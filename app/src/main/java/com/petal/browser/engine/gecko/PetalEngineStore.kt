@@ -100,6 +100,12 @@ object PetalEngineStore {
         store?.dispatch(action)
     }
 
+    /** Marks the BrowserStore restore phase complete after Petal's tab metadata has been restored. */
+    @JvmStatic
+    fun markRestoreComplete(context: Context) {
+        getStore(context).dispatch(mozilla.components.browser.state.action.RestoreCompleteAction)
+    }
+
     /**
      * Creates an [mozilla.components.concept.engine.EngineView] using [GeckoEngine].
      */

@@ -801,6 +801,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         // Tab Session Restoration & Rehydration
         boolean tabsRestored = com.petal.browser.unit.PetalTabSessionManager.restoreSession(this);
+        // Keep Android Components' restore lifecycle in sync with Petal's richer
+        // tab/session restoration. Individual Gecko sessions are registered in
+        // BrowserStore as tabs are materialized; this action closes the restore
+        // phase for middleware and SessionStorage observers.
+        com.petal.browser.engine.gecko.PetalEngineStore.markRestoreComplete(this);
 
         // If still no open tab, open default page
         if (!tabsRestored && BrowserContainer.size() < 1) {
