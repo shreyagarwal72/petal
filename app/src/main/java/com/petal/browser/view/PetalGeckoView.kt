@@ -1033,9 +1033,6 @@ class PetalGeckoView @JvmOverloads constructor(
         session.mediaSessionDelegate = object : MediaSession.Delegate {
             override fun onActivated(session: GeckoSession, mediaSession: MediaSession) {
                 mediaBridge?.setActiveGeckoMediaSession(mediaSession)
-                com.petal.browser.engine.gecko.PetalEngineStore.activateMediaSession(
-                    context, tabId, mediaSession.controller
-                )
             }
 
             override fun onDeactivated(session: GeckoSession, mediaSession: MediaSession) {
@@ -1047,9 +1044,6 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onPlay(session: GeckoSession, mediaSession: MediaSession) {
                 mediaBridge?.setActiveGeckoMediaSession(mediaSession)
-                com.petal.browser.engine.gecko.PetalEngineStore.updateMediaPlaybackState(
-                    context, tabId, MediaSession.PlaybackState.PLAYING
-                )
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
@@ -1066,9 +1060,6 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onPause(session: GeckoSession, mediaSession: MediaSession) {
-                com.petal.browser.engine.gecko.PetalEngineStore.updateMediaPlaybackState(
-                    context, tabId, MediaSession.PlaybackState.PAUSED
-                )
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
@@ -1079,9 +1070,6 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onStop(session: GeckoSession, mediaSession: MediaSession) {
-                com.petal.browser.engine.gecko.PetalEngineStore.updateMediaPlaybackState(
-                    context, tabId, MediaSession.PlaybackState.NONE
-                )
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
@@ -1093,7 +1081,6 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onPositionState(session: GeckoSession, mediaSession: MediaSession, state: MediaSession.PositionState) {
                 mediaBridge?.updatePositionState(state.position, state.duration)
-                com.petal.browser.engine.gecko.PetalEngineStore.updateMediaPosition(context, tabId, state)
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
@@ -1105,7 +1092,6 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onFullscreen(session: GeckoSession, mediaSession: MediaSession, enabled: Boolean, meta: MediaSession.ElementMetadata?) {
-                com.petal.browser.engine.gecko.PetalEngineStore.updateMediaFullscreen(context, tabId, enabled, meta)
                 if (meta != null && meta.width > 0 && meta.height > 0) {
                     val act = getHostActivity() ?: return
                     act.runOnUiThread {
@@ -1115,7 +1101,6 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onMetadata(session: GeckoSession, mediaSession: MediaSession, meta: MediaSession.Metadata) {
-                com.petal.browser.engine.gecko.PetalEngineStore.updateMediaMetadata(context, tabId, meta)
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
