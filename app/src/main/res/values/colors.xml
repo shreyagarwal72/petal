@@ -60,7 +60,6 @@
     <color name="teal">#40009688</color>
     <color name="yellow">#40FFC107</color>
 
-    <color name="ic_launcher_background">#FFFFFF</color>
     <color name="live_update_accent">#B81D63</color>
 
 </resources>
