@@ -82,6 +82,7 @@ object SafeDownloadValues {
      * URL path, query params, and MIME type fallback (Petal algorithm).
      */
     @JvmStatic
+    @JvmOverloads
     fun fileName(
         url: String,
         contentDisposition: String?,
