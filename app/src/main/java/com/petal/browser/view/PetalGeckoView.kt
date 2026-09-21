@@ -276,7 +276,35 @@ class PetalGeckoView @JvmOverloads constructor(
                 session: GeckoSession,
                 perm: GeckoSession.PermissionDelegate.ContentPermission
             ): GeckoResult<Int>? {
-                return GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                val result = GeckoResult<Int>()
+                val activity = getHostActivity()
+                if (activity == null) {
+                    result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                    return result
+                }
+
+                // Gecko content permissions are promptable site permissions. Never
+                // auto-allow them: route geolocation through Petal's Material dialog
+                // and deny unsupported content permission types explicitly.
+                if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION) {
+                    activity.runOnUiThread {
+                        com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
+                            activity,
+                            com.petal.browser.ui.components.PetalPermissionType.LOCATION,
+                            perm.uri,
+                            Runnable {
+                                com.petal.browser.unit.HelperUnit.grantPermissionsLoc(activity)
+                                result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                            },
+                            Runnable {
+                                result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                            }
+                        )
+                    }
+                } else {
+                    result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                }
+                return result
             }
         }
 
