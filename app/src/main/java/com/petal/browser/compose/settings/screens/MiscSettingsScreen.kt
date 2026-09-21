@@ -417,7 +417,7 @@ fun MiscSettingsScreenContent(
                     listOf(
                         PetalLensManager.SnapProvider.ASK to "Ask every time",
                         PetalLensManager.SnapProvider.GOOGLE_LENS to "Google Lens",
-                        PetalLensManager.SnapProvider.PETAL_SCANNER to "Petal Scanner"
+                        PetalLensManager.SnapProvider.PETAL_SCANNER to "Petal QR Scanner"
                     ).forEach { (provider, label) ->
                         Row(
                             modifier = Modifier.fillMaxWidth().clickable { onSnapProviderChange(provider) },

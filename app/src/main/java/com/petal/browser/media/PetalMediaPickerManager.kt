@@ -124,7 +124,9 @@ object PetalMediaPickerManager {
             )
             val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
 
-            val seenIds = mutableSetOf<Long>()
+            // IDs can repeat between MediaStore volumes. Deduplicate by the complete
+            // content URI so images from secondary storage and Android Photos remain visible.
+            val seenUris = mutableSetOf<String>()
             for (targetUri in imageUris.distinct()) {
                 try {
                     context.contentResolver.query(
@@ -143,13 +145,12 @@ object PetalMediaPickerManager {
                         if (idCol != -1) {
                             while (cursor.moveToNext() && mediaList.size < 300) {
                                 val id = cursor.getLong(idCol)
-                                if (!seenIds.add(id)) continue
-
                                 val name = if (nameCol != -1) cursor.getString(nameCol) ?: "Image_$id" else "Image_$id"
                                 val mime = if (mimeCol != -1) cursor.getString(mimeCol) ?: "image/jpeg" else "image/jpeg"
                                 val size = if (sizeCol != -1) cursor.getLong(sizeCol) else 0L
                                 val date = if (dateCol != -1) cursor.getLong(dateCol) else System.currentTimeMillis() / 1000
                                 val contentUri = ContentUris.withAppendedId(targetUri, id)
+                                if (!seenUris.add(contentUri.toString())) continue
 
                                 mediaList.add(
                                     MediaItem(

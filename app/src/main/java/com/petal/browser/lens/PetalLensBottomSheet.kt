@@ -82,25 +82,29 @@ fun PetalLensBottomSheet(
         refreshGallery()
     }
 
+    fun openImageWithSelectedScanner(uri: Uri) {
+        if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.PETAL_SCANNER) {
+            PetalImageScannerBridge.show(context as androidx.activity.ComponentActivity, uri.toString())
+        } else {
+            PetalLensManager.launchLensForImageUri(context, uri)
+        }
+        onDismissRequest()
+    }
+
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
-            try {
-                PetalLensManager.launchLensForImageUri(context, uri)
-            } catch (e: Exception) {
-                PetalLensManager.launchGoogleLensApp(context)
-            }
-            onDismissRequest()
+            runCatching { openImageWithSelectedScanner(uri) }
+                .onFailure { PetalLensManager.launchGoogleLensApp(context) }
         }
     }
     val galleryChooserLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            try { PetalLensManager.launchLensForImageUri(context, uri) }
-            catch (_: Exception) { PetalLensManager.launchGoogleLensApp(context) }
-            onDismissRequest()
+            runCatching { openImageWithSelectedScanner(uri) }
+                .onFailure { PetalLensManager.launchGoogleLensApp(context) }
         }
     }
 
@@ -549,12 +553,8 @@ fun PetalLensBottomSheet(
                                 .clip(RoundedCornerShape(14.dp))
                                 .clickable {
                                     PetalHapticEngine.getInstance(context).playClick(context)
-                                    try {
-                                        PetalLensManager.launchLensForImageUri(context, item.uri)
-                                    } catch (e: Exception) {
-                                        PetalLensManager.launchGoogleLensApp(context)
-                                    }
-                                    onDismissRequest()
+                                    runCatching { openImageWithSelectedScanner(item.uri) }
+                                        .onFailure { PetalLensManager.launchGoogleLensApp(context) }
                                 }
                         ) {
                             AsyncImage(
