@@ -23,6 +23,7 @@ import android.content.Context
 import android.media.MediaScannerConnection
 import android.os.Build
 import android.webkit.MimeTypeMap
+import androidx.core.app.NotificationManagerCompat
 import com.tonyodev.fetch2.AbstractFetchListener
 import com.tonyodev.fetch2.Download
 import com.tonyodev.fetch2.Fetch
@@ -37,6 +38,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.util.Locale
+import mozilla.components.browser.state.state.content.DownloadState
+import mozilla.components.feature.downloads.manager.FetchDownloadManager
+import mozilla.components.support.base.android.NotificationsDelegate
+import kotlin.reflect.KClass
 
 object PetalFetchDownloadBridge {
 
@@ -154,6 +159,12 @@ object PetalFetchDownloadBridge {
         onEnqueued: ((Long) -> Unit)? = null,
         onFailed: (() -> Unit)? = null
     ) {
+        // Gecko browser responses now enter Mozilla's official download pipeline.
+        // Media/sniffer downloads continue through Fetch2 below so the existing
+        // media-specific behavior remains unchanged during migration.
+        if (enqueueMozillaGeckoDownload(context, url, fileName, mimeType, onEnqueued, onFailed)) {
+            return
+        }
         val safeHeaders = responseHeaders.filter { (name, value) ->
             name.isNotBlank() && value.isNotBlank() &&
                 !name.equals("Content-Length", true) &&
@@ -182,6 +193,49 @@ object PetalFetchDownloadBridge {
             onEnqueued = onEnqueued,
             onFailed = onFailed
         )
+    }
+
+    private fun enqueueMozillaGeckoDownload(
+        context: Context,
+        url: String,
+        fileName: String,
+        mimeType: String?,
+        onEnqueued: ((Long) -> Unit)?,
+        onFailed: (() -> Unit)?
+    ): Boolean {
+        return try {
+            if (!SafeDownloadValues.isHttpUrl(url)) return false
+            val safeName = SafeDownloadValues.fileName(url, null, mimeType, fileName).ifBlank { "download" }
+            val directory = File(
+                android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
+                safeName
+            )
+            val manager = FetchDownloadManager(
+                applicationContext = context.applicationContext,
+                store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context),
+                service = com.petal.browser.download.PetalMozillaDownloadService::class,
+                notificationsDelegate = NotificationsDelegate(
+                    NotificationManagerCompat.from(context.applicationContext)
+                )
+            )
+            val id = manager.download(
+                DownloadState(
+                    url = url,
+                    fileName = safeName,
+                    contentType = mimeType,
+                    directoryPath = directory.parentFile?.absolutePath
+                        ?: android.os.Environment.getExternalStoragePublicDirectory(
+                            android.os.Environment.DIRECTORY_DOWNLOADS
+                        ).absolutePath
+                )
+            )
+            if (id.isNullOrBlank()) return false
+            onEnqueued?.invoke(id.hashCode().toLong())
+            true
+        } catch (_: Throwable) {
+            onFailed?.invoke()
+            false
+        }
     }
 
     @JvmStatic
