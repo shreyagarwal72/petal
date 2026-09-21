@@ -621,14 +621,17 @@ object PetalExtensionManager {
     }
 
     private fun createPopupSession(extension: WebExtension, sourceSession: GeckoSession? = null): GeckoResult<GeckoSession>? {
-        _pendingPopup.value?.session?.let { existing ->
+        val previousPopup = _pendingPopup.value
+        _pendingPopup.value = null
+        previousPopup?.sourceSession?.let { source ->
+            try { if (source.isOpen) source.setActive(true) } catch (_: Throwable) {}
+        }
+        previousPopup?.session?.let { existing ->
             try {
                 existing.setActive(false)
                 existing.close()
             } catch (ignored: Exception) {}
         }
-        _pendingPopup.value = null
-
         // GeckoView accepts a normal GeckoSession here. Open it before returning so the
         // extension popup can begin loading immediately; delaying open until Compose
         // composition can leave Gecko waiting for the popup host and make the browser
@@ -727,13 +730,18 @@ object PetalExtensionManager {
 
     @JvmStatic
     fun dismissPopup() {
-        _pendingPopup.value?.session?.let { session ->
+        val popup = _pendingPopup.value ?: return
+        _pendingPopup.value = null
+        popup.sourceSession?.let { source ->
+            try { if (source.isOpen) source.setActive(true) }
+            catch (t: Throwable) { Log.d(TAG, "Failed to reactivate browser session after popup", t) }
+        }
+        popup.session.let { session ->
             try {
                 session.setActive(false)
                 session.close()
             } catch (ignored: Exception) {}
         }
-        _pendingPopup.value = null
     }
 
     /**
@@ -807,14 +815,17 @@ object PetalExtensionManager {
     }
 
     private fun openDirectPopup(extension: WebExtension, popupUrl: String, context: Context) {
-        _pendingPopup.value?.session?.let { existing ->
+        val previousPopup = _pendingPopup.value
+        _pendingPopup.value = null
+        previousPopup?.sourceSession?.let { source ->
+            try { if (source.isOpen) source.setActive(true) } catch (_: Throwable) {}
+        }
+        previousPopup?.session?.let { existing ->
             try {
                 existing.setActive(false)
                 existing.close()
             } catch (ignored: Exception) {}
         }
-        _pendingPopup.value = null
-
         val popupSettings = org.mozilla.geckoview.GeckoSessionSettings.Builder()
             .usePrivateMode(false)
             .allowJavascript(true)

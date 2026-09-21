@@ -599,6 +599,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                         android.view.ViewGroup rootDecor = (android.view.ViewGroup) getWindow().getDecorView();
                                         android.view.View tag = rootDecor.findViewWithTag("ext_popup_overlay");
                                         if (tag != null) rootDecor.removeView(tag);
+                                        rootDecor.requestFocus();
                                     } catch (Exception ignored) {}
                                     com.petal.browser.extensions.PetalExtensionManager.dismissPopup();
                                 });
