@@ -13,6 +13,8 @@
   [![Telegram Channel](https://img.shields.io/badge/Telegram-Champion%20Workspace-blue?style=for-the-badge&logo=telegram)](https://t.me/championworkspace)
   [![License](https://img.shields.io/github/license/shreyagarwal72/petal?color=purple&style=for-the-badge)](LICENSE.md)
 
+  [![Sponsor Petal](https://img.shields.io/badge/Sponsor%20Petal-GitHub%20Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/shreyagarwal72)
+
 </div>
 
 ---
