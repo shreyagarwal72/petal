@@ -28,6 +28,7 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.ExternalDownloadManagerHelper
 import com.petal.browser.lens.PetalLensManager
+import androidx.preference.PreferenceManager
 
 @Composable
 fun MiscSettingsScreen(
@@ -37,6 +38,8 @@ fun MiscSettingsScreen(
     viewModel: MiscSettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val preferences = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    var writingToolsBar by remember { mutableStateOf(preferences.getBoolean("sp_writing_tools_bar", true)) }
     val autoOpenApps by viewModel.autoOpenApps.collectAsStateWithLifecycle()
     val checkUpdateOnLaunch by viewModel.checkUpdateOnLaunch.collectAsStateWithLifecycle()
     val downloadManagerMode by viewModel.downloadManagerMode.collectAsStateWithLifecycle()
@@ -108,6 +111,24 @@ fun MiscSettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                SettingsCategoryCard(
+                    title = "Writing tools",
+                    icon = Icons.Rounded.Edit,
+                    cardId = "misc_writing_tools",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    ToggleRow(
+                        title = "Keyboard writing tools",
+                        subtitle = "Show an editing toolbar above the keyboard for text fields",
+                        icon = Icons.Rounded.Keyboard,
+                        checked = writingToolsBar,
+                        onCheckedChange = {
+                            writingToolsBar = it
+                            preferences.edit().putBoolean("sp_writing_tools_bar", it).apply()
+                        }
+                    )
+                }
+
                 // Default Download Manager Card
                 SettingsCategoryCard(
                     title = "Default Download Manager",
