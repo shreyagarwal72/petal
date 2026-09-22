@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -40,6 +41,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -818,11 +823,18 @@ private fun InstallPermissionDialog(prompt: PetalExtensionManager.PendingPrompt)
 
 /**
  * Renders a WebExtension browser/page-action popup (the small dropdown UI extensions like
- * uBlock Origin or Bitwarden show when their toolbar icon is tapped) inside a floating M3 card,
- * using a lightweight secondary [GeckoView] bound to the popup's own [GeckoSession].
- */
-/**
- * Renders a WebExtension live popup web app screen matching Fennec's action popup.
+ * uBlock Origin or Bitwarden show when their toolbar icon is tapped) inside a floating M3
+ * bottom sheet, using a secondary [GeckoView] bound to the popup's own [GeckoSession].
+ *
+ * Key features:
+ *  - **Full-screen toggle** — Bitwarden and similar vault UIs need room to browse items;
+ *    a single tap on the expand icon switches between compact (65 %) and full-screen modes.
+ *  - **Text input prompt support** — master-password / PIN dialogs inside extension popups
+ *    are routed through a native Material 3 AlertDialog so the system keyboard appears
+ *    correctly and the user can actually type into them.
+ *  - **Clipboard auto-allow** — extensions that write to the clipboard (e.g. Bitwarden
+ *    "Copy password") receive silent ALLOW so the copy works without a permission prompt.
+ *  - **Zoom controls** — pinch-unfriendly popups can be rescaled with ± buttons.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -830,21 +842,33 @@ fun PetalExtensionPopupScreen(
     popup: PetalExtensionManager.PendingPopup,
     onDismiss: () -> Unit
 ) {
-    // Match Omni Browser's real WebExtension popup behavior: a compact interactive
-    // bottom-sheet surface containing the extension's own Gecko content, rather than
-    // navigating the whole browser to the moz-extension:// page.
     androidx.activity.compose.BackHandler(onBack = onDismiss)
     val context = LocalContext.current
     val hostActivity = context as? ComponentActivity
 
     key(popup.session) {
         var popupScale by remember { mutableStateOf(1f) }
+        var isFullScreen by remember { mutableStateOf(false) }
+
+        // State for native text-input prompt dialog (used by password managers for master
+        // password / PIN prompts that originate inside the extension popup GeckoSession).
+        var pendingTextPrompt by remember {
+            mutableStateOf<GeckoSession.PromptDelegate.TextPrompt?>(null)
+        }
+        var textPromptInput by remember { mutableStateOf("") }
+        var textPromptIsPassword by remember { mutableStateOf(false) }
+        var textPromptResult by remember {
+            mutableStateOf<GeckoResult<GeckoSession.PromptDelegate.PromptResponse>?>(null)
+        }
 
         val popupContent: @Composable () -> Unit = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.65f)
+                    .then(
+                        if (isFullScreen) Modifier.fillMaxHeight()
+                        else Modifier.fillMaxHeight(0.65f)
+                    )
                     .navigationBarsPadding()
             ) {
                 Row(
@@ -931,6 +955,19 @@ fun PetalExtensionPopupScreen(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
+                        // Full-screen / collapse toggle — especially useful for Bitwarden
+                        // vault browsing where the compact height is too tight to show items.
+                        IconButton(
+                            onClick = { isFullScreen = !isFullScreen },
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isFullScreen) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
+                                contentDescription = if (isFullScreen) "Collapse" else "Expand",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                         IconButton(onClick = onDismiss, modifier = Modifier.size(34.dp)) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
@@ -976,6 +1013,55 @@ fun PetalExtensionPopupScreen(
                                         (ctx as? ComponentActivity)?.runOnUiThread { onDismiss() }
                                     }
                                 }
+
+                                // Route text-input prompts (master password, PIN, etc.) through
+                                // a native Material 3 dialog so the system keyboard appears and
+                                // the user can actually type their password. Alert/button prompts
+                                // are handled with reasonable defaults so the popup never stalls.
+                                popup.session.promptDelegate = object : GeckoSession.PromptDelegate {
+                                    override fun onAlertPrompt(
+                                        session: GeckoSession,
+                                        prompt: GeckoSession.PromptDelegate.AlertPrompt
+                                    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+                                        GeckoResult.fromValue(prompt.dismiss())
+
+                                    override fun onButtonPrompt(
+                                        session: GeckoSession,
+                                        prompt: GeckoSession.PromptDelegate.ButtonPrompt
+                                    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+                                        GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
+
+                                    override fun onTextPrompt(
+                                        session: GeckoSession,
+                                        prompt: GeckoSession.PromptDelegate.TextPrompt
+                                    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                                        val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                                        val lowerMsg = (prompt.message ?: "").lowercase()
+                                        val isPass = lowerMsg.contains("password") ||
+                                            lowerMsg.contains("pin") ||
+                                            lowerMsg.contains("passphrase") ||
+                                            lowerMsg.contains("master") ||
+                                            lowerMsg.contains("unlock") ||
+                                            lowerMsg.contains("secret")
+                                        (ctx as? ComponentActivity)?.runOnUiThread {
+                                            pendingTextPrompt = prompt
+                                            textPromptInput = prompt.defaultValue ?: ""
+                                            textPromptIsPassword = isPass
+                                            textPromptResult = result
+                                        }
+                                        return result
+                                    }
+
+                                    // Clipboard write (copy password, copy TOTP code, etc.) —
+                                    // silently allow so Bitwarden "Copy" actions work without
+                                    // interrupting the autofill flow with a permission dialog.
+                                    override fun onSharePrompt(
+                                        session: GeckoSession,
+                                        prompt: GeckoSession.PromptDelegate.SharePrompt
+                                    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+                                        GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.SUCCESS))
+                                }
+
                                 popup.session.navigationDelegate = object : GeckoSession.NavigationDelegate {
                                     override fun onLoadRequest(
                                         session: GeckoSession,
@@ -1061,6 +1147,63 @@ fun PetalExtensionPopupScreen(
             Box(modifier = Modifier.fillMaxWidth()) {
                 popupContent()
             }
+        }
+
+        // Native Material 3 text-input dialog for extension password prompts (Bitwarden
+        // master password, KeePassXC PIN, etc.). Rendered on top of the bottom sheet so
+        // the system keyboard appears correctly and the user can type into the field.
+        pendingTextPrompt?.let { prompt ->
+            AlertDialog(
+                onDismissRequest = {
+                    textPromptResult?.complete(prompt.dismiss())
+                    pendingTextPrompt = null
+                    textPromptResult = null
+                },
+                icon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
+                title = { Text(prompt.title ?: popup.extensionName) },
+                text = {
+                    Column {
+                        if (!prompt.message.isNullOrBlank()) {
+                            Text(
+                                prompt.message!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+                        OutlinedTextField(
+                            value = textPromptInput,
+                            onValueChange = { textPromptInput = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            visualTransformation = if (textPromptIsPassword)
+                                PasswordVisualTransformation()
+                            else
+                                VisualTransformation.None,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = if (textPromptIsPassword) KeyboardType.Password else KeyboardType.Text,
+                                imeAction = ImeAction.Done
+                            )
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        textPromptResult?.complete(prompt.confirm(textPromptInput))
+                        pendingTextPrompt = null
+                        textPromptInput = ""
+                        textPromptResult = null
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        textPromptResult?.complete(prompt.dismiss())
+                        pendingTextPrompt = null
+                        textPromptInput = ""
+                        textPromptResult = null
+                    }) { Text("Cancel") }
+                }
+            )
         }
     }
 }

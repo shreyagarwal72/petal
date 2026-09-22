@@ -242,6 +242,70 @@ object PetalExtensionManager {
             description = "A simple Pomodoro-style timer for managing focus and productivity sessions.",
             amoSlug = "tomato-clock",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/tomato-clock/"
+        ),
+        // ── Official Mozilla-recommended extensions added below ───────────
+        CatalogEntry(
+            id = "noscript",
+            name = "NoScript Security Suite",
+            description = "Allow JavaScript, Java, and Flash only from trusted domains. Protects against XSS and other web security exploits.",
+            amoSlug = "noscript",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/noscript/"
+        ),
+        CatalogEntry(
+            id = "search_by_image",
+            name = "Search by Image",
+            description = "Powerful reverse image search tool supporting Google, Bing, Yandex, Baidu, TinEye, and more.",
+            amoSlug = "search_by_image",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/search_by_image/"
+        ),
+        CatalogEntry(
+            id = "read-aloud",
+            name = "Read Aloud: Text to Speech",
+            description = "Read out loud the current web page article with one click. Supports 40+ languages.",
+            amoSlug = "read-aloud",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/read-aloud/"
+        ),
+        CatalogEntry(
+            id = "youtube-recommended-videos",
+            name = "Unhook: Remove YouTube Distractions",
+            description = "Hide YouTube recommended videos, comments, sidebar, homepage, trending, and other distractions.",
+            amoSlug = "youtube-recommended-videos",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/youtube-recommended-videos/"
+        ),
+        CatalogEntry(
+            id = "styl-us",
+            name = "Stylus",
+            description = "Redesign websites with custom CSS themes. Install from online repositories or create your own.",
+            amoSlug = "styl-us",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/styl-us/"
+        ),
+        CatalogEntry(
+            id = "consent-o-matic",
+            name = "Consent-O-Matic",
+            description = "Automatically handles GDPR cookie consent forms by rejecting non-essential cookies.",
+            amoSlug = "consent-o-matic",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/consent-o-matic/"
+        ),
+        CatalogEntry(
+            id = "leechblock-ng",
+            name = "LeechBlock NG",
+            description = "Block time-wasting sites. Specify which sites to block and when — a simple productivity tool.",
+            amoSlug = "leechblock-ng",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/leechblock-ng/"
+        ),
+        CatalogEntry(
+            id = "single-file",
+            name = "SingleFile",
+            description = "Save an entire web page — including images and styling — as a single self-contained HTML file.",
+            amoSlug = "single-file",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/single-file/"
+        ),
+        CatalogEntry(
+            id = "chrome-mask",
+            name = "Chrome Mask",
+            description = "Makes Firefox appear as Chrome to websites that incorrectly block or degrade Firefox users.",
+            amoSlug = "chrome-mask",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/chrome-mask/"
         )
     )
 
