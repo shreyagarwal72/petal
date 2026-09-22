@@ -493,30 +493,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // been detached during the exit callback. Treat it as unavailable and
         // let the ripple fall back to the window centre instead of crashing.
         View iconView;
-        /** Restores input to the active browser surface after a decor-level transient UI closes. */
-        public void restoreBrowserInputFocus() {
-            try {
-                View decor = getWindow().getDecorView();
-                decor.setFocusableInTouchMode(true);
-                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    com.petal.browser.view.PetalGeckoView gecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                    gecko.setVisibility(View.VISIBLE);
-                    gecko.onResume();
-                    gecko.requestFocus();
-                } else if (currentAlbumController != null && currentAlbumController.getAlbumView() != null) {
-                    currentAlbumController.getAlbumView().setVisibility(View.VISIBLE);
-                    currentAlbumController.getAlbumView().requestFocus();
-                }
-                if (contentFrame != null) {
-                    contentFrame.setVisibility(View.VISIBLE);
-                    contentFrame.requestFocus();
-                }
-                decor.requestFocus();
-            } catch (Throwable t) {
-                Log.d(TAG, "Failed to restore browser input focus", t);
-            }
-        }
-
         try {
             iconView = provider.getIconView();
         } catch (RuntimeException ignored) {
@@ -562,6 +538,30 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 .start();
         // Safety net so the splash can never get stuck if the animation is cancelled.
         splashView.postDelayed(removeOnce, duration + 400L);
+    }
+
+    /** Restores input to the active browser surface after a decor-level transient UI closes. */
+    public void restoreBrowserInputFocus() {
+        try {
+            View decor = getWindow().getDecorView();
+            decor.setFocusableInTouchMode(true);
+            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                com.petal.browser.view.PetalGeckoView gecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+                gecko.setVisibility(View.VISIBLE);
+                gecko.onResume();
+                gecko.requestFocus();
+            } else if (currentAlbumController != null && currentAlbumController.getAlbumView() != null) {
+                currentAlbumController.getAlbumView().setVisibility(View.VISIBLE);
+                currentAlbumController.getAlbumView().requestFocus();
+            }
+            if (contentFrame != null) {
+                contentFrame.setVisibility(View.VISIBLE);
+                contentFrame.requestFocus();
+            }
+            decor.requestFocus();
+        } catch (Throwable t) {
+            Log.d(TAG, "Failed to restore browser input focus", t);
+        }
     }
 
     @Override
