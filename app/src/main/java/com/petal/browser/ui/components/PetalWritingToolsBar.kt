@@ -67,6 +67,7 @@ object PetalWritingToolsBar {
             if (key == PREF) ViewCompat.getRootWindowInsets(host)?.let(::update)
     }
 
+    @JvmStatic
     fun update(host: ViewGroup, insets: WindowInsetsCompat) {
         for (index in 0 until host.childCount) {
             val child = host.getChildAt(index)
