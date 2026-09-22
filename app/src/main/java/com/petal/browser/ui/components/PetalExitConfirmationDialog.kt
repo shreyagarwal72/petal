@@ -132,7 +132,15 @@ private fun ExitDialogContent(
     onStay: () -> Unit,
     onExit: () -> Unit,
 ) {
-    BasicAlertDialog(onDismissRequest = onStay) {
+    // This content is hosted inside the platform Dialog above. Do not create a
+    // second BasicAlertDialog window here; nested dialog windows can render blank.
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 6.dp,
+        shadowElevation = 4.dp
+    ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
