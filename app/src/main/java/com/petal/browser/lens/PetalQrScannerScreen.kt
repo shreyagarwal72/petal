@@ -186,7 +186,6 @@ fun PetalQrScannerScreen(
             PetalContainmentSurface(
                 shape = MaterialTheme.shapes.extraLarge,
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp,
                 modifier = Modifier.padding(24.dp)
             ) {
                 Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
