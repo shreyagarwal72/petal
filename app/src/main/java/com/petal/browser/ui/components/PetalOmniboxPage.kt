@@ -253,7 +253,9 @@ fun PetalOmniboxPage(
         }
     }
     var queryState by remember {
-        mutableStateOf(TextFieldValue(cleanedInitialQuery, TextRange(cleanedInitialQuery.length)))
+        // Opening the address bar is an edit action: select the complete current
+        // URL so typing immediately replaces it instead of appending at the end.
+        mutableStateOf(TextFieldValue(cleanedInitialQuery, TextRange(0, cleanedInitialQuery.length)))
     }
     var suggestions by remember { mutableStateOf<List<OmniboxSuggestion>>(emptyList()) }
     var suggestionToRemove by remember { mutableStateOf<OmniboxSuggestion?>(null) }

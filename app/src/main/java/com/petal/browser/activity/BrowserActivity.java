@@ -2492,7 +2492,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void onNewTabClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                            addAlbum(getString(R.string.app_name), "about:blank", true);
+                            boolean keepIncognito = currentAlbumController instanceof com.petal.browser.view.PetalGeckoView
+                                    ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
+                                    : (ninjaWebView != null && ninjaWebView.isIncognito());
+                            addAlbum(getString(R.string.app_name), "about:blank", true, keepIncognito);
                         }
 
                         @Override
