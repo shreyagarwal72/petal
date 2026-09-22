@@ -1,5 +1,8 @@
 package com.petal.browser.ui.components
 
+import android.os.Build
+import android.view.WindowManager
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -7,6 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,6 +53,19 @@ fun PetalExpressiveDialog(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
+        val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+        DisposableEffect(dialogWindow) {
+            dialogWindow?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            dialogWindow?.attributes = dialogWindow?.attributes?.apply { dimAmount = 0.58f }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                dialogWindow?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                dialogWindow?.setBackgroundBlurRadius(34)
+            }
+            onDispose {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) dialogWindow?.setBackgroundBlurRadius(0)
+                dialogWindow?.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            }
+        }
         // Compose can measure an AnimatedVisibility first frame at zero size on some
         // Android versions. Keep the dialog surface mounted immediately so it never
         // becomes a blank, touch-blocking window.

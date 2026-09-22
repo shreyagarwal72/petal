@@ -5,6 +5,7 @@ import android.app.Dialog
 import android.graphics.Color as AndroidColor
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.os.Build
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.Window
@@ -80,6 +81,10 @@ object PetalExitConfirmationDialog {
             window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
             window.setDimAmount(0.68f)
             window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                window.setBackgroundBlurRadius(34)
+            }
             window.setGravity(Gravity.CENTER)
             window.setLayout(
                 (activity.resources.displayMetrics.widthPixels * 0.84f).toInt().coerceAtMost(dp(activity, 360)),
@@ -111,6 +116,10 @@ object PetalExitConfirmationDialog {
                 (activity.resources.displayMetrics.widthPixels * 0.84f).toInt().coerceAtMost(dp(activity, 360)),
                 WindowManager.LayoutParams.WRAP_CONTENT
             )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                window.setBackgroundBlurRadius(34)
+            }
         }
     }
 
