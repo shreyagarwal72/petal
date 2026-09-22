@@ -933,9 +933,9 @@ fun PetalOmniboxPage(
 
                         // Suggestions List - fills the rest of the page with Material 3 Expressive containment
                         if (suggestions.isNotEmpty()) {
-                            Surface(
+                            PetalContainmentSurface(
                                 shape = RoundedCornerShape(24.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -978,9 +978,9 @@ fun PetalOmniboxPage(
                                                  middleCorner = 6.dp,
                                                  singleCorner = 16.dp
                                              )
-                                             Surface(
+                                             PetalContainmentSurface(
                                                  shape = itemShape,
-                                                 color = MaterialTheme.colorScheme.surfaceContainer,
+                                                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                                                  modifier = Modifier
                                                      .fillMaxWidth()
                                                      // Rows fade in/out and slide smoothly into their
