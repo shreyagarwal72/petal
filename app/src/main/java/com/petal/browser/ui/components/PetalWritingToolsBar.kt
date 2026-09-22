@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.LinearLayout
 import android.widget.FrameLayout
+import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -54,17 +55,20 @@ object PetalWritingToolsBar {
                 layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 44)
             })
         }
-        host.addView(bar, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            gravity = Gravity.BOTTOM
-        })
+        val barLayoutParams: ViewGroup.LayoutParams = if (host is RelativeLayout) {
+            RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            }
+        } else {
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.BOTTOM }
+        }
+        host.addView(bar, barLayoutParams)
         fun update(insets: WindowInsetsCompat) {
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val visible = insets.isVisible(WindowInsetsCompat.Type.ime()) && preferences.getBoolean(PREF, true)
             bar.visibility = if (visible) View.VISIBLE else View.GONE
             (bar.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
-                // BrowserActivity already reserves the IME area as root bottom padding.
-                // Adding the IME height again would push the bar into the status/top area.
-                lp.bottomMargin = 0
+                lp.bottomMargin = ime.bottom
                 bar.layoutParams = lp
             }
         }
@@ -82,7 +86,7 @@ object PetalWritingToolsBar {
                 val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
                 val enabled = PreferenceManager.getDefaultSharedPreferences(host.context).getBoolean(PREF, true)
                 child.visibility = if (enabled && insets.isVisible(WindowInsetsCompat.Type.ime())) View.VISIBLE else View.GONE
-                (child.layoutParams as? ViewGroup.MarginLayoutParams)?.let { it.bottomMargin = 0; child.layoutParams = it }
+                (child.layoutParams as? ViewGroup.MarginLayoutParams)?.let { it.bottomMargin = ime.bottom; child.layoutParams = it }
             }
         }
     }

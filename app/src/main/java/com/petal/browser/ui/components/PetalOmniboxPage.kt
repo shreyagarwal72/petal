@@ -544,6 +544,7 @@ fun PetalOmniboxPage(
                                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .heightIn(max = 420.dp)
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Row(
@@ -962,7 +963,7 @@ fun PetalOmniboxPage(
                                     )
 
                                     LazyColumn(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                                         verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
