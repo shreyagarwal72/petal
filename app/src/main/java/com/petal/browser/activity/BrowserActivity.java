@@ -492,7 +492,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // Android 16 can hand back a splash provider whose icon view has already
         // been detached during the exit callback. Treat it as unavailable and
         // let the ripple fall back to the window centre instead of crashing.
-        final View iconView;
+        View iconView;
         try {
             iconView = provider.getIconView();
         } catch (RuntimeException ignored) {
