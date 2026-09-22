@@ -20,8 +20,8 @@ android {
         applicationId "com.petal.browser"
         minSdkVersion 26
         targetSdkVersion 36
-        versionCode 360
-        versionName "3.6"
+        versionCode 370
+        versionName "3.7"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         resConfigs "ar", "b+hi+Latn", "b+sr+Latn", "cs", "de", "el", "es", "et", "fa", "fr", "he", "hi", "hu", "id", "it", "ja", "nl", "pl", "pt", "ro", "ru", "sr", "sv", "tr", "uk", "vi", "zh", "zh-rTW"
@@ -207,29 +207,29 @@ dependencies {
     implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'
     implementation 'io.github.junkfood02.youtubedl-android:aria2c:0.18.1'
 
-    // Mozilla GeckoView & Android Components (Release channel 155.0.1)
-    implementation 'org.mozilla.geckoview:geckoview:155.0.20260903215306'
-    implementation('org.mozilla.components:browser-engine-gecko:155.0.1') {
+    // Mozilla GeckoView & Android Components (Release channel 156.0.1)
+    implementation 'org.mozilla.geckoview:geckoview:156.0.20260909172920'
+    implementation('org.mozilla.components:browser-engine-gecko:156.0.1') {
         exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
     }
-    implementation 'org.mozilla.components:concept-engine:155.0.1'
-    implementation 'org.mozilla.components:browser-state:155.0.1'
-    implementation 'org.mozilla.components:browser-session-storage:155.0.1'
-    implementation 'org.mozilla.components:lib-state:155.0.1'
-    implementation 'org.mozilla.components:support-base:155.0.1'
-    implementation 'org.mozilla.components:support-utils:155.0.1'
+    implementation 'org.mozilla.components:concept-engine:156.0.1'
+    implementation 'org.mozilla.components:browser-state:156.0.1'
+    implementation 'org.mozilla.components:browser-session-storage:156.0.1'
+    implementation 'org.mozilla.components:lib-state:156.0.1'
+    implementation 'org.mozilla.components:support-base:156.0.1'
+    implementation 'org.mozilla.components:support-utils:156.0.1'
 
-    // Android Components Features (155.0.1)
-    implementation 'org.mozilla.components:feature-readerview:155.0.1'
-    implementation 'org.mozilla.components:feature-findinpage:155.0.1'
-    implementation 'org.mozilla.components:feature-sitepermissions:155.0.1'
-    implementation 'org.mozilla.components:feature-prompts:155.0.1'
-    implementation 'org.mozilla.components:feature-pwa:155.0.1'
-    implementation 'org.mozilla.components:feature-downloads:155.0.1'
-    implementation 'org.mozilla.components:feature-search:155.0.1'
-    implementation 'org.mozilla.components:feature-webcompat:155.0.1'
-    implementation 'org.mozilla.components:feature-customtabs:155.0.1'
-    implementation 'org.mozilla.components:feature-media:155.0.1'
+    // Android Components Features (156.0.1)
+    implementation 'org.mozilla.components:feature-readerview:156.0.1'
+    implementation 'org.mozilla.components:feature-findinpage:156.0.1'
+    implementation 'org.mozilla.components:feature-sitepermissions:156.0.1'
+    implementation 'org.mozilla.components:feature-prompts:156.0.1'
+    implementation 'org.mozilla.components:feature-pwa:156.0.1'
+    implementation 'org.mozilla.components:feature-downloads:156.0.1'
+    implementation 'org.mozilla.components:feature-search:156.0.1'
+    implementation 'org.mozilla.components:feature-webcompat:156.0.1'
+    implementation 'org.mozilla.components:feature-customtabs:156.0.1'
+    implementation 'org.mozilla.components:feature-media:156.0.1'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.58'

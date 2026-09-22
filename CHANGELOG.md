@@ -1621,3 +1621,16 @@ for more information.
 - new: sort lists by title and date (v1.5)
 - fixed: navigation settings (v1.2)
 - fixed: screenshot (v1.3)
+### v3.7 — GeckoView 156 & Browser Polish
+
+> *Updated the Gecko engine and synchronized the latest scanner, popup, tab, diagnostics, and Material You improvements.*
+
+#### Engine
+- Updated GeckoView to `156.0.20260909172920` and Mozilla Android Components to `156.0.1`.
+
+#### Improvements
+- Added smoother tab transitions and expressive Material 3 popup/undo surfaces.
+- Improved omnibox selection, incognito tab continuity, and tab numbering.
+- Fixed extension popup dismissal restoring browser touch/input focus.
+- Kept diagnostic capture disabled by default while fixing crash handling.
+- Continued the Petal QR Scanner, Google Lens, Quick Settings, and adaptive icon improvements.
