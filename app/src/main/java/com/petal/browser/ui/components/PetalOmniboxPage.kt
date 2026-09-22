@@ -449,6 +449,7 @@ fun PetalOmniboxPage(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .imePadding()
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
