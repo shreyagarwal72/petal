@@ -11,6 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.petal.browser.ui.theme.PetalBrowserShapes
 
 /**
  * Shared Material 3 Expressive themed Snackbar composable.
@@ -22,7 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 fun PetalThemedSnackbar(
     snackbarData: SnackbarData,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp),
+    shape: Shape = PetalBrowserShapes.Snackbar,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     actionColor: Color = MaterialTheme.colorScheme.primary,
@@ -48,7 +49,7 @@ fun PetalThemedSnackbar(
 fun PetalThemedSnackbarHost(
     hostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp),
+    shape: Shape = PetalBrowserShapes.Snackbar,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     actionColor: Color = MaterialTheme.colorScheme.primary

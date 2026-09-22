@@ -157,6 +157,17 @@ fun FirefoxAccountSyncScreen(
         }
     }
 
+    val firefoxImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        if (uri != null) {
+            coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                val count = runCatching { FirefoxDataImportManager.importFile(context, uri) }.getOrDefault(0)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    snackbarHostState.showSnackbar(if (count > 0) "Imported $count Firefox items" else "No Firefox data found")
+                }
+            }
+        }
+    }
+
     fun openAvatarMediaPicker() {
         if (com.petal.browser.media.PetalMediaPickerManager.hasMediaPermissions(context)) {
             showMediaPickerSheet = true
@@ -644,6 +655,17 @@ fun FirefoxAccountSyncScreen(
                                                 Text("Pair with Firefox Desktop", fontWeight = FontWeight.SemiBold)
                                             }
 
+                                            Spacer(Modifier.height(10.dp))
+
+                                            OutlinedButton(
+                                                onClick = { firefoxImportLauncher.launch(arrayOf("text/html", "application/json", "text/*")) },
+                                                shape = RoundedCornerShape(20.dp),
+                                                modifier = Modifier.fillMaxWidth().height(48.dp).bouncyClickable()
+                                            ) {
+                                                Icon(Icons.Rounded.FileOpen, contentDescription = null)
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Import Firefox bookmarks or history", fontWeight = FontWeight.SemiBold)
+                                            }
                                             Spacer(Modifier.height(10.dp))
 
                                             // Direct Connect with Email Button
@@ -1255,4 +1277,3 @@ fun FirefoxAccountSyncScreen(
         )
     }
 }
-

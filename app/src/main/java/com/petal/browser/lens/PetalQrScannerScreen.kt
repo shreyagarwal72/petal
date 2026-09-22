@@ -3,10 +3,17 @@ package com.petal.browser.lens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.util.Size
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import java.io.File
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Camera
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -23,6 +30,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FlashOn
 import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.Cameraswitch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.draw.clip
 import androidx.core.content.ContextCompat
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
@@ -61,6 +71,8 @@ fun PetalQrScannerScreen(
     val closeInteraction = remember { MutableInteractionSource() }
     val flashInteraction = remember { MutableInteractionSource() }
     var cameraControl by remember { mutableStateOf<androidx.camera.core.CameraControl?>(null) }
+    var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
+    var lensFacing by remember { mutableIntStateOf(CameraSelector.LENS_FACING_BACK) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var detectedValue by remember { mutableStateOf<String?>(null) }
     val executor = remember { Executors.newSingleThreadExecutor() }
@@ -77,19 +89,19 @@ fun PetalQrScannerScreen(
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                FilledTonalIconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, "Close") }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                FilledTonalIconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, "Cancel scanning") }
                 Spacer(Modifier.width(12.dp))
-                Column {
-                    Text("Petal Scanner", style = MaterialTheme.typography.titleLarge, color = Color.White)
-                    Text("QR & barcode scanner", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = .72f))
+                Column(Modifier.weight(1f)) {
+                    Text("Petal QR Scanner", style = MaterialTheme.typography.titleLarge, color = Color.White)
+                    Text("Auto-scan is ready", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = .72f))
                 }
+                Icon(Icons.Rounded.QrCodeScanner, "Scanner", tint = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.weight(1f))
-            Box(
-                Modifier.align(Alignment.CenterHorizontally).size(270.dp)
-                    .border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))
-            )
+            Box(Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(32.dp)).border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))) {
+                Box(Modifier.fillMaxSize().border(3.dp, MaterialTheme.colorScheme.primary.copy(alpha = .7f), RoundedCornerShape(28.dp)))
+            }
             AnimatedVisibility(visible = detectedValue == null, enter = fadeIn(), exit = fadeOut()) {
             Text(
                 "Align the code inside the frame",
@@ -99,16 +111,19 @@ fun PetalQrScannerScreen(
             )
             }
             Spacer(Modifier.weight(1f))
+            Text("Point at a code or capture a photo", color = Color.White.copy(alpha = .78f), style = MaterialTheme.typography.bodyMedium)
         }
         if (hasPermission) {
-            AndroidView(
+            key(lensFacing) { AndroidView(
                 factory = { ctx ->
                     PreviewView(ctx).also { view ->
                         val future = ProcessCameraProvider.getInstance(ctx)
                         future.addListener({
                             val provider = future.get()
                             view.post { cameraProvider = provider }
-                            val preview = Preview.Builder().build().also { it.surfaceProvider = view.surfaceProvider }
+                            val preview = Preview.Builder().setTargetResolution(Size(1280, 960)).build().also { it.surfaceProvider = view.surfaceProvider }
+                            val capture = ImageCapture.Builder().setTargetResolution(Size(1280, 960)).build()
+                            view.post { imageCapture = capture }
                             val analysis = ImageAnalysis.Builder()
                                 .setTargetResolution(Size(1280, 960))
                                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -148,13 +163,13 @@ fun PetalQrScannerScreen(
                                 } finally { image.close() }
                             }
                             provider.unbindAll()
-                            val camera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
+                            val camera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.Builder().requireLensFacing(lensFacing).build(), preview, analysis, capture)
                             cameraControl = camera.cameraControl
                         }, ContextCompat.getMainExecutor(ctx))
                     }
                 },
-                modifier = Modifier.fillMaxSize()
-            )
+                modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).align(Alignment.Center)
+            ) }
         } else {
             Text("Camera permission is required", color = Color.White, modifier = Modifier.align(Alignment.Center))
         }
@@ -183,10 +198,18 @@ fun PetalQrScannerScreen(
                 }
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(bottom = 84.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
+        Row(modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(horizontal = 24.dp, bottom = 76.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+            FilledTonalIconButton(onClick = { lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK }) { Icon(Icons.Rounded.Cameraswitch, "Switch camera") }
+            FilledIconButton(onClick = {
+                val output = File(context.cacheDir, "petal-scan-${System.nanoTime()}.jpg")
+                imageCapture?.takePicture(ImageCapture.OutputFileOptions.Builder(output).build(), ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
+                    override fun onError(exception: ImageCaptureException) { }
+                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                        decodePetalBitmap(BitmapFactory.decodeFile(output.absolutePath))?.let { value -> scanLocked = true; detectedValue = value }
+                        output.delete()
+                    }
+                })
+            }) { Icon(Icons.Rounded.CameraAlt, "Capture and scan") }
             FilledTonalIconButton(onClick = {
                 torchEnabled = !torchEnabled
                 cameraControl?.enableTorch(torchEnabled)
@@ -208,4 +231,14 @@ fun PetalQrScannerScreen(
             )
         }
     }
+}
+
+private fun decodePetalBitmap(bitmap: Bitmap): String? {
+    val scaled = Bitmap.createScaledBitmap(bitmap, bitmap.width.coerceAtMost(1600), (bitmap.height * 1600f / bitmap.width).toInt().coerceAtLeast(1), true)
+    val pixels = IntArray(scaled.width * scaled.height)
+    scaled.getPixels(pixels, 0, scaled.width, 0, 0, scaled.width, scaled.height)
+    return runCatching {
+        MultiFormatReader().apply { setHints(mapOf(DecodeHintType.TRY_HARDER to true)) }
+            .decode(BinaryBitmap(HybridBinarizer(RGBLuminanceSource(scaled.width, scaled.height, pixels)))).text
+    }.getOrNull()
 }

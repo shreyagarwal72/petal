@@ -3,9 +3,6 @@ package com.petal.browser.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.*
@@ -50,29 +47,23 @@ fun PetalExpressiveDialog(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
-        AnimatedVisibility(
-            visible = true,
-            enter = fadeIn() + scaleIn(initialScale = 0.92f)
+        // Compose can measure an AnimatedVisibility first frame at zero size on some
+        // Android versions. Keep the dialog surface mounted immediately so it never
+        // becomes a blank, touch-blocking window.
+        Surface(
+            modifier = modifier.fillMaxWidth(0.92f).wrapContentHeight(),
+            shape = shape,
+            color = containerColor,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            tonalElevation = 6.dp,
+            shadowElevation = 12.dp,
+            border = BorderStroke(1.dp, PetalExpressivePopupDefaults.outline)
         ) {
-            Surface(
-                modifier = modifier
-                    .fillMaxWidth(0.92f)
-                    .wrapContentHeight(),
-                shape = shape,
-                color = containerColor,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                tonalElevation = 6.dp,
-                shadowElevation = 12.dp,
-                border = BorderStroke(1.dp, PetalExpressivePopupDefaults.outline)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    content = content
-                )
-            }
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                content = content
+            )
         }
     }
 }
