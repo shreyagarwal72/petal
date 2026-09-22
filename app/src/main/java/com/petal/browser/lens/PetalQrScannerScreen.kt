@@ -74,6 +74,7 @@ fun PetalQrScannerScreen(
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var lensFacing by remember { mutableIntStateOf(CameraSelector.LENS_FACING_BACK) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    var cameraReady by remember { mutableStateOf(false) }
     var detectedValue by remember { mutableStateOf<String?>(null) }
     val executor = remember { Executors.newSingleThreadExecutor() }
 
@@ -100,6 +101,50 @@ fun PetalQrScannerScreen(
             }
             Spacer(Modifier.weight(1f))
             Box(Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(32.dp)).border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))) {
+                if (hasPermission) {
+                    key(lensFacing) { AndroidView(
+                        factory = { ctx ->
+                            PreviewView(ctx).also { view ->
+                                val future = ProcessCameraProvider.getInstance(ctx)
+                                future.addListener({
+                                    val provider = future.get()
+                                    view.post { cameraProvider = provider }
+                                    val preview = Preview.Builder().setTargetResolution(Size(1280, 960)).build().also { it.surfaceProvider = view.surfaceProvider }
+                                    val capture = ImageCapture.Builder().setTargetResolution(Size(1280, 960)).build()
+                                    view.post { imageCapture = capture; cameraReady = true }
+                                    val analysis = ImageAnalysis.Builder().setTargetResolution(Size(1280, 960)).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
+                                    analysis.setAnalyzer(executor) { image ->
+                                        try {
+                                            val plane = image.planes.firstOrNull()
+                                            if (plane != null) {
+                                                val buffer = plane.buffer
+                                                val bytes = ByteArray(buffer.remaining()).also { buffer.get(it) }
+                                                val pixels = IntArray(image.width * image.height)
+                                                val rowStride = plane.rowStride.coerceAtLeast(image.width)
+                                                val pixelStride = plane.pixelStride.coerceAtLeast(1)
+                                                for (row in 0 until image.height) for (column in 0 until image.width) {
+                                                    val offset = (row * rowStride + column * pixelStride).coerceIn(0, bytes.lastIndex)
+                                                    val y = bytes[offset].toInt() and 0xff
+                                                    pixels[row * image.width + column] = -0x1000000 or (y shl 16) or (y shl 8) or y
+                                                }
+                                                val result = runCatching { MultiFormatReader().apply { setHints(mapOf(DecodeHintType.TRY_HARDER to true)) }.decode(BinaryBitmap(HybridBinarizer(RGBLuminanceSource(image.width, image.height, pixels)))).text }.getOrNull()
+                                                if (!result.isNullOrBlank() && !scanLocked) {
+                                                    scanLocked = true
+                                                    view.post { detectedValue = result; if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) (context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? Vibrator)?.vibrate(VibrationEffect.createOneShot(70, VibrationEffect.DEFAULT_AMPLITUDE)) }
+                                                }
+                                            }
+                                        } finally { image.close() }
+                                    }
+                                    provider.unbindAll()
+                                    val camera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.Builder().requireLensFacing(lensFacing).build(), preview, analysis, capture)
+                                    cameraControl = camera.cameraControl
+                                }, ContextCompat.getMainExecutor(ctx))
+                            }
+                        }, modifier = Modifier.fillMaxSize())
+                    ) }
+                } else {
+                    Text("Camera permission is required", color = Color.White, modifier = Modifier.align(Alignment.Center))
+                }
                 Box(Modifier.fillMaxSize().border(3.dp, MaterialTheme.colorScheme.primary.copy(alpha = .7f), RoundedCornerShape(28.dp)))
             }
             AnimatedVisibility(visible = detectedValue == null, enter = fadeIn(), exit = fadeOut()) {
@@ -110,70 +155,20 @@ fun PetalQrScannerScreen(
                 style = MaterialTheme.typography.bodyLarge
             )
             }
-            Spacer(Modifier.weight(1f))
             Text("Point at a code or capture a photo", color = Color.White.copy(alpha = .78f), style = MaterialTheme.typography.bodyMedium)
-        }
-        if (hasPermission) {
-            key(lensFacing) { AndroidView(
-                factory = { ctx ->
-                    PreviewView(ctx).also { view ->
-                        val future = ProcessCameraProvider.getInstance(ctx)
-                        future.addListener({
-                            val provider = future.get()
-                            view.post { cameraProvider = provider }
-                            val preview = Preview.Builder().setTargetResolution(Size(1280, 960)).build().also { it.surfaceProvider = view.surfaceProvider }
-                            val capture = ImageCapture.Builder().setTargetResolution(Size(1280, 960)).build()
-                            view.post { imageCapture = capture }
-                            val analysis = ImageAnalysis.Builder()
-                                .setTargetResolution(Size(1280, 960))
-                                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                                .build()
-                            analysis.setAnalyzer(executor) { image ->
-                                try {
-                                    val plane = image.planes.firstOrNull()
-                                    if (plane != null) {
-                                        val buffer = plane.buffer
-                                        val bytes = ByteArray(buffer.remaining()).also { buffer.get(it) }
-                                        val pixels = IntArray(image.width * image.height)
-                                        // CameraX Y-plane is greyscale; expand it for ZXing's luminance source.
-                                        val rowStride = plane.rowStride.coerceAtLeast(image.width)
-                                        val pixelStride = plane.pixelStride.coerceAtLeast(1)
-                                        for (row in 0 until image.height) {
-                                            for (column in 0 until image.width) {
-                                                val offset = (row * rowStride + column * pixelStride).coerceIn(0, bytes.lastIndex)
-                                                val y = bytes[offset].toInt() and 0xff
-                                                pixels[row * image.width + column] = -0x1000000 or (y shl 16) or (y shl 8) or y
-                                            }
-                                        }
-                                        val source = RGBLuminanceSource(image.width, image.height, pixels)
-                                        val result = runCatching {
-                                            MultiFormatReader().apply {
-                                                setHints(mapOf(DecodeHintType.TRY_HARDER to true))
-                                            }.decode(BinaryBitmap(HybridBinarizer(source))).text
-                                        }.getOrNull()
-                                        if (!result.isNullOrBlank() && !scanLocked) {
-                                            scanLocked = true
-                                            view.post {
-                                                detectedValue = result
-                                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                                    (context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? Vibrator)
-                                                        ?.vibrate(VibrationEffect.createOneShot(70, VibrationEffect.DEFAULT_AMPLITUDE))
-                                                }
-                                            }
-                                        }
-                                    }
-                                } finally { image.close() }
-                            }
-                            provider.unbindAll()
-                            val camera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.Builder().requireLensFacing(lensFacing).build(), preview, analysis, capture)
-                            cameraControl = camera.cameraControl
-                        }, ContextCompat.getMainExecutor(ctx))
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).align(Alignment.Center)
-            ) }
-        } else {
-            Text("Camera permission is required", color = Color.White, modifier = Modifier.align(Alignment.Center))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                FilledTonalIconButton(onClick = { lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK }) { Icon(Icons.Rounded.Cameraswitch, "Switch camera") }
+                FilledIconButton(enabled = cameraReady && imageCapture != null, onClick = {
+                    val capture = imageCapture ?: return@FilledIconButton
+                    val output = File(context.cacheDir, "petal-scan-${System.nanoTime()}.jpg")
+                    capture.takePicture(ImageCapture.OutputFileOptions.Builder(output).build(), ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
+                        override fun onError(exception: ImageCaptureException) { output.delete(); android.widget.Toast.makeText(context, "Could not capture image", android.widget.Toast.LENGTH_SHORT).show() }
+                        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) { try { decodePetalBitmap(BitmapFactory.decodeFile(output.absolutePath))?.let { value -> scanLocked = true; detectedValue = value } } catch (_: Throwable) { android.widget.Toast.makeText(context, "Could not read captured image", android.widget.Toast.LENGTH_SHORT).show() } finally { output.delete() } }
+                    })
+                }) { Icon(Icons.Rounded.CameraAlt, "Capture and scan") }
+                FilledTonalIconButton(onClick = { torchEnabled = !torchEnabled; cameraControl?.enableTorch(torchEnabled) }, interactionSource = flashInteraction, modifier = Modifier.expressivePress(flashInteraction)) { Icon(Icons.Rounded.FlashOn, "Flashlight", tint = if (torchEnabled) Color.Yellow else MaterialTheme.colorScheme.onSecondaryContainer) }
+            }
+            Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f), tonalElevation = 4.dp) { Text("Scan a QR code or barcode", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = 22.dp, vertical = 13.dp)) }
         }
         AnimatedVisibility(
             visible = detectedValue != null,
@@ -199,38 +194,6 @@ fun PetalQrScannerScreen(
                     }
                 }
             }
-        }
-        Row(modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(start = 24.dp, end = 24.dp, bottom = 76.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-            FilledTonalIconButton(onClick = { lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK }) { Icon(Icons.Rounded.Cameraswitch, "Switch camera") }
-            FilledIconButton(onClick = {
-                val output = File(context.cacheDir, "petal-scan-${System.nanoTime()}.jpg")
-                imageCapture?.takePicture(ImageCapture.OutputFileOptions.Builder(output).build(), ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
-                    override fun onError(exception: ImageCaptureException) { }
-                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        decodePetalBitmap(BitmapFactory.decodeFile(output.absolutePath))?.let { value -> scanLocked = true; detectedValue = value }
-                        output.delete()
-                    }
-                })
-            }) { Icon(Icons.Rounded.CameraAlt, "Capture and scan") }
-            FilledTonalIconButton(onClick = {
-                torchEnabled = !torchEnabled
-                cameraControl?.enableTorch(torchEnabled)
-            }, interactionSource = flashInteraction, modifier = Modifier.expressivePress(flashInteraction)) {
-                Icon(Icons.Rounded.FlashOn, "Flashlight", tint = if (torchEnabled) Color.Yellow else MaterialTheme.colorScheme.onSecondaryContainer)
-            }
-        }
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
-            tonalElevation = 4.dp,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 28.dp)
-        ) {
-            Text(
-                "Scan a QR code or barcode",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = 22.dp, vertical = 13.dp)
-            )
         }
     }
 }
