@@ -14,8 +14,8 @@ import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.ManageSearch
 import androidx.compose.material.icons.rounded.MobileFriendly
-import androidx.compose.material.icons.rounded.NoAdult
 import androidx.compose.material.icons.rounded.OndemandVideo
+import androidx.compose.material.icons.rounded.Policy
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.Save
@@ -68,7 +68,7 @@ object PetalCuratedExtensionsData {
         // ── Cookie management ────────────────────────────────────────────
         "istilldontcareaboutcookies" to ExtensionVisual(Icons.Rounded.Block, Color(0xFF64748B)),
         "cookie-editor" to ExtensionVisual(Icons.Rounded.Edit, Color(0xFFEAB308)),
-        "consent-o-matic" to ExtensionVisual(Icons.Rounded.NoAdult, Color(0xFF0EA5E9)),
+        "consent-o-matic" to ExtensionVisual(Icons.Rounded.Policy, Color(0xFF0EA5E9)),
 
         // ── Appearance / UI ──────────────────────────────────────────────
         "darkreader" to ExtensionVisual(Icons.Rounded.DarkMode, Color(0xFF818CF8)),

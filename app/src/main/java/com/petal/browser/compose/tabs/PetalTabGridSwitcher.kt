@@ -517,7 +517,7 @@ fun PetalTabGridSwitcher(
                                     PetalExpressiveMenuItem(
                                         text = "Sort Tabs",
                                         leadingIcon = { Icon(Icons.Rounded.Sort, contentDescription = null, tint = accentColor) },
-                                        trailingContent = { Icon(Icons.Rounded.ChevronRight, null, modifier = Modifier.size(16.dp)) },
+                                        trailingIcon = { Icon(Icons.Rounded.ChevronRight, null, modifier = Modifier.size(16.dp)) },
                                         onClick = { isSortMenuExpanded = true }
                                     )
                                     PetalExpressiveDropdownMenu(
@@ -536,7 +536,7 @@ fun PetalTabGridSwitcher(
                                                     Icon(icon, null,
                                                         tint = if (sortOrder == order) accentColor else MaterialTheme.colorScheme.onSurfaceVariant)
                                                 },
-                                                trailingContent = if (sortOrder == order) ({
+                                                trailingIcon = if (sortOrder == order) ({
                                                     Icon(Icons.Rounded.Check, null, tint = accentColor, modifier = Modifier.size(16.dp))
                                                 }) else null,
                                                 onClick = {
@@ -552,7 +552,7 @@ fun PetalTabGridSwitcher(
                                 PetalExpressiveMenuItem(
                                     text = "Recently Closed",
                                     leadingIcon = { Icon(Icons.Rounded.Restore, contentDescription = null, tint = accentColor) },
-                                    trailingContent = if (recentlyClosedCount > 0) ({
+                                    trailingIcon = if (recentlyClosedCount > 0) ({
                                         Surface(shape = CircleShape, color = accentColor.copy(alpha = 0.15f), modifier = Modifier.size(22.dp)) {
                                             Box(contentAlignment = Alignment.Center) {
                                                 Text(recentlyClosedCount.coerceAtMost(99).toString(), style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = accentColor)
@@ -1341,6 +1341,11 @@ fun PetalTabGridSwitcher(
             },
             onRenameGroup = { newTitle ->
                 val updated = group.copy(title = newTitle)
+                PetalTabGroupManager.updateGroup(context, updated)
+                refreshGroups()
+                inspectingGroup = updated
+            },
+            onColorChange = { updated ->
                 PetalTabGroupManager.updateGroup(context, updated)
                 refreshGroups()
                 inspectingGroup = updated
@@ -2453,7 +2458,8 @@ private fun PetalTabGroupInspectionDialog(
     onTabSelect: (PetalTabItem) -> Unit,
     onTabClose: (PetalTabItem) -> Unit,
     onUngroupTab: (PetalTabItem) -> Unit,
-    onRenameGroup: (String) -> Unit
+    onRenameGroup: (String) -> Unit,
+    onColorChange: (PetalTabGroup) -> Unit
 ) {
     var isEditingName by remember { mutableStateOf(false) }
     var groupNameInput by remember { mutableStateOf(group.title) }
@@ -2528,10 +2534,7 @@ private fun PetalTabGroupInspectionDialog(
                             modifier = Modifier
                                 .size(28.dp)
                                 .clickable {
-                                    val updated = group.copy(colorHex = colorHex)
-                                    PetalTabGroupManager.updateGroup(context, updated)
-                                    refreshGroups()
-                                    inspectingGroup = updated
+                                    onColorChange(group.copy(colorHex = colorHex))
                                 }
                         ) {
                             if (isSelectedColor) {
