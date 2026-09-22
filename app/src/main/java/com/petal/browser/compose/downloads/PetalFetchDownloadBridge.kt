@@ -409,7 +409,7 @@ object PetalFetchDownloadBridge {
 
     /** Cancels (if active) and permanently deletes the download + its partial/complete file. */
     @JvmStatic
-    fun deleteDownload(context: Context, item: DownloadItem) {
+    fun deleteDownload(context: Context, item: DownloadItem, deleteFile: Boolean = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)) {
         ensureInitialized(context)
         val mozillaId = synchronized(mozillaDownloadsMap) {
             mozillaDownloadsMap.keys.firstOrNull { it.hashCode().toLong() == item.id }
@@ -426,7 +426,7 @@ object PetalFetchDownloadBridge {
             synchronized(mozillaDownloadsMap) { mozillaDownloadsMap.remove(mozillaId) }
             try {
                 item.localUri?.removePrefix("file://")?.let { path ->
-                    File(path).takeIf { it.exists() }?.delete()
+                    if (deleteFile) File(path).takeIf { it.exists() }?.delete()
                 }
             } catch (_: Throwable) { }
             publish()
@@ -442,7 +442,7 @@ object PetalFetchDownloadBridge {
             val path = item.localUri?.removePrefix("file://")
             if (!path.isNullOrEmpty()) {
                 val file = File(path)
-                if (file.exists()) file.delete()
+                if (deleteFile && file.exists()) file.delete()
             }
         } catch (e: Exception) {
             e.printStackTrace()

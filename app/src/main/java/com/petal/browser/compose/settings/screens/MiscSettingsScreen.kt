@@ -38,8 +38,6 @@ fun MiscSettingsScreen(
     viewModel: MiscSettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val preferences = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    var writingToolsBar by remember { mutableStateOf(preferences.getBoolean("sp_writing_tools_bar", true)) }
     val autoOpenApps by viewModel.autoOpenApps.collectAsStateWithLifecycle()
     val checkUpdateOnLaunch by viewModel.checkUpdateOnLaunch.collectAsStateWithLifecycle()
     val downloadManagerMode by viewModel.downloadManagerMode.collectAsStateWithLifecycle()
@@ -89,6 +87,9 @@ fun MiscSettingsScreenContent(
 ) {
     val context = LocalContext.current
     val preferences = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    var confirmFileDelete by remember { mutableStateOf(preferences.getBoolean("sp_confirm_download_delete", true)) }
+    var deleteFromStorage by remember { mutableStateOf(preferences.getBoolean("sp_delete_download_file", false)) }
+    var writingToolsBar by remember { mutableStateOf(preferences.getBoolean("sp_writing_tools_bar", true)) }
     var writingToolsBar by remember { mutableStateOf(preferences.getBoolean("sp_writing_tools_bar", true)) }
     val installedDownloaders = remember(context) {
         ExternalDownloadManagerHelper.getInstalledDownloaders(context)
@@ -113,6 +114,11 @@ fun MiscSettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                SettingsCategoryCard(title = "Download deletion", icon = Icons.Rounded.Delete, cardId = "misc_download_delete", targetHighlightId = targetHighlightItemId) {
+                    ToggleRow(title = "Confirm file deletion", subtitle = "Ask before removing a download from the device", icon = Icons.Rounded.HelpOutline, checked = confirmFileDelete, onCheckedChange = { confirmFileDelete = it; preferences.edit().putBoolean("sp_confirm_download_delete", it).apply() })
+                    ToggleRow(title = "Delete file from storage", subtitle = "Use this as the default choice when deleting a download", icon = Icons.Rounded.DeleteForever, checked = deleteFromStorage, onCheckedChange = { deleteFromStorage = it; preferences.edit().putBoolean("sp_delete_download_file", it).apply() })
+                }
+
                 SettingsCategoryCard(
                     title = "Writing tools",
                     icon = Icons.Rounded.Edit,
