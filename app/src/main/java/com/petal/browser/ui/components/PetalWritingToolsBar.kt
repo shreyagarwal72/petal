@@ -65,6 +65,7 @@ object PetalWritingToolsBar {
         update(ViewCompat.getRootWindowInsets(host) ?: return)
         preferences.registerOnSharedPreferenceChangeListener { _, key ->
             if (key == PREF) ViewCompat.getRootWindowInsets(host)?.let(::update)
+        }
     }
 
     @JvmStatic
@@ -79,7 +80,5 @@ object PetalWritingToolsBar {
             }
         }
     }
-}
-
     private fun edit(activity: Activity): android.widget.EditText? = activity.currentFocus as? android.widget.EditText
 }
