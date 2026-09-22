@@ -1,7 +1,6 @@
 package com.petal.browser.ui.components
 
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -11,6 +10,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * Shared Material 3 Expressive themed Snackbar composable.
@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 fun PetalThemedSnackbar(
     snackbarData: SnackbarData,
     modifier: Modifier = Modifier,
-    shape: Shape = CircleShape,
+    shape: Shape = RoundedCornerShape(20.dp),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     actionColor: Color = MaterialTheme.colorScheme.primary,
@@ -48,7 +48,7 @@ fun PetalThemedSnackbar(
 fun PetalThemedSnackbarHost(
     hostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    shape: Shape = CircleShape,
+    shape: Shape = RoundedCornerShape(20.dp),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     actionColor: Color = MaterialTheme.colorScheme.primary
