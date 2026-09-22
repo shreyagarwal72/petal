@@ -46,6 +46,7 @@ import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
+import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -312,10 +313,11 @@ fun PetalDownloadManagerScreen(
     }
     val rawDownloadList by PetalFetchDownloadBridge.downloadItems.collectAsState()
     var pendingDeletedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var pendingDeleteItems by remember { mutableStateOf<List<DownloadItem>>(emptyList()) }
+    var deleteSelectedFiles by remember { mutableStateOf(false) }
     val downloadList = remember(rawDownloadList, pendingDeletedIds) {
         rawDownloadList.filter { !pendingDeletedIds.contains(it.id) }
     }
-
     var sortOption by remember { mutableStateOf(DownloadSortOption.DATE_DESC) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
 
@@ -371,6 +373,19 @@ fun PetalDownloadManagerScreen(
                 pendingDeletedIds = pendingDeletedIds - targetIds
             }
         }
+    }
+
+    if (pendingDeleteItems.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { pendingDeleteItems = emptyList() },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            icon = { Icon(Icons.Rounded.DeleteForever, null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Delete downloads?", fontWeight = FontWeight.Bold) },
+            text = { Column { Text("Remove ${pendingDeleteItems.size} downloads from the list?"); Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = deleteSelectedFiles, onCheckedChange = { deleteSelectedFiles = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() }); Text("Also delete files from device storage") } } },
+            dismissButton = { TextButton(onClick = { pendingDeleteItems = emptyList() }) { Text("Cancel") } },
+            confirmButton = { Button(onClick = { val items = pendingDeleteItems; pendingDeleteItems = emptyList(); performStagedDelete(items) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }
+        )
     }
 
     // Completed images are represented by the preview strip below. Keep active,
@@ -465,7 +480,8 @@ fun PetalDownloadManagerScreen(
                                 contentDescription = "Delete Selected",
                                 onClick = {
                                     val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
-                                    performStagedDelete(itemsToDelete)
+                                    deleteSelectedFiles = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)
+                                    pendingDeleteItems = itemsToDelete
                                     selectedIds = emptySet()
                                 }
                             )
@@ -1086,26 +1102,9 @@ private fun DownloadProgressRing(
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             if (showRing) {
                 if (item.progress != null) {
-                    CircularProgressIndicator(
-                        progress = { animatedProgress },
-                        color = ringColor,
-                        trackColor = trackColor,
-                        strokeWidth = 3.2.dp,
-                        strokeCap = StrokeCap.Round,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(2.5.dp)
-                    )
+                    PetalCircularWavyProgressIndicator(progress = { animatedProgress }, color = ringColor, trackColor = trackColor, size = 41.dp, strokeWidth = 3.2.dp, wavelength = 16.dp)
                 } else {
-                    CircularProgressIndicator(
-                        color = ringColor,
-                        trackColor = trackColor,
-                        strokeWidth = 3.2.dp,
-                        strokeCap = StrokeCap.Round,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(2.5.dp)
-                    )
+                    PetalCircularWavyProgressIndicator(progress = null, color = ringColor, trackColor = trackColor, size = 41.dp, strokeWidth = 3.2.dp, wavelength = 16.dp)
                 }
             }
 
