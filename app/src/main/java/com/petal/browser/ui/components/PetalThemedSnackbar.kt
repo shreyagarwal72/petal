@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,10 +35,10 @@ fun PetalThemedSnackbar(
     actionColor: Color = MaterialTheme.colorScheme.primary,
     dismissActionColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
-    Surface(
+    androidx.compose.material3.Surface(
         modifier = modifier,
         shape = shape,
-        containerColor = containerColor,
+        color = containerColor,
         contentColor = contentColor,
         tonalElevation = 6.dp,
         shadowElevation = 10.dp
@@ -52,7 +54,7 @@ fun PetalThemedSnackbar(
             }
             if (snackbarData.visuals.withDismissAction) {
                 IconButton(onClick = { snackbarData.dismiss() }) {
-                    Icon(androidx.compose.material.icons.Icons.Rounded.Close, "Dismiss", tint = dismissActionColor)
+                    Icon(Icons.Rounded.Close, "Dismiss", tint = dismissActionColor)
                 }
             }
         }
