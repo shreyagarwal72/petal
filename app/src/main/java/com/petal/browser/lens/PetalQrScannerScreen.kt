@@ -200,7 +200,7 @@ fun PetalQrScannerScreen(
                 }
             }
         }
-        Row(modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(horizontal = 24.dp, bottom = 76.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(start = 24.dp, end = 24.dp, bottom = 76.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
             FilledTonalIconButton(onClick = { lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK }) { Icon(Icons.Rounded.Cameraswitch, "Switch camera") }
             FilledIconButton(onClick = {
                 val output = File(context.cacheDir, "petal-scan-${System.nanoTime()}.jpg")

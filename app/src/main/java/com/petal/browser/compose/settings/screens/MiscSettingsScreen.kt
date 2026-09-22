@@ -90,7 +90,6 @@ fun MiscSettingsScreenContent(
     var confirmFileDelete by remember { mutableStateOf(preferences.getBoolean("sp_confirm_download_delete", true)) }
     var deleteFromStorage by remember { mutableStateOf(preferences.getBoolean("sp_delete_download_file", false)) }
     var writingToolsBar by remember { mutableStateOf(preferences.getBoolean("sp_writing_tools_bar", true)) }
-    var writingToolsBar by remember { mutableStateOf(preferences.getBoolean("sp_writing_tools_bar", true)) }
     val installedDownloaders = remember(context) {
         ExternalDownloadManagerHelper.getInstalledDownloaders(context)
     }
