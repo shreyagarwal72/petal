@@ -142,7 +142,7 @@ fun PetalQrScannerScreen(
                                 }, ContextCompat.getMainExecutor(ctx))
                             }
                         }, modifier = Modifier.fillMaxSize())
-                    ) }
+                    }
                 } else {
                     Text("Camera permission is required", color = Color.White, modifier = Modifier.align(Alignment.Center))
                 }
