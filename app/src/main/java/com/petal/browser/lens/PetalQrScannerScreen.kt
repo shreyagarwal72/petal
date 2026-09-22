@@ -49,6 +49,7 @@ import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import com.petal.browser.ui.components.expressivePress
+import com.petal.browser.ui.components.PetalContainmentSurface
 import android.os.VibrationEffect
 import android.os.Vibrator
 import java.util.concurrent.Executors
@@ -156,7 +157,12 @@ fun PetalQrScannerScreen(
             )
             }
             Text("Point at a code or capture a photo", color = Color.White.copy(alpha = .78f), style = MaterialTheme.typography.bodyMedium)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+            PetalContainmentSurface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .94f)
+            ) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                 FilledTonalIconButton(onClick = { lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK }) { Icon(Icons.Rounded.Cameraswitch, "Switch camera") }
                 FilledIconButton(enabled = cameraReady && imageCapture != null, onClick = {
                     val capture = imageCapture ?: return@FilledIconButton
@@ -167,8 +173,9 @@ fun PetalQrScannerScreen(
                     })
                 }) { Icon(Icons.Rounded.CameraAlt, "Capture and scan") }
                 FilledTonalIconButton(onClick = { torchEnabled = !torchEnabled; cameraControl?.enableTorch(torchEnabled) }, interactionSource = flashInteraction, modifier = Modifier.expressivePress(flashInteraction)) { Icon(Icons.Rounded.FlashOn, "Flashlight", tint = if (torchEnabled) Color.Yellow else MaterialTheme.colorScheme.onSecondaryContainer) }
+                }
             }
-            Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f), tonalElevation = 4.dp) { Text("Scan a QR code or barcode", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = 22.dp, vertical = 13.dp)) }
+            PetalContainmentSurface(shape = RoundedCornerShape(28.dp), containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = .94f)) { Text("Scan a QR code or barcode", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = 22.dp, vertical = 13.dp)) }
         }
         AnimatedVisibility(
             visible = detectedValue != null,
@@ -176,9 +183,9 @@ fun PetalQrScannerScreen(
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.Center)
         ) {
-            Surface(
+            PetalContainmentSurface(
                 shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 modifier = Modifier.padding(24.dp)
             ) {
