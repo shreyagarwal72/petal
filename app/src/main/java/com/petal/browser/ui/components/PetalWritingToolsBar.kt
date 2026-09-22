@@ -32,12 +32,12 @@ object PetalWritingToolsBar {
             visibility = View.GONE
         }
         val actions = listOf(
-            "Undo" to { edit(activity)?.undo() },
-            "Redo" to { edit(activity)?.redo() },
+            "Undo" to { edit(activity)?.onTextContextMenuItem(android.R.id.undo) },
+            "Redo" to { edit(activity)?.onTextContextMenuItem(android.R.id.redo) },
             "Select all" to { edit(activity)?.selectAll() },
-            "Cut" to { edit(activity)?.cut() },
-            "Copy" to { edit(activity)?.copy() },
-            "Paste" to { edit(activity)?.paste() },
+            "Cut" to { edit(activity)?.onTextContextMenuItem(android.R.id.cut) },
+            "Copy" to { edit(activity)?.onTextContextMenuItem(android.R.id.copy) },
+            "Paste" to { edit(activity)?.onTextContextMenuItem(android.R.id.paste) },
             "Clear" to { edit(activity)?.setText("") },
             "Hide" to { activity.getSystemService(android.view.inputmethod.InputMethodManager::class.java)?.hideSoftInputFromWindow(bar.windowToken, 0) }
         )
@@ -67,7 +67,6 @@ object PetalWritingToolsBar {
             if (key == PREF) ViewCompat.getRootWindowInsets(host)?.let(::update)
     }
 
-    @JvmStatic
     fun update(host: ViewGroup, insets: WindowInsetsCompat) {
         for (index in 0 until host.childCount) {
             val child = host.getChildAt(index)

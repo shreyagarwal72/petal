@@ -155,8 +155,10 @@ fun PetalQrScannerScreen(
                                             scanLocked = true
                                             view.post {
                                                 detectedValue = result
-                                                (context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? Vibrator)
-                                                    ?.vibrate(VibrationEffect.createOneShot(70, VibrationEffect.DEFAULT_AMPLITUDE))
+                                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                                    (context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? Vibrator)
+                                                        ?.vibrate(VibrationEffect.createOneShot(70, VibrationEffect.DEFAULT_AMPLITUDE))
+                                                }
                                             }
                                         }
                                     }

@@ -88,6 +88,8 @@ fun MiscSettingsScreenContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val preferences = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    var writingToolsBar by remember { mutableStateOf(preferences.getBoolean("sp_writing_tools_bar", true)) }
     val installedDownloaders = remember(context) {
         ExternalDownloadManagerHelper.getInstalledDownloaders(context)
     }
