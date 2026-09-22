@@ -1623,10 +1623,10 @@ for more information.
 - fixed: screenshot (v1.3)
 ### v3.7 — GeckoView 156 & Browser Polish
 
-> *Updated the Gecko engine and synchronized the latest scanner, popup, tab, diagnostics, and Material You improvements.*
+> *Stabilized the Gecko engine dependency and synchronized the latest scanner, popup, tab, diagnostics, and Material You improvements.*
 
 #### Engine
-- Updated GeckoView to `156.0.20260909172920` and Mozilla Android Components to `156.0.1`.
+- Kept the latest published compatible GeckoView `155.0.20260903215306` and Mozilla Android Components `155.0.1` coordinates so CI can resolve the release classpath.
 
 #### Improvements
 - Added smoother tab transitions and expressive Material 3 popup/undo surfaces.
