@@ -325,6 +325,23 @@ object PetalTabSwitcherBridge {
                                     }
                                 }
                             }
+                        },
+                        onDuplicateTab = { tabItem ->
+                            if (activity is BrowserActivity) {
+                                val url = if (tabItem.url.isBlank() || tabItem.url == "Petal Home") "about:blank" else tabItem.url
+                                activity.addAlbum(tabItem.title, url, tabItem.isIncognito)
+                            }
+                        },
+                        onCloseOtherTabs = { tabItem ->
+                            val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
+                            val others = BrowserContainer.list().filter { it != targetAlbum }
+                            others.forEach { otherAlbum ->
+                                val id = otherAlbum.hashCode().toString()
+                                tabItems.removeAll { it.id == id }
+                                com.petal.browser.unit.TabThumbnailCache.remove(id)
+                                onCloseTab(otherAlbum)
+                            }
+                            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
                         }
                     )
                 }
