@@ -719,8 +719,31 @@ private fun DownloadRowItem(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
-    var renameInput by remember { mutableStateOf(item.fileName) }
     val context = LocalContext.current
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteFile by remember { mutableStateOf(androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)) }
+    var renameInput by remember { mutableStateOf(item.fileName) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            icon = { Icon(Icons.Rounded.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Delete download?", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Remove ${item.fileName} from the download list?")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = deleteFile, onCheckedChange = { deleteFile = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() })
+                        Text("Also delete the file from device storage")
+                    }
+                }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") } },
+            confirmButton = { Button(onClick = { showDeleteDialog = false; onDeleteItem() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }
+        )
+    }
 
 
     if (showRenameDialog) {
@@ -979,7 +1002,7 @@ private fun DownloadRowItem(
                             leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 menuExpanded = false
-                                onDeleteItem()
+                                showDeleteDialog = true
                             }
                         )
                     }
@@ -1355,4 +1378,3 @@ private fun DownloadsEmptyState() {
         description = "Files you download will appear here"
     )
 }
-
