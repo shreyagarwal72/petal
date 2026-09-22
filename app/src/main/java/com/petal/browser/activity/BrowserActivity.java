@@ -1877,6 +1877,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // will re-compute heights from the now-measured views and call requestLayout()
             // again — correcting the content area to fill the available space.
             scheduleSurfaceHeightCheck(targetFrame, av, targetController);
+            // Some OEM window managers complete the first attach with a visible but
+            // zero-sized compositor child. Re-activate and remeasure the surface after
+            // layout settles instead of leaving the user on a permanent blank page.
+            targetFrame.postDelayed(() -> {
+                if (currentAlbumController != targetController || av.getParent() != targetFrame) return;
+                if (av.getWidth() == 0 || av.getHeight() == 0) {
+                    av.requestLayout();
+                    targetFrame.requestLayout();
+                    applyAddressBarPosition();
+                }
+                if (av instanceof com.petal.browser.view.PetalGeckoView && av.isShown()) {
+                    ((com.petal.browser.view.PetalGeckoView) av).onResume();
+                    av.invalidate();
+                }
+            }, 180L);
         } catch (Exception e) {
             android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: addView failed, retrying (attempt " + attempt + ")", e);
             if (attempt < MAX_ATTACH_ATTEMPTS) {
