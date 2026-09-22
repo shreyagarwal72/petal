@@ -1284,8 +1284,10 @@ private fun PetalTabCard(
             else -> 1.0f
         },
         animationSpec = spring(
-            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+            // Keep tab switching responsive without the large overshoot that made
+            // the grid feel jumpy on lower-refresh-rate devices.
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
         ),
         finishedListener = {
             if (isSelecting) {
