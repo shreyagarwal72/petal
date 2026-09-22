@@ -615,22 +615,33 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.extensions.PetalExtensionManager.setPopupRequestListener(popup -> {
             runOnUiThread(() -> {
                 try {
+                    final boolean[] popupCleanedUp = {false};
+                    final Runnable cleanupPopup = () -> {
+                        if (popupCleanedUp[0]) return;
+                        popupCleanedUp[0] = true;
+                        android.view.ViewGroup root = (android.view.ViewGroup) getWindow().getDecorView();
+                        android.view.View overlay = root.findViewWithTag("ext_popup_overlay");
+                        if (overlay != null) {
+                            overlay.clearFocus();
+                            root.removeView(overlay);
+                        }
+                        com.petal.browser.extensions.PetalExtensionManager.dismissPopup();
+                        restoreBrowserInputFocus();
+                    };
                     android.view.View popupView =
                         com.petal.browser.compose.extensions.PetalExtensionsBridge.createPopupView(
                             this, popup,
                             () -> {
-                                runOnUiThread(() -> {
-                                    try {
-                                        android.view.ViewGroup rootDecor = (android.view.ViewGroup) getWindow().getDecorView();
-                                        android.view.View tag = rootDecor.findViewWithTag("ext_popup_overlay");
-                                        if (tag != null) rootDecor.removeView(tag);
-                                        restoreBrowserInputFocus();
-                                    } catch (Exception ignored) {}
-                                    com.petal.browser.extensions.PetalExtensionManager.dismissPopup();
-                                });
+                                runOnUiThread(cleanupPopup);
                                 return kotlin.Unit.INSTANCE;
                             }
                         );
+                    popupView.addOnAttachStateChangeListener(new android.view.View.OnAttachStateChangeListener() {
+                        @Override public void onViewAttachedToWindow(android.view.View view) {}
+                        @Override public void onViewDetachedFromWindow(android.view.View view) {
+                            cleanupPopup.run();
+                        }
+                    });
                     popupView.setTag("ext_popup_overlay");
                     android.view.ViewGroup rootDecor = (android.view.ViewGroup) getWindow().getDecorView();
                     // Remove any stale popup overlay first

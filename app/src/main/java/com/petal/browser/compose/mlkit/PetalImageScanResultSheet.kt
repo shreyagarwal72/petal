@@ -166,6 +166,15 @@ object PetalImageScannerBridge {
                 }
             }
             dialog.setContentView(composeView)
+            // BottomSheetDialog owns a separate window. Always release its focus and
+            // restore the browser after *any* dismissal path (drag, outside tap, back,
+            // or the sheet's explicit close action), not only the explicit button.
+            dialog.setOnDismissListener {
+                composeView.clearFocus()
+                dialog.window?.decorView?.clearFocus()
+                (activity as? com.petal.browser.activity.BrowserActivity)
+                    ?.restoreBrowserInputFocus()
+            }
             dialog.show()
         }
     }
