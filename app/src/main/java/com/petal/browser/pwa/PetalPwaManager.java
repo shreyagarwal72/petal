@@ -274,7 +274,10 @@ public class PetalPwaManager {
             // Sample corner and center pixels to detect if the icon already provides its own solid background
             int cornerPixel = rawIcon.getPixel(0, 0);
             int cornerAlpha = Color.alpha(cornerPixel);
-            if (cornerAlpha > 200 && isHighRes) {
+            // Keep only genuinely opaque app artwork edge-to-edge. Many favicon PNGs
+            // have an opaque corner but transparent glyph/background regions; returning
+            // those directly makes the launcher render a seemingly empty icon.
+            if (cornerAlpha > 200 && isHighRes && !hasTransparency) {
                 // Icon is a full solid canvas image (e.g. Nextup / 192x192 PWA icon), draw it directly with smooth rounded corners
                 float cornerRadius = targetSize * 0.22f;
                 RectF rect = new RectF(0, 0, targetSize, targetSize);
