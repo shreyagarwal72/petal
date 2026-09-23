@@ -11,6 +11,7 @@ import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.DownloadMiddleware
+import mozilla.components.support.utils.DefaultDownloadFileUtils
 import org.mozilla.geckoview.GeckoRuntime
 
 /**
@@ -72,7 +73,9 @@ object PetalEngineStore {
         )
         val downloadMiddleware = DownloadMiddleware(
             applicationContext = appContext,
-            downloadServiceClass = com.petal.browser.download.PetalMozillaDownloadService::class.java
+            downloadServiceClass = com.petal.browser.download.PetalMozillaDownloadService::class.java,
+            downloadFileUtils = DefaultDownloadFileUtils(appContext),
+            deleteFileFromStorage = true
         )
 
         val newStore = BrowserStore(
