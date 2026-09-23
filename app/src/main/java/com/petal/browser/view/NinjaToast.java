@@ -64,29 +64,37 @@ public class NinjaToast {
             Toast toast = new Toast(context);
 
             TypedValue surfaceValue = new TypedValue();
-            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHighest, surfaceValue, true);
+            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceInverse, surfaceValue, true);
             if (surfaceValue.data == 0) {
-                context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHigh, surfaceValue, true);
+                context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHighest, surfaceValue, true);
             }
-            int backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : Color.parseColor("#2B2D30");
+            int backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : Color.parseColor("#2F2F33");
 
             TypedValue onSurfaceValue = new TypedValue();
-            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, onSurfaceValue, true);
+            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceInverse, onSurfaceValue, true);
+            if (onSurfaceValue.data == 0) {
+                context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, onSurfaceValue, true);
+            }
             int textColor = onSurfaceValue.data != 0 ? onSurfaceValue.data : Color.WHITE;
+
+            TypedValue outlineValue = new TypedValue();
+            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOutlineVariant, outlineValue, true);
+            int strokeColor = outlineValue.data != 0 ? outlineValue.data : Color.parseColor("#44474E");
 
             LinearLayout container = new LinearLayout(context);
             container.setOrientation(LinearLayout.HORIZONTAL);
             container.setGravity(Gravity.CENTER);
-            int h = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, context.getResources().getDisplayMetrics());
+            int h = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 22, context.getResources().getDisplayMetrics());
             int v = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, context.getResources().getDisplayMetrics());
             container.setPadding(h, v, h, v);
 
             GradientDrawable background = new GradientDrawable();
             background.setShape(GradientDrawable.RECTANGLE);
-            background.setCornerRadius(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24, context.getResources().getDisplayMetrics()));
+            background.setCornerRadius(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 28, context.getResources().getDisplayMetrics()));
             background.setColor(backgroundColor);
+            background.setStroke((int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, context.getResources().getDisplayMetrics()), strokeColor);
             container.setBackground(background);
-            container.setElevation(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, context.getResources().getDisplayMetrics()));
+            container.setElevation(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, context.getResources().getDisplayMetrics()));
 
             TextView textView = new TextView(context);
             textView.setText(text);
