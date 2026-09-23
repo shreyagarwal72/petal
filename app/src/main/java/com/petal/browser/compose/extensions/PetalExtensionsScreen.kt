@@ -374,6 +374,15 @@ fun PetalExtensionsScreen(
     pendingPrompt?.let { prompt ->
         InstallPermissionDialog(prompt = prompt)
     }
+
+    pendingPopup?.let { popup ->
+        PetalExtensionPopupScreen(
+            popup = popup,
+            onDismiss = {
+                PetalExtensionManager.dismissPopup()
+            }
+        )
+    }
 }
 
 @Composable
@@ -951,6 +960,21 @@ fun PetalExtensionPopupScreen(
                             Icon(
                                 imageVector = Icons.Rounded.ZoomIn,
                                 contentDescription = "Zoom in",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        // Open Settings / Options page button if available
+                        IconButton(
+                            onClick = {
+                                onDismiss()
+                                PetalExtensionManager.openOptionsPage(popup.extensionId, context)
+                            },
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Settings,
+                                contentDescription = "Extension Settings",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                 modifier = Modifier.size(18.dp)
                             )
