@@ -7,68 +7,129 @@ import android.webkit.CookieManager;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.petal.browser.engine.gecko.PetalGeckoRuntime;
+
+import org.mozilla.geckoview.GeckoResult;
+import org.mozilla.geckoview.StorageController;
+
 import java.io.File;
 import java.util.Objects;
+import java.util.concurrent.Executors;
 
 /**
- * CacheManager: Handles robust clearing of HTTP cache, WebStorage, cookies,
- * and app_webview directory structures while maintaining safety across all Android versions.
+ * CacheManager: Official Firefox (GeckoView / Fenix) grade website cache & storage manager.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Manages full and per-host clearing of HTTP/network cache, image decode cache,
+ * DOM storage (localStorage, sessionStorage), IndexedDB, ServiceWorkers, and app cache.
+ * Uses GeckoView's native StorageController while maintaining safe Chromium fallbacks.
  */
 public class CacheManager {
 
     private static final String TAG = "CacheManager";
 
     /**
-     * Clears all cache sources including HTTP cache, WebStorage, Cookies, and app_webview directories.
+     * Clears all website cache sources (GeckoView network disk cache, memory cache,
+     * Chromium webview fallback cache, and application temporary cache directories).
      *
      * @param context Application or Activity context.
      * @param activeWebView Optional active WebView instance to clear cache on; can be null.
      */
-    public static void clearAllCache(Context context, WebView activeWebView) {
+    public static void clearAllCache(@NonNull Context context, @Nullable WebView activeWebView) {
         if (context == null) return;
         Context appContext = context.getApplicationContext();
 
-        // 1. Clear Chromium WebView Cache (http/disk cache ONLY)
+        // 1. Clear Mozilla GeckoView Engine Cache (Official Firefox StorageController pipeline)
+        try {
+            if (PetalGeckoRuntime.isGeckoAvailable(appContext)) {
+                // ALL_CACHES clears: Network disk cache, memory cache, image decodes, and shader caches
+                PetalGeckoRuntime.clearData(appContext, StorageController.ClearFlags.ALL_CACHES);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error clearing GeckoView website cache", e);
+        }
+
+        // 2. Clear In-Memory Decoded Tab Thumbnails & Favicons
+        try {
+            TabThumbnailCache.clearMemoryCache();
+        } catch (Exception e) {
+            Log.w(TAG, "Error trimming thumbnail memory cache", e);
+        }
+
+        // 3. Clear Chromium WebView Cache Fallback (for any embedded WebViews)
         try {
             BrowsingDataManager.clearCache(appContext, activeWebView);
         } catch (Exception e) {
             Log.w(TAG, "Error clearing Chromium cache sources", e);
         }
 
-        // 2. Delete Application Cache Directory
-        try {
-            File cacheDir = appContext.getCacheDir();
-            if (cacheDir != null && cacheDir.isDirectory()) {
-                deleteDirContents(cacheDir);
+        // 4. Safely Delete Application Cache Directory without touching Gecko profiles
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                File cacheDir = appContext.getCacheDir();
+                if (cacheDir != null && cacheDir.isDirectory()) {
+                    deleteDirContentsExcluding(cacheDir, "gecko", "profile", "cookies.sqlite");
+                }
+                File extCacheDir = appContext.getExternalCacheDir();
+                if (extCacheDir != null && extCacheDir.isDirectory()) {
+                    deleteDirContents(extCacheDir);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Error clearing app cache directory", e);
             }
-            File extCacheDir = appContext.getExternalCacheDir();
-            if (extCacheDir != null && extCacheDir.isDirectory()) {
-                deleteDirContents(extCacheDir);
+        });
+    }
+
+    /**
+     * Clear all website data including caches, cookies, DOM storages, and IndexedDB
+     * as per Firefox Fenix Clear Browsing Data specification.
+     */
+    public static void clearAllWebsiteData(@NonNull Context context) {
+        if (context == null) return;
+        Context appContext = context.getApplicationContext();
+
+        try {
+            if (PetalGeckoRuntime.isGeckoAvailable(appContext)) {
+                long flags = StorageController.ClearFlags.ALL_CACHES
+                        | StorageController.ClearFlags.COOKIES
+                        | StorageController.ClearFlags.DOM_STORAGES
+                        | StorageController.ClearFlags.AUTH_SESSIONS;
+                PetalGeckoRuntime.clearData(appContext, flags);
             }
         } catch (Exception e) {
-            Log.w(TAG, "Error clearing app cache directory", e);
+            Log.w(TAG, "Error clearing all GeckoView website data", e);
         }
 
-        // NOTE: We intentionally do NOT manually delete files inside app_webview
-        // (Cache, Code Cache, GPUCache, blob_storage) here.
-        //
-        // Even after every NinjaWebView instance has been destroyed, Chromium's
-        // WebView engine keeps process-wide singleton caches (HTTP disk cache,
-        // V8 code cache, GPU shader cache) backed by memory-mapped index files.
-        // Those singletons are not guaranteed to be torn down just because the
-        // Java-level WebView objects are gone, since this cleanup can run from
-        // onDestroy() while the app process (and the in-process WebView engine)
-        // is still alive.
-        //
-        // Deleting those files out from under a live Chromium instance can
-        // corrupt the on-disk cache index. That corruption doesn't crash the
-        // app immediately - it crashes the *next* time the app launches and
-        // Chromium tries to reinitialize against the now-corrupted cache files.
-        //
-        // Step 1 above (webView.clearCache(true), clearHttpResponseCache(),
-        // clearProfileCacheAndStorage()) already clears these caches through
-        // WebView's own safe, coordinated APIs, so this raw filesystem cleanup
-        // is both redundant and dangerous. Do not reintroduce it.
+        clearAllCache(appContext, null);
+    }
+
+    /**
+     * Clears cached data for a specific website host (Firefox per-site data clearing).
+     *
+     * @param context Application context.
+     * @param host Domain or host name (e.g., "example.com").
+     */
+    public static void clearSiteCache(@NonNull Context context, @NonNull String host) {
+        if (context == null || host == null || host.trim().isEmpty()) return;
+        Context appContext = context.getApplicationContext();
+
+        try {
+            if (PetalGeckoRuntime.isGeckoAvailable(appContext)) {
+                String cleanHost = host.trim().toLowerCase();
+                if (cleanHost.startsWith("http://")) cleanHost = cleanHost.substring(7);
+                if (cleanHost.startsWith("https://")) cleanHost = cleanHost.substring(8);
+                int slashIndex = cleanHost.indexOf('/');
+                if (slashIndex != -1) cleanHost = cleanHost.substring(0, slashIndex);
+
+                PetalGeckoRuntime.getOrCreate(appContext)
+                        .getStorageController()
+                        .clearDataForHost(cleanHost, StorageController.ClearFlags.ALL_CACHES | StorageController.ClearFlags.DOM_STORAGES);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error clearing site cache for host: " + host, e);
+        }
     }
 
     /**
@@ -102,6 +163,29 @@ public class CacheManager {
             if (children != null) {
                 for (File child : children) {
                     deleteDir(child);
+                }
+            }
+        }
+    }
+
+    /**
+     * Recursively deletes directory contents while protecting specific protected folder names.
+     */
+    public static void deleteDirContentsExcluding(File dir, String... excludedNames) {
+        if (dir != null && dir.isDirectory()) {
+            File[] children = dir.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    boolean skip = false;
+                    for (String ex : excludedNames) {
+                        if (child.getName().equalsIgnoreCase(ex) || child.getName().toLowerCase().contains(ex.toLowerCase())) {
+                            skip = true;
+                            break;
+                        }
+                    }
+                    if (!skip) {
+                        deleteDir(child);
+                    }
                 }
             }
         }
