@@ -234,4 +234,15 @@
     <string name="widget_shortcuts_desc">Quick access grid for favorite shortcuts and bookmarks.</string>
     <string name="widget_mode_switch_name">Petal Mode Switcher</string>
     <string name="widget_mode_switch_desc">Quickly switch between Standard and Incognito browsing modes.</string>
+
+    <!-- Custom Tabs & External Links (Firefox Specification) -->
+    <string name="pref_custom_tabs_title">Custom Tabs</string>
+    <string name="pref_custom_tabs_summary">Open external links in a streamlined Custom Tab overlay with Firefox GeckoView rendering</string>
+    <string name="pref_custom_tabs_etp_title">Enhanced Tracking Protection</string>
+    <string name="pref_custom_tabs_etp_summary">Enforce strict content blocking and tracker isolation in Custom Tabs</string>
+    <string name="pref_custom_tabs_share">Share link</string>
+    <string name="pref_custom_tabs_copy">Copy link</string>
+    <string name="pref_custom_tabs_desktop">Desktop site</string>
+    <string name="pref_custom_tabs_open_browser">Open in Petal Browser</string>
+    <string name="pref_custom_tabs_copied">Link copied to clipboard</string>
 </resources>

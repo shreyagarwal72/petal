@@ -39,6 +39,8 @@ fun MiscSettingsScreen(
 ) {
     val context = LocalContext.current
     val autoOpenApps by viewModel.autoOpenApps.collectAsStateWithLifecycle()
+    val customTabsEnabled by viewModel.customTabsEnabled.collectAsStateWithLifecycle()
+    val customTabsEtp by viewModel.customTabsEtp.collectAsStateWithLifecycle()
     val checkUpdateOnLaunch by viewModel.checkUpdateOnLaunch.collectAsStateWithLifecycle()
     val downloadManagerMode by viewModel.downloadManagerMode.collectAsStateWithLifecycle()
     val autoPreviewDownloadedImages by viewModel.autoPreviewDownloadedImages.collectAsStateWithLifecycle()
@@ -47,12 +49,16 @@ fun MiscSettingsScreen(
 
     MiscSettingsScreenContent(
         autoOpenApps = autoOpenApps,
+        customTabsEnabled = customTabsEnabled,
+        customTabsEtp = customTabsEtp,
         checkUpdateOnLaunch = checkUpdateOnLaunch,
         downloadManagerMode = downloadManagerMode,
         autoPreviewDownloadedImages = autoPreviewDownloadedImages,
         liveUpdates = liveUpdates,
         snapProvider = snapProvider,
         onAutoOpenAppsChange = viewModel::setAutoOpenApps,
+        onCustomTabsEnabledChange = viewModel::setCustomTabsEnabled,
+        onCustomTabsEtpChange = viewModel::setCustomTabsEtp,
         onCheckUpdateOnLaunchChange = viewModel::setCheckUpdateOnLaunch,
         onDownloadManagerModeChange = viewModel::setDownloadManagerMode,
         onAutoPreviewDownloadedImagesChange = viewModel::setAutoPreviewDownloadedImages,
@@ -70,12 +76,16 @@ fun MiscSettingsScreen(
 @Composable
 fun MiscSettingsScreenContent(
     autoOpenApps: Boolean,
+    customTabsEnabled: Boolean,
+    customTabsEtp: Boolean,
     checkUpdateOnLaunch: Boolean,
     downloadManagerMode: String,
     autoPreviewDownloadedImages: Boolean,
     liveUpdates: Boolean,
     snapProvider: PetalLensManager.SnapProvider,
     onAutoOpenAppsChange: (Boolean) -> Unit,
+    onCustomTabsEnabledChange: (Boolean) -> Unit,
+    onCustomTabsEtpChange: (Boolean) -> Unit,
     onCheckUpdateOnLaunchChange: (Boolean) -> Unit,
     onDownloadManagerModeChange: (String) -> Unit,
     onAutoPreviewDownloadedImagesChange: (Boolean) -> Unit,
@@ -441,13 +451,29 @@ fun MiscSettingsScreenContent(
                     }
                 }
 
-                // External Applications & Tools Card
+                // External Applications & Custom Tabs Card
                 SettingsCategoryCard(
-                    title = "External Applications & Links",
+                    title = "Custom Tabs & External Links",
                     iconRes = com.petal.browser.R.drawable.download_2_filled,
                     cardId = "misc_apps",
                     targetHighlightId = targetHighlightItemId
                 ) {
+                    ToggleRow(
+                        title = "Petal Custom Tabs",
+                        subtitle = "Open links from external apps in a fast, lightweight Custom Tab overlay",
+                        icon = Icons.Rounded.OpenInBrowser,
+                        checked = customTabsEnabled,
+                        onCheckedChange = onCustomTabsEnabledChange
+                    )
+
+                    ToggleRow(
+                        title = "Enhanced Tracking Protection",
+                        subtitle = "Isolate cross-site trackers and block known tracking scripts inside Custom Tabs",
+                        icon = Icons.Rounded.Security,
+                        checked = customTabsEtp,
+                        onCheckedChange = onCustomTabsEtpChange
+                    )
+
                     ToggleRow(
                         title = "Auto Open External Apps",
                         subtitle = "Allow YouTube, Maps & Play Store links to open in external native apps instead of Petal",

@@ -162,6 +162,9 @@ class PetalGeckoView @JvmOverloads constructor(
     private var mediaBridge: PetalMediaBridge? = null
     private var pwaManager: PetalPwaManager? = null
     private var onScrollChangeListener: OnScrollChangeListener? = null
+    var onPageProgressChanged: ((Int) -> Unit)? = null
+    var onPageTitleChanged: ((String) -> Unit)? = null
+    var onPageSecurityChanged: ((Boolean) -> Unit)? = null
     private var lastScrollHapticY: Int = 0
     private var currentScrollY: Int = 0
     private var currentScrollX: Int = 0
@@ -261,6 +264,7 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onProgressChange(session: GeckoSession, progress: Int) {
                 currentProgress = progress
                 updateProgress(progress)
+                onPageProgressChanged?.invoke(progress)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateProgress(context, tabId, progress)
                 }
@@ -271,6 +275,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {
                 currentSecurityInfo = securityInfo
+                onPageSecurityChanged?.invoke(securityInfo.isSecure)
             }
         }
 
@@ -516,6 +521,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 title?.let {
                     currentTitle = it
                     album.setAlbumTitle(it, currentUrl)
+                    onPageTitleChanged?.invoke(it)
                     if (engineSession != null) {
                         com.petal.browser.engine.gecko.PetalEngineStore.updateUrlAndTitle(context, tabId, currentUrl, it)
                     }

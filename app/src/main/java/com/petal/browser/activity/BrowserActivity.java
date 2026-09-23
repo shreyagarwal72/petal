@@ -5943,6 +5943,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else if (Intent.ACTION_VIEW.equals(action) && dataUri != null) {
             String scheme = dataUri.getScheme();
             if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme) || "about".equalsIgnoreCase(scheme)) {
+                // If Custom Tabs is enabled and this intent was dispatched as a CustomTabsIntent
+                // from an external caller, route directly to PetalCustomTabActivity (Firefox Fenix contract).
+                boolean customTabsPref = sp.getBoolean("sp_custom_tabs_enabled", true);
+                boolean hasCustomTabExtra = intent.hasExtra(androidx.browser.customtabs.CustomTabsIntent.EXTRA_SESSION)
+                        || intent.hasExtra(androidx.browser.customtabs.CustomTabsIntent.EXTRA_TOOLBAR_COLOR)
+                        || intent.hasExtra("android.support.customtabs.extra.SESSION");
+                if (customTabsPref && hasCustomTabExtra && !isPwaMode) {
+                    Intent cctIntent = new Intent(intent);
+                    cctIntent.setClass(this, com.petal.browser.customtabs.PetalCustomTabActivity.class);
+                    cctIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(cctIntent);
+                    getIntent().setAction("");
+                    finish();
+                    return;
+                }
+
                 sp.edit().putBoolean("show_overview", false).apply();
                 getIntent().setAction("");
 

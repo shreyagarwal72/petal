@@ -18,6 +18,12 @@ class MiscSettingsViewModel @Inject constructor(
     val autoOpenApps: StateFlow<Boolean> = settingsRepository.autoOpenApps
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val customTabsEnabled: StateFlow<Boolean> = settingsRepository.customTabsEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val customTabsEtp: StateFlow<Boolean> = settingsRepository.customTabsEtp
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val checkUpdateOnLaunch: StateFlow<Boolean> = settingsRepository.checkUpdateOnLaunch
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -32,6 +38,14 @@ class MiscSettingsViewModel @Inject constructor(
 
     fun setAutoOpenApps(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setAutoOpenApps(enabled)
+    }
+
+    fun setCustomTabsEnabled(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setCustomTabsEnabled(enabled)
+    }
+
+    fun setCustomTabsEtp(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setCustomTabsEtp(enabled)
     }
 
     fun setCheckUpdateOnLaunch(enabled: Boolean) = viewModelScope.launch {

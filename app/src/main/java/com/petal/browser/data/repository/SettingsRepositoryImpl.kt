@@ -284,6 +284,14 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_auto_open_apps", false)
     }
 
+    override val customTabsEnabled: Flow<Boolean> = preferenceFlow("sp_custom_tabs_enabled") {
+        sp.getBoolean("sp_custom_tabs_enabled", true)
+    }
+
+    override val customTabsEtp: Flow<Boolean> = preferenceFlow("sp_custom_tabs_etp") {
+        sp.getBoolean("sp_custom_tabs_etp", true)
+    }
+
     override val checkUpdateOnLaunch: Flow<Boolean> = preferenceFlow("sp_check_update_on_launch") {
         sp.getBoolean("sp_check_update_on_launch", true)
     }
@@ -578,6 +586,14 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setAutoOpenApps(enabled: Boolean) {
         sp.edit().putBoolean("sp_auto_open_apps", enabled).apply()
+    }
+
+    override suspend fun setCustomTabsEnabled(enabled: Boolean) {
+        sp.edit().putBoolean("sp_custom_tabs_enabled", enabled).apply()
+    }
+
+    override suspend fun setCustomTabsEtp(enabled: Boolean) {
+        sp.edit().putBoolean("sp_custom_tabs_etp", enabled).apply()
     }
 
     override suspend fun setCheckUpdateOnLaunch(enabled: Boolean) {
