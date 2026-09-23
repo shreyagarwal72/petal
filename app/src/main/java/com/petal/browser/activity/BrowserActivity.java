@@ -1239,13 +1239,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ? currentAlbumController.getUrl()
                 : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
 
-        // If fullscreen, dialog overview, search bar or native overlay is showing, dismiss it first
+        // ── Tier 1: Fullscreen / HTML5 Video / Web Custom View ──
         if (fullscreenHolder != null || customView != null || videoView != null) {
             onHideCustomView();
             return;
         }
+
+        // ── Tier 2: Dialogs, Search-on-site & Modal Overlays ──
         if (dialogOverview != null && dialogOverview.isShowing()) {
             hideOverview();
+            return;
+        }
+        if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE) {
+            searchOnSiteInput.setText("");
+            searchOnSiteLayout.setVisibility(GONE);
+            appBar.setVisibility(VISIBLE);
             return;
         }
         if (isOverlayScreenShowing) {
@@ -1266,32 +1274,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             updateBackCallbackState();
             return;
         }
-        if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE) {
-            searchOnSiteInput.setText("");
-            searchOnSiteLayout.setVisibility(GONE);
-            appBar.setVisibility(VISIBLE);
-            return;
-        }
 
-        // Check if web view has back history
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView && ((com.petal.browser.view.PetalGeckoView) currentAlbumController).hasBackHistory()) {
-            sp.edit().putBoolean("backPressed", true).apply();
+        // ── Tier 3: Website History Traversal (Firefox / GeckoView Parity) ──
+        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-            gv.stopLoading();
-            gv.goBack();
-            updateOmniBox();
-            return;
-        }
-        if (ninjaWebView != null && ninjaWebView.canGoBack()) {
+            if (gv.canGoBack()) {
+                sp.edit().putBoolean("backPressed", true).apply();
+                gv.stopLoading();
+                gv.goBack();
+                updateOmniBox();
+                updateBackCallbackState();
+                return;
+            }
+        } else if (ninjaWebView != null && ninjaWebView.canGoBack()) {
             sp.edit().putBoolean("backPressed", true).apply();
             ninjaWebView.stopLoading();
             ninjaWebView.goBack();
             updateOmniBox();
+            updateBackCallbackState();
             return;
         }
 
-        // No web back history:
-        // If we are on a webpage (not home), return to the Home page of this tab
+        // ── Tier 4: Intra-Tab Home Fallback ──
+        // If on a web document with no history, navigate back to this tab's start surface
         if (!isPetalHomeSurfaceShowing && !isHomePage(currentUrl) && currentUrl != null && !currentUrl.isEmpty() && !currentUrl.equalsIgnoreCase("about:blank")) {
             String homeUrl = sp != null ? sp.getString("favoriteURL", "about:blank") : "about:blank";
             if (homeUrl == null || homeUrl.trim().isEmpty()) homeUrl = "about:blank";
@@ -1301,17 +1306,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ninjaWebView.stopLoading();
             }
             showAlbum(currentAlbumController, homeUrl);
+            updateOmniBox();
+            updateBackCallbackState();
             return;
         }
 
-        // We are on Home surface (or about:blank)
-        // If there are multiple tabs open, close the current tab and switch to the previous one
+        // ── Tier 5: Multi-Tab Closure & Exit Confirmation ──
+        // If on the Home surface with multiple tabs open, close current tab and return to previous tab
         if (BrowserContainer.size() > 1 && currentAlbumController != null) {
             removeAlbum(currentAlbumController);
             return;
         }
 
-        // Single tab on Home: prompt exit confirmation dialog directly
+        // Last tab on Home surface: confirm exit or finish task
         boolean requireConfirm = sp.getBoolean("sp_close_browser_confirm", true);
         if (!requireConfirm) {
             finishAndRemoveTask();

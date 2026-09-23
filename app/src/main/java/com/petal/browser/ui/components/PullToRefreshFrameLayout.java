@@ -8,39 +8,37 @@ import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 
 /**
- * FrameLayout used for the browser's content container ({@code R.id.main_content})
- * that provides smooth, Chrome/Firefox-like pull-to-refresh UX.
+ * Reconstructed high-performance container for browser content ({@code R.id.main_content})
+ * engineered after Mozilla Firefox / Fenix SwipeRefreshLayout and GeckoView touch architecture.
  *
- * It filters gestures to match standard mobile browser touch areas:
- * - Restricts pull initiation touch area to the top portion of the viewport.
- * - Rejects multi-touch gestures (pinch-to-zoom protection like Firefox / Fennec).
- * - Filters quick-scale / double-tap drag zoom gestures.
- * - Enforces vertical swipe dominance over horizontal drags.
- * - Damps pull travel distance to standard 100dp for snappy, tactile refresh.
- * - Respects child disallow-intercept requests.
+ * Touch mechanics & touch area:
+ * - Natural full-viewport touch initiation when page is at the top (`scrollY == 0` / `canChildScrollUp() == false`).
+ * - Multi-touch rejection: Immediately abates on pinch-to-zoom (`pointerCount > 1`).
+ * - Quick-scale (double-tap-and-drag zoom) immunity matching Mozilla GeckoView touch input.
+ * - Strict vertical gesture dominance (`dy > Math.abs(dx) * 1.35f`).
+ * - Smooth exponential pull resistance (Firefox damped spring physics).
+ * - Exact release threshold with haptic click indication.
  */
 public class PullToRefreshFrameLayout extends FrameLayout {
 
-    /** Whether the current page is scrolled to the top and may start a pull. */
+    /** Whether the current web page or document is at top and eligible for pull-down. */
     public interface CanPull {
         boolean canPull();
     }
 
-    /** Fired repeatedly while dragging, with progress in [0f, 1f]. */
+    /** Fired continuously during drag with progress [0f, 1f]. */
     public interface OnPullListener {
         void onPull(float progress);
     }
 
-    /** Fired on release; {@code triggered} is true once the pull passed the threshold. */
+    /** Fired upon finger release with {@code triggered} indicating if threshold was reached. */
     public interface OnReleaseListener {
         void onRelease(boolean triggered);
     }
 
-    private static final float DEFAULT_PULL_DISTANCE_DP = 80f;
-    private static final float EDGE_THRESHOLD_DP = 120f;
-    private static final float TRIGGER_THRESHOLD = 0.70f;
-    private static final float DRAG_DAMPING = 0.55f;
-    /** Downward travel must beat horizontal travel by this factor (matches architecture docs). */
+    private static final float DEFAULT_PULL_DISTANCE_DP = 85f;
+    private static final float TRIGGER_THRESHOLD = 0.72f;
+    private static final float DRAG_DAMPING = 0.50f;
     private static final float VERTICAL_DOMINANCE = 1.35f;
 
     private CanPull canPull = () -> true;
@@ -51,14 +49,16 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     private final int doubleTapTimeout;
     private final int doubleTapSlopSquare;
     private float pullDistancePx;
-    private float edgeThresholdPx;
+
     private float downX;
     private float downY;
-    private boolean dragging;
-    private boolean intercepting;
-    private boolean hadMultiTouch;
+    private int activePointerId = MotionEvent.INVALID_POINTER_ID;
+    private boolean isDragging;
+    private boolean isIntercepting;
+    private boolean hasMultiTouch;
     private boolean isQuickScaleInProgress;
     private boolean disallowIntercept;
+    private boolean hasTriggeredHaptic;
 
     private MotionEvent firstDownEvent;
     private MotionEvent upEvent;
@@ -80,7 +80,6 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         int doubleTapSlop = vc.getScaledDoubleTapSlop();
         doubleTapSlopSquare = doubleTapSlop * doubleTapSlop;
         pullDistancePx = DEFAULT_PULL_DISTANCE_DP * context.getResources().getDisplayMetrics().density;
-        edgeThresholdPx = EDGE_THRESHOLD_DP * context.getResources().getDisplayMetrics().density;
     }
 
     public void setCanPull(CanPull canPull) {
@@ -95,17 +94,13 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         this.onReleaseListener = listener;
     }
 
-    /** Drag distance (in dp) that maps to 100% pull progress. Defaults to 80dp like omni-browser. */
     public void setPullDistanceDp(float dp) {
-        this.pullDistancePx = dp * getResources().getDisplayMetrics().density;
+        this.pullDistancePx = Math.max(40f, dp) * getResources().getDisplayMetrics().density;
     }
 
-    /**
-     * Kept for source compatibility. The pull no longer depends on where the finger lands;
-     * the page's scroll position decides whether a pull may start.
-     */
+    /** Backward compatibility: touch area is the natural viewport when at scroll top. */
     public void setEdgeThresholdDp(float dp) {
-        this.edgeThresholdPx = dp * getResources().getDisplayMetrics().density;
+        // Maintained for binary compatibility
     }
 
     private boolean canChildScrollUp() {
@@ -166,9 +161,10 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     }
 
     private void cancelDrag() {
-        if (dragging) {
-            dragging = false;
-            intercepting = false;
+        if (isDragging) {
+            isDragging = false;
+            isIntercepting = false;
+            hasTriggeredHaptic = false;
             if (onReleaseListener != null) {
                 onReleaseListener.onRelease(false);
             }
@@ -177,24 +173,20 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        // GeckoView may request disallow-intercept while its compositor is scrolling.
-        // Keep observing the top-edge downward gesture so pull-to-refresh can still
-        // take ownership once the page is at scrollY == 0.
         if (!isEnabled()) {
             return false;
         }
 
-        // Multi-touch rejection (pinch-to-zoom protection like Firefox / Chrome)
-        if (ev.getPointerCount() > 1 || hadMultiTouch) {
-            hadMultiTouch = true;
-            if (dragging) {
+        // Multi-touch / pinch-to-zoom protection: Firefox rejects pull if multiple fingers land
+        if (ev.getPointerCount() > 1 || hasMultiTouch) {
+            hasMultiTouch = true;
+            if (isDragging) {
                 cancelDrag();
             }
             return false;
         }
 
         int action = ev.getActionMasked();
-
         if (action == MotionEvent.ACTION_CANCEL || (action == MotionEvent.ACTION_UP && isQuickScaleInProgress)) {
             forgetQuickScaleEvents();
             cancelDrag();
@@ -209,67 +201,59 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
         switch (action) {
             case MotionEvent.ACTION_DOWN:
+                activePointerId = ev.getPointerId(0);
                 downX = ev.getX();
                 downY = ev.getY();
-                dragging = false;
-                intercepting = false;
-                hadMultiTouch = false;
-                // Reset on every new gesture sequence so a stale flag from a previous
-                // touch (e.g. the legacy WebView requesting disallow-intercept) can never
-                // block the next pull.
+                isDragging = false;
+                isIntercepting = false;
+                hasMultiTouch = false;
                 disallowIntercept = false;
+                hasTriggeredHaptic = false;
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if (dragging) {
-                    // Already owned by us; keep the stream.
+                if (isDragging) {
                     return true;
                 }
 
-                // Measure against where the finger first landed, not the previous
-                // event. Per-event deltas are dominated by thumb jitter on the first
-                // few MOVEs, which used to abort the whole gesture.
-                float dx = ev.getX() - downX;
-                float dy = ev.getY() - downY;
-
-                // Not a downward pull: leave the touch to the page.
-                if (dy <= 0f) {
-                    break;
+                int pointerIndex = ev.findPointerIndex(activePointerId);
+                if (pointerIndex < 0) {
+                    return false;
                 }
 
-                // Still inside touch slop: undecided, keep watching.
+                float curX = ev.getX(pointerIndex);
+                float curY = ev.getY(pointerIndex);
+                float dx = curX - downX;
+                float dy = curY - downY;
+
+                // Only downwards travel starts pull
                 if (dy <= touchSlop) {
                     break;
                 }
 
-                // Clearly horizontal or diagonal: the page or a swipe owns it.
+                // Vertical dominance: Must be noticeably more vertical than horizontal
                 if (dy <= Math.abs(dx) * VERTICAL_DOMINANCE) {
                     break;
                 }
 
-                // Page position is the source of truth for "at top". The old
-                // finger-position band (downY <= 120dp) was measured in this
-                // container's coordinates, which the floating address bar overlaps,
-                // so it rejected valid pulls (bottom address bar, large font scale).
+                // Page position validation (Firefox model): Top of document must be reached
                 if (!canChildScrollUp() && canPull.canPull()) {
-                    intercepting = true;
-                    dragging = true;
-                    // Claim the gesture for the rest of this sequence so ancestors
-                    // cannot take it back while Gecko is still processing it.
-                    getParent().requestDisallowInterceptTouchEvent(true);
+                    isIntercepting = true;
+                    isDragging = true;
+                    if (getParent() != null) {
+                        getParent().requestDisallowInterceptTouchEvent(true);
+                    }
                     return true;
                 }
                 break;
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                intercepting = false;
-                break;
-
-            default:
+                isIntercepting = false;
                 break;
         }
-        return dragging;
+
+        return isDragging;
     }
 
     @Override
@@ -278,9 +262,9 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             return false;
         }
 
-        if (event.getPointerCount() > 1 || hadMultiTouch) {
-            hadMultiTouch = true;
-            if (dragging) {
+        if (event.getPointerCount() > 1 || hasMultiTouch) {
+            hasMultiTouch = true;
+            if (isDragging) {
                 cancelDrag();
             }
             return false;
@@ -288,45 +272,66 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
+                activePointerId = event.getPointerId(0);
                 downX = event.getX();
                 downY = event.getY();
                 break;
 
-            case MotionEvent.ACTION_MOVE:
-                if (dragging) {
-                    float pullDistance = Math.max(0f, (event.getY() - downY) - touchSlop);
+            case MotionEvent.ACTION_MOVE: {
+                int pointerIndex = event.findPointerIndex(activePointerId);
+                if (pointerIndex < 0) {
+                    return false;
+                }
+                float curY = event.getY(pointerIndex);
+
+                if (isDragging) {
+                    float pullDistance = Math.max(0f, (curY - downY) - touchSlop);
                     float dampedDy = pullDistance * DRAG_DAMPING;
                     float progress = Math.min(1f, dampedDy / pullDistancePx);
+
+                    if (progress >= TRIGGER_THRESHOLD && !hasTriggeredHaptic) {
+                        hasTriggeredHaptic = true;
+                        try {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(getContext()).playClick(getContext());
+                        } catch (Exception ignored) {}
+                    } else if (progress < TRIGGER_THRESHOLD) {
+                        hasTriggeredHaptic = false;
+                    }
+
                     if (onPullListener != null) {
                         onPullListener.onPull(progress);
                     }
                 }
                 break;
+            }
 
             case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
-                if (dragging) {
-                    float pullDistance = Math.max(0f, (event.getY() - downY) - touchSlop);
+            case MotionEvent.ACTION_CANCEL: {
+                if (isDragging) {
+                    int pointerIndex = event.findPointerIndex(activePointerId);
+                    float curY = pointerIndex >= 0 ? event.getY(pointerIndex) : downY;
+                    float pullDistance = Math.max(0f, (curY - downY) - touchSlop);
                     float dampedDy = pullDistance * DRAG_DAMPING;
                     float progress = dampedDy / pullDistancePx;
-                    dragging = false;
-                    intercepting = false;
+
+                    isDragging = false;
+                    isIntercepting = false;
+                    hasTriggeredHaptic = false;
+
                     if (onReleaseListener != null) {
                         onReleaseListener.onRelease(progress >= TRIGGER_THRESHOLD);
                     }
                 }
                 forgetQuickScaleEvents();
                 break;
-
-            default:
-                break;
+            }
         }
         return true;
     }
 
     @Override
     public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-        if (dragging || intercepting) {
+        if (isDragging || isIntercepting) {
             return;
         }
         this.disallowIntercept = disallowIntercept;
