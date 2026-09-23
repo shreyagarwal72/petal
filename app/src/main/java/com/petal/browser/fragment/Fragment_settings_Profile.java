@@ -13,7 +13,6 @@ import androidx.preference.PreferenceManager;
 import java.util.Objects;
 
 import com.petal.browser.R;
-import com.petal.browser.browser.BannerBlock;
 import com.petal.browser.preferences.BasePreferenceFragment;
 
 public class Fragment_settings_Profile extends BasePreferenceFragment  implements SharedPreferences.OnSharedPreferenceChangeListener  {
@@ -32,7 +31,9 @@ public class Fragment_settings_Profile extends BasePreferenceFragment  implement
     public void onSharedPreferenceChanged(final SharedPreferences sp, String key) {
         updatePrefSummary(findPreference(key));
         if (key.equals("profileStandard_adBlock")) {
-            if (sp.getBoolean("profileStandard_adBlock",false)) BannerBlock.downloadBanners(getActivity());
+            if (sp.getBoolean("profileStandard_adBlock", false) && getActivity() != null) {
+                com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(getActivity().getApplicationContext());
+            }
         }
     }
 

@@ -18,4 +18,6 @@ public interface AlbumController {
     void deactivate();
     String getTitle();
     String getUrl();
+    default void destroy() {}
+    default boolean isIncognito() { return false; }
 }

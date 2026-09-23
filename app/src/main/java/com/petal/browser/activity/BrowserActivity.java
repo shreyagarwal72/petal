@@ -142,7 +142,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.petal.browser.R;
 import com.petal.browser.browser.AlbumController;
-import com.petal.browser.browser.BannerBlock;
 import com.petal.browser.browser.BrowserContainer;
 import com.petal.browser.browser.BrowserController;
 import com.petal.browser.browser.DataURIParser;
@@ -714,7 +713,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         try {
-            new BannerBlock(context);
+            com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(context);
         } catch (Exception ignored) {}
         HelperUnit.initTheme(activity);
         com.petal.browser.account.GoogleAccountManager.INSTANCE.init(this);

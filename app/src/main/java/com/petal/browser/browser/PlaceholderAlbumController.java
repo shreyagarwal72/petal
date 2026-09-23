@@ -48,7 +48,7 @@ public final class PlaceholderAlbumController implements AlbumController {
     public String getTabId() { return tabId; }
     public String getTabGroupId() { return tabGroupId; }
     public String getTabGroupTitle() { return tabGroupTitle; }
-    public boolean isIncognito() { return incognito; }
+    @Override public boolean isIncognito() { return incognito; }
 
     public void setTitle(String title) { this.title = title == null ? "" : title; }
     public void setUrl(String url) { this.url = url == null || url.isEmpty() ? "about:blank" : url; }

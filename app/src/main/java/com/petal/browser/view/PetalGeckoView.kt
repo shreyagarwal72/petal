@@ -1657,7 +1657,7 @@ class PetalGeckoView @JvmOverloads constructor(
         this.tabGroupTitle = title
     }
 
-    fun isIncognito(): Boolean = isIncognito
+    override fun isIncognito(): Boolean = isIncognito
 
     fun setIncognito(incognito: Boolean) {
         this.isIncognito = incognito
@@ -1831,7 +1831,7 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
-    fun destroy() {
+    override fun destroy() {
         stopLoading()
         try { session.setActive(false) } catch (_: Throwable) {}
         // Detach GeckoView before closing its session. Closing an attached session can
