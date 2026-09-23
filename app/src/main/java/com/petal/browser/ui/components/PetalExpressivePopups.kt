@@ -372,9 +372,10 @@ object PetalExpressivePromptBridge {
         val activity = findActivity(context) ?: return
         var dialog: androidx.appcompat.app.AlertDialog? = null
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
-            androidx.lifecycle.setViewTreeLifecycleOwner(activity)
-            androidx.lifecycle.setViewTreeViewModelStoreOwner(activity)
-            androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 com.petal.browser.ui.theme.PetalExpressiveTheme {
                     PetalExpressiveAlertDialog(
@@ -415,9 +416,10 @@ object PetalExpressivePromptBridge {
         val activity = findActivity(context) ?: return
         var dialog: androidx.appcompat.app.AlertDialog? = null
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
-            androidx.lifecycle.setViewTreeLifecycleOwner(activity)
-            androidx.lifecycle.setViewTreeViewModelStoreOwner(activity)
-            androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 com.petal.browser.ui.theme.PetalExpressiveTheme {
                     PetalExpressiveAlertDialog(
@@ -463,9 +465,10 @@ object PetalExpressivePromptBridge {
         val activity = findActivity(context) ?: return
         var dialog: androidx.appcompat.app.AlertDialog? = null
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
-            androidx.lifecycle.setViewTreeLifecycleOwner(activity)
-            androidx.lifecycle.setViewTreeViewModelStoreOwner(activity)
-            androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 com.petal.browser.ui.theme.PetalExpressiveTheme {
                     PetalExpressiveTextPromptDialog(
@@ -507,9 +510,10 @@ object PetalExpressivePromptBridge {
         val activity = findActivity(context) ?: return
         var dialog: androidx.appcompat.app.AlertDialog? = null
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
-            androidx.lifecycle.setViewTreeLifecycleOwner(activity)
-            androidx.lifecycle.setViewTreeViewModelStoreOwner(activity)
-            androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 com.petal.browser.ui.theme.PetalExpressiveTheme {
                     PetalExpressiveAuthPromptDialog(
