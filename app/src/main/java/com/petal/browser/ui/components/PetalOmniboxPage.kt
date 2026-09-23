@@ -527,15 +527,14 @@ fun PetalOmniboxPage(
                             )
                         }
 
-                        // Chrome-style Quick Actions Card when an active webpage is focused
-                        if (cleanPageUrl.isNotBlank()) {
+                        // Chrome-style Quick Actions Card when an active webpage is focused and user hasn't edited the search
+                        if (cleanPageUrl.isNotBlank() && queryState.text.trim() == cleanPageUrl) {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
                                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(max = 420.dp)
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    .padding(horizontal = 12.dp, vertical = 4.dp)
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -671,9 +670,9 @@ fun PetalOmniboxPage(
                             }
                         }
 
-                        // Smart Paste & Search Action Pill (Detects URLs and text queries from clipboard)
+                        // Smart Paste & Search Action Pill (Detects URLs and text queries from clipboard when query is empty)
                         androidx.compose.animation.AnimatedVisibility(
-                            visible = clipboardText != null,
+                            visible = clipboardText != null && queryState.text.isEmpty(),
                             enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
                             exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
                         ) {
@@ -839,8 +838,8 @@ fun PetalOmniboxPage(
                             }
                         }
 
-                        // Frequently Visited Site Shortcuts Row (Only show when a website is already opened in this tab)
-                        if (cleanPageUrl.isNotBlank()) {
+                        // Frequently Visited Site Shortcuts Row (Only show when query hasn't been edited)
+                        if (cleanPageUrl.isNotBlank() && queryState.text.trim() == cleanPageUrl) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -922,17 +921,15 @@ fun PetalOmniboxPage(
                             }
                         }
 
-                        // Suggestions List - fills the rest of the page with Material 3 Expressive containment
+                        // Suggestions List - fills the remaining space above the keyboard with Material 3 Expressive containment
                         if (suggestions.isNotEmpty()) {
                             PetalContainmentSurface(
                                 shape = RoundedCornerShape(24.dp),
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .weight(1f, fill = false)
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
-                                    // Smoothly grows/shrinks as the suggestion count changes
-                                    // on every keystroke, instead of the list snapping to a
-                                    // new height.
                                     .animateContentSize(
                                         animationSpec = spring(
                                             dampingRatio = Spring.DampingRatioNoBouncy,
@@ -953,7 +950,9 @@ fun PetalOmniboxPage(
                                     )
 
                                     LazyColumn(
-                                        modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .weight(1f, fill = false),
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                                         verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
