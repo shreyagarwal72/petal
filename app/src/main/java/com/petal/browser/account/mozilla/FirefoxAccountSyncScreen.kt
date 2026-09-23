@@ -391,6 +391,12 @@ fun FirefoxAccountSyncScreen(
                                 Column(modifier = Modifier.padding(20.dp)) {
                                     if (accountState is FxaState.SignedIn) {
                                         val signedIn = accountState as FxaState.SignedIn
+
+                                        // Auto-refresh profile if name or avatar is missing or on screen entry
+                                        LaunchedEffect(signedIn.email) {
+                                            fxaManager.refreshProfile()
+                                        }
+
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
                                             modifier = Modifier.fillMaxWidth()
@@ -402,12 +408,21 @@ fun FirefoxAccountSyncScreen(
                                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Icon(
-                                                    Icons.Rounded.AccountCircle,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                    modifier = Modifier.size(36.dp)
-                                                )
+                                                if (!signedIn.avatarUrl.isNullOrBlank()) {
+                                                    AsyncImage(
+                                                        model = signedIn.avatarUrl,
+                                                        contentDescription = "Firefox Avatar",
+                                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                                } else {
+                                                    Icon(
+                                                        Icons.Rounded.AccountCircle,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                        modifier = Modifier.size(36.dp)
+                                                    )
+                                                }
                                             }
                                             Spacer(Modifier.width(16.dp))
                                             Column(modifier = Modifier.weight(1f)) {

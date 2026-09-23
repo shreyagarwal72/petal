@@ -115,30 +115,31 @@ class FxAccountManager private constructor() {
                 val refreshToken = json.optString("refresh_token", "fx_ref_" + UUID.randomUUID().toString().take(12))
                 val expiresIn = json.optLong("expires_in", 86400L)
 
-                // Try fetching user profile info
+                // Try fetching user profile info from official Mozilla Accounts profile APIs and JWT
                 var email = fallbackEmail
                 var displayName: String? = null
                 var avatarUrl: String? = null
                 var uid = UUID.nameUUIDFromBytes(email.toByteArray()).toString().replace("-", "").take(16)
 
-                try {
-                    val profileUrl = java.net.URL(PROFILE_ENDPOINT)
-                    val profConn = (profileUrl.openConnection() as java.net.HttpURLConnection).apply {
-                        requestMethod = "GET"
-                        setRequestProperty("Authorization", "Bearer $accessToken")
-                        setRequestProperty("Accept", "application/json")
-                        connectTimeout = 8_000
-                        readTimeout = 8_000
+                // 1. Try decoding id_token if returned by FxA OAuth
+                val idToken = json.optString("id_token", null)
+                if (!idToken.isNullOrBlank()) {
+                    val jwtProfile = parseIdToken(idToken)
+                    if (jwtProfile != null) {
+                        if (!jwtProfile.email.isNullOrBlank()) email = jwtProfile.email
+                        if (!jwtProfile.displayName.isNullOrBlank()) displayName = jwtProfile.displayName
+                        if (!jwtProfile.uid.isNullOrBlank()) uid = jwtProfile.uid
                     }
-                    if (profConn.responseCode in 200..299) {
-                        val profText = profConn.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
-                        val profJson = org.json.JSONObject(profText)
-                        email = profJson.optString("email", fallbackEmail)
-                        displayName = profJson.optString("displayName", null)
-                        avatarUrl = profJson.optString("avatar", null)
-                        uid = profJson.optString("uid", uid)
-                    }
-                } catch (_: Exception) {}
+                }
+
+                // 2. Fetch directly from official Mozilla Accounts profile endpoints
+                val fetchedProfile = fetchUserProfile(accessToken)
+                if (fetchedProfile != null) {
+                    if (fetchedProfile.email.isNotBlank()) email = fetchedProfile.email
+                    if (!fetchedProfile.displayName.isNullOrBlank()) displayName = fetchedProfile.displayName
+                    if (!fetchedProfile.avatarUrl.isNullOrBlank()) avatarUrl = fetchedProfile.avatarUrl
+                    if (fetchedProfile.uid.isNotBlank()) uid = fetchedProfile.uid
+                }
 
                 completeLogin(
                     code = code,
@@ -177,6 +178,95 @@ class FxAccountManager private constructor() {
             )
             true
         }
+    }
+
+    /**
+     * Parses OpenID Connect id_token JWT payload for email, name, and sub.
+     */
+    private fun parseIdToken(idToken: String): FxAccountProfile? {
+        return try {
+            val parts = idToken.split(".")
+            if (parts.size >= 2) {
+                val payloadBytes = android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP)
+                val payloadJson = org.json.JSONObject(String(payloadBytes, StandardCharsets.UTF_8))
+                val email = payloadJson.optString("email", "")
+                val name = payloadJson.optString("name", payloadJson.optString("displayName", ""))
+                val sub = payloadJson.optString("sub", "")
+                FxAccountProfile(
+                    email = email,
+                    displayName = if (name.isNotBlank()) name else null,
+                    avatarUrl = payloadJson.optString("picture", null),
+                    uid = if (sub.isNotBlank()) sub else UUID.randomUUID().toString().take(16)
+                )
+            } else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Fetches user profile from Mozilla Accounts Profile API.
+     * Tries primary endpoint followed by fallback endpoint.
+     */
+    suspend fun fetchUserProfile(accessToken: String): FxAccountProfile? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val endpoints = listOf(
+            PROFILE_ENDPOINT,
+            PROFILE_ENDPOINT_ALT,
+            "https://profile.accounts.firefox.com/v1/profile"
+        )
+        for (ep in endpoints) {
+            try {
+                val url = java.net.URL(ep)
+                val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    setRequestProperty("Authorization", "Bearer $accessToken")
+                    setRequestProperty("Accept", "application/json")
+                    connectTimeout = 8_000
+                    readTimeout = 8_000
+                }
+                if (conn.responseCode in 200..299) {
+                    val text = conn.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+                    val json = org.json.JSONObject(text)
+                    val email = json.optString("email", "")
+                    val displayName = json.optString("displayName", json.optString("name", null))
+                    val avatar = json.optString("avatar", json.optString("avatarDefault", null))
+                    val uid = json.optString("uid", json.optString("id", ""))
+                    if (email.isNotBlank() || !displayName.isNullOrBlank() || uid.isNotBlank()) {
+                        return@withContext FxAccountProfile(
+                            email = email,
+                            displayName = displayName,
+                            avatarUrl = avatar,
+                            uid = if (uid.isNotBlank()) uid else UUID.randomUUID().toString().take(16)
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+        null
+    }
+
+    /**
+     * Public method to refresh user profile from Mozilla Accounts if logged in with an access token.
+     */
+    suspend fun refreshProfile(): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val token = prefs?.getString(KEY_ACCESS_TOKEN, null) ?: return@withContext false
+        val currentEmail = prefs?.getString(KEY_EMAIL, "") ?: return@withContext false
+        val profile = fetchUserProfile(token) ?: return@withContext false
+
+        val updatedEmail = if (profile.email.isNotBlank()) profile.email else currentEmail
+        val updatedDisplayName = profile.displayName ?: prefs?.getString(KEY_DISPLAY_NAME, null) ?: updatedEmail.substringBefore("@")
+        val updatedAvatar = profile.avatarUrl ?: prefs?.getString(KEY_AVATAR_URL, null)
+        val updatedUid = if (profile.uid.isNotBlank()) profile.uid else (prefs?.getString(KEY_UID, null) ?: "")
+
+        prefs?.edit()?.apply {
+            putString(KEY_EMAIL, updatedEmail)
+            putString(KEY_DISPLAY_NAME, updatedDisplayName)
+            putString(KEY_AVATAR_URL, updatedAvatar)
+            putString(KEY_UID, updatedUid)
+            apply()
+        }
+        _accountState.value = FxaState.SignedIn(updatedEmail, updatedDisplayName, updatedAvatar, updatedUid)
+        true
     }
 
     /**
@@ -367,6 +457,7 @@ class FxAccountManager private constructor() {
         const val AUTH_ENDPOINT = "https://accounts.firefox.com/authorization"
         const val TOKEN_ENDPOINT = "https://oauth.accounts.firefox.com/v1/token"
         const val PROFILE_ENDPOINT = "https://api.accounts.firefox.com/v1/profile"
+        const val PROFILE_ENDPOINT_ALT = "https://profile.accounts.firefox.com/v1/profile"
         const val REDIRECT_URI = "https://accounts.firefox.com/oauth/success/a2270f727f45f648"
         const val CUSTOM_SCHEME_REDIRECT = "petal://fxa-auth"
         const val DEFAULT_SCOPES = "profile https://identity.mozilla.com/apps/oldsync"
