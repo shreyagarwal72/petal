@@ -338,7 +338,7 @@ public class PetalPwaManager {
 
         new Thread(() -> {
             try {
-                String targetUrl = finalPageUrl;
+                String candidateUrl = finalPageUrl;
                 String rawTitle = null;
 
                 if (currentManifest != null) {
@@ -348,9 +348,10 @@ public class PetalPwaManager {
                         rawTitle = currentManifest.name;
                     }
                     if (!currentManifest.startUrl.isEmpty()) {
-                        targetUrl = resolveUrl(finalPageUrl, currentManifest.startUrl);
+                        candidateUrl = resolveUrl(finalPageUrl, currentManifest.startUrl);
                     }
                 }
+                final String targetUrl = candidateUrl;
 
                 if (rawTitle == null || rawTitle.isEmpty()) {
                     rawTitle = finalController != null && finalController.getTitle() != null && !finalController.getTitle().isEmpty() ? finalController.getTitle() : (webView != null && webView.getTitle() != null && !webView.getTitle().isEmpty() ? webView.getTitle() : HelperUnit.domain(finalPageUrl));
