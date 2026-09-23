@@ -68,10 +68,11 @@ enum class PetalPermissionType(
 fun PetalPermissionDialog(
     type: PetalPermissionType,
     origin: String,
-    onAllow: () -> Unit,
-    onDeny: () -> Unit
+    onAllow: (remember: Boolean) -> Unit,
+    onDeny: (remember: Boolean) -> Unit
 ) {
     val cleanOrigin = origin.ifBlank { "Webpage" }
+    var rememberChoice by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
 
     Surface(
         shape = RoundedCornerShape(28.dp),
@@ -139,7 +140,30 @@ fun PetalPermissionDialog(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Remember Choice Checkbox
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Checkbox(
+                    checked = rememberChoice,
+                    onCheckedChange = { rememberChoice = it }
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Remember this decision",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Buttons Row
             Row(
@@ -148,7 +172,7 @@ fun PetalPermissionDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
-                    onClick = onDeny,
+                    onClick = { onDeny(rememberChoice) },
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .weight(1f)
@@ -163,7 +187,7 @@ fun PetalPermissionDialog(
                 }
 
                 Button(
-                    onClick = onAllow,
+                    onClick = { onAllow(rememberChoice) },
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -198,6 +222,17 @@ object PetalPermissionDialogBridge {
         onAllow: Runnable,
         onDeny: Runnable
     ) {
+        showPermissionPrompt(context, type, origin, { onAllow.run() }, { onDeny.run() })
+    }
+
+    @JvmStatic
+    fun showPermissionPrompt(
+        context: Context,
+        type: PetalPermissionType,
+        origin: String,
+        onAllow: (remember: Boolean) -> Unit,
+        onDeny: (remember: Boolean) -> Unit
+    ) {
         var currContext = context
         while (currContext is android.content.ContextWrapper) {
             if (currContext is androidx.activity.ComponentActivity) break
@@ -217,13 +252,13 @@ object PetalPermissionDialogBridge {
                     PetalPermissionDialog(
                         type = type,
                         origin = origin,
-                        onAllow = {
+                        onAllow = { remember ->
                             try { dialog?.dismiss() } catch (ignored: Exception) {}
-                            onAllow.run()
+                            onAllow(remember)
                         },
-                        onDeny = {
+                        onDeny = { remember ->
                             try { dialog?.dismiss() } catch (ignored: Exception) {}
-                            onDeny.run()
+                            onDeny(remember)
                         }
                     )
                 }
@@ -233,7 +268,7 @@ object PetalPermissionDialogBridge {
         val builder = MaterialAlertDialogBuilder(activity)
         builder.setView(composeView)
         builder.setCancelable(true)
-        builder.setOnCancelListener { onDeny.run() }
+        builder.setOnCancelListener { onDeny(false) }
 
         dialog = builder.create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)

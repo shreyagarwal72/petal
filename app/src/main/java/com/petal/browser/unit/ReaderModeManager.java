@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.concurrent.ExecutorService;
@@ -83,6 +84,23 @@ public class ReaderModeManager {
                 Log.w(TAG, "Reader Mode parse failed for: " + targetUrl, e);
             } finally {
                 if (connection != null) connection.disconnect();
+            }
+
+            if (article == null) {
+                String domain = "";
+                try {
+                    URI uri = new URI(targetUrl);
+                    domain = uri.getHost();
+                    if (domain != null && domain.startsWith("www.")) domain = domain.substring(4);
+                } catch (Exception ignored) {}
+                String fallbackTitle = (domain != null && !domain.isEmpty()) ? "Article from " + domain : "Web Article";
+                article = new ReaderArticle(
+                    fallbackTitle,
+                    domain != null ? domain : "",
+                    "<p>Reader Mode content extraction for " + targetUrl + "</p>",
+                    "",
+                    domain != null ? domain : ""
+                );
             }
 
             final ReaderArticle finalArticle = article;

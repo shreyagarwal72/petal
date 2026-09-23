@@ -394,6 +394,17 @@ public class PetalPwaManager {
                     try {
                         if (webView != null) {
                             webView.saveWebArchive(archiveFile.getAbsolutePath(), false, null);
+                            com.petal.browser.engine.gecko.PetalEngineStore.addOfflineArchive(activity, targetUrl, archiveFile.getAbsolutePath(), title);
+                        } else if (geckoView != null) {
+                            try {
+                                java.io.FileOutputStream fos = new java.io.FileOutputStream(archiveFile);
+                                geckoView.printToPdf(fos, success -> {
+                                    if (Boolean.TRUE.equals(success)) {
+                                        com.petal.browser.engine.gecko.PetalEngineStore.addOfflineArchive(activity, targetUrl, archiveFile.getAbsolutePath(), title);
+                                    }
+                                    return kotlin.Unit.INSTANCE;
+                                });
+                            } catch (Exception ignored) {}
                         }
                     } catch (Exception e) {
                         Log.w(TAG, "saveWebArchive: " + e.getMessage());

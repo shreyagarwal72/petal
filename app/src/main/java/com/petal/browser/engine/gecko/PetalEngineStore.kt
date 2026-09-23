@@ -243,6 +243,17 @@ object PetalEngineStore {
         )
     }
 
+    /** Updates find-in-page match results in BrowserStore for the active tab. */
+    @JvmStatic
+    fun updateFindResults(context: Context, tabId: String, current: Int, total: Int) {
+        getStore(context).dispatch(
+            mozilla.components.browser.state.action.ContentAction.UpdateFindResultsAction(
+                tabId,
+                mozilla.components.browser.state.state.content.FindResultState(current = current, total = total)
+            )
+        )
+    }
+
     @JvmStatic
     fun activateMediaSession(
         context: Context,

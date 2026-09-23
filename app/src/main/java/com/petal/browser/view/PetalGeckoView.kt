@@ -298,21 +298,34 @@ class PetalGeckoView @JvmOverloads constructor(
                 } else {
                     com.petal.browser.ui.components.PetalPermissionType.MICROPHONE
                 }
+                val host = try { android.net.Uri.parse(uri).host ?: uri } catch (_: Exception) { uri }
+                val prefKey = "perm_${permissionType.name.lowercase()}_$host"
+                val savedRule = sp.getString(prefKey, null)
+                if ("allow" == savedRule) {
+                    if (!video.isNullOrEmpty()) com.petal.browser.unit.HelperUnit.grantPermissionsCamera(activity)
+                    if (!audio.isNullOrEmpty()) com.petal.browser.unit.HelperUnit.grantPermissionsMic(activity)
+                    callback.grant(video?.firstOrNull(), audio?.firstOrNull())
+                    return
+                } else if ("block" == savedRule) {
+                    callback.reject()
+                    return
+                }
+
                 activity.runOnUiThread {
                     com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
                         activity,
                         permissionType,
                         uri,
-                        Runnable {
-                            if (!video.isNullOrEmpty()) {
-                                com.petal.browser.unit.HelperUnit.grantPermissionsCamera(activity)
-                            }
-                            if (!audio.isNullOrEmpty()) {
-                                com.petal.browser.unit.HelperUnit.grantPermissionsMic(activity)
-                            }
+                        { remember ->
+                            if (remember) sp.edit().putString(prefKey, "allow").apply()
+                            if (!video.isNullOrEmpty()) com.petal.browser.unit.HelperUnit.grantPermissionsCamera(activity)
+                            if (!audio.isNullOrEmpty()) com.petal.browser.unit.HelperUnit.grantPermissionsMic(activity)
                             callback.grant(video?.firstOrNull(), audio?.firstOrNull())
                         },
-                        Runnable { callback.reject() }
+                        { remember ->
+                            if (remember) sp.edit().putString(prefKey, "block").apply()
+                            callback.reject()
+                        }
                     )
                 }
             }
@@ -328,20 +341,31 @@ class PetalGeckoView @JvmOverloads constructor(
                     return result
                 }
 
-                // Gecko content permissions are promptable site permissions. Never
-                // auto-allow them: route geolocation through Petal's Material dialog
-                // and deny unsupported content permission types explicitly.
                 if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION) {
+                    val host = try { android.net.Uri.parse(perm.uri).host ?: perm.uri } catch (_: Exception) { perm.uri }
+                    val prefKey = "perm_location_$host"
+                    val savedRule = sp.getString(prefKey, null)
+                    if ("allow" == savedRule) {
+                        com.petal.browser.unit.HelperUnit.grantPermissionsLoc(activity)
+                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                        return result
+                    } else if ("block" == savedRule) {
+                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                        return result
+                    }
+
                     activity.runOnUiThread {
                         com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
                             activity,
                             com.petal.browser.ui.components.PetalPermissionType.LOCATION,
                             perm.uri,
-                            Runnable {
+                            { remember ->
+                                if (remember) sp.edit().putString(prefKey, "allow").apply()
                                 com.petal.browser.unit.HelperUnit.grantPermissionsLoc(activity)
                                 result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
                             },
-                            Runnable {
+                            { remember ->
+                                if (remember) sp.edit().putString(prefKey, "block").apply()
                                 result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
                             }
                         )
@@ -702,23 +726,19 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
-        // Material 3 Prompt Delegate (Alerts, Confirms, Prompts, Auth, Choice, Text, Popups)
+        // Material 3 Expressive Prompt Delegate (Alerts, Confirms, Prompts, Auth, Choice, Text, Popups)
         session.promptDelegate = object : GeckoSession.PromptDelegate {
             override fun onAlertPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.AlertPrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
                 val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
                 val act = getHostActivity() ?: return result
                 act.runOnUiThread {
-                    MaterialAlertDialogBuilder(act)
-                        .setTitle(prompt.title ?: act.getString(R.string.app_name))
-                        .setMessage(prompt.message ?: "")
-                        .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                            dialog.dismiss()
-                            result.complete(prompt.dismiss())
-                        }
-                        .setOnCancelListener {
-                            result.complete(prompt.dismiss())
-                        }
-                        .show()
+                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showAlert(
+                        act,
+                        prompt.title ?: act.getString(R.string.app_name),
+                        prompt.message ?: ""
+                    ) {
+                        result.complete(prompt.dismiss())
+                    }
                 }
                 return result
             }
@@ -727,21 +747,13 @@ class PetalGeckoView @JvmOverloads constructor(
                 val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
                 val act = getHostActivity() ?: return result
                 act.runOnUiThread {
-                    val builder = MaterialAlertDialogBuilder(act)
-                        .setTitle(prompt.title ?: act.getString(R.string.app_name))
-                        .setMessage(prompt.message ?: "")
-                        .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                            dialog.dismiss()
-                            result.complete(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
-                        }
-                        .setNegativeButton(android.R.string.cancel) { dialog, _ ->
-                            dialog.dismiss()
-                            result.complete(prompt.dismiss())
-                        }
-                        .setOnCancelListener {
-                            result.complete(prompt.dismiss())
-                        }
-                    builder.show()
+                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+                        act,
+                        prompt.title ?: act.getString(R.string.app_name),
+                        prompt.message ?: "",
+                        { result.complete(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE)) },
+                        { result.complete(prompt.dismiss()) }
+                    )
                 }
                 return result
             }
@@ -753,46 +765,23 @@ class PetalGeckoView @JvmOverloads constructor(
                 val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
                 val act = getHostActivity() ?: return GeckoResult.fromValue(prompt.dismiss())
                 act.runOnUiThread {
-                    val layout = android.widget.LinearLayout(act).apply {
-                        orientation = android.widget.LinearLayout.VERTICAL
-                        val pad = (16 * resources.displayMetrics.density).toInt()
-                        setPadding(pad, pad / 2, pad, pad / 2)
-                    }
-                    val userEdit = android.widget.EditText(act).apply {
-                        hint = "Username"
-                        prompt.authOptions.username?.let { setText(it) }
-                    }
-                    val passEdit = android.widget.EditText(act).apply {
-                        hint = "Password"
-                        inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-                    }
                     val isPasswordOnly = (prompt.authOptions.flags and GeckoSession.PromptDelegate.AuthPrompt.AuthOptions.Flags.ONLY_PASSWORD) != 0
-                    if (!isPasswordOnly) layout.addView(userEdit)
-                    layout.addView(passEdit)
-
                     val dialogTitle = prompt.title ?: prompt.authOptions.uri ?: act.getString(R.string.app_name)
-                    MaterialAlertDialogBuilder(act)
-                        .setTitle(dialogTitle)
-                        .setMessage(prompt.message ?: "Sign In")
-                        .setView(layout)
-                        .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                            dialog.dismiss()
-                            val enteredPassword = passEdit.text.toString()
+                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showAuth(
+                        act,
+                        dialogTitle,
+                        prompt.message ?: "Sign In",
+                        isPasswordOnly,
+                        prompt.authOptions.username,
+                        { user, pass ->
                             if (isPasswordOnly) {
-                                result.complete(prompt.confirm(enteredPassword))
+                                result.complete(prompt.confirm(pass))
                             } else {
-                                val enteredUser = userEdit.text.toString()
-                                result.complete(prompt.confirm(enteredUser, enteredPassword))
+                                result.complete(prompt.confirm(user, pass))
                             }
-                        }
-                        .setNegativeButton(android.R.string.cancel) { dialog, _ ->
-                            dialog.dismiss()
-                            result.complete(prompt.dismiss())
-                        }
-                        .setOnCancelListener {
-                            result.complete(prompt.dismiss())
-                        }
-                        .show()
+                        },
+                        { result.complete(prompt.dismiss()) }
+                    )
                 }
                 return result
             }
@@ -804,31 +793,14 @@ class PetalGeckoView @JvmOverloads constructor(
                 val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
                 val act = getHostActivity() ?: return GeckoResult.fromValue(prompt.dismiss())
                 act.runOnUiThread {
-                    val input = android.widget.EditText(act).apply {
-                        prompt.defaultValue?.let { setText(it) }
-                        selectAll()
-                    }
-                    val container = android.widget.FrameLayout(act).apply {
-                        val pad = (20 * resources.displayMetrics.density).toInt()
-                        setPadding(pad, pad / 2, pad, pad / 2)
-                        addView(input)
-                    }
-                    MaterialAlertDialogBuilder(act)
-                        .setTitle(prompt.title ?: act.getString(R.string.app_name))
-                        .setMessage(prompt.message ?: "")
-                        .setView(container)
-                        .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                            dialog.dismiss()
-                            result.complete(prompt.confirm(input.text.toString()))
-                        }
-                        .setNegativeButton(android.R.string.cancel) { dialog, _ ->
-                            dialog.dismiss()
-                            result.complete(prompt.dismiss())
-                        }
-                        .setOnCancelListener {
-                            result.complete(prompt.dismiss())
-                        }
-                        .show()
+                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showPrompt(
+                        act,
+                        prompt.title ?: act.getString(R.string.app_name),
+                        prompt.message ?: "",
+                        prompt.defaultValue,
+                        { value -> result.complete(prompt.confirm(value)) },
+                        { result.complete(prompt.dismiss()) }
+                    )
                 }
                 return result
             }
@@ -1458,14 +1430,31 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun findAllAsync(query: String) {
-        session.finder.find(query, GeckoSession.FINDER_FIND_MATCH_CASE)
+        val result = session.finder.find(query, GeckoSession.FINDER_FIND_MATCH_CASE)
+        result?.accept { findResult ->
+            if (findResult != null) {
+                com.petal.browser.engine.gecko.PetalEngineStore.updateFindResults(
+                    context,
+                    tabId,
+                    current = findResult.current,
+                    total = findResult.total
+                )
+            }
+        }
     }
 
     fun findNext(forward: Boolean) {
-        if (forward) {
-            session.finder.find(null, GeckoSession.FINDER_FIND_MATCH_CASE)
-        } else {
-            session.finder.find(null, GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_BACKWARDS)
+        val flags = if (forward) GeckoSession.FINDER_FIND_MATCH_CASE else (GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_BACKWARDS)
+        val result = session.finder.find(null, flags)
+        result?.accept { findResult ->
+            if (findResult != null) {
+                com.petal.browser.engine.gecko.PetalEngineStore.updateFindResults(
+                    context,
+                    tabId,
+                    current = findResult.current,
+                    total = findResult.total
+                )
+            }
         }
     }
 

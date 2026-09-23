@@ -211,3 +211,332 @@ fun PetalExpressiveMenuItem(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
     )
 }
+
+/**
+ * Material 3 Expressive Text Input Prompt Dialog (JavaScript prompt()).
+ */
+@Composable
+fun PetalExpressiveTextPromptDialog(
+    title: String,
+    message: String?,
+    defaultValue: String = "",
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var textValue by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(defaultValue) }
+
+    PetalExpressiveDialog(onDismissRequest = onDismiss) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (!message.isNullOrBlank()) {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            OutlinedTextField(
+                value = textValue,
+                onValueChange = { textValue = it },
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text("Cancel")
+                }
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = { onConfirm(textValue) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("OK", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Material 3 Expressive Authentication Prompt Dialog (HTTP Basic / Digest Auth).
+ */
+@Composable
+fun PetalExpressiveAuthPromptDialog(
+    title: String,
+    message: String?,
+    isPasswordOnly: Boolean,
+    initialUsername: String = "",
+    onConfirm: (String, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var username by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(initialUsername) }
+    var password by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+
+    PetalExpressiveDialog(onDismissRequest = onDismiss) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (!message.isNullOrBlank()) {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (!isPasswordOnly) {
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                shape = RoundedCornerShape(16.dp),
+                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text("Cancel")
+                }
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = { onConfirm(username, password) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Sign In", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Java Interop Bridge to render pure Material 3 Expressive Prompts directly from GeckoView.
+ */
+object PetalExpressivePromptBridge {
+
+    @JvmStatic
+    fun showAlert(
+        context: android.content.Context,
+        title: String,
+        message: String?,
+        onConfirm: Runnable
+    ) {
+        val activity = findActivity(context) ?: return
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+        val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+            androidx.lifecycle.setViewTreeLifecycleOwner(activity)
+            androidx.lifecycle.setViewTreeViewModelStoreOwner(activity)
+            androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+            setContent {
+                com.petal.browser.ui.theme.PetalExpressiveTheme {
+                    PetalExpressiveAlertDialog(
+                        onDismissRequest = {
+                            try { dialog?.dismiss() } catch (_: Exception) {}
+                            onConfirm.run()
+                        },
+                        title = title,
+                        message = message,
+                        confirmText = "OK",
+                        onConfirm = {
+                            try { dialog?.dismiss() } catch (_: Exception) {}
+                            onConfirm.run()
+                        },
+                        dismissText = null
+                    )
+                }
+            }
+        }
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+            .setView(composeView)
+            .setCancelable(true)
+            .setOnCancelListener { onConfirm.run() }
+        dialog = builder.create().apply {
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            show()
+        }
+    }
+
+    @JvmStatic
+    fun showConfirm(
+        context: android.content.Context,
+        title: String,
+        message: String?,
+        onConfirm: Runnable,
+        onCancel: Runnable
+    ) {
+        val activity = findActivity(context) ?: return
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+        val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+            androidx.lifecycle.setViewTreeLifecycleOwner(activity)
+            androidx.lifecycle.setViewTreeViewModelStoreOwner(activity)
+            androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+            setContent {
+                com.petal.browser.ui.theme.PetalExpressiveTheme {
+                    PetalExpressiveAlertDialog(
+                        onDismissRequest = {
+                            try { dialog?.dismiss() } catch (_: Exception) {}
+                            onCancel.run()
+                        },
+                        title = title,
+                        message = message,
+                        confirmText = "OK",
+                        onConfirm = {
+                            try { dialog?.dismiss() } catch (_: Exception) {}
+                            onConfirm.run()
+                        },
+                        dismissText = "Cancel",
+                        onDismiss = {
+                            try { dialog?.dismiss() } catch (_: Exception) {}
+                            onCancel.run()
+                        }
+                    )
+                }
+            }
+        }
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+            .setView(composeView)
+            .setCancelable(true)
+            .setOnCancelListener { onCancel.run() }
+        dialog = builder.create().apply {
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            show()
+        }
+    }
+
+    @JvmStatic
+    fun showPrompt(
+        context: android.content.Context,
+        title: String,
+        message: String?,
+        defaultValue: String?,
+        onConfirm: java.util.function.Consumer<String>,
+        onCancel: Runnable
+    ) {
+        val activity = findActivity(context) ?: return
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+        val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+            androidx.lifecycle.setViewTreeLifecycleOwner(activity)
+            androidx.lifecycle.setViewTreeViewModelStoreOwner(activity)
+            androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+            setContent {
+                com.petal.browser.ui.theme.PetalExpressiveTheme {
+                    PetalExpressiveTextPromptDialog(
+                        title = title,
+                        message = message,
+                        defaultValue = defaultValue ?: "",
+                        onConfirm = { value ->
+                            try { dialog?.dismiss() } catch (_: Exception) {}
+                            onConfirm.accept(value)
+                        },
+                        onDismiss = {
+                            try { dialog?.dismiss() } catch (_: Exception) {}
+                            onCancel.run()
+                        }
+                    )
+                }
+            }
+        }
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+            .setView(composeView)
+            .setCancelable(true)
+            .setOnCancelListener { onCancel.run() }
+        dialog = builder.create().apply {
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            show()
+        }
+    }
+
+    @JvmStatic
+    fun showAuth(
+        context: android.content.Context,
+        title: String,
+        message: String?,
+        isPasswordOnly: Boolean,
+        initialUsername: String?,
+        onConfirm: java.util.function.BiConsumer<String, String>,
+        onCancel: Runnable
+    ) {
+        val activity = findActivity(context) ?: return
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+        val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+            androidx.lifecycle.setViewTreeLifecycleOwner(activity)
+            androidx.lifecycle.setViewTreeViewModelStoreOwner(activity)
+            androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+            setContent {
+                com.petal.browser.ui.theme.PetalExpressiveTheme {
+                    PetalExpressiveAuthPromptDialog(
+                        title = title,
+                        message = message,
+                        isPasswordOnly = isPasswordOnly,
+                        initialUsername = initialUsername ?: "",
+                        onConfirm = { user, pass ->
+                            try { dialog?.dismiss() } catch (_: Exception) {}
+                            onConfirm.accept(user, pass)
+                        },
+                        onDismiss = {
+                            try { dialog?.dismiss() } catch (_: Exception) {}
+                            onCancel.run()
+                        }
+                    )
+                }
+            }
+        }
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+            .setView(composeView)
+            .setCancelable(true)
+            .setOnCancelListener { onCancel.run() }
+        dialog = builder.create().apply {
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            show()
+        }
+    }
+
+    private fun findActivity(context: android.content.Context): androidx.activity.ComponentActivity? {
+        var curr = context
+        while (curr is android.content.ContextWrapper) {
+            if (curr is androidx.activity.ComponentActivity) return curr
+            curr = curr.baseContext
+        }
+        return null
+    }
+}
