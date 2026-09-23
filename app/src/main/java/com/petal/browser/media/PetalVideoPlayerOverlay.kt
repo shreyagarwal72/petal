@@ -14,7 +14,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +22,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,16 +51,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,22 +66,25 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 /**
  * Petal Video Player Overlay
- * Pure Jetpack Compose overlay modeled after mpvEx:
+ * Pure Jetpack Compose Material 3 player overlay with:
  * - Overlaps video views cleanly with transparent gesture backdrop
- * - Features the signature mpvEx Squiggly / Wavy Seekbar
+ * - Features the signature Squiggly / Wavy Seekbar
  * - Vertical slide gestures for left brightness & right volume with HUD cards
  * - Double-tap left/right seek with pill animations and haptic ticks
+ * - Full aspect ratio selector (Fit, 16:9, 4:3, 1:1, 9:16, 21:9, Zoom, Stretch)
+ * - Universal casting button to stream video to TVs / devices
  * - Speed selection, PiP trigger, and title header
  */
 @Composable
@@ -104,16 +102,14 @@ fun PetalVideoPlayerOverlay(
     onAspectRatioToggle: ((String) -> Unit)? = null,
     onPipClick: () -> Unit,
     onCloseFullscreen: () -> Unit,
+    videoUrl: String? = null,
+    onCastClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager }
     val maxVolume = remember { audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15 }
 
-    // The player activity hides the system bars immediately (immersive mode), so
-    // statusBarsPadding()/navigationBarsPadding() alone collapse to 0 and the controls sit
-    // flush against the physical screen edge / camera cutout. Combine the (usually-zero) bar
-    // inset with the display cutout inset and fall back to a comfortable minimum.
     val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
     val bottomClearance = WindowInsets.navigationBars.asPaddingValues()
@@ -122,22 +118,11 @@ fun PetalVideoPlayerOverlay(
     var areControlsVisible by remember { mutableStateOf(true) }
     var currentSpeed by remember { mutableFloatStateOf(playbackSpeed) }
     var showSpeedSelector by remember { mutableStateOf(false) }
+    var showAspectSheet by remember { mutableStateOf(false) }
+    var currentAspectModeId by remember { mutableStateOf("FIT") }
 
     // Local Video Brightness State (0.1f = very dim, 1.0f = full normal brightness)
-    // Adjusting brightness only affects the video layer, not the browser activity or device window
     var videoBrightness by remember { mutableFloatStateOf(1.0f) }
-
-    // Aspect ratio modes: Mode ID to Display Label
-    val aspectModes = remember {
-        listOf(
-            "FIT" to "Fit (Original)",
-            "ZOOM" to "Zoom (Crop)",
-            "STRETCH" to "Stretch",
-            "WIDE_16_9" to "16:9",
-            "CLASSIC_4_3" to "4:3",
-        )
-    }
-    var currentAspectIndex by remember { mutableIntStateOf(0) }
 
     // HUD gesture overlays
     var volumeHudLevel by remember { mutableIntStateOf(-1) }
@@ -157,8 +142,7 @@ fun PetalVideoPlayerOverlay(
     Box(
         modifier = modifier.fillMaxSize(),
     ) {
-        // Dedicated Background Gesture Layer:
-        // Placed at the bottom of the Box stack so controls layer above receives all click events cleanly
+        // Dedicated Background Gesture Layer
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -202,12 +186,10 @@ fun PetalVideoPlayerOverlay(
                         val deltaY = -dragAmount.y
 
                         if (x < width * 0.45f) {
-                            // Left side vertical gesture: Video Brightness (affects ONLY video overlay, not browser)
                             val newBrightness = (videoBrightness + (deltaY / 600f)).coerceIn(0.1f, 1.0f)
                             videoBrightness = newBrightness
                             brightnessHudLevel = newBrightness
                         } else if (x > width * 0.55f) {
-                            // Right side vertical gesture: Volume
                             audioManager?.let { am ->
                                 val currentVol = am.getStreamVolume(AudioManager.STREAM_MUSIC)
                                 val step = if (deltaY > 0) 1 else -1
@@ -222,7 +204,7 @@ fun PetalVideoPlayerOverlay(
                 },
         )
 
-        // Local Video Dimmer Layer: Dims the video content beneath without affecting browser or system brightness
+        // Local Video Dimmer Layer
         if (videoBrightness < 1.0f) {
             val dimAlpha = ((1.0f - videoBrightness) * 0.85f).coerceIn(0f, 0.85f)
             Box(
@@ -231,6 +213,7 @@ fun PetalVideoPlayerOverlay(
                     .background(Color.Black.copy(alpha = dimAlpha)),
             )
         }
+
         // Double-tap Seek Pill Indicator
         LaunchedEffect(doubleTapSeekText) {
             if (doubleTapSeekText != null) {
@@ -266,7 +249,7 @@ fun PetalVideoPlayerOverlay(
         if (aspectRatioHudText != null) {
             Surface(
                 shape = CircleShape,
-                color = Color.Black.copy(alpha = 0.8f),
+                color = Color.Black.copy(alpha = 0.85f),
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(16.dp),
@@ -387,7 +370,7 @@ fun PetalVideoPlayerOverlay(
                         .align(Alignment.BottomCenter),
                 )
 
-                // Top Header Column (Top Bar + Dropdown Speed Selector)
+                // Top Header Column
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -423,13 +406,31 @@ fun PetalVideoPlayerOverlay(
                                 .padding(horizontal = 12.dp),
                         )
 
+                        // Cast Button
                         IconButton(
                             onClick = {
-                                currentAspectIndex = (currentAspectIndex + 1) % aspectModes.size
-                                val (modeId, modeLabel) = aspectModes[currentAspectIndex]
-                                aspectRatioHudText = modeLabel
-                                onAspectRatioToggle?.invoke(modeId)
                                 PetalHapticEngine.getInstance(context).playClick(context)
+                                if (onCastClick != null) {
+                                    onCastClick()
+                                } else {
+                                    PetalCastManager.castMedia(context, videoUrl, title)
+                                }
+                            },
+                            modifier = Modifier.size(40.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.icon_cast),
+                                contentDescription = "Cast",
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+
+                        // Aspect Ratio Sheet Trigger
+                        IconButton(
+                            onClick = {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                showAspectSheet = true
                             },
                             modifier = Modifier.size(40.dp),
                         ) {
@@ -440,6 +441,7 @@ fun PetalVideoPlayerOverlay(
                             )
                         }
 
+                        // Playback Speed Trigger
                         IconButton(
                             onClick = {
                                 showSpeedSelector = !showSpeedSelector
@@ -454,6 +456,7 @@ fun PetalVideoPlayerOverlay(
                             )
                         }
 
+                        // Picture-in-Picture Trigger
                         IconButton(
                             onClick = onPipClick,
                             modifier = Modifier.size(40.dp),
@@ -466,7 +469,7 @@ fun PetalVideoPlayerOverlay(
                         }
                     }
 
-                    // Speed Selector Pill Card (if active)
+                    // Speed Selector Pill Card
                     if (showSpeedSelector) {
                         Box(
                             modifier = Modifier
@@ -598,6 +601,22 @@ fun PetalVideoPlayerOverlay(
                     )
                 }
             }
+        }
+
+        // Material 3 Aspect Ratio Sheet
+        if (showAspectSheet) {
+            PetalAspectRatioSheet(
+                currentModeId = currentAspectModeId,
+                onSelectMode = { option ->
+                    currentAspectModeId = option.id
+                    aspectRatioHudText = option.label
+                    onAspectRatioToggle?.invoke(option.id)
+                    showAspectSheet = false
+                },
+                onDismissRequest = {
+                    showAspectSheet = false
+                },
+            )
         }
     }
 }

@@ -194,8 +194,11 @@ fun PetalVideoPlayerScreen(
                     resizeMode = when (modeId) {
                         "ZOOM" -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                         "STRETCH" -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-                        "WIDE_16_9" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
-                        "CLASSIC_4_3" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
+                        "16:9", "WIDE_16_9" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
+                        "4:3", "CLASSIC_4_3" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
+                        "1:1", "SQUARE_1_1" -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                        "9:16", "VERTICAL_9_16" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
+                        "21:9", "CINEMA_21_9" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
                         else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
                     }
                 },
@@ -224,6 +227,10 @@ fun PetalVideoPlayerScreen(
                     }
                 },
                 onCloseFullscreen = onClose,
+                videoUrl = videoUri.toString(),
+                onCastClick = {
+                    PetalCastManager.castMedia(context, videoUri.toString(), displayName)
+                },
                 modifier = Modifier.fillMaxSize(),
             )
         }

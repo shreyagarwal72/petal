@@ -117,6 +117,10 @@ class PetalVideoPlayerOverlayBridge(
                     onCloseFullscreen = {
                         onClose()
                     },
+                    videoUrl = controller?.url,
+                    onCastClick = {
+                        PetalCastManager.castMedia(activity, controller?.url, title)
+                    },
                 )
             }
         }

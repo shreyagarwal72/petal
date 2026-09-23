@@ -247,12 +247,21 @@ public class PetalMediaBridge {
                 "               v.style.width = '100%';" +
                 "               v.style.height = '100%';" +
                 "               v.style.aspectRatio = '';" +
-                "           } else if (mode === 'WIDE_16_9') {" +
+                "           } else if (mode === '16:9' || mode === 'WIDE_16_9') {" +
                 "               v.style.objectFit = 'contain';" +
                 "               v.style.aspectRatio = '16/9';" +
-                "           } else if (mode === 'CLASSIC_4_3') {" +
+                "           } else if (mode === '4:3' || mode === 'CLASSIC_4_3') {" +
                 "               v.style.objectFit = 'contain';" +
                 "               v.style.aspectRatio = '4/3';" +
+                "           } else if (mode === '1:1' || mode === 'SQUARE_1_1') {" +
+                "               v.style.objectFit = 'contain';" +
+                "               v.style.aspectRatio = '1/1';" +
+                "           } else if (mode === '9:16' || mode === 'VERTICAL_9_16') {" +
+                "               v.style.objectFit = 'contain';" +
+                "               v.style.aspectRatio = '9/16';" +
+                "           } else if (mode === '21:9' || mode === 'CINEMA_21_9') {" +
+                "               v.style.objectFit = 'contain';" +
+                "               v.style.aspectRatio = '21/9';" +
                 "           }" +
                 "       } catch(e) {}" +
                 "   }" +
