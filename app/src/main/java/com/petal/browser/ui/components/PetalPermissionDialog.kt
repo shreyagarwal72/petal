@@ -17,6 +17,10 @@ import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,7 +76,7 @@ fun PetalPermissionDialog(
     onDeny: (remember: Boolean) -> Unit
 ) {
     val cleanOrigin = origin.ifBlank { "Webpage" }
-    var rememberChoice by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+    val rememberChoiceState = remember { mutableStateOf(true) }
 
     Surface(
         shape = RoundedCornerShape(28.dp),
@@ -152,8 +156,8 @@ fun PetalPermissionDialog(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Checkbox(
-                    checked = rememberChoice,
-                    onCheckedChange = { rememberChoice = it }
+                    checked = rememberChoiceState.value,
+                    onCheckedChange = { rememberChoiceState.value = it }
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
@@ -172,7 +176,7 @@ fun PetalPermissionDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
-                    onClick = { onDeny(rememberChoice) },
+                    onClick = { onDeny(rememberChoiceState.value) },
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .weight(1f)
@@ -187,7 +191,7 @@ fun PetalPermissionDialog(
                 }
 
                 Button(
-                    onClick = { onAllow(rememberChoice) },
+                    onClick = { onAllow(rememberChoiceState.value) },
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,

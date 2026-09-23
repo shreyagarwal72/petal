@@ -11,6 +11,11 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.Alignment
@@ -22,6 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
 /**
  * Shared popup/dialog language for Petal.
@@ -223,7 +231,7 @@ fun PetalExpressiveTextPromptDialog(
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var textValue by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(defaultValue) }
+    val textState = remember { mutableStateOf(defaultValue) }
 
     PetalExpressiveDialog(onDismissRequest = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -242,8 +250,8 @@ fun PetalExpressiveTextPromptDialog(
             }
 
             OutlinedTextField(
-                value = textValue,
-                onValueChange = { textValue = it },
+                value = textState.value,
+                onValueChange = { textState.value = it },
                 shape = RoundedCornerShape(16.dp),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -262,7 +270,7 @@ fun PetalExpressiveTextPromptDialog(
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
-                    onClick = { onConfirm(textValue) },
+                    onClick = { onConfirm(textState.value) },
                     modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -285,8 +293,8 @@ fun PetalExpressiveAuthPromptDialog(
     onConfirm: (String, String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var username by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(initialUsername) }
-    var password by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    val usernameState = remember { mutableStateOf(initialUsername) }
+    val passwordState = remember { mutableStateOf("") }
 
     PetalExpressiveDialog(onDismissRequest = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -306,8 +314,8 @@ fun PetalExpressiveAuthPromptDialog(
 
             if (!isPasswordOnly) {
                 OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
+                    value = usernameState.value,
+                    onValueChange = { usernameState.value = it },
                     label = { Text("Username") },
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
@@ -316,8 +324,8 @@ fun PetalExpressiveAuthPromptDialog(
             }
 
             OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
+                value = passwordState.value,
+                onValueChange = { passwordState.value = it },
                 label = { Text("Password") },
                 shape = RoundedCornerShape(16.dp),
                 visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
@@ -338,7 +346,7 @@ fun PetalExpressiveAuthPromptDialog(
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
-                    onClick = { onConfirm(username, password) },
+                    onClick = { onConfirm(usernameState.value, passwordState.value) },
                     modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
