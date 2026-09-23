@@ -10,6 +10,7 @@ import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.downloads.DownloadMiddleware
 import org.mozilla.geckoview.GeckoRuntime
 
 /**
@@ -64,18 +65,22 @@ object PetalEngineStore {
         val appContext = context.applicationContext
         val currentEngine = getEngine(appContext)
 
-        val middleware = EngineMiddleware.create(
+        val engineMiddleware = EngineMiddleware.create(
             engine = currentEngine,
             scope = mainScope,
             trimMemoryAutomatically = true
         )
+        val downloadMiddleware = DownloadMiddleware(
+            applicationContext = appContext,
+            downloadServiceClass = com.petal.browser.download.PetalMozillaDownloadService::class.java
+        )
 
         val newStore = BrowserStore(
             initialState = BrowserState(),
-            middleware = middleware
+            middleware = engineMiddleware + listOf(downloadMiddleware)
         )
         store = newStore
-        Log.i(TAG, "Initialized Mozilla BrowserStore with EngineMiddleware")
+        Log.i(TAG, "Initialized Mozilla BrowserStore with EngineMiddleware and DownloadMiddleware")
         return newStore
     }
 
