@@ -70,7 +70,7 @@ object PetalRecentlyClosedManager {
 
     private fun persist(context: Context?) {
         val ctx = context ?: try {
-            com.petal.browser.PetalApplication.getInstance()
+            com.petal.browser.PetalApplication.instance
         } catch (_: Exception) { null } ?: return
 
         try {

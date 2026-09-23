@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.security.BiometricLockManager
 import com.petal.browser.ui.components.ExpressiveHeader
@@ -150,7 +151,7 @@ fun PetalRecentlyClosedVault(
                         },
                         onUnlockAttempt = {
                             if (PetalRecentlyClosedManager.verifyPassword(context, passwordInput)) {
-                                PetalHapticEngine.getInstance(context).playHeavyClick(context)
+                                PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
                                 isUnlocked = true
                             } else {
                                 PetalHapticEngine.getInstance(context).playTick(context)
@@ -215,8 +216,8 @@ fun PetalRecentlyClosedVault(
             canBiometric = canBiometric,
             accentColor = accentColor,
             onDismiss = { showSettingsDialog = false },
-            onSaveSettings = { newRetention, newLockType, newPassword ->
-                val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            onSaveSettings = { newRetention: String, newLockType: String, newPassword: String ->
+                val sp: android.content.SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
                 sp.edit().putString(PetalRecentlyClosedManager.PREF_RETENTION_DAYS, newRetention).apply()
                 PetalRecentlyClosedManager.pruneExpiredTabs(context)
 
@@ -310,9 +311,9 @@ private fun LockScreenContent(
             PetalShapedPasswordInput(
                 value = passwordInput,
                 onValueChange = onPasswordChange,
-                placeholder = "Enter passcode",
+                hintText = "Enter passcode",
                 isError = passwordError,
-                onSubmit = onUnlockAttempt,
+                onUnlock = onUnlockAttempt,
                 modifier = Modifier.fillMaxWidth(0.85f)
             )
 

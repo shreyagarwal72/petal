@@ -50,6 +50,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import com.petal.browser.ui.components.PetalConfirmSheetContent
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -271,7 +273,7 @@ fun PetalTabGridSwitcher(
                     // Pulling down while at the top
                     val newOffset = (pullToRevealLockOffset + available.y * 0.55f).coerceAtMost(320f)
                     if (newOffset > 190f && pullToRevealLockOffset <= 190f) {
-                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playHeavyClick(context)
+                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
                     }
                     pullToRevealLockOffset = newOffset
                     return Offset(0f, available.y)
