@@ -243,7 +243,7 @@ fun PetalTabGridSwitcher(
     // ── Long scroll up / pull-down reveal for Closed Tabs Vault ──
     var pullToRevealLockOffset by remember { mutableFloatStateOf(0f) }
     var isVaultVisible by remember { mutableStateOf(false) }
-    val maxRevealThreshold = 180f // dp in pixels equivalent approximately
+    val maxRevealThreshold = 300f // Higher intentional threshold to prevent accidental scroll
 
     val vaultNestedScrollConnection = remember {
         object : NestedScrollConnection {
@@ -270,9 +270,9 @@ fun PetalTabGridSwitcher(
                 }
 
                 if (isAtTop && available.y > 0) {
-                    // Pulling down while at the top
-                    val newOffset = (pullToRevealLockOffset + available.y * 0.55f).coerceAtMost(320f)
-                    if (newOffset > 190f && pullToRevealLockOffset <= 190f) {
+                    // Firm pull resistance with 0.30f dampening factor so normal flick scrolling doesn't trigger it
+                    val newOffset = (pullToRevealLockOffset + available.y * 0.30f).coerceAtMost(360f)
+                    if (newOffset >= maxRevealThreshold && pullToRevealLockOffset < maxRevealThreshold) {
                         com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
                     }
                     pullToRevealLockOffset = newOffset
@@ -282,7 +282,7 @@ fun PetalTabGridSwitcher(
             }
 
             override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity): androidx.compose.ui.unit.Velocity {
-                if (pullToRevealLockOffset >= 180f) {
+                if (pullToRevealLockOffset >= maxRevealThreshold) {
                     pullToRevealLockOffset = 0f
                     isVaultVisible = true
                 } else {
@@ -685,15 +685,14 @@ fun PetalTabGridSwitcher(
                         )
                 ) {
                     // ── Animated Material 3 Expressive Lock Reveal Indicator on Long Pull-Down ──
-                    if (animatedLockPullOffset > 10f) {
-                        val lockAlpha = (animatedLockPullOffset / 160f).coerceIn(0f, 1f)
-                        val lockScale = (animatedLockPullOffset / 180f).coerceIn(0.5f, 1.25f)
-                        val isThresholdReached = animatedLockPullOffset >= 180f
+                    if (animatedLockPullOffset > 15f) {
+                        val lockProgress = (animatedLockPullOffset / maxRevealThreshold).coerceIn(0f, 1f)
+                        val isThresholdReached = animatedLockPullOffset >= maxRevealThreshold
 
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = (animatedLockPullOffset * 0.4f).dp)
+                                .padding(top = (animatedLockPullOffset * 0.28f).dp)
                                 .align(Alignment.TopCenter),
                             contentAlignment = Alignment.Center
                         ) {
@@ -704,16 +703,16 @@ fun PetalTabGridSwitcher(
                                     1.5.dp,
                                     if (isThresholdReached) accentColor else MaterialTheme.colorScheme.outlineVariant
                                 ),
-                                shadowElevation = (animatedLockPullOffset * 0.05f).dp,
+                                shadowElevation = (lockProgress * 8f).dp,
                                 modifier = Modifier
                                     .graphicsLayer {
-                                        alpha = lockAlpha
-                                        scaleX = lockScale
-                                        scaleY = lockScale
+                                        alpha = lockProgress
+                                        scaleX = 0.7f + (0.35f * lockProgress)
+                                        scaleY = 0.7f + (0.35f * lockProgress)
                                     }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
@@ -733,7 +732,15 @@ fun PetalTabGridSwitcher(
                         }
                     }
 
-                    when {
+                    // ── Tabs Container: Translated downwards when pulling so component is never covered ──
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                translationY = animatedLockPullOffset * 0.95f
+                            }
+                    ) {
+                        when {
 
 
                         // ── Tab Groups Screen Category ──────────────────────────────
@@ -1038,6 +1045,7 @@ fun PetalTabGridSwitcher(
                         }
                     }
                 }
+            }
             }
 
             // Multi-Select Floating Action Bar (Firefox Parity)

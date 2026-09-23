@@ -1430,32 +1430,12 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun findAllAsync(query: String) {
-        val result = session.finder.find(query, GeckoSession.FINDER_FIND_MATCH_CASE)
-        result?.accept { findResult ->
-            if (findResult != null) {
-                com.petal.browser.engine.gecko.PetalEngineStore.updateFindResults(
-                    context,
-                    tabId,
-                    current = findResult.current,
-                    total = findResult.total
-                )
-            }
-        }
+        session.finder.find(query, GeckoSession.FINDER_FIND_MATCH_CASE)
     }
 
     fun findNext(forward: Boolean) {
         val flags = if (forward) GeckoSession.FINDER_FIND_MATCH_CASE else (GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_BACKWARDS)
-        val result = session.finder.find(null, flags)
-        result?.accept { findResult ->
-            if (findResult != null) {
-                com.petal.browser.engine.gecko.PetalEngineStore.updateFindResults(
-                    context,
-                    tabId,
-                    current = findResult.current,
-                    total = findResult.total
-                )
-            }
-        }
+        session.finder.find(null, flags)
     }
 
     /**

@@ -71,6 +71,7 @@ fun PetalRecentlyClosedVault(
     var passwordInput by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showForgotLockDialog by remember { mutableStateOf(false) }
 
     // List of records
     var records by remember { mutableStateOf(PetalRecentlyClosedManager.getRecentlyClosedTabs()) }
@@ -173,6 +174,9 @@ fun PetalRecentlyClosedVault(
                                 )
                             }
                         },
+                        onForgotLock = {
+                            showForgotLockDialog = true
+                        },
                         canBiometric = canBiometric,
                         accentColor = accentColor
                     )
@@ -231,6 +235,75 @@ fun PetalRecentlyClosedVault(
             }
         )
     }
+
+    // ── Forgot Lock / Reset Vault Dialog ──
+    if (showForgotLockDialog) {
+        AlertDialog(
+            onDismissRequest = { showForgotLockDialog = false },
+            icon = {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.size(52.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.WarningAmber,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+            },
+            title = {
+                Text(
+                    text = "Reset Vault & Clear Data?",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Text(
+                    text = "For security and privacy, resetting the vault lock will permanently erase all ${records.size} saved closed tabs and remove the passcode protection. You will regain immediate access to the vault.\n\nThis cannot be undone.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showForgotLockDialog = false
+                        PetalRecentlyClosedManager.resetLockAndClearData(context)
+                        lockType = "none"
+                        isUnlocked = true
+                        passwordInput = ""
+                        passwordError = false
+                        refreshRecords()
+                        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Clear All Data & Unlock", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showForgotLockDialog = false },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Cancel", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = RoundedCornerShape(28.dp)
+        )
+    }
 }
 
 /**
@@ -244,6 +317,7 @@ private fun LockScreenContent(
     onPasswordChange: (String) -> Unit,
     onUnlockAttempt: () -> Unit,
     onBiometricClick: () -> Unit,
+    onForgotLock: () -> Unit,
     canBiometric: Boolean,
     accentColor: Color
 ) {
@@ -340,6 +414,17 @@ private fun LockScreenContent(
                 Spacer(Modifier.width(8.dp))
                 Text("Unlock", fontWeight = FontWeight.Bold)
             }
+
+            Spacer(Modifier.height(12.dp))
+
+            TextButton(
+                onClick = onForgotLock,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Forgot Passcode?", fontWeight = FontWeight.SemiBold)
+            }
         }
 
         if (canBiometric && lockType == "biometric") {
@@ -354,6 +439,17 @@ private fun LockScreenContent(
                 Icon(Icons.Rounded.Fingerprint, null, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Scan Fingerprint", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            TextButton(
+                onClick = onForgotLock,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Forgot Lock / Reset Vault", fontWeight = FontWeight.SemiBold)
             }
         }
     }

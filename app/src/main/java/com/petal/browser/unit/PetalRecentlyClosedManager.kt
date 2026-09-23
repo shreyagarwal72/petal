@@ -254,6 +254,22 @@ object PetalRecentlyClosedManager {
         return !stored.isNullOrBlank()
     }
 
+    /**
+     * Resets the vault lock by removing the stored passcode hash, reverting lock type to 'none',
+     * and erasing all closed tabs records for security.
+     */
+    @JvmStatic
+    @Synchronized
+    fun resetLockAndClearData(context: Context) {
+        closedTabs.clear()
+        persist(context)
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .edit()
+            .remove(PREF_PASSWORD_HASH)
+            .putString(PREF_LOCK_TYPE, "none")
+            .apply()
+    }
+
     private fun hashString(input: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
         return bytes.joinToString("") { "%02x".format(it) }

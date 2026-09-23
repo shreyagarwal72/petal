@@ -75,7 +75,7 @@ object PetalEngineStore {
             applicationContext = appContext,
             downloadServiceClass = com.petal.browser.download.PetalMozillaDownloadService::class.java,
             downloadFileUtils = DefaultDownloadFileUtils(appContext),
-            deleteFileFromStorage = true
+            deleteFileFromStorage = { true }
         )
 
         val newStore = BrowserStore(
@@ -240,17 +240,6 @@ object PetalEngineStore {
     fun clearFindResults(context: Context, tabId: String) {
         getStore(context).dispatch(
             mozilla.components.browser.state.action.ContentAction.ClearFindResultsAction(tabId)
-        )
-    }
-
-    /** Updates find-in-page match results in BrowserStore for the active tab. */
-    @JvmStatic
-    fun updateFindResults(context: Context, tabId: String, current: Int, total: Int) {
-        getStore(context).dispatch(
-            mozilla.components.browser.state.action.ContentAction.UpdateFindResultsAction(
-                tabId,
-                mozilla.components.browser.state.state.content.FindResultState(current = current, total = total)
-            )
         )
     }
 
