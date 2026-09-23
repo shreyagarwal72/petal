@@ -89,7 +89,6 @@ fun MiscSettingsScreenContent(
     val preferences = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var confirmFileDelete by remember { mutableStateOf(preferences.getBoolean("sp_confirm_download_delete", true)) }
     var deleteFromStorage by remember { mutableStateOf(preferences.getBoolean("sp_delete_download_file", false)) }
-    var writingToolsBar by remember { mutableStateOf(preferences.getBoolean("sp_writing_tools_bar", true)) }
     val installedDownloaders = remember(context) {
         ExternalDownloadManagerHelper.getInstalledDownloaders(context)
     }
@@ -116,24 +115,6 @@ fun MiscSettingsScreenContent(
                 SettingsCategoryCard(title = "Download deletion", icon = Icons.Rounded.Delete, cardId = "misc_download_delete", targetHighlightId = targetHighlightItemId) {
                     ToggleRow(title = "Confirm file deletion", subtitle = "Ask before removing a download from the device", icon = Icons.Rounded.HelpOutline, checked = confirmFileDelete, onCheckedChange = { confirmFileDelete = it; preferences.edit().putBoolean("sp_confirm_download_delete", it).apply() })
                     ToggleRow(title = "Delete file from storage", subtitle = "Use this as the default choice when deleting a download", icon = Icons.Rounded.DeleteForever, checked = deleteFromStorage, onCheckedChange = { deleteFromStorage = it; preferences.edit().putBoolean("sp_delete_download_file", it).apply() })
-                }
-
-                SettingsCategoryCard(
-                    title = "Writing tools",
-                    icon = Icons.Rounded.Edit,
-                    cardId = "misc_writing_tools",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    ToggleRow(
-                        title = "Keyboard writing tools",
-                        subtitle = "Show an editing toolbar above the keyboard for text fields",
-                        icon = Icons.Rounded.Keyboard,
-                        checked = writingToolsBar,
-                        onCheckedChange = {
-                            writingToolsBar = it
-                            preferences.edit().putBoolean("sp_writing_tools_bar", it).apply()
-                        }
-                    )
                 }
 
                 // Default Download Manager Card

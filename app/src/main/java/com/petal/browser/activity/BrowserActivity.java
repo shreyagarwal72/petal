@@ -61,7 +61,6 @@ import android.text.TextWatcher;
 import com.petal.browser.compose.downloads.PetalDownloadBridge;
 import com.petal.browser.compose.home.PetalComposeBridge;
 import com.petal.browser.compose.home.PetalHomeActionHandler;
-import com.petal.browser.ui.components.PetalWritingToolsBar;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
@@ -862,10 +861,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     applyBottomBarVisibilityForSurface();
                 }
             }
-            PetalWritingToolsBar.update((ViewGroup) v, insets);
             return insets;
         });
-        PetalWritingToolsBar.attach(this, (ViewGroup) predictiveBackRoot, sp);
 
         MaterialAlertDialogBuilder builderOverview = new MaterialAlertDialogBuilder(context);
         View dialogViewOverview = View.inflate(context, R.layout.dialog_overview, null);
