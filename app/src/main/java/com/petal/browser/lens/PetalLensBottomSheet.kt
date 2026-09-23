@@ -220,10 +220,12 @@ fun PetalLensBottomSheet(
                     (context as? com.petal.browser.activity.BrowserActivity)?.restoreBrowserInputFocus()
                     if (value.startsWith("http://") || value.startsWith("https://")) {
                         com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(value))
+                        onDismissRequest()
                     } else {
                         val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                         clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Scanned barcode", value))
                         NinjaToast.show(context, "Barcode copied", Toast.LENGTH_SHORT)
+                        onDismissRequest()
                     }
                 },
                 onDismiss = {
