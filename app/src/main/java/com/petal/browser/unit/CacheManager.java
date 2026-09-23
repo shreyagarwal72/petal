@@ -53,7 +53,7 @@ public class CacheManager {
 
         // 2. Clear In-Memory Decoded Tab Thumbnails & Favicons
         try {
-            TabThumbnailCache.clearMemoryCache();
+            TabThumbnailCache.clearMemory();
         } catch (Exception e) {
             Log.w(TAG, "Error trimming thumbnail memory cache", e);
         }
@@ -125,7 +125,7 @@ public class CacheManager {
 
                 PetalGeckoRuntime.getOrCreate(appContext)
                         .getStorageController()
-                        .clearDataForHost(cleanHost, StorageController.ClearFlags.ALL_CACHES | StorageController.ClearFlags.DOM_STORAGES);
+                        .clearDataFromHost(cleanHost, StorageController.ClearFlags.ALL_CACHES | StorageController.ClearFlags.DOM_STORAGES);
             }
         } catch (Exception e) {
             Log.w(TAG, "Error clearing site cache for host: " + host, e);

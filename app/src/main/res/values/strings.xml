@@ -224,4 +224,14 @@
     <string name="file_picker_search_hint">Search in current folder…</string>
     <string name="file_picker_grant_permission">Petal needs storage permission to browse files.</string>
     <string name="file_picker_grant_button">Grant Storage Access</string>
+
+    <!-- Widget Titles & Descriptions -->
+    <string name="widget_quick_search_name">Petal Search 1 (Compact Bar)</string>
+    <string name="widget_quick_search_desc">Compact search bar with AI and Voice shortcuts.</string>
+    <string name="widget_expressive_bar_name">Petal Search 8 (Expressive Island)</string>
+    <string name="widget_expressive_bar_desc">M3 Expressive search bar with scallop monogram badge and action island.</string>
+    <string name="widget_shortcuts_name">Petal Shortcuts &amp; Bookmarks</string>
+    <string name="widget_shortcuts_desc">Quick access grid for favorite shortcuts and bookmarks.</string>
+    <string name="widget_mode_switch_name">Petal Mode Switcher</string>
+    <string name="widget_mode_switch_desc">Quickly switch between Standard and Incognito browsing modes.</string>
 </resources>
