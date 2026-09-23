@@ -292,13 +292,10 @@ object PetalTabSwitcherBridge {
                             onNewTab(isIncognito)
                         },
                         onCloseAllTabs = {
-                            val count = tabItems.size
-                            PetalConfirmSheetBridge.showCloseAllTabsConfirmation(activity, count) {
-                                tabItems.clear()
-                                com.petal.browser.unit.TabThumbnailCache.clear()
-                                onCloseAllTabs()
-                                com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
-                            }
+                            tabItems.clear()
+                            com.petal.browser.unit.TabThumbnailCache.clear()
+                            onCloseAllTabs()
+                            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
                         },
                         onOpenSettings = {
                             (activity as? BrowserActivity)?.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.TABS)

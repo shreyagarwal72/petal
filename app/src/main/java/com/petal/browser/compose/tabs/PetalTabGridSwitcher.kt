@@ -95,22 +95,12 @@ enum class TabDisplayMode {
 }
 
 /**
- * Which set of tabs the top segmented pill switcher currently shows:
- * Regular, Groups, Incognito, or Recently Closed (Firefox parity).
+ * Which set of tabs the top segmented pill switcher currently shows: Regular, Groups, Incognito.
  */
 enum class TabCategory {
     REGULAR,
     GROUPS,
-    INCOGNITO,
-    RECENTLY_CLOSED
-}
-
-/** Sort order applied to the tab list. Persisted to SharedPreferences. */
-enum class TabSortOrder {
-    DEFAULT,        // Original open order (default)
-    LAST_USED,      // Most recently active first
-    ALPHABETICAL,   // A–Z by title
-    BY_DOMAIN       // Grouped by eTLD+1 domain
+    INCOGNITO
 }
 
 /**
@@ -160,12 +150,6 @@ fun PetalTabGridSwitcher(
         val savedMode = sp.getString("sp_tab_display_mode", "GRID") ?: "GRID"
         mutableStateOf(try { TabDisplayMode.valueOf(savedMode) } catch (e: Exception) { TabDisplayMode.GRID })
     }
-    // Tab sort order — persisted across sessions
-    var sortOrder by remember {
-        val saved = sp.getString("sp_tab_sort_order", "DEFAULT") ?: "DEFAULT"
-        mutableStateOf(try { TabSortOrder.valueOf(saved) } catch (_: Exception) { TabSortOrder.DEFAULT })
-    }
-    var isSortMenuExpanded by remember { mutableStateOf(false) }
     var isOverflowMenuExpanded by remember { mutableStateOf(false) }
     var contextMenuTabId by remember { mutableStateOf<String?>(null) }
     var selectionMode by remember { mutableStateOf(false) }
@@ -176,16 +160,11 @@ fun PetalTabGridSwitcher(
         }
     }
 
-    // Recently-closed tabs — loaded from the in-process manager on every composition
-    var recentlyClosedList by remember {
-        mutableStateOf(PetalRecentlyClosedManager.getRecentlyClosedTabs())
-    }
-    fun refreshRecentlyClosed() {
-        recentlyClosedList = PetalRecentlyClosedManager.getRecentlyClosedTabs()
-    }
-
     // State for the "Add selected tabs to group" dialog
     var showAddToGroupDialog by remember { mutableStateOf(false) }
+
+    // State for in-Compose close-all-tabs confirmation dialog
+    var showCloseAllConfirmDialog by remember { mutableStateOf(false) }
 
     fun persistPinnedTabs() {
         sp.edit().putStringSet("sp_pinned_tab_ids", pinnedTabIds.toSet()).apply()
@@ -328,42 +307,22 @@ fun PetalTabGridSwitcher(
     val regularTabCount = tabs.count { !it.isIncognito }
     val incognitoTabCount = tabs.count { it.isIncognito }
     val groupsCount = tabGroups.size
-    val recentlyClosedCount = recentlyClosedList.size
 
     // Category tabs & filtering
     val categoryTabs = when (selectedCategory) {
         TabCategory.REGULAR -> tabs.filter { !it.isIncognito }
         TabCategory.INCOGNITO -> tabs.filter { it.isIncognito }
         TabCategory.GROUPS -> tabs.filter { !it.isIncognito }
-        TabCategory.RECENTLY_CLOSED -> emptyList() // handled separately via recentlyClosedList
     }
     val visibleTabs = categoryTabs.filter { it.id !in pendingRemovalIds }
-
-    // Apply sort order on top of pin-priority then the chosen sort key
-    val sortedVisibleTabs = when (sortOrder) {
-        TabSortOrder.DEFAULT -> visibleTabs.sortedWith(compareByDescending { pinnedTabIds.contains(it.id) })
-        TabSortOrder.ALPHABETICAL -> visibleTabs.sortedWith(
-            compareByDescending<PetalTabItem> { pinnedTabIds.contains(it.id) }
-                .thenBy { it.title.lowercase().ifBlank { it.url.lowercase() } }
-        )
-        TabSortOrder.BY_DOMAIN -> visibleTabs.sortedWith(
-            compareByDescending<PetalTabItem> { pinnedTabIds.contains(it.id) }
-                .thenBy { com.petal.browser.unit.HelperUnit.domain(it.url).lowercase() }
-        )
-        TabSortOrder.LAST_USED -> visibleTabs.sortedWith(
-            // Active tab first, then pinned, then default order (GeckoView doesn't expose last-used
-            // time natively, so we use the "isSelected" flag as a proxy for most-recently-used).
-            compareByDescending<PetalTabItem> { it.isSelected }
-                .thenByDescending { pinnedTabIds.contains(it.id) }
-        )
-    }
-
-    val filteredTabs = sortedVisibleTabs.filter { tab ->
-        searchQuery.isBlank() ||
-            tab.title.contains(searchQuery, ignoreCase = true) ||
-            tab.url.contains(searchQuery, ignoreCase = true) ||
-            tab.groupTitle?.contains(searchQuery, ignoreCase = true) == true
-    }
+    val filteredTabs = visibleTabs
+        .sortedWith(compareByDescending { pinnedTabIds.contains(it.id) })
+        .filter { tab ->
+            searchQuery.isBlank() ||
+                tab.title.contains(searchQuery, ignoreCase = true) ||
+                tab.url.contains(searchQuery, ignoreCase = true) ||
+                tab.groupTitle?.contains(searchQuery, ignoreCase = true) == true
+        }
 
     val filteredGroups = tabGroups.filter { group ->
         if (searchQuery.isBlank()) true
@@ -374,13 +333,6 @@ fun PetalTabGridSwitcher(
                     t != null && (t.title.contains(searchQuery, ignoreCase = true) || t.url.contains(searchQuery, ignoreCase = true))
                 }
         }
-    }
-
-    // Filtered recently-closed list
-    val filteredRecentlyClosed = recentlyClosedList.filter { rec ->
-        searchQuery.isBlank() ||
-            rec.title.contains(searchQuery, ignoreCase = true) ||
-            rec.url.contains(searchQuery, ignoreCase = true)
     }
 
 
@@ -429,13 +381,11 @@ fun PetalTabGridSwitcher(
                     title = if (selectionMode) "${selectedTabIds.size} selected" else when (selectedCategory) {
                         TabCategory.INCOGNITO -> "Incognito Tabs"
                         TabCategory.GROUPS -> "Tab Groups"
-                        TabCategory.RECENTLY_CLOSED -> "Recently Closed"
                         TabCategory.REGULAR -> "Tab Manager"
                     },
                     subtitle = if (selectionMode) "Choose an action for selected tabs" else when (selectedCategory) {
                         TabCategory.INCOGNITO -> "$incognitoTabCount private tabs open"
                         TabCategory.GROUPS -> if (groupsCount == 1) "1 active group" else "$groupsCount active groups"
-                        TabCategory.RECENTLY_CLOSED -> if (recentlyClosedCount == 1) "1 closed tab" else "$recentlyClosedCount closed tabs"
                         TabCategory.REGULAR -> "$regularTabCount active tabs open"
                     },
                     enableLiquidGlass = true,
@@ -468,17 +418,15 @@ fun PetalTabGridSwitcher(
                             )
                         }
 
-                        if (selectedCategory != TabCategory.RECENTLY_CLOSED) {
-                            HeaderActionIcon(
-                                icon = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
-                                contentDescription = "Toggle layout",
-                                onClick = {
-                                    val nextMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
-                                    displayMode = nextMode
-                                    sp.edit().putString("sp_tab_display_mode", nextMode.name).apply()
-                                }
-                            )
-                        }
+                        HeaderActionIcon(
+                            icon = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
+                            contentDescription = "Toggle layout",
+                            onClick = {
+                                val nextMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
+                                displayMode = nextMode
+                                sp.edit().putString("sp_tab_display_mode", nextMode.name).apply()
+                            }
+                        )
 
                         Box {
                             HeaderActionIcon(
@@ -512,60 +460,6 @@ fun PetalTabGridSwitcher(
                                     }
                                 )
                                 HorizontalDivider()
-                                // Sort Tabs submenu (Firefox parity)
-                                Box {
-                                    PetalExpressiveMenuItem(
-                                        text = "Sort Tabs",
-                                        leadingIcon = { Icon(Icons.Rounded.Sort, contentDescription = null, tint = accentColor) },
-                                        trailingIcon = { Icon(Icons.Rounded.ChevronRight, null, modifier = Modifier.size(16.dp)) },
-                                        onClick = { isSortMenuExpanded = true }
-                                    )
-                                    PetalExpressiveDropdownMenu(
-                                        expanded = isSortMenuExpanded,
-                                        onDismissRequest = { isSortMenuExpanded = false }
-                                    ) {
-                                        listOf(
-                                            Triple(TabSortOrder.DEFAULT, Icons.Rounded.Reorder, "Default order"),
-                                            Triple(TabSortOrder.LAST_USED, Icons.Rounded.History, "Last used"),
-                                            Triple(TabSortOrder.ALPHABETICAL, Icons.Rounded.SortByAlpha, "A to Z"),
-                                            Triple(TabSortOrder.BY_DOMAIN, Icons.Rounded.Language, "By domain")
-                                        ).forEach { (order, icon, label) ->
-                                            PetalExpressiveMenuItem(
-                                                text = label,
-                                                leadingIcon = {
-                                                    Icon(icon, null,
-                                                        tint = if (sortOrder == order) accentColor else MaterialTheme.colorScheme.onSurfaceVariant)
-                                                },
-                                                trailingIcon = if (sortOrder == order) ({
-                                                    Icon(Icons.Rounded.Check, null, tint = accentColor, modifier = Modifier.size(16.dp))
-                                                }) else null,
-                                                onClick = {
-                                                    sortOrder = order
-                                                    sp.edit().putString("sp_tab_sort_order", order.name).apply()
-                                                    isSortMenuExpanded = false
-                                                    isOverflowMenuExpanded = false
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                                PetalExpressiveMenuItem(
-                                    text = "Recently Closed",
-                                    leadingIcon = { Icon(Icons.Rounded.Restore, contentDescription = null, tint = accentColor) },
-                                    trailingIcon = if (recentlyClosedCount > 0) ({
-                                        Surface(shape = CircleShape, color = accentColor.copy(alpha = 0.15f), modifier = Modifier.size(22.dp)) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Text(recentlyClosedCount.coerceAtMost(99).toString(), style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = accentColor)
-                                            }
-                                        }
-                                    }) else null,
-                                    onClick = {
-                                        isOverflowMenuExpanded = false
-                                        refreshRecentlyClosed()
-                                        selectedCategory = TabCategory.RECENTLY_CLOSED
-                                    }
-                                )
-                                HorizontalDivider()
                                 PetalExpressiveMenuItem(
                                     text = "Tab Manager Settings",
                                     leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
@@ -580,8 +474,13 @@ fun PetalTabGridSwitcher(
                                     leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
-                                        commitPendingRemovals()
-                                        onCloseAllTabs()
+                                        val needConfirm = sp.getBoolean("sp_close_tab_confirm", false) || sp.getBoolean("sp_close_browser_confirm", false)
+                                        if (needConfirm) {
+                                            showCloseAllConfirmDialog = true
+                                        } else {
+                                            commitPendingRemovals()
+                                            onCloseAllTabs()
+                                        }
                                     }
                                 )
                             }
@@ -589,27 +488,23 @@ fun PetalTabGridSwitcher(
                     }
                 )
 
-                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)) {
-                    // ── 4-Segment Switcher: Regular | Groups | Incognito | Recently Closed ──
+                 Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)) {
+                    // ── 3-Segment Switcher: Regular | Groups | Incognito ──
                     TabCategorySwitcher(
                         selected = selectedCategory,
                         accentColor = accentColor,
-                        onSelect = { selectedCategory = it; if (it == TabCategory.RECENTLY_CLOSED) refreshRecentlyClosed() }
+                        onSelect = { selectedCategory = it }
                     )
 
                     Spacer(Modifier.height(10.dp))
 
-                    // ── Real-time tab & group & recently-closed search ─────────────
+                    // ── Real-time tab & group search ─────────────
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         placeholder = {
                             Text(
-                                when (selectedCategory) {
-                                    TabCategory.GROUPS -> "Search tab groups..."
-                                    TabCategory.RECENTLY_CLOSED -> "Search closed tabs..."
-                                    else -> "Search open tabs..."
-                                },
+                                if (selectedCategory == TabCategory.GROUPS) "Search tab groups..." else "Search open tabs...",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
@@ -726,176 +621,7 @@ fun PetalTabGridSwitcher(
                         )
                 ) {
                     when {
-                        // ── Recently Closed Panel (Firefox parity) ─────────────────
-                        selectedCategory == TabCategory.RECENTLY_CLOSED -> {
-                            if (recentlyClosedList.isEmpty()) {
-                                TabManagerEmptyState(
-                                    accentColor = accentColor,
-                                    textColor = textColor,
-                                    isIncognito = false,
-                                    title = "No recently closed tabs",
-                                    subtitle = "Tabs you close will appear here so you can restore them",
-                                    onNewTab = null
-                                )
-                            } else {
-                                Column(modifier = Modifier.fillMaxSize()) {
-                                    // Restore All / Clear All actions bar
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        OutlinedButton(
-                                            onClick = {
-                                                val all = recentlyClosedList.toList()
-                                                all.forEach { rec ->
-                                                    PetalRecentlyClosedManager.removeClosedTab(rec.id)
-                                                    onRestoreTab?.invoke(
-                                                        PetalTabItem(id = rec.id, title = rec.title, url = rec.url,
-                                                            isIncognito = rec.isIncognito, groupId = rec.groupId,
-                                                            groupTitle = rec.groupTitle, groupColorHex = rec.groupColorHex)
-                                                    )
-                                                }
-                                                refreshRecentlyClosed()
-                                            },
-                                            shape = RoundedCornerShape(20.dp),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(Icons.Rounded.RestoreFromTrash, null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(6.dp))
-                                            Text("Restore All", style = MaterialTheme.typography.labelLarge)
-                                        }
-                                        OutlinedButton(
-                                            onClick = {
-                                                PetalRecentlyClosedManager.clear()
-                                                refreshRecentlyClosed()
-                                            },
-                                            shape = RoundedCornerShape(20.dp),
-                                            colors = ButtonDefaults.outlinedButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error
-                                            ),
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(Icons.Rounded.DeleteSweep, null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(6.dp))
-                                            Text("Clear All", style = MaterialTheme.typography.labelLarge)
-                                        }
-                                    }
-                                    LazyColumn(
-                                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        modifier = Modifier.fillMaxSize()
-                                    ) {
-                                        items(filteredRecentlyClosed, key = { it.id }) { rec ->
-                                            val timeAgo = remember(rec.closedTimestamp) {
-                                                val diff = System.currentTimeMillis() - rec.closedTimestamp
-                                                when {
-                                                    diff < 60_000L -> "Just now"
-                                                    diff < 3_600_000L -> "${diff / 60_000L}m ago"
-                                                    diff < 86_400_000L -> "${diff / 3_600_000L}h ago"
-                                                    else -> "${diff / 86_400_000L}d ago"
-                                                }
-                                            }
-                                            Surface(
-                                                shape = RoundedCornerShape(16.dp),
-                                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .entrance()
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                                ) {
-                                                    // Favicon placeholder circle
-                                                    Surface(
-                                                        shape = CircleShape,
-                                                        color = accentColor.copy(alpha = 0.15f),
-                                                        modifier = Modifier.size(36.dp)
-                                                    ) {
-                                                        Box(contentAlignment = Alignment.Center) {
-                                                            Text(
-                                                                rec.title.take(1).uppercase().ifBlank { "?" },
-                                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                                color = accentColor
-                                                            )
-                                                        }
-                                                    }
-                                                    Column(modifier = Modifier.weight(1f)) {
-                                                        Text(
-                                                            text = rec.title.ifBlank { rec.url },
-                                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                                            maxLines = 1,
-                                                            overflow = TextOverflow.Ellipsis
-                                                        )
-                                                        Row(
-                                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                            verticalAlignment = Alignment.CenterVertically
-                                                        ) {
-                                                            Text(
-                                                                text = rec.url,
-                                                                style = MaterialTheme.typography.bodySmall,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                maxLines = 1,
-                                                                overflow = TextOverflow.Ellipsis,
-                                                                modifier = Modifier.weight(1f, fill = false)
-                                                            )
-                                                            Text(
-                                                                text = "· $timeAgo",
-                                                                style = MaterialTheme.typography.bodySmall,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                                            )
-                                                        }
-                                                        rec.groupTitle?.let { grpTitle ->
-                                                            val grpColor = rec.groupColorHex?.let {
-                                                                try { Color(android.graphics.Color.parseColor(it)) } catch (_: Exception) { accentColor }
-                                                            } ?: accentColor
-                                                            Spacer(Modifier.height(2.dp))
-                                                            ExpressiveTabGroupPill(groupName = grpTitle, containerColor = grpColor, contentColor = Color.White)
-                                                        }
-                                                    }
-                                                    // Action buttons
-                                                    Column(
-                                                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                                                        horizontalAlignment = Alignment.CenterHorizontally
-                                                    ) {
-                                                        IconButton(
-                                                            onClick = {
-                                                                PetalRecentlyClosedManager.removeClosedTab(rec.id)
-                                                                onRestoreTab?.invoke(
-                                                                    PetalTabItem(id = rec.id, title = rec.title, url = rec.url,
-                                                                        isIncognito = rec.isIncognito, groupId = rec.groupId,
-                                                                        groupTitle = rec.groupTitle, groupColorHex = rec.groupColorHex)
-                                                                )
-                                                                refreshRecentlyClosed()
-                                                            },
-                                                            modifier = Modifier.size(36.dp)
-                                                        ) {
-                                                            Icon(Icons.Rounded.Add, "Restore tab", tint = accentColor, modifier = Modifier.size(18.dp))
-                                                        }
-                                                        IconButton(
-                                                            onClick = {
-                                                                PetalRecentlyClosedManager.removeClosedTab(rec.id)
-                                                                refreshRecentlyClosed()
-                                                            },
-                                                            modifier = Modifier.size(36.dp)
-                                                        ) {
-                                                            Icon(Icons.Rounded.Close, "Remove from history", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+
 
                         // ── Tab Groups Screen Category ──────────────────────────────
                         selectedCategory == TabCategory.GROUPS -> {
@@ -1546,6 +1272,32 @@ fun PetalTabGridSwitcher(
             }
         }
     }
+
+    // Modal dialog for Close All Tabs confirmation
+    if (showCloseAllConfirmDialog) {
+        PetalExpressiveDialog(
+            onDismissRequest = { showCloseAllConfirmDialog = false },
+            modifier = Modifier.fillMaxWidth(0.92f),
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            PetalConfirmSheetContent(
+                icon = Icons.Rounded.LayersClear,
+                title = "Close All Tabs?",
+                message = "Are you sure you want to close all ${tabs.size} active tabs?",
+                confirmText = "Close All",
+                cancelText = "Cancel",
+                isDestructive = true,
+                onConfirm = {
+                    showCloseAllConfirmDialog = false
+                    commitPendingRemovals()
+                    onCloseAllTabs()
+                },
+                onCancel = {
+                    showCloseAllConfirmDialog = false
+                }
+            )
+        }
+    }
 }
 
 /** Top segmented pill switcher: Regular vs Groups vs Incognito, full-width. */
@@ -1586,14 +1338,6 @@ private fun TabCategorySwitcher(
                 selected = selected == TabCategory.INCOGNITO,
                 accentColor = accentColor,
                 onClick = { onSelect(TabCategory.INCOGNITO) },
-                modifier = Modifier.weight(1f)
-            )
-            TabCategoryPill(
-                label = "Closed",
-                icon = Icons.Rounded.Restore,
-                selected = selected == TabCategory.RECENTLY_CLOSED,
-                accentColor = accentColor,
-                onClick = { onSelect(TabCategory.RECENTLY_CLOSED) },
                 modifier = Modifier.weight(1f)
             )
         }
