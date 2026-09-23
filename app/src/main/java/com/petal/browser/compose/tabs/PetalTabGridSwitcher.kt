@@ -50,7 +50,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -235,6 +237,65 @@ fun PetalTabGridSwitcher(
 
     val gridState = rememberLazyGridState()
     val listState = rememberLazyListState()
+
+    // ── Long scroll up / pull-down reveal for Closed Tabs Vault ──
+    var pullToRevealLockOffset by remember { mutableFloatStateOf(0f) }
+    var isVaultVisible by remember { mutableStateOf(false) }
+    val maxRevealThreshold = 180f // dp in pixels equivalent approximately
+
+    val vaultNestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // If pulled down and now user is scrolling back up, consume and reduce offset
+                if (pullToRevealLockOffset > 0f && available.y < 0) {
+                    val consumed = available.y
+                    pullToRevealLockOffset = (pullToRevealLockOffset + consumed).coerceAtLeast(0f)
+                    return Offset(0f, consumed)
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                // Check if grid/list is at top
+                val isAtTop = if (displayMode == TabDisplayMode.GRID) {
+                    gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
+                } else {
+                    listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+                }
+
+                if (isAtTop && available.y > 0) {
+                    // Pulling down while at the top
+                    val newOffset = (pullToRevealLockOffset + available.y * 0.55f).coerceAtMost(320f)
+                    if (newOffset > 190f && pullToRevealLockOffset <= 190f) {
+                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playHeavyClick(context)
+                    }
+                    pullToRevealLockOffset = newOffset
+                    return Offset(0f, available.y)
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity): androidx.compose.ui.unit.Velocity {
+                if (pullToRevealLockOffset >= 180f) {
+                    pullToRevealLockOffset = 0f
+                    isVaultVisible = true
+                } else {
+                    pullToRevealLockOffset = 0f
+                }
+                return super.onPostFling(consumed, available)
+            }
+        }
+    }
+
+    val animatedLockPullOffset by animateFloatAsState(
+        targetValue = pullToRevealLockOffset,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "lockPullOffset"
+    )
 
     val effectiveOnBack: () -> Unit = remember(onBack, context) {
         onBack ?: {
@@ -613,6 +674,7 @@ fun PetalTabGridSwitcher(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = 4.dp)
+                        .nestedScroll(vaultNestedScrollConnection)
                         .animateContentSize(
                             animationSpec = spring(
                                 dampingRatio = Spring.DampingRatioNoBouncy,
@@ -620,6 +682,55 @@ fun PetalTabGridSwitcher(
                             )
                         )
                 ) {
+                    // ── Animated Material 3 Expressive Lock Reveal Indicator on Long Pull-Down ──
+                    if (animatedLockPullOffset > 10f) {
+                        val lockAlpha = (animatedLockPullOffset / 160f).coerceIn(0f, 1f)
+                        val lockScale = (animatedLockPullOffset / 180f).coerceIn(0.5f, 1.25f)
+                        val isThresholdReached = animatedLockPullOffset >= 180f
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = (animatedLockPullOffset * 0.4f).dp)
+                                .align(Alignment.TopCenter),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(24.dp),
+                                color = if (isThresholdReached) accentColor else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                border = BorderStroke(
+                                    1.5.dp,
+                                    if (isThresholdReached) accentColor else MaterialTheme.colorScheme.outlineVariant
+                                ),
+                                shadowElevation = (animatedLockPullOffset * 0.05f).dp,
+                                modifier = Modifier
+                                    .graphicsLayer {
+                                        alpha = lockAlpha
+                                        scaleX = lockScale
+                                        scaleY = lockScale
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isThresholdReached) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
+                                        contentDescription = "Closed Tabs Vault Lock",
+                                        tint = if (isThresholdReached) MaterialTheme.colorScheme.onPrimary else accentColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = if (isThresholdReached) "Release to open Vault" else "Pull to reveal Vault",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = if (isThresholdReached) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     when {
 
 
@@ -1295,6 +1406,33 @@ fun PetalTabGridSwitcher(
                 onCancel = {
                     showCloseAllConfirmDialog = false
                 }
+            )
+        }
+    }
+
+    // Fullscreen / Modal Vault Sheet for Recently Closed Tabs
+    if (isVaultVisible) {
+        Dialog(
+            onDismissRequest = { isVaultVisible = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            PetalRecentlyClosedVault(
+                onDismiss = { isVaultVisible = false },
+                onRestoreTab = { rec ->
+                    isVaultVisible = false
+                    onRestoreTab?.invoke(
+                        PetalTabItem(
+                            id = rec.id,
+                            title = rec.title,
+                            url = rec.url,
+                            isIncognito = rec.isIncognito,
+                            groupId = rec.groupId,
+                            groupTitle = rec.groupTitle,
+                            groupColorHex = rec.groupColorHex
+                        )
+                    )
+                },
+                accentColor = accentColor
             )
         }
     }

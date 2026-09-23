@@ -1,10 +1,18 @@
 package com.petal.browser.unit
 
+import android.content.Context
+import androidx.preference.PreferenceManager
 import com.petal.browser.compose.tabs.PetalTabItem
+import org.json.JSONArray
+import org.json.JSONObject
+import java.security.MessageDigest
 
 /**
- * Manages recently closed tabs for instant restoration ("Undo Close")
- * and historical recently closed tab browsing.
+ * Manages recently closed tabs with:
+ * - Configurable expiration/retention policy (1 day, 7 days, 14 days, 30 days, or never).
+ * - Persistent storage across sessions via SharedPreferences JSON.
+ * - Material 3 Expressive vault security: Password/PIN hash, Biometric preference, and auto-lock state.
+ * - ZERO thumbnail storage: All previews are explicitly wiped from memory and disk when tabs are closed.
  */
 data class ClosedTabRecord(
     val id: String,
@@ -19,8 +27,91 @@ data class ClosedTabRecord(
 )
 
 object PetalRecentlyClosedManager {
-    private const val MAX_RECENTLY_CLOSED = 30
+
+    private const val PREFS_KEY_RECORDS = "sp_recently_closed_records_json"
+    const val PREF_RETENTION_DAYS = "sp_recently_closed_retention_days" // "1", "7", "14", "30", "never"
+    const val PREF_LOCK_TYPE = "sp_recently_closed_lock_type" // "none", "biometric", "password"
+    const val PREF_PASSWORD_HASH = "sp_recently_closed_pwd_hash"
+
+    private const val MAX_RECENTLY_CLOSED = 60
     private val closedTabs = mutableListOf<ClosedTabRecord>()
+    private var isInitialized = false
+
+    @Synchronized
+    fun init(context: Context) {
+        if (isInitialized) return
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val json = sp.getString(PREFS_KEY_RECORDS, null)
+        if (!json.isNullOrBlank()) {
+            try {
+                val array = JSONArray(json)
+                closedTabs.clear()
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    closedTabs.add(
+                        ClosedTabRecord(
+                            id = obj.optString("id"),
+                            title = obj.optString("title"),
+                            url = obj.optString("url"),
+                            originalIndex = obj.optInt("originalIndex", -1),
+                            isIncognito = obj.optBoolean("isIncognito", false),
+                            groupId = obj.optString("groupId").takeIf { it.isNotEmpty() },
+                            groupTitle = obj.optString("groupTitle").takeIf { it.isNotEmpty() },
+                            groupColorHex = obj.optString("groupColorHex").takeIf { it.isNotEmpty() },
+                            closedTimestamp = obj.optLong("closedTimestamp", System.currentTimeMillis())
+                        )
+                    )
+                }
+            } catch (_: Exception) {}
+        }
+        pruneExpiredTabs(context)
+        isInitialized = true
+    }
+
+    private fun persist(context: Context?) {
+        val ctx = context ?: try {
+            com.petal.browser.PetalApplication.getInstance()
+        } catch (_: Exception) { null } ?: return
+
+        try {
+            val array = JSONArray()
+            closedTabs.forEach { rec ->
+                val obj = JSONObject().apply {
+                    put("id", rec.id)
+                    put("title", rec.title)
+                    put("url", rec.url)
+                    put("originalIndex", rec.originalIndex)
+                    put("isIncognito", rec.isIncognito)
+                    rec.groupId?.let { put("groupId", it) }
+                    rec.groupTitle?.let { put("groupTitle", it) }
+                    rec.groupColorHex?.let { put("groupColorHex", it) }
+                    put("closedTimestamp", rec.closedTimestamp)
+                }
+                array.put(obj)
+            }
+            PreferenceManager.getDefaultSharedPreferences(ctx)
+                .edit()
+                .putString(PREFS_KEY_RECORDS, array.toString())
+                .apply()
+        } catch (_: Exception) {}
+    }
+
+    /**
+     * Enforces the retention policy: removes records older than the configured threshold.
+     */
+    @Synchronized
+    fun pruneExpiredTabs(context: Context) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val retentionDays = sp.getString(PREF_RETENTION_DAYS, "7") ?: "7"
+        if (retentionDays == "never") return
+
+        val days = retentionDays.toLongOrNull() ?: 7L
+        val cutoffTime = System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L)
+        val removed = closedTabs.removeAll { it.closedTimestamp < cutoffTime }
+        if (removed) {
+            persist(context)
+        }
+    }
 
     @JvmStatic
     @JvmOverloads
@@ -35,12 +126,17 @@ object PetalRecentlyClosedManager {
         groupTitle: String? = null,
         groupColorHex: String? = null
     ) {
-        // Do not store incognito tabs in recently closed history for privacy
+        // Strict privacy: Do not store incognito tabs in recently closed history
         if (isIncognito) return
 
         val cleanUrl = url?.trim() ?: ""
-        if (cleanUrl.isEmpty() || cleanUrl.equals("about:blank", ignoreCase = true)) {
+        if (cleanUrl.isEmpty() || cleanUrl.equals("about:blank", ignoreCase = true) || cleanUrl.equals("petal://home", ignoreCase = true)) {
             return
+        }
+
+        // Wipe thumbnail cache immediately and completely
+        if (!id.isNullOrBlank()) {
+            TabThumbnailCache.remove(id)
         }
 
         // Avoid exact duplicate at the top
@@ -48,8 +144,8 @@ object PetalRecentlyClosedManager {
             closedTabs.removeAt(0)
         }
 
-        val safeId = if (id.isNullOrBlank()) "tab_${System.currentTimeMillis()}" else id
-        val safeTitle = if (title.isNullOrBlank() || title == "Petal Home") cleanUrl else title
+        val safeId = if (id.isNullOrBlank()) "closed_${System.currentTimeMillis()}" else id
+        val safeTitle = if (title.isNullOrBlank() || title == "Petal Home" || title == "Petal Start") cleanUrl else title
 
         val record = ClosedTabRecord(
             id = safeId,
@@ -67,6 +163,7 @@ object PetalRecentlyClosedManager {
         if (closedTabs.size > MAX_RECENTLY_CLOSED) {
             closedTabs.removeAt(closedTabs.size - 1)
         }
+        persist(null)
     }
 
     @JvmStatic
@@ -88,7 +185,9 @@ object PetalRecentlyClosedManager {
     @JvmStatic
     @Synchronized
     fun popLastClosedTab(): ClosedTabRecord? {
-        return if (closedTabs.isNotEmpty()) closedTabs.removeAt(0) else null
+        val rec = if (closedTabs.isNotEmpty()) closedTabs.removeAt(0) else null
+        if (rec != null) persist(null)
+        return rec
     }
 
     @JvmStatic
@@ -101,7 +200,9 @@ object PetalRecentlyClosedManager {
     @Synchronized
     fun removeClosedTab(id: String): ClosedTabRecord? {
         val index = closedTabs.indexOfFirst { it.id == id }
-        return if (index >= 0) closedTabs.removeAt(index) else null
+        val rec = if (index >= 0) closedTabs.removeAt(index) else null
+        if (rec != null) persist(null)
+        return rec
     }
 
     @JvmStatic
@@ -114,5 +215,47 @@ object PetalRecentlyClosedManager {
     @Synchronized
     fun clear() {
         closedTabs.clear()
+        persist(null)
+    }
+
+    // --- Vault Security & Passcode Helpers ---
+
+    fun getLockType(context: Context): String {
+        return PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(PREF_LOCK_TYPE, "none") ?: "none"
+    }
+
+    fun setLockType(context: Context, type: String) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .edit()
+            .putString(PREF_LOCK_TYPE, type)
+            .apply()
+    }
+
+    fun setPassword(context: Context, plainText: String) {
+        val hash = hashString(plainText)
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .edit()
+            .putString(PREF_PASSWORD_HASH, hash)
+            .putString(PREF_LOCK_TYPE, "password")
+            .apply()
+    }
+
+    fun verifyPassword(context: Context, plainText: String): Boolean {
+        val storedHash = PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(PREF_PASSWORD_HASH, "") ?: ""
+        if (storedHash.isBlank()) return true
+        return hashString(plainText) == storedHash
+    }
+
+    fun hasPasswordConfigured(context: Context): Boolean {
+        val stored = PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(PREF_PASSWORD_HASH, "")
+        return !stored.isNullOrBlank()
+    }
+
+    private fun hashString(input: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 }
