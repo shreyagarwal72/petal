@@ -790,16 +790,6 @@ data class AppCreditItem(
 
 val petalAppCredits = listOf(
     AppCreditItem(
-        title = "FOSS Browser",
-        developer = "scoute-dich",
-        role = "Core Browser Engine & Android Architecture",
-        description = "Fully open source, lightweight web browser built on Android WebKit with clean navigation controls.",
-        url = "https://github.com/scoute-dich/browser",
-        icon = Icons.Rounded.Public,
-        containerColor = Color(0xFF4285F4),
-        tags = listOf("Browser Base", "GPL-3.0", "Core Engine")
-    ),
-    AppCreditItem(
         title = "Zenith",
         developer = "1372Slash",
         role = "Material 3 Expressive Design & Digital Wellbeing",
@@ -818,16 +808,6 @@ val petalAppCredits = listOf(
         icon = Icons.Rounded.PlayArrow,
         containerColor = Color(0xFF00E5FF),
         tags = listOf("Lossless Audio", "Streaming", "Material 3")
-    ),
-    AppCreditItem(
-        title = "Aurora Store",
-        developer = "whyorean (Rahul Patel)",
-        role = "Material Design Patterns & Architecture",
-        description = "Privacy-respecting Google Play client demonstrating exquisite Material 3 design and robust app architecture.",
-        url = "https://github.com/whyorean/AuroraStore",
-        icon = Icons.Rounded.Android,
-        containerColor = Color(0xFF00C853),
-        tags = listOf("Material 3", "App Architecture", "Open Source")
     ),
     AppCreditItem(
         title = "RvSystem-Monitor",
@@ -1026,6 +1006,21 @@ fun PetalCreditsSheetContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredCredits = remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            petalAppCredits
+        } else {
+            val q = searchQuery.trim().lowercase()
+            petalAppCredits.filter {
+                it.title.lowercase().contains(q) ||
+                it.developer.lowercase().contains(q) ||
+                it.role.lowercase().contains(q) ||
+                it.tags.any { tag -> tag.lowercase().contains(q) }
+            }
+        }
+    }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
@@ -1037,7 +1032,9 @@ fun PetalCreditsSheetContent(
                 contentWindowInsets = WindowInsets(0, 0, 0, 0)
             ) { innerPadding ->
                 Box(
-                    modifier = modifier.fillMaxSize()
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
                 ) {
                     M3ExpressiveVariableBackground(pageSeed = "credits_page")
 
@@ -1046,7 +1043,7 @@ fun PetalCreditsSheetContent(
                     ) {
                         ExpressiveHeader(
                             title = "Open Source Credits",
-                            subtitle = "Standing on the Shoulders of Giants",
+                            subtitle = "Standing on the shoulders of giants",
                             onBack = onClose,
                             enableLiquidGlass = true
                         )
@@ -1055,17 +1052,16 @@ fun PetalCreditsSheetContent(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            // Intro Mission Card
+                            // Intro Attribution Card
                             Surface(
                                 shape = RoundedCornerShape(24.dp),
                                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                                 tonalElevation = 2.dp,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                                modifier = Modifier
-                                    .fillMaxWidth()
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(
                                     modifier = Modifier.padding(18.dp),
@@ -1096,40 +1092,85 @@ fun PetalCreditsSheetContent(
                                         )
                                     }
                                     Text(
-                                        text = "Petal Browser is built upon phenomenal open source projects, libraries, and design frameworks created by visionary developers across the globe. We gratefully acknowledge and credit their outstanding work.",
+                                        text = "Petal Browser is crafted upon open-source software, design systems, and libraries by passionate engineers worldwide. We honor and celebrate their contributions.",
                                         style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
 
-                            // Credit List Cards
-                            petalAppCredits.forEachIndexed { index, credit ->
-                                CreditCardItem(
-                                    credit = credit,
-                                    onClick = {
-                                        try {
-                                            val activity = context as? com.petal.browser.activity.BrowserActivity
-                                            if (activity != null) {
-                                                onClose()
-                                                val ctrl = activity.currentAlbumController
-                                                if (ctrl is com.petal.browser.view.PetalGeckoView) {
-                                                    ctrl.loadUrl(credit.url)
-                                                    activity.showAlbum(ctrl, credit.url)
-                                                } else if (activity.ninjaWebView != null) {
-                                                    activity.ninjaWebView.loadUrl(credit.url)
-                                                    activity.showAlbum(activity.currentAlbumController, credit.url)
-                                                } else {
-                                                    activity.addAlbum(null, credit.url, true)
-                                                }
-                                            } else {
-                                                BrowserUnit.intentURL(context, Uri.parse(credit.url))
-                                            }
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
+                            // Search / Filter Input
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = { Text("Search contributors or technologies...") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Rounded.Search,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(Icons.Rounded.Close, contentDescription = "Clear search")
                                         }
                                     }
-                                )
+                                },
+                                singleLine = true,
+                                shape = RoundedCornerShape(20.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            // Credit List Items
+                            if (filteredCredits.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No matching credits found",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            } else {
+                                filteredCredits.forEach { credit ->
+                                    CreditCardItem(
+                                        credit = credit,
+                                        onClick = {
+                                            try {
+                                                val activity = context as? com.petal.browser.activity.BrowserActivity
+                                                if (activity != null) {
+                                                    onClose()
+                                                    val ctrl = activity.currentAlbumController
+                                                    if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                                                        ctrl.loadUrl(credit.url)
+                                                        activity.showAlbum(ctrl, credit.url)
+                                                    } else if (activity.ninjaWebView != null) {
+                                                        activity.ninjaWebView.loadUrl(credit.url)
+                                                        activity.showAlbum(activity.currentAlbumController, credit.url)
+                                                    } else {
+                                                        activity.addAlbum(null, credit.url, true)
+                                                    }
+                                                } else {
+                                                    BrowserUnit.intentURL(context, Uri.parse(credit.url))
+                                                }
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                            }
+                                        }
+                                    )
+                                }
                             }
 
                             // Footer
@@ -1140,9 +1181,10 @@ fun PetalCreditsSheetContent(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "All trademarks and open-source licenses belong to their respective owners.",
+                                    text = "All project names, trademarks, and open-source licenses belong to their respective copyright holders.",
                                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
