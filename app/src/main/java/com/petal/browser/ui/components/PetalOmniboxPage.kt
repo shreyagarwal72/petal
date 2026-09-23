@@ -356,17 +356,7 @@ fun PetalOmniboxPage(
             if (liveSuggestionsEnabled) {
                 delay(200)
                 val searchEngine = sp.getString("sp_search_engine", "0")
-                val fetch: ((String, SearchSuggestionsManager.SuggestionCallback) -> Unit)? = when (searchEngine) {
-                    "0" -> SearchSuggestionsManager::fetchSuggestions
-                    "1" -> SearchSuggestionsManager::fetchDuckDuckGoSuggestions
-                    "4" -> SearchSuggestionsManager::fetchBingSuggestions
-                    else -> null
-                }
-                if (fetch == null) {
-                    suggestions = historyMatches + listOf(OmniboxSuggestion(currentText, isHistory = false))
-                    return@LaunchedEffect
-                }
-                fetch(currentText) { engineResults ->
+                SearchSuggestionsManager.fetchSuggestionsForEngine(searchEngine, currentText) { engineResults ->
                     val combined = mutableListOf<OmniboxSuggestion>()
                     combined.addAll(historyMatches)
                     engineResults.forEach { res ->

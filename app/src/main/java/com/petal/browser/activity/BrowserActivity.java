@@ -3720,23 +3720,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     boolean enableLiveSuggestions = true;
                     if (hasText && adapterSearch != null && enableLiveSuggestions) {
                         String searchEngine = sp.getString("sp_search_engine", "0");
-                        if ("1".equals(searchEngine)) { // DuckDuckGo
-                            com.petal.browser.unit.SearchSuggestionsManager.fetchDuckDuckGoSuggestions(liveText, suggestions -> {
-                                if (adapterSearch != null) adapterSearch.setLiveSuggestions(suggestions);
-                            });
-                        } else if ("4".equals(searchEngine)) { // Bing
-                            com.petal.browser.unit.SearchSuggestionsManager.fetchBingSuggestions(liveText, suggestions -> {
-                                if (adapterSearch != null) adapterSearch.setLiveSuggestions(suggestions);
-                            });
-                        } else if ("0".equals(searchEngine)) { // Google
-                            com.petal.browser.unit.SearchSuggestionsManager.fetchSuggestions(liveText, suggestions -> {
-                                if (adapterSearch != null) adapterSearch.setLiveSuggestions(suggestions);
-                            });
-                        } else if (adapterSearch != null) {
-                            // Startpage, Brave, SearXNG, Qwant, Ecosia and custom
-                            // engines do not use a mismatched Google suggestion endpoint.
-                            adapterSearch.setLiveSuggestions(null);
-                        }
+                        com.petal.browser.unit.SearchSuggestionsManager.fetchSuggestionsForEngine(searchEngine, liveText, suggestions -> {
+                            if (adapterSearch != null) adapterSearch.setLiveSuggestions(suggestions);
+                        });
                     } else if (adapterSearch != null) {
                         adapterSearch.setLiveSuggestions(null);
                     }

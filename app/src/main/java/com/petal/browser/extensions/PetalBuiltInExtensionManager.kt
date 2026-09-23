@@ -46,6 +46,12 @@ object PetalBuiltInExtensionManager {
             extensionId = "petal-translate@petalbrowser.app",
             label       = "Petal Translate",
             prefKey     = "petal_builtin_translate"
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/google_search_fixer/",
+            extensionId = "google-search-fixer@petalbrowser.app",
+            label       = "Google Search Fixer",
+            prefKey     = "petal_builtin_google_search_fixer"
         )
     )
 
