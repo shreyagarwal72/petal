@@ -624,6 +624,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             root.removeView(overlay);
                         }
                         com.petal.browser.extensions.PetalExtensionManager.dismissPopup();
+                        // Explicitly reactivate the current browser tab session
+                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                            try {
+                                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).activate();
+                            } catch (Throwable ignored) {}
+                        }
                         // Post focus restoration to ensure window focus queue is idle
                         root.post(() -> restoreBrowserInputFocus());
                     };
@@ -635,12 +641,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 return kotlin.Unit.INSTANCE;
                             }
                         );
-                    popupView.addOnAttachStateChangeListener(new android.view.View.OnAttachStateChangeListener() {
-                        @Override public void onViewAttachedToWindow(android.view.View view) {}
-                        @Override public void onViewDetachedFromWindow(android.view.View view) {
-                            cleanupPopup.run();
-                        }
-                    });
                     popupView.setTag("ext_popup_overlay");
                     android.view.ViewGroup rootDecor = (android.view.ViewGroup) getWindow().getDecorView();
                     // Remove any stale popup overlay first
@@ -654,6 +654,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT
                     );
                     rootDecor.addView(popupView, lp);
+                    popupView.requestFocus();
                 } catch (Exception e) {
                     android.util.Log.e("BrowserActivity", "Failed to show extension popup overlay", e);
                 }
