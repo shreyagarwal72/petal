@@ -245,7 +245,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public String mCameraPhotoPath = null;
     public com.petal.browser.media.PetalMediaSessionService mediaService;
     public boolean isMediaBound = false;
-    public com.petal.browser.ui.components.PetalFastScrubberBridge fastScrubberBridge = null;
     /**
      * True during the very first onResume() that immediately follows onCreate().
      * dispatchIntent() is called at the end of onCreate() (after all tabs are ready),
@@ -2366,13 +2365,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             springTranslateY(bottomNavContainer, 0f, androidx.dynamicanimation.animation.SpringForce.STIFFNESS_MEDIUM, androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY);
                         }
                     }
-
-                    @Override
-                    public void onScrollPositionChanged(int scrollY, int contentHeight) {
-                        if (fastScrubberBridge != null) {
-                            fastScrubberBridge.onScrollUpdate(scrollY, contentHeight);
-                        }
-                    }
                 });
             } else if (ninjaWebView != null) {
                 ninjaWebView.setBrowserController(this);
@@ -2532,31 +2524,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     () -> getActiveMediaBridge()
                 );
                 mediaCompose.bringToFront();
-            }
-
-            androidx.compose.ui.platform.ComposeView scrubberCompose = findViewById(R.id.fast_scrubber_compose);
-            if (scrubberCompose != null && fastScrubberBridge == null) {
-                fastScrubberBridge = new com.petal.browser.ui.components.PetalFastScrubberBridge(
-                    this,
-                    () -> {
-                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).scrollToTop();
-                        } else if (ninjaWebView != null) {
-                            ninjaWebView.pageUp(true);
-                        }
-                        return kotlin.Unit.INSTANCE;
-                    },
-                    () -> {
-                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).scrollToBottom();
-                        } else if (ninjaWebView != null) {
-                            ninjaWebView.pageDown(true);
-                        }
-                        return kotlin.Unit.INSTANCE;
-                    }
-                );
-                fastScrubberBridge.bind(scrubberCompose);
-                scrubberCompose.bringToFront();
             }
         } catch (Exception ignored) {}
         applyAddressBarPosition();
