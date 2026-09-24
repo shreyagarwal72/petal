@@ -60,6 +60,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -128,6 +129,23 @@ data class TextAnnotation(
 data class PageAnnotations(
     val strokes: MutableList<StrokePath> = mutableListOf(),
     val textNotes: MutableList<TextAnnotation> = mutableListOf()
+) {
+    /** Deep copy used for undo snapshots — the live lists must not be aliased. */
+    fun snapshot(): PageAnnotations = PageAnnotations(
+        strokes = strokes.toMutableList(),
+        textNotes = textNotes.toMutableList()
+    )
+}
+
+/**
+ * One undo step: which page it applies to, and that page's full annotation
+ * state *before* the edit that just happened. Snapshot-per-edit is simpler
+ * and less bug-prone than reversing individual stroke/text/clear ops, and
+ * it uniformly covers PEN, HIGHLIGHTER, TEXT, ERASER, and Clear-all.
+ */
+private data class AnnotationUndoStep(
+    val pageIndex: Int,
+    val previousState: PageAnnotations
 )
 
 // ─── Java-Callable Bridge Entry Point ────────────────────────────────────────
@@ -220,6 +238,71 @@ fun PetalPdfViewerScreen(
     var pendingNotePage by remember { mutableIntStateOf(0) }
     var isSavingPdf by remember { mutableStateOf(false) }
 
+    // Undo history for annotation edits (draw / text / erase / clear).
+    // Capped so a long editing session can't grow this unbounded.
+    val undoStack = remember { mutableStateListOf<AnnotationUndoStep>() }
+    val maxUndoSteps = 50
+    val canUndo by remember { derivedStateOf { undoStack.isNotEmpty() } }
+
+    // Call BEFORE mutating annotationsMap[pageIndex] to record what it looked like.
+    val recordUndoSnapshot: (Int) -> Unit = { pageIndex ->
+        val current = annotationsMap[pageIndex] ?: PageAnnotations()
+        undoStack.add(AnnotationUndoStep(pageIndex, current.snapshot()))
+        if (undoStack.size > maxUndoSteps) {
+            undoStack.removeAt(0)
+        }
+    }
+
+    val undoLastAnnotationEdit: () -> Unit = {
+        if (undoStack.isNotEmpty()) {
+            val step = undoStack.removeAt(undoStack.size - 1)
+            annotationsMap[step.pageIndex] = step.previousState
+        }
+    }
+
+    // ── Universal PDF text editing (real embedded text, via PDFBox) ──
+    // Separate mode from the draw/annotate mode above: this edits the
+    // document's actual text content, not an overlay drawn on top.
+    var isTextEditMode by remember { mutableStateOf(false) }
+    var textEditLines by remember { mutableStateOf<List<PdfTextLine>>(emptyList()) }
+    var isLoadingTextLines by remember { mutableStateOf(false) }
+    var selectedTextLine by remember { mutableStateOf<PdfTextLine?>(null) }
+    var isSavingTextEdit by remember { mutableStateOf(false) }
+    // Undo history for text edits: each entry is (the File as it was, page it
+    // touched) captured as a full file-byte snapshot before a replace — text
+    // edits rewrite the file on disk immediately (PDFBox needs a real File to
+    // operate on), so undo here means "restore the previous file bytes."
+    val textEditUndoStack = remember { mutableStateListOf<ByteArray>() }
+    val canUndoTextEdit by remember { derivedStateOf { textEditUndoStack.isNotEmpty() } }
+
+    // Resolves a real java.io.File PDFBox can read/write, copying content://
+    // sources into app-private storage first since PDFBox cannot operate on
+    // a ParcelFileDescriptor/content stream directly.
+    val resolveEditableFile: () -> File? = resolveEditableFile@{
+        return@resolveEditableFile try {
+            if (pdfUri.scheme == "file") {
+                File(pdfUri.path ?: pdfUri.toString().removePrefix("file://"))
+            } else {
+                val workDir = File(context.cacheDir, "pdf_text_edit").apply { mkdirs() }
+                val safeName = (pdfUri.lastPathSegment ?: "document.pdf").let {
+                    "${pdfUri.toString().hashCode()}_$it"
+                }
+                val workFile = File(workDir, safeName)
+                if (!workFile.exists()) {
+                    context.contentResolver.openInputStream(pdfUri)?.use { input ->
+                        workFile.outputStream().use { output -> input.copyTo(output) }
+                    }
+                }
+                workFile
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+    // Kept stable across recompositions for this screen instance.
+    val editableFile = remember { resolveEditableFile() }
+
     // Real system bar insets
     val statusBarInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding()
@@ -252,7 +335,7 @@ fun PetalPdfViewerScreen(
     // Auto-hide controls timer (disabled when editing or searching)
     val hideJob = remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     val scheduleHideControls: () -> Unit = {
-        if (!isEditMode && !showFindBar) {
+        if (!isEditMode && !isTextEditMode && !showFindBar) {
             hideJob.value?.cancel()
             hideJob.value = coroutineScope.launch {
                 delay(4500)
@@ -261,7 +344,7 @@ fun PetalPdfViewerScreen(
         }
     }
     val toggleControls: () -> Unit = {
-        if (!isEditMode && !showFindBar) {
+        if (!isEditMode && !isTextEditMode && !showFindBar) {
             controlsVisible = !controlsVisible
             if (controlsVisible) scheduleHideControls()
         }
@@ -269,14 +352,25 @@ fun PetalPdfViewerScreen(
 
     LaunchedEffect(Unit) { scheduleHideControls() }
 
-    // Load PDF safely from URI
-    DisposableEffect(pdfUri) {
+    // Bump this after a PDFBox text-edit save (or its undo) to force the
+    // PdfRenderer below to reopen the file, since PdfRenderer caches its
+    // ParcelFileDescriptor and has no way to detect on-disk changes itself.
+    var rendererReloadKey by remember { mutableIntStateOf(0) }
+
+    // Load PDF safely from URI. Prefers `editableFile` (the same File that
+    // PdfTextEditEngine reads/writes) when available, so text edits are
+    // visible immediately after a reload — falls back to resolving pdfUri
+    // directly only if editableFile couldn't be prepared.
+    DisposableEffect(pdfUri, rendererReloadKey) {
         isLoading = true
         loadError = null
         try {
-            val descriptor: ParcelFileDescriptor? = when (pdfUri.scheme) {
-                "content" -> context.contentResolver.openFileDescriptor(pdfUri, "r")
-                "file", null -> {
+            val descriptor: ParcelFileDescriptor? = when {
+                editableFile != null && editableFile.exists() -> {
+                    ParcelFileDescriptor.open(editableFile, ParcelFileDescriptor.MODE_READ_ONLY)
+                }
+                pdfUri.scheme == "content" -> context.contentResolver.openFileDescriptor(pdfUri, "r")
+                pdfUri.scheme == "file" || pdfUri.scheme == null -> {
                     val filePath = pdfUri.path ?: pdfUri.toString().removePrefix("file://")
                     val file = File(filePath)
                     if (file.exists()) {
@@ -414,6 +508,7 @@ fun PetalPdfViewerScreen(
             if (success) {
                 PetalToast.show(context, "PDF saved successfully!")
                 isEditMode = false
+                undoStack.clear()
             } else {
                 PetalToast.show(context, "Failed to save PDF modifications")
             }
@@ -421,8 +516,72 @@ fun PetalPdfViewerScreen(
         }
     }
 
+    // Load text lines for whichever page is currently visible, whenever
+    // text-edit mode is entered or the visible page changes while in it.
+    LaunchedEffect(isTextEditMode, currentVisiblePage.value) {
+        if (isTextEditMode && editableFile != null) {
+            isLoadingTextLines = true
+            selectedTextLine = null
+            val lines = withContext(Dispatchers.IO) {
+                PdfTextEditEngine.ensureInitialized(context)
+                PdfTextEditEngine.extractLinesForPage(editableFile, currentVisiblePage.value)
+            }
+            textEditLines = lines
+            isLoadingTextLines = false
+        }
+    }
+
+    val applyTextLineEdit: (PdfTextLine, String) -> Unit = { line, newText ->
+        if (editableFile != null && editableFile.exists()) {
+            coroutineScope.launch {
+                isSavingTextEdit = true
+                val previousBytes = withContext(Dispatchers.IO) {
+                    runCatching { editableFile.readBytes() }.getOrNull()
+                }
+                val success = withContext(Dispatchers.IO) {
+                    PdfTextEditEngine.replaceLineText(editableFile, line, newText)
+                }
+                if (success && previousBytes != null) {
+                    textEditUndoStack.add(previousBytes)
+                    if (textEditUndoStack.size > 20) textEditUndoStack.removeAt(0)
+                    // Re-extract so the on-screen line list reflects the new text.
+                    val refreshed = withContext(Dispatchers.IO) {
+                        PdfTextEditEngine.extractLinesForPage(editableFile, currentVisiblePage.value)
+                    }
+                    textEditLines = refreshed
+                    rendererReloadKey++
+                    PetalToast.show(context, "Text updated")
+                } else {
+                    PetalToast.show(context, "Failed to update text")
+                }
+                selectedTextLine = null
+                isSavingTextEdit = false
+            }
+        }
+    }
+
+    val undoLastTextEdit: () -> Unit = {
+        if (textEditUndoStack.isNotEmpty() && editableFile != null) {
+            val previousBytes = textEditUndoStack.removeAt(textEditUndoStack.size - 1)
+            runCatching { editableFile.writeBytes(previousBytes) }
+                .onSuccess {
+                    rendererReloadKey++
+                    coroutineScope.launch {
+                        val refreshed = withContext(Dispatchers.IO) {
+                            PdfTextEditEngine.extractLinesForPage(editableFile, currentVisiblePage.value)
+                        }
+                        textEditLines = refreshed
+                    }
+                }
+                .onFailure { it.printStackTrace() }
+        }
+    }
+
     androidx.activity.compose.BackHandler {
-        if (isEditMode) {
+        if (isTextEditMode) {
+            isTextEditMode = false
+            textEditUndoStack.clear()
+        } else if (isEditMode) {
             isEditMode = false
         } else if (showFindBar) {
             showFindBar = false
@@ -517,7 +676,7 @@ fun PetalPdfViewerScreen(
 
                 else -> {
                     // ── Multi-Page Lazy Column with Interactive Zoom & Pan ──
-                    val gestureModifier = if (!isEditMode) {
+                    val gestureModifier = if (!isEditMode && !isTextEditMode) {
                         Modifier
                             .fillMaxSize()
                             .pointerInput(pdfUri) {
@@ -601,6 +760,11 @@ fun PetalPdfViewerScreen(
                                         pendingNotePage = pageIndex
                                         showAddNoteDialog = true
                                     },
+                                    onBeforeMutate = { recordUndoSnapshot(pageIndex) },
+                                    bitmapRefreshKey = rendererReloadKey,
+                                    isTextEditMode = isTextEditMode,
+                                    textLines = if (isTextEditMode && pageIndex == currentVisiblePage.value) textEditLines else emptyList(),
+                                    onTextLineTap = { line -> selectedTextLine = line },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(12.dp))
@@ -616,7 +780,7 @@ fun PetalPdfViewerScreen(
 
                     // ── Top App Bar (M3 Expressive Floating Surface) ──
                     AnimatedVisibility(
-                        visible = controlsVisible && !showFindBar && !isEditMode,
+                        visible = controlsVisible && !showFindBar && !isEditMode && !isTextEditMode,
                         modifier = Modifier.align(Alignment.TopCenter),
                         enter = fadeIn(tween(180)) + slideInVertically(
                             spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
@@ -636,8 +800,10 @@ fun PetalPdfViewerScreen(
                                 controlsVisible = true
                             },
                             onEditMode = {
-                                isEditMode = true
-                                controlsVisible = true
+                                if (!isTextEditMode) {
+                                    isEditMode = true
+                                    controlsVisible = true
+                                }
                             },
                             onShare = { sharePdfDocument(context, pdfUri, displayName) },
                             onPrint = { printPdfDocument(context, pdfUri, displayName) },
@@ -712,17 +878,42 @@ fun PetalPdfViewerScreen(
                             onToolChange = { selectedTool = it },
                             onColorChange = { selectedColor = it },
                             onClearAnnotations = {
+                                recordUndoSnapshot(currentVisiblePage.value)
                                 annotationsMap[currentVisiblePage.value]?.strokes?.clear()
                                 annotationsMap[currentVisiblePage.value]?.textNotes?.clear()
                             },
+                            onUndo = undoLastAnnotationEdit,
+                            canUndo = canUndo,
                             onSave = saveAnnotatedPdf,
-                            onCancel = { isEditMode = false }
+                            onCancel = {
+                                isEditMode = false
+                                undoStack.clear()
+                            }
+                        )
+                    }
+
+                    // ── Universal Text Edit Mode Top Bar ──
+                    AnimatedVisibility(
+                        visible = isTextEditMode,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        enter = fadeIn(tween(200)) + slideInVertically { -it },
+                        exit = fadeOut(tween(150)) + slideOutVertically { -it }
+                    ) {
+                        PdfTextEditTopBar(
+                            isLoading = isLoadingTextLines,
+                            isSaving = isSavingTextEdit,
+                            canUndo = canUndoTextEdit,
+                            onUndo = undoLastTextEdit,
+                            onClose = {
+                                isTextEditMode = false
+                                textEditUndoStack.clear()
+                            }
                         )
                     }
 
                     // ── Bottom Floating Pill Action Bar ──
                     AnimatedVisibility(
-                        visible = controlsVisible && !isEditMode,
+                        visible = controlsVisible && !isEditMode && !isTextEditMode,
                         modifier = Modifier.align(Alignment.BottomCenter),
                         enter = fadeIn(tween(180)) + slideInVertically(
                             spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
@@ -739,7 +930,17 @@ fun PetalPdfViewerScreen(
                             onZoomOut = { zoomBy(0.8f) },
                             onResetZoom = resetZoom,
                             onShowThumbnails = { showThumbnailSheet = true },
-                            onJumpPage = { showJumpDialog = true }
+                            onJumpPage = { showJumpDialog = true },
+                            onEditText = {
+                                if (isEditMode) {
+                                    PetalToast.show(context, "Finish or cancel drawing edits first")
+                                } else if (editableFile == null) {
+                                    PetalToast.show(context, "Couldn't prepare this document for text editing")
+                                } else {
+                                    isTextEditMode = true
+                                    controlsVisible = true
+                                }
+                            }
                         )
                     }
                 }
@@ -794,6 +995,7 @@ fun PetalPdfViewerScreen(
                 Button(
                     onClick = {
                         if (noteInput.isNotBlank()) {
+                            recordUndoSnapshot(pendingNotePage)
                             val anno = annotationsMap.getOrPut(pendingNotePage) { PageAnnotations() }
                             anno.textNotes.add(
                                 TextAnnotation(
@@ -844,6 +1046,78 @@ fun PetalPdfViewerScreen(
             onDismiss = { showInfoSheet = false }
         )
     }
+
+    // ── Edit Text Line Dialog (Universal PDF Text Edit) ──
+    val lineBeingEdited = selectedTextLine
+    if (lineBeingEdited != null) {
+        var editedText by remember(lineBeingEdited) { mutableStateOf(lineBeingEdited.text) }
+        AlertDialog(
+            onDismissRequest = { if (!isSavingTextEdit) selectedTextLine = null },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = RoundedCornerShape(24.dp),
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.TextFields,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text("Edit Text", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = editedText,
+                        onValueChange = { editedText = it },
+                        label = { Text("Line text") },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "This replaces the line's actual text in the PDF using a standard font. " +
+                            "Characters outside basic Latin/Western punctuation may be dropped.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (editedText.isNotBlank() && editedText != lineBeingEdited.text) {
+                            applyTextLineEdit(lineBeingEdited, editedText)
+                        } else {
+                            selectedTextLine = null
+                        }
+                    },
+                    enabled = !isSavingTextEdit,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (isSavingTextEdit) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text("Save")
+                    }
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { selectedTextLine = null },
+                    enabled = !isSavingTextEdit,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 // ─── Single Page Renderer View with Drawing Layer ────────────────────────────
@@ -857,13 +1131,24 @@ private fun PdfPageView(
     selectedColor: Color = Color.Red,
     pageAnnotations: PageAnnotations? = null,
     onAddTextNoteRequest: () -> Unit = {},
+    onBeforeMutate: () -> Unit = {},
+    /** Bump this to force the page bitmap to re-render, e.g. after PDFBox edits the file on disk. */
+    bitmapRefreshKey: Int = 0,
+    isTextEditMode: Boolean = false,
+    textLines: List<PdfTextLine> = emptyList(),
+    onTextLineTap: (PdfTextLine) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var pageBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var pageAspectRatio by remember { mutableFloatStateOf(1.414f) }
     var currentStroke by remember { mutableStateOf<List<Offset>>(emptyList()) }
+    // Page size in PDF points (from PdfRenderer.Page, which reports MediaBox
+    // dimensions) — needed to map PdfTextLine coordinates (also in points,
+    // bottom-left origin) onto this Composable's top-left-origin pixel box.
+    var pagePointWidth by remember { mutableFloatStateOf(612f) }
+    var pagePointHeight by remember { mutableFloatStateOf(792f) }
 
-    LaunchedEffect(renderer, pageIndex) {
+    LaunchedEffect(renderer, pageIndex, bitmapRefreshKey) {
         if (renderer == null) return@LaunchedEffect
         withContext(Dispatchers.IO) {
             try {
@@ -874,6 +1159,8 @@ private fun PdfPageView(
                     val w = page.width
                     val h = page.height
                     pageAspectRatio = if (w > 0) h.toFloat() / w.toFloat() else 1.414f
+                    pagePointWidth = w.toFloat().coerceAtLeast(1f)
+                    pagePointHeight = h.toFloat().coerceAtLeast(1f)
 
                     val renderScale = 2.0f
                     val bitmapWidth = (w * renderScale).toInt().coerceAtLeast(300)
@@ -940,6 +1227,7 @@ private fun PdfPageView(
                                     val normPt = Offset(offset.x / size.width, offset.y / size.height)
                                     currentStroke = listOf(normPt)
                                 } else if (selectedTool == AnnotationTool.ERASER) {
+                                    onBeforeMutate()
                                     pageAnnotations?.strokes?.clear()
                                 }
                             },
@@ -952,6 +1240,7 @@ private fun PdfPageView(
                             },
                             onDragEnd = {
                                 if (currentStroke.isNotEmpty() && pageAnnotations != null) {
+                                    onBeforeMutate()
                                     val isHigh = selectedTool == AnnotationTool.HIGHLIGHTER
                                     val strokeCol = if (isHigh) selectedColor.copy(alpha = 0.35f) else selectedColor
                                     val strokeW = if (isHigh) 24f else 6f
@@ -1041,6 +1330,131 @@ private fun PdfPageView(
                     )
                 }
             }
+
+            // Tappable Text-Line Overlay (Universal PDF Text Edit)
+            // Boxes are drawn over each detected line of real PDF text; tapping
+            // one requests an edit for that line. Coordinates are converted
+            // from PDF points (origin bottom-left) to this Box's pixel space
+            // (origin top-left) using the page's point-size captured above.
+            if (isTextEditMode && textLines.isNotEmpty()) {
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val boxWidthPx = constraints.maxWidth.toFloat()
+                    val boxHeightPx = constraints.maxHeight.toFloat()
+                    val scaleX = if (pagePointWidth > 0f) boxWidthPx / pagePointWidth else 1f
+                    val scaleY = if (pagePointHeight > 0f) boxHeightPx / pagePointHeight else 1f
+
+                    textLines.forEach { line ->
+                        val topPx = (pagePointHeight - line.baselineY - line.height * 0.75f) * scaleY
+                        val leftPx = line.x * scaleX
+                        val widthPx = line.width * scaleX
+                        val heightPx = line.height * 1.4f * scaleY
+
+                        val density = androidx.compose.ui.platform.LocalDensity.current
+                        Box(
+                            modifier = Modifier
+                                .offset(
+                                    x = with(density) { leftPx.toDp() },
+                                    y = with(density) { topPx.toDp() }
+                                )
+                                .size(
+                                    width = with(density) { widthPx.coerceAtLeast(24f).toDp() },
+                                    height = with(density) { heightPx.coerceAtLeast(16f).toDp() }
+                                )
+                                .background(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                    RoundedCornerShape(2.dp)
+                                )
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                    RoundedCornerShape(2.dp)
+                                )
+                                .clickable { onTextLineTap(line) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Universal Text Edit Mode Top Bar ─────────────────────────────────────────
+
+@Composable
+private fun PdfTextEditTopBar(
+    isLoading: Boolean,
+    isSaving: Boolean,
+    canUndo: Boolean,
+    onUndo: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = topClearance + 8.dp)
+            .padding(horizontal = 12.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
+            shadowElevation = 8.dp,
+            modifier = Modifier.border(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                RoundedCornerShape(24.dp)
+            )
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = onClose, modifier = Modifier.size(38.dp)) {
+                        Icon(Icons.Rounded.Close, contentDescription = "Close text editing")
+                    }
+
+                    Text(
+                        text = "Edit document text",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isLoading || isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(end = 4.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(
+                            onClick = onUndo,
+                            enabled = canUndo && !isSaving,
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Undo,
+                                contentDescription = "Undo last text edit",
+                                tint = if (canUndo) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.35f)
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    text = "Tap a highlighted line to edit it. Edited lines use a standard font " +
+                        "and may look slightly different from the surrounding text.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 12.dp, top = 2.dp)
+                )
+            }
         }
     }
 }
@@ -1107,9 +1521,11 @@ private fun PdfViewerTopBar(
                 )
                 if (totalPages > 0) {
                     Text(
-                        text = "Page $currentPage of $totalPages • Tap to jump",
+                        text = "Page $currentPage of $totalPages",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -1118,30 +1534,6 @@ private fun PdfViewerTopBar(
                 Icon(
                     imageVector = Icons.Rounded.Search,
                     contentDescription = "Find text",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            IconButton(onClick = onEditMode) {
-                Icon(
-                    imageVector = Icons.Rounded.Edit,
-                    contentDescription = "Edit & Annotate",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            IconButton(onClick = onPrint) {
-                Icon(
-                    imageVector = Icons.Rounded.Print,
-                    contentDescription = "Print document",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            IconButton(onClick = onShare) {
-                Icon(
-                    imageVector = Icons.Rounded.Share,
-                    contentDescription = "Share",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -1161,11 +1553,6 @@ private fun PdfViewerTopBar(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Find text") },
-                        leadingIcon = { Icon(Icons.Rounded.Search, null) },
-                        onClick = { menuExpanded = false; onFindText() }
-                    )
-                    DropdownMenuItem(
                         text = { Text("Edit & Annotate") },
                         leadingIcon = { Icon(Icons.Rounded.Edit, null) },
                         onClick = { menuExpanded = false; onEditMode() }
@@ -1174,6 +1561,16 @@ private fun PdfViewerTopBar(
                         text = { Text("Jump to page") },
                         leadingIcon = { Icon(Icons.Rounded.FindInPage, null) },
                         onClick = { menuExpanded = false; onJumpPage() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Print") },
+                        leadingIcon = { Icon(Icons.Rounded.Print, null) },
+                        onClick = { menuExpanded = false; onPrint() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Share") },
+                        leadingIcon = { Icon(Icons.Rounded.Share, null) },
+                        onClick = { menuExpanded = false; onShare() }
                     )
                     DropdownMenuItem(
                         text = { Text("Document info") },
@@ -1280,6 +1677,8 @@ private fun PdfEditTopBar(
     onToolChange: (AnnotationTool) -> Unit,
     onColorChange: (Color) -> Unit,
     onClearAnnotations: () -> Unit,
+    onUndo: () -> Unit,
+    canUndo: Boolean,
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -1344,6 +1743,18 @@ private fun PdfEditTopBar(
                             leadingIcon = { Icon(Icons.Rounded.TextFields, null, Modifier.size(16.dp)) },
                             shape = RoundedCornerShape(12.dp)
                         )
+
+                        IconButton(
+                            onClick = onUndo,
+                            enabled = canUndo,
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Undo,
+                                contentDescription = "Undo",
+                                tint = if (canUndo) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.35f)
+                            )
+                        }
 
                         IconButton(onClick = onClearAnnotations, modifier = Modifier.size(38.dp)) {
                             Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear")
@@ -1414,7 +1825,8 @@ private fun PdfViewerBottomBar(
     onZoomOut: () -> Unit,
     onResetZoom: () -> Unit,
     onShowThumbnails: () -> Unit,
-    onJumpPage: () -> Unit
+    onJumpPage: () -> Unit,
+    onEditText: () -> Unit
 ) {
     val bottomClearance = WindowInsets.navigationBars.asPaddingValues()
         .calculateBottomPadding().coerceAtLeast(16.dp)
@@ -1471,6 +1883,16 @@ private fun PdfViewerBottomBar(
                     Icon(
                         imageVector = Icons.Rounded.GridView,
                         contentDescription = "Thumbnails",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // Edit PDF's real text (extract/rewrite via PDFBox)
+                IconButton(onClick = onEditText, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Rounded.TextFields,
+                        contentDescription = "Edit document text",
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
