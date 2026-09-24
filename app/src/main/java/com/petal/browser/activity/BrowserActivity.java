@@ -3494,17 +3494,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 popup.setOnMenuItemClickListener(item -> {
                     if (item.getItemId() == R.id.menu_delete) {
-                        Snackbar snackbarBottom = HelperUnit.makePetalSnackbar(bottom_navigation, R.string.hint_database, Snackbar.LENGTH_SHORT);
-                        HelperUnit.makeSnackbarRound(snackbarBottom);
-                        snackbarBottom.setAction(context.getString(R.string.app_ok), (v -> {
-                            if (overViewTab.equals(getString(R.string.album_title_bookmarks))) {
-                                BrowserUnit.clearBookmark(context);
-                                bottom_navigation.setSelectedItemId(R.id.page_2); }
-                            else if (overViewTab.equals(getString(R.string.album_title_history))) {
-                                BrowserUnit.clearHistory(context);
-                                bottom_navigation.setSelectedItemId(R.id.page_3); }
-                        }));
-                        snackbarBottom.show();
+                        String dialogTitle = overViewTab.equals(getString(R.string.album_title_bookmarks))
+                                ? "Clear All Bookmarks?" : "Clear All History?";
+                        String dialogMsg = overViewTab.equals(getString(R.string.album_title_bookmarks))
+                                ? "This will permanently remove all bookmarks from your library."
+                                : "This will permanently remove all web history records.";
+                        com.petal.browser.ui.components.PetalConfirmSheetBridge.showClearDatabaseConfirmation(
+                            BrowserActivity.this,
+                            dialogTitle,
+                            dialogMsg,
+                            () -> {
+                                if (overViewTab.equals(getString(R.string.album_title_bookmarks))) {
+                                    BrowserUnit.clearBookmark(context);
+                                    bottom_navigation.setSelectedItemId(R.id.page_2);
+                                } else if (overViewTab.equals(getString(R.string.album_title_history))) {
+                                    BrowserUnit.clearHistory(context);
+                                    bottom_navigation.setSelectedItemId(R.id.page_3);
+                                }
+                            }
+                        );
                     } else if (item.getItemId() == R.id.menu_sortName) {
                         sp.edit().putString("sort_bookmark", "title").apply();
                         sp.edit().putBoolean("sort_bookmarkDomain", false).apply();
@@ -5858,7 +5866,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (!sp.getBoolean("sp_close_tab_confirm", false)) {
             okAction.run();
         } else {
-            String tabTitle = ninjaWebView != null ? ninjaWebView.getTitle() : "";
+            String tabTitle = currentAlbumController != null ? currentAlbumController.getTitle() : "";
             com.petal.browser.ui.components.PetalConfirmSheetBridge.showTabCloseConfirmation(this, tabTitle, okAction);
         }
     }
@@ -5868,15 +5876,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             List<AlbumController> toRemove = new ArrayList<>();
             for (AlbumController album : BrowserContainer.list()) {
-                boolean isIncog = false;
-                if (album instanceof com.petal.browser.view.PetalGeckoView) {
-                    isIncog = ((com.petal.browser.view.PetalGeckoView) album).isIncognito();
-                } else if (album instanceof NinjaWebView) {
-                    isIncog = ((NinjaWebView) album).isIncognito();
-                } else if (album instanceof com.petal.browser.browser.PlaceholderAlbumController) {
-                    isIncog = ((com.petal.browser.browser.PlaceholderAlbumController) album).isIncognito();
-                }
-                if (isIncog) {
+                if (album != null && album.isIncognito()) {
                     toRemove.add(album);
                 }
             }
@@ -6496,19 +6496,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void triggerRebirth(Context context) {
         sp.edit().putInt("restart_changed", 0).putBoolean("restoreOnRestart", true).apply();
         saveOpenedTabs();
-        View anchor = currentAlbumController != null ? currentAlbumController.getAlbumView() : (ninjaWebView != null ? ninjaWebView : findViewById(android.R.id.content));
-        Snackbar snackbar = HelperUnit.makePetalSnackbar(anchor, R.string.toast_restart, Snackbar.LENGTH_SHORT);
-        HelperUnit.makeSnackbarRound(snackbar);
-        snackbar.setAction(context.getString(R.string.app_ok), (v -> {
+        com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(this, () -> {
             PackageManager packageManager = context.getPackageManager();
             Intent intent = packageManager.getLaunchIntentForPackage(context.getPackageName());
-            assert intent != null;
-            ComponentName componentName = intent.getComponent();
-            Intent mainIntent = Intent.makeRestartActivityTask(componentName);
-            context.startActivity(mainIntent);
-            System.exit(0);
-        }));
-        snackbar.show();
+            if (intent != null) {
+                ComponentName componentName = intent.getComponent();
+                Intent mainIntent = Intent.makeRestartActivityTask(componentName);
+                context.startActivity(mainIntent);
+                System.exit(0);
+            }
+        });
     }
 
     public void installPwaShortcut() {

@@ -251,4 +251,32 @@ object PetalConfirmSheetBridge {
             onConfirm = onConfirm
         )
     }
+
+    @JvmStatic
+    fun showRestartConfirmation(activity: ComponentActivity, onConfirm: Runnable) {
+        showConfirmSheet(
+            activity = activity,
+            icon = Icons.Rounded.RestartAlt,
+            title = "Restart Petal Browser?",
+            message = "A restart is required to apply the updated configuration and engine settings.",
+            confirmText = "Restart Now",
+            cancelText = "Later",
+            isDestructive = false,
+            onConfirm = onConfirm
+        )
+    }
+
+    @JvmStatic
+    fun showClearDatabaseConfirmation(activity: ComponentActivity, title: String, message: String, onConfirm: Runnable) {
+        showConfirmSheet(
+            activity = activity,
+            icon = Icons.Rounded.DeleteForever,
+            title = title,
+            message = message,
+            confirmText = "Clear All",
+            cancelText = "Cancel",
+            isDestructive = true,
+            onConfirm = onConfirm
+        )
+    }
 }

@@ -23,6 +23,7 @@ import androidx.preference.PreferenceManager;
 
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.snackbar.Snackbar;
+import com.petal.browser.ui.components.PetalConfirmSheetBridge;
 
 import java.util.List;
 import java.util.Objects;
@@ -73,40 +74,42 @@ public class Settings_ProfileList extends AppCompatActivity {
                 cardView.setBackgroundColor(color);
                 HelperUnit.applyBouncyTouchFeedback(deleteEntry, 0.88f);
                 deleteEntry.setOnClickListener(v1 -> {
-
-                    Snackbar snackbarDelete = HelperUnit.makePetalSnackbar(v1, R.string.hint_database, Snackbar.LENGTH_SHORT);
-                    HelperUnit.makeSnackbarRound(snackbarDelete);
-                    snackbarDelete.setAction(this.getContext().getString(R.string.app_ok), (v2 -> {
-                        try {
-                            listStandard.removeDomain(list.get(position));
-                            list.remove(position);
-                            notifyDataSetChanged();
-                            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this.getContext());
-                            sp.edit()
-                                    .remove(list.get(position) + "_saveData")
-                                    .remove(list.get(position) + "_images")
-                                    .remove(list.get(position) + "_adBlock")
-                                    .remove(list.get(position) + "_trackingULS")
-                                    .remove(list.get(position) + "_location")
-                                    .remove(list.get(position) + "_fingerPrintProtection")
-                                    .remove(list.get(position) + "_cookies")
-                                    .remove(list.get(position) + "_cookiesThirdParty")
-                                    .remove(list.get(position) + "_deny_cookie_banners")
-                                    .remove(list.get(position) + "_javascript")
-                                    .remove(list.get(position) + "_javascriptPopUp")
-                                    .remove(list.get(position) + "_saveHistory")
-                                    .remove(list.get(position) + "_camera")
-                                    .remove(list.get(position) + "_microphone")
-                                    .remove(list.get(position) + "_dom")
-                                    .remove(list.get(position) + "_night")
-                                    .remove(list.get(position) + "_drm")
-                                    .remove(list.get(position) + "_desktop").apply();
-                            NinjaToast.show(Settings_ProfileList.this, R.string.app_done);
-                        } catch (Exception e) {
-                            Log.i(TAG, "dialogCustomSearches:" + e);
+                    String domain = list.get(position);
+                    PetalConfirmSheetBridge.showClearDatabaseConfirmation(
+                        Settings_ProfileList.this,
+                        getString(R.string.hint_database),
+                        "Are you sure you want to remove settings for \"" + domain + "\"?",
+                        () -> {
+                            try {
+                                listStandard.removeDomain(domain);
+                                list.remove(position);
+                                notifyDataSetChanged();
+                                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(Settings_ProfileList.this);
+                                sp.edit()
+                                        .remove(domain + "_saveData")
+                                        .remove(domain + "_images")
+                                        .remove(domain + "_adBlock")
+                                        .remove(domain + "_trackingULS")
+                                        .remove(domain + "_location")
+                                        .remove(domain + "_fingerPrintProtection")
+                                        .remove(domain + "_cookies")
+                                        .remove(domain + "_cookiesThirdParty")
+                                        .remove(domain + "_deny_cookie_banners")
+                                        .remove(domain + "_javascript")
+                                        .remove(domain + "_javascriptPopUp")
+                                        .remove(domain + "_saveHistory")
+                                        .remove(domain + "_camera")
+                                        .remove(domain + "_microphone")
+                                        .remove(domain + "_dom")
+                                        .remove(domain + "_night")
+                                        .remove(domain + "_drm")
+                                        .remove(domain + "_desktop").apply();
+                                NinjaToast.show(Settings_ProfileList.this, R.string.app_done);
+                            } catch (Exception e) {
+                                Log.i(TAG, "dialogCustomSearches:" + e);
+                            }
                         }
-                    }));
-                    snackbarDelete.show();
+                    );
                 });
                 return v;
             }
