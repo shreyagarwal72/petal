@@ -634,10 +634,10 @@ class PetalGeckoView @JvmOverloads constructor(
                 if (responseUrl.isNullOrBlank()) return
                 val act = getHostActivity() ?: return
                 val parsed = try { android.net.Uri.parse(responseUrl) } catch (_: Exception) { null }
-                val isMozillaXpi = parsed?.host?.equals("addons.mozilla.org", ignoreCase = true) == true &&
-                    parsed.path?.contains("/downloads/", ignoreCase = true) == true &&
-                    parsed.path?.endsWith(".xpi", ignoreCase = true) == true
-                if (isMozillaXpi) {
+                val isXpiUrl = parsed?.path?.endsWith(".xpi", ignoreCase = true) == true ||
+                    response.headers["content-type"]?.contains("application/x-xpinstall", ignoreCase = true) == true ||
+                    (parsed?.host?.contains("addons.mozilla.org", ignoreCase = true) == true && responseUrl.contains(".xpi", ignoreCase = true))
+                if (isXpiUrl) {
                     act.runOnUiThread {
                         com.petal.browser.extensions.PetalExtensionManager.install(responseUrl) { success, message ->
                             com.petal.browser.view.PetalToast.show(act, message ?: if (success) "Extension installed" else "Extension installation failed")

@@ -624,7 +624,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             root.removeView(overlay);
                         }
                         com.petal.browser.extensions.PetalExtensionManager.dismissPopup();
-                        restoreBrowserInputFocus();
+                        // Post focus restoration to ensure window focus queue is idle
+                        root.post(() -> restoreBrowserInputFocus());
                     };
                     android.view.View popupView =
                         com.petal.browser.compose.extensions.PetalExtensionsBridge.createPopupView(
@@ -644,7 +645,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     android.view.ViewGroup rootDecor = (android.view.ViewGroup) getWindow().getDecorView();
                     // Remove any stale popup overlay first
                     android.view.View old = rootDecor.findViewWithTag("ext_popup_overlay");
-                    if (old != null) rootDecor.removeView(old);
+                    if (old != null) {
+                        old.clearFocus();
+                        rootDecor.removeView(old);
+                    }
                     android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT

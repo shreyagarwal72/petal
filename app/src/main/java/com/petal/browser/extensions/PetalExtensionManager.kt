@@ -796,15 +796,20 @@ object PetalExtensionManager {
     fun dismissPopup() {
         val popup = _pendingPopup.value ?: return
         _pendingPopup.value = null
-        popup.sourceSession?.let { source ->
-            try { if (source.isOpen) source.setActive(true) }
-            catch (t: Throwable) { Log.d(TAG, "Failed to reactivate browser session after popup", t) }
-        }
         popup.session.let { session ->
             try {
                 session.setActive(false)
                 session.close()
             } catch (ignored: Exception) {}
+        }
+        popup.sourceSession?.let { source ->
+            try {
+                if (source.isOpen) {
+                    source.setActive(true)
+                }
+            } catch (t: Throwable) {
+                Log.d(TAG, "Failed to reactivate browser session after popup", t)
+            }
         }
     }
 
