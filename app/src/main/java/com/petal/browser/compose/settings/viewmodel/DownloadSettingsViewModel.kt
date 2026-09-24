@@ -1,0 +1,39 @@
+package com.petal.browser.compose.settings.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.petal.browser.data.repository.SettingsRepository
+import com.petal.browser.unit.ExternalDownloadManagerHelper
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class DownloadSettingsViewModel @Inject constructor(
+    private val settingsRepository: SettingsRepository
+) : ViewModel() {
+
+    val downloadManagerMode: StateFlow<String> = settingsRepository.downloadManagerMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ExternalDownloadManagerHelper.MODE_IN_APP)
+
+    val autoPreviewDownloadedImages: StateFlow<Boolean> = settingsRepository.autoPreviewDownloadedImages
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val liveUpdates: StateFlow<Boolean> = settingsRepository.liveUpdates
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setDownloadManagerMode(mode: String) = viewModelScope.launch {
+        settingsRepository.setDownloadManagerMode(mode)
+    }
+
+    fun setAutoPreviewDownloadedImages(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setAutoPreviewDownloadedImages(enabled)
+    }
+
+    fun setLiveUpdates(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setLiveUpdates(enabled)
+    }
+}
