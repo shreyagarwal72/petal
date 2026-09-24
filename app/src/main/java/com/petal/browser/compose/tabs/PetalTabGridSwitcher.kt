@@ -1867,38 +1867,6 @@ private fun PetalTabCard(
                             Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
                         }
                     }
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable(onClick = onLongPress)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Rounded.MoreVert,
-                                contentDescription = "Tab options",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    }
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable(onClick = onTabClose)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = "Close tab",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    }
                 }
             }
 
@@ -2168,12 +2136,6 @@ private fun PetalTabListItem(
                     Surface(shape = CircleShape, color = accentColor, modifier = Modifier.size(20.dp)) {
                         Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
                     }
-                }
-                IconButton(onClick = onLongPress, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = "Tab options", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                }
-                IconButton(onClick = onTabClose, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close tab", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                 }
             }
         }
