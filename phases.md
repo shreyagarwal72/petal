@@ -4,14 +4,14 @@ This document reconstructs the realistic development phases of Petal Browser bas
 
 ---
 
-## Phase 1: Core Browsing Foundation & FOSS Browser Baseline
+## Phase 1: Core Browsing Foundation & Mozilla GeckoView Architecture
 - **Status**: Complete ✅
 - **Evidenced Features**:
-  - Fork of FOSS Browser with baseline Android WebKit architecture.
+  - Full Mozilla GeckoView rendering and session engine architecture.
   - Multi-tab navigation with `AlbumController` and `BrowserController` contracts.
   - SQLite persistence for bookmarks, browsing history, and favicons (`FaviconHelper.java`).
-  - Privacy controls: local cookie management, incognito mode, basic ad/tracker domain blocklists (`BannerBlock.java`).
-  - Standard download hooks and PDF webpage export support.
+  - Privacy controls: Firefox Enhanced Tracking Protection (ETP), Total Cookie Protection, and native Cookie Banner Blocker.
+  - Built-in PDF webpage export via `GeckoSession.saveAsPdf()`.
 
 ---
 

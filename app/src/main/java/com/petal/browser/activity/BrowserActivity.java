@@ -372,11 +372,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     
-    public boolean canNinjaGoBack() {
+    public boolean canBrowserGoBack() {
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             return ((com.petal.browser.view.PetalGeckoView) currentAlbumController).canGoBack();
         }
         return false;
+    }
+
+    @Deprecated
+    public boolean canNinjaGoBack() {
+        return canBrowserGoBack();
     }
 
 
@@ -5965,10 +5970,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (composeAddr != null) composeAddr.setVisibility(GONE);
             if (bottomNav != null) bottomNav.setVisibility(GONE);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
-
-            if (ninjaWebView != null) {
-                ninjaWebView.getSettings().setCacheMode(android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK);
-            }
         }
 
         String action = intent.getAction();
@@ -5981,7 +5982,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         Uri dataUri = intent.getData();
         String mimeType = intent.getType();
         if ("".equals(action)) {
-            Log.i(TAG, "resumed FOSS browser");
+            Log.i(TAG, "resumed Petal Browser");
         } else if (filePathCallback != null) {
             filePathCallback = null;
             getIntent().setAction("");
@@ -6099,15 +6100,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         addAlbum(fileName, localUrl, true);
                         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                             ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(localUrl);
-                        } else if (ninjaWebView != null) {
-                            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(localUrl);
                         }
                     } else {
                         addAlbum(fileName, "about:blank" , true);
                         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                             ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadDataWithBaseURL(null, fileContent, "text/html", "UTF-8", null);
-                        } else if (ninjaWebView != null) {
-                            ninjaWebView.loadDataWithBaseURL(null, fileContent, "text/html", "UTF-8", null);
                         }
                     }
                 } else {
@@ -6166,10 +6163,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     addAlbum(fileName, virtualFileUrl, true);
                     if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                         ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadDataWithBaseURL(virtualFileUrl, htmlWrapper, "text/html", "UTF-8", null);
-                    } else if (ninjaWebView != null) {
-                        ninjaWebView.getSettings().setDefaultTextEncodingName("utf-8");
-                        // WICHTIG: virtualFileUrl als BaseURL übergeben zwingt webView.getUrl() diesen Pfad anzuzeigen
-                        ninjaWebView.loadDataWithBaseURL(virtualFileUrl, htmlWrapper, "text/html", "UTF-8", null);
                     }
                 }
             } else {
@@ -6240,8 +6233,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         if (result != null && !result.trim().isEmpty()) {
                             String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
                             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                                showAlbum(currentAlbumController, targetUrl);
-                            } else if (ninjaWebView != null) {
                                 showAlbum(currentAlbumController, targetUrl);
                             } else {
                                 addAlbum(null, targetUrl, true);
@@ -6615,10 +6606,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return controller.getAlbumView();
             }
         }
-        return ninjaWebView != null ? ninjaWebView.getRootView() : null;
+        return null;
     }
 
     public void createWebPrintJob(WebView webView) {
+        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+            try {
+                java.io.File cacheDir = getCacheDir();
+                java.io.File pdfFile = new java.io.File(cacheDir, "print_temp.pdf");
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(pdfFile);
+                gv.printToPdf(fos, success -> {
+                    if (success) {
+                        runOnUiThread(() -> {
+                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                            Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                                    BrowserActivity.this,
+                                    getPackageName() + ".fileprovider",
+                                    pdfFile
+                            );
+                            intent.setDataAndType(uri, "application/pdf");
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            try {
+                                startActivity(Intent.createChooser(intent, getString(R.string.app_name) + " Document"));
+                            } catch (Exception e) {
+                                PetalToast.show(BrowserActivity.this, "No PDF viewer found");
+                            }
+                        });
+                    }
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Error generating print job via GeckoView", e);
+            }
+            return;
+        }
         if (webView == null) return;
         try {
             PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
@@ -6635,14 +6656,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onPause() {
         super.onPause();
-        boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
-        boolean backgroundPlay = sp != null && sp.getBoolean("sp_background_play", false);
-        if (!backgroundPlay && !inPip && ninjaWebView != null) {
-            try {
-                ninjaWebView.onPause();
-                ninjaWebView.pauseTimers();
-            } catch (Exception ignored) {}
-        }
         try {
             saveOpenedTabs();
         } catch (Exception e) {

@@ -1,9 +1,9 @@
 # Petal Browser Product Requirements Document (PRD.md)
 
 ## 1. Executive Summary & Product Positioning
-**Petal Browser** is a fast, ultra-lightweight, and privacy-focused Android web browser built upon a modern hybrid architecture combining a Mozilla GeckoView engine core with a Material 3 Expressive Jetpack Compose user interface.
+**Petal Browser** is a fast, ultra-lightweight, and privacy-focused Android web browser built upon a modern architecture combining a Mozilla GeckoView engine core with a Material 3 Expressive Jetpack Compose user interface.
 
-Forked originally from FOSS Browser, Petal Browser retains the non-invasive, open-source privacy values of its predecessor while delivering modern Android design paradigms, predictive gesture motion, and advanced media playback capabilities.
+Petal Browser retains non-invasive, open-source privacy values while delivering modern Android design paradigms, predictive gesture motion, full WebExtension support, and advanced media playback capabilities.
 
 ---
 
@@ -23,10 +23,10 @@ Forked originally from FOSS Browser, Petal Browser retains the non-invasive, ope
 ## 3. Core Differentiators & Product Features
 As evidenced strictly by the current codebase implementation:
 
-### 3.1 Dual-Engine Standalone Browsing Core
-- **Mozilla GeckoView 154 Integration**: Complete standalone engine providing modern web standard compliance, independent of system WebView bugs or manufacturer delays.
+### 3.1 Mozilla GeckoView Standalone Browsing Core
+- **Mozilla GeckoView Integration**: Complete standalone engine providing modern web standard compliance, independent of system WebView bugs or manufacturer delays.
 - **Strict Enhanced Tracking Protection (ETP)**: Integrated content blocking configured to reject third-party tracking cookies, cryptominers, and malicious fingerprinting domains.
-- **Legacy WebView Fallback**: Maintained via `NinjaWebView` for fallback compatibility.
+- **Total Cookie Protection & AMO Extensions**: Isolated cookie jars per site, full support for Firefox WebExtensions (AMO) and native Petal built-in extensions.
 
 ### 3.2 Material 3 Expressive UI & Physics-Based Motion
 - **35 Dynamic Shapes**: Interactive shortcuts and UI components adapt across 35 dynamic polygon geometries (`PetalMaterialShapes.kt`).

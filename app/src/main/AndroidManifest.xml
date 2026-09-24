@@ -233,7 +233,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Erlaubt es, markierten Text aus anderen Apps direkt im FOSS-Browser zu öffnen -->
+            <!-- Allow opening highlighted text from other apps directly in Petal Browser (Firefox GeckoView) -->
             <intent-filter>
                 <action android:name="android.intent.action.PROCESS_TEXT" />
                 <category android:name="android.intent.category.DEFAULT" />

@@ -68,12 +68,12 @@
 ```mermaid
 graph TD
     A[Petal Browser Core] --> B[Jetpack Compose M3 Expressive UI]
-    A --> C[FOSS WebKit Engine]
+    A --> C[Mozilla GeckoView Engine]
     A --> D[Fetch2 Download Pipeline]
     A --> E[Petal AI Hub]
     B --> F[Predictive Back Surface & Blur]
     B --> G[35 Dynamic M3 Shapes]
-    C --> H[Async AdBlock Rule Filter]
+    C --> H[Firefox Tracking Protection & AdBlock]
     E --> I[Gemini / Grok / OpenAI / Groq]
 ```
 
@@ -110,7 +110,7 @@ app/build/outputs/apk/debug/app-debug.apk
 ## 💖 Open Source Credits & Upstream Projects
 
 Petal Browser is built on the shoulders of giants. We express our deepest gratitude to:
-- **[FOSS Browser](https://github.com/scoute-dich/browser)** by *scoute-dich* — Core Android browser engine & clean WebKit architecture.
+- **[Mozilla Firefox & GeckoView](https://github.com/mozilla-mobile/firefox-android)** by *Mozilla* — Advanced GeckoView rendering engine, WebExtensions architecture, and Android Components.
 - **[Zenith](https://github.com/1372Slash/Zenith)** by *1372Slash* — Material Design 3 Expressive motion physics & digital wellbeing framework.
 - **[LastWave](https://github.com/duxtami/LastWave-native)** by *duxtami* — Hi-Res lossless audio streaming architecture & Material 3 design.
 - **[Aurora Store](https://github.com/whyorean/AuroraStore)** by *whyorean (Rahul Patel)* — Modern Material design patterns & elegant app architecture.

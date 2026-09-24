@@ -1,27 +1,21 @@
 # Petal Browser Architecture (architecture.md)
 
-## 1. System Overview & Dual-Engine Model
-Petal Browser employs a hybrid architectural foundation combining a robust Java Android Activity lifecycle foundation (forked and refined from FOSS Browser) with modern Kotlin & Jetpack Compose declarative UI layers.
+## 1. System Overview & Mozilla GeckoView Engine Core
+Petal Browser employs a modern architecture combining a robust Java/Kotlin Android Activity foundation with Mozilla GeckoView and declarative Jetpack Compose Material 3 Expressive UI layers.
 
 ### Browsing Core Architecture
-The browsing subsystem supports two distinct rendering engines:
-1. **Mozilla GeckoView (Modern Standalone Engine)**:
-   - **Artifact**: `org.mozilla.geckoview:geckoview:154.0.20260824154132`.
-   - **Runtime Management**: Managed by the thread-safe process singleton `com.petal.browser.engine.gecko.PetalGeckoRuntime`. Configures strict anti-tracking, third-party cookie blocking, safe browsing, and JavaScript settings.
+All web browsing sessions, tab surfaces, and WebExtensions run exclusively on **Mozilla GeckoView**:
+1. **Mozilla GeckoView (Standalone Engine Core)**:
+   - **Artifact**: `org.mozilla.geckoview:geckoview`.
+   - **Runtime Management**: Managed by the thread-safe process singleton `com.petal.browser.engine.gecko.PetalGeckoRuntime`. Configures Firefox Enhanced Tracking Protection (ETP), Total Cookie Protection, cookie banner blocker, safe browsing, and full WebExtensions support.
    - **View & Tab Layer**: Implemented in `com.petal.browser.view.PetalGeckoView`, which encapsulates `GeckoView` and `GeckoSession`. Implements `AlbumController` and AndroidX `NestedScrollingChild3` to integrate smoothly with the browser's address bar collapse, swipe refresh, and tab overview.
-   - **Controller Wiring**: Managed through `com.petal.browser.controller.BrowserWebViewController`.
-2. **Chromium / Android System WebView (Legacy Baseline Engine)**:
-   - Implemented via `com.petal.browser.view.NinjaWebView` extending `android.webkit.WebView`.
-   - Coordinated through `com.petal.browser.browser.NinjaWebViewClient` and `com.petal.browser.browser.NinjaWebChromeClient`.
-   - Retains legacy FOSS Browser naming conventions for maximum backward compatibility.
+   - **Controller Wiring**: Managed through `com.petal.browser.controller.BrowserWebViewController` and official Mozilla Android Components.
 
 ```mermaid
 graph TD
     A[BrowserActivity.java] --> B[BrowserWebViewController.kt]
-    A --> C[NinjaWebView.java]
     B --> D[PetalGeckoView.kt]
     D --> E[GeckoRuntime Singleton / GeckoSession]
-    C --> F[NinjaWebViewClient / ChromeClient]
     A --> G[ComposeView Bridging Container]
     G --> H[Jetpack Compose M3 UI Screens]
 ```
@@ -61,14 +55,14 @@ Back gesture dispatching is carefully split between the native Android platform 
    - Uses AndroidX `PredictiveBackHandler` inside Compose surfaces.
    - Computes real-time progress physics, applying surface scaling, corner radius morphing, and backdrop blur (`PetalContentSnapshot`).
 3. **Display Edge Gesture Exclusion Reset**:
-   - To prevent the web rendering surface from trapping Android 10+ (API 29+) system edge gestures, `NinjaWebView` and `PetalGeckoView` actively enforce empty system gesture exclusion rects on touch interactions (`ACTION_DOWN`, `ACTION_UP`, `ACTION_CANCEL`).
+   - To prevent the web rendering surface from trapping Android 10+ (API 29+) system edge gestures, `PetalGeckoView` actively enforces empty system gesture exclusion rects on touch interactions (`ACTION_DOWN`, `ACTION_UP`, `ACTION_CANCEL`).
 
 ---
 
 ## 4. Subpackage Directory Structure
 - `com.petal.browser.activity`: Core Android activities (`BrowserActivity`, `Settings_Activity`, `AppLockActivity`).
-- `com.petal.browser.browser`: Core browser contracts and clients (`BrowserController`, `AlbumController`, `NinjaWebViewClient`, `NinjaWebChromeClient`).
-- `com.petal.browser.view`: Engine rendering views (`PetalGeckoView`, `NinjaWebView`).
+- `com.petal.browser.browser`: Core browser contracts and controllers (`BrowserController`, `AlbumController`, `BrowserContainer`).
+- `com.petal.browser.view`: Engine rendering views (`PetalGeckoView`).
 - `com.petal.browser.engine`: Low-level engine integrations (`PetalGeckoRuntime`, `ChromiumNativeEngineCore`, `FullscreenVideoRules`).
 - `com.petal.browser.compose`: Jetpack Compose UI surfaces (settings, tabs, omnibox, context menus, video player).
 - `com.petal.browser.predictive`: Predictive back gesture coordination, blur snapshots, and transition curves.
