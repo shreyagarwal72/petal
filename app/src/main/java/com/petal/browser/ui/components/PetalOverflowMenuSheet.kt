@@ -475,12 +475,21 @@ fun PetalOverflowMenuSheet(
                             shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
                             onClick = onShareLink
                         ),
-                        ActionMatrixItem(
-                            icon = Icons.Rounded.FindInPage,
-                            label = "Find",
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
-                            onClick = onSearchOnSite
-                        )
+                        if (!isHomePage) {
+                            ActionMatrixItem(
+                                icon = Icons.Rounded.FindInPage,
+                                label = "Find",
+                                shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                                onClick = onSearchOnSite
+                            )
+                        } else {
+                            ActionMatrixItem(
+                                icon = Icons.Rounded.History,
+                                label = "History",
+                                shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                                onClick = onOpenHistory
+                            )
+                        }
                     )
                 )
 
@@ -676,12 +685,14 @@ fun PetalOverflowMenuSheet(
                     exit = shrinkVertically()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        MenuRowItem(
-                            icon = Icons.Rounded.Search,
-                            title = "Search on site",
-                            isSubItem = true,
-                            onClick = onSearchOnSite
-                        )
+                        if (!isHomePage) {
+                            MenuRowItem(
+                                icon = Icons.Rounded.FindInPage,
+                                title = "Find in page",
+                                isSubItem = true,
+                                onClick = onSearchOnSite
+                            )
+                        }
                         MenuRowItem(
                             icon = Icons.Rounded.MenuBook,
                             title = "Reading mode",

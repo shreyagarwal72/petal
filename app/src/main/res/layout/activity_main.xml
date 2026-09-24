@@ -117,69 +117,13 @@
         app:fabCustomSize="42dp"
         android:visibility="gone"/>
 
-    <!-- Search On Site Bar -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/searchOnSiteLayout"
-        android:visibility="gone"
-        style="@style/Widget.Material3.CardView.Elevated"
-        android:backgroundTint="?attr/colorSurfaceContainerHigh"
-        app:cardElevation="4dp"
-        app:strokeWidth="0dp"
+    <!-- Material 3 Expressive Find In Page Bar -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/find_in_page_compose"
         android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:layout_margin="12dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        app:cardCornerRadius="28dp"
-        android:orientation="vertical">
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <Button
-                android:id="@+id/searchOnSite_buttonClose"
-                style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerInParent="true"
-                android:layout_marginEnd="10dp"
-                app:icon="@drawable/icon_close" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/searchOnSite_textField"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_alignParentTop="true"
-                android:layout_toStartOf="@+id/searchOnSite_buttonClose"
-                android:paddingEnd="10dp"
-                android:paddingStart="10dp"
-                android:paddingBottom="5dp"
-                android:paddingTop="5dp"
-                android:hint="@string/menu_other_searchSite"
-                app:boxCornerRadiusTopStart="24dp"
-                app:boxCornerRadiusTopEnd="24dp"
-                app:boxCornerRadiusBottomStart="24dp"
-                app:boxCornerRadiusBottomEnd="24dp"
-                app:boxStrokeWidth="0.8dp"
-                app:boxStrokeWidthFocused="1.5dp"
-                app:startIconDrawable="@drawable/icon_up"
-                app:endIconDrawable="@drawable/icon_down"
-                app:endIconMode="custom">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/searchOnSite_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text|textUri"
-                    android:selectAllOnFocus="true"/>
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-        </RelativeLayout>
-
-    </com.google.android.material.card.MaterialCardView>
+        android:visibility="gone" />
 
 
     <!-- Small Circular Floating Bubble for Collapsed Address Bar (Bottom-Right) -->
