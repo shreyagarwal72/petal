@@ -437,13 +437,7 @@ fun PetalOmniboxPage(
                     )
 
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .imePadding()
-                            .clickable(
-                                indication = null,
-                                interactionSource = remember { MutableInteractionSource() }
-                            ) {} // Absorb clicks inside content area
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         // Chrome-style search field row pinned to top with status bar padding
                         Row(
