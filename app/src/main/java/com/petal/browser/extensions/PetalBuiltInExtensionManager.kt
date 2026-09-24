@@ -29,6 +29,15 @@ object PetalBuiltInExtensionManager {
     )
 
     val builtIns: List<BuiltInSpec> = listOf(
+        // Mozilla WebCompat — bundled in the GeckoView AAR, fixes site compatibility breakages.
+        // This is the same extension Firefox for Android ships as a default built-in.
+        // The resource URI points to GeckoView's own bundled copy (no asset to ship).
+        BuiltInSpec(
+            assetPath   = "extensions/webcompat/",
+            extensionId = "webcompat@mozilla.org",
+            label       = "WebCompat",
+            prefKey     = "petal_builtin_webcompat"
+        ),
         BuiltInSpec(
             assetPath   = "web_extensions/petal_universal_copy/",
             extensionId = "petal-universal-copy@petalbrowser.app",
@@ -54,6 +63,7 @@ object PetalBuiltInExtensionManager {
             prefKey     = "petal_builtin_google_search_fixer"
         )
     )
+
 
     /** Install and sync all built-in extensions. Called from BrowserActivity. */
     @JvmStatic

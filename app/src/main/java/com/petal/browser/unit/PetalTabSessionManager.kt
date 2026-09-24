@@ -90,6 +90,20 @@ object PetalTabSessionManager {
                     if (isIncognito) continue
 
                     val rawUrl = controller.url ?: ""
+                    // Prefer persistentUrl for GeckoView tabs: currentUrl can be reset to
+                    // "about:blank" while a page is loading (GeckoView compositor reset).
+                    // persistentUrl holds the last real URL that was explicitly navigated to,
+                    // so we never save "about:blank" when the tab actually has real content.
+                    val effectiveUrl = when {
+                        controller is PetalGeckoView &&
+                        controller.persistentUrl.isNotBlank() &&
+                        !controller.persistentUrl.equals("about:blank", ignoreCase = true) ->
+                            controller.persistentUrl
+                        rawUrl.isNotBlank() && !rawUrl.equals("about:blank", ignoreCase = true) ->
+                            rawUrl
+                        else -> rawUrl
+                    }
+
                     val rawTitle = controller.title ?: ""
                     val tabId = when (controller) {
                         is PetalGeckoView -> controller.getTabId()
@@ -114,7 +128,7 @@ object PetalTabSessionManager {
                     val record = TabSessionRecord(
                         persistentTabId = tabId,
                         title = rawTitle,
-                        url = rawUrl,
+                        url = effectiveUrl,   // use effectiveUrl — never saves transient about:blank
                         isIncognito = false,
                         isActive = isActiveTab,
                         tabGroupId = groupId,
@@ -123,9 +137,10 @@ object PetalTabSessionManager {
                     )
                     records.add(record)
 
-                    if (rawUrl.isNotBlank()) {
-                        legacyUrls.add(rawUrl)
+                    if (effectiveUrl.isNotBlank()) {
+                        legacyUrls.add(effectiveUrl)
                     }
+
                 }
 
                 val sp = PreferenceManager.getDefaultSharedPreferences(context)

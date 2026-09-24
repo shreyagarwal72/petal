@@ -151,11 +151,19 @@ class PetalGeckoView @JvmOverloads constructor(
     private val album: AdapterTabs = AdapterTabs(context, this, globalBrowserController)
 
     private var currentUrl: String = "about:blank"
+    /**
+     * The last real (non-blank, non-home) URL that was explicitly requested via [loadUrl].
+     * Unlike [currentUrl], this is never reset to "about:blank" — it preserves the original
+     * intent even while the engine is still loading. Used by [PetalTabSessionManager] to
+     * recover the correct URL instead of persisting a transient "about:blank".
+     */
+    @JvmField var persistentUrl: String = ""
     private var currentTitle: String = "Petal Start"
     private var currentProgress: Int = 0
     private var canGoBackVal: Boolean = false
     private var canGoForwardVal: Boolean = false
     private var lastRecordedHistoryUrl: String? = null
+
     private var favicon: Bitmap? = null
     var currentSecurityInfo: GeckoSession.ProgressDelegate.SecurityInformation? = null
         private set
@@ -413,11 +421,19 @@ class PetalGeckoView @JvmOverloads constructor(
             ) {
                 if (url.isNullOrBlank() || url.equals(currentUrl, ignoreCase = true)) return
                 currentUrl = url
+                // Update persistentUrl for navigations (redirects, SPA pushState) so the
+                // save-on-pause always has the final visible URL, not the initial request URL.
+                if (!url.equals("about:blank", ignoreCase = true) &&
+                    !url.startsWith("about:") &&
+                    !url.startsWith("moz-extension://")) {
+                    persistentUrl = url
+                }
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
                 album.setAlbumTitle(currentTitle, url)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateUrlAndTitle(context, tabId, url, currentTitle)
                 }
+
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
@@ -1288,6 +1304,9 @@ class PetalGeckoView @JvmOverloads constructor(
 
         showLoadingSkeleton(targetUrl)
         currentUrl = targetUrl
+        // Persist the intended URL separately from the live currentUrl so saveSession()
+        // can recover it even if about:blank fires before the page finishes loading.
+        persistentUrl = targetUrl
         album.setAlbumTitle(targetUrl, targetUrl)
         if (engineSession != null) {
             engineSession.loadUrl(targetUrl)
@@ -1295,6 +1314,7 @@ class PetalGeckoView @JvmOverloads constructor(
             session.loadUri(targetUrl)
         }
     }
+
 
     fun loadDataWithBaseURL(baseUrl: String?, data: String, mimeType: String?, encoding: String?, historyUrl: String?) {
         try {

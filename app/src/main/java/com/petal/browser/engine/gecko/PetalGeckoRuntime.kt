@@ -98,7 +98,11 @@ object PetalGeckoRuntime {
             .webManifest(true)
             .extensionsProcessEnabled(true)
             .extensionsWebAPIEnabled(true)
-            .loginAutofillEnabled(false)
+            // Enable login autofill API so password manager extensions (Bitwarden, etc.) can
+            // intercept login forms via the WebExtension loginAutofill API. Without this,
+            // extensions receive the form events but cannot fill credentials.
+            .loginAutofillEnabled(true)
+
 
         // Firefox official memory and performance optimizations
         try {
