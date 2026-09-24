@@ -1594,7 +1594,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
             View mainProgressBar = findViewById(R.id.main_progress_bar_compose);
             View downloadBannerCompose = findViewById(R.id.download_banner_compose);
-            View searchOnSiteLayout = findViewById(R.id.searchOnSiteLayout);
             View fabShowAppBar = findViewById(R.id.fab_showAppBar);
 
             View fabMenu = findViewById(R.id.fab_menu);
@@ -1675,11 +1674,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (webView != ninjaWebView) return;
 
             boolean isHome = isHomePage(url);
+            View albumView = webView != null ? webView.getAlbumView() : null;
             boolean alreadyAttached = currentAlbumController == webView
                     && contentFrame != null
-                    && webView.getParent() == contentFrame
-                    && webView.getVisibility() == VISIBLE
-                    && getTopContentChild() == webView;
+                    && albumView != null
+                    && albumView.getParent() == contentFrame
+                    && albumView.getVisibility() == VISIBLE
+                    && getTopContentChild() == albumView;
 
             if (alreadyAttached && !isHome) {
                 updateAddressBar();
@@ -4188,75 +4189,51 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (!(findInPageCompose instanceof androidx.compose.ui.platform.ComposeView)) return;
         androidx.compose.ui.platform.ComposeView cv = (androidx.compose.ui.platform.ComposeView) findInPageCompose;
         cv.setContent(androidx.compose.runtime.internal.ComposableLambdaKt.composableLambdaInstance(192837465, true, (composer, key) -> {
-            String fontName = sp != null ? sp.getString("sp_app_font", "GS_FLEX") : "GS_FLEX";
-            String styleName = sp != null ? sp.getString("sp_color_style", "TONAL_SPOT") : "TONAL_SPOT";
-            String paletteId = sp != null ? sp.getString("sp_palette_id", com.petal.browser.ui.theme.ThemeKt.getDefaultPaletteId()) : com.petal.browser.ui.theme.ThemeKt.getDefaultPaletteId();
-            boolean dynamicColor = sp != null && sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.ThemeKt.isDynamicColorSupported());
-            boolean isAmoled = sp != null && sp.getBoolean("sp_amoled", false);
-
-            com.petal.browser.ui.theme.AppFont appFont = com.petal.browser.ui.theme.AppFont.valueOf(fontName != null ? fontName : "GS_FLEX");
-            com.petal.browser.ui.theme.ColorStyle colorStyle = com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT;
-            try {
-                if (styleName != null) colorStyle = com.petal.browser.ui.theme.ColorStyle.valueOf(styleName);
-            } catch (Exception ignored) {}
-
-            com.petal.browser.ui.theme.ThemeKt.PetalExpressiveTheme(
-                dynamicColor,
-                isAmoled,
-                appFont,
-                colorStyle,
-                paletteId,
-                androidx.compose.runtime.internal.ComposableLambdaKt.composableLambda(composer, 102938475, true, (c, k) -> {
-                    com.petal.browser.compose.find.PetalFindInPageBarKt.PetalFindInPageBar(
-                        isFindInPageShowing,
-                        findInPageQuery,
-                        query -> {
-                            findInPageQuery = query;
-                            updateFindInPageCompose();
-                            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                                com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                                if (query.isEmpty()) {
-                                    gv.clearMatches();
-                                } else {
-                                    gv.findAllAsync(query);
-                                }
-                            } else if (ninjaWebView != null) {
-                                if (query.isEmpty()) {
-                                    ninjaWebView.clearMatches();
-                                } else {
-                                    ninjaWebView.findAllAsync(query);
-                                }
-                            }
-                            return kotlin.Unit.INSTANCE;
-                        },
-                        () -> {
-                            // Find Next
-                            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(true);
-                            } else if (ninjaWebView != null) {
-                                ninjaWebView.findNext(true);
-                            }
-                            return kotlin.Unit.INSTANCE;
-                        },
-                        () -> {
-                            // Find Previous
-                            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(false);
-                            } else if (ninjaWebView != null) {
-                                ninjaWebView.findNext(false);
-                            }
-                            return kotlin.Unit.INSTANCE;
-                        },
-                        () -> {
-                            closeFindInPage();
-                            return kotlin.Unit.INSTANCE;
-                        },
-                        androidx.compose.ui.Modifier.Companion
-                    );
+            com.petal.browser.compose.find.PetalFindInPageBarKt.PetalFindInPageHost(
+                isFindInPageShowing,
+                findInPageQuery,
+                query -> {
+                    findInPageQuery = query;
+                    updateFindInPageCompose();
+                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                        com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+                        if (query.isEmpty()) {
+                            gv.clearMatches();
+                        } else {
+                            gv.findAllAsync(query);
+                        }
+                    } else if (ninjaWebView != null) {
+                        if (query.isEmpty()) {
+                            ninjaWebView.clearMatches();
+                        } else {
+                            ninjaWebView.findAllAsync(query);
+                        }
+                    }
                     return kotlin.Unit.INSTANCE;
-                }),
+                },
+                () -> {
+                    // Find Next
+                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(true);
+                    } else if (ninjaWebView != null) {
+                        ninjaWebView.findNext(true);
+                    }
+                    return kotlin.Unit.INSTANCE;
+                },
+                () -> {
+                    // Find Previous
+                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(false);
+                    } else if (ninjaWebView != null) {
+                        ninjaWebView.findNext(false);
+                    }
+                    return kotlin.Unit.INSTANCE;
+                },
+                () -> {
+                    closeFindInPage();
+                    return kotlin.Unit.INSTANCE;
+                },
                 composer,
-                0,
                 0
             );
             return kotlin.Unit.INSTANCE;

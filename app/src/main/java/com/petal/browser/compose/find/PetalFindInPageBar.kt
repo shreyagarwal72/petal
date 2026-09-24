@@ -174,3 +174,28 @@ fun PetalFindInPageBar(
         }
     }
 }
+
+/**
+ * Convenience Compose host for integration with Java callers (BrowserActivity).
+ * Encapsulates the PetalExpressiveTheme lookup and wraps PetalFindInPageBar.
+ */
+@Composable
+fun PetalFindInPageHost(
+    visible: Boolean,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onFindNext: () -> Unit,
+    onFindPrevious: () -> Unit,
+    onClose: () -> Unit
+) {
+    com.petal.browser.ui.theme.PetalExpressiveTheme {
+        PetalFindInPageBar(
+            visible = visible,
+            query = query,
+            onQueryChange = onQueryChange,
+            onFindNext = onFindNext,
+            onFindPrevious = onFindPrevious,
+            onClose = onClose
+        )
+    }
+}
