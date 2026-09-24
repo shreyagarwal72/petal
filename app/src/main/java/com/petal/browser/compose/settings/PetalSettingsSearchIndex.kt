@@ -332,35 +332,7 @@ object PetalSettingsSearchIndex {
             category = SettingsCategory.EXPERIMENTAL,
             keywords = listOf("double back", "exit", "close app", "accidental exit", "back button")
         ),
-        // ==================== DOWNLOADS ====================
-        SettingsSearchItem(
-            id = "download_live_updates",
-            title = "Live Updates (Android 16+)",
-            subtitle = "Show a live progress chip in the status bar and lock screen for active downloads",
-            category = SettingsCategory.DOWNLOAD,
-            keywords = listOf("live updates", "live notification", "status bar chip", "promoted ongoing", "download notification", "progress chip", "android 16", "live activity", "stride")
-        ),
-        SettingsSearchItem(
-            id = "download_default_manager",
-            title = "Default Download Manager",
-            subtitle = "Choose between Petal's high-speed in-app downloader or external download managers (1DM, ADM, AB DM, Navi)",
-            category = SettingsCategory.DOWNLOAD,
-            keywords = listOf("download manager", "default download", "external download", "1dm", "adm", "ab download manager", "navi", "external downloader", "download engine", "in-app downloader")
-        ),
-        SettingsSearchItem(
-            id = "download_auto_preview_images",
-            title = "Auto-preview Downloaded Images",
-            subtitle = "Show downloaded photos in the manager like Chrome",
-            category = SettingsCategory.DOWNLOAD,
-            keywords = listOf("preview photos", "preview images", "download preview", "download photos", "auto preview")
-        ),
-        SettingsSearchItem(
-            id = "download_confirm_delete",
-            title = "Confirm File Deletion",
-            subtitle = "Ask before removing a download from the device",
-            category = SettingsCategory.DOWNLOAD,
-            keywords = listOf("delete download", "confirm deletion", "remove download", "file deletion", "storage")
-        ),
+
         // ==================== MISCELLANEOUS ====================
         SettingsSearchItem(
             id = "misc_snap_photo",
@@ -470,7 +442,6 @@ object PetalSettingsSearchIndex {
         SettingsCategory.ADDRESS_BAR,
         SettingsCategory.EXPERIMENTAL,
         SettingsCategory.TABS,
-        SettingsCategory.DOWNLOAD,
         SettingsCategory.MISCELLANEOUS,
         SettingsCategory.DATA_STORAGE,
         SettingsCategory.UPDATER,

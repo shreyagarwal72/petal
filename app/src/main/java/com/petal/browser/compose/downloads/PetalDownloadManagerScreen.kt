@@ -434,11 +434,24 @@ fun PetalDownloadManagerScreen(
         }
     }
 
+    var isSettingsOpen by remember { mutableStateOf(false) }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
-        onBack = onBackPress,
+        onBack = {
+            if (isSettingsOpen) {
+                isSettingsOpen = false
+            } else {
+                onBackPress()
+            }
+        },
     ) {
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+    if (isSettingsOpen) {
+        com.petal.browser.compose.settings.screens.DownloadSettingsScreen(
+            onNavigateBack = { isSettingsOpen = false }
+        )
+    } else {
     Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -458,87 +471,92 @@ fun PetalDownloadManagerScreen(
             if (isSelectionMode) {
                 ExpressiveHeader(
                     title = "${selectedIds.size} Selected",
-                        subtitle = "Selecting Mode",
-                        onBack = { selectedIds = emptySet() },
-                        actions = {
+                    subtitle = "Selecting Mode",
+                    onBack = { selectedIds = emptySet() },
+                    actions = {
+                        HeaderActionIcon(
+                            icon = if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                            contentDescription = "Select All",
+                            onClick = { toggleSelectAll() }
+                        )
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.Share,
+                            contentDescription = "Share Selected",
+                            onClick = {
+                                val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
+                                shareMultipleFiles(context, itemsToShare)
+                                selectedIds = emptySet()
+                            }
+                        )
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.Delete,
+                            contentDescription = "Delete Selected",
+                            onClick = {
+                                val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
+                                deleteSelectedFiles = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)
+                                pendingDeleteItems = itemsToDelete
+                                selectedIds = emptySet()
+                            }
+                        )
+                    }
+                )
+            } else {
+                ExpressiveHeader(
+                    title = "Downloads",
+                    subtitle = "${downloadList.size} files",
+                    onBack = onBackPress,
+                    actions = {
+                        Box {
                             HeaderActionIcon(
-                                icon = if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                contentDescription = "Select All",
-                                onClick = { toggleSelectAll() }
+                                icon = Icons.Rounded.Sort,
+                                contentDescription = "Sort Downloads",
+                                onClick = { sortMenuExpanded = true }
                             )
-                            HeaderActionIcon(
-                                icon = Icons.Rounded.Share,
-                                contentDescription = "Share Selected",
-                                onClick = {
-                                    val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
-                                    shareMultipleFiles(context, itemsToShare)
-                                    selectedIds = emptySet()
-                                }
-                            )
-                            HeaderActionIcon(
-                                icon = Icons.Rounded.Delete,
-                                contentDescription = "Delete Selected",
-                                onClick = {
-                                    val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
-                                    deleteSelectedFiles = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)
-                                    pendingDeleteItems = itemsToDelete
-                                    selectedIds = emptySet()
-                                }
-                            )
-                        }
-                    )
-                } else {
-                    ExpressiveHeader(
-                        title = "Downloads",
-                        subtitle = "${downloadList.size} files",
-                        onBack = onBackPress,
-                        actions = {
-                            Box {
-                                HeaderActionIcon(
-                                    icon = Icons.Rounded.Sort,
-                                    contentDescription = "Sort Downloads",
-                                    onClick = { sortMenuExpanded = true }
-                                )
-                                DropdownMenu(
-                                    expanded = sortMenuExpanded,
-                                    onDismissRequest = { sortMenuExpanded = false }
-                                ) {
-                                    DownloadSortOption.values().forEach { option ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = when (option) {
-                                                        DownloadSortOption.DATE_DESC -> "Date (Newest first)"
-                                                        DownloadSortOption.DATE_ASC -> "Date (Oldest first)"
-                                                        DownloadSortOption.NAME_ASC -> "Name (A-Z)"
-                                                        DownloadSortOption.NAME_DESC -> "Name (Z-A)"
-                                                        DownloadSortOption.SIZE_DESC -> "Size (Largest first)"
-                                                        DownloadSortOption.SIZE_ASC -> "Size (Smallest first)"
-                                                        DownloadSortOption.STATUS -> "Status (Active first)"
-                                                    },
-                                                    fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
+                            DropdownMenu(
+                                expanded = sortMenuExpanded,
+                                onDismissRequest = { sortMenuExpanded = false }
+                            ) {
+                                DownloadSortOption.values().forEach { option ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = when (option) {
+                                                    DownloadSortOption.DATE_DESC -> "Date (Newest first)"
+                                                    DownloadSortOption.DATE_ASC -> "Date (Oldest first)"
+                                                    DownloadSortOption.NAME_ASC -> "Name (A-Z)"
+                                                    DownloadSortOption.NAME_DESC -> "Name (Z-A)"
+                                                    DownloadSortOption.SIZE_DESC -> "Size (Largest first)"
+                                                    DownloadSortOption.SIZE_ASC -> "Size (Smallest first)"
+                                                    DownloadSortOption.STATUS -> "Status (Active first)"
+                                                },
+                                                fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            if (sortOption == option) {
+                                                Icon(
+                                                    Icons.Rounded.Check,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary
                                                 )
-                                            },
-                                            trailingIcon = {
-                                                if (sortOption == option) {
-                                                    Icon(
-                                                        Icons.Rounded.Check,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.primary
-                                                    )
-                                                }
-                                            },
-                                            onClick = {
-                                                sortOption = option
-                                                sortMenuExpanded = false
                                             }
-                                        )
-                                    }
+                                        },
+                                        onClick = {
+                                            sortOption = option
+                                            sortMenuExpanded = false
+                                        }
+                                    )
                                 }
                             }
                         }
-                    )
-                }
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.Settings,
+                            contentDescription = "Download Settings",
+                            onClick = { isSettingsOpen = true }
+                        )
+                    }
+                )
+            }
 
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             if (isLoading) {
@@ -596,7 +614,7 @@ fun PetalDownloadManagerScreen(
                                 onOpenFile = {
                                     val activity = context as? com.petal.browser.activity.BrowserActivity
                                     if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName)) {
-                                        val allImages = sortedDownloadList.filter { it.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }
+                                        val allImages = sortedDownloadList.filter { it.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName) && !it.localUri.isNullOrBlank() }
                                         activity.pendingOverlayBackAction = Runnable {
                                             activity.runOnUiThread { activity.showDownloads() }
                                         }
