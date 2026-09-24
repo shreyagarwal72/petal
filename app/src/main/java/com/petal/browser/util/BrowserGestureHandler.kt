@@ -105,7 +105,7 @@ object BrowserGestureHandler {
             "26" -> activity.doubleTapsQuit()
             "27" -> {
                 prefs.edit().putString("profile", "profileStandard").apply()
-                webView?.reload()
+                geckoView?.reload()
             }
             "29" -> activity.showDownloads()
             "30" -> {
