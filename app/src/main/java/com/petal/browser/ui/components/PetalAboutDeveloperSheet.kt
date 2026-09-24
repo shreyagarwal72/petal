@@ -255,9 +255,6 @@ fun PetalAboutDeveloperSheetContent(
                                             if (ctrl is com.petal.browser.view.PetalGeckoView) {
                                                 ctrl.loadUrl(url)
                                                 activity.showAlbum(ctrl, url)
-                                            } else if (activity.ninjaWebView != null) {
-                                                activity.ninjaWebView.loadUrl(url)
-                                                activity.showAlbum(activity.currentAlbumController, url)
                                             } else {
                                                 activity.addAlbum(null, url, true)
                                             }
@@ -1156,9 +1153,6 @@ fun PetalCreditsSheetContent(
                                                     if (ctrl is com.petal.browser.view.PetalGeckoView) {
                                                         ctrl.loadUrl(credit.url)
                                                         activity.showAlbum(ctrl, credit.url)
-                                                    } else if (activity.ninjaWebView != null) {
-                                                        activity.ninjaWebView.loadUrl(credit.url)
-                                                        activity.showAlbum(activity.currentAlbumController, credit.url)
                                                     } else {
                                                         activity.addAlbum(null, credit.url, true)
                                                     }

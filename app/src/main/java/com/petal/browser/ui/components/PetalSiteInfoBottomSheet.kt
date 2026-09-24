@@ -64,7 +64,7 @@ fun PetalSiteInfoBottomSheet(
     val isHttps = urlScheme == "https" || geckoSecurity?.isSecure == true
     val isHttp = urlScheme == "http"
     val isInternalPage = currentUrl.startsWith("petal:") || currentUrl.startsWith("about:")
-    val sslCertificate: SslCertificate? = webView?.certificate
+    val sslCertificate: SslCertificate? = null
     val isSecure = isHttps || (isInternalPage && currentUrl.isNotEmpty())
 
     // Cookie Count for domain
@@ -419,7 +419,7 @@ fun PetalSiteInfoBottomSheet(
                         if (allowed && context is android.app.Activity) {
                             HelperUnit.grantPermissionsCamera(context)
                         }
-                        geckoView?.reloadWithoutInit() ?: webView?.reloadWithoutInit()
+                        geckoView?.reloadWithoutInit()
                     },
                     leadingIcon = {
                         PetalShapeIconBadge(
@@ -447,7 +447,7 @@ fun PetalSiteInfoBottomSheet(
                         if (allowed && context is android.app.Activity) {
                             HelperUnit.grantPermissionsMic(context)
                         }
-                        geckoView?.reloadWithoutInit() ?: webView?.reloadWithoutInit()
+                        geckoView?.reloadWithoutInit()
                     },
                     leadingIcon = {
                         PetalShapeIconBadge(
@@ -472,7 +472,6 @@ fun PetalSiteInfoBottomSheet(
                     onCheckedChange = { allowed ->
                         isLocationAllowed = allowed
                         sp.edit().putBoolean(profile + "_location", allowed).apply()
-                        webView?.getSettings()?.setGeolocationEnabled(allowed)
                         if (allowed && context is android.app.Activity) {
                             HelperUnit.grantPermissionsLoc(context)
                         } else if (!allowed) {
@@ -480,7 +479,7 @@ fun PetalSiteInfoBottomSheet(
                                 GeolocationPermissions.getInstance().clear(domain)
                             } catch (ignored: Exception) {}
                         }
-                        geckoView?.reloadWithoutInit() ?: webView?.reloadWithoutInit()
+                        geckoView?.reloadWithoutInit()
                     },
                     leadingIcon = {
                         PetalShapeIconBadge(

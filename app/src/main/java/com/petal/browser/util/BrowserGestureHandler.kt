@@ -18,17 +18,14 @@ object BrowserGestureHandler {
     fun performGesture(activity: BrowserActivity, gestureKey: String, targetUrl: String?) {
         val prefs = activity.sp ?: return
         val gestureAction = prefs.getString(gestureKey, "0") ?: "0"
-        val webView = activity.ninjaWebView
+        val ctrl = activity.currentAlbumController
+        val geckoView = ctrl as? com.petal.browser.view.PetalGeckoView
 
         when (gestureAction) {
             "01" -> {} // No-op
             "02" -> {
-                if (webView != null && webView.canGoForward()) {
-                    webView.stopLoading()
-                    val backForwardList = webView.copyBackForwardList()
-                    val historyUrl = backForwardList.getItemAtIndex(backForwardList.currentIndex + 1).url
-                    webView.initPreferences(historyUrl)
-                    webView.goForward()
+                if (geckoView != null && geckoView.canGoForward()) {
+                    geckoView.goForward()
                 } else {
                     PetalToast.show(activity, R.string.toast_webview_forward)
                 }
@@ -36,15 +33,15 @@ object BrowserGestureHandler {
             "03" -> {
                 if (activity.fullscreenHolder != null || activity.customView != null || activity.videoView != null) {
                     Log.v(TAG, "Petal in fullscreen mode")
-                } else if (webView != null && webView.canGoBack()) {
+                } else if (geckoView != null && geckoView.canGoBack()) {
                     prefs.edit().putBoolean("backPressed", true).apply()
-                    webView.goBack()
+                    geckoView.goBack()
                 } else {
                     activity.removeAlbum(activity.currentAlbumController)
                 }
             }
-            "04" -> webView?.pageUp(true)
-            "05" -> webView?.pageDown(true)
+            "04" -> {}
+            "05" -> {}
             "06" -> activity.showAlbum(activity.nextAlbumController(false))
             "07" -> activity.showAlbum(activity.nextAlbumController(true))
             "08" -> activity.showOverview()
@@ -59,21 +56,27 @@ object BrowserGestureHandler {
                 activity.showOverview()
             }
             "12" -> {
-                if (webView != null && webView.url != null) {
-                    activity.shareLink(webView.title, webView.url)
+                val url = ctrl?.url
+                if (!url.isNullOrBlank()) {
+                    activity.shareLink(ctrl.title ?: "", url)
                 }
             }
             "13" -> activity.searchOnSite()
             "14" -> {
-                if (webView != null && targetUrl != null) {
-                    activity.saveBookmark(webView.title, targetUrl)
+                val url = targetUrl ?: ctrl?.url
+                if (!url.isNullOrBlank()) {
+                    activity.saveBookmark(ctrl?.title ?: "", url)
                 }
             }
-            "16" -> webView?.reload()
+            "16" -> geckoView?.reload()
             "17" -> {
                 val favUrl = prefs.getString("favoriteURL", "about:blank") ?: "about:blank"
-                webView?.loadUrl(favUrl)
-                activity.showAlbum(activity.currentAlbumController, favUrl)
+                if (geckoView != null) {
+                    geckoView.loadUrl(favUrl)
+                    activity.showAlbum(geckoView, favUrl)
+                } else {
+                    activity.addAlbum(activity.getString(R.string.app_name), favUrl, true)
+                }
             }
             "18" -> {
                 activity.bottom_navigation?.selectedItemId = R.id.page_2
@@ -81,8 +84,9 @@ object BrowserGestureHandler {
                 activity.showDialogFilter()
             }
             "19" -> {
-                if (webView != null && activity.fab_menu != null) {
-                    activity.showDialogFastToggle(webView.title, webView.url, activity.fab_menu)
+                val url = ctrl?.url
+                if (!url.isNullOrBlank() && activity.fab_menu != null) {
+                    activity.showDialogFastToggle(ctrl.title ?: "", url, activity.fab_menu)
                 }
             }
             "22" -> {
@@ -90,8 +94,9 @@ object BrowserGestureHandler {
                 activity.triggerRebirth(activity)
             }
             "24" -> {
-                if (webView != null && webView.url != null) {
-                    activity.copyLink(webView.url)
+                val url = ctrl?.url
+                if (!url.isNullOrBlank()) {
+                    activity.copyLink(url)
                 }
             }
             "25" -> {

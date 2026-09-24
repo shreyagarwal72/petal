@@ -241,18 +241,10 @@ object PetalAccessibilityEngine {
                     lastSwipeTime = now
                     controller.goBack()
                     return true
-                } else if (controller.canGoBack()) {
-                    lastSwipeTime = now
-                    controller.goBack()
-                    return true
                 }
             } else if (hScroll > 0.65f) {
                 // Swipe Right -> Go Forward
                 if (controller is com.petal.browser.view.PetalGeckoView && controller.canGoForward()) {
-                    lastSwipeTime = now
-                    controller.goForward()
-                    return true
-                } else if (controller.canGoForward()) {
                     lastSwipeTime = now
                     controller.goForward()
                     return true

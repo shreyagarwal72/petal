@@ -146,7 +146,7 @@ object BrowserMediaDelegate {
 
         val currentAlbumView = if (activity.currentAlbumController is View) activity.currentAlbumController as View else null
         val targetView: View? = activity.customView
-            ?: (activity.videoView ?: (currentAlbumView ?: (activity.ninjaWebView ?: activity.findViewById(android.R.id.content))))
+            ?: (activity.videoView ?: (currentAlbumView ?: activity.findViewById(android.R.id.content)))
 
         var width = 0
         var height = 0

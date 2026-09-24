@@ -85,8 +85,6 @@ object BrowserDialogManager {
         val currentCtrl = activity.currentAlbumController
         if (currentCtrl is com.petal.browser.view.PetalGeckoView) {
             currentCtrl.stopLoading()
-        } else {
-            activity.ninjaWebView?.stopLoading()
         }
 
         val context: Context = activity

@@ -183,9 +183,6 @@ object PetalPrivacyShieldSheet {
                                 if (current is com.petal.browser.view.PetalGeckoView) {
                                     current.initPreferences(pageUrl)
                                     current.reload()
-                                } else if (activity.ninjaWebView != null) {
-                                    activity.ninjaWebView.initPreferences(pageUrl)
-                                    activity.ninjaWebView.reload()
                                 }
                             }
                         },
@@ -197,9 +194,6 @@ object PetalPrivacyShieldSheet {
                                 if (current is com.petal.browser.view.PetalGeckoView) {
                                     current.initPreferences(pageUrl)
                                     current.reload()
-                                } else if (activity.ninjaWebView != null) {
-                                    activity.ninjaWebView.initPreferences(pageUrl)
-                                    activity.ninjaWebView.reload()
                                 }
                             }
                             onToggleAdBlock(enabled)
