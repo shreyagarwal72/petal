@@ -113,8 +113,9 @@ public class ReaderModeManager {
     }
 
     /**
-     * Generates styled HTML document string for displaying in Reader Mode inside NinjaWebView.
+     * Generates styled HTML document string for displaying in Reader Mode.
      */
+
     public static String buildReaderHtml(ReaderArticle article, boolean isDarkTheme) {
         if (article == null) return "<html><body><p>Unable to parse Reader Mode content.</p></body></html>";
 

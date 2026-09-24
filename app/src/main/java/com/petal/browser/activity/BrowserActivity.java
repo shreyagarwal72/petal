@@ -163,7 +163,6 @@ import com.petal.browser.view.GridAdapter;
 import com.petal.browser.view.GridItem;
 import com.petal.browser.view.MenuItem;
 import com.petal.browser.view.PetalToast;
-import com.petal.browser.view.NinjaWebView;
 import com.petal.browser.view.AdapterRecord;
 import com.petal.browser.view.SwipeTouchListener;
 import dagger.hilt.android.AndroidEntryPoint;
@@ -181,16 +180,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public TextInputEditText search_input;
     public TextView appBar_title;
     public EditText searchOnSiteInput;
-    @SuppressLint("StaticFieldLeak")
-    public static NinjaWebView ninjaWebView = null;
-
-    /**
-     * Kotlin-friendly accessor (exposed as the `currentNinjaWebView` property) for the
-     * currently active NinjaWebView instance.
-     */
-    public NinjaWebView getCurrentNinjaWebView() {
-        return null;
-    }
 
     public View customView;
     public WebChromeClient.CustomViewCallback customViewCallback;
@@ -381,10 +370,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return context;
     }
 
-    public NinjaWebView getNinjaWebView() {
-        return null;
-    }
-
+    
     public boolean canNinjaGoBack() {
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             return ((com.petal.browser.view.PetalGeckoView) currentAlbumController).canGoBack();
@@ -1172,7 +1158,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * Posted so it never runs re-entrantly inside the Compose callback that triggered the
      * removal, and skipped if the same view was re-attached in the meantime (a re-attached
      * ComposeView would simply rebuild its composition on the next measure anyway).
-     * Retained tab surfaces (GeckoView/NinjaWebView) are not ComposeViews and are unaffected.
+     * Retained tab surfaces (PetalGeckoView) are not ComposeViews and are unaffected.
      */
     private void disposeRemovedComposeOverlay(View child) {
         if (!(child instanceof androidx.compose.ui.platform.ComposeView)) return;
@@ -1220,7 +1206,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // gesture/inset transition, navigated correctly every time. isAcceptingText()
                 // reflects the real IME service state rather than a cached insets snapshot, and
                 // (unlike checking for a focused EditText) it still recognizes a focused HTML
-                // input inside NinjaWebView/PetalGeckoView, so typing-then-back still just closes
+                // input inside PetalGeckoView, so typing-then-back still just closes
                 // the keyboard there as before.
                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 boolean imeActuallyServing = imm != null && imm.isAcceptingText();
@@ -1675,7 +1661,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void onTabUrlStarted(NinjaWebView webView, String url) {
+    public void onTabUrlStarted(com.petal.browser.browser.AlbumController webView, String url) {
         runOnUiThread(() -> {
             if (webView != ninjaWebView) return;
 
@@ -1705,8 +1691,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     // ─────────────────────────────────────────────────────────────────────────
     // Retained tab surfaces
     //
-    // Every tab's browser surface (PetalGeckoView / NinjaWebView album view) is added to
+    // Every tab's browser surface (PetalGeckoView album view) is added to
     // contentFrame exactly once, the first time that tab is shown, and then stays attached
+
     // for the life of the tab. Switching tabs toggles View.VISIBLE / View.GONE and
     // suspends/resumes the outgoing/incoming GeckoSession via setActive(false/true) (done
     // by AlbumController.deactivate()/activate()). The view is never detached from the
@@ -1724,10 +1711,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     /** True if {@code v} is a browser surface that must be hidden, never detached, on a tab switch. */
     private boolean isTabSurface(View v) {
         return v != null
-                && (v instanceof NinjaWebView
-                || v instanceof com.petal.browser.view.PetalGeckoView
+                && (v instanceof com.petal.browser.view.PetalGeckoView
                 || retainedTabSurfaces.contains(v));
     }
+
 
     /** The topmost child of contentFrame that is not View.GONE, or null if nothing is visible. */
     private View getTopContentChild() {
@@ -1814,7 +1801,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     /**
-     * Mounts an album's view (GeckoView/NinjaWebView container) in {@code targetFrame} the
+     * Mounts an album's view (PetalGeckoView container) in {@code targetFrame} the
      * first time the tab is shown, defending against the GeckoView "attach before WindowInsets are dispatched" NPE
      * (see the caller for the full explanation) that otherwise leaves the frame with zero
      * children — i.e. a blank web page or blank home surface.
@@ -2026,9 +2013,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // must not cycle its session inactive->active: that pauses and resumes compositing
         // for no reason and is itself a source of visible flicker.
         if (currentAlbumController != null && currentAlbumController != controller) {
-            if (currentAlbumController instanceof NinjaWebView) {
-                ((NinjaWebView) currentAlbumController).updatePreviewCache();
-            }
+            
             currentAlbumController.deactivate();
         }
         currentAlbumController = controller;
@@ -2289,7 +2274,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Swap tab surfaces by visibility, never by detaching: the outgoing tab's surface
             // goes View.GONE (its session was already setActive(false)), the incoming tab's
             // surface goes View.VISIBLE. This is the same code path for PetalGeckoView and
-            // NinjaWebView tabs.
+            // tabs.
             hideTabSurfacesExcept(av);
             if (av.getParent() == contentFrame) {
                 // Warm path: this tab's surface is already mounted. No removeView/addView, no
@@ -2406,32 +2391,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
 
                 ninjaWebView.updatePreviewCache();
-                ninjaWebView.setOnScrollChangeListener(new NinjaWebView.OnScrollChangeListener() {
-                    @Override
-                    public void onScrollDown() {
-                        boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
-                        if (!isFloating) return;
-                        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-                        if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
-                            springTranslateY(bottomNavContainer, bottomNavContainer.getHeight(), androidx.dynamicanimation.animation.SpringForce.STIFFNESS_MEDIUM, androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY);
-                        }
-                    }
-
-                    @Override
-                    public void onScrollUp() {
-                        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-                        if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
-                            springTranslateY(bottomNavContainer, 0f, androidx.dynamicanimation.animation.SpringForce.STIFFNESS_MEDIUM, androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY);
-                        }
-                    }
-
-                    @Override
-                    public void onScrollPositionChanged(int scrollY, int contentHeight) {
-                        if (fastScrubberBridge != null) {
-                            fastScrubberBridge.onScrollUpdate(scrollY, contentHeight);
-                        }
-                    }
-                });
+                
             }
         }
         updateOmniBox();
@@ -2891,8 +2851,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean isIncog = false;
             if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 isIncog = ((com.petal.browser.view.PetalGeckoView) controller).isIncognito();
-            } else if (controller instanceof NinjaWebView) {
-                isIncog = ((NinjaWebView) controller).isIncognito();
+            
             } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
                 isIncog = ((com.petal.browser.browser.PlaceholderAlbumController) controller).isIncognito();
             }
@@ -2927,9 +2886,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             closeTabConfirmation(() -> {
                 AlbumController predecessor;
                 if (controller == currentAlbumController) {
-                    if (controller instanceof NinjaWebView) {
-                        predecessor = ((NinjaWebView) controller).getPredecessor();
-                    } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                     else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                         predecessor = ((com.petal.browser.view.PetalGeckoView) controller).getPredecessor();
                     } else {
                         predecessor = null;
@@ -2971,10 +2928,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } catch (Exception ignored) {}
 
                 BrowserContainer.remove(controller);
-                if (controller instanceof NinjaWebView) {
-                    ((NinjaWebView) controller).destroy();
-                    com.petal.browser.unit.TabThumbnailCache.remove(((NinjaWebView) controller).getTabId());
-                } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                 else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                     ((com.petal.browser.view.PetalGeckoView) controller).destroy();
                 }
                 com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
@@ -3001,9 +2955,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             // Retained surface: unmount it from contentFrame before the tab is destroyed.
             detachTabSurface(controller);
-            if (controller instanceof NinjaWebView) {
-                ((NinjaWebView) controller).destroy();
-            } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+             else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 ((com.petal.browser.view.PetalGeckoView) controller).destroy();
             }
             boolean isClosingCurrent = (controller == currentAlbumController);
@@ -3039,9 +2991,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, ((com.petal.browser.view.PetalGeckoView) controller).getTabId());
             }
-            if (controller instanceof NinjaWebView) {
-                com.petal.browser.unit.TabThumbnailCache.remove(((NinjaWebView) controller).getTabId());
-            }
+            
             com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
             if (isClosingCurrent && BrowserContainer.size() > 0) {
                 AlbumController nextController = BrowserContainer.get(Math.max(0, BrowserContainer.size() - 1));
@@ -3050,17 +3000,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         currentAlbumController.deactivate();
                     }
                     currentAlbumController = nextController;
-                    if (currentAlbumController instanceof NinjaWebView) {
-                        
-                    }
                     currentAlbumController.activate();
                 } else {
                     showAlbum(nextController);
                 }
             } else if (BrowserContainer.size() == 0) {
                 currentAlbumController = null;
-                ninjaWebView = null;
             }
+
             updatePersistentBottomNav();
             saveOpenedTabs();
             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(this);
@@ -3083,7 +3030,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         for (AlbumController ac : BrowserContainer.list()) {
             boolean tabIncog = (ac instanceof com.petal.browser.view.PetalGeckoView)
                     ? ((com.petal.browser.view.PetalGeckoView) ac).isIncognito()
-                    : (ac instanceof NinjaWebView && ((NinjaWebView) ac).isIncognito());
+                    : false; // all tabs are GeckoView
             if (tabIncog == isCurrentIncog) {
                 matchingTabs.add(ac);
             }
@@ -4564,9 +4511,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 tab_container.removeView(album.getAlbumView());
                             }
                             detachTabSurface(album);
-                            if (album instanceof NinjaWebView) {
-                                ((NinjaWebView) album).destroy();
-                            }
+                            
                         }
                     }
                     BrowserContainer.clear();

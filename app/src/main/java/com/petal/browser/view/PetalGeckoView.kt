@@ -1905,9 +1905,9 @@ class PetalGeckoView @JvmOverloads constructor(
     // touch instead of surfacing it as a predictive back gesture, which is
     // why the gesture would work on some pages/moments and not others.
     //
-    // Official GeckoView guidance (mirrored here from NinjaWebView's own
-    // fix, and matching how Fennec/Fenix keep the edge clear for the OS)
+    // Official GeckoView guidance (matching how Fennec/Fenix keep the edge clear for the OS)
     // is to clear systemGestureExclusionRects on every ACTION_DOWN, before
+
     // the OS decides whether this touch belongs to the app or to a
     // predictive back/forward edge swipe - clearing it only after the
     // gesture has already started (as BrowserActivity's

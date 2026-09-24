@@ -106,7 +106,6 @@ import com.petal.browser.database.FaviconHelper;
 import com.petal.browser.view.GridItem;
 import com.petal.browser.view.MenuItem;
 import com.petal.browser.view.PetalToast;
-import com.petal.browser.view.NinjaWebView;
 
 public class HelperUnit {
 

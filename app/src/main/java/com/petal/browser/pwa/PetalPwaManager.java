@@ -47,10 +47,11 @@ import java.util.List;
 
 /**
  * PetalPwaManager
- * Dynamic Progressive Web App (PWA) manager supporting both PetalGeckoView (GeckoView engine)
- * and NinjaWebView (WebView engine), providing manifest detection & parsing via JS injection,
- * offline webpage web archive saving, and standalone Web App launching.
+ * Dynamic Progressive Web App (PWA) manager supporting PetalGeckoView (GeckoView engine),
+ * providing manifest detection & parsing via JS injection, offline webpage web archive saving,
+ * and standalone Web App launching.
  */
+
 public class PetalPwaManager {
 
     private static final String TAG = "PetalPwaManager";
@@ -369,9 +370,7 @@ public class PetalPwaManager {
                 if (rawBitmap == null && finalController instanceof com.petal.browser.view.PetalGeckoView) {
                     rawBitmap = ((com.petal.browser.view.PetalGeckoView) finalController).getFavicon();
                 }
-                if (rawBitmap == null && webView instanceof com.petal.browser.view.NinjaWebView) {
-                    rawBitmap = ((com.petal.browser.view.NinjaWebView) webView).getFavicon();
-                }
+                
                 if (rawBitmap == null) {
                     com.petal.browser.database.FaviconHelper helper = new com.petal.browser.database.FaviconHelper(activity);
                     rawBitmap = helper.getFavicon(finalPageUrl);

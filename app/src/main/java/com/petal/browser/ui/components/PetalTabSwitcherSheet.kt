@@ -125,13 +125,11 @@ object PetalTabSwitcherBridge {
                                         if (album is com.petal.browser.view.PetalGeckoView) {
                                             val u = album.url
                                             if (u.isNotBlank() && !u.equals("about:blank", ignoreCase = true) && !u.equals("petal://home", ignoreCase = true)) u else album.getAlbumUrl()
-                                        } else if (album is com.petal.browser.view.NinjaWebView) {
-                                            val u = album.url
-                                            if (!u.isNullOrBlank() && !u.equals("about:blank", ignoreCase = true) && !u.equals("petal://home", ignoreCase = true)) u else album.getAlbumUrl()
                                         } else {
                                             album.getUrl()
                                         }
                                     } catch (_: Exception) { null }
+
                                     val isIncognitoTab = (album is com.petal.browser.view.PetalGeckoView && album.isIncognito()) ||
                                             false
                                     val faviconBitmap = when (album) {
@@ -147,19 +145,13 @@ object PetalTabSwitcherBridge {
                                                 ?: com.petal.browser.unit.TabThumbnailCache.get(album.getAlbumUrl())
                                                 ?: com.petal.browser.unit.TabThumbnailCache.get(album.url)
                                         }
-                                        is com.petal.browser.view.NinjaWebView -> {
-                                            album.getCachedPreviewBitmap()
-                                                ?: album.capturePreviewBitmap()
-                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.getTabId())
-                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.getAlbumUrl())
-                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.url)
-                                        }
                                         is PlaceholderAlbumController -> {
                                             com.petal.browser.unit.TabThumbnailCache.get(album.getTabId())
                                                 ?: com.petal.browser.unit.TabThumbnailCache.get(album.url)
                                         }
                                         else -> com.petal.browser.unit.TabThumbnailCache.get(album.hashCode().toString())
                                     }
+
 
                                     val displayTitle = when {
                                         !rawTitle.isNullOrBlank() && !rawTitle.equals("about:blank", ignoreCase = true) && !rawTitle.equals("Petal Start", ignoreCase = true) && !rawTitle.equals("Petal Home", ignoreCase = true) -> rawTitle
@@ -225,11 +217,10 @@ object PetalTabSwitcherBridge {
                                 tabItems.removeAll { it.id == tabItem.id }
                                 if (targetAlbum is com.petal.browser.view.PetalGeckoView) {
                                     com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
-                                } else if (targetAlbum is com.petal.browser.view.NinjaWebView) {
-                                    com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
                                 } else if (targetAlbum is PlaceholderAlbumController) {
                                     com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
                                 }
+
                                 com.petal.browser.unit.TabThumbnailCache.remove(tabItem.id)
                                 onCloseTab(targetAlbum)
                                 com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
@@ -312,17 +303,9 @@ object PetalTabSwitcherBridge {
                                         }
                                     }
                                 }
-                            } else if (targetAlbum is com.petal.browser.view.NinjaWebView) {
-                                targetAlbum.capturePreviewBitmapAsync { bitmap ->
-                                    if (bitmap != null) {
-                                        val index = tabItems.indexOfFirst { it.id == tabItem.id }
-                                        if (index >= 0) {
-                                            tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
-                                        }
-                                    }
-                                }
                             }
                         },
+
                         onDuplicateTab = { tabItem ->
                             if (activity is BrowserActivity) {
                                 val url = if (tabItem.url.isBlank() || tabItem.url == "Petal Home") "about:blank" else tabItem.url
