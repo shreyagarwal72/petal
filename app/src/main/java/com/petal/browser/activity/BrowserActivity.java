@@ -3912,7 +3912,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             "})();",
             value -> {
                 aiResearchTimeoutHandler.removeCallbacks(aiResearchTimeoutRunnable);
-                if (!isAiResearchExtracting) return; // already timed out, ignore late callback
+                if (!isAiResearchExtracting) return kotlin.Unit.INSTANCE; // already timed out, ignore late callback
                 isAiResearchExtracting = false;
 
                 String cleanText = value != null ? value : "";
