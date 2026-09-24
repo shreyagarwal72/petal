@@ -81,12 +81,8 @@ object PetalTabSessionManager {
 
                 for (controller in controllers) {
                     // Privacy guarantee: NEVER persist incognito tabs
-                    val isIncognito = when (controller) {
-                        is PetalGeckoView -> controller.isIncognito()
-                        is NinjaWebView -> controller.isIncognito()
-                        is PlaceholderAlbumController -> controller.isIncognito()
-                        else -> false
-                    }
+                    val isIncognito = controller.isIncognito
+
                     if (isIncognito) continue
 
                     val rawUrl = controller.url ?: ""
@@ -107,19 +103,16 @@ object PetalTabSessionManager {
                     val rawTitle = controller.title ?: ""
                     val tabId = when (controller) {
                         is PetalGeckoView -> controller.getTabId()
-                        is NinjaWebView -> controller.getTabId()
                         is PlaceholderAlbumController -> controller.getTabId()
                         else -> controller.hashCode().toString()
                     }
                     val groupId = when (controller) {
                         is PetalGeckoView -> controller.getTabGroupId()
-                        is NinjaWebView -> controller.getTabGroupId()
                         is PlaceholderAlbumController -> controller.getTabGroupId()
                         else -> null
                     }
                     val groupTitle = when (controller) {
                         is PetalGeckoView -> controller.getTabGroupTitle()
-                        is NinjaWebView -> controller.getTabGroupTitle()
                         is PlaceholderAlbumController -> controller.getTabGroupTitle()
                         else -> null
                     }
