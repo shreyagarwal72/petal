@@ -247,22 +247,7 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onOpenSafeLocker() {
-                    val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
-                        setViewTreeLifecycleOwner(activity)
-                        setViewTreeViewModelStoreOwner(activity)
-                        setViewTreeSavedStateRegistryOwner(activity)
-                        setContent {
-                            com.petal.browser.ui.theme.PetalExpressiveTheme {
-                                com.petal.browser.privacy.SafeLockerSheet(
-                                    onDismissRequest = {
-                                        (parent as? android.view.ViewGroup)?.removeView(this)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    val decor = activity.window.decorView as? android.view.ViewGroup
-                    decor?.addView(composeView)
+                    activity.showSafeLocker()
                 }
 
                 override fun onTriggerMediaMode() {

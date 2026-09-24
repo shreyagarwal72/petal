@@ -1132,6 +1132,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onTrimMemory(int level) {
         super.onTrimMemory(level);
+        try {
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.onTrimMemory(this, level);
+            com.petal.browser.unit.TabThumbnailCache.clear();
+        } catch (Throwable t) {
+            Log.d(TAG, "Error in onTrimMemory: " + t.getMessage());
+        }
         // Proactively suspend background GeckoView tabs under memory pressure so the OS
         // doesn't OOM-kill the content process mid-session. Levels RUNNING_LOW (10),
         // RUNNING_CRITICAL (15), and COMPLETE (80) are the most urgent signals.
@@ -4877,6 +4883,42 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public void showSafeLockerScreen() {
+        try {
+            captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
+            clearContentFrameKeepingTabs();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_safe = findViewById(R.id.fab_bubble);
+            if (fab_bubble_safe != null) fab_bubble_safe.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
+            View safeLockerView = com.petal.browser.privacy.SafeLockerBridge.createSafeLockerView(
+                BrowserActivity.this,
+                () -> {
+                    isOverlayScreenShowing = false;
+                    removeOverlayViews();
+                    showAlbum(currentAlbumController);
+                    updatePersistentBottomNav();
+                    updateOmniBox();
+                    return kotlin.Unit.INSTANCE;
+                }
+            );
+            presentComposeScreen(safeLockerView);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void showSafeLocker() {
+        showSafeLockerScreen();
+    }
+
     public void showCreditsScreen() {
         showCreditsScreen(null);
     }
@@ -6613,16 +6655,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    @Override
-    public void onTrimMemory(int level) {
-        super.onTrimMemory(level);
-        try {
-            com.petal.browser.engine.gecko.PetalGeckoRuntime.onTrimMemory(this, level);
-            com.petal.browser.unit.TabThumbnailCache.clear();
-        } catch (Throwable t) {
-            Log.d(TAG, "Error in onTrimMemory: " + t.getMessage());
-        }
-    }
 
     @Override
     public void onLowMemory() {
