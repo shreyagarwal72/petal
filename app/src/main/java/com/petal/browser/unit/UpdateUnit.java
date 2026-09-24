@@ -309,7 +309,7 @@ public class UpdateUnit {
     }
 
     private static void downloadAndInstallApk(final Activity activity, final String apkUrl, final String version) {
-        long downloadId = com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueueSystemUpdateDownload(
+        long downloadId = com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueuePetalUpdateDownload(
                 activity.getApplicationContext(),
                 apkUrl,
                 version

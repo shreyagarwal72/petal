@@ -1,29 +1,5 @@
-/*
- * MIT License
- * Copyright (c) 2026 Petal Browser
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT/TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 package com.petal.browser.unit
 
-import android.app.DownloadManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -33,53 +9,29 @@ import android.provider.Settings
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.preference.PreferenceManager
+import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.view.PetalToast
+import com.tonyodev.fetch2.AbstractFetchListener
+import com.tonyodev.fetch2.Download
+import com.tonyodev.fetch2.EnqueueAction
+import com.tonyodev.fetch2.Error
+import com.tonyodev.fetch2.Fetch
+import com.tonyodev.fetch2.NetworkType
+import com.tonyodev.fetch2.Priority
+import com.tonyodev.fetch2.Request
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
- * BroadcastReceiver triggered when the system DownloadManager completes downloading
- * an in-app update APK. Survives app backgrounding and process termination.
+ * Petal in-app update installer and downloader.
+ * Uses Petal's high-speed internal download engine (Fetch2 + OkHttp) exclusively.
+ * Fully eliminates legacy android.app.DownloadManager dependencies.
  */
 class PetalUpdateInstallerReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (DownloadManager.ACTION_DOWNLOAD_COMPLETE == intent.action) {
-            val downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
-            if (downloadId <= 0L) return
-
-            val sp = PreferenceManager.getDefaultSharedPreferences(context)
-            val activeUpdateDownloadId = sp.getLong(KEY_UPDATE_DOWNLOAD_ID, -1L)
-            val updateFilePath = sp.getString(KEY_UPDATE_FILE_PATH, null)
-
-            if (downloadId == activeUpdateDownloadId && !updateFilePath.isNullOrBlank()) {
-                val apkFile = File(updateFilePath)
-                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-                if (dm != null) {
-                    val query = DownloadManager.Query().setFilterById(downloadId)
-                    dm.query(query)?.use { cursor ->
-                        if (cursor.moveToFirst()) {
-                            val statusIdx = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                            val status = if (statusIdx >= 0) cursor.getInt(statusIdx) else -1
-                            if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                                sp.edit().remove(KEY_UPDATE_DOWNLOAD_ID).apply()
-                                installDownloadedApk(context, apkFile)
-                            } else if (status == DownloadManager.STATUS_FAILED) {
-                                sp.edit().remove(KEY_UPDATE_DOWNLOAD_ID).apply()
-                                PetalToast.show(context, "Update download failed")
-                            }
-                        }
-                    }
-                } else if (apkFile.exists() && apkFile.length() > 0) {
-                    sp.edit().remove(KEY_UPDATE_DOWNLOAD_ID).apply()
-                    installDownloadedApk(context, apkFile)
-                }
-            }
-        }
+        // Maintained as a standard receiver stub for any broadcast callbacks if needed.
     }
 
     companion object {
@@ -88,115 +40,165 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
         const val KEY_UPDATE_FILE_PATH = "sp_active_update_file_path"
         const val KEY_UPDATE_VERSION = "sp_active_update_version"
 
+        /**
+         * Downloads update APK using Petal Download Manager engine with live progress callbacks.
+         */
         @JvmStatic
         suspend fun downloadAndInstallApk(
             context: Context,
             apkUrl: String,
             version: String,
             onProgressUpdate: (Int) -> Unit
-        ): Boolean = withContext(Dispatchers.IO) {
-            var connection: HttpURLConnection? = null
-            var output: FileOutputStream? = null
-            try {
-                val cleanVersion = version.replace(Regex("[^a-zA-Z0-9]"), "_")
-                val fileName = "Petal_v${cleanVersion}.apk"
-                val downloadsDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
-                    ?: context.filesDir
-                val destinationFile = File(downloadsDir, fileName)
-                if (destinationFile.exists()) {
-                    destinationFile.delete()
-                }
-
-                val url = URL(apkUrl)
-                connection = (url.openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 15000
-                    readTimeout = 30000
-                    instanceFollowRedirects = true
-                    setRequestProperty("User-Agent", "PetalBrowserApp")
-                }
-                connection.connect()
-
-                val fileLength = connection.contentLength
-                val input = connection.inputStream
-                output = FileOutputStream(destinationFile)
-
-                val data = ByteArray(8192)
-                var total: Long = 0
-                var count: Int
-                var lastReportedProgress = -1
-
-                while (input.read(data).also { count = it } != -1) {
-                    total += count
-                    if (fileLength > 0) {
-                        val progress = ((total * 100) / fileLength).toInt()
-                        if (progress != lastReportedProgress) {
-                            lastReportedProgress = progress
-                            withContext(Dispatchers.Main) {
-                                onProgressUpdate(progress)
-                            }
-                        }
-                    }
-                    output.write(data, 0, count)
-                }
-                output.flush()
-
-                withContext(Dispatchers.Main) {
-                    onProgressUpdate(100)
-                    installDownloadedApk(context, destinationFile)
-                }
-                true
-            } catch (e: Exception) {
-                Log.e(TAG, "In-app update download failed: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    PetalToast.show(context, "Update download failed: ${e.message}")
-                }
-                false
-            } finally {
-                try { output?.close() } catch (_: Exception) {}
-                try { connection?.disconnect() } catch (_: Exception) {}
+        ): Boolean = withContext(Dispatchers.Main) {
+            val appContext = context.applicationContext
+            val cleanVersion = version.replace(Regex("[^a-zA-Z0-9]"), "_")
+            val fileName = "Petal_v${cleanVersion}.apk"
+            val downloadsDir = appContext.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
+                ?: appContext.filesDir
+            val destinationFile = File(downloadsDir, fileName)
+            if (destinationFile.exists()) {
+                destinationFile.delete()
             }
-        }
 
-        @JvmStatic
-        fun enqueueSystemUpdateDownload(context: Context, downloadUrl: String, version: String): Long {
-            return try {
-                val cleanVersion = version.replace(Regex("[^a-zA-Z0-9]"), "_")
-                val fileName = "Petal_v${cleanVersion}.apk"
-                val downloadsDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
-                    ?: context.filesDir
-                val destinationFile = File(downloadsDir, fileName)
-                if (destinationFile.exists()) {
-                    destinationFile.delete()
+            val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
+            val downloadEngine = com.petal.browser.download.PetalDownloadEngine.getInstance(appContext)
+            val fetch = downloadEngine.fetch
+
+            val request = Request(apkUrl, destinationFile.absolutePath).apply {
+                priority = Priority.HIGH
+                networkType = NetworkType.ALL
+                enqueueAction = EnqueueAction.REPLACE_EXISTING
+                autoRetryMaxAttempts = 10
+                addHeader("User-Agent", "PetalBrowserApp")
+            }
+
+            var completed = false
+            val listener = object : AbstractFetchListener() {
+                override fun onProgress(download: Download, etaInMilliSeconds: Long, downloadedBytesPerSecond: Long) {
+                    if (download.id == request.id) {
+                        val progress = download.progress.coerceIn(0, 100)
+                        onProgressUpdate(progress)
+                    }
                 }
 
-                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-                    ?: throw IllegalStateException("DownloadManager not available")
-
-                val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
-                    setTitle("Petal Browser $version Update")
-                    setDescription("Downloading update package...")
-                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    setDestinationUri(Uri.fromFile(destinationFile))
-                    setMimeType("application/vnd.android.package-archive")
-                    setAllowedOverMetered(true)
-                    setAllowedOverRoaming(true)
+                override fun onCompleted(download: Download) {
+                    if (download.id == request.id) {
+                        completed = true
+                        fetch.removeListener(this)
+                        sp.edit().remove(KEY_UPDATE_DOWNLOAD_ID).apply()
+                        onProgressUpdate(100)
+                        installDownloadedApk(appContext, destinationFile)
+                    }
                 }
 
-                val downloadId = dm.enqueue(request)
+                override fun onError(download: Download, error: Error, throwable: Throwable?) {
+                    if (download.id == request.id) {
+                        fetch.removeListener(this)
+                        sp.edit().remove(KEY_UPDATE_DOWNLOAD_ID).apply()
+                        Log.e(TAG, "Update download failed via Petal Download Manager: $error", throwable)
+                        PetalToast.show(appContext, "Update download failed: $error")
+                    }
+                }
+            }
 
-                val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            fetch.addListener(listener)
+            fetch.enqueue(request, { req ->
                 sp.edit()
-                    .putLong(KEY_UPDATE_DOWNLOAD_ID, downloadId)
+                    .putLong(KEY_UPDATE_DOWNLOAD_ID, req.id.toLong())
                     .putString(KEY_UPDATE_FILE_PATH, destinationFile.absolutePath)
                     .putString(KEY_UPDATE_VERSION, version)
                     .apply()
+                com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(
+                    appContext,
+                    req.id.toLong(),
+                    destinationFile.name
+                )
+            }, { err ->
+                fetch.removeListener(listener)
+                Log.e(TAG, "Failed to enqueue update download: $err")
+                PetalToast.show(appContext, "Failed to start update download: $err")
+            })
 
-                PetalToast.show(context, "Update download started in background...")
-                downloadId
+            true
+        }
+
+        /**
+         * Enqueues update download directly in Petal Download Manager (Fetch2 engine).
+         * Runs in background with notification and automatically prompts to install on completion.
+         */
+        @JvmStatic
+        fun enqueuePetalUpdateDownload(context: Context, downloadUrl: String, version: String): Long {
+            return try {
+                val appContext = context.applicationContext
+                val cleanVersion = version.replace(Regex("[^a-zA-Z0-9]"), "_")
+                val fileName = "Petal_v${cleanVersion}.apk"
+                val downloadsDir = appContext.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
+                    ?: appContext.filesDir
+                val destinationFile = File(downloadsDir, fileName)
+                if (destinationFile.exists()) {
+                    destinationFile.delete()
+                }
+
+                val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
+                val downloadEngine = com.petal.browser.download.PetalDownloadEngine.getInstance(appContext)
+                val fetch = downloadEngine.fetch
+
+                val request = Request(downloadUrl, destinationFile.absolutePath).apply {
+                    priority = Priority.HIGH
+                    networkType = NetworkType.ALL
+                    enqueueAction = EnqueueAction.REPLACE_EXISTING
+                    autoRetryMaxAttempts = 10
+                    addHeader("User-Agent", "PetalBrowserApp")
+                }
+
+                fetch.addListener(object : AbstractFetchListener() {
+                    override fun onCompleted(download: Download) {
+                        if (download.id == request.id) {
+                            fetch.removeListener(this)
+                            sp.edit().remove(KEY_UPDATE_DOWNLOAD_ID).apply()
+                            installDownloadedApk(appContext, destinationFile)
+                        }
+                    }
+
+                    override fun onError(download: Download, error: Error, throwable: Throwable?) {
+                        if (download.id == request.id) {
+                            fetch.removeListener(this)
+                            sp.edit().remove(KEY_UPDATE_DOWNLOAD_ID).apply()
+                            Log.e(TAG, "Background update download failed: $error", throwable)
+                            PetalToast.show(appContext, "Update download failed: $error")
+                        }
+                    }
+                })
+
+                fetch.enqueue(request, { req ->
+                    sp.edit()
+                        .putLong(KEY_UPDATE_DOWNLOAD_ID, req.id.toLong())
+                        .putString(KEY_UPDATE_FILE_PATH, destinationFile.absolutePath)
+                        .putString(KEY_UPDATE_VERSION, version)
+                        .apply()
+                    com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(
+                        appContext,
+                        req.id.toLong(),
+                        destinationFile.name
+                    )
+                    PetalToast.show(appContext, "Petal update downloading in background...")
+                }, { err ->
+                    Log.e(TAG, "Failed to enqueue update download: $err")
+                })
+
+                request.id.toLong()
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to enqueue update download with DownloadManager", e)
+                Log.e(TAG, "Failed to enqueue update download in Petal Download Manager", e)
                 -1L
             }
+        }
+
+        /**
+         * Backward compatibility stub delegating to Petal Download Manager.
+         */
+        @JvmStatic
+        fun enqueueSystemUpdateDownload(context: Context, downloadUrl: String, version: String): Long {
+            return enqueuePetalUpdateDownload(context, downloadUrl, version)
         }
 
         @JvmStatic

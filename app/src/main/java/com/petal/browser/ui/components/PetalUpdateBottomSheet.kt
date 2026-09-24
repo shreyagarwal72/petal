@@ -578,7 +578,7 @@ fun PetalUpdateSheetContent(
                                     if (!success) {
                                         isDownloading = false
                                         isDownloadEnqueued = true
-                                        com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueueSystemUpdateDownload(
+                                        com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueuePetalUpdateDownload(
                                             context = context,
                                             downloadUrl = updateInfo.downloadUrl,
                                             version = updateInfo.versionName
@@ -608,7 +608,7 @@ fun PetalUpdateSheetContent(
                                 onClick = {
                                     updateSplitExpanded = false
                                     isDownloadEnqueued = true
-                                    com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueueSystemUpdateDownload(
+                                    com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueuePetalUpdateDownload(
                                         context = context,
                                         downloadUrl = updateInfo.downloadUrl,
                                         version = updateInfo.versionName
