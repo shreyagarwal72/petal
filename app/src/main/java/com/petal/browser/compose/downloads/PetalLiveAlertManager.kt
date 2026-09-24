@@ -53,7 +53,7 @@ object PetalLiveAlertManager {
     }
 
     @JvmStatic
-    private fun startGlobalDownloadObserver(context: Context) {
+    fun startGlobalDownloadObserver(context: Context) {
         if (isGlobalCollectorStarted) return
         synchronized(this) {
             if (isGlobalCollectorStarted) return
