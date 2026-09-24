@@ -1,3 +1,29 @@
+### v3.9 — 🌸 Material 3 Expressive Extensions & Find in Page Milestone
+
+> *"Material 3 Expressive Extensions Manager with dedicated Built-in & Firefox Add-on tabs, real AMO icons, Petal Dark Webpages with whitelist, and website-exclusive floating Find in Page."*
+
+#### 🧩 Extensions Ecosystem Modernization
+- **Expressive Multi-Tab Architecture**: Completely redesigned `PetalExtensionsScreen` using Material 3 Expressive design tokens, pill tabs, fluid elevation, and responsive container cards.
+  - **Tab 1 — Petal Built-in Extensions**: Dedicated ecosystem for browser-native capabilities:
+    - *Dark Webpages*: Native CSS/DOM inversion dark mode engine replacing legacy Dark Reader, featuring per-site whitelist controls and real-time contrast adjustment.
+    - *Clean Link*: Automatic real-time stripping of URL marketing trackers, analytics parameters (`utm_*`, `fbclid`, `gclid`, etc.).
+    - *Universal Copy*: Enables text selection and copying on sites that aggressively restrict user selection.
+    - *AI Overview Blocker*: Filters out intrusive search engine AI-generated preview widgets.
+  - **Tab 2 — Firefox Add-ons (AMO)**: Combined Installed and Recommended sections on a single unified canvas with real AMO icons fetched live via Mozilla CDN URLs with disk caching.
+- **Dedicated Extension Settings**: Built-in extensions now feature detailed configuration sheets with toggles, domain whitelists, and parameter controls.
+- **Menu Simplification**: Consolidated disparate tool toggles from the overflow menu into Petal Built-in Extensions.
+
+#### 🔍 Material 3 Expressive Find in Page
+- **Floating Expressive Pill Bar**: Replaced legacy Android search bar with `PetalFindInPageBar` built entirely with Material 3 Expressive styling, soft rounded corners, tonal elevation, and smooth slide animations.
+- **Website-Exclusive Display**: Find in Page is now strictly available only while browsing web content, automatically hidden on homepage, bookmarks, and internal views.
+- **Fluid Keyboard & Match Traversal**: Instant auto-focus, ime navigation actions, match jumping with directional indicator controls, and responsive dismiss gesture handling.
+
+#### 🛠️ Core Stability & GeckoView Integration
+- **Legacy WebView Cleanup**: Resolved residual conditional references to legacy components, unifying all browser tabs under Mozilla GeckoView.
+- **Build & Interop Optimization**: Verified Java/Kotlin Composable SAM conversions and Compose lifecycle bindings.
+
+---
+
 ### v3.3 — Address Bar & Search Customization
 
 > *Compact address bar, dedicated customization settings, improved bottom positioning, and unlimited custom search engines.*

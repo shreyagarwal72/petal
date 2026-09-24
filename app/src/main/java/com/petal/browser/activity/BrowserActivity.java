@@ -2885,7 +2885,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             closeTabConfirmation(() -> {
                 AlbumController predecessor;
                 if (controller == currentAlbumController) {
-                     else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                    if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                         predecessor = ((com.petal.browser.view.PetalGeckoView) controller).getPredecessor();
                     } else {
                         predecessor = null;
@@ -2927,7 +2927,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } catch (Exception ignored) {}
 
                 BrowserContainer.remove(controller);
-                 else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                     ((com.petal.browser.view.PetalGeckoView) controller).destroy();
                 }
                 com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
@@ -2954,7 +2954,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             // Retained surface: unmount it from contentFrame before the tab is destroyed.
             detachTabSurface(controller);
-             else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+            if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 ((com.petal.browser.view.PetalGeckoView) controller).destroy();
             }
             boolean isClosingCurrent = (controller == currentAlbumController);
