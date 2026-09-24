@@ -245,4 +245,20 @@
     <string name="pref_custom_tabs_desktop">Desktop site</string>
     <string name="pref_custom_tabs_open_browser">Open in Petal Browser</string>
     <string name="pref_custom_tabs_copied">Link copied to clipboard</string>
+
+    <!-- PDF Viewer Features: Find, Annotate & Edit -->
+    <string name="pdf_find_in_document">Find in document</string>
+    <string name="pdf_find_hint">Find text…</string>
+    <string name="pdf_find_no_results">No results</string>
+    <string name="pdf_edit_mode">Edit &amp; Annotate</string>
+    <string name="pdf_draw_pen">Pen</string>
+    <string name="pdf_highlight">Highlighter</string>
+    <string name="pdf_text_note">Text Note</string>
+    <string name="pdf_eraser">Eraser</string>
+    <string name="pdf_clear_annotations">Clear Annotations</string>
+    <string name="pdf_save_changes">Save Changes</string>
+    <string name="pdf_saved_successfully">PDF saved successfully</string>
+    <string name="pdf_zoom_in">Zoom In</string>
+    <string name="pdf_zoom_out">Zoom Out</string>
+    <string name="pdf_fit_width">Fit to Width</string>
 </resources>

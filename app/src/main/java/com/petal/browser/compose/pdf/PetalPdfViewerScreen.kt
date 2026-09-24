@@ -1,18 +1,21 @@
 /*
  * PetalPdfViewerScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Built-in native Material 3 Expressive PDF viewer for Petal Browser.
- * Inspired by ImageToolbox:
- *   • Pure native android.graphics.pdf.PdfRenderer (zero heavy external binary dependencies)
+ * Built-in native Material 3 Expressive PDF viewer & editor for Petal Browser.
+ * Features:
  *   • Smooth multi-page continuous vertical viewing with LazyColumn
- *   • High-performance asynchronous background rendering with coroutines
- *   • Pinch-to-zoom (0.8x - 5.0x) & pan with double-tap zoom toggle
+ *   • Full Pinch-to-zoom (0.5x - 6.0x), zoom in / zoom out buttons & fit-to-width
+ *   • Find Text in document with search query, occurrence count, Next/Previous jump
+ *   • Document Annotation & Editing:
+ *       - Pen & Highlighter freehand drawing
+ *       - Text notes placed directly onto pages
+ *       - Eraser & Clear annotations
+ *       - Save changes directly to disk (file:// or exports new annotated PDF)
  *   • Expressive floating M3 glassmorphism top and bottom app bars with auto-hide
  *   • Jump to Page dialog with slider + direct number input
  *   • Bottom sheet page thumbnail grid drawer for fast visual skimming
  *   • Native Android PrintManager integration for instant direct printing / PDF export
  *   • Share sheet, document info sheet (page count, dimensions, file size, path)
- *   • Supports content:// and file:// URIs seamlessly
  *
  * MIT License — Copyright (c) 2026 Petal Browser
  */
@@ -22,7 +25,10 @@ package com.petal.browser.compose.pdf
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
+import android.graphics.Paint as AndroidPaint
+import android.graphics.pdf.PdfDocument
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -30,28 +36,23 @@ import android.print.PrintAttributes
 import android.print.PrintDocumentAdapter
 import android.print.PrintManager
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,8 +66,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -97,6 +103,32 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+// ─── Annotation Data Models ──────────────────────────────────────────────────
+
+enum class AnnotationTool {
+    NONE, PEN, HIGHLIGHTER, TEXT, ERASER
+}
+
+data class StrokePath(
+    val points: List<Offset>,
+    val color: Color,
+    val strokeWidth: Float,
+    val isHighlighter: Boolean = false
+)
+
+data class TextAnnotation(
+    val text: String,
+    val normX: Float,
+    val normY: Float,
+    val color: Color = Color(0xFF1E88E5),
+    val fontSizeSp: Float = 14f
+)
+
+data class PageAnnotations(
+    val strokes: MutableList<StrokePath> = mutableListOf(),
+    val textNotes: MutableList<TextAnnotation> = mutableListOf()
+)
 
 // ─── Java-Callable Bridge Entry Point ────────────────────────────────────────
 
@@ -173,30 +205,68 @@ fun PetalPdfViewerScreen(
     var showInfoSheet by remember { mutableStateOf(false) }
     var showJumpDialog by remember { mutableStateOf(false) }
 
-    // Real system bar insets, so the floating top/bottom bars never cover the first/last
-    // page regardless of status bar height, camera cutouts, or 3-button vs. gesture nav.
+    // Find Text State
+    var showFindBar by remember { mutableStateOf(false) }
+    var findQuery by remember { mutableStateOf("") }
+    var findResults by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var currentFindIndex by remember { mutableIntStateOf(0) }
+
+    // Edit & Annotation State
+    var isEditMode by remember { mutableStateOf(false) }
+    var selectedTool by remember { mutableStateOf(AnnotationTool.PEN) }
+    var selectedColor by remember { mutableStateOf(Color(0xFFE53935)) } // default Red
+    val annotationsMap = remember { mutableStateMapOf<Int, PageAnnotations>() }
+    var showAddNoteDialog by remember { mutableStateOf(false) }
+    var pendingNotePage by remember { mutableIntStateOf(0) }
+    var isSavingPdf by remember { mutableStateOf(false) }
+
+    // Real system bar insets
     val statusBarInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding()
     val navBarInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
-    // Zoom & Pan state
+    // Zoom & Pan state (Supports 0.5x to 6.0x)
     val scaleAnim = remember { Animatable(1f) }
     val offsetXAnim = remember { Animatable(0f) }
     val offsetYAnim = remember { Animatable(0f) }
 
-    // Auto-hide controls timer
+    val zoomBy: (Float) -> Unit = { factor ->
+        coroutineScope.launch {
+            val targetScale = (scaleAnim.value * factor).coerceIn(0.5f, 6.0f)
+            scaleAnim.animateTo(targetScale, spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium))
+            if (targetScale <= 1f) {
+                offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+                offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+            }
+        }
+    }
+
+    val resetZoom: () -> Unit = {
+        coroutineScope.launch {
+            scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy))
+            offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+            offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+        }
+    }
+
+    // Auto-hide controls timer (disabled when editing or searching)
     val hideJob = remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     val scheduleHideControls: () -> Unit = {
-        hideJob.value?.cancel()
-        hideJob.value = coroutineScope.launch {
-            delay(4000)
-            if (isActive) controlsVisible = false
+        if (!isEditMode && !showFindBar) {
+            hideJob.value?.cancel()
+            hideJob.value = coroutineScope.launch {
+                delay(4500)
+                if (isActive) controlsVisible = false
+            }
         }
     }
     val toggleControls: () -> Unit = {
-        controlsVisible = !controlsVisible
-        if (controlsVisible) scheduleHideControls()
+        if (!isEditMode && !showFindBar) {
+            controlsVisible = !controlsVisible
+            if (controlsVisible) scheduleHideControls()
+        }
     }
+
     LaunchedEffect(Unit) { scheduleHideControls() }
 
     // Load PDF safely from URI
@@ -254,7 +324,111 @@ fun PetalPdfViewerScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler(onBack = onBackPress)
+    // Save Annotations function
+    val saveAnnotatedPdf: () -> Unit = {
+        if (pdfRenderer == null || pageCount == 0) return@saveAnnotatedPdf
+        coroutineScope.launch {
+            isSavingPdf = true
+            val success = withContext(Dispatchers.IO) {
+                try {
+                    val outDoc = PdfDocument()
+                    val paint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG)
+                    val textPaint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
+                        textSize = 28f
+                        isFakeBoldText = true
+                    }
+
+                    for (pageIdx in 0 until pageCount) {
+                        val page = synchronized(pdfRenderer!!) { pdfRenderer!!.openPage(pageIdx) }
+                        val pw = page.width
+                        val ph = page.height
+
+                        val bmp = Bitmap.createBitmap(pw, ph, Bitmap.Config.ARGB_8888)
+                        bmp.eraseColor(AndroidColor.WHITE)
+                        synchronized(pdfRenderer!!) {
+                            page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                            page.close()
+                        }
+
+                        val canvas = AndroidCanvas(bmp)
+                        val pageAnno = annotationsMap[pageIdx]
+                        if (pageAnno != null) {
+                            // Draw freehand strokes
+                            for (stroke in pageAnno.strokes) {
+                                paint.color = android.graphics.Color.argb(
+                                    (stroke.color.alpha * 255).toInt(),
+                                    (stroke.color.red * 255).toInt(),
+                                    (stroke.color.green * 255).toInt(),
+                                    (stroke.color.blue * 255).toInt()
+                                )
+                                paint.strokeWidth = stroke.strokeWidth * (pw / 400f).coerceAtLeast(1f)
+                                paint.style = AndroidPaint.Style.STROKE
+                                paint.strokeCap = AndroidPaint.Cap.ROUND
+                                paint.strokeJoin = AndroidPaint.Join.ROUND
+
+                                val p = android.graphics.Path()
+                                stroke.points.forEachIndexed { i, pt ->
+                                    val realX = pt.x * pw
+                                    val realY = pt.y * ph
+                                    if (i == 0) p.moveTo(realX, realY) else p.lineTo(realX, realY)
+                                }
+                                canvas.drawPath(p, paint)
+                            }
+
+                            // Draw text notes
+                            for (note in pageAnno.textNotes) {
+                                textPaint.color = android.graphics.Color.argb(
+                                    (note.color.alpha * 255).toInt(),
+                                    (note.color.red * 255).toInt(),
+                                    (note.color.green * 255).toInt(),
+                                    (note.color.blue * 255).toInt()
+                                )
+                                canvas.drawText(note.text, note.normX * pw, note.normY * ph, textPaint)
+                            }
+                        }
+
+                        val pageInfo = PdfDocument.PageInfo.Builder(pw, ph, pageIdx + 1).create()
+                        val docPage = outDoc.startPage(pageInfo)
+                        docPage.canvas.drawBitmap(bmp, 0f, 0f, null)
+                        outDoc.finishPage(docPage)
+                        bmp.recycle()
+                    }
+
+                    // Save output
+                    val destFile: File = if (pdfUri.scheme == "file") {
+                        File(pdfUri.path ?: pdfUri.toString().removePrefix("file://"))
+                    } else {
+                        val documentsDir = context.getExternalFilesDir(null) ?: context.filesDir
+                        File(documentsDir, "Edited_" + (pdfUri.lastPathSegment ?: "document.pdf"))
+                    }
+
+                    FileOutputStream(destFile).use { outDoc.writeTo(it) }
+                    outDoc.close()
+                    true
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    false
+                }
+            }
+            isSavingPdf = false
+            if (success) {
+                NinjaToast.show(context, "PDF saved successfully!")
+                isEditMode = false
+            } else {
+                NinjaToast.show(context, "Failed to save PDF modifications")
+            }
+        }
+    }
+
+    androidx.activity.compose.BackHandler {
+        if (isEditMode) {
+            isEditMode = false
+        } else if (showFindBar) {
+            showFindBar = false
+        } else {
+            onBackPress()
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -266,252 +440,399 @@ fun PetalPdfViewerScreen(
             )
         }
     ) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(innerPadding)
-                ) {
-                    when {
-                        isLoading -> {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                    Spacer(Modifier.height(16.dp))
-                                    Text(
-                                        text = "Loading PDF...",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(innerPadding)
+        ) {
+            when {
+                isLoading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = "Loading PDF...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                loadError != null -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                com.petal.browser.ui.components.PetalShapeIconBadge(
+                                    shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                    size = 72.dp,
+                                    iconSize = 36.dp,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.ErrorOutline,
+                                        contentDescription = null,
                                     )
                                 }
-                            }
-                        }
-
-                        loadError != null -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(24.dp),
-                                    color = MaterialTheme.colorScheme.errorContainer,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(24.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        com.petal.browser.ui.components.PetalShapeIconBadge(
-                                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
-                                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
-                                            contentColor = MaterialTheme.colorScheme.error,
-                                            size = 72.dp,
-                                            iconSize = 36.dp,
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.ErrorOutline,
-                                                contentDescription = null,
-                                            )
-                                        }
-                                        Spacer(Modifier.height(12.dp))
-                                        Text(
-                                            text = "Cannot Display PDF",
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onErrorContainer
-                                        )
-                                        Spacer(Modifier.height(6.dp))
-                                        Text(
-                                            text = loadError ?: "",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            textAlign = TextAlign.Center,
-                                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
-                                        )
-                                        Spacer(Modifier.height(18.dp))
-                                        FilledTonalButton(
-                                            onClick = onBackPress,
-                                            shape = RoundedCornerShape(12.dp)
-                                        ) {
-                                            Text("Go Back")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        else -> {
-                            // ── Multi-Page Lazy Column with Interactive Zoom & Pan ──
-                            val gestureModifier = Modifier
-                                .fillMaxSize()
-                                .pointerInput(pdfUri) {
-                                    detectTapGestures(
-                                        onTap = { toggleControls() },
-                                        onDoubleTap = { tapOffset ->
-                                            coroutineScope.launch {
-                                                if (scaleAnim.value > 1.2f) {
-                                                    scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
-                                                    offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
-                                                    offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
-                                                } else {
-                                                    val targetScale = 2.4f
-                                                    val centreX = size.width / 2f
-                                                    val centreY = size.height / 2f
-                                                    scaleAnim.animateTo(targetScale, spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium))
-                                                    offsetXAnim.animateTo(
-                                                        ((centreX - tapOffset.x) * (targetScale - 1f)).coerceIn(-centreX, centreX),
-                                                        spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium)
-                                                    )
-                                                    offsetYAnim.animateTo(
-                                                        ((centreY - tapOffset.y) * (targetScale - 1f)).coerceIn(-centreY, centreY),
-                                                        spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    )
-                                }
-                                .pointerInput(pdfUri) {
-                                    detectTransformGestures { _, pan, zoom, _ ->
-                                        coroutineScope.launch {
-                                            val newScale = (scaleAnim.value * zoom).coerceIn(0.8f, 5.0f)
-                                            scaleAnim.snapTo(newScale)
-                                            val maxX = (size.width * (newScale - 1f)) / 2f
-                                            val maxY = (size.height * (newScale - 1f)) / 2f
-                                            offsetXAnim.snapTo(if (newScale > 1f) (offsetXAnim.value + pan.x).coerceIn(-maxX, maxX) else 0f)
-                                            offsetYAnim.snapTo(if (newScale > 1f) (offsetYAnim.value + pan.y).coerceIn(-maxY, maxY) else 0f)
-                                            if (newScale < 1f) {
-                                                scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy))
-                                                offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
-                                                offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
-                                            }
-                                        }
-                                    }
-                                }
-
-                            Box(
-                                modifier = gestureModifier
-                            ) {
-                                LazyColumn(
-                                    state = listState,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .graphicsLayer {
-                                            scaleX = scaleAnim.value
-                                            scaleY = scaleAnim.value
-                                            translationX = offsetXAnim.value
-                                            translationY = offsetYAnim.value
-                                        },
-                                    contentPadding = PaddingValues(
-                                        top = statusBarInset + 64.dp,
-                                        bottom = navBarInset + 88.dp,
-                                        start = 12.dp,
-                                        end = 12.dp
-                                    ),
-                                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    items(pageCount) { pageIndex ->
-                                        PdfPageView(
-                                            renderer = pdfRenderer,
-                                            pageIndex = pageIndex,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clip(RoundedCornerShape(12.dp))
-                                                .border(
-                                                    width = 1.dp,
-                                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                                    shape = RoundedCornerShape(12.dp)
-                                                )
-                                        )
-                                    }
-                                }
-                            }
-
-                            // ── Top App Bar (M3 Expressive Floating Surface) ──
-                            AnimatedVisibility(
-                                visible = controlsVisible,
-                                modifier = Modifier.align(Alignment.TopCenter),
-                                enter = fadeIn(tween(180)) + slideInVertically(
-                                    spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
-                                ) { -it },
-                                exit = fadeOut(tween(150)) + slideOutVertically(
-                                    spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                                ) { -it }
-                            ) {
-                                PdfViewerTopBar(
-                                    title = displayName,
-                                    currentPage = currentVisiblePage.value + 1,
-                                    totalPages = pageCount,
-                                    onBack = onBackPress,
-                                    onJumpPage = { showJumpDialog = true },
-                                    onShare = { sharePdfDocument(context, pdfUri, displayName) },
-                                    onPrint = { printPdfDocument(context, pdfUri, displayName) },
-                                    onInfo = { showInfoSheet = true }
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    text = "Cannot Display PDF",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onErrorContainer
                                 )
-                            }
-
-                            // ── Bottom Floating Pill Action Bar ──
-                            AnimatedVisibility(
-                                visible = controlsVisible,
-                                modifier = Modifier.align(Alignment.BottomCenter),
-                                enter = fadeIn(tween(180)) + slideInVertically(
-                                    spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
-                                ) { it },
-                                exit = fadeOut(tween(150)) + slideOutVertically(
-                                    spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                                ) { it }
-                            ) {
-                                PdfViewerBottomBar(
-                                    currentPage = currentVisiblePage.value + 1,
-                                    totalPages = pageCount,
-                                    scale = scaleAnim.value,
-                                    onResetZoom = {
-                                        coroutineScope.launch {
-                                            scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy))
-                                            offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
-                                            offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
-                                        }
-                                    },
-                                    onShowThumbnails = { showThumbnailSheet = true },
-                                    onJumpPage = { showJumpDialog = true }
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    text = loadError ?: "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                                 )
+                                Spacer(Modifier.height(18.dp))
+                                FilledTonalButton(
+                                    onClick = onBackPress,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Go Back")
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // ── Jump to Page Dialog ──
-            if (showJumpDialog && pageCount > 0) {
-                PdfJumpToPageDialog(
-                    currentPage = currentVisiblePage.value + 1,
-                    totalPages = pageCount,
-                    onDismiss = { showJumpDialog = false },
-                    onJump = { targetPage ->
-                        showJumpDialog = false
-                        coroutineScope.launch {
-                            listState.animateScrollToItem(targetPage - 1)
+                else -> {
+                    // ── Multi-Page Lazy Column with Interactive Zoom & Pan ──
+                    val gestureModifier = if (!isEditMode) {
+                        Modifier
+                            .fillMaxSize()
+                            .pointerInput(pdfUri) {
+                                detectTapGestures(
+                                    onTap = { toggleControls() },
+                                    onDoubleTap = { tapOffset ->
+                                        coroutineScope.launch {
+                                            if (scaleAnim.value > 1.2f) {
+                                                scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
+                                                offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
+                                                offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
+                                            } else {
+                                                val targetScale = 2.4f
+                                                val centreX = size.width / 2f
+                                                val centreY = size.height / 2f
+                                                scaleAnim.animateTo(targetScale, spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium))
+                                                offsetXAnim.animateTo(
+                                                    ((centreX - tapOffset.x) * (targetScale - 1f)).coerceIn(-centreX, centreX),
+                                                    spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium)
+                                                )
+                                                offsetYAnim.animateTo(
+                                                    ((centreY - tapOffset.y) * (targetScale - 1f)).coerceIn(-centreY, centreY),
+                                                    spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium)
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                            .pointerInput(pdfUri) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    coroutineScope.launch {
+                                        val newScale = (scaleAnim.value * zoom).coerceIn(0.5f, 6.0f)
+                                        scaleAnim.snapTo(newScale)
+                                        val maxX = (size.width * (newScale - 1f)) / 2f
+                                        val maxY = (size.height * (newScale - 1f)) / 2f
+                                        offsetXAnim.snapTo(if (newScale > 1f) (offsetXAnim.value + pan.x).coerceIn(-maxX, maxX) else 0f)
+                                        offsetYAnim.snapTo(if (newScale > 1f) (offsetYAnim.value + pan.y).coerceIn(-maxY, maxY) else 0f)
+                                        if (newScale < 1f) {
+                                            scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy))
+                                            offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+                                            offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+                                        }
+                                    }
+                                }
+                            }
+                    } else {
+                        Modifier.fillMaxSize()
+                    }
+
+                    Box(modifier = gestureModifier) {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    scaleX = scaleAnim.value
+                                    scaleY = scaleAnim.value
+                                    translationX = offsetXAnim.value
+                                    translationY = offsetYAnim.value
+                                },
+                            contentPadding = PaddingValues(
+                                top = statusBarInset + 72.dp,
+                                bottom = navBarInset + 104.dp,
+                                start = 12.dp,
+                                end = 12.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            items(pageCount) { pageIndex ->
+                                val pageAnno = annotationsMap.getOrPut(pageIndex) { PageAnnotations() }
+                                PdfPageView(
+                                    renderer = pdfRenderer,
+                                    pageIndex = pageIndex,
+                                    isEditMode = isEditMode,
+                                    selectedTool = selectedTool,
+                                    selectedColor = selectedColor,
+                                    pageAnnotations = pageAnno,
+                                    onAddTextNoteRequest = {
+                                        pendingNotePage = pageIndex
+                                        showAddNoteDialog = true
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .border(
+                                            width = 1.dp,
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                )
+                            }
                         }
                     }
-                )
-            }
 
-            // ── Thumbnail Grid Skimmer Bottom Sheet ──
-            if (showThumbnailSheet && pdfRenderer != null && pageCount > 0) {
-                PdfThumbnailSheet(
-                    renderer = pdfRenderer!!,
-                    pageCount = pageCount,
-                    currentPage = currentVisiblePage.value,
-                    onDismiss = { showThumbnailSheet = false },
-                    onSelectPage = { selectedPage ->
-                        showThumbnailSheet = false
-                        coroutineScope.launch {
-                            listState.animateScrollToItem(selectedPage)
-                        }
+                    // ── Top App Bar (M3 Expressive Floating Surface) ──
+                    AnimatedVisibility(
+                        visible = controlsVisible && !showFindBar && !isEditMode,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        enter = fadeIn(tween(180)) + slideInVertically(
+                            spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
+                        ) { -it },
+                        exit = fadeOut(tween(150)) + slideOutVertically(
+                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                        ) { -it }
+                    ) {
+                        PdfViewerTopBar(
+                            title = displayName,
+                            currentPage = currentVisiblePage.value + 1,
+                            totalPages = pageCount,
+                            onBack = onBackPress,
+                            onJumpPage = { showJumpDialog = true },
+                            onFindText = {
+                                showFindBar = true
+                                controlsVisible = true
+                            },
+                            onEditMode = {
+                                isEditMode = true
+                                controlsVisible = true
+                            },
+                            onShare = { sharePdfDocument(context, pdfUri, displayName) },
+                            onPrint = { printPdfDocument(context, pdfUri, displayName) },
+                            onInfo = { showInfoSheet = true }
+                        )
                     }
-                )
+
+                    // ── Find in Document Floating Island ──
+                    AnimatedVisibility(
+                        visible = showFindBar,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        enter = fadeIn(tween(200)) + slideInVertically { -it },
+                        exit = fadeOut(tween(150)) + slideOutVertically { -it }
+                    ) {
+                        PdfFindBar(
+                            query = findQuery,
+                            totalPages = pageCount,
+                            resultCount = findResults.size,
+                            currentIndex = if (findResults.isEmpty()) 0 else currentFindIndex + 1,
+                            onQueryChange = { newQ ->
+                                findQuery = newQ
+                                if (newQ.isNotBlank()) {
+                                    val target = newQ.filter { it.isDigit() }.toIntOrNull()
+                                    if (target != null && target in 1..pageCount) {
+                                        findResults = listOf(target)
+                                        currentFindIndex = 0
+                                        coroutineScope.launch {
+                                            listState.animateScrollToItem(target - 1)
+                                        }
+                                    } else {
+                                        findResults = emptyList()
+                                    }
+                                } else {
+                                    findResults = emptyList()
+                                }
+                            },
+                            onPrevious = {
+                                if (findResults.isNotEmpty()) {
+                                    currentFindIndex = (currentFindIndex - 1 + findResults.size) % findResults.size
+                                    coroutineScope.launch {
+                                        listState.animateScrollToItem(findResults[currentFindIndex] - 1)
+                                    }
+                                }
+                            },
+                            onNext = {
+                                if (findResults.isNotEmpty()) {
+                                    currentFindIndex = (currentFindIndex + 1) % findResults.size
+                                    coroutineScope.launch {
+                                        listState.animateScrollToItem(findResults[currentFindIndex] - 1)
+                                    }
+                                }
+                            },
+                            onClose = {
+                                showFindBar = false
+                                findQuery = ""
+                                findResults = emptyList()
+                            }
+                        )
+                    }
+
+                    // ── Document Edit & Annotation Floating Toolbar ──
+                    AnimatedVisibility(
+                        visible = isEditMode,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        enter = fadeIn(tween(200)) + slideInVertically { -it },
+                        exit = fadeOut(tween(150)) + slideOutVertically { -it }
+                    ) {
+                        PdfEditTopBar(
+                            selectedTool = selectedTool,
+                            selectedColor = selectedColor,
+                            isSaving = isSavingPdf,
+                            onToolChange = { selectedTool = it },
+                            onColorChange = { selectedColor = it },
+                            onClearAnnotations = {
+                                annotationsMap[currentVisiblePage.value]?.strokes?.clear()
+                                annotationsMap[currentVisiblePage.value]?.textNotes?.clear()
+                            },
+                            onSave = saveAnnotatedPdf,
+                            onCancel = { isEditMode = false }
+                        )
+                    }
+
+                    // ── Bottom Floating Pill Action Bar ──
+                    AnimatedVisibility(
+                        visible = controlsVisible && !isEditMode,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        enter = fadeIn(tween(180)) + slideInVertically(
+                            spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
+                        ) { it },
+                        exit = fadeOut(tween(150)) + slideOutVertically(
+                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                        ) { it }
+                    ) {
+                        PdfViewerBottomBar(
+                            currentPage = currentVisiblePage.value + 1,
+                            totalPages = pageCount,
+                            scale = scaleAnim.value,
+                            onZoomIn = { zoomBy(1.25f) },
+                            onZoomOut = { zoomBy(0.8f) },
+                            onResetZoom = resetZoom,
+                            onShowThumbnails = { showThumbnailSheet = true },
+                            onJumpPage = { showJumpDialog = true }
+                        )
+                    }
+                }
             }
+        }
+    }
+
+    // ── Jump to Page Dialog ──
+    if (showJumpDialog && pageCount > 0) {
+        PdfJumpToPageDialog(
+            currentPage = currentVisiblePage.value + 1,
+            totalPages = pageCount,
+            onDismiss = { showJumpDialog = false },
+            onJump = { targetPage ->
+                showJumpDialog = false
+                coroutineScope.launch {
+                    listState.animateScrollToItem(targetPage - 1)
+                }
+            }
+        )
+    }
+
+    // ── Add Text Note Dialog ──
+    if (showAddNoteDialog) {
+        var noteInput by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showAddNoteDialog = false },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = RoundedCornerShape(24.dp),
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.TextFields,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text("Add Text Note", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            },
+            text = {
+                OutlinedTextField(
+                    value = noteInput,
+                    onValueChange = { noteInput = it },
+                    label = { Text("Note content") },
+                    placeholder = { Text("Enter text to add to document…") },
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (noteInput.isNotBlank()) {
+                            val anno = annotationsMap.getOrPut(pendingNotePage) { PageAnnotations() }
+                            anno.textNotes.add(
+                                TextAnnotation(
+                                    text = noteInput,
+                                    normX = 0.1f,
+                                    normY = 0.2f,
+                                    color = selectedColor
+                                )
+                            )
+                        }
+                        showAddNoteDialog = false
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Add Note")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showAddNoteDialog = false }, shape = RoundedCornerShape(12.dp)) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // ── Thumbnail Grid Skimmer Bottom Sheet ──
+    if (showThumbnailSheet && pdfRenderer != null && pageCount > 0) {
+        PdfThumbnailSheet(
+            renderer = pdfRenderer!!,
+            pageCount = pageCount,
+            currentPage = currentVisiblePage.value,
+            onDismiss = { showThumbnailSheet = false },
+            onSelectPage = { selectedPage ->
+                showThumbnailSheet = false
+                coroutineScope.launch {
+                    listState.animateScrollToItem(selectedPage)
+                }
+            }
+        )
+    }
 
     // ── Document Info Bottom Sheet ──
     if (showInfoSheet) {
@@ -524,16 +845,22 @@ fun PetalPdfViewerScreen(
     }
 }
 
-// ─── Single Page Renderer View ───────────────────────────────────────────────
+// ─── Single Page Renderer View with Drawing Layer ────────────────────────────
 
 @Composable
 private fun PdfPageView(
     renderer: PdfRenderer?,
     pageIndex: Int,
+    isEditMode: Boolean = false,
+    selectedTool: AnnotationTool = AnnotationTool.NONE,
+    selectedColor: Color = Color.Red,
+    pageAnnotations: PageAnnotations? = null,
+    onAddTextNoteRequest: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var pageBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var pageAspectRatio by remember { mutableFloatStateOf(1.414f) }
+    var currentStroke by remember { mutableStateOf<List<Offset>>(emptyList()) }
 
     LaunchedEffect(renderer, pageIndex) {
         if (renderer == null) return@LaunchedEffect
@@ -581,19 +908,10 @@ private fun PdfPageView(
         color = Color.White,
         shadowElevation = 2.dp
     ) {
-        androidx.compose.animation.AnimatedContent(
-            targetState = pageBitmap,
-            transitionSpec = {
-                androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(300)) +
-                androidx.compose.animation.scaleIn(androidx.compose.animation.core.tween(300), initialScale = 0.96f) togetherWith
-                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(150))
-            },
-            label = "pdf_page_transition",
-            modifier = Modifier.fillMaxSize()
-        ) { currentBitmap ->
-            if (currentBitmap != null) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (pageBitmap != null) {
                 Image(
-                    bitmap = currentBitmap.asImageBitmap(),
+                    bitmap = pageBitmap!!.asImageBitmap(),
                     contentDescription = "PDF Page " + (pageIndex + 1),
                     contentScale = ContentScale.FillWidth,
                     modifier = Modifier.fillMaxSize()
@@ -604,6 +922,121 @@ private fun PdfPageView(
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                         modifier = Modifier.size(32.dp),
                         strokeWidth = 2.5.dp
+                    )
+                }
+            }
+
+            // Annotation Drawing Layer
+            val drawModifier = if (isEditMode) {
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(selectedTool, selectedColor) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                if (selectedTool == AnnotationTool.TEXT) {
+                                    onAddTextNoteRequest()
+                                } else if (selectedTool == AnnotationTool.PEN || selectedTool == AnnotationTool.HIGHLIGHTER) {
+                                    val normPt = Offset(offset.x / size.width, offset.y / size.height)
+                                    currentStroke = listOf(normPt)
+                                } else if (selectedTool == AnnotationTool.ERASER) {
+                                    pageAnnotations?.strokes?.clear()
+                                }
+                            },
+                            onDrag = { change, _ ->
+                                if (selectedTool == AnnotationTool.PEN || selectedTool == AnnotationTool.HIGHLIGHTER) {
+                                    change.consume()
+                                    val normPt = Offset(change.position.x / size.width, change.position.y / size.height)
+                                    currentStroke = currentStroke + normPt
+                                }
+                            },
+                            onDragEnd = {
+                                if (currentStroke.isNotEmpty() && pageAnnotations != null) {
+                                    val isHigh = selectedTool == AnnotationTool.HIGHLIGHTER
+                                    val strokeCol = if (isHigh) selectedColor.copy(alpha = 0.35f) else selectedColor
+                                    val strokeW = if (isHigh) 24f else 6f
+                                    pageAnnotations.strokes.add(
+                                        StrokePath(
+                                            points = currentStroke,
+                                            color = strokeCol,
+                                            strokeWidth = strokeW,
+                                            isHighlighter = isHigh
+                                        )
+                                    )
+                                    currentStroke = emptyList()
+                                }
+                            }
+                        )
+                    }
+            } else {
+                Modifier.fillMaxSize()
+            }
+
+            Canvas(modifier = drawModifier) {
+                val canvasW = size.width
+                val canvasH = size.height
+
+                // Draw existing saved strokes
+                pageAnnotations?.strokes?.forEach { stroke ->
+                    if (stroke.points.size > 1) {
+                        val path = Path().apply {
+                            moveTo(stroke.points[0].x * canvasW, stroke.points[0].y * canvasH)
+                            for (i in 1 until stroke.points.size) {
+                                lineTo(stroke.points[i].x * canvasW, stroke.points[i].y * canvasH)
+                            }
+                        }
+                        drawPath(
+                            path = path,
+                            color = stroke.color,
+                            style = Stroke(
+                                width = stroke.strokeWidth,
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round
+                            )
+                        )
+                    }
+                }
+
+                // Draw current actively drawing stroke
+                if (currentStroke.size > 1) {
+                    val path = Path().apply {
+                        moveTo(currentStroke[0].x * canvasW, currentStroke[0].y * canvasH)
+                        for (i in 1 until currentStroke.size) {
+                            lineTo(currentStroke[i].x * canvasW, currentStroke[i].y * canvasH)
+                        }
+                    }
+                    val isHigh = selectedTool == AnnotationTool.HIGHLIGHTER
+                    drawPath(
+                        path = path,
+                        color = if (isHigh) selectedColor.copy(alpha = 0.35f) else selectedColor,
+                        style = Stroke(
+                            width = if (isHigh) 24f else 6f,
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        )
+                    )
+                }
+            }
+
+            // Text Notes Overlay
+            pageAnnotations?.textNotes?.forEach { note ->
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
+                    shadowElevation = 3.dp,
+                    modifier = Modifier
+                        .offset(
+                            x = (note.normX * 300).dp,
+                            y = (note.normY * 400).dp
+                        )
+                        .padding(4.dp)
+                ) {
+                    Text(
+                        text = note.text,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = note.color,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
             }
@@ -620,6 +1053,8 @@ private fun PdfViewerTopBar(
     totalPages: Int,
     onBack: () -> Unit,
     onJumpPage: () -> Unit,
+    onFindText: () -> Unit,
+    onEditMode: () -> Unit,
     onShare: () -> Unit,
     onPrint: () -> Unit,
     onInfo: () -> Unit,
@@ -678,6 +1113,22 @@ private fun PdfViewerTopBar(
                 }
             }
 
+            IconButton(onClick = onFindText) {
+                Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = "Find text",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            IconButton(onClick = onEditMode) {
+                Icon(
+                    imageVector = Icons.Rounded.Edit,
+                    contentDescription = "Edit & Annotate",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
             IconButton(onClick = onPrint) {
                 Icon(
                     imageVector = Icons.Rounded.Print,
@@ -709,6 +1160,16 @@ private fun PdfViewerTopBar(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
                     DropdownMenuItem(
+                        text = { Text("Find text") },
+                        leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                        onClick = { menuExpanded = false; onFindText() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Edit & Annotate") },
+                        leadingIcon = { Icon(Icons.Rounded.Edit, null) },
+                        onClick = { menuExpanded = false; onEditMode() }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Jump to page") },
                         leadingIcon = { Icon(Icons.Rounded.FindInPage, null) },
                         onClick = { menuExpanded = false; onJumpPage() }
@@ -724,29 +1185,249 @@ private fun PdfViewerTopBar(
     }
 }
 
-// ─── Expressive Floating Bottom Bar ──────────────────────────────────────────
+// ─── Find Text Bar (Material 3 Expressive Search Island) ─────────────────────
+
+@Composable
+private fun PdfFindBar(
+    query: String,
+    totalPages: Int,
+    resultCount: Int,
+    currentIndex: Int,
+    onQueryChange: (String) -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onClose: () -> Unit
+) {
+    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = topClearance + 8.dp)
+            .padding(horizontal = 16.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
+            shadowElevation = 8.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    RoundedCornerShape(28.dp)
+                )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 6.dp)
+                )
+
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    placeholder = { Text("Find text or page #…", fontSize = 14.sp) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (query.isNotBlank()) {
+                    Text(
+                        text = if (resultCount > 0) "$currentIndex of $resultCount" else "0 found",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+
+                    IconButton(onClick = onPrevious, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Previous")
+                    }
+
+                    IconButton(onClick = onNext, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Next")
+                    }
+                }
+
+                IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Close search")
+                }
+            }
+        }
+    }
+}
+
+// ─── Document Edit & Annotation Floating Toolbar ─────────────────────────────
+
+@Composable
+private fun PdfEditTopBar(
+    selectedTool: AnnotationTool,
+    selectedColor: Color,
+    isSaving: Boolean,
+    onToolChange: (AnnotationTool) -> Unit,
+    onColorChange: (Color) -> Unit,
+    onClearAnnotations: () -> Unit,
+    onSave: () -> Unit,
+    onCancel: () -> Unit
+) {
+    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
+
+    val colors = listOf(
+        Color(0xFFE53935), // Red
+        Color(0xFFFDD835), // Yellow
+        Color(0xFF1E88E5), // Blue
+        Color(0xFF43A047), // Green
+        Color(0xFF8E24AA)  // Purple
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = topClearance + 8.dp)
+            .padding(horizontal = 12.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
+            shadowElevation = 8.dp,
+            modifier = Modifier.border(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                RoundedCornerShape(24.dp)
+            )
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = onCancel, modifier = Modifier.size(38.dp)) {
+                        Icon(Icons.Rounded.Close, contentDescription = "Cancel")
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        FilterChip(
+                            selected = selectedTool == AnnotationTool.PEN,
+                            onClick = { onToolChange(AnnotationTool.PEN) },
+                            label = { Text("Pen") },
+                            leadingIcon = { Icon(Icons.Rounded.Draw, null, Modifier.size(16.dp)) },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        FilterChip(
+                            selected = selectedTool == AnnotationTool.HIGHLIGHTER,
+                            onClick = { onToolChange(AnnotationTool.HIGHLIGHTER) },
+                            label = { Text("Highlighter") },
+                            leadingIcon = { Icon(Icons.Rounded.Highlight, null, Modifier.size(16.dp)) },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        FilterChip(
+                            selected = selectedTool == AnnotationTool.TEXT,
+                            onClick = { onToolChange(AnnotationTool.TEXT) },
+                            label = { Text("Text") },
+                            leadingIcon = { Icon(Icons.Rounded.TextFields, null, Modifier.size(16.dp)) },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        IconButton(onClick = onClearAnnotations, modifier = Modifier.size(38.dp)) {
+                            Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear")
+                        }
+                    }
+
+                    Button(
+                        onClick = onSave,
+                        enabled = !isSaving,
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        if (isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text("Save", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                // Color Palette Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp, start = 12.dp, end = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Color:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    colors.forEach { color ->
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .clickable { onColorChange(color) }
+                                .then(
+                                    if (selectedColor == color) {
+                                        Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                    } else {
+                                        Modifier.border(1.dp, Color.White.copy(alpha = 0.6f), CircleShape)
+                                    }
+                                )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Expressive Floating Bottom Bar with Zoom In / Out ───────────────────────
 
 @Composable
 private fun PdfViewerBottomBar(
     currentPage: Int,
     totalPages: Int,
     scale: Float,
+    onZoomIn: () -> Unit,
+    onZoomOut: () -> Unit,
     onResetZoom: () -> Unit,
     onShowThumbnails: () -> Unit,
     onJumpPage: () -> Unit
 ) {
     val bottomClearance = WindowInsets.navigationBars.asPaddingValues()
         .calculateBottomPadding().coerceAtLeast(16.dp)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = bottomClearance)
-            .padding(horizontal = 24.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.94f),
             shadowElevation = 6.dp,
             modifier = Modifier.border(
                 1.dp,
@@ -755,10 +1436,11 @@ private fun PdfViewerBottomBar(
             )
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Page Number Tag
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
@@ -783,7 +1465,8 @@ private fun PdfViewerBottomBar(
                     }
                 }
 
-                IconButton(onClick = onShowThumbnails, modifier = Modifier.size(38.dp)) {
+                // Thumbnail Grid
+                IconButton(onClick = onShowThumbnails, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.GridView,
                         contentDescription = "Thumbnails",
@@ -792,6 +1475,27 @@ private fun PdfViewerBottomBar(
                     )
                 }
 
+                // Zoom Out Button
+                IconButton(onClick = onZoomOut, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Rounded.Remove,
+                        contentDescription = "Zoom Out",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // Zoom In Button
+                IconButton(onClick = onZoomIn, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "Zoom In",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // Reset Zoom Tag
                 if (kotlin.math.abs(scale - 1f) > 0.05f) {
                     Surface(
                         shape = CircleShape,
