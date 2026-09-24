@@ -550,6 +550,7 @@ private fun AddExtensionSheet(
     var showMozillaCatalogPrompt by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val busy by PetalExtensionManager.busy.collectAsState()
+    val extensions by PetalExtensionManager.extensions.collectAsState()
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
         Column(

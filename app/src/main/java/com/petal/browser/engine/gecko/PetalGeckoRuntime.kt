@@ -124,20 +124,13 @@ object PetalGeckoRuntime {
     @JvmStatic
     fun onTrimMemory(context: Context, level: Int) {
         val rt = runtime ?: return
-        try {
-            // GeckoRuntime supports onTrimMemory natively
-            rt.onTrimMemory(level)
-            Log.d(TAG, "Propagated onTrimMemory level $level to GeckoRuntime")
-        } catch (t: Throwable) {
-            Log.d(TAG, "GeckoRuntime onTrimMemory fallback: ${t.message}")
-        }
-
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             try {
-                // Purge memory caches in StorageController
+                // Purge volatile image caches in StorageController
                 rt.storageController.clearData(
                     org.mozilla.geckoview.StorageController.ClearFlags.IMAGE_CACHE
                 )
+                Log.d(TAG, "Purged Gecko image cache on memory trim level $level")
             } catch (t: Throwable) {
                 Log.d(TAG, "Failed to purge image cache on low memory: ${t.message}")
             }

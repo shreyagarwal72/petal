@@ -8,16 +8,21 @@ import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 
 /**
- * Reconstructed high-performance container for browser content ({@code R.id.main_content})
- * engineered after Mozilla Firefox / Fenix SwipeRefreshLayout and GeckoView touch architecture.
+ * High-performance full-viewport pull-to-refresh container for browser content
+ * ({@code R.id.main_content}) engineered from Mozilla Firefox / Fenix SwipeRefreshLayout
+ * and GeckoView touch architecture.
  *
- * Touch mechanics & touch area:
- * - Natural full-viewport touch initiation when page is at the top (`scrollY == 0` / `canChildScrollUp() == false`).
- * - Multi-touch rejection: Immediately abates on pinch-to-zoom (`pointerCount > 1`).
- * - Quick-scale (double-tap-and-drag zoom) immunity matching Mozilla GeckoView touch input.
- * - Strict vertical gesture dominance (`dy > Math.abs(dx) * 1.35f`).
- * - Smooth exponential pull resistance (Firefox damped spring physics).
- * - Exact release threshold with haptic click indication.
+ * Firefox Touch Features & Architecture:
+ * - Full-screen viewport touch initiation: Any touch gesture starting on the web page / viewport
+ *   when page is scrolled to top (scrollY <= 0) can initiate pull-to-refresh.
+ * - Multi-touch & Pinch-to-zoom protection: Multi-touch gestures (zoom, quick-scale, pinch)
+ *   are detected and immediately cancel/prevent pull-to-refresh interception so webpage gestures work 100%.
+ * - Multi-pointer switching: Seamlessly transfers pointer tracking if primary finger lifts (ACTION_POINTER_UP).
+ * - Vertical dominance filtering (Firefox VerticalSwipeRefreshLayout): Ignores horizontal swipes
+ *   (e.g., carousels, text selection, swiping tabs) using strict touch slop & directional dominance.
+ * - Firefox / AOSP Slingshot tension physics: Non-linear damping curve based on slingshot distance
+ *   giving a realistic, physical rubber-band pull experience.
+ * - Haptic feedback: Subtle tactile click when passing the release trigger threshold.
  */
 public class PullToRefreshFrameLayout extends FrameLayout {
 
@@ -36,9 +41,10 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         void onRelease(boolean triggered);
     }
 
-    private static final float DEFAULT_PULL_DISTANCE_DP = 85f;
-    private static final float TRIGGER_THRESHOLD = 0.72f;
-    private static final float DRAG_DAMPING = 0.50f;
+    // Firefox / AOSP SwipeRefreshLayout physics constants
+    private static final float DEFAULT_PULL_DISTANCE_DP = 80f;
+    private static final float TRIGGER_THRESHOLD = 0.70f;
+    private static final float DRAG_RATE = 0.5f;
     private static final float VERTICAL_DOMINANCE = 1.35f;
 
     private CanPull canPull = () -> true;
@@ -50,8 +56,9 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     private final int doubleTapSlopSquare;
     private float pullDistancePx;
 
-    private float downX;
-    private float downY;
+    private float initialDownX;
+    private float initialDownY;
+    private float initialMotionY;
     private int activePointerId = MotionEvent.INVALID_POINTER_ID;
     private boolean isDragging;
     private boolean isIntercepting;
@@ -98,9 +105,9 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         this.pullDistancePx = Math.max(40f, dp) * getResources().getDisplayMetrics().density;
     }
 
-    /** Backward compatibility: touch area is the natural viewport when at scroll top. */
+    /** Backward compatibility: touch area is the full viewport when at scroll top. */
     public void setEdgeThresholdDp(float dp) {
-        // Maintained for binary compatibility
+        // Maintained for binary compatibility - covers full viewport
     }
 
     private boolean canChildScrollUp() {
@@ -171,6 +178,25 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         }
     }
 
+    /**
+     * Official Firefox / AOSP slingshot tension calculation.
+     * Computes the non-linear pull progress [0f, 1f+] with elastic resistance as user drags down.
+     */
+    private float calculateProgress(float overscrollTop) {
+        if (overscrollTop <= 0 || pullDistancePx <= 0) {
+            return 0f;
+        }
+        float originalDragPercent = overscrollTop / pullDistancePx;
+        float dragPercent = Math.min(1.0f, Math.abs(originalDragPercent));
+        float extraOS = Math.abs(overscrollTop) - pullDistancePx;
+        float slingshotDist = pullDistancePx;
+        float tensionSlingshotPercent = Math.max(0, Math.min(extraOS, slingshotDist * 2) / slingshotDist);
+        float tensionPercent = (float) ((tensionSlingshotPercent / 4) - Math.pow((tensionSlingshotPercent / 4), 2)) * 2f;
+        float extraMove = slingshotDist * tensionPercent * 2;
+        float targetY = (slingshotDist * dragPercent) + extraMove;
+        return Math.max(0f, targetY / pullDistancePx);
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         if (!isEnabled()) {
@@ -202,14 +228,24 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         switch (action) {
             case MotionEvent.ACTION_DOWN:
                 activePointerId = ev.getPointerId(0);
-                downX = ev.getX();
-                downY = ev.getY();
+                initialDownX = ev.getX();
+                initialDownY = ev.getY();
+                initialMotionY = initialDownY;
                 isDragging = false;
                 isIntercepting = false;
                 hasMultiTouch = false;
                 disallowIntercept = false;
                 hasTriggeredHaptic = false;
                 break;
+
+            case MotionEvent.ACTION_POINTER_DOWN: {
+                // Second pointer touches down; multi-touch should yield to page zoom/gestures
+                hasMultiTouch = true;
+                if (isDragging) {
+                    cancelDrag();
+                }
+                return false;
+            }
 
             case MotionEvent.ACTION_MOVE:
                 if (isDragging) {
@@ -223,21 +259,22 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
                 float curX = ev.getX(pointerIndex);
                 float curY = ev.getY(pointerIndex);
-                float dx = curX - downX;
-                float dy = curY - downY;
+                float dx = curX - initialDownX;
+                float dy = curY - initialDownY;
 
                 // Only downwards travel starts pull
                 if (dy <= touchSlop) {
                     break;
                 }
 
-                // Vertical dominance: Must be noticeably more vertical than horizontal
+                // Vertical dominance: Must be noticeably more vertical than horizontal (Firefox VerticalSwipeRefreshLayout)
                 if (dy <= Math.abs(dx) * VERTICAL_DOMINANCE) {
                     break;
                 }
 
-                // Page position validation (Firefox model): Top of document must be reached
+                // Page position validation (Firefox model): Full touch area across viewport is valid when scrolled to top
                 if (!canChildScrollUp() && canPull.canPull()) {
+                    initialMotionY = initialDownY + touchSlop;
                     isIntercepting = true;
                     isDragging = true;
                     if (getParent() != null) {
@@ -245,6 +282,10 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     }
                     return true;
                 }
+                break;
+
+            case MotionEvent.ACTION_POINTER_UP:
+                onSecondaryPointerUp(ev);
                 break;
 
             case MotionEvent.ACTION_UP:
@@ -273,9 +314,18 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 activePointerId = event.getPointerId(0);
-                downX = event.getX();
-                downY = event.getY();
+                initialDownX = event.getX();
+                initialDownY = event.getY();
+                initialMotionY = initialDownY;
                 break;
+
+            case MotionEvent.ACTION_POINTER_DOWN: {
+                hasMultiTouch = true;
+                if (isDragging) {
+                    cancelDrag();
+                }
+                return false;
+            }
 
             case MotionEvent.ACTION_MOVE: {
                 int pointerIndex = event.findPointerIndex(activePointerId);
@@ -285,34 +335,43 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 float curY = event.getY(pointerIndex);
 
                 if (isDragging) {
-                    float pullDistance = Math.max(0f, (curY - downY) - touchSlop);
-                    float dampedDy = pullDistance * DRAG_DAMPING;
-                    float progress = Math.min(1f, dampedDy / pullDistancePx);
+                    float overscrollTop = (curY - initialMotionY) * DRAG_RATE;
+                    if (overscrollTop > 0) {
+                        float progress = calculateProgress(overscrollTop);
 
-                    if (progress >= TRIGGER_THRESHOLD && !hasTriggeredHaptic) {
-                        hasTriggeredHaptic = true;
-                        try {
-                            com.petal.browser.haptics.PetalHapticEngine.getInstance(getContext()).playClick(getContext());
-                        } catch (Exception ignored) {}
-                    } else if (progress < TRIGGER_THRESHOLD) {
-                        hasTriggeredHaptic = false;
-                    }
+                        if (progress >= TRIGGER_THRESHOLD && !hasTriggeredHaptic) {
+                            hasTriggeredHaptic = true;
+                            try {
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(getContext()).playClick(getContext());
+                            } catch (Exception ignored) {}
+                        } else if (progress < TRIGGER_THRESHOLD) {
+                            hasTriggeredHaptic = false;
+                        }
 
-                    if (onPullListener != null) {
-                        onPullListener.onPull(progress);
+                        if (onPullListener != null) {
+                            onPullListener.onPull(progress);
+                        }
+                    } else {
+                        // User pushed back past the start
+                        if (onPullListener != null) {
+                            onPullListener.onPull(0f);
+                        }
                     }
                 }
                 break;
             }
 
+            case MotionEvent.ACTION_POINTER_UP:
+                onSecondaryPointerUp(event);
+                break;
+
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL: {
                 if (isDragging) {
                     int pointerIndex = event.findPointerIndex(activePointerId);
-                    float curY = pointerIndex >= 0 ? event.getY(pointerIndex) : downY;
-                    float pullDistance = Math.max(0f, (curY - downY) - touchSlop);
-                    float dampedDy = pullDistance * DRAG_DAMPING;
-                    float progress = dampedDy / pullDistancePx;
+                    float curY = pointerIndex >= 0 ? event.getY(pointerIndex) : initialMotionY;
+                    float overscrollTop = (curY - initialMotionY) * DRAG_RATE;
+                    float progress = calculateProgress(overscrollTop);
 
                     isDragging = false;
                     isIntercepting = false;
@@ -327,6 +386,20 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             }
         }
         return true;
+    }
+
+    private void onSecondaryPointerUp(MotionEvent ev) {
+        int pointerIndex = ev.getActionIndex();
+        int pointerId = ev.getPointerId(pointerIndex);
+        if (pointerId == activePointerId) {
+            // Pick a new active pointer
+            int newPointerIndex = pointerIndex == 0 ? 1 : 0;
+            if (newPointerIndex < ev.getPointerCount()) {
+                activePointerId = ev.getPointerId(newPointerIndex);
+                initialDownY = ev.getY(newPointerIndex);
+                initialMotionY = initialDownY;
+            }
+        }
     }
 
     @Override
