@@ -2011,7 +2011,8 @@ class PetalGeckoView @JvmOverloads constructor(
         if (lower.startsWith("http://") || lower.startsWith("https://") ||
             lower.startsWith("about:") || lower.startsWith("blob:") ||
             lower.startsWith("data:") || lower.startsWith("javascript:") ||
-            lower.startsWith("petal:")
+            lower.startsWith("petal:") || lower.startsWith("moz-extension:") ||
+            lower.startsWith("resource:") || lower.startsWith("chrome:")
         ) {
             return false
         }
