@@ -13,7 +13,6 @@ import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.browser.PlaceholderAlbumController
 import com.petal.browser.controller.BrowserWebViewController
 import com.petal.browser.database.RecordAction
-import com.petal.browser.view.NinjaWebView
 import com.petal.browser.view.PetalGeckoView
 import java.util.Arrays
 import java.util.concurrent.Executors

@@ -5242,9 +5242,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }  else if (profile.equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_images", checkbox_image.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_images", checkbox_image.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_images", checkbox_image.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_images", checkbox_image.isChecked()).apply();
                 }
             });
 
@@ -5253,12 +5253,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_java.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_javascript", checkbox_java.isChecked()).apply();
-                } else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_javascript", checkbox_java.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_javascript", checkbox_java.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_javascript", checkbox_java.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_javascript", checkbox_java.isChecked()).apply();
                 }
             });
 
@@ -5267,12 +5267,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_javaPopUp.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
-                } else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
                 }
             });
 
@@ -5281,12 +5281,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_cookies.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_cookies", checkbox_cookies.isChecked()).apply();
-                } else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_cookies", checkbox_cookies.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_cookies", checkbox_cookies.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_cookies", checkbox_cookies.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_cookies", checkbox_cookies.isChecked()).apply();
                 }
             });
 
@@ -5295,12 +5295,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_cookiesThirdParty.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
-                }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
                 }
             });
 
@@ -5309,12 +5309,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_cookiesBanner.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
-                } else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
                 }
             });
 
@@ -5323,12 +5323,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_fingerPrint.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
-                } else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
                 }
             });
 
@@ -5337,12 +5337,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_adBlock.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_adBlock", checkbox_adBlock.isChecked()).apply();
-                }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_adBlock", checkbox_adBlock.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_adBlock", checkbox_adBlock.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_adBlock", checkbox_adBlock.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_adBlock", checkbox_adBlock.isChecked()).apply();
                 }
             });
 
@@ -5351,12 +5351,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_trackingURL.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
-                }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
                 }
             });
 
@@ -5365,12 +5365,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_saveData.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_saveData", checkbox_saveData.isChecked()).apply();
-                }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_saveData", checkbox_saveData.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_saveData", checkbox_saveData.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_saveData", checkbox_saveData.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_saveData", checkbox_saveData.isChecked()).apply();
                 }
             });
 
@@ -5379,12 +5379,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_history.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_saveHistory", checkbox_history.isChecked()).apply();
-                }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_saveHistory", checkbox_history.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_saveHistory", checkbox_history.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_saveHistory", checkbox_history.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_saveHistory", checkbox_history.isChecked()).apply();
                 }
             });
 
@@ -5393,12 +5393,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_location.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_location", checkbox_location.isChecked()).apply();
-                } else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_location", checkbox_location.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_location", checkbox_location.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_location", checkbox_location.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_location", checkbox_location.isChecked()).apply();
                 }
             });
 
@@ -5407,12 +5407,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_mic.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_microphone", checkbox_mic.isChecked()).apply();
-                }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_microphone", checkbox_mic.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_microphone", checkbox_mic.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_microphone", checkbox_mic.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_microphone", checkbox_mic.isChecked()).apply();
                 }
             });
 
@@ -5421,12 +5421,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_camera.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_camera", checkbox_camera.isChecked()).apply();
-                } else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_camera", checkbox_camera.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_camera", checkbox_camera.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_camera", checkbox_camera.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_camera", checkbox_camera.isChecked()).apply();
                 }
             });
 
@@ -5435,12 +5435,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_dom.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_dom", checkbox_dom.isChecked()).apply();
-                }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_dom", checkbox_dom.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_dom", checkbox_dom.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_dom", checkbox_dom.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_dom", checkbox_dom.isChecked()).apply();
                 }
             });
 
@@ -5457,12 +5457,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 checkbox_nightView.setOnClickListener(v -> {
                     if (listStandard.isWhite(url)){
                         sp.edit().putBoolean(profile + "_night", checkbox_nightView.isChecked()).apply();
-                    }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                    }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                         ninjaWebView.setProfileChanged();
                         setProfileIcon(buttonProfile, url);
-                        sp.edit().putBoolean(NinjaWebView.getProfile() + "_night", checkbox_nightView.isChecked()).apply();
+                        sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_night", checkbox_nightView.isChecked()).apply();
                     } else {
-                        sp.edit().putBoolean(NinjaWebView.getProfile() + "_night", checkbox_nightView.isChecked()).apply();
+                        sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_night", checkbox_nightView.isChecked()).apply();
                     }
                 });
             }
@@ -5472,12 +5472,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_desktop.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_desktop", checkbox_desktop.isChecked()).apply();
-                }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_desktop", checkbox_desktop.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_desktop", checkbox_desktop.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_desktop", checkbox_desktop.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_desktop", checkbox_desktop.isChecked()).apply();
                 }
             });
 
@@ -5486,12 +5486,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_drm.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_drm", checkbox_drm.isChecked()).apply();
-                }  else if (NinjaWebView.getProfile().equals("profileStandard")) {
+                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
                     ninjaWebView.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_drm", checkbox_drm.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_drm", checkbox_drm.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_drm", checkbox_drm.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_drm", checkbox_drm.isChecked()).apply();
                 }
             });
 
@@ -5728,12 +5728,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         ));
 
                 FloatingActionButton buttonProfile = dialogView.findViewById(R.id.buttonProfile);
-                NinjaWebView.getBrowserController().setProfileIcon(buttonProfile, url);
+                this.setProfileIcon(buttonProfile, url);
                 FaviconHelper.setFavicon(context, dialogView, url, R.id.menu_icon, R.drawable.icon_image_broken);
                 buttonProfile.setOnClickListener(v -> showDialogFastToggle(title,url, buttonProfile));
                 buttonProfile.setOnLongClickListener(v -> {
                     sp.edit().putString("profile", "profileStandard").apply();
-                    NinjaWebView.getBrowserController().setProfileIcon(buttonProfile, url);
+                    this.setProfileIcon(buttonProfile, url);
                     if (!listStandard.isWhite(url)){
                         ninjaWebView.reload();
                     }return false;
@@ -6557,11 +6557,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
                 manager = gv.getPwaManager();
                 if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, gv, null); gv.setPwaManager(manager); }
-            } else if (currentAlbumController instanceof com.petal.browser.view.NinjaWebView) {
-                com.petal.browser.view.NinjaWebView webView = (com.petal.browser.view.NinjaWebView) currentAlbumController;
-                manager = webView.getPwaManager();
-                if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, webView, null); webView.setPwaManager(manager); }
-            }
+            
             if (manager != null) manager.installCurrentPwa(this);
             else PetalToast.show(this, "No active web page to install");
         } catch (Exception e) {

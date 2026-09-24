@@ -12,7 +12,6 @@ import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.browser.AlbumController
-import com.petal.browser.view.NinjaWebView
 import com.petal.browser.view.PetalGeckoView
 
 object PetalSiteInfoBridge {

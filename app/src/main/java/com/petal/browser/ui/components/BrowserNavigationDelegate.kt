@@ -12,7 +12,6 @@ import com.petal.browser.activity.Settings_Delete
 import com.petal.browser.database.RecordAction
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.view.PetalToast
-import com.petal.browser.view.NinjaWebView
 import com.petal.browser.view.PetalGeckoView
 
 /**
