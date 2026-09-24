@@ -123,6 +123,9 @@ object PetalAdBlockEngine {
             .putBoolean("sp_ad_block", enabled)
             .putBoolean("profileStandard_adBlock", enabled)
             .apply()
+        try {
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+        } catch (_: Throwable) {}
     }
 
     @JvmStatic

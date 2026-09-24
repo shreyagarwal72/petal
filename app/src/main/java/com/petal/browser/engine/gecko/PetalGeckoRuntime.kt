@@ -121,6 +121,9 @@ object PetalGeckoRuntime {
         runtime?.let { rt ->
             try {
                 rt.settings.javaScriptEnabled = sp.getBoolean("profileStandard_javascript", true)
+                val adBlockEnabled = sp.getBoolean("sp_ad_block", true)
+                val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
+                rt.settings.contentBlocking.enhancedTrackingProtectionLevel = etpLevel
             } catch (e: Exception) {
                 Log.w(TAG, "Error synchronizing GeckoRuntime preferences: ${e.message}")
             }

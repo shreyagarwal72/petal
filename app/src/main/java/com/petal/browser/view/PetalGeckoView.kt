@@ -36,6 +36,7 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
+import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.MediaSession
 import kotlinx.coroutines.launch
@@ -723,6 +724,13 @@ class PetalGeckoView @JvmOverloads constructor(
                         }
                     }
                 }
+            }
+        }
+
+        // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)
+        session.contentBlockingDelegate = object : ContentBlocking.Delegate {
+            override fun onContentBlocked(session: GeckoSession, event: ContentBlocking.BlockEvent) {
+                com.petal.browser.browser.PetalAdBlockEngine.recordBlock(currentUrl)
             }
         }
 
