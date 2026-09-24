@@ -12,7 +12,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import com.petal.browser.browser.AlbumController
-import com.petal.browser.view.NinjaWebView
 import com.petal.browser.view.PetalGeckoView
 
 /**
@@ -29,7 +28,7 @@ class PetalVideoPlayerOverlayBridge(
 ) : PetalMediaBridge.MediaStateListener {
 
     private val mediaBridge: PetalMediaBridge?
-        get() = (controller as? PetalGeckoView)?.getMediaBridge() ?: (controller as? NinjaWebView)?.mediaBridge
+        get() = (controller as? PetalGeckoView)?.getMediaBridge()
 
     private var composeView: ComposeView? = null
     private var previousListener: PetalMediaBridge.MediaStateListener? = null

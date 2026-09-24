@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.browser.AlbumController
-import com.petal.browser.view.NinjaWebView
 import com.petal.browser.view.PetalGeckoView
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,11 +40,10 @@ fun PetalSiteInfoBottomSheet(
 ) {
     val context = LocalContext.current
     val geckoView = albumController as? PetalGeckoView
-    val webView = albumController as? NinjaWebView
-
+    
     val currentUrl = albumController?.url ?: ""
     val domain = remember(currentUrl) { HelperUnit.domain(currentUrl) }
-    val favicon: Bitmap? = geckoView?.getFavicon() ?: webView?.favicon
+    val favicon: Bitmap? = geckoView?.getFavicon()
 
     // Check GeckoView SecurityInformation if available, plus URL scheme
     val geckoSecurity = geckoView?.currentSecurityInfo

@@ -182,14 +182,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public TextView appBar_title;
     public EditText searchOnSiteInput;
     @SuppressLint("StaticFieldLeak")
-    public static NinjaWebView ninjaWebView;
+    public static NinjaWebView ninjaWebView = null;
 
     /**
      * Kotlin-friendly accessor (exposed as the `currentNinjaWebView` property) for the
      * currently active NinjaWebView instance.
      */
     public NinjaWebView getCurrentNinjaWebView() {
-        return ninjaWebView;
+        return null;
     }
 
     public View customView;
@@ -382,7 +382,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public NinjaWebView getNinjaWebView() {
-        return ninjaWebView;
+        return null;
     }
 
     public boolean canNinjaGoBack() {
@@ -1202,9 +1202,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             isOverlayScreenShowing = false;
             pendingOverlayBackAction = null;
         }
-        if (currentAlbumController instanceof NinjaWebView) {
-            ninjaWebView = (NinjaWebView) currentAlbumController;
-        }
+        
 
         View currentFocus = getCurrentFocus();
         boolean isKeyboardVisible = false;
@@ -2037,9 +2035,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             com.petal.browser.engine.gecko.PetalEngineStore.selectTab(this, ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getTabId());
         }
-        if (currentAlbumController instanceof NinjaWebView) {
-            ninjaWebView = (NinjaWebView) currentAlbumController;
-        }
+        
         currentAlbumController.activate();
         // Always restore the host container before mounting a new surface. Predictive-back,
         // pull-to-refresh and other transitions may temporarily transform this container.
@@ -3055,7 +3051,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     currentAlbumController = nextController;
                     if (currentAlbumController instanceof NinjaWebView) {
-                        ninjaWebView = (NinjaWebView) currentAlbumController;
+                        
                     }
                     currentAlbumController.activate();
                 } else {
@@ -5112,9 +5108,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showDialogFastToggle(String title, String url, FloatingActionButton floatingActionButton) {
 
         listStandard = new List_standard(context);
-        if (currentAlbumController instanceof NinjaWebView) {
-            ninjaWebView = (NinjaWebView) currentAlbumController;
-        }
+        
 
         String profile;
         if (listStandard.isWhite(url)) {

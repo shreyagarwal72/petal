@@ -23,7 +23,6 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.preference.PreferenceManager
 import com.petal.browser.unit.HelperUnit
-import com.petal.browser.view.NinjaWebView
 
 object PetalAccessibilityEngine {
 
@@ -242,7 +241,7 @@ object PetalAccessibilityEngine {
                     lastSwipeTime = now
                     controller.goBack()
                     return true
-                } else if (controller is NinjaWebView && controller.canGoBack()) {
+                } else if (controller.canGoBack()) {
                     lastSwipeTime = now
                     controller.goBack()
                     return true
@@ -253,7 +252,7 @@ object PetalAccessibilityEngine {
                     lastSwipeTime = now
                     controller.goForward()
                     return true
-                } else if (controller is NinjaWebView && controller.canGoForward()) {
+                } else if (controller.canGoForward()) {
                     lastSwipeTime = now
                     controller.goForward()
                     return true

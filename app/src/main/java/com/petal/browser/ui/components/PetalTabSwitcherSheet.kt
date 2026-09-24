@@ -133,10 +133,10 @@ object PetalTabSwitcherBridge {
                                         }
                                     } catch (_: Exception) { null }
                                     val isIncognitoTab = (album is com.petal.browser.view.PetalGeckoView && album.isIncognito()) ||
-                                            ((album is com.petal.browser.view.NinjaWebView) && album.isIncognito())
+                                            false
                                     val faviconBitmap = when (album) {
                                         is com.petal.browser.view.PetalGeckoView -> album.getFavicon()
-                                        is com.petal.browser.view.NinjaWebView -> album.getFavicon()
+                                        
                                         is PlaceholderAlbumController -> album.getFavicon()
                                         else -> null
                                     }
@@ -170,14 +170,14 @@ object PetalTabSwitcherBridge {
                                     val group = com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(context, album.hashCode().toString())
                                     val webViewGroupId = when (album) {
                                         is com.petal.browser.view.PetalGeckoView -> album.getTabGroupId()
-                                        is com.petal.browser.view.NinjaWebView -> album.tabGroupId
+                                        
                                         is PlaceholderAlbumController -> album.getTabGroupId()
                                         else -> null
                                     }
                                     val effectiveGroupId = group?.id ?: webViewGroupId
                                     val effectiveGroupTitle = group?.title ?: when (album) {
                                         is com.petal.browser.view.PetalGeckoView -> album.getTabGroupTitle()
-                                        is com.petal.browser.view.NinjaWebView -> album.tabGroupTitle
+                                        
                                         is PlaceholderAlbumController -> album.getTabGroupTitle()
                                         else -> null
                                     }
@@ -250,7 +250,7 @@ object PetalTabSwitcherBridge {
                             val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
                             when (targetAlbum) {
                                 is com.petal.browser.view.PetalGeckoView -> targetAlbum.getMediaBridge()?.setMuted(muted)
-                                is com.petal.browser.view.NinjaWebView -> targetAlbum.getMediaBridge()?.setMuted(muted)
+                                
                             }
                         },
                         onCreateGroup = { tabItem ->
