@@ -1452,7 +1452,7 @@ private fun PdfTextEditTopBar(
                         "and may look slightly different from the surrounding text.",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 12.dp, top = 2.dp)
+                    modifier = Modifier.padding(start = 12.dp, top = 2.dp, end = 12.dp)
                 )
             }
         }
