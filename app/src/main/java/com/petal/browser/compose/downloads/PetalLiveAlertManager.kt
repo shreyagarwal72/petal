@@ -87,7 +87,7 @@ object PetalLiveAlertManager {
                             DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
                                 handledTerminalStatusMap.remove(item.id)
                                 val lastTime = lastNotifTimeMap[item.id] ?: 0L
-                                if (now - lastTime >= 500L || lastTime == 0L) {
+                                if (now - lastTime >= 150L || lastTime == 0L) {
                                     lastNotifTimeMap[item.id] = now
                                     showLiveNotification(
                                         context,
@@ -394,16 +394,16 @@ object PetalLiveAlertManager {
 
         val accentColor = LiveUpdateNotificationManager.getLiveThemeAccentColor(context)
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.icon_check)
-            .setContentTitle("Download Complete")
+            .setSmallIcon(R.drawable.ic_trophy)
+            .setContentTitle("Download Complete 🏆")
             .setContentText(contentText)
-            .setSubText("Completed")
+            .setSubText("Finished 🏆")
             .setOngoing(false)
             .setAutoCancel(true)
             .setColor(accentColor)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(openFilePendingIntent)
-            .addAction(R.drawable.icon_check, "Open File", openFilePendingIntent)
+            .addAction(R.drawable.ic_trophy, "Open File", openFilePendingIntent)
 
         nm.notify(downloadId.toInt(), builder.build())
     }

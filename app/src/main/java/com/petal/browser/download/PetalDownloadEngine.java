@@ -88,12 +88,13 @@ public class PetalDownloadEngine {
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .dispatcher(dispatcher)
                 .connectionPool(new ConnectionPool(64, 5, TimeUnit.MINUTES))
-                .connectTimeout(20, TimeUnit.SECONDS)
+                .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(0, TimeUnit.MILLISECONDS)
                 .writeTimeout(0, TimeUnit.MILLISECONDS)
                 .followRedirects(true)
                 .followSslRedirects(true)
                 .retryOnConnectionFailure(true)
+                .protocols(java.util.Arrays.asList(okhttp3.Protocol.HTTP_2, okhttp3.Protocol.HTTP_1_1))
                 .build();
 
         // setDownloadConcurrentLimit controls how many separate downloads run at once, not
@@ -101,7 +102,7 @@ public class PetalDownloadEngine {
         // above) - safe to keep high without reintroducing the range-splitting size bug.
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
                 .setDownloadConcurrentLimit(32)
-                .setProgressReportingInterval(250L)
+                .setProgressReportingInterval(150L)
                 .setAutoRetryMaxAttempts(10)
                 .enableAutoStart(true)
                 .enableRetryOnNetworkGain(true)

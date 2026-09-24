@@ -146,6 +146,11 @@ object PetalFetchDownloadBridge {
             } catch (_: Throwable) {
             }
 
+            try {
+                PetalLiveAlertManager.startGlobalDownloadObserver(appContext)
+            } catch (_: Throwable) {
+            }
+
             initialized = true
         }
     }
