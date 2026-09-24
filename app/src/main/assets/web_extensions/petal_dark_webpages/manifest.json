@@ -1,0 +1,23 @@
+{
+    "manifest_version": 2,
+    "name": "Petal Dark Webpages",
+    "version": "1.0.0",
+    "description": "Smart dark mode for all websites with automatic inversion and whitelist options.",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "petal-dark-webpages@petalbrowser.app"
+        }
+    },
+    "permissions": [
+        "storage",
+        "<all_urls>"
+    ],
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["dark_webpages.js"],
+            "run_at": "document_start",
+            "all_frames": true
+        }
+    ]
+}

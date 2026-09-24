@@ -25,6 +25,7 @@ object PetalBuiltInExtensionManager {
         val assetPath: String,
         val extensionId: String,
         val label: String,
+        val description: String,
         val prefKey: String
     )
 
@@ -35,31 +36,50 @@ object PetalBuiltInExtensionManager {
         BuiltInSpec(
             assetPath   = "extensions/webcompat/",
             extensionId = "webcompat@mozilla.org",
-            label       = "WebCompat",
+            label       = "Mozilla WebCompat",
+            description = "Fixes compatibility quirks and site breakages for mobile Firefox engine.",
             prefKey     = "petal_builtin_webcompat"
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/petal_dark_webpages/",
+            extensionId = "petal-dark-webpages@petalbrowser.app",
+            label       = "Petal Dark Webpages",
+            description = "Smart night mode for all websites with automatic inversion and per-site whitelist.",
+            prefKey     = "petal_builtin_dark_webpages"
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/petal_clean_link/",
+            extensionId = "petal-clean-link@petalbrowser.app",
+            label       = "Petal Clean Link",
+            description = "Automatically strips tracking tokens (UTM, fbclid, gclid) from links.",
+            prefKey     = "petal_builtin_clean_link"
         ),
         BuiltInSpec(
             assetPath   = "web_extensions/petal_universal_copy/",
             extensionId = "petal-universal-copy@petalbrowser.app",
             label       = "Petal Universal Copy",
+            description = "Bypasses copy restrictions and unlocks text selection on all websites.",
             prefKey     = "petal_builtin_universal_copy"
         ),
         BuiltInSpec(
             assetPath   = "web_extensions/petal_ai_blocker/",
             extensionId = "petal-ai-blocker@petalbrowser.app",
             label       = "Petal AI Blocker",
+            description = "Hides AI overview cards and synthesized summaries in search engine results.",
             prefKey     = "petal_builtin_ai_blocker"
         ),
         BuiltInSpec(
             assetPath   = "web_extensions/petal_translate/",
             extensionId = "petal-translate@petalbrowser.app",
             label       = "Petal Translate",
+            description = "Real-time in-page translation engine powered by Petal on-device models.",
             prefKey     = "petal_builtin_translate"
         ),
         BuiltInSpec(
             assetPath   = "web_extensions/google_search_fixer/",
             extensionId = "google-search-fixer@petalbrowser.app",
             label       = "Google Search Fixer",
+            description = "Ensures modern full-featured Google Search experience on GeckoView.",
             prefKey     = "petal_builtin_google_search_fixer"
         )
     )
@@ -123,5 +143,44 @@ object PetalBuiltInExtensionManager {
                 { e -> Log.e(TAG, "Toggle failed for ${spec.label}", e) }
             )
         }, { e -> Log.e(TAG, "Cannot list extensions for toggle", e) })
+    }
+
+    private const val PREF_DARK_WHITELIST = "petal_dark_webpages_whitelist"
+    private const val PREF_DARK_CONTRAST = "petal_dark_webpages_contrast"
+
+    @JvmStatic
+    fun getDarkWebpagesWhitelist(context: Context): Set<String> {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        return sp.getStringSet(PREF_DARK_WHITELIST, emptySet()) ?: emptySet()
+    }
+
+    @JvmStatic
+    fun addDarkWebpageWhitelist(context: Context, domain: String) {
+        val clean = domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
+        if (clean.isBlank()) return
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        val current = sp.getStringSet(PREF_DARK_WHITELIST, emptySet())?.toMutableSet() ?: mutableSetOf()
+        current.add(clean)
+        sp.edit().putStringSet(PREF_DARK_WHITELIST, current).apply()
+    }
+
+    @JvmStatic
+    fun removeDarkWebpageWhitelist(context: Context, domain: String) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        val current = sp.getStringSet(PREF_DARK_WHITELIST, emptySet())?.toMutableSet() ?: return
+        current.remove(domain)
+        sp.edit().putStringSet(PREF_DARK_WHITELIST, current).apply()
+    }
+
+    @JvmStatic
+    fun getDarkWebpagesContrast(context: Context): Int {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        return sp.getInt(PREF_DARK_CONTRAST, 90)
+    }
+
+    @JvmStatic
+    fun setDarkWebpagesContrast(context: Context, contrast: Int) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        sp.edit().putInt(PREF_DARK_CONTRAST, contrast).apply()
     }
 }

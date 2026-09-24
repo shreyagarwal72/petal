@@ -118,13 +118,6 @@ object PetalExtensionManager {
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/ublock-origin/"
         ),
         CatalogEntry(
-            id = "darkreader",
-            name = "Dark Reader",
-            description = "Inverts bright web page colors to custom dark mode for comfortable night browsing.",
-            amoSlug = "darkreader",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/darkreader/"
-        ),
-        CatalogEntry(
             id = "privacy-badger17",
             name = "Privacy Badger",
             description = "Automatically learns to block invisible tracking scripts as you browse.",

@@ -236,13 +236,6 @@ object PetalSettingsSearchIndex {
             category = SettingsCategory.SEARCH_HOMEPAGE,
             keywords = listOf("pip", "picture in picture", "floating video", "video popout", "mini player")
         ),
-        SettingsSearchItem(
-            id = "search_force_dark_web",
-            title = "Force Dark Mode for Web Content",
-            subtitle = "Invert web page colors using Blink Chromium dark algorithm for comfortable night reading",
-            category = SettingsCategory.SEARCH_HOMEPAGE,
-            keywords = listOf("force dark", "dark web", "invert colors", "web dark mode", "night mode web")
-        ),
 
         // ==================== DISPLAY & ACCESSIBILITY ====================
         SettingsSearchItem(

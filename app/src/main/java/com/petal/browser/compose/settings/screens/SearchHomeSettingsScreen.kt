@@ -281,14 +281,6 @@ fun SearchHomeSettingsScreenContent(
                         enabled = isPipSupported,
                         onCheckedChange = onAutoPipChange
                     )
-                    // Force Dark Mode for Web Content
-                    ToggleRow(
-                        title = "Force Dark Web Content",
-                        subtitle = "Automatically apply dark themes to websites that do not natively support dark mode",
-                        icon = Icons.Rounded.DarkMode,
-                        checked = forceDarkMode,
-                        onCheckedChange = onForceDarkModeChange
-                    )
                 }
 
                 Spacer(Modifier.height(32.dp))
