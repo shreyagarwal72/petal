@@ -326,8 +326,8 @@ fun PetalPdfViewerScreen(
 
     // Save Annotations function
     val saveAnnotatedPdf: () -> Unit = {
-        if (pdfRenderer == null || pageCount == 0) return@saveAnnotatedPdf
-        coroutineScope.launch {
+        if (pdfRenderer != null && pageCount > 0) {
+            coroutineScope.launch {
             isSavingPdf = true
             val success = withContext(Dispatchers.IO) {
                 try {
@@ -417,6 +417,7 @@ fun PetalPdfViewerScreen(
             } else {
                 NinjaToast.show(context, "Failed to save PDF modifications")
             }
+        }
         }
     }
 

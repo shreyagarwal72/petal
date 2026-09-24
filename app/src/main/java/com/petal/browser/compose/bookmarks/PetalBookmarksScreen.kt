@@ -51,6 +51,8 @@ import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalExpressiveAlertDialog
 import com.petal.browser.ui.components.PetalExpressiveDialog
+import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.compose.home.getFaviconUrl
@@ -503,11 +505,13 @@ private fun BookmarkCardItem(
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .bouncyClickable(scaleDown = 0.97f, onClick = onClick)
-            .let { with(itemScope) { it.animateItem() } }
-            .entrance(index = animationIndex, playKey = "${record.url}_${record.time}")
+        modifier = with(itemScope) {
+            Modifier
+                .fillMaxWidth()
+                .animateItem()
+                .bouncyClickable(scaleDown = 0.97f, onClick = onClick)
+                .entrance(index = animationIndex, playKey = "${record.url}_${record.time}")
+        }
     ) {
         Row(
             modifier = Modifier

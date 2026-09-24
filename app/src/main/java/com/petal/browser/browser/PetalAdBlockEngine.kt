@@ -190,7 +190,7 @@ object PetalAdBlockEngine {
         return trieBlocked
     }
 
-    private fun recordBlock(pageUrl: String?) {
+    fun recordBlock(pageUrl: String?) {
         totalBlockedCount.incrementAndGet()
         if (!pageUrl.isNullOrBlank()) {
             val pageHost = try { Uri.parse(pageUrl).host ?: "" } catch (e: Exception) { "" }
