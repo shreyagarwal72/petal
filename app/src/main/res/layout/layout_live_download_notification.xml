@@ -53,54 +53,55 @@
         android:ellipsize="end"
         android:text="0 MB / 0 MB • calculating..." />
 
-    <!-- Animated doll runner track above progress bar -->
-    <LinearLayout
-        android:id="@+id/notification_doll_track"
+    <!-- Animated doll runner track positioned directly on top of the downloading progress line -->
+    <FrameLayout
+        android:id="@+id/notification_progress_container"
         android:layout_width="match_parent"
-        android:layout_height="24dp"
-        android:layout_marginTop="4dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_height="32dp"
+        android:layout_marginTop="2dp">
 
-        <!-- Leading spacer to position doll above current download percentage -->
-        <View
-            android:id="@+id/notification_runner_spacer_left"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="0" />
+        <!-- Progress bar directly at bottom of container -->
+        <ProgressBar
+            android:id="@+id/notification_progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="4dp"
+            android:max="100"
+            android:progress="0" />
 
-        <ImageView
-            android:id="@+id/notification_doll_runner"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:src="@drawable/ic_doll_run_1"
-            android:contentDescription="Live Download Runner" />
+        <!-- Doll runner and trophy track overlaying directly upon progress line -->
+        <LinearLayout
+            android:id="@+id/notification_doll_track"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="bottom">
 
-        <!-- Trailing spacer between doll and finish emoji -->
-        <View
-            android:id="@+id/notification_runner_spacer_right"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="100" />
+            <!-- Dynamic spacer positioning runner doll above current progress -->
+            <ImageView
+                android:id="@+id/notification_doll_runner"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginBottom="2dp"
+                android:src="@drawable/ic_doll_run_1"
+                android:contentDescription="Live Download Runner" />
 
-        <!-- Finish Trophy Emoji marker at end of track -->
-        <TextView
-            android:id="@+id/notification_finish_icon"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:gravity="center"
-            android:textSize="15sp"
-            android:text="🏆" />
-    </LinearLayout>
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
-    <!-- Progress bar -->
-    <ProgressBar
-        android:id="@+id/notification_progress_bar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="6dp"
-        android:layout_marginTop="2dp"
-        android:max="100"
-        android:progress="0" />
-
+            <!-- Finish Trophy icon positioned at end of downloading line -->
+            <TextView
+                android:id="@+id/notification_finish_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:gravity="center"
+                android:layout_marginBottom="2dp"
+                android:textSize="16sp"
+                android:text="🏆" />
+        </LinearLayout>
+    </FrameLayout>
 </LinearLayout>

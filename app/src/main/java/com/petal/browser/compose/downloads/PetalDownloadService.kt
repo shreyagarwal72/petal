@@ -155,6 +155,41 @@ class PetalDownloadService : Service() {
         } else {
             "${active.size} downloads active in background"
         }
+        val openAppIntent = Intent(applicationContext, BrowserActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("open_downloads", true)
+        }
+        val openAppPendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            FOREGROUND_NOTIF_ID,
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val isPaused = item.status == android.app.DownloadManager.STATUS_PAUSED
+        val toggleIntent = Intent(applicationContext, PetalDownloadCancelReceiver::class.java).apply {
+            action = if (isPaused) PetalDownloadCancelReceiver.ACTION_RESUME_DOWNLOAD else PetalDownloadCancelReceiver.ACTION_PAUSE_DOWNLOAD
+            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, item.id)
+        }
+        val togglePendingIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            FOREGROUND_NOTIF_ID + 10,
+            toggleIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val cancelIntent = Intent(applicationContext, PetalDownloadCancelReceiver::class.java).apply {
+            action = PetalDownloadCancelReceiver.ACTION_CANCEL_DOWNLOAD
+            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, item.id)
+        }
+        val cancelPendingIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            FOREGROUND_NOTIF_ID + 20,
+            cancelIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val chipText = "${formatSpeed(item.speedBytesPerSec)} • $percent%"
         val notification = LiveUpdateNotificationManager.buildLiveNotification(
             applicationContext,
             FOREGROUND_NOTIF_ID.toLong(),
@@ -162,11 +197,11 @@ class PetalDownloadService : Service() {
             text,
             percent,
             total <= 0,
-            false,
-            "Background download",
-            null,
-            null,
-            null
+            isPaused,
+            chipText,
+            openAppPendingIntent,
+            cancelPendingIntent,
+            togglePendingIntent
         )
         try {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager

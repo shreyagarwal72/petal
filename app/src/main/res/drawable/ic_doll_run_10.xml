@@ -1,0 +1,66 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Frame 10: Smooth intermediate rise (between 2 and 3/4) -->
+    <!-- Head -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M10,2.75 A2,2 0 1,0 14,2.75 A2,2 0 1,0 10,2.75Z"/>
+    <!-- Bow -->
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M13.2,1.25 L14.5,0.35 L14.8,1.25 L14.5,2.25 Z"/>
+    <!-- Hair/bun -->
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M11.5,0.75 A0.8,0.8 0 1,0 13.5,0.75 A0.8,0.8 0 1,0 11.5,0.75Z"/>
+    <!-- Neck -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M11.5,4.75 L12.5,4.75 L12.5,5.75 L11.5,5.75Z"/>
+    <!-- Body / Dress -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M10,5.75 L14,5.75 L15.5,11.25 L8.5,11.25Z"/>
+    <!-- Dress overlay -->
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M10.5,5.75 L13.5,5.75 L14.0,7.75 L10.0,7.75Z"/>
+    <!-- Arms spread preparing for flight -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:strokeColor="#FFD81B60"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M13.5,6.75 L16.0,8.75 L16.2,10.0"/>
+    <path
+        android:fillColor="#FFD81B60"
+        android:strokeColor="#FFD81B60"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M10.5,6.75 L8.0,8.5 L7.8,9.75"/>
+    <!-- Right leg: high kick lifting -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:strokeColor="#FFD81B60"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M12.9,11.25 L14.5,14.5 L16.0,17.5"/>
+    <!-- Left leg: swinging forward -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:strokeColor="#FFD81B60"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M11.1,11.25 L9.8,14.0 L8.0,16.5"/>
+    <!-- Right shoe -->
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M15.0,17.0 L17.5,17.5 L17.2,18.5 L14.8,18.0Z"/>
+    <!-- Left shoe -->
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M6.8,16.2 L9.2,16.8 L8.8,17.8 L6.4,17.2Z"/>
+</vector>

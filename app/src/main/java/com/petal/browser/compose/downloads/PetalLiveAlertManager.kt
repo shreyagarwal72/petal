@@ -394,16 +394,16 @@ object PetalLiveAlertManager {
 
         val accentColor = LiveUpdateNotificationManager.getLiveThemeAccentColor(context)
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_trophy)
-            .setContentTitle("Download Complete 🏆")
+            .setSmallIcon(R.drawable.check_rounded)
+            .setContentTitle("Download Complete")
             .setContentText(contentText)
-            .setSubText("Finished 🏆")
+            .setSubText("Finished")
             .setOngoing(false)
             .setAutoCancel(true)
             .setColor(accentColor)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(openFilePendingIntent)
-            .addAction(R.drawable.ic_trophy, "Open File", openFilePendingIntent)
+            .addAction(R.drawable.icon_download, "Open File", openFilePendingIntent)
 
         nm.notify(downloadId.toInt(), builder.build())
     }

@@ -138,15 +138,23 @@ public class LiveUpdateNotificationManager {
     }
 
     public static int getRunningDollFrameResource(int progressPercent) {
-        int frame = (int) ((System.currentTimeMillis() / 120L) % 8);
+        int frame = (int) ((System.currentTimeMillis() / 60L) % 16);
         switch (frame) {
-            case 1: return R.drawable.ic_doll_run_2;
-            case 2: return R.drawable.ic_doll_run_3;
-            case 3: return R.drawable.ic_doll_run_4;
-            case 4: return R.drawable.ic_doll_run_5;
-            case 5: return R.drawable.ic_doll_run_6;
-            case 6: return R.drawable.ic_doll_run_7;
-            case 7: return R.drawable.ic_doll_run_8;
+            case 1: return R.drawable.ic_doll_run_9;
+            case 2: return R.drawable.ic_doll_run_2;
+            case 3: return R.drawable.ic_doll_run_10;
+            case 4: return R.drawable.ic_doll_run_3;
+            case 5: return R.drawable.ic_doll_run_4;
+            case 6: return R.drawable.ic_doll_run_11;
+            case 7: return R.drawable.ic_doll_run_5;
+            case 8: return R.drawable.ic_doll_run_12;
+            case 9: return R.drawable.ic_doll_run_6;
+            case 10: return R.drawable.ic_doll_run_13;
+            case 11: return R.drawable.ic_doll_run_7;
+            case 12: return R.drawable.ic_doll_run_14;
+            case 13: return R.drawable.ic_doll_run_8;
+            case 14: return R.drawable.ic_doll_run_15;
+            case 15: return R.drawable.ic_doll_run_16;
             case 0:
             default:
                 return R.drawable.ic_doll_run_1;
@@ -224,8 +232,12 @@ public class LiveUpdateNotificationManager {
             customView.setTextColor(R.id.notification_speed_chip, themeAccentColor);
             customView.setImageViewResource(R.id.notification_doll_runner, dollFrameRes);
 
-            // Dynamically position the doll runner on the track above the progress line
-            int leftPadding = (int) (context.getResources().getDisplayMetrics().density * (clampedProgress * 2.2f));
+            // Dynamically position the doll runner on the track above the progress line.
+            // Screen width minus notification margins (approx 64dp) minus trophy and doll widths (approx 48dp)
+            float density = context.getResources().getDisplayMetrics().density;
+            float screenWidthDp = context.getResources().getConfiguration().screenWidthDp;
+            float availableTrackDp = Math.max(120f, screenWidthDp - 112f);
+            int leftPadding = (int) (density * (availableTrackDp * (clampedProgress / 100f)));
             customView.setViewPadding(R.id.notification_doll_runner, leftPadding, 0, 0, 0);
 
             if (isIndeterminate) {

@@ -78,10 +78,9 @@ public class PetalDownloadEngine {
     private PetalDownloadEngine(Context context) {
         Context appContext = context.getApplicationContext();
 
-        // Custom robust OkHttpClient for segmented parallel downloading
-        // Keep enough workers and warm connections to saturate fast networks without
-        // buffering the file in memory. Fetch2 still streams each response directly
-        // to disk, which is safer than range-splitting signed/CDN URLs.
+        // Custom high-performance OkHttpClient mirroring Firefox Mobile network stack
+        // High connection pooling, HTTP/2 multiplexing, non-blocking asynchronous IO,
+        // and low latency connection timeouts.
         Dispatcher dispatcher = new Dispatcher(Executors.newFixedThreadPool(64));
         dispatcher.setMaxRequests(128);
         dispatcher.setMaxRequestsPerHost(32);
@@ -89,8 +88,8 @@ public class PetalDownloadEngine {
                 .dispatcher(dispatcher)
                 .connectionPool(new ConnectionPool(64, 5, TimeUnit.MINUTES))
                 .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(0, TimeUnit.MILLISECONDS)
-                .writeTimeout(0, TimeUnit.MILLISECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
                 .followRedirects(true)
                 .followSslRedirects(true)
                 .retryOnConnectionFailure(true)
