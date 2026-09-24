@@ -12,6 +12,9 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.petal.browser.R
+import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.compose.downloads.LiveUpdateNotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,7 +28,8 @@ import java.util.UUID
  *
  * Runs yt-dlp downloads as a foreground service so they survive app
  * minimization, screen-off, and configuration changes. Shows a persistent
- * notification with real-time progress and a Cancel action.
+ * live-update notification (using Petal's LiveUpdateNotificationManager)
+ * with real-time progress and a Cancel action.
  *
  * Use [PetalSocialDownloadService.enqueue] to start a download.
  */
@@ -40,7 +44,8 @@ class PetalSocialDownloadService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        ensureChannel()
+        LiveUpdateNotificationManager.ensureChannelCreated(applicationContext)
+        ensureSocialChannel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -73,7 +78,7 @@ class PetalSocialDownloadService : Service() {
                     ), "Petal Social"
                 )
 
-                startForeground(NOTIF_ID, buildProgressNotif(title, 0f, taskId))
+                startForeground(NOTIF_ID, buildProgressNotif(title, 0f))
 
                 activeJob = scope.launch {
                     try {
@@ -85,7 +90,7 @@ class PetalSocialDownloadService : Service() {
                             taskId = taskId,
                             cookies = cookies
                         ) { progress, _ ->
-                            nm.notify(NOTIF_ID, buildProgressNotif(title, progress, taskId))
+                            nm.notify(NOTIF_ID, buildProgressNotif(title, progress))
                         }.fold(
                             onSuccess = { filePath ->
                                 if (filePath != null) {
@@ -100,7 +105,11 @@ class PetalSocialDownloadService : Service() {
                             }
                         )
                     } finally {
-                        stopForeground(STOP_FOREGROUND_DETACH)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            stopForeground(STOP_FOREGROUND_DETACH)
+                        } else {
+                            @Suppress("DEPRECATION") stopForeground(false)
+                        }
                         stopSelf()
                     }
                 }
@@ -117,53 +126,76 @@ class PetalSocialDownloadService : Service() {
 
     // ── Notification helpers ───────────────────────────────────────────────
 
-    private fun ensureChannel() {
+    private fun ensureSocialChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            nm.createNotificationChannel(
-                NotificationChannel(CH_ID, "Social Downloads", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Progress for Petal Social Downloader (yt-dlp)"
-                    setShowBadge(false)
-                }
-            )
+            // Only create if the shared live-downloads channel isn't enough.
+            // Social downloads now share the same "Live Downloader & Alerts" channel
+            // so the user manages one consistent channel. No separate channel needed.
         }
     }
 
-    private fun cancelIntent(): PendingIntent {
+    private fun cancelPendingIntent(): PendingIntent {
         val i = Intent(this, PetalSocialDownloadService::class.java).apply { action = ACTION_CANCEL }
         return PendingIntent.getService(this, 0, i,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
-    private fun buildProgressNotif(title: String, progress: Float, taskId: String): Notification {
-        val p = (progress * 100).toInt()
-        return NotificationCompat.Builder(this, CH_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setContentTitle("Downloading")
+    private fun openDownloadsPendingIntent(): PendingIntent {
+        val i = Intent(this, BrowserActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("open_downloads", true)
+        }
+        return PendingIntent.getActivity(this, NOTIF_ID + 1, i,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    }
+
+    private fun buildProgressNotif(title: String, progress: Float): Notification {
+        val p = (progress * 100).toInt().coerceIn(0, 100)
+        val isIndeterminate = p == 0
+        val chipText = if (isIndeterminate) "Starting…" else "$p%"
+        return LiveUpdateNotificationManager.buildLiveNotification(
+            this,
+            NOTIF_ID.toLong(),
+            "Downloading",
+            title,
+            p,
+            isIndeterminate,
+            false,
+            chipText,
+            openDownloadsPendingIntent(),
+            cancelPendingIntent(),
+            null
+        )
+    }
+
+    private fun buildDoneNotif(title: String): Notification {
+        val accentColor = LiveUpdateNotificationManager.getLiveThemeAccentColor(this)
+        return NotificationCompat.Builder(this, LiveUpdateNotificationManager.CHANNEL_ID)
+            .setSmallIcon(R.drawable.check_rounded)
+            .setContentTitle("Download complete")
             .setContentText(title)
-            .setProgress(100, p, p == 0)
-            .addAction(android.R.drawable.ic_delete, "Cancel", cancelIntent())
-            .setOngoing(true).setOnlyAlertOnce(true).setSilent(true)
+            .setColor(accentColor)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(openDownloadsPendingIntent())
             .build()
     }
 
-    private fun buildDoneNotif(title: String) =
-        NotificationCompat.Builder(this, CH_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setContentTitle("Download complete")
-            .setContentText(title)
-            .setAutoCancel(true).build()
-
-    private fun buildErrNotif(title: String, err: String) =
-        NotificationCompat.Builder(this, CH_ID)
-            .setSmallIcon(android.R.drawable.stat_notify_error)
+    private fun buildErrNotif(title: String, err: String): Notification {
+        val accentColor = LiveUpdateNotificationManager.getLiveThemeAccentColor(this)
+        return NotificationCompat.Builder(this, LiveUpdateNotificationManager.CHANNEL_ID)
+            .setSmallIcon(R.drawable.icon_alert)
             .setContentTitle("Download failed")
             .setContentText("$title: $err")
-            .setAutoCancel(true).build()
+            .setColor(accentColor)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+    }
 
     companion object {
         private const val TAG          = "PetalSocialDlService"
-        private const val CH_ID        = "petal_social_download"
-        private const val NOTIF_ID     = 50100
+        private const val NOTIF_ID      = 50100
         private const val NOTIF_DONE_ID = 50101
         private const val NOTIF_ERR_ID  = 50102
 

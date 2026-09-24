@@ -28,8 +28,9 @@ object PetalLiveAlertManager {
     private val lastNotifTimeMap = ConcurrentHashMap<Long, Long>()
     private val handledTerminalStatusMap = ConcurrentHashMap<Long, Int>()
 
-    @Volatile
-    private var isGlobalCollectorStarted = false
+    // Single collector job — kept so we can cancel + relaunch it reliably.
+    @Volatile private var collectorJob: Job? = null
+    private val observerLock = Any()
 
     @JvmOverloads
     @JvmStatic
@@ -54,74 +55,82 @@ object PetalLiveAlertManager {
 
     @JvmStatic
     fun startGlobalDownloadObserver(context: Context) {
-        if (isGlobalCollectorStarted) return
-        synchronized(this) {
-            if (isGlobalCollectorStarted) return
-            isGlobalCollectorStarted = true
+        synchronized(observerLock) {
+            // If a collector job is already active, do nothing.
+            if (collectorJob?.isActive == true) return
+            collectorJob = scope.launch {
+                try {
+                    PetalFetchDownloadBridge.downloadItems.collect { items ->
+                        val activeItems = items.filter {
+                            it.status == DownloadManager.STATUS_RUNNING ||
+                            it.status == DownloadManager.STATUS_PENDING ||
+                            it.status == DownloadManager.STATUS_PAUSED
+                        }
 
-            scope.launch {
-                PetalFetchDownloadBridge.downloadItems.collect { items ->
-                    val activeItems = items.filter {
-                        it.status == DownloadManager.STATUS_RUNNING ||
-                        it.status == DownloadManager.STATUS_PENDING ||
-                        it.status == DownloadManager.STATUS_PAUSED
-                    }
+                        // Fetch2 can briefly publish an empty snapshot while the app is
+                        // backgrounded or its database is being reopened. Do not stop the
+                        // foreground service (which would make downloads appear paused) on
+                        // that transient state; only shut it down after a real non-empty,
+                        // terminal snapshot.
+                        if (items.isNotEmpty() && activeItems.isEmpty()) {
+                            PetalDownloadService.stopIfNoActiveDownloads(context)
+                        }
 
-                    // Fetch2 can briefly publish an empty snapshot while the app is
-                    // backgrounded or its database is being reopened. Do not stop the
-                    // foreground service (which would make downloads appear paused) on
-                    // that transient state; only shut it down after a real non-empty,
-                    // terminal snapshot.
-                    if (items.isNotEmpty() && activeItems.isEmpty()) {
-                        PetalDownloadService.stopIfNoActiveDownloads(context)
-                    }
+                        // Keep the foreground service notification alive independently of the UI task.
+                        if (activeItems.isNotEmpty()) {
+                            PetalDownloadService.updatePersistentNotification(context)
+                        }
 
-                    // Keep the foreground service notification alive independently of the UI task.
-                    if (activeItems.isNotEmpty()) {
-                        PetalDownloadService.updatePersistentNotification(context)
-                    }
-
-                    val now = System.currentTimeMillis()
-                    items.forEach { item ->
-                        when (item.status) {
-                            DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
-                                handledTerminalStatusMap.remove(item.id)
-                                val lastTime = lastNotifTimeMap[item.id] ?: 0L
-                                if (now - lastTime >= 150L || lastTime == 0L) {
-                                    lastNotifTimeMap[item.id] = now
-                                    showLiveNotification(
-                                        context,
-                                        downloadId = item.id,
-                                        fileName = item.fileName,
-                                        soFar = item.bytesDownloaded,
-                                        total = item.totalSize,
-                                        speedBytesPerSec = item.speedBytesPerSec,
-                                        etaSeconds = item.etaSeconds
-                                    )
+                        val now = System.currentTimeMillis()
+                        items.forEach { item ->
+                            when (item.status) {
+                                DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
+                                    handledTerminalStatusMap.remove(item.id)
+                                    val lastTime = lastNotifTimeMap[item.id] ?: 0L
+                                    if (now - lastTime >= 150L || lastTime == 0L) {
+                                        lastNotifTimeMap[item.id] = now
+                                        showLiveNotification(
+                                            context,
+                                            downloadId = item.id,
+                                            fileName = item.fileName,
+                                            soFar = item.bytesDownloaded,
+                                            total = item.totalSize,
+                                            speedBytesPerSec = item.speedBytesPerSec,
+                                            etaSeconds = item.etaSeconds
+                                        )
+                                    }
                                 }
-                            }
-                            DownloadManager.STATUS_PAUSED -> {
-                                if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_PAUSED) {
-                                    handledTerminalStatusMap[item.id] = DownloadManager.STATUS_PAUSED
-                                    showPausedNotification(context, item.id)
+                                DownloadManager.STATUS_PAUSED -> {
+                                    if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_PAUSED) {
+                                        handledTerminalStatusMap[item.id] = DownloadManager.STATUS_PAUSED
+                                        showPausedNotification(context, item.id)
+                                    }
                                 }
-                            }
-                            DownloadManager.STATUS_SUCCESSFUL -> {
-                                if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_SUCCESSFUL) {
-                                    handledTerminalStatusMap[item.id] = DownloadManager.STATUS_SUCCESSFUL
-                                    lastNotifTimeMap.remove(item.id)
-                                    showCompletionNotification(context, item.id, item.fileName, item.totalSize)
+                                DownloadManager.STATUS_SUCCESSFUL -> {
+                                    if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_SUCCESSFUL) {
+                                        handledTerminalStatusMap[item.id] = DownloadManager.STATUS_SUCCESSFUL
+                                        lastNotifTimeMap.remove(item.id)
+                                        showCompletionNotification(context, item.id, item.fileName, item.totalSize)
+                                    }
                                 }
-                            }
-                            DownloadManager.STATUS_FAILED -> {
-                                if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_FAILED) {
-                                    handledTerminalStatusMap[item.id] = DownloadManager.STATUS_FAILED
-                                    lastNotifTimeMap.remove(item.id)
-                                    showFailureNotification(context, item.id, item.fileName)
+                                DownloadManager.STATUS_FAILED -> {
+                                    if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_FAILED) {
+                                        handledTerminalStatusMap[item.id] = DownloadManager.STATUS_FAILED
+                                        lastNotifTimeMap.remove(item.id)
+                                        showFailureNotification(context, item.id, item.fileName)
+                                    }
                                 }
                             }
                         }
                     }
+                } catch (e: CancellationException) {
+                    // Normal cancellation (e.g., during resume restart) — do not log as error.
+                    throw e
+                } catch (e: Throwable) {
+                    // Flow collection unexpectedly failed — clear the job so the next
+                    // trackDownload() call can relaunch it automatically.
+                    Log.e(TAG, "Global download observer crashed; will restart on next download", e)
+                    synchronized(observerLock) { collectorJob = null }
                 }
             }
         }
@@ -169,12 +178,18 @@ object PetalLiveAlertManager {
 
     @JvmStatic
     fun resumeDownload(context: Context, downloadId: Long) {
-        // Clear pause dedup and rate-limit so the observer fires a live notification immediately
+        // Clear pause dedup and rate-limit so the observer fires a live notification immediately.
         handledTerminalStatusMap.remove(downloadId)
         lastNotifTimeMap.remove(downloadId)
         PetalFetchDownloadBridge.resume(context, downloadId)
-        // Ensure the global observer is running — reset the guard so it relaunches if needed
-        isGlobalCollectorStarted = false
+
+        // Cancel the old collector and relaunch so the freshly-resumed download is immediately
+        // observed. Without cancellation, resetting the old guard flag would race with the
+        // existing coroutine and potentially launch a second parallel collector.
+        synchronized(observerLock) {
+            collectorJob?.cancel()
+            collectorJob = null
+        }
         startGlobalDownloadObserver(context)
     }
 
@@ -437,5 +452,28 @@ object PetalLiveAlertManager {
             .setContentIntent(pendingIntent)
 
         nm.notify(filePath.hashCode(), builder.build())
+    }
+
+    // ── Formatting helpers ────────────────────────────────────────────────
+
+    private fun formatBytes(bytes: Long): String {
+        if (bytes < 1024) return "$bytes B"
+        val kb = bytes / 1024.0
+        if (kb < 1024) return "%.1f KB".format(java.util.Locale.US, kb)
+        val mb = kb / 1024.0
+        if (mb < 1024) return "%.1f MB".format(java.util.Locale.US, mb)
+        return "%.1f GB".format(java.util.Locale.US, mb / 1024.0)
+    }
+
+    private fun formatSpeed(bytesPerSecond: Long): String =
+        if (bytesPerSecond > 0) "${formatBytes(bytesPerSecond)}/s" else "waiting"
+
+    private fun formatEta(etaSeconds: Long): String {
+        if (etaSeconds <= 0) return "calculating"
+        return when {
+            etaSeconds < 60 -> "${etaSeconds}s"
+            etaSeconds < 3600 -> "${etaSeconds / 60}m ${etaSeconds % 60}s"
+            else -> "${etaSeconds / 3600}h ${(etaSeconds % 3600) / 60}m"
+        }
     }
 }

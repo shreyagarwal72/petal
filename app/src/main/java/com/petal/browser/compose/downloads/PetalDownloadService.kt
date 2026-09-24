@@ -6,7 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
 import com.petal.browser.activity.BrowserActivity
@@ -62,6 +64,7 @@ class PetalDownloadService : Service() {
     }
 
     private var wakeLock: PowerManager.WakeLock? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate() {
         super.onCreate()
@@ -145,7 +148,7 @@ class PetalDownloadService : Service() {
     fun updatePersistentNotification() {
         val active = PetalFetchDownloadBridge.downloadItems.value.filter { isActive(it.status) }
         if (active.isEmpty()) {
-            stopForegroundAndSelf()
+            mainHandler.post { stopForegroundAndSelf() }
             return
         }
         val item = active.first()
@@ -205,16 +208,21 @@ class PetalDownloadService : Service() {
             cancelPendingIntent,
             togglePendingIntent
         )
-        try {
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-            manager.notify(FOREGROUND_NOTIF_ID, notification)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(FOREGROUND_NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-            } else {
-                startForeground(FOREGROUND_NOTIF_ID, notification)
+
+        // NotificationManager.notify() is thread-safe, but startForeground()/stopForeground()
+        // must be called on the service's main thread to avoid RemoteException / ForegroundServiceStartNotAllowedException.
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        manager.notify(FOREGROUND_NOTIF_ID, notification)
+        mainHandler.post {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    startForeground(FOREGROUND_NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+                } else {
+                    startForeground(FOREGROUND_NOTIF_ID, notification)
+                }
+            } catch (e: Throwable) {
+                Log.e(TAG, "Failed to update persistent notification", e)
             }
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to update persistent notification", e)
         }
     }
 
