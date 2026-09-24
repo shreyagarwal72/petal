@@ -3930,6 +3930,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     currentUrl,
                     cleanText
                 );
+                return kotlin.Unit.INSTANCE;
             }
         );
     }
@@ -4188,56 +4189,46 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void updateFindInPageCompose() {
         if (!(findInPageCompose instanceof androidx.compose.ui.platform.ComposeView)) return;
         androidx.compose.ui.platform.ComposeView cv = (androidx.compose.ui.platform.ComposeView) findInPageCompose;
-        cv.setContent(androidx.compose.runtime.internal.ComposableLambdaKt.composableLambdaInstance(192837465, true, (composer, key) -> {
-            com.petal.browser.compose.find.PetalFindInPageBarKt.PetalFindInPageHost(
-                isFindInPageShowing,
-                findInPageQuery,
-                query -> {
-                    findInPageQuery = query;
-                    updateFindInPageCompose();
-                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                        if (query.isEmpty()) {
-                            gv.clearMatches();
-                        } else {
-                            gv.findAllAsync(query);
-                        }
-                    } else if (ninjaWebView != null) {
-                        if (query.isEmpty()) {
-                            ninjaWebView.clearMatches();
-                        } else {
-                            ninjaWebView.findAllAsync(query);
-                        }
+        com.petal.browser.compose.find.PetalFindInPageBridge.setupFindInPage(
+            cv,
+            isFindInPageShowing,
+            findInPageQuery,
+            query -> {
+                findInPageQuery = query;
+                updateFindInPageCompose();
+                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                    com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+                    if (query.isEmpty()) {
+                        gv.clearMatches();
+                    } else {
+                        gv.findAllAsync(query);
                     }
-                    return kotlin.Unit.INSTANCE;
-                },
-                () -> {
-                    // Find Next
-                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(true);
-                    } else if (ninjaWebView != null) {
-                        ninjaWebView.findNext(true);
+                } else if (ninjaWebView != null) {
+                    if (query.isEmpty()) {
+                        ninjaWebView.clearMatches();
+                    } else {
+                        ninjaWebView.findAllAsync(query);
                     }
-                    return kotlin.Unit.INSTANCE;
-                },
-                () -> {
-                    // Find Previous
-                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(false);
-                    } else if (ninjaWebView != null) {
-                        ninjaWebView.findNext(false);
-                    }
-                    return kotlin.Unit.INSTANCE;
-                },
-                () -> {
-                    closeFindInPage();
-                    return kotlin.Unit.INSTANCE;
-                },
-                composer,
-                0
-            );
-            return kotlin.Unit.INSTANCE;
-        }));
+                }
+            },
+            () -> {
+                // Find Next
+                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(true);
+                } else if (ninjaWebView != null) {
+                    ninjaWebView.findNext(true);
+                }
+            },
+            () -> {
+                // Find Previous
+                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(false);
+                } else if (ninjaWebView != null) {
+                    ninjaWebView.findNext(false);
+                }
+            },
+            this::closeFindInPage
+        );
     }
 
     public void closeFindInPage() {
@@ -6587,6 +6578,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             }
                         });
                     }
+                    return kotlin.Unit.INSTANCE;
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Error generating print job via GeckoView", e);

@@ -176,26 +176,31 @@ fun PetalFindInPageBar(
 }
 
 /**
- * Convenience Compose host for integration with Java callers (BrowserActivity).
- * Encapsulates the PetalExpressiveTheme lookup and wraps PetalFindInPageBar.
+ * Java interop bridge to set up the Find in Page ComposeView from BrowserActivity.
  */
-@Composable
-fun PetalFindInPageHost(
-    visible: Boolean,
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onFindNext: () -> Unit,
-    onFindPrevious: () -> Unit,
-    onClose: () -> Unit
-) {
-    com.petal.browser.ui.theme.PetalExpressiveTheme {
-        PetalFindInPageBar(
-            visible = visible,
-            query = query,
-            onQueryChange = onQueryChange,
-            onFindNext = onFindNext,
-            onFindPrevious = onFindPrevious,
-            onClose = onClose
-        )
+object PetalFindInPageBridge {
+    @JvmStatic
+    fun setupFindInPage(
+        composeView: androidx.compose.ui.platform.ComposeView,
+        visible: Boolean,
+        query: String,
+        onQueryChange: java.util.function.Consumer<String>,
+        onFindNext: Runnable,
+        onFindPrevious: Runnable,
+        onClose: Runnable
+    ) {
+        composeView.setContent {
+            com.petal.browser.ui.theme.PetalExpressiveTheme {
+                PetalFindInPageBar(
+                    visible = visible,
+                    query = query,
+                    onQueryChange = { onQueryChange.accept(it) },
+                    onFindNext = { onFindNext.run() },
+                    onFindPrevious = { onFindPrevious.run() },
+                    onClose = { onClose.run() }
+                )
+            }
+        }
     }
 }
+
