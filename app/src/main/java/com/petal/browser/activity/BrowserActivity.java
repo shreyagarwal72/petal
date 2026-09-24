@@ -6612,4 +6612,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             Log.e(TAG, "Error saving tab session in onPause", e);
         }
     }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        try {
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.onTrimMemory(this, level);
+            com.petal.browser.unit.TabThumbnailCache.clear();
+        } catch (Throwable t) {
+            Log.d(TAG, "Error in onTrimMemory: " + t.getMessage());
+        }
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        try {
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.onLowMemory(this);
+            com.petal.browser.unit.TabThumbnailCache.clear();
+        } catch (Throwable t) {
+            Log.d(TAG, "Error in onLowMemory: " + t.getMessage());
+        }
+    }
 }

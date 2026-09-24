@@ -1577,6 +1577,10 @@ class PetalGeckoView @JvmOverloads constructor(
         album.activate()
         session.setActive(true)
         geckoView.visibility = View.VISIBLE
+        // Notify BrowserStore of tab selection
+        try {
+            com.petal.browser.engine.gecko.PetalEngineStore.selectTab(context, tabId)
+        } catch (_: Throwable) {}
     }
 
     override fun deactivate() {
@@ -1848,6 +1852,7 @@ class PetalGeckoView @JvmOverloads constructor(
         try { geckoView.releaseSession() } catch (_: Throwable) {}
         try { if (session.isOpen) session.close() } catch (_: Throwable) {}
         try { engineSession?.close() } catch (_: Throwable) {}
+        try { com.petal.browser.engine.gecko.PetalEngineStore.removeTab(context, tabId) } catch (_: Throwable) {}
         removeAllViews()
     }
 
