@@ -69,7 +69,7 @@ import com.petal.browser.R;
 import com.petal.browser.browser.List_standard;
 import com.petal.browser.database.Record;
 import com.petal.browser.database.RecordAction;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 
 public class BackupUnit {
 
@@ -389,13 +389,13 @@ public class BackupUnit {
 
                 final String savedName = fileName;
                 handler.post(() -> {
-                    NinjaToast.show(context, "Backup downloaded to Downloads: " + savedName);
+                    PetalToast.show(context, "Backup downloaded to Downloads: " + savedName);
                 });
 
             } catch (Exception e) {
                 Log.e("Petal", "backupToDownloadManager error", e);
                 handler.post(() -> {
-                    NinjaToast.show(context, "Backup failed: " + e.getMessage());
+                    PetalToast.show(context, "Backup failed: " + e.getMessage());
                 });
             }
         });
@@ -430,7 +430,7 @@ public class BackupUnit {
 
         if (streamHolder[0] == null) {
             new Handler(Looper.getMainLooper()).post(() ->
-                    NinjaToast.show(context, "Backup failed: cannot open file for writing"));
+                    PetalToast.show(context, "Backup failed: cannot open file for writing"));
             return;
         }
 
@@ -448,12 +448,12 @@ public class BackupUnit {
                 }
 
                 Log.i("Petal", "Backup written successfully (" + dataBytes.length + " bytes)");
-                handler.post(() -> NinjaToast.show(context,
+                handler.post(() -> PetalToast.show(context,
                         context.getString(R.string.app_done) + ": Backup saved (" + dataBytes.length + " bytes)"));
 
             } catch (Exception e) {
                 Log.e("Petal", "backupToUri error", e);
-                handler.post(() -> NinjaToast.show(context, "Backup failed: " + e.getMessage()));
+                handler.post(() -> PetalToast.show(context, "Backup failed: " + e.getMessage()));
             }
         });
     }
@@ -472,7 +472,7 @@ public class BackupUnit {
             try {
                 java.io.InputStream is = context.getContentResolver().openInputStream(uri);
                 if (is == null) {
-                    handler.post(() -> NinjaToast.show(context, "Failed to open selected file"));
+                    handler.post(() -> PetalToast.show(context, "Failed to open selected file"));
                     return;
                 }
 
@@ -712,12 +712,12 @@ public class BackupUnit {
                 }
 
                 handler.post(() -> {
-                    NinjaToast.show(context, context.getString(R.string.app_done) + ": " + context.getString(R.string.settings_data_restore));
+                    PetalToast.show(context, context.getString(R.string.app_done) + ": " + context.getString(R.string.settings_data_restore));
                 });
             } catch (Exception e) {
                 Log.e("Petal", "restoreFromUri error", e);
                 handler.post(() -> {
-                    NinjaToast.show(context, "Restore failed: " + e.getMessage());
+                    PetalToast.show(context, "Restore failed: " + e.getMessage());
                 });
             }
         });
@@ -741,7 +741,7 @@ public class BackupUnit {
                     }
                 }
                 if (jsonFile == null || !jsonFile.exists()) {
-                    handler.post(() -> NinjaToast.show(context, "No backup file found at Documents/browser_backup/petal_browser_backup.json"));
+                    handler.post(() -> PetalToast.show(context, "No backup file found at Documents/browser_backup/petal_browser_backup.json"));
                     return;
                 }
 
@@ -981,12 +981,12 @@ public class BackupUnit {
                 }
 
                 handler.post(() -> {
-                    NinjaToast.show(context, context.getString(R.string.app_done) + ": " + context.getString(R.string.settings_data_restore));
+                    PetalToast.show(context, context.getString(R.string.app_done) + ": " + context.getString(R.string.settings_data_restore));
                 });
             } catch (Exception e) {
                 Log.e("Petal", "restoreFromJson error", e);
                 handler.post(() -> {
-                    NinjaToast.show(context, "Restore failed: " + e.getMessage());
+                    PetalToast.show(context, "Restore failed: " + e.getMessage());
                 });
             }
         });

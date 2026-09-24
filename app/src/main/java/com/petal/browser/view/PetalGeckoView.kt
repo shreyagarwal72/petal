@@ -1,6 +1,6 @@
 package com.petal.browser.view
 
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
@@ -430,7 +430,7 @@ class PetalGeckoView @JvmOverloads constructor(
                                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
                                     fxManager.exchangeCodeForTokens(authCode, emailParam)
                                     com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(act)
-                                    com.petal.browser.view.NinjaToast.show(act, "Signed in with Firefox Account. Syncing data...")
+                                    com.petal.browser.view.PetalToast.show(act, "Signed in with Firefox Account. Syncing data...")
                                     act.removeAlbum(this@PetalGeckoView)
                                 }
                                 return@runOnUiThread
@@ -640,7 +640,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 if (isMozillaXpi) {
                     act.runOnUiThread {
                         com.petal.browser.extensions.PetalExtensionManager.install(responseUrl) { success, message ->
-                            com.petal.browser.view.NinjaToast.show(act, message ?: if (success) "Extension installed" else "Extension installation failed")
+                            com.petal.browser.view.PetalToast.show(act, message ?: if (success) "Extension installed" else "Extension installation failed")
                         }
                     }
                     return
@@ -1334,7 +1334,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
-                        com.petal.browser.view.NinjaToast.show(context, "Page repeatedly crashed. Stopped auto-reloading.")
+                        com.petal.browser.view.PetalToast.show(context, "Page repeatedly crashed. Stopped auto-reloading.")
                     }
                 }
                 return
@@ -2038,7 +2038,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 // Friendly torrent/magnet handler when no dedicated torrent client is installed
                 val clipboard = act.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
                 clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Magnet Link", url))
-                NinjaToast.show(
+                PetalToast.show(
                     act,
                     "Magnet link copied to clipboard (install a torrent client to open directly)",
                     android.widget.Toast.LENGTH_LONG
@@ -2052,7 +2052,7 @@ class PetalGeckoView @JvmOverloads constructor(
         // try to render it as a webpage (it will just fail and can leave a broken tab).
         // Block the load and tell the user instead.
         try {
-            NinjaToast.show(
+            PetalToast.show(
                 act,
                 "No app found to open this link",
                 android.widget.Toast.LENGTH_SHORT

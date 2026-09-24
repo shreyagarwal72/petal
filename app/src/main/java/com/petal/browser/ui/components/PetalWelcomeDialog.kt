@@ -1,6 +1,6 @@
 package com.petal.browser.ui.components
 
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -758,9 +758,9 @@ private fun BackupFeatureStepPage(context: Context) {
                     true
                 )
                 restoreSuccessMessage = "Data & preferences successfully restored!"
-                NinjaToast.show(context, "Data restored successfully!", Toast.LENGTH_SHORT)
+                PetalToast.show(context, "Data restored successfully!", Toast.LENGTH_SHORT)
             } catch (e: Exception) {
-                NinjaToast.show(context, "Restore failed: ${e.message}", Toast.LENGTH_LONG)
+                PetalToast.show(context, "Restore failed: ${e.message}", Toast.LENGTH_LONG)
             }
         }
     }
@@ -859,9 +859,9 @@ private fun BackupFeatureStepPage(context: Context) {
                         true
                     )
                     restoreSuccessMessage = "Data & preferences successfully restored!"
-                    NinjaToast.show(context, "Data restored successfully!", Toast.LENGTH_SHORT)
+                    PetalToast.show(context, "Data restored successfully!", Toast.LENGTH_SHORT)
                 } catch (e: Exception) {
-                    NinjaToast.show(context, "Restore failed: ${e.message}", Toast.LENGTH_LONG)
+                    PetalToast.show(context, "Restore failed: ${e.message}", Toast.LENGTH_LONG)
                 }
             },
             onBrowseSystemFallback = {

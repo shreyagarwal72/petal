@@ -1,6 +1,6 @@
 package com.petal.browser.media
 
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -165,7 +165,7 @@ fun PetalMediaPickerBottomSheet(
         if (granted) {
             loadMedia()
         } else {
-            NinjaToast.show(context, "Storage permission is needed to browse photos & videos", Toast.LENGTH_SHORT)
+            PetalToast.show(context, "Storage permission is needed to browse photos & videos", Toast.LENGTH_SHORT)
         }
     }
 
@@ -191,11 +191,11 @@ fun PetalMediaPickerBottomSheet(
                 try {
                     cameraPhotoLauncher.launch(uri)
                 } catch (e: Exception) {
-                    NinjaToast.show(context, "Unable to launch camera", Toast.LENGTH_SHORT)
+                    PetalToast.show(context, "Unable to launch camera", Toast.LENGTH_SHORT)
                 }
             }
         } else {
-            NinjaToast.show(context, "Camera permission is required", Toast.LENGTH_SHORT)
+            PetalToast.show(context, "Camera permission is required", Toast.LENGTH_SHORT)
         }
     }
 
@@ -274,7 +274,7 @@ fun PetalMediaPickerBottomSheet(
                                 try {
                                     cameraPhotoLauncher.launch(uri)
                                 } catch (e: Exception) {
-                                    NinjaToast.show(context, "Unable to launch camera", Toast.LENGTH_SHORT)
+                                    PetalToast.show(context, "Unable to launch camera", Toast.LENGTH_SHORT)
                                 }
                             }
                         } else {

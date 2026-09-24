@@ -7,7 +7,7 @@ import android.net.Uri
 import androidx.preference.PreferenceManager
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.Util1DM
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 import java.io.File
 
 /**
@@ -76,7 +76,7 @@ object PetalTorrentEngineManager {
                 } else {
                     Util1DM.downloadTorrent(activity, url, true)
                 }
-                NinjaToast.show(activity, "Opening 1DM Torrent Downloader...")
+                PetalToast.show(activity, "Opening 1DM Torrent Downloader...")
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -100,7 +100,7 @@ object PetalTorrentEngineManager {
                 
                 if (!webSeed.isNullOrBlank()) {
                     BrowserUnit.download(activity, webSeed, topic, null)
-                    NinjaToast.show(activity, "Downloading Torrent via WebSeed: $topic")
+                    PetalToast.show(activity, "Downloading Torrent via WebSeed: $topic")
                 } else {
                     // Open with system torrent handler intent as fallback
                     val intent = Intent(Intent.ACTION_VIEW, uri).apply {
@@ -111,12 +111,12 @@ object PetalTorrentEngineManager {
             } else {
                 val guessedName = fileName ?: "download.torrent"
                 BrowserUnit.download(activity, url, guessedName, "application/x-bittorrent")
-                NinjaToast.show(activity, "Downloading Torrent File: $guessedName")
+                PetalToast.show(activity, "Downloading Torrent File: $guessedName")
             }
             return true
         } catch (e: Exception) {
             e.printStackTrace()
-            NinjaToast.show(activity, "Unable to handle Torrent link: ${e.message}")
+            PetalToast.show(activity, "Unable to handle Torrent link: ${e.message}")
             return false
         }
     }

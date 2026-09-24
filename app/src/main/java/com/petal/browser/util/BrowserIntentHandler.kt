@@ -18,7 +18,7 @@ import com.petal.browser.lens.PetalLensBridge
 import com.petal.browser.ui.components.PetalAiSearchBridge
 import com.petal.browser.ui.components.PetalVoiceSearchBridge
 import com.petal.browser.unit.BrowserUnit
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 import com.petal.browser.widget.PetalSearchWidgetProvider
 import java.io.BufferedReader
 import java.io.File

@@ -54,7 +54,7 @@ import com.petal.browser.R;
 import com.petal.browser.browser.AlbumController;
 import com.petal.browser.browser.BrowserController;
 import com.petal.browser.browser.List_standard;
-import com.petal.browser.browser.NinjaDownloadListener;
+import com.petal.browser.browser.PetalDownloadListener;
 import com.petal.browser.browser.NinjaWebChromeClient;
 import com.petal.browser.browser.NinjaWebViewClient;
 import com.petal.browser.browser.WebAppInterface;
@@ -78,7 +78,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     private AlbumController predecessor = null;
     private NinjaWebViewClient webViewClient;
     private NinjaWebChromeClient webChromeClient;
-    private NinjaDownloadListener downloadListener;
+    private PetalDownloadListener downloadListener;
     private static String profile;
     private List_standard listStandard;
     private Bitmap favicon;
@@ -179,7 +179,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         this.album = new AdapterTabs(this.context, this, browserController);
         this.webViewClient = new NinjaWebViewClient(this);
         this.webChromeClient = new NinjaWebChromeClient(this);
-        this.downloadListener = new NinjaDownloadListener(this.context, this);
+        this.downloadListener = new PetalDownloadListener(this.context, this);
 
         initWebView();
         initAlbum();

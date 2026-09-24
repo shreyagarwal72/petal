@@ -91,7 +91,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.*
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -412,10 +412,10 @@ fun PetalPdfViewerScreen(
             }
             isSavingPdf = false
             if (success) {
-                NinjaToast.show(context, "PDF saved successfully!")
+                PetalToast.show(context, "PDF saved successfully!")
                 isEditMode = false
             } else {
-                NinjaToast.show(context, "Failed to save PDF modifications")
+                PetalToast.show(context, "Failed to save PDF modifications")
             }
         }
         }
@@ -1857,7 +1857,7 @@ private fun printPdfDocument(context: Context, uri: Uri, title: String) {
     try {
         val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
         if (printManager == null) {
-            NinjaToast.show(context, "Print service unavailable on this device")
+            PetalToast.show(context, "Print service unavailable on this device")
             return
         }
 
@@ -1910,7 +1910,7 @@ private fun printPdfDocument(context: Context, uri: Uri, title: String) {
         printManager.print("Petal PDF - $title", adapter, PrintAttributes.Builder().build())
     } catch (e: Exception) {
         e.printStackTrace()
-        NinjaToast.show(context, "Unable to print: " + (e.localizedMessage ?: "Unknown error"))
+        PetalToast.show(context, "Unable to print: " + (e.localizedMessage ?: "Unknown error"))
     }
 }
 
@@ -1920,7 +1920,7 @@ private fun sharePdfDocument(context: Context, uri: Uri, title: String) {
             val filePath = uri.path ?: uri.toString().removePrefix("file://")
             val file = File(filePath)
             if (!file.exists()) {
-                NinjaToast.show(context, "File does not exist")
+                PetalToast.show(context, "File does not exist")
                 return
             }
             androidx.core.content.FileProvider.getUriForFile(
@@ -1945,7 +1945,7 @@ private fun sharePdfDocument(context: Context, uri: Uri, title: String) {
         )
     } catch (e: Exception) {
         e.printStackTrace()
-        NinjaToast.show(context, "Unable to share PDF: " + (e.localizedMessage ?: "Unknown error"))
+        PetalToast.show(context, "Unable to share PDF: " + (e.localizedMessage ?: "Unknown error"))
     }
 }
 

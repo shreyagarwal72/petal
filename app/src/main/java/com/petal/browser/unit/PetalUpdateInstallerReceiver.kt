@@ -33,7 +33,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.preference.PreferenceManager
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -70,7 +70,7 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
                                 installDownloadedApk(context, apkFile)
                             } else if (status == DownloadManager.STATUS_FAILED) {
                                 sp.edit().remove(KEY_UPDATE_DOWNLOAD_ID).apply()
-                                NinjaToast.show(context, "Update download failed")
+                                PetalToast.show(context, "Update download failed")
                             }
                         }
                     }
@@ -148,7 +148,7 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.e(TAG, "In-app update download failed: ${e.message}", e)
                 withContext(Dispatchers.Main) {
-                    NinjaToast.show(context, "Update download failed: ${e.message}")
+                    PetalToast.show(context, "Update download failed: ${e.message}")
                 }
                 false
             } finally {
@@ -191,7 +191,7 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
                     .putString(KEY_UPDATE_VERSION, version)
                     .apply()
 
-                NinjaToast.show(context, "Update download started in background...")
+                PetalToast.show(context, "Update download started in background...")
                 downloadId
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to enqueue update download with DownloadManager", e)
@@ -204,7 +204,7 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
             try {
                 if (!apkFile.exists() || apkFile.length() == 0L) {
                     Log.e(TAG, "APK file not found: ${apkFile.absolutePath}")
-                    NinjaToast.show(context, "Update installer file not found")
+                    PetalToast.show(context, "Update installer file not found")
                     return
                 }
 
@@ -215,7 +215,7 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         context.startActivity(settingsIntent)
-                        NinjaToast.show(context, "Please grant permission to install updates")
+                        PetalToast.show(context, "Please grant permission to install updates")
                         return
                     }
                 }
@@ -233,7 +233,7 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
                 context.startActivity(installIntent)
             } catch (e: Exception) {
                 Log.e(TAG, "Error installing APK", e)
-                NinjaToast.show(context, "Failed to launch installer: ${e.message}")
+                PetalToast.show(context, "Failed to launch installer: ${e.message}")
             }
         }
     }

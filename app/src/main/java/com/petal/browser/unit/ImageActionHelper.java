@@ -10,7 +10,7 @@ import android.os.Environment;
 import android.webkit.URLUtil;
 import android.widget.Toast;
 import androidx.core.content.FileProvider;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import java.io.File;
@@ -67,7 +67,7 @@ public class ImageActionHelper {
                     BrowserUnit.download(context, imageUrl, finalFileName, "image/*");
                     if (context instanceof android.app.Activity) {
                         ((android.app.Activity) context).runOnUiThread(() ->
-                            NinjaToast.show(context, "Image download started"));
+                            PetalToast.show(context, "Image download started"));
                     }
                 }).start();
             } else {
@@ -79,7 +79,7 @@ public class ImageActionHelper {
                 downloadImageDirectly(context, imageUrl, fileName);
             }
         } catch (Exception e) {
-            NinjaToast.show(context, "Failed to download image: " + e.getLocalizedMessage());
+            PetalToast.show(context, "Failed to download image: " + e.getLocalizedMessage());
         }
     }
 
@@ -101,11 +101,11 @@ public class ImageActionHelper {
                 context.sendBroadcast(intent);
 
                 if (context instanceof android.app.Activity) {
-                    ((android.app.Activity) context).runOnUiThread(() -> NinjaToast.show(context, "Image saved to Downloads"));
+                    ((android.app.Activity) context).runOnUiThread(() -> PetalToast.show(context, "Image saved to Downloads"));
                 }
             } catch (Exception e) {
                 if (context instanceof android.app.Activity) {
-                    ((android.app.Activity) context).runOnUiThread(() -> NinjaToast.show(context, "Failed to save image"));
+                    ((android.app.Activity) context).runOnUiThread(() -> PetalToast.show(context, "Failed to save image"));
                 }
             }
         }).start();
@@ -116,7 +116,7 @@ public class ImageActionHelper {
             return;
         }
 
-        NinjaToast.show(context, "Preparing image for sharing...");
+        PetalToast.show(context, "Preparing image for sharing...");
 
         new Thread(() -> {
             try {
@@ -145,7 +145,7 @@ public class ImageActionHelper {
                 context.startActivity(chooser);
             } catch (Exception e) {
                 if (context instanceof android.app.Activity) {
-                    ((android.app.Activity) context).runOnUiThread(() -> NinjaToast.show(context, "Failed to share image"));
+                    ((android.app.Activity) context).runOnUiThread(() -> PetalToast.show(context, "Failed to share image"));
                 }
             }
         }).start();

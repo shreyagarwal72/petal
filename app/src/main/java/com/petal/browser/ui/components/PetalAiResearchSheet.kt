@@ -73,7 +73,7 @@ fun PetalAiResearchSheet(
     fun runResearch(mode: ResearchMode, prompt: String) {
         if (apiKey.isBlank() && selectedProvider != AiProvider.CUSTOM) {
             showApiKeyConfig = true
-            com.petal.browser.view.NinjaToast.show(context, "Please configure an API Key first")
+            com.petal.browser.view.PetalToast.show(context, "Please configure an API Key first")
             return
         }
         focusManager.clearFocus()
@@ -777,7 +777,7 @@ fun PetalAiResearchSheet(
                                         onClick = {
                                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                             clipboard.setPrimaryClip(ClipData.newPlainText("AI Research", response))
-                                            com.petal.browser.view.NinjaToast.show(context, "Research copied to clipboard")
+                                            com.petal.browser.view.PetalToast.show(context, "Research copied to clipboard")
                                         },
                                         modifier = Modifier.size(36.dp)
                                     ) {

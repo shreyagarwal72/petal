@@ -35,7 +35,7 @@ import com.petal.browser.R;
 import com.petal.browser.preferences.BasePreferenceFragment;
 import com.petal.browser.unit.BackupUnit;
 import com.petal.browser.unit.HelperUnit;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 
 public class Fragment_settings_Backup extends BasePreferenceFragment {
 
@@ -202,7 +202,7 @@ public class Fragment_settings_Backup extends BasePreferenceFragment {
             editor.apply();
         } catch (IOException | SAXException | ParserConfigurationException e) {
             Log.i("Petal", "restoreUserPrefs:" + e);
-            NinjaToast.show(context, context.getString(R.string.app_error));
+            PetalToast.show(context, context.getString(R.string.app_error));
         }
     }
 }

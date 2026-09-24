@@ -80,7 +80,7 @@ import com.petal.browser.objects.CustomRedirect
 import com.petal.browser.objects.CustomRedirectsHelper
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 
 /**
  * Pure Kotlin & Compose Material 3 Expressive implementation of CustomRedirectsDialog.
@@ -363,7 +363,7 @@ private fun CreateNewRedirectDialog(
                     Button(
                         onClick = {
                             if (sourceText.isBlank() || targetText.isBlank()) {
-                                NinjaToast.show(context, com.petal.browser.R.string.toast_input_empty)
+                                PetalToast.show(context, com.petal.browser.R.string.toast_input_empty)
                             } else {
                                 onAdd(CustomRedirect(sourceText.trim(), targetText.trim()))
                             }
@@ -371,7 +371,7 @@ private fun CreateNewRedirectDialog(
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.bouncyClickable(onClick = {
                             if (sourceText.isBlank() || targetText.isBlank()) {
-                                NinjaToast.show(context, com.petal.browser.R.string.toast_input_empty)
+                                PetalToast.show(context, com.petal.browser.R.string.toast_input_empty)
                             } else {
                                 onAdd(CustomRedirect(sourceText.trim(), targetText.trim()))
                             }

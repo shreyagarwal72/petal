@@ -54,7 +54,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.logger.PetalAppLogger
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 
 /**
  * Material 3 Expressive Crash Recovery Dialog for Petal Browser.
@@ -291,7 +291,7 @@ fun PetalCrashRecoveryHost(
                                 try {
                                     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     cm.setPrimaryClip(ClipData.newPlainText("Petal Crash Log", crashReport))
-                                    NinjaToast.show(context, "Copied crash log to clipboard")
+                                    PetalToast.show(context, "Copied crash log to clipboard")
                                 } catch (e: Exception) {
                                     e.printStackTrace()
                                 }

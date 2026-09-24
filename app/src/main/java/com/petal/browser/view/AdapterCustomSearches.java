@@ -101,7 +101,7 @@ public class AdapterCustomSearches extends RecyclerView.Adapter<RedirectsViewHol
                 BrowserUnit.intentURL(context, Uri.parse(t));
                 sp.edit().putString("sp_search_customSearches", "").apply();
             } else {
-                NinjaToast.show(BrowserActivity.getAppContext(), R.string.app_error);
+                PetalToast.show(BrowserActivity.getAppContext(), R.string.app_error);
             }
         });
     }

@@ -11,7 +11,7 @@ import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.activity.Settings_Delete
 import com.petal.browser.database.RecordAction
 import com.petal.browser.unit.HelperUnit
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 import com.petal.browser.view.NinjaWebView
 import com.petal.browser.view.PetalGeckoView
 
@@ -95,7 +95,7 @@ object BrowserNavigationDelegate {
                         .putBoolean("profileStandard_desktop", enabled)
                         .apply()
                     geckoView?.setDesktopMode(enabled)
-                    NinjaToast.show(activity, if (enabled) "Desktop site requested" else "Mobile site requested")
+                    PetalToast.show(activity, if (enabled) "Desktop site requested" else "Mobile site requested")
                 }
 
                 override fun onToggleAdBlock(enabled: Boolean) {
@@ -106,7 +106,7 @@ object BrowserNavigationDelegate {
                         .apply()
                     geckoView?.initPreferences(url)
                     geckoView?.reload()
-                    NinjaToast.show(activity, if (enabled) "AdBlocker Enabled" else "AdBlocker Disabled")
+                    PetalToast.show(activity, if (enabled) "AdBlocker Enabled" else "AdBlocker Disabled")
                 }
 
                 override fun onNewTab() {
@@ -115,7 +115,7 @@ object BrowserNavigationDelegate {
 
                 override fun onNewIncognitoTab() {
                     activity.addAlbum("Incognito Tab", prefs.getString("favoriteURL", "about:blank"), true, true)
-                    NinjaToast.show(activity, "Opened Incognito Tab")
+                    PetalToast.show(activity, "Opened Incognito Tab")
                 }
 
                 override fun onOpenHistory() {
@@ -177,7 +177,7 @@ object BrowserNavigationDelegate {
                         val clip = android.content.ClipData.newPlainText("Clean URL", cleanUrl)
                         clipboard?.setPrimaryClip(clip)
                         com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.7f)
-                        NinjaToast.show(activity, "Clean link copied to clipboard")
+                        PetalToast.show(activity, "Clean link copied to clipboard")
                     }
                 }
 
@@ -275,9 +275,9 @@ object BrowserNavigationDelegate {
                     if (isPipSupported) {
                         activity.triggerSystemPipMode()
                     } else if (isBgPlayEnabled) {
-                        NinjaToast.show(activity, "Background media playback active")
+                        PetalToast.show(activity, "Background media playback active")
                     } else {
-                        NinjaToast.show(activity, "Enable Auto PiP or Background Play in Settings")
+                        PetalToast.show(activity, "Enable Auto PiP or Background Play in Settings")
                     }
                 }
             }

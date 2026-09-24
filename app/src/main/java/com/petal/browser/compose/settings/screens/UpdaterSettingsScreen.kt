@@ -30,7 +30,7 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalCrashReportingPicker
 import com.petal.browser.unit.UpdateUnit
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -207,7 +207,7 @@ fun UpdaterSettingsScreenContent(
                                                 }
                                             } else {
                                                 isCheckingUpdate = false
-                                                NinjaToast.show(context, "Checking for updates...")
+                                                PetalToast.show(context, "Checking for updates...")
                                             }
                                         },
                                         modifier = Modifier.weight(1f),
@@ -257,7 +257,7 @@ fun UpdaterSettingsScreenContent(
                         onModeSelected = { mode ->
                             crashReportMode = mode
                             sp.edit().putString(PetalAppLogger.PREF_CRASH_REPORT_MODE, mode).apply()
-                            NinjaToast.show(context, if (mode == "auto") "Crash reporting set to Auto" else "Crash reporting disabled")
+                            PetalToast.show(context, if (mode == "auto") "Crash reporting set to Auto" else "Crash reporting disabled")
                         }
                     )
                     // Diagnostic Actions: Export ZIP Logs

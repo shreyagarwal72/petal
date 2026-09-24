@@ -109,7 +109,7 @@ public class AdapterCustomRedirect extends RecyclerView.Adapter<RedirectsViewHol
                 String sourceText = Objects.requireNonNull(source2.getText()).toString();
                 String targetText = Objects.requireNonNull(target2.getText()).toString();
                 if (targetText.isEmpty() && sourceText.isEmpty()) {
-                    NinjaToast.show(context, R.string.toast_input_empty);
+                    PetalToast.show(context, R.string.toast_input_empty);
                     return;
                 }
                 this.addRedirect(new CustomRedirect(sourceText, targetText));

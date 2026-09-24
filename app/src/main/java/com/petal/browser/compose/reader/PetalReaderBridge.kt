@@ -1,8 +1,9 @@
 /*
  * PetalReaderBridge.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Java-interop bridge and client-side readability extraction engine for
- * Petal Reader Mode.
+ * Modern bridge and native readability extraction engine for Petal Reader Mode.
+ * Supports native GeckoView Reader Mode (about:reader) as well as offline
+ * DOM-based article extraction for the native Material 3 Expressive reader view.
  */
 
 package com.petal.browser.compose.reader
@@ -28,6 +29,7 @@ import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.unit.ReaderModeManager
+import com.petal.browser.view.PetalGeckoView
 
 object PetalReaderBridge {
 
@@ -42,6 +44,7 @@ object PetalReaderBridge {
         val title = controller.title ?: "Article"
         val domain = HelperUnit.domain(url) ?: ""
 
+        // Prefer offline extraction directly via ReaderModeManager
         ReaderModeManager.parseArticle(url) { parsed ->
             if (parsed != null && parsed.contentHtml.isNotBlank()) {
                 val cleanText = parsed.contentHtml.replace(Regex("<[^>]*>"), " ").trim()
@@ -50,6 +53,14 @@ object PetalReaderBridge {
                 callback(ReaderArticleData(title, "", domain, "", "Unable to extract article text from this page."))
             }
         }
+    }
+
+    /**
+     * Toggles native GeckoView Reader View (about:reader?url=...) on a PetalGeckoView instance.
+     */
+    @JvmStatic
+    fun toggleNativeGeckoReader(geckoView: PetalGeckoView, active: Boolean) {
+        geckoView.toggleReaderMode(active)
     }
 
     @JvmStatic

@@ -12,7 +12,7 @@ import com.petal.browser.download.DownloadFileNameResolver
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.unit.ImageActionHelper
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 
 /**
  * Kotlin Manager encapsulating long-press context menus for BrowserActivity.
@@ -82,27 +82,27 @@ object BrowserContextMenuManager {
 
                 override fun onCopyLinkAddress() {
                     HelperUnit.copy(activity, imageURL)
-                    NinjaToast.show(activity, "Image URL copied")
+                    PetalToast.show(activity, "Image URL copied")
                 }
 
                 override fun onCopyImage() {
                     HelperUnit.copy(activity, imageURL)
-                    NinjaToast.show(activity, "Image copied to clipboard")
+                    PetalToast.show(activity, "Image copied to clipboard")
                 }
 
                 override fun onCopyLinkText() {
                     HelperUnit.copy(activity, HelperUnit.domain(imageURL))
-                    NinjaToast.show(activity, "Domain copied")
+                    PetalToast.show(activity, "Domain copied")
                 }
 
                 override fun onDownloadLink() {
                     try {
                         DownloadFileNameResolver.resolve(activity.lifecycleScope, imageURL) { fileName, mimeType ->
                             BrowserUnit.download(activity, imageURL, fileName, mimeType)
-                            NinjaToast.show(activity, "Download started")
+                            PetalToast.show(activity, "Download started")
                         }
                     } catch (e: Exception) {
-                        NinjaToast.show(activity, "Failed to start download")
+                        PetalToast.show(activity, "Failed to start download")
                     }
                 }
 
@@ -110,7 +110,7 @@ object BrowserContextMenuManager {
                     if (imageURL.isNotBlank()) {
                         ImageActionHelper.downloadImage(activity, imageURL)
                     } else {
-                        NinjaToast.show(activity, "No valid image URL found")
+                        PetalToast.show(activity, "No valid image URL found")
                     }
                 }
 
@@ -122,7 +122,7 @@ object BrowserContextMenuManager {
                         record.isReadingList = true
                         action.addBookmark(record)
                         action.close()
-                        NinjaToast.show(activity, "Added to reading list")
+                        PetalToast.show(activity, "Added to reading list")
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -132,7 +132,7 @@ object BrowserContextMenuManager {
                     if (imageURL.isNotBlank()) {
                         PetalImageScannerBridge.show(activity, imageURL)
                     } else {
-                        NinjaToast.show(activity, "No valid image URL found")
+                        PetalToast.show(activity, "No valid image URL found")
                     }
                 }
 
@@ -140,7 +140,7 @@ object BrowserContextMenuManager {
                     if (imageURL.isNotBlank()) {
                         com.petal.browser.lens.PetalLensManager.searchImageWithGoogleLens(activity, imageURL)
                     } else {
-                        NinjaToast.show(activity, "No valid image URL found")
+                        PetalToast.show(activity, "No valid image URL found")
                     }
                 }
 
@@ -148,7 +148,7 @@ object BrowserContextMenuManager {
                     if (imageURL.isNotBlank()) {
                         ImageActionHelper.shareImage(activity, imageURL)
                     } else {
-                        NinjaToast.show(activity, "No valid image URL found")
+                        PetalToast.show(activity, "No valid image URL found")
                     }
                 }
 
@@ -239,22 +239,22 @@ object BrowserContextMenuManager {
 
                 override fun onCopyLinkAddress() {
                     HelperUnit.copy(activity, urlResult)
-                    NinjaToast.show(activity, "Link copied")
+                    PetalToast.show(activity, "Link copied")
                 }
 
                 override fun onCopyLinkText() {
                     HelperUnit.copy(activity, HelperUnit.domain(urlResult))
-                    NinjaToast.show(activity, "Link text copied")
+                    PetalToast.show(activity, "Link text copied")
                 }
 
                 override fun onDownloadLink() {
                     try {
                         DownloadFileNameResolver.resolve(activity.lifecycleScope, urlResult) { fileName, mimeType ->
                             BrowserUnit.download(activity, urlResult, fileName, mimeType)
-                            NinjaToast.show(activity, "Download started")
+                            PetalToast.show(activity, "Download started")
                         }
                     } catch (e: Exception) {
-                        NinjaToast.show(activity, "Failed to start download")
+                        PetalToast.show(activity, "Failed to start download")
                     }
                 }
 
@@ -272,7 +272,7 @@ object BrowserContextMenuManager {
                         record.isReadingList = true
                         action.addBookmark(record)
                         action.close()
-                        NinjaToast.show(activity, "Added to reading list")
+                        PetalToast.show(activity, "Added to reading list")
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -305,7 +305,7 @@ object BrowserContextMenuManager {
                         val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO, Uri.parse(mailto))
                         activity.startActivity(intent)
                     } catch (e: Exception) {
-                        NinjaToast.show(activity, "No email client found")
+                        PetalToast.show(activity, "No email client found")
                     }
                 }
 
@@ -314,7 +314,7 @@ object BrowserContextMenuManager {
                         val intent = android.content.Intent(android.content.Intent.ACTION_DIAL, Uri.parse(tel))
                         activity.startActivity(intent)
                     } catch (e: Exception) {
-                        NinjaToast.show(activity, "No phone app found")
+                        PetalToast.show(activity, "No phone app found")
                     }
                 }
 
@@ -323,7 +323,7 @@ object BrowserContextMenuManager {
                         val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(geo))
                         activity.startActivity(intent)
                     } catch (e: Exception) {
-                        NinjaToast.show(activity, "No maps app found")
+                        PetalToast.show(activity, "No maps app found")
                     }
                 }
 
@@ -352,16 +352,16 @@ object BrowserContextMenuManager {
                     try {
                         DownloadFileNameResolver.resolve(activity.lifecycleScope, cleanVideoUrl, fallbackMimeType = "video/mp4") { fileName, mimeType ->
                             BrowserUnit.download(activity, cleanVideoUrl, fileName, mimeType)
-                            NinjaToast.show(activity, "Video download started")
+                            PetalToast.show(activity, "Video download started")
                         }
                     } catch (e: Exception) {
-                        NinjaToast.show(activity, "Failed to start video download")
+                        PetalToast.show(activity, "Failed to start video download")
                     }
                 }
 
                 override fun onCopyLinkAddress() {
                     HelperUnit.copy(activity, cleanVideoUrl)
-                    NinjaToast.show(activity, "Video link copied")
+                    PetalToast.show(activity, "Video link copied")
                 }
 
                 override fun onShareLink() {
@@ -402,16 +402,16 @@ object BrowserContextMenuManager {
                     try {
                         DownloadFileNameResolver.resolve(activity.lifecycleScope, audioUrl) { fileName, mimeType ->
                             BrowserUnit.download(activity, audioUrl, fileName, mimeType)
-                            NinjaToast.show(activity, "Audio download started")
+                            PetalToast.show(activity, "Audio download started")
                         }
                     } catch (e: Exception) {
-                        NinjaToast.show(activity, "Failed to start audio download")
+                        PetalToast.show(activity, "Failed to start audio download")
                     }
                 }
 
                 override fun onCopyLinkAddress() {
                     HelperUnit.copy(activity, audioUrl)
-                    NinjaToast.show(activity, "Audio link copied")
+                    PetalToast.show(activity, "Audio link copied")
                 }
 
                 override fun onShareLink() {
@@ -441,7 +441,7 @@ object BrowserContextMenuManager {
 
                 override fun onCopySelectedText(text: String) {
                     HelperUnit.copy(activity, text)
-                    NinjaToast.show(activity, "Text copied")
+                    PetalToast.show(activity, "Text copied")
                 }
 
                 override fun onShareSelectedText(text: String) {

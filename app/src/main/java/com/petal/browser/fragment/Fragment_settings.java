@@ -25,7 +25,7 @@ import com.petal.browser.activity.Settings_Profile;
 import com.petal.browser.activity.Settings_ProfileList;
 import com.petal.browser.browser.AdBlock;
 import com.petal.browser.preferences.BasePreferenceFragment;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 
 public class Fragment_settings extends BasePreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -140,7 +140,7 @@ public class Fragment_settings extends BasePreferenceFragment implements SharedP
         if(customSE) {
             searchEngines.setEnabled(false);
             if (customSearchEngine.isEmpty()) {
-                NinjaToast.show(context, text);
+                PetalToast.show(context, text);
             }
         } else {
             searchEngines.setEnabled(true);

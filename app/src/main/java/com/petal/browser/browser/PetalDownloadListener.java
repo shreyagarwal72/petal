@@ -23,12 +23,12 @@ import java.util.concurrent.Executors;
 import com.petal.browser.R;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 
-public class NinjaDownloadListener implements DownloadListener {
+public class PetalDownloadListener implements DownloadListener {
     private final Context context;
     private final WebView webView;
-    public NinjaDownloadListener(Context context, WebView webView) {
+    public PetalDownloadListener(Context context, WebView webView) {
         super();
         this.context = context;
         this.webView = webView;
@@ -214,7 +214,7 @@ public class NinjaDownloadListener implements DownloadListener {
                             } catch (Exception e) {
                                 webView.post(() -> {
                                     String textToShow = context.getString(R.string.app_error) + ": " + e.getMessage();
-                                    NinjaToast.show(webView.getContext(), textToShow);
+                                    PetalToast.show(webView.getContext(), textToShow);
                                 });
                             }
                         });

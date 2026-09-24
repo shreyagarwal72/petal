@@ -14,7 +14,7 @@
 
 package com.petal.browser.compose.file
 
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -401,17 +401,17 @@ private fun TextCodeViewerContent(
                         withContext(Dispatchers.Main) {
                             PetalHapticEngine.getInstance(context).playClick(context)
                             lines = fullContent.split("\n")
-                            NinjaToast.show(context, "File saved successfully", Toast.LENGTH_SHORT)
+                            PetalToast.show(context, "File saved successfully", Toast.LENGTH_SHORT)
                             onEditFinish()
                         }
                     } else {
                         withContext(Dispatchers.Main) {
-                            NinjaToast.show(context, "Could not open file for writing", Toast.LENGTH_LONG)
+                            PetalToast.show(context, "Could not open file for writing", Toast.LENGTH_LONG)
                         }
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        NinjaToast.show(context, "Failed to save: ${e.message}", Toast.LENGTH_LONG)
+                        PetalToast.show(context, "Failed to save: ${e.message}", Toast.LENGTH_LONG)
                     }
                 } finally {
                     isSaving = false
@@ -1012,7 +1012,7 @@ private fun installApkPackage(context: Context, fileUri: Uri, displayName: Strin
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(settingsIntent)
-                NinjaToast.show(context, "Please enable permission to install packages", Toast.LENGTH_LONG)
+                PetalToast.show(context, "Please enable permission to install packages", Toast.LENGTH_LONG)
                 return
             }
         }
@@ -1037,7 +1037,7 @@ private fun installApkPackage(context: Context, fileUri: Uri, displayName: Strin
         }
         context.startActivity(installIntent)
     } catch (e: Exception) {
-        NinjaToast.show(context, "Failed to launch installer: ${e.message}", Toast.LENGTH_LONG)
+        PetalToast.show(context, "Failed to launch installer: ${e.message}", Toast.LENGTH_LONG)
     }
 }
 

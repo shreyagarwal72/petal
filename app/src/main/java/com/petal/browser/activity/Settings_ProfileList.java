@@ -34,7 +34,7 @@ import com.petal.browser.database.RecordAction;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 import com.petal.browser.unit.RecordUnit;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import com.petal.browser.view.AdapterProfileList;
 
 public class Settings_ProfileList extends AppCompatActivity {
@@ -104,7 +104,7 @@ public class Settings_ProfileList extends AppCompatActivity {
                                         .remove(domain + "_night")
                                         .remove(domain + "_drm")
                                         .remove(domain + "_desktop").apply();
-                                NinjaToast.show(Settings_ProfileList.this, R.string.app_done);
+                                PetalToast.show(Settings_ProfileList.this, R.string.app_done);
                             } catch (Exception e) {
                                 Log.i(TAG, "dialogCustomSearches:" + e);
                             }

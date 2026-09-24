@@ -5,7 +5,7 @@ import android.util.Log
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.activity.Settings_Activity
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 
 /**
  * Kotlin utility handler encapsulating swipe & motion gesture actions for BrowserActivity.
@@ -30,7 +30,7 @@ object BrowserGestureHandler {
                     webView.initPreferences(historyUrl)
                     webView.goForward()
                 } else {
-                    NinjaToast.show(activity, R.string.toast_webview_forward)
+                    PetalToast.show(activity, R.string.toast_webview_forward)
                 }
             }
             "03" -> {

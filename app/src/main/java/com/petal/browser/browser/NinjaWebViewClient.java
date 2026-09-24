@@ -50,7 +50,7 @@ import com.petal.browser.database.RecordAction;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 import com.petal.browser.unit.RecordUnit;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import com.petal.browser.view.NinjaWebView;
 
 public class NinjaWebViewClient extends WebViewClient {
@@ -563,7 +563,7 @@ public class NinjaWebViewClient extends WebViewClient {
                 String finalEmail = (emailParam != null && !emailParam.trim().isEmpty()) ? emailParam : "user@mozilla.org";
                 fxManager.completeLogin(authCode, finalEmail, "Firefox Sync User");
                 com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context);
-                com.petal.browser.view.NinjaToast.show(context, "Signed in with Firefox Account. Syncing data...");
+                com.petal.browser.view.PetalToast.show(context, "Signed in with Firefox Account. Syncing data...");
                 if (context instanceof com.petal.browser.activity.BrowserActivity) {
                     ((com.petal.browser.activity.BrowserActivity) context).removeAlbum(ninjaWebView);
                 }
@@ -596,7 +596,7 @@ public class NinjaWebViewClient extends WebViewClient {
             }
         }
 
-        // WebView only fires NinjaDownloadListener.onDownloadStart for content types it can't
+        // WebView only fires PetalDownloadListener.onDownloadStart for content types it can't
         // render itself. Plain-text/source responses (.kt, .java, .py, .json, ...) almost never
         // arrive with a Content-Disposition: attachment header, so WebView just navigates and
         // displays them inline - the download confirmation dialog never gets a chance to show at

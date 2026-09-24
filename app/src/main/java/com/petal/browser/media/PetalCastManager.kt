@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 
 /**
  * PetalCastManager
@@ -16,7 +16,7 @@ object PetalCastManager {
     @JvmStatic
     fun castMedia(context: Context, videoUrl: String?, title: String?) {
         if (videoUrl.isNullOrBlank()) {
-            NinjaToast.show(context, "No stream URL found to cast")
+            PetalToast.show(context, "No stream URL found to cast")
             return
         }
 
@@ -45,7 +45,7 @@ object PetalCastManager {
             context.startActivity(chooser)
         } catch (e: Exception) {
             e.printStackTrace()
-            NinjaToast.show(context, "No casting or video player apps found")
+            PetalToast.show(context, "No casting or video player apps found")
         }
     }
 }

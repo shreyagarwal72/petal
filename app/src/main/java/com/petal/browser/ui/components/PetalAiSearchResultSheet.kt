@@ -478,7 +478,7 @@ fun PetalAiSearchResultSheet(
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 val clip = ClipData.newPlainText("AI Web Search Answer", responseResult)
                                 clipboard.setPrimaryClip(clip)
-                                com.petal.browser.view.NinjaToast.show(context, "Answer copied to clipboard")
+                                com.petal.browser.view.PetalToast.show(context, "Answer copied to clipboard")
                             }) {
                                 Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }

@@ -234,7 +234,7 @@ fun PetalMarkdownText(
                                     onClick = {
                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                         clipboard.setPrimaryClip(ClipData.newPlainText("Code", block.code))
-                                        com.petal.browser.view.NinjaToast.show(context, "Code copied")
+                                        com.petal.browser.view.PetalToast.show(context, "Code copied")
                                     },
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                                 ) {

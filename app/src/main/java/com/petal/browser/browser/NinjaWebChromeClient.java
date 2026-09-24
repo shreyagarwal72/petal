@@ -31,7 +31,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.petal.browser.R;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import com.petal.browser.view.NinjaWebView;
 
 public class NinjaWebChromeClient extends WebChromeClient {
@@ -91,7 +91,7 @@ public class NinjaWebChromeClient extends WebChromeClient {
     @Override
     public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
         if (consoleMessage.message().contains("NotAllowedError: Write permission denied.")) {  //this error occurs when user copies to clipboard
-            NinjaToast.show(ninjaWebView.getContext(), R.string.app_error_copy);
+            PetalToast.show(ninjaWebView.getContext(), R.string.app_error_copy);
             return true;
         }
         return false;

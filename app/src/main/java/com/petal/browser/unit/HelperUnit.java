@@ -105,7 +105,7 @@ import com.petal.browser.browser.List_standard;
 import com.petal.browser.database.FaviconHelper;
 import com.petal.browser.view.GridItem;
 import com.petal.browser.view.MenuItem;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import com.petal.browser.view.NinjaWebView;
 
 public class HelperUnit {
@@ -200,7 +200,7 @@ public class HelperUnit {
                     String finalFileName = title + extension1;
 
                     if (title.isEmpty() || !extension1.startsWith(".")) {
-                        NinjaToast.show(activity, activity.getString(R.string.toast_input_empty));
+                        PetalToast.show(activity, activity.getString(R.string.toast_input_empty));
                     } else {
                         try {
                             if (url.startsWith("data:")) {
@@ -241,7 +241,7 @@ public class HelperUnit {
                             }
                         } catch (Exception e) {
                             System.out.println("Error Downloading File: " + e);
-                            NinjaToast.show(activity, activity.getString(R.string.app_error) + e.toString().substring(e.toString().indexOf(":")), Toast.LENGTH_LONG);
+                            PetalToast.show(activity, activity.getString(R.string.app_error) + e.toString().substring(e.toString().indexOf(":")), Toast.LENGTH_LONG);
                             Log.i(TAG, "shouldOverrideUrlLoading Exception:" + e);
                         }
                         try {
@@ -420,7 +420,7 @@ public class HelperUnit {
             String filename1 = title + extension1;
 
             if (title.isEmpty() || !extension1.startsWith(".")) {
-                NinjaToast.show(activity, activity.getString(R.string.toast_input_empty));
+                PetalToast.show(activity, activity.getString(R.string.toast_input_empty));
             } else {
                 if (BackupUnit.checkPermissionStorage(activity)) {
                     File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename1);

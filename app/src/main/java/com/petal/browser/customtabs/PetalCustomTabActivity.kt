@@ -41,7 +41,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 import com.petal.browser.view.PetalGeckoView
 import org.mozilla.geckoview.ContentBlocking
 
@@ -261,7 +261,7 @@ class PetalCustomTabActivity : ComponentActivity() {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
         val clip = ClipData.newPlainText("URL", urlToCopy)
         clipboard?.setPrimaryClip(clip)
-        NinjaToast.show(this, getString(R.string.pref_custom_tabs_copied))
+        PetalToast.show(this, getString(R.string.pref_custom_tabs_copied))
     }
 
     private fun openInPetalBrowser() {

@@ -19,7 +19,7 @@ import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.ui.components.*
 import com.petal.browser.unit.BrowserUnit
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 
 @Composable
 fun AboutSettingsScreen(
@@ -53,7 +53,7 @@ fun AboutSettingsScreen(
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             val clip = android.content.ClipData.newPlainText("GitHub URL", "https://github.com/shreyagarwal72")
                             clipboard.setPrimaryClip(clip)
-                            NinjaToast.show(context, "Copied GitHub URL to clipboard")
+                            PetalToast.show(context, "Copied GitHub URL to clipboard")
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }

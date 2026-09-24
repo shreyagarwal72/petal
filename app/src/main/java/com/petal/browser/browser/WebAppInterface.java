@@ -1,6 +1,6 @@
 package com.petal.browser.browser;
 
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.Context;
@@ -50,7 +50,7 @@ public class WebAppInterface {
                     () -> kotlin.Unit.INSTANCE
             );
         } catch (IllegalArgumentException e) {
-            NinjaToast.show(mContext, mContext.getString(R.string.app_error), Toast.LENGTH_SHORT);
+            PetalToast.show(mContext, mContext.getString(R.string.app_error), Toast.LENGTH_SHORT);
         }
     }
 
@@ -65,7 +65,7 @@ public class WebAppInterface {
             }
             showSnackbar();
         } catch (IOException e) {
-            NinjaToast.show(mContext, mContext.getString(R.string.app_error), Toast.LENGTH_SHORT);
+            PetalToast.show(mContext, mContext.getString(R.string.app_error), Toast.LENGTH_SHORT);
         }
     }
 

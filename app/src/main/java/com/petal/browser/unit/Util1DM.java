@@ -1,6 +1,6 @@
 package com.petal.browser.unit;
 
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -169,13 +169,13 @@ public class Util1DM {
                                     try {
                                         activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(GOOGLE_PLAY_STORE_URL + packageName + getStoreTracking(activity))));
                                     } catch (ActivityNotFoundException e2) {
-                                        NinjaToast.show(activity, e2.getMessage(), Toast.LENGTH_SHORT);
+                                        PetalToast.show(activity, e2.getMessage(), Toast.LENGTH_SHORT);
                                     }
                                 }
                             }
                         } catch (Throwable t) {
                             t.printStackTrace();
-                            NinjaToast.show(activity, t.getMessage(), Toast.LENGTH_SHORT);
+                            PetalToast.show(activity, t.getMessage(), Toast.LENGTH_SHORT);
                         }
                     }
                 });

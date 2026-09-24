@@ -1,6 +1,6 @@
 package com.petal.browser.pwa;
 
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -329,7 +329,7 @@ public class PetalPwaManager {
         }
 
         if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim()) || pageUrl.startsWith("petal://")) {
-            activity.runOnUiThread(() -> NinjaToast.show(activity, "Cannot install empty page as app", Toast.LENGTH_SHORT));
+            activity.runOnUiThread(() -> PetalToast.show(activity, "Cannot install empty page as app", Toast.LENGTH_SHORT));
             return;
         }
 
@@ -445,10 +445,10 @@ public class PetalPwaManager {
                     }
                 }
 
-                activity.runOnUiThread(() -> NinjaToast.show(activity, "Installed \"" + title + "\" to Home Screen", Toast.LENGTH_SHORT));
+                activity.runOnUiThread(() -> PetalToast.show(activity, "Installed \"" + title + "\" to Home Screen", Toast.LENGTH_SHORT));
             } catch (Exception e) {
                 Log.e(TAG, "Error installing PWA shortcut", e);
-                activity.runOnUiThread(() -> NinjaToast.show(activity, "Could not install app shortcut", Toast.LENGTH_SHORT));
+                activity.runOnUiThread(() -> PetalToast.show(activity, "Could not install app shortcut", Toast.LENGTH_SHORT));
             }
         }).start();
     }

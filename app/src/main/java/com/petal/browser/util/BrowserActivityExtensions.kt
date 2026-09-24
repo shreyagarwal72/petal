@@ -3,18 +3,18 @@ package com.petal.browser.util
 import android.content.Context
 import android.view.View
 import androidx.annotation.StringRes
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 
 /**
  * Idiomatic Kotlin Extension Functions for Context, View, and Activity operations.
  */
 
 fun Context.showToast(message: String) {
-    NinjaToast.show(this, message)
+    PetalToast.show(this, message)
 }
 
 fun Context.showToast(@StringRes resId: Int) {
-    NinjaToast.show(this, resId)
+    PetalToast.show(this, resId)
 }
 
 fun View.show() {

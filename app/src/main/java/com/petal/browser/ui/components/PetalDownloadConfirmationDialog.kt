@@ -499,7 +499,7 @@ object PetalDownloadDialogBridge {
                                     activity, url, guessedFileName, mimeType, null
                                 )
                                 if (!launched) {
-                                    com.petal.browser.view.NinjaToast.show(activity, "No external downloader found")
+                                    com.petal.browser.view.PetalToast.show(activity, "No external downloader found")
                                 }
                             }
                         }

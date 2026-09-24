@@ -162,7 +162,7 @@ import com.petal.browser.view.AdapterSearch;
 import com.petal.browser.view.GridAdapter;
 import com.petal.browser.view.GridItem;
 import com.petal.browser.view.MenuItem;
-import com.petal.browser.view.NinjaToast;
+import com.petal.browser.view.PetalToast;
 import com.petal.browser.view.NinjaWebView;
 import com.petal.browser.view.AdapterRecord;
 import com.petal.browser.view.SwipeTouchListener;
@@ -684,7 +684,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     new java.util.function.Consumer<String>() {
                         @Override
                         public void accept(String error) {
-                            NinjaToast.show(BrowserActivity.this, "Authentication required: " + error, Toast.LENGTH_SHORT);
+                            PetalToast.show(BrowserActivity.this, "Authentication required: " + error, Toast.LENGTH_SHORT);
                             finish();
                         }
                     }
@@ -1533,7 +1533,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return true;
             case KeyEvent.KEYCODE_F7:
                 boolean caretState = com.petal.browser.accessibility.PetalAccessibilityEngine.toggleCaretBrowsing(this, ninjaWebView);
-                com.petal.browser.view.NinjaToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
+                com.petal.browser.view.PetalToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
                 return true;
             case KeyEvent.KEYCODE_BACK:
                 performBackNavigation();
@@ -3587,7 +3587,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (ninjaWebView != null && ninjaWebView.canGoBack()) {
                     ninjaWebView.goBack();
                 } else {
-                    NinjaToast.show(BrowserActivity.this, "Nothing to undo");
+                    PetalToast.show(BrowserActivity.this, "Nothing to undo");
                 }
             });
         }
@@ -3683,7 +3683,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (!query.isEmpty() && !query.equals(activeUrl)) {
                     showDialogCustomSearches(query);
                 } else {
-                    NinjaToast.show(this, R.string.toast_input_empty);
+                    PetalToast.show(this, R.string.toast_input_empty);
                 }
                 return false;
             });
@@ -3776,7 +3776,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addAlbum(null, targetUrl, true);
             }
         } else {
-            NinjaToast.show(this, R.string.toast_input_empty);
+            PetalToast.show(this, R.string.toast_input_empty);
         }
     }
 
@@ -3939,7 +3939,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         isAiResearchExtracting = true;
-        NinjaToast.show(BrowserActivity.this, "Analyzing page\u2026");
+        PetalToast.show(BrowserActivity.this, "Analyzing page\u2026");
 
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             isAiResearchExtracting = false;
@@ -3963,7 +3963,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         aiResearchTimeoutRunnable = () -> {
             if (isAiResearchExtracting) {
                 isAiResearchExtracting = false;
-                NinjaToast.show(BrowserActivity.this, "Petal AI timed out reading this page. Please try again.");
+                PetalToast.show(BrowserActivity.this, "Petal AI timed out reading this page. Please try again.");
             }
         };
         aiResearchTimeoutHandler.postDelayed(aiResearchTimeoutRunnable, 6000);
@@ -4922,7 +4922,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController == null || currentAlbumController.getUrl() == null) return;
         String url = currentAlbumController.getUrl();
         if (url.startsWith("about:") || url.startsWith("petal://") || url.startsWith("file://")) {
-            NinjaToast.show(this, "Cannot save internal page offline");
+            PetalToast.show(this, "Cannot save internal page offline");
             return;
         }
 
@@ -4958,7 +4958,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     conn.disconnect();
 
                     runOnUiThread(() -> {
-                        NinjaToast.show(BrowserActivity.this, "Saved website to view offline!");
+                        PetalToast.show(BrowserActivity.this, "Saved website to view offline!");
                         com.petal.browser.engine.gecko.PetalEngineStore.addOfflineArchive(
                                 BrowserActivity.this, url, archiveFile.getAbsolutePath(), rawTitle);
                         com.petal.browser.compose.downloads.PetalLiveAlertManager.trackOfflinePage(
@@ -4966,12 +4966,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     });
                 } catch (Exception e) {
                     Log.e(TAG, "Error saving offline page", e);
-                    runOnUiThread(() -> NinjaToast.show(BrowserActivity.this, "Failed to save page offline"));
+                    runOnUiThread(() -> PetalToast.show(BrowserActivity.this, "Failed to save page offline"));
                 }
             }).start();
         } catch (Exception e) {
             Log.e(TAG, "Error saving web archive offline", e);
-            NinjaToast.show(BrowserActivity.this, "Failed to save page offline");
+            PetalToast.show(BrowserActivity.this, "Failed to save page offline");
         }
     }
 
@@ -4979,7 +4979,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController == null || currentAlbumController.getUrl() == null) return;
         String url = currentAlbumController.getUrl();
         if (url.startsWith("about:") || url.startsWith("petal://") || url.startsWith("file://")) {
-            NinjaToast.show(this, "Reader mode is not available for internal pages");
+            PetalToast.show(this, "Reader mode is not available for internal pages");
             return;
         }
 
@@ -5010,13 +5010,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     );
                     presentComposeScreen(readerView);
                 } else {
-                    NinjaToast.show(BrowserActivity.this, "Could not extract article content for Reading mode");
+                    PetalToast.show(BrowserActivity.this, "Could not extract article content for Reading mode");
                 }
                 return kotlin.Unit.INSTANCE;
             });
         } catch (Exception e) {
             Log.e(TAG, "Error launching reader mode", e);
-            NinjaToast.show(this, "Failed to load Reading mode");
+            PetalToast.show(this, "Failed to load Reading mode");
         }
     }
 
@@ -5577,7 +5577,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             }
         } else {
-            NinjaToast.show(context, getString(R.string.app_error));
+            PetalToast.show(context, getString(R.string.app_error));
         }
     }
     
@@ -5638,7 +5638,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("text", url);
         Objects.requireNonNull(clipboard).setPrimaryClip(clip);
-        NinjaToast.show(this, getString(R.string.app_done));
+        PetalToast.show(this, getString(R.string.app_done));
     }
 
     public void shareLink(String title, String url) {
@@ -5790,7 +5790,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             ClipData clip = ClipData.newPlainText("text", data);
             Objects.requireNonNull(clipboard).setPrimaryClip(clip);
-            NinjaToast.show(this, getString(R.string.app_done));
+            PetalToast.show(this, getString(R.string.app_done));
             addAlbum("", urlForPosting, true);
         } else {
             MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
@@ -5821,7 +5821,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 ClipData clip = ClipData.newPlainText("text", data);
                 Objects.requireNonNull(clipboard).setPrimaryClip(clip);
-                NinjaToast.show(this, getString(R.string.app_done));
+                PetalToast.show(this, getString(R.string.app_done));
                 addAlbum("", shareTop, true);
                 dialog.cancel();
                 try {
@@ -5844,17 +5844,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
     public void saveBookmark(String title, String url) {
         if (url == null || url.trim().isEmpty() || isHomePage(url)) {
-            NinjaToast.show(this, "Home page cannot be bookmarked");
+            PetalToast.show(this, "Home page cannot be bookmarked");
             return;
         }
         RecordAction action = new RecordAction(context);
         action.open(true);
         String message = context.getString(R.string.app_error) + ": " + context.getString(R.string.app_error_save);
         if (action.checkUrl(url, RecordUnit.TABLE_BOOKMARK))
-            NinjaToast.show(this, message);
+            PetalToast.show(this, message);
         else {
             action.addBookmark(new Record(title, url, 0, 0));
-            NinjaToast.show(this, R.string.app_done); }
+            PetalToast.show(this, R.string.app_done); }
         action.close();
     }
 
@@ -5892,7 +5892,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             updatePersistentBottomNav();
             saveOpenedTabs();
             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(this);
-            NinjaToast.show(this, "Closed all Incognito tabs");
+            PetalToast.show(this, "Closed all Incognito tabs");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -5992,7 +5992,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
                     }
                 } catch (Exception e) {
-                    NinjaToast.show(context, getString(R.string.app_error));
+                    PetalToast.show(context, getString(R.string.app_error));
                 }
             } else if ("file".equals(dataUri.getScheme())) {
                 fileName = dataUri.getLastPathSegment();
@@ -6009,7 +6009,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 getIntent().setAction("");
                 com.petal.browser.extensions.PetalExtensionManager.installFromContentUri(this, dataUri, (success, message) -> {
                     runOnUiThread(() -> {
-                        NinjaToast.show(this, message != null ? message : (success ? "Extension installed" : "Extension installation failed"));
+                        PetalToast.show(this, message != null ? message : (success ? "Extension installed" : "Extension installation failed"));
                         if (success) {
                             showExtensionsScreen();
                         }
@@ -6031,7 +6031,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         "html", "txt", "xml", "json", "java", "md", "js", "css", "sh", "py", "org", "gpx"
                 );
                 if (!allowedExtensions.contains(extension)) {
-                    NinjaToast.show(this, getString(R.string.dialog_supported), Toast.LENGTH_SHORT);
+                    PetalToast.show(this, getString(R.string.dialog_supported), Toast.LENGTH_SHORT);
                     getIntent().setAction("");
                     getIntent().setData(null);
                     return;
@@ -6083,7 +6083,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 formattedContent = jsonArray.toString(2);
                             }
                         } catch (Exception ignored) {
-                            NinjaToast.show(context, getString(R.string.app_error));
+                            PetalToast.show(context, getString(R.string.app_error));
                         }
                     } else {
                         assert fileName != null;
@@ -6512,7 +6512,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : null;
             if (activeUrl == null || activeUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(activeUrl)) {
-                NinjaToast.show(this, "No active web page to install");
+                PetalToast.show(this, "No active web page to install");
                 return;
             }
             com.petal.browser.pwa.PetalPwaManager manager = null;
@@ -6526,10 +6526,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, webView, null); webView.setPwaManager(manager); }
             }
             if (manager != null) manager.installCurrentPwa(this);
-            else NinjaToast.show(this, "No active web page to install");
+            else PetalToast.show(this, "No active web page to install");
         } catch (Exception e) {
             e.printStackTrace();
-            NinjaToast.show(this, "Failed to install app");
+            PetalToast.show(this, "Failed to install app");
         }
     }
 

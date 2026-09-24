@@ -9,7 +9,7 @@ import android.net.Uri
 import android.webkit.CookieManager
 import android.webkit.WebSettings
 import androidx.preference.PreferenceManager
-import com.petal.browser.view.NinjaToast
+import com.petal.browser.view.PetalToast
 import java.util.Locale
 
 /**
@@ -156,7 +156,7 @@ object ExternalDownloadManagerHelper {
                         false,
                         false
                     )
-                    NinjaToast.show(context, "Opening in 1DM...")
+                    PetalToast.show(context, "Opening in 1DM...")
                     return true
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -195,7 +195,7 @@ object ExternalDownloadManagerHelper {
                     }
                     try {
                         context.startActivity(intent)
-                        NinjaToast.show(context, "Opening in ${targetDownloader.displayName}...")
+                        PetalToast.show(context, "Opening in ${targetDownloader.displayName}...")
                         return true
                     } catch (e: Exception) {
                         e.printStackTrace()
