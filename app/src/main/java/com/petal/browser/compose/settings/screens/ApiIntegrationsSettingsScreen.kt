@@ -30,6 +30,7 @@ import com.petal.browser.ui.components.ScrollFadeRow
 fun ApiIntegrationsSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null,
     viewModel: SearchHomeSettingsViewModel = hiltViewModel()
 ) {
     val enableLiveSuggestions by viewModel.enableLiveSuggestions.collectAsStateWithLifecycle()
@@ -38,7 +39,8 @@ fun ApiIntegrationsSettingsScreen(
         enableLiveSuggestions = enableLiveSuggestions,
         onEnableLiveSuggestionsChange = viewModel::setEnableLiveSuggestions,
         onNavigateBack = onNavigateBack,
-        modifier = modifier
+        modifier = modifier,
+        targetHighlightItemId = targetHighlightItemId
     )
 }
 
@@ -47,7 +49,8 @@ fun ApiIntegrationsSettingsScreenContent(
     enableLiveSuggestions: Boolean,
     onEnableLiveSuggestionsChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null
 ) {
     val context = LocalContext.current
     var selectedProvider by remember { mutableStateOf(PetalAiResearchEngine.getSelectedProvider(context)) }
@@ -81,7 +84,7 @@ fun ApiIntegrationsSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Dedicated Petal AI & API Keys Hub Card
-                SettingsCategoryCard(title = "Petal AI & API Keys Hub", iconRes = com.petal.browser.R.drawable.ic_ai_stars) {
+                SettingsCategoryCard(title = "Petal AI & API Keys Hub", iconRes = com.petal.browser.R.drawable.ic_ai_stars, cardId = "ai_provider", targetHighlightId = targetHighlightItemId) {
                     Text(
                         "Configure AI providers, API keys, and model selections for Petal Deep Research, AI Search, and page summarizer.",
                         style = MaterialTheme.typography.bodySmall,
@@ -351,6 +354,12 @@ fun ApiIntegrationsSettingsScreenContent(
                             }
                         }
                     }
+                    Spacer(Modifier.height(32.dp))
+                }
+            }
+        }
+    }
+
     if (showCustomAiGuide) {
         AlertDialog(
             onDismissRequest = { showCustomAiGuide = false },
@@ -358,11 +367,5 @@ fun ApiIntegrationsSettingsScreenContent(
             text = { Text("1. Choose Custom AI.\n\n2. From your provider dashboard, copy its OpenAI-compatible base URL (for example https://provider.example/v1). Petal adds /chat/completions automatically.\n\n3. Create and paste an API key if the provider requires one; local servers may leave it blank.\n\n4. Enter the exact model ID shown by the provider, or use Fetch Models.\n\n5. Tap Test Connection before using Petal AI.\n\nUse HTTPS for internet providers. HTTP is allowed only for private/local network servers such as Ollama or LM Studio.") },
             confirmButton = { TextButton(onClick = { showCustomAiGuide = false }) { Text("Got it") } }
         )
-    }
-
-                    }
-                Spacer(Modifier.height(32.dp))
-            }
-        }
     }
 }

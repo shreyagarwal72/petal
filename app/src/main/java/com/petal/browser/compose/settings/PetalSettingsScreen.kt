@@ -223,6 +223,7 @@ fun PetalSettingsScreen(
                     onCategoryClick = { category, highlightId ->
                         currentCategory = category
                         currentHighlightId = highlightId
+                        searchQuery = ""
                     },
                     onNavigateBack = onBackPress
                 )
@@ -241,13 +242,13 @@ private fun RenderCategoryContent(
     when (category) {
         SettingsCategory.OVERVIEW -> {}
         SettingsCategory.API_INTEGRATIONS -> {
-            ApiIntegrationsSettingsScreen(onNavigateBack = onNavigateBack)
+            ApiIntegrationsSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
         }
         SettingsCategory.APPEARANCE -> {
-            AppearanceSettingsScreen(onNavigateBack = onNavigateBack)
+            AppearanceSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
         }
         SettingsCategory.PRIVACY -> {
-            PrivacySettingsScreen(onNavigateBack = onNavigateBack)
+            PrivacySettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
         }
         SettingsCategory.SEARCH_HOMEPAGE -> {
             SearchHomeSettingsScreen(

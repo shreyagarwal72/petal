@@ -321,18 +321,13 @@ private fun SearchItemCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
+                Text(
                         text = item.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
+                        overflow = TextOverflow.Ellipsis
                     )
                     Surface(
                         shape = RoundedCornerShape(8.dp),
@@ -347,7 +342,6 @@ private fun SearchItemCard(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-                }
 
                 Text(
                     text = item.subtitle,
