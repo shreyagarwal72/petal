@@ -142,6 +142,12 @@ dependencies {
     implementation 'androidx.graphics:graphics-shapes:1.0.1'
     implementation 'com.airbnb.android:lottie-compose:6.6.2'
 
+    // PDFBox-Android — used only for the "Edit PDF text" feature (real embedded
+    // text extraction + content-stream rewrite). PdfRenderer above stays as the
+    // fast rasterizer for normal viewing; PDFBox only loads when edit mode opens.
+    // NOTE: unverified in a real build — no Android SDK available to compile-check.
+    implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
+
     // Jetpack Glance — used for the home screen widget so it can be built with real
     // Material 3 (Expressive) components/color roles instead of hand-rolled RemoteViews.
     implementation 'androidx.glance:glance:1.1.1'
