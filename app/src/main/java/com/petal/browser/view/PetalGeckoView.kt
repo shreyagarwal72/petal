@@ -1495,6 +1495,10 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
+    fun setProfileChanged() {
+        applySettings()
+    }
+
     /**
      * Exports the current page to a PDF via GeckoSession.saveAsPdf(), which yields the PDF bytes
      * as an InputStream. The bytes are copied into [outputStream], and the streams are closed.

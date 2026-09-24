@@ -182,6 +182,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public View findInPageCompose;
     public boolean isFindInPageShowing = false;
     public String findInPageQuery = "";
+    @Deprecated
+    public static com.petal.browser.view.PetalGeckoView ninjaWebView = null;
 
     public View customView;
     public WebChromeClient.CustomViewCallback customViewCallback;
@@ -236,6 +238,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public AlbumController getCurrentAlbumController() {
         return currentAlbumController;
+    }
+
+    public com.petal.browser.view.PetalGeckoView getGeckoView() {
+        return currentAlbumController instanceof com.petal.browser.view.PetalGeckoView ? (com.petal.browser.view.PetalGeckoView) currentAlbumController : null;
     }
 
     public void setCurrentAlbumController(AlbumController controller) {
@@ -2327,6 +2333,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView geckoView = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+                ninjaWebView = geckoView;
                 geckoView.setBrowserController(this);
                 String currentUrl = geckoView.getUrl();
                 String albumSavedUrl = null;
@@ -6374,6 +6381,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (!foreground) {
             geckoView.deactivate();
         } else {
+            ninjaWebView = geckoView;
             hideOverview();
             geckoView.activate();
             if (dialogOverview != null) dialogOverview.cancel();
