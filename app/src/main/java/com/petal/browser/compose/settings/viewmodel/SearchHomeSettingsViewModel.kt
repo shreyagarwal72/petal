@@ -36,6 +36,9 @@ class SearchHomeSettingsViewModel @Inject constructor(
     val enableLiveSuggestions: StateFlow<Boolean> = settingsRepository.enableLiveSuggestions
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val showSearchEngineSelectorInOmnibox: StateFlow<Boolean> = settingsRepository.showSearchEngineSelectorInOmnibox
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     fun setSearchEngineIndex(index: String) = viewModelScope.launch {
         settingsRepository.setSearchEngineIndex(index)
     }
@@ -62,5 +65,9 @@ class SearchHomeSettingsViewModel @Inject constructor(
 
     fun setEnableLiveSuggestions(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setEnableLiveSuggestions(enabled)
+    }
+
+    fun setShowSearchEngineSelectorInOmnibox(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setShowSearchEngineSelectorInOmnibox(enabled)
     }
 }

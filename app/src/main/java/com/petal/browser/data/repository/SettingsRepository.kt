@@ -39,6 +39,7 @@ interface SettingsRepository {
     val autoPip: Flow<Boolean>
     val forceDarkMode: Flow<Boolean>
     val enableLiveSuggestions: Flow<Boolean>
+    val showSearchEngineSelectorInOmnibox: Flow<Boolean>
 
     // Privacy & Security
     val adBlockEnabled: Flow<Boolean>
@@ -123,6 +124,7 @@ interface SettingsRepository {
     suspend fun setAutoPip(enabled: Boolean)
     suspend fun setForceDarkMode(enabled: Boolean)
     suspend fun setEnableLiveSuggestions(enabled: Boolean)
+    suspend fun setShowSearchEngineSelectorInOmnibox(enabled: Boolean)
 
     suspend fun setAdBlockEnabled(enabled: Boolean)
     suspend fun setBlockThirdPartyCookies(enabled: Boolean)

@@ -42,6 +42,7 @@ fun SearchHomeSettingsScreen(
     val autoPip by viewModel.autoPip.collectAsStateWithLifecycle()
     val forceDarkMode by viewModel.forceDarkMode.collectAsStateWithLifecycle()
     val enableLiveSuggestions by viewModel.enableLiveSuggestions.collectAsStateWithLifecycle()
+    val showSearchEngineSelectorInOmnibox by viewModel.showSearchEngineSelectorInOmnibox.collectAsStateWithLifecycle()
 
     SearchHomeSettingsScreenContent(
         searchEngineIndex = searchEngineIndex,
@@ -51,6 +52,7 @@ fun SearchHomeSettingsScreen(
         autoPip = autoPip,
         forceDarkMode = forceDarkMode,
         enableLiveSuggestions = enableLiveSuggestions,
+        showSearchEngineSelectorInOmnibox = showSearchEngineSelectorInOmnibox,
         onSearchEngineIndexChange = viewModel::setSearchEngineIndex,
         onHomepageTypeChange = viewModel::setHomepageType,
         onCustomHomepageUrlChange = viewModel::setCustomHomepageUrl,
@@ -58,6 +60,7 @@ fun SearchHomeSettingsScreen(
         onAutoPipChange = viewModel::setAutoPip,
         onForceDarkModeChange = viewModel::setForceDarkMode,
         onEnableLiveSuggestionsChange = viewModel::setEnableLiveSuggestions,
+        onShowSearchEngineSelectorInOmniboxChange = viewModel::setShowSearchEngineSelectorInOmnibox,
         onNavigateBack = onNavigateBack,
         onNavigateToAddressBarSettings = onNavigateToAddressBarSettings,
         targetHighlightItemId = targetHighlightItemId,
@@ -75,6 +78,7 @@ fun SearchHomeSettingsScreenContent(
     autoPip: Boolean,
     forceDarkMode: Boolean,
     enableLiveSuggestions: Boolean,
+    showSearchEngineSelectorInOmnibox: Boolean,
     onSearchEngineIndexChange: (String) -> Unit,
     onHomepageTypeChange: (String) -> Unit,
     onCustomHomepageUrlChange: (String) -> Unit,
@@ -82,6 +86,7 @@ fun SearchHomeSettingsScreenContent(
     onAutoPipChange: (Boolean) -> Unit,
     onForceDarkModeChange: (Boolean) -> Unit,
     onEnableLiveSuggestionsChange: (Boolean) -> Unit,
+    onShowSearchEngineSelectorInOmniboxChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToAddressBarSettings: () -> Unit = {},
     targetHighlightItemId: String? = null,
@@ -174,6 +179,36 @@ fun SearchHomeSettingsScreenContent(
                         }
                     }
 
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "Engine Selector in Search Box",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Show search engine icon on the left of the omnibox to quickly switch providers",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = showSearchEngineSelectorInOmnibox,
+                                onCheckedChange = onShowSearchEngineSelectorInOmniboxChange
+                            )
+                        }
+                    }
                 }
 
                 // Homepage & Media Playback Card

@@ -455,18 +455,109 @@ fun PetalOmniboxPage(
                                 )
                             }
 
+                            var currentEngineIndexStr by remember {
+                                mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0")
+                            }
+                            val showEngineSelector = remember {
+                                sp.getBoolean("sp_show_search_engine_selector_in_omnibox", true)
+                            }
+                            var showEngineMenu by remember { mutableStateOf(false) }
+
+                            val allEngines = remember(context, currentEngineIndexStr) {
+                                allSearchEngines(context)
+                            }
+                            val currentEngine = remember(currentEngineIndexStr, allEngines) {
+                                val idx = currentEngineIndexStr.toIntOrNull() ?: 0
+                                allEngines.find { it.index == idx } ?: availableSearchEngines.first()
+                            }
+
                             OutlinedTextField(
                                 value = queryState,
                                 onValueChange = { queryState = it },
                                 placeholder = {
                                     Text(
-                                        text = "Search Google or type URL",
+                                        text = "Search ${currentEngine.name} or type URL",
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 },
+                                leadingIcon = if (showEngineSelector) {
+                                    {
+                                        Box {
+                                            IconButton(
+                                                onClick = { showEngineMenu = true },
+                                                modifier = Modifier.size(38.dp)
+                                            ) {
+                                                val engineIcon = when (currentEngine.name.lowercase()) {
+                                                    "google" -> Icons.Rounded.Search
+                                                    "duckduckgo" -> Icons.Rounded.Shield
+                                                    "startpage" -> Icons.Rounded.VpnKey
+                                                    "brave search", "brave" -> Icons.Rounded.Security
+                                                    "bing" -> Icons.Rounded.Search
+                                                    "searxng", "searx" -> Icons.Rounded.ManageSearch
+                                                    "qwant" -> Icons.Rounded.TravelExplore
+                                                    "ecosia" -> Icons.Rounded.Eco
+                                                    else -> Icons.Rounded.Search
+                                                }
+                                                Icon(
+                                                    imageVector = engineIcon,
+                                                    contentDescription = "Search with ${currentEngine.name} (Tap to change)",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+
+                                            DropdownMenu(
+                                                expanded = showEngineMenu,
+                                                onDismissRequest = { showEngineMenu = false },
+                                                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                            ) {
+                                                Text(
+                                                    text = "Search Engine",
+                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                                )
+                                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                                allEngines.forEach { engine ->
+                                                    val isSelected = engine.index == (currentEngineIndexStr.toIntOrNull() ?: 0)
+                                                    DropdownMenuItem(
+                                                        text = {
+                                                            Row(
+                                                                verticalAlignment = Alignment.CenterVertically,
+                                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                            ) {
+                                                                Text(
+                                                                    text = engine.name,
+                                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                                )
+                                                                if (isSelected) {
+                                                                    Icon(
+                                                                        Icons.Rounded.Check,
+                                                                        contentDescription = null,
+                                                                        tint = MaterialTheme.colorScheme.primary,
+                                                                        modifier = Modifier.size(16.dp)
+                                                                    )
+                                                                }
+                                                            }
+                                                        },
+                                                        onClick = {
+                                                            currentEngineIndexStr = engine.index.toString()
+                                                            sp.edit()
+                                                                .putString("sp_search_engine", engine.index.toString())
+                                                                .putBoolean("searchEngineSwitch", false)
+                                                                .apply()
+                                                            showEngineMenu = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else null,
                                 trailingIcon = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         if (queryState.text.isNotEmpty()) {

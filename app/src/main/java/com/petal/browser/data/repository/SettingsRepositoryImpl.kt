@@ -149,6 +149,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_enable_live_suggestions", true)
     }
 
+    override val showSearchEngineSelectorInOmnibox: Flow<Boolean> = preferenceFlow("sp_show_search_engine_selector_in_omnibox") {
+        sp.getBoolean("sp_show_search_engine_selector_in_omnibox", true)
+    }
+
     // ── Privacy & Security ────────────────────────────────────────────────────
     override val adBlockEnabled: Flow<Boolean> = preferenceFlow("sp_ad_block") {
         sp.getBoolean("sp_ad_block", true)
@@ -446,6 +450,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setEnableLiveSuggestions(enabled: Boolean) {
         sp.edit().putBoolean("sp_enable_live_suggestions", enabled).apply()
+    }
+
+    override suspend fun setShowSearchEngineSelectorInOmnibox(enabled: Boolean) {
+        sp.edit().putBoolean("sp_show_search_engine_selector_in_omnibox", enabled).apply()
     }
 
     override suspend fun setAdBlockEnabled(enabled: Boolean) {
