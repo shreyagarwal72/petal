@@ -72,8 +72,7 @@ class FxAccountManager private constructor() {
     fun isRedirectUrl(url: String): Boolean {
         return url.startsWith(REDIRECT_URI) ||
                url.startsWith(CUSTOM_SCHEME_REDIRECT) ||
-               url.contains("/oauth/success/") ||
-               (url.contains("code=") && (url.contains("accounts.firefox.com") || url.contains("petal://") || url.contains("localhost")))
+               url.contains("accounts.firefox.com/oauth/success/")
     }
 
     /**
