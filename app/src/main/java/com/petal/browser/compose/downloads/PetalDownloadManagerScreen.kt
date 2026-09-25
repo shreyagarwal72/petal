@@ -659,6 +659,8 @@ fun PetalDownloadManagerScreen(
 }
 }
 }
+}
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
