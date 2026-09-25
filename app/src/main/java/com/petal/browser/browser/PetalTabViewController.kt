@@ -53,7 +53,7 @@ class PetalTabViewController @JvmOverloads constructor(
         engineView.render(engineSession)
 
         engineSession.register(object : EngineSession.Observer {
-            override fun onLocationChange(url: String) {
+            override fun onLocationChange(url: String, hasUserGesture: Boolean) {
                 store.dispatch(ContentAction.UpdateUrlAction(tab.id, url))
             }
 

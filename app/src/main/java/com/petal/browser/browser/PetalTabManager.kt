@@ -7,21 +7,9 @@ import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.EngineState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.feature.tabs.TabsUseCases
-
-/**
- * PetalTabManager
- * ─────────────────────────────────────────────────────────────────────────
- * High-level tab management orchestrator powered by Mozilla Android Components
- * [BrowserStore] and [TabsUseCases].
- *
- * Encapsulates adding, removing, selecting, moving, and querying tabs across
- * normal and incognito browsing sessions.
- */
 class PetalTabManager(private val context: Context) {
 
     private val store: BrowserStore = PetalEngineStore.getStore(context)
-    val tabsUseCases: TabsUseCases = TabsUseCases(store)
 
     /**
      * Creates and adds a new tab to [BrowserStore].
@@ -59,21 +47,21 @@ class PetalTabManager(private val context: Context) {
      * Removes an existing tab by its unique tab ID.
      */
     fun removeTab(tabId: String) {
-        tabsUseCases.removeTab(tabId)
+        PetalEngineStore.removeTab(context, tabId)
     }
 
     /**
      * Selects an active tab by its tab ID.
      */
     fun selectTab(tabId: String) {
-        tabsUseCases.selectTab(tabId)
+        PetalEngineStore.selectTab(context, tabId)
     }
 
     /**
      * Returns the currently selected tab session state, if any.
      */
     fun getSelectedTab(): TabSessionState? {
-        return store.state.selectedTab
+        return store.state.tabs.firstOrNull { it.id == store.state.selectedTabId }
     }
 
     /**

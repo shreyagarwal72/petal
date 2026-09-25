@@ -31,7 +31,7 @@ object PetalSessionRestoreManager {
             val storage = PetalEngineStore.getSessionStorage(context)
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    storage.save(tabsFilter = { !it.content.private })
+                    storage.save(store.state)
                 } catch (t: Throwable) {
                     Log.w(TAG, "Failed to persist tab session snapshot: ${t.message}")
                 }
@@ -49,12 +49,9 @@ object PetalSessionRestoreManager {
         return withContext(Dispatchers.IO) {
             try {
                 val storage = PetalEngineStore.getSessionStorage(context)
-                val snapshot = storage.read() ?: return@withContext false
-                if (snapshot.sessionList.isEmpty()) {
-                    return@withContext false
-                }
+                val restoredState = storage.restore() ?: return@withContext false
                 withContext(Dispatchers.Main) {
-                    storage.restore(snapshot)
+                    store.dispatch(mozilla.components.browser.state.action.TabListAction.RestoreAction(restoredState.tabs))
                 }
                 true
             } catch (t: Throwable) {

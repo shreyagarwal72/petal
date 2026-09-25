@@ -73,14 +73,14 @@ object PetalAddonManager {
         onSuccess: () -> Unit = {},
         onError: (Throwable) -> Unit = {}
     ) {
-        engine.uninstallWebExtension(
-            extension = extension,
-            onSuccess = onSuccess,
-            onError = { e ->
-                Log.e(TAG, "Failed to uninstall extension: ${extension.id}", e)
-                onError(e)
+        val rawExt = PetalExtensionManager.extensions.value.find { it.id == extension.id }?.raw
+        if (rawExt != null) {
+            PetalExtensionManager.uninstall(rawExt) { success ->
+                if (success) onSuccess() else onError(RuntimeException("Uninstall failed for ${extension.id}"))
             }
-        )
+        } else {
+            onError(IllegalArgumentException("Extension not found: ${extension.id}"))
+        }
     }
 
     /**
@@ -92,15 +92,13 @@ object PetalAddonManager {
         onSuccess: (WebExtension) -> Unit = {},
         onError: (Throwable) -> Unit = {}
     ) {
-        engine.enableWebExtension(
-            extension = extension,
-            source = WebExtension.EnableSource.USER,
-            onSuccess = onSuccess,
-            onError = { e ->
-                Log.e(TAG, "Failed to enable extension: ${extension.id}", e)
-                onError(e)
-            }
-        )
+        val rawExt = PetalExtensionManager.extensions.value.find { it.id == extension.id }?.raw
+        if (rawExt != null) {
+            PetalExtensionManager.setEnabled(rawExt, true)
+            onSuccess(extension)
+        } else {
+            onError(IllegalArgumentException("Extension not found: ${extension.id}"))
+        }
     }
 
     /**
@@ -112,15 +110,13 @@ object PetalAddonManager {
         onSuccess: (WebExtension) -> Unit = {},
         onError: (Throwable) -> Unit = {}
     ) {
-        engine.disableWebExtension(
-            extension = extension,
-            source = WebExtension.EnableSource.USER,
-            onSuccess = onSuccess,
-            onError = { e ->
-                Log.e(TAG, "Failed to disable extension: ${extension.id}", e)
-                onError(e)
-            }
-        )
+        val rawExt = PetalExtensionManager.extensions.value.find { it.id == extension.id }?.raw
+        if (rawExt != null) {
+            PetalExtensionManager.setEnabled(rawExt, false)
+            onSuccess(extension)
+        } else {
+            onError(IllegalArgumentException("Extension not found: ${extension.id}"))
+        }
     }
 
     /**
@@ -130,12 +126,7 @@ object PetalAddonManager {
         engine: GeckoEngine,
         callback: (List<WebExtension>) -> Unit
     ) {
-        engine.listInstalledWebExtensions(
-            onSuccess = callback,
-            onError = { e ->
-                Log.w(TAG, "Failed to list installed extensions: ${e.message}")
-                callback(emptyList())
-            }
-        )
+        val current = PetalExtensionManager.extensions.value.map { it.raw }
+        callback(emptyList())
     }
 }

@@ -67,7 +67,7 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
         mainHandler.post {
             try {
                 val act = findBrowserActivity() ?: return@post
-                val title = extension.getMetadata(context)?.name ?: act.getString(com.petal.browser.R.string.app_name)
+                val title = extension.getMetadata()?.name ?: act.getString(com.petal.browser.R.string.app_name)
                 val targetUrl = url.ifBlank { "about:blank" }
                 val tabId = "tab_ext_${System.currentTimeMillis()}_${Math.abs(targetUrl.hashCode())}"
 
