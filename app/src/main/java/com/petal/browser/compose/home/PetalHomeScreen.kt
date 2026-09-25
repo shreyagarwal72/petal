@@ -14,9 +14,12 @@ import android.content.Context
 import android.net.Uri
 import java.util.Locale
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -94,24 +97,31 @@ data class PetalShortcut(
     val url: String,
     val siteId: String,
     val containerColor: Color,
-    val contentColor: Color = Color.White
+    val contentColor: Color = Color.White,
+    val shapeName: String? = null
 )
 
 fun loadRemovedShortcutUrls(context: Context): Set<String> {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    return sp.getStringSet("sp_removed_home_shortcut_urls_v1", emptySet()) ?: emptySet()
+    val key = com.petal.browser.profile.PetalProfileManager.getScopedKey("sp_removed_home_shortcut_urls_v1")
+    return sp.getStringSet(key, emptySet()) ?: emptySet()
 }
 
 fun saveRemovedShortcutUrls(context: Context, set: Set<String>) {
+    val key = com.petal.browser.profile.PetalProfileManager.getScopedKey("sp_removed_home_shortcut_urls_v1")
     PreferenceManager.getDefaultSharedPreferences(context)
         .edit()
-        .putStringSet("sp_removed_home_shortcut_urls_v1", set)
+        .putStringSet(key, set)
         .apply()
 }
 
 fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val jsonStr = sp.getString("sp_custom_home_shortcuts_json_v3", null)
+    val scopedKey = com.petal.browser.profile.PetalProfileManager.getScopedKey("sp_custom_home_shortcuts_json_v3")
+    val jsonStr = sp.getString(scopedKey, null) ?: if (com.petal.browser.profile.PetalProfileManager.activeProfile.isDefault) {
+        sp.getString("sp_custom_home_shortcuts_json_v3", null)
+    } else null
+
     if (jsonStr != null) {
         try {
             val array = JSONArray(jsonStr)
@@ -122,12 +132,13 @@ fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
                 val url = obj.optString("url", "https://google.com")
                 val siteId = obj.optString("siteId", "globe")
                 val colorStr = obj.optString("color", "#4285F4")
+                val shapeName = if (obj.has("shapeName")) obj.optString("shapeName") else null
                 val parsedColor = try {
                     Color(android.graphics.Color.parseColor(colorStr))
                 } catch (_: Throwable) {
                     Color(0xFF4285F4)
                 }
-                list.add(PetalShortcut(label, url, siteId, parsedColor))
+                list.add(PetalShortcut(label, url, siteId, parsedColor, shapeName = shapeName))
             }
             return list
         } catch (_: Throwable) { }
@@ -198,11 +209,15 @@ fun saveHomeShortcuts(context: Context, list: List<PetalShortcut>) {
         obj.put("siteId", item.siteId)
         val argb = item.containerColor.toArgb()
         obj.put("color", String.format("#%08X", argb))
+        if (item.shapeName != null) {
+            obj.put("shapeName", item.shapeName)
+        }
         array.put(obj)
     }
+    val scopedKey = com.petal.browser.profile.PetalProfileManager.getScopedKey("sp_custom_home_shortcuts_json_v3")
     PreferenceManager.getDefaultSharedPreferences(context)
         .edit()
-        .putString("sp_custom_home_shortcuts_json_v3", array.toString())
+        .putString(scopedKey, array.toString())
         .apply()
 }
 
@@ -467,16 +482,53 @@ fun PetalHomeScreen(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
+    val coroutineScope = rememberCoroutineScope()
+    val profileSwitchProgress = remember { Animatable(1f) }
+    var showProfileSwitchSheet by remember { mutableStateOf(false) }
+    var showWallpaperSheet by remember { mutableStateOf(false) }
+
+    // Candy-browser profile transition function
+    fun switchProfile(targetProfileId: String) {
+        if (targetProfileId == com.petal.browser.profile.PetalProfileManager.activeProfile.id) return
+        coroutineScope.launch {
+            // Exit: 120ms tween fade & slide down
+            profileSwitchProgress.animateTo(0f, tween(120, easing = FastOutSlowInEasing))
+            com.petal.browser.profile.PetalProfileManager.switchProfile(context, targetProfileId)
+            com.petal.browser.wallpaper.PetalWallpaperManager.loadForActiveProfile(context)
+            shortcuts = loadHomeShortcuts(context)
+            removedUrls = loadRemovedShortcutUrls(context)
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CONFIRM, 0.5f)
+            // Entrance: 460f stiffness / 0.78f damping ratio spring bounce
+            profileSwitchProgress.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 460f))
+        }
+    }
+
+    // Initialize wallpaper and profile managers for active profile
+    LaunchedEffect(Unit) {
+        com.petal.browser.profile.PetalProfileManager.init(context)
+        com.petal.browser.wallpaper.PetalWallpaperManager.init(context)
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-                    // ── Layer 0: living Material 3 Expressive background ───────────
-                    com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                        modifier = Modifier.fillMaxSize(),
-                        pageSeed = "home_page"
-                    )
+                    // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
+                    val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
+                    if (!activeWallpaperUri.isNullOrBlank()) {
+                        com.petal.browser.wallpaper.PetalAnimatedWallpaperBackground(
+                            wallpaperUri = activeWallpaperUri,
+                            dim = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim,
+                            blur = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                            modifier = Modifier.fillMaxSize(),
+                            pageSeed = "home_page"
+                        )
+                    }
 
                     Column(
                         modifier = Modifier.fillMaxSize()
@@ -485,19 +537,75 @@ fun PetalHomeScreen(
                             title = "Petal",
                             subtitle = "Personal Window to the Web",
                             actions = {
+                                // Wallpaper Customizer Action Button
                                 IconButton(
-                                    onClick = onOpenAccountSync,
-                                    modifier = Modifier.size(44.dp)
+                                    onClick = { showWallpaperSheet = true },
+                                    modifier = Modifier.size(38.dp)
                                 ) {
-                                    ProfileAvatarDisplay(profile = profile, sizeDp = 36)
+                                    Icon(
+                                        imageVector = Icons.Rounded.Palette,
+                                        contentDescription = "Customize Wallpaper",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+
+                                Spacer(Modifier.width(4.dp))
+
+                                // Expressive Profile Switcher Pill Button (Issue #23)
+                                val currentProfile = com.petal.browser.profile.PetalProfileManager.activeProfile
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
+                                    border = BorderStroke(1.dp, currentProfile.getComposeColor().copy(alpha = 0.5f)),
+                                    modifier = Modifier
+                                        .height(34.dp)
+                                        .clickable { showProfileSwitchSheet = true }
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .clip(CircleShape)
+                                                .background(currentProfile.getComposeColor().copy(alpha = 0.25f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = if (currentProfile.isDefault) Icons.Rounded.Person else Icons.Rounded.FolderShared,
+                                                contentDescription = null,
+                                                tint = currentProfile.getComposeColor(),
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                        }
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            text = currentProfile.name,
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.widthIn(max = 84.dp)
+                                        )
+                                    }
                                 }
                             }
                         )
 
+                        // Main home scrolling column wrapped with Candy-Browser profile switch animation
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
+                                .graphicsLayer {
+                                    alpha = profileSwitchProgress.value
+                                    translationY = (1f - profileSwitchProgress.value) * 14.dp.toPx()
+                                    val scale = 0.97f + profileSwitchProgress.value * 0.03f
+                                    scaleX = scale
+                                    scaleY = scale
+                                }
                                 .verticalScroll(rememberScrollState())
                                 .padding(horizontal = 20.dp, vertical = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -533,6 +641,24 @@ fun PetalHomeScreen(
                         }
                     }
 
+                    // ── Profile Switcher Modal Sheet ──────────────────────────────────
+                    if (showProfileSwitchSheet) {
+                        com.petal.browser.ui.components.PetalProfileSwitchSheet(
+                            onDismissRequest = { showProfileSwitchSheet = false },
+                            onOpenAccountSettings = onOpenAccountSync,
+                            onSelectProfile = { selectedId ->
+                                switchProfile(selectedId)
+                            }
+                        )
+                    }
+
+                    // ── Wallpaper Customizer Modal Sheet ──────────────────────────────
+                    if (showWallpaperSheet) {
+                        com.petal.browser.ui.components.PetalWallpaperSheet(
+                            onDismissRequest = { showWallpaperSheet = false }
+                        )
+                    }
+
                     // ── Create New Shortcut Dialog ────────────────────────────────────
                     if (isAddingNewShortcut) {
                         EditShortcutDialog(
@@ -559,6 +685,7 @@ fun PetalHomeScreen(
                             initialName = current.label,
                             initialUrl = current.url,
                             initialColor = current.containerColor,
+                            initialShapeName = current.shapeName,
                             onDismiss = { editingItem = null },
                             onSave = { updatedShortcut ->
                                 if (isCustom) {
@@ -676,8 +803,14 @@ private fun ShortcutTile(
     val faviconUrl = remember(shortcut.url) { getFaviconUrl(shortcut.url) }
     var isImageError by remember(shortcut.url) { mutableStateOf(false) }
 
-    // Relay-inspired three-shape rhythm: positions 1/4/7, 2/5/8 and 3/6/9 repeat.
-    val tileShape = remember(index) { homeShortcutShape(index) }
+    val tileShape = remember(shortcut.shapeName, index) {
+        if (!shortcut.shapeName.isNullOrBlank()) {
+            val matched = PetalMaterialShapes.allShapes.find { it.name.equals(shortcut.shapeName, ignoreCase = true) }
+            matched?.toShape() ?: homeShortcutShape(index)
+        } else {
+            homeShortcutShape(index)
+        }
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -708,22 +841,23 @@ private fun ShortcutTile(
                 )
         ) {
             if (!faviconUrl.isNullOrEmpty() && !isImageError) {
+                // 0-padding full-bleed clipping to the expressive shape
                 AsyncImage(
                     model = faviconUrl,
                     contentDescription = shortcut.label,
                     contentScale = ContentScale.Crop,
                     onError = { isImageError = true },
                     modifier = Modifier
-                        .size(40.dp)
+                        .fillMaxSize()
                         .clip(tileShape)
                 )
             } else {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                                .size(40.dp)
+                        .fillMaxSize()
                         .clip(tileShape)
-                        .background(shortcut.containerColor.copy(alpha = 0.18f))
+                        .background(shortcut.containerColor.copy(alpha = 0.22f))
                 ) {
                     SiteBrandIconTinted(
                         siteId = shortcut.siteId,
@@ -1152,15 +1286,22 @@ private fun EditShortcutDialog(
     initialName: String,
     initialUrl: String,
     initialColor: Color,
+    initialShapeName: String? = null,
     onDismiss: () -> Unit,
     onSave: (PetalShortcut) -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
     var nameText by remember(initialName) { mutableStateOf(initialName) }
     var urlText by remember(initialUrl) { mutableStateOf(initialUrl) }
+    var selectedShapeName by remember(initialShapeName) { mutableStateOf(initialShapeName ?: "Flower") }
 
     val currentFaviconUrl = remember(urlText) { getFaviconUrl(urlText) }
     var isImageError by remember(urlText) { mutableStateOf(false) }
+
+    val previewTileShape = remember(selectedShapeName) {
+        val matched = PetalMaterialShapes.allShapes.find { it.name.equals(selectedShapeName, ignoreCase = true) }
+        matched?.toShape() ?: PetalMaterialShapes.Flower.toShape()
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1189,9 +1330,50 @@ private fun EditShortcutDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Live Preview with automatic thumbnail showcasing Material 3 Expressive shapes
-                val previewTileShape = remember { homeShortcutShape(0) }
+                Text(
+                    text = "Material 3 Expressive Shape",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
+                // Shape selector horizontal carousel
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    PetalMaterialShapes.homescreenShapes.forEach { shapeHolder ->
+                        val isSelected = shapeHolder.name.equals(selectedShapeName, ignoreCase = true)
+                        val shape = shapeHolder.toShape()
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(shape)
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceContainerHighest
+                                )
+                                .border(
+                                    width = if (isSelected) 2.dp else 0.5.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = shape
+                                )
+                                .clickable {
+                                    selectedShapeName = shapeHolder.name
+                                }
+                        ) {
+                            Text(
+                                text = shapeHolder.name.take(1),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                // Live Preview with 0-padding full-bleed expressive shape
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1206,7 +1388,7 @@ private fun EditShortcutDialog(
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(54.dp)
                             .shadow(elevation = 2.dp, shape = previewTileShape)
                             .clip(previewTileShape)
                             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
@@ -1217,13 +1399,14 @@ private fun EditShortcutDialog(
                             )
                     ) {
                         if (!currentFaviconUrl.isNullOrEmpty() && !isImageError) {
+                            // 0-padding full bleed
                             AsyncImage(
                                 model = currentFaviconUrl,
                                 contentDescription = nameText,
                                 contentScale = ContentScale.Crop,
                                 onError = { isImageError = true },
                                 modifier = Modifier
-                                    .size(34.dp)
+                                    .fillMaxSize()
                                     .clip(previewTileShape)
                             )
                         } else {
@@ -1235,7 +1418,7 @@ private fun EditShortcutDialog(
                         }
                     }
                     Column {
-                        Text("Live Preview", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                        Text("Live Preview (${selectedShapeName})", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                         Text(
                             nameText.ifBlank { "Shortcut" },
                             style = MaterialTheme.typography.bodyMedium,
@@ -1282,7 +1465,8 @@ private fun EditShortcutDialog(
                             label = derivedName,
                             url = finalUrl,
                             siteId = siteId,
-                            containerColor = initialColor
+                            containerColor = initialColor,
+                            shapeName = selectedShapeName
                         )
                     )
                 }
