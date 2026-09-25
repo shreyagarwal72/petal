@@ -433,6 +433,9 @@ class PetalGeckoView @JvmOverloads constructor(
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateUrlAndTitle(context, tabId, url, currentTitle)
                 }
+                if (!isIncognito) {
+                    com.petal.browser.browser.PetalPlacesStorage.recordVisit(context, url, currentTitle)
+                }
 
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
