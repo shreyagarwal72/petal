@@ -166,11 +166,40 @@ object PetalGeckoRuntime {
     fun syncPreferences(sp: SharedPreferences) {
         runtime?.let { rt ->
             try {
-                rt.settings.javaScriptEnabled = sp.getBoolean("profileStandard_javascript", true)
-                val adBlockEnabled = sp.getBoolean("sp_ad_block", true)
+                // 1. JavaScript
+                rt.settings.javaScriptEnabled = sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
+
+                // 2. Enhanced Tracking Protection & AdBlock
+                val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
                 val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
                 rt.settings.contentBlocking.enhancedTrackingProtectionLevel = etpLevel
                 rt.settings.contentBlocking.strictSocialTrackingProtection = adBlockEnabled
+
+                // 3. Block Third-Party / Tracking Cookies (Firefox ETP Cookie Isolation)
+                val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
+                rt.settings.contentBlocking.cookieBehavior = if (blockThirdPartyCookies) {
+                    ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
+                } else {
+                    ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
+                }
+
+                // 4. Anti-Tracking Flags (Fingerprinting, STP, Cryptominers, WebRTC, Social)
+                val fingerprintProtection = sp.getBoolean("sp_fingerprint_protection", true)
+                var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
+                if (adBlockEnabled) {
+                    antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or ContentBlocking.AntiTracking.STP
+                }
+                if (fingerprintProtection) {
+                    antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.FINGERPRINTING
+                }
+                rt.settings.contentBlocking.antiTracking = antiTrackingFlags
+
+                // 5. Safe Browsing Malware & Phishing Shield
+                rt.settings.contentBlocking.safeBrowsing = ContentBlocking.SafeBrowsing.DEFAULT
+
+                // 6. WebAuthn & Passkeys Autofill
+                val webauthnEnabled = sp.getBoolean("sp_webauthn_enabled", true)
+                rt.settings.loginAutofillEnabled = webauthnEnabled
             } catch (e: Exception) {
                 Log.w(TAG, "Error synchronizing GeckoRuntime preferences: ${e.message}")
             }

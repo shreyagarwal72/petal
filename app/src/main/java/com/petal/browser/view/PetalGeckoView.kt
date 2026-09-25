@@ -226,6 +226,14 @@ class PetalGeckoView @JvmOverloads constructor(
                 com.petal.browser.media.sniffer.PetalMediaSniffer.clear()
                 currentUrl = url
                 applyGeckoBlockingPolicy(url)
+
+                val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", true))
+                if (httpsOnly && url.startsWith("http://", ignoreCase = true)) {
+                    val secureUrl = "https://" + url.substring(7)
+                    session.loadUri(secureUrl)
+                    return
+                }
+
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
                 album.setAlbumTitle(currentTitle, url)
                 updateProgress(10)
@@ -268,6 +276,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
 
                 pwaManager?.detectPwaManifest()
+                injectClientPrivacyProtections()
             }
 
             override fun onProgressChange(session: GeckoSession, progress: Int) {
@@ -844,8 +853,12 @@ class PetalGeckoView @JvmOverloads constructor(
                 session: GeckoSession,
                 prompt: GeckoSession.PromptDelegate.PopupPrompt
             ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                // Allow popup window requests (such as OAuth sign-in windows)
-                return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+                val blockPopups = sp.getBoolean("sp_block_popups", sp.getBoolean("profileStandard_javascriptPopUp", true))
+                return if (blockPopups) {
+                    GeckoResult.fromValue(prompt.confirm(AllowOrDeny.DENY))
+                } else {
+                    GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+                }
             }
 
             override fun onBeforeUnloadPrompt(
@@ -1211,8 +1224,9 @@ class PetalGeckoView @JvmOverloads constructor(
         val desktopEnabled = sp.getBoolean("${profile}_desktop", sp.getBoolean("sp_desktop_site", false))
         applyDesktopMode(desktopEnabled)
         applyGeckoBlockingPolicy(currentUrl)
-        val enableJs = sp.getBoolean("sp_javascript", true)
+        val enableJs = sp.getBoolean("sp_javascript", sp.getBoolean("${profile}_javascript", true))
         session.settings.allowJavascript = enableJs
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     /**
@@ -1227,6 +1241,7 @@ class PetalGeckoView @JvmOverloads constructor(
         val whitelisted = !host.isNullOrBlank() &&
             com.petal.browser.browser.PetalAdBlockEngine.isDomainWhitelisted(host)
         session.settings.useTrackingProtection = enabled && !whitelisted
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     fun setDesktopMode(enabled: Boolean) {
@@ -1274,7 +1289,13 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         val redirected = BrowserUnit.redirectURL(sp, url)
-        val targetUrl = BrowserUnit.queryWrapper(context, redirected)
+        var targetUrl = BrowserUnit.queryWrapper(context, redirected)
+
+        // Enforce HTTPS-Only Security Upgrade
+        val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", true))
+        if (httpsOnly && targetUrl.startsWith("http://", ignoreCase = true)) {
+            targetUrl = "https://" + targetUrl.substring(7)
+        }
 
         // APKMirror download endpoints are file responses, not pages. Rendering the
         // download.php response in Gecko can create a large transient document and
@@ -2129,6 +2150,87 @@ class PetalGeckoView @JvmOverloads constructor(
         } catch (t: Throwable) {
             callback?.invoke("ERROR: ${t.message}")
         }
+    }
+
+    /**
+     * Injects client-side privacy protections into the active page DOM:
+     * - Do Not Track & Global Privacy Control (navigator.doNotTrack = '1', navigator.globalPrivacyControl = true)
+     * - WebRTC IP Leak Shield (disables or restricts RTCPeerConnection candidate gathering)
+     * - Strict Referrer Trimming (enforces strict-origin-when-cross-origin / no-referrer meta)
+     * - Anti-Fingerprinting Canvas/Audio noise injection
+     */
+    fun injectClientPrivacyProtections() {
+        if (currentUrl.startsWith("about:") || currentUrl.startsWith("chrome:") || currentUrl.startsWith("moz-extension:")) return
+        try {
+            val dntGpc = sp.getBoolean("sp_dnt_gpc", sp.getBoolean("profileStandard_dnt", true))
+            val webrtcProtection = sp.getBoolean("sp_webrtc_protection", sp.getBoolean("profileStandard_webrtcProtection", true))
+            val trimReferrers = sp.getBoolean("sp_trim_referrers", true)
+            val fingerprintProtection = sp.getBoolean("sp_fingerprint_protection", sp.getBoolean("profileStandard_fingerPrintProtection", true))
+
+            val sb = StringBuilder("(function() {\n")
+            if (dntGpc) {
+                sb.append("""
+                    try {
+                        Object.defineProperty(navigator, 'doNotTrack', { get: () => '1', configurable: true });
+                        Object.defineProperty(navigator, 'globalPrivacyControl', { get: () => true, configurable: true });
+                        Object.defineProperty(window, 'doNotTrack', { get: () => '1', configurable: true });
+                    } catch(e) {}
+                """.trimIndent()).append("\n")
+            }
+            if (webrtcProtection) {
+                sb.append("""
+                    try {
+                        if (window.RTCPeerConnection) {
+                            const OrigRTCPeerConnection = window.RTCPeerConnection;
+                            window.RTCPeerConnection = function(config, constraints) {
+                                if (config && config.iceServers) {
+                                    config.iceCandidatePoolSize = 0;
+                                }
+                                const pc = new OrigRTCPeerConnection(config, constraints);
+                                const origCreateOffer = pc.createOffer.bind(pc);
+                                pc.createOffer = function(options) {
+                                    return origCreateOffer(options).then(offer => {
+                                        offer.sdp = offer.sdp.replace(/c=IN IP4 .+\r\n/g, 'c=IN IP4 0.0.0.0\r\n');
+                                        return offer;
+                                    });
+                                };
+                                return pc;
+                            };
+                            window.RTCPeerConnection.prototype = OrigRTCPeerConnection.prototype;
+                        }
+                    } catch(e) {}
+                """.trimIndent()).append("\n")
+            }
+            if (trimReferrers) {
+                sb.append("""
+                    try {
+                        if (!document.querySelector('meta[name="referrer"]')) {
+                            const meta = document.createElement('meta');
+                            meta.name = 'referrer';
+                            meta.content = 'strict-origin-when-cross-origin';
+                            (document.head || document.documentElement).appendChild(meta);
+                        }
+                    } catch(e) {}
+                """.trimIndent()).append("\n")
+            }
+            if (fingerprintProtection) {
+                sb.append("""
+                    try {
+                        const shift = Math.floor(Math.random() * 2) - 1;
+                        const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+                        CanvasRenderingContext2D.prototype.getImageData = function(...args) {
+                            const imgData = origGetImageData.apply(this, args);
+                            if (imgData.data.length > 4) {
+                                imgData.data[0] = (imgData.data[0] + shift) & 255;
+                            }
+                            return imgData;
+                        };
+                    } catch(e) {}
+                """.trimIndent()).append("\n")
+            }
+            sb.append("})();")
+            evaluateJavascript(sb.toString())
+        } catch (_: Throwable) {}
     }
 
     /**

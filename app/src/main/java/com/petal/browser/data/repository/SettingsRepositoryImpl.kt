@@ -459,49 +459,59 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setAdBlockEnabled(enabled: Boolean) {
         sp.edit().putBoolean("sp_ad_block", enabled)
             .putBoolean("profileStandard_adBlock", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setBlockThirdPartyCookies(enabled: Boolean) {
         sp.edit().putBoolean("sp_block_third_party_cookies", enabled)
             .putBoolean("profileStandard_cookiesThirdParty", !enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setFingerprintProtection(enabled: Boolean) {
         sp.edit().putBoolean("sp_fingerprint_protection", enabled)
             .putBoolean("profileStandard_fingerPrintProtection", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setWebrtcProtection(enabled: Boolean) {
         sp.edit().putBoolean("sp_webrtc_protection", enabled)
             .putBoolean("profileStandard_webrtcProtection", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setDntGpc(enabled: Boolean) {
         sp.edit().putBoolean("sp_dnt_gpc", enabled)
             .putBoolean("profileStandard_dnt", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setTrimReferrers(enabled: Boolean) {
         sp.edit().putBoolean("sp_trim_referrers", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setWebauthnEnabled(enabled: Boolean) {
         sp.edit().putBoolean("sp_webauthn_enabled", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setHttpsOnly(enabled: Boolean) {
         sp.edit().putBoolean("sp_https_only", enabled)
             .putBoolean("profileStandard_httpsOnly", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setJavaScriptEnabled(enabled: Boolean) {
         sp.edit().putBoolean("sp_javascript", enabled)
             .putBoolean("profileStandard_javascript", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setBlockPopups(enabled: Boolean) {
         sp.edit().putBoolean("sp_block_popups", enabled)
             .putBoolean("profileStandard_javascriptPopUp", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setOpenRedirectsInBackground(enabled: Boolean) {
