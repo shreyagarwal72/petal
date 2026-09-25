@@ -13,7 +13,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -36,8 +40,8 @@ object PetalQuickToolsBridge {
     fun showQuickTools(activity: BrowserActivity) {
         val currentController = activity.currentAlbumController
         val geckoView = currentController as? PetalGeckoView
-        val currentUrl = geckoView?.url ?: activity.currentUrl ?: ""
-        val currentTitle = geckoView?.title ?: ""
+        val currentUrl = geckoView?.url ?: currentController?.url ?: ""
+        val currentTitle = geckoView?.title ?: currentController?.title ?: ""
 
         val decor = activity.window.decorView as? ViewGroup ?: return
 
@@ -119,7 +123,7 @@ object PetalQuickToolsBridge {
             }
 
             QuickToolId.SAVE_PDF -> {
-                activity.print()
+                activity.createWebPrintJob(null)
             }
 
             QuickToolId.NETWORK -> {
@@ -130,7 +134,7 @@ object PetalQuickToolsBridge {
                 if (currentUrl.isNotEmpty() && !currentUrl.startsWith("about:")) {
                     try {
                         val pwa = geckoView?.getPwaManager() ?: PetalPwaManager(activity, geckoView, null)
-                        pwa.installPwa()
+                        pwa.installCurrentPwa(activity)
                     } catch (e: Exception) {
                         PetalToast.show(activity, "PWA shortcut pinned")
                     }
@@ -413,19 +417,19 @@ object PetalQuickToolsBridge {
                         PetalImageGrabberSheet(
                             images = images,
                             onDownloadImage = { imgUrl ->
-                                com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueue(
+                                com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
                                     context = activity,
                                     url = imgUrl,
-                                    suggestedFilename = imgUrl.substringAfterLast("/").substringBefore("?").ifEmpty { "image.jpg" }
+                                    fileName = imgUrl.substringAfterLast("/").substringBefore("?").ifEmpty { "image.jpg" }
                                 )
                                 PetalToast.show(activity, "Downloading image...")
                             },
                             onDownloadAll = {
                                 images.forEach { imgUrl ->
-                                    com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueue(
+                                    com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
                                         context = activity,
                                         url = imgUrl,
-                                        suggestedFilename = imgUrl.substringAfterLast("/").substringBefore("?").ifEmpty { "image.jpg" }
+                                        fileName = imgUrl.substringAfterLast("/").substringBefore("?").ifEmpty { "image.jpg" }
                                     )
                                 }
                                 PetalToast.show(activity, "Downloading ${images.size} images...")

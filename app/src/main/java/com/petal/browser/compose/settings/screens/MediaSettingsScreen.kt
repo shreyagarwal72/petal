@@ -13,6 +13,7 @@ package com.petal.browser.compose.settings.screens
 import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

@@ -1518,6 +1518,21 @@ class PetalGeckoView @JvmOverloads constructor(
         session.finder.find(null, flags)
     }
 
+    fun setUserAgent(customUserAgent: String?) {
+        try {
+            if (customUserAgent != null && customUserAgent.isNotBlank()) {
+                session.settings.userAgentMode = GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+                session.settings.userAgentOverride = customUserAgent
+            } else {
+                session.settings.userAgentOverride = null
+                val desktopEnabled = sp.getBoolean("sp_desktop", false)
+                applyDesktopMode(desktopEnabled)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     /**
      * Toggles Firefox Reader Mode for the active page if available.
      */
