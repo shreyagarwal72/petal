@@ -11,7 +11,7 @@ import mozilla.components.concept.engine.webextension.WebExtension
  * WebExtension operations for Petal Browser.
  *
  * Provides standard, unified methods to install, uninstall, enable, disable,
- * and list WebExtensions (e.g. Dark Reader, Bitwarden, uBlock Origin).
+ * set incognito permission, and list WebExtensions.
  */
 object PetalAddonManager {
 
@@ -118,6 +118,27 @@ object PetalAddonManager {
             onSuccess = onSuccess,
             onError = { _, e ->
                 Log.e(TAG, "Failed to disable extension: ${extension.id}", e)
+                onError(e)
+            }
+        )
+    }
+
+    /**
+     * Sets whether an extension is allowed to run in private (Incognito) browsing mode.
+     */
+    fun setAllowedInPrivateBrowsing(
+        engine: GeckoEngine,
+        extension: WebExtension,
+        allowed: Boolean,
+        onSuccess: () -> Unit = {},
+        onError: (Throwable) -> Unit = {}
+    ) {
+        engine.setAllowedInPrivateBrowsing(
+            extension = extension,
+            allowed = allowed,
+            onSuccess = onSuccess,
+            onError = { _, e ->
+                Log.e(TAG, "Failed to update private browsing access for ${extension.id}", e)
                 onError(e)
             }
         )
