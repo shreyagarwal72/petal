@@ -2,114 +2,151 @@
 
 <div align="center">
 
-  <img src="https://github.com/shreyagarwal72/petal_browser/blob/main/graphics/icon.png" width="128" height="128" alt="Petal Browser App Icon" style="border-radius: 28px;" />
+  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="128" height="128" alt="Petal Browser App Icon" style="border-radius: 28px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);" />
 
   <h2>Petal Browser</h2>
 
-  <p><strong>Fast, Ultra-Lightweight & Privacy-Focused Android Web Browser built with Jetpack Compose & Material 3 Expressive Design</strong></p>
+  <p><strong>Fast, Modern, Privacy-First Android Browser powered by Mozilla GeckoView &amp; Jetpack Compose Material 3 Expressive Design</strong></p>
 
-  [![Latest Release](https://img.shields.io/github/v/release/shreyagarwal72/petal?color=0075ff&style=for-the-badge)](https://github.com/shreyagarwal72/petal/releases/latest)
-  [![Build Status](https://img.shields.io/github/actions/workflow/status/shreyagarwal72/petal/android_build.yml?branch=main&style=for-the-badge)](https://github.com/shreyagarwal72/petal/actions/workflows/android_build.yml)
-  [![Telegram Channel](https://img.shields.io/badge/Telegram-Champion%20Workspace-blue?style=for-the-badge&logo=telegram)](https://t.me/championworkspace)
-  [![License](https://img.shields.io/github/license/shreyagarwal72/petal?color=purple&style=for-the-badge)](LICENSE.md)
+  <p>
+    <a href="https://play.google.com/store/apps/details?id=com.petal.browser" target="_blank">
+      <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="58" alt="Get it on Google Play" />
+    </a>
+    <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank">
+      <img src="https://img.shields.io/badge/Get%20App%20Here-Direct%20APK%20Download-0075ff?style=for-the-badge&logo=android&logoColor=white" height="42" alt="Get App Here (Direct APK)" />
+    </a>
+  </p>
 
-  [![Sponsor Petal](https://img.shields.io/badge/Sponsor%20Petal-GitHub%20Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/shreyagarwal72)
+  <p>
+    <a href="https://github.com/shreyagarwal72/petal/releases/latest"><img src="https://img.shields.io/github/v/release/shreyagarwal72/petal?color=0075ff&style=for-the-badge&logo=github" alt="Latest Release" /></a>
+    <a href="https://github.com/shreyagarwal72/petal/actions/workflows/android_build.yml"><img src="https://img.shields.io/github/actions/workflow/status/shreyagarwal72/petal/android_build.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white" alt="Build Status" /></a>
+    <a href="https://t.me/championworkspace"><img src="https://img.shields.io/badge/Telegram-Champion%20Workspace-0088cc?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Channel" /></a>
+    <a href="LICENSE.md"><img src="https://img.shields.io/github/license/shreyagarwal72/petal?color=7952b3&style=for-the-badge" alt="License" /></a>
+    <a href="https://github.com/sponsors/shreyagarwal72"><img src="https://img.shields.io/badge/Sponsor%20Petal-GitHub%20Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Sponsor" /></a>
+  </p>
 
 </div>
 
 ---
 
-## 🌟 At a Glance
+## 🚀 Download & Installation
 
-| 🎨 **Design System** | ⚡ **Performance** | 🛡️ **Privacy & Security** | 🤖 **AI & Intelligence** |
-| :--- | :--- | :--- | :--- |
-| **Material 3 Expressive** with 35 dynamic polygon shapes | **Hardware-accelerated** WebKit rendering engine | **Multi-threaded AdBlock** & tracking protection | **Petal AI Hub** supporting Gemini, Grok, GPT & Claude |
-| **Living background mesh** with dynamic palette theming | **Staggered spring animations** & fluid gesture physics | **Zero telemetry**, zero analytics, 100% private | **AI Search & Research**, smart summaries & page Q&A |
-| **Predictive Back** dual-surface depth blur | **Low RAM consumption** with instant tab switching | **Granular site permissions** & secure cookie isolation | **Integrated Download Manager** with background fetch |
+Choose your preferred installation method:
+
+<div align="center">
+
+| Platform | Channel | Link |
+| :--- | :--- | :--- |
+| **Google Play Store** | Official Store Release | [![Get it on Google Play](https://img.shields.io/badge/Google_Play-414141?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.petal.browser) |
+| **GitHub Releases** | Direct Universal / ABI APKs | [![Download APK](https://img.shields.io/badge/Get_App_Here-Direct_APK-0075ff?style=for-the-badge&logo=android&logoColor=white)](https://github.com/shreyagarwal72/petal/releases/latest) |
+| **Telegram Channel** | Direct Updates & Beta Builds | [![Telegram](https://img.shields.io/badge/Telegram-Beta_Channel-0088cc?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/championworkspace) |
+
+</div>
 
 ---
 
-## ✨ Key Features & Highlights
+## 🌟 Comprehensive Architecture & Feature Audit
+
+Petal Browser combines Mozilla GeckoView with a reactive UI built in Jetpack Compose and Material 3 Expressive Design.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Petal Browser Architecture                        │
+├──────────────────────────────────────┬──────────────────────────────────────┤
+│          UI & Interaction Layer      │          Engine & Storage Layer      │
+├──────────────────────────────────────┼──────────────────────────────────────┤
+│ • Jetpack Compose M3 Expressive      │ • Mozilla GeckoView 155.0.1 Engine   │
+│ • 35 Dynamic Polygon Geometric Shapes│ • Firefox Android Components Stack   │
+│ • Predictive Back & Depth Blur       │ • Strict Firefox Tab Thumbnail Cache │
+│ • Dual Living Variable Backdrops     │ • Multi-threaded uAssets & HaGeZi AdB│
+│ • Compose Multi-Engine Omnibox       │ • yt-dlp & Fetch2 Background Engine  │
+│ • Inbuilt WebExtensions Manager      │ • Passkey, WebAuthn & Biometric Lock │
+└──────────────────────────────────────┴──────────────────────────────────────┘
+```
+
+---
+
+## ✨ Key Capabilities & Highlights
+
+### 🦊 Mozilla GeckoView 155 Engine & Full Web Standards
+- **Real Desktop & Mobile Web Rendering**: Powered by modern Mozilla GeckoView (v155 release channel) and Mozilla Android Components (`browser-engine-gecko`, `concept-engine`, `browser-session-storage`).
+- **Complete Extension Ecosystem**: Supports Firefox Add-ons as well as Petal Inbuilt Builtin Extensions (MediaGrabber, Universal Copy, AI Blocker, Clean Link, Dark Webpages, Petal Translate, and Google Search Fixer).
+- **Standards-Compliant Progressive Web Apps (PWA)**: Recreated Web App installation workflow matching Firefox with live icon preview, manifest parsing, and standalone home-screen launch.
+
+### 🖼️ Tab Thumbnail Cache System (Firefox Parity)
+- **Multi-Tiered LRU Storage**: Sized dynamically to application RAM limits (8MB - 48MB) with aspect-ratio preserving downscaling.
+- **Strict Private Browsing Isolation**: Incognito/private thumbnails are maintained strictly in volatile RAM and **never written to disk storage**, purged instantly upon session close.
+- **Zero-Leak Eviction**: Multi-identifier eviction (`tabId`, `hashCode`, URL) guarantees closed tabs leave zero footprint in memory or disk.
+- **Async Non-Blocking I/O**: Multi-threaded disk cache persistence with stale write cancellation prevents UI thread stutters during tab switcher scrolling.
 
 ### 🎨 Material 3 Expressive Design & Fluid Motion
-- **35 Material 3 Expressive Shapes**: Every shortcut icon, search pill, and floating component renders with distinct dynamic polygon geometry (squircle, petal, diamond, flower, pill, and more).
+- **35 Material 3 Expressive Shapes**: Every card, search pill, button, and shortcut renders with dynamic polygon geometry (squircle, petal, diamond, flower, cookie, and pill).
 - **Living Variable Background**: Dynamic procedural ambient backdrop responding smoothly to daylight and palette shifts.
 - **Predictive Back & Depth Blur Physics**: Smooth back gesture with real-time GPU background scaling and dual-surface depth blur.
 - **Dynamic Theming & AMOLED Pure Black**: Full support for Android 12+ wallpaper dynamic color extraction, tonal palettes, and true AMOLED `#000000` pitch black mode.
-- **GS Flex & Expressive Typography**: Customizable variable font system with real-time preview and instant layout switching.
+- **Expressive Typography**: Dynamic variable font scaling with real-time preview and instant layout switching.
 
-### 🌐 Smart Omnibox & Browsing Experience
-- **Chrome & Edge Style Omnibox**: Responsive address bar featuring security lock indicators, instant domain breakdown, and fast site settings.
-- **Scroll-Linked Collapse**: Auto-collapsing address bar with floating action bubble (`fab_bubble`) and spring physics.
-- **60fps Tab Grid Switcher**: 2-column live tab grid with swipe-to-dismiss, instant thumbnail caching, and incognito tab segregation.
-- **Custom Shortcut Manager**: Pin and customize your favorite web shortcuts with color palettes, custom icons, and auto-visited recommendations.
+### 🛡️ Privacy, Content Filtering & Security Settings
+- **Multi-Tier Tracking Protection**: Native GeckoView tracking protection with strict cookie sandboxing and fingerprinting defenses.
+- **Integrated Content Filtering**: Built-in EasyList, EasyPrivacy, HaGeZi Multi PRO, and uAssets cosmetic and network blocking rules.
+- **Hardware Biometric Lock**: Secure tab locker and app lock powered by AndroidX Biometric and Keystore encryption.
+- **Zero Telemetry**: No background tracking, analytical SDKs, or third-party behavioral profiling.
 
-### 🤖 Petal AI Hub & Smart Assistant
-- **Universal Multi-Model Integration**: Connect your own API keys for **Google Gemini**, **Groq**, **OpenAI**, **xAI Grok**, or **OpenRouter**.
+### 📥 High-Speed Resumable Download Manager & Social Downloader
+- **Multi-Threaded Resumable Engine**: Built on Fetch2 and OkHttp with chunked downloads, pause, resume, speed indicators, and background fetch services.
+- **Active Download Lifecycle Management**: Instant cancellation and notification removal upon deletion, with stale download filtering and auto-retry on reconnect.
+- **Social Downloader Support**: Built-in media extraction powered by `youtubedl-android` (yt-dlp, FFmpeg, aria2c) for video, audio, and media grabber workflows.
+
+### 🤖 Petal AI Hub
+- **Multi-Model Integration**: Connect your own API keys for **Google Gemini**, **Grok (xAI)**, **OpenAI**, **Anthropic Claude**, or **Groq / OpenRouter**.
 - **Page Summaries & Deep Research**: Summarize complex web pages or run in-depth research queries with citations in a single tap.
-- **Contextual AI Actions**: Select any text on a page to translate, explain, rephrase, or query AI without leaving your tab.
-
-### 🛡️ Uncompromising Privacy & Content Protection
-- **Multi-Threaded Ad & Tracker Shield**: Fast asynchronous domain filtering engine with customizable hostlists.
-- **Zero Telemetry Guarantee**: No background metrics, user tracking, advertising SDKs, or server analytics.
-- **Multi-Engine Search Selector**: Instant switching between DuckDuckGo, Brave, Startpage, SearXNG, Google, Bing, Qwant, and Ecosia.
-- **Granular Site Controls**: Instant toggling of JavaScript, cookies, location permissions, images, and desktop mode per tab.
-
-### ⚡ Power Tools & Integrations
-- **Resumable Download Manager**: Multi-threaded background file download engine with pause, resume, real-time speed monitoring, and auto-categorization.
-- **Chrome Account & Cloud Sync**: Profile avatar integration with secure sync preference state management.
-- **Dedicated Open Source Credits**: Built-in attribution hub honoring upstream projects, frameworks, and contributing developers.
-- **Termux & Android Power User Ready**: Optimized build workflow and lightweight footprint designed for both standard Android and power-user environments.
+- **Contextual In-Page Actions**: Select text on any webpage to translate, explain, rephrase, or query AI assistants instantly.
 
 ---
 
-## 🛠️ Architecture & Tech Stack
+## 📊 Technical Specifications
 
-```mermaid
-graph TD
-    A[Petal Browser Core] --> B[Jetpack Compose M3 Expressive UI]
-    A --> C[Mozilla GeckoView Engine]
-    A --> D[Fetch2 Download Pipeline]
-    A --> E[Petal AI Hub]
-    B --> F[Predictive Back Surface & Blur]
-    B --> G[35 Dynamic M3 Shapes]
-    C --> H[Firefox Tracking Protection & AdBlock]
-    E --> I[Gemini / Grok / OpenAI / Groq]
-```
-
-- **Languages**: Kotlin 2.0+ & Java 17
-- **UI Toolkit**: Jetpack Compose (BOM 2026.06.01) with Material 3 Expressive (`1.5.0-alpha17`)
-- **Image Pipeline**: Coil Kotlin Coroutines
-- **Download Engine**: Fetch2 Multi-threaded Downloader
-- **Minimum OS**: Android 8.0 (API 26)
-- **Target OS**: Android 15 (API 35)
-- **Build System**: Gradle 8.11+ with Android Gradle Plugin 8.7+
+| Component | Specification |
+| :--- | :--- |
+| **Target Android OS** | Android 15 & 16 Ready (API 35/36) |
+| **Minimum Android OS** | Android 8.0 Oreo (API 26) |
+| **Web Rendering Engine** | Mozilla GeckoView 155.0.1 Release Channel |
+| **UI Framework** | Jetpack Compose BOM 2026.06.01 / Material 3 Expressive 1.5.0 |
+| **Languages** | Kotlin 2.0+ & Java 17 |
+| **Architecture** | MVVM + Clean Architecture + Dagger Hilt 2.58 |
+| **Image Loading** | Coil 2.7.0 (Kotlin Coroutines) |
+| **Download Stack** | Fetch2 3.4.1 + OkHttp 4.12.0 + youtubedl-android 0.18.1 |
+| **ABI Support** | `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64` (Universal APK included) |
 
 ---
 
-## 💻 Build & Install
+## 🛠️ Building From Source
 
-To build the debug APK locally:
+To build the APK locally:
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/shreyagarwal72/petal.git
 cd petal
 
-# Compile debug build
+# 2. Build the Debug APK
 ./gradlew assembleDebug
+
+# 3. Locate the output APK at:
+# app/build/outputs/apk/debug/app-debug.apk
 ```
 
-The APK will be generated at:
-```
-app/build/outputs/apk/debug/app-debug.apk
+To assemble a universal release APK:
+```bash
+./gradlew assembleRelease
 ```
 
 ---
 
-## 💖 Open Source Credits & Upstream Projects
+## 💖 Upstream Projects & Open Source Credits
 
-Petal Browser is built on the shoulders of giants. We express our deepest gratitude to:
+Petal Browser is open-source software built on top of incredible community foundations:
+
 - **[Mozilla Firefox & GeckoView](https://github.com/mozilla-mobile/firefox-android)** by *Mozilla* — Advanced GeckoView rendering engine, WebExtensions architecture, and Android Components.
 - **[Zenith](https://github.com/1372Slash/Zenith)** by *1372Slash* — Material Design 3 Expressive motion physics & digital wellbeing framework.
 - **[LastWave](https://github.com/duxtami/LastWave-native)** by *duxtami* — Hi-Res lossless audio streaming architecture & Material 3 design.
@@ -125,5 +162,5 @@ Petal Browser is built on the shoulders of giants. We express our deepest gratit
 
 ## 📜 License
 
-Licensed under the **[GNU General Public License v3.0 (GPL-3.0)](LICENSE.md)**.
+Licensed under the **[GNU General Public License v3.0 (GPL-3.0)](LICENSE.md)**.  
 Free and Open Source Software. You are welcome to redistribute and modify it under the terms of the GPL-3.0.
