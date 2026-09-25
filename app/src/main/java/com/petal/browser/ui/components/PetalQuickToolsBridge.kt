@@ -4,6 +4,9 @@
  * Quick Tools Bridge: coordinates UI bottom sheets, script injections, and
  * tool actions for Petal Browser matching Omni Browser reference.
  *
+ * Uses com.google.android.material.bottomsheet.BottomSheetDialog to guarantee
+ * clean window management, prevent decorView pollution, and eliminate activity freezes.
+ *
  * Copyright (c) 2026 Petal Browser
  */
 
@@ -22,13 +25,18 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.lens.PetalScannerActivity
 import com.petal.browser.pwa.PetalPwaManager
 import com.petal.browser.tools.PetalDevConsoleSheet
+import com.petal.browser.ui.theme.AppFont
+import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.view.PetalGeckoView
 import com.petal.browser.view.PetalToast
@@ -43,30 +51,62 @@ object PetalQuickToolsBridge {
         val currentUrl = geckoView?.url ?: currentController?.url ?: ""
         val currentTitle = geckoView?.title ?: currentController?.title ?: ""
 
-        val decor = activity.window.decorView as? ViewGroup ?: return
+        try {
+            val dialog = BottomSheetDialog(activity)
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            dialog.setCancelable(true)
+            dialog.setCanceledOnTouchOutside(true)
+            dialog.window?.let { win ->
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
+                win.statusBarColor = android.graphics.Color.TRANSPARENT
+                win.navigationBarColor = android.graphics.Color.TRANSPARENT
+            }
 
-        var composeView: ComposeView? = null
-        composeView = ComposeView(activity).apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeViewModelStoreOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                PetalExpressiveTheme {
-                    PetalQuickToolsSheet(
-                        currentPageUrl = currentUrl,
-                        currentPageTitle = currentTitle,
-                        onToolClicked = { tool ->
-                            handleToolClick(activity, geckoView, currentUrl, currentTitle, tool)
-                        },
-                        onDismissRequest = {
-                            decor.removeView(composeView)
-                        }
-                    )
+            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+            val composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
+                setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+                setContent {
+                    val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                    val isAmoled = sp.getBoolean("sp_amoled", false)
+                    val appFont = remember(fontName) { AppFont.fromName(fontName) }
+                    val colorStyle = remember(styleName) {
+                        try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
+                    }
+
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = appFont,
+                        colorStyle = colorStyle,
+                        paletteId = paletteId
+                    ) {
+                        PetalQuickToolsSheet(
+                            currentPageUrl = currentUrl,
+                            currentPageTitle = currentTitle,
+                            onToolClicked = { tool ->
+                                try { dialog.dismiss() } catch (_: Exception) {}
+                                handleToolClick(activity, geckoView, currentUrl, currentTitle, tool)
+                            },
+                            onDismissRequest = {
+                                try { dialog.dismiss() } catch (_: Exception) {}
+                            }
+                        )
+                    }
                 }
             }
+
+            dialog.setContentView(composeView)
+            dialog.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        decor.addView(composeView)
     }
 
     private fun handleToolClick(
@@ -315,60 +355,124 @@ object PetalQuickToolsBridge {
     }
 
     private fun showSiteStyle(activity: BrowserActivity, geckoView: PetalGeckoView?) {
-        val decor = activity.window.decorView as? ViewGroup ?: return
-        var view: ComposeView? = null
-        view = ComposeView(activity).apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeViewModelStoreOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setContent {
-                var activePreset by remember { mutableStateOf(SiteStylePreset.DEFAULT) }
-                PetalExpressiveTheme {
-                    PetalSiteStyleSheet(
-                        activePreset = activePreset,
-                        onSelectPreset = { preset ->
-                            activePreset = preset
-                            if (preset.css.isNotEmpty()) {
-                                geckoView?.evaluateJavascript("""
-                                    (function() {
-                                        var style = document.getElementById('__petal_site_style');
-                                        if (!style) {
-                                            style = document.createElement('style');
-                                            style.id = '__petal_site_style';
-                                            document.head.appendChild(style);
-                                        }
-                                        style.innerHTML = `${preset.css}`;
-                                    })()
-                                """.trimIndent())
-                            } else {
-                                geckoView?.evaluateJavascript("var s = document.getElementById('__petal_site_style'); if (s) s.remove();")
-                            }
+        try {
+            val dialog = BottomSheetDialog(activity)
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            dialog.setCancelable(true)
+            dialog.setCanceledOnTouchOutside(true)
+            dialog.window?.let { win ->
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
+                win.statusBarColor = android.graphics.Color.TRANSPARENT
+                win.navigationBarColor = android.graphics.Color.TRANSPARENT
+            }
+
+            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+            val composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
+                setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+                setContent {
+                    val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                    val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                    var activePreset by remember { mutableStateOf(SiteStylePreset.DEFAULT) }
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = remember(fontName) { AppFont.fromName(fontName) },
+                        colorStyle = remember(styleName) {
+                            try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                         },
-                        onDismissRequest = { decor.removeView(view) }
-                    )
+                        paletteId = paletteId
+                    ) {
+                        PetalSiteStyleSheet(
+                            activePreset = activePreset,
+                            onSelectPreset = { preset ->
+                                activePreset = preset
+                                if (preset.css.isNotEmpty()) {
+                                    geckoView?.evaluateJavascript("""
+                                        (function() {
+                                            var style = document.getElementById('__petal_site_style');
+                                            if (!style) {
+                                                style = document.createElement('style');
+                                                style.id = '__petal_site_style';
+                                                document.head.appendChild(style);
+                                            }
+                                            style.innerHTML = `${preset.css}`;
+                                        })()
+                                    """.trimIndent())
+                                } else {
+                                    geckoView?.evaluateJavascript("var s = document.getElementById('__petal_site_style'); if (s) s.remove();")
+                                }
+                            },
+                            onDismissRequest = {
+                                try { dialog.dismiss() } catch (_: Exception) {}
+                            }
+                        )
+                    }
                 }
             }
+            dialog.setContentView(composeView)
+            dialog.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        decor.addView(view)
     }
 
     private fun showDevNotes(activity: BrowserActivity, domain: String) {
-        val decor = activity.window.decorView as? ViewGroup ?: return
-        var view: ComposeView? = null
-        view = ComposeView(activity).apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeViewModelStoreOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setContent {
-                PetalExpressiveTheme {
-                    PetalDevNotesSheet(
-                        domain = domain,
-                        onDismissRequest = { decor.removeView(view) }
-                    )
+        try {
+            val dialog = BottomSheetDialog(activity)
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            dialog.setCancelable(true)
+            dialog.setCanceledOnTouchOutside(true)
+            dialog.window?.let { win ->
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
+                win.statusBarColor = android.graphics.Color.TRANSPARENT
+                win.navigationBarColor = android.graphics.Color.TRANSPARENT
+            }
+
+            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+            val composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
+                setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+                setContent {
+                    val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                    val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = remember(fontName) { AppFont.fromName(fontName) },
+                        colorStyle = remember(styleName) {
+                            try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
+                        },
+                        paletteId = paletteId
+                    ) {
+                        PetalDevNotesSheet(
+                            domain = domain,
+                            onDismissRequest = {
+                                try { dialog.dismiss() } catch (_: Exception) {}
+                            }
+                        )
+                    }
                 }
             }
+            dialog.setContentView(composeView)
+            dialog.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        decor.addView(view)
     }
 
     private fun showAutoScroll(activity: BrowserActivity, geckoView: PetalGeckoView?) {
@@ -395,7 +499,6 @@ object PetalQuickToolsBridge {
     }
 
     private fun showImageGrabber(activity: BrowserActivity, geckoView: PetalGeckoView?) {
-        val decor = activity.window.decorView as? ViewGroup ?: return
         geckoView?.evaluateJavascript("""
             (function() {
                 var urls = new Set();
@@ -407,40 +510,73 @@ object PetalQuickToolsBridge {
         """.trimIndent()) { result ->
             val type = object : TypeToken<List<String>>() {}.type
             val images: List<String> = try { Gson().fromJson(result, type) } catch (_: Exception) { emptyList() }
-            var view: ComposeView? = null
-            view = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setContent {
-                    PetalExpressiveTheme {
-                        PetalImageGrabberSheet(
-                            images = images,
-                            onDownloadImage = { imgUrl ->
-                                com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
-                                    context = activity,
-                                    url = imgUrl,
-                                    fileName = imgUrl.substringAfterLast("/").substringBefore("?").ifEmpty { "image.jpg" }
-                                )
-                                PetalToast.show(activity, "Downloading image...")
+            try {
+                val dialog = BottomSheetDialog(activity)
+                dialog.behavior.skipCollapsed = true
+                dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                dialog.setCancelable(true)
+                dialog.setCanceledOnTouchOutside(true)
+                dialog.window?.let { win ->
+                    androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
+                    win.statusBarColor = android.graphics.Color.TRANSPARENT
+                    win.navigationBarColor = android.graphics.Color.TRANSPARENT
+                }
+
+                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+                val composeView = ComposeView(activity).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeViewModelStoreOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+                    setContent {
+                        val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                        val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                        val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                        val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                        val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                        PetalExpressiveTheme(
+                            dynamicColor = dynamicColor,
+                            useAmoled = isAmoled,
+                            appFont = remember(fontName) { AppFont.fromName(fontName) },
+                            colorStyle = remember(styleName) {
+                                try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                             },
-                            onDownloadAll = {
-                                images.forEach { imgUrl ->
+                            paletteId = paletteId
+                        ) {
+                            PetalImageGrabberSheet(
+                                images = images,
+                                onDownloadImage = { imgUrl ->
                                     com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
                                         context = activity,
                                         url = imgUrl,
                                         fileName = imgUrl.substringAfterLast("/").substringBefore("?").ifEmpty { "image.jpg" }
                                     )
+                                    PetalToast.show(activity, "Downloading image...")
+                                },
+                                onDownloadAll = {
+                                    images.forEach { imgUrl ->
+                                        com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
+                                            context = activity,
+                                            url = imgUrl,
+                                            fileName = imgUrl.substringAfterLast("/").substringBefore("?").ifEmpty { "image.jpg" }
+                                        )
+                                    }
+                                    PetalToast.show(activity, "Downloading ${images.size} images...")
+                                    try { dialog.dismiss() } catch (_: Exception) {}
+                                },
+                                onDismissRequest = {
+                                    try { dialog.dismiss() } catch (_: Exception) {}
                                 }
-                                PetalToast.show(activity, "Downloading ${images.size} images...")
-                                decor.removeView(view)
-                            },
-                            onDismissRequest = { decor.removeView(view) }
-                        )
+                            )
+                        }
                     }
                 }
+                dialog.setContentView(composeView)
+                dialog.show()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            decor.addView(view)
         }
     }
 
@@ -493,42 +629,60 @@ object PetalQuickToolsBridge {
     }
 
     private fun showPetalConfig(activity: BrowserActivity) {
-        val decor = activity.window.decorView as? ViewGroup ?: return
-        var view: ComposeView? = null
-        view = ComposeView(activity).apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeViewModelStoreOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setContent {
-                PetalExpressiveTheme {
-                    PetalConfigSheet(
-                        onDismissRequest = { decor.removeView(view) }
-                    )
-                }
-            }
-        }
-        decor.addView(view)
+        PetalConfigSheet.show(activity)
     }
 
     private fun showConsoleLog(activity: BrowserActivity, geckoView: PetalGeckoView?) {
-        val decor = activity.window.decorView as? ViewGroup ?: return
-        var view: ComposeView? = null
-        view = ComposeView(activity).apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeViewModelStoreOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setContent {
-                PetalExpressiveTheme {
-                    PetalDevConsoleSheet(
-                        onExecuteScript = { script, callback ->
-                            geckoView?.evaluateJavascript(script, callback)
-                                ?: callback("Error: Web session not active")
+        try {
+            val dialog = BottomSheetDialog(activity)
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            dialog.setCancelable(true)
+            dialog.setCanceledOnTouchOutside(true)
+            dialog.window?.let { win ->
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
+                win.statusBarColor = android.graphics.Color.TRANSPARENT
+                win.navigationBarColor = android.graphics.Color.TRANSPARENT
+            }
+
+            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+            val composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
+                setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+                setContent {
+                    val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                    val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = remember(fontName) { AppFont.fromName(fontName) },
+                        colorStyle = remember(styleName) {
+                            try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                         },
-                        onDismissRequest = { decor.removeView(view) }
-                    )
+                        paletteId = paletteId
+                    ) {
+                        PetalDevConsoleSheet(
+                            onExecuteScript = { script, callback ->
+                                geckoView?.evaluateJavascript(script, callback)
+                                    ?: callback("Error: Web session not active")
+                            },
+                            onDismissRequest = {
+                                try { dialog.dismiss() } catch (_: Exception) {}
+                            }
+                        )
+                    }
                 }
             }
+            dialog.setContentView(composeView)
+            dialog.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        decor.addView(view)
     }
 }
