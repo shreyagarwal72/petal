@@ -1417,6 +1417,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun canGoForward(): Boolean = canGoForwardVal
 
+    @JvmOverloads
     fun goBack(userInteraction: Boolean = true) {
         if (canGoBackVal) {
             if (engineSession != null) {
@@ -1427,6 +1428,7 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
+    @JvmOverloads
     fun goForward(userInteraction: Boolean = true) {
         if (canGoForwardVal) {
             if (engineSession != null) {
