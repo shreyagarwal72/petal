@@ -451,6 +451,7 @@ private fun BuiltInExtensionsList(
                                 "petal_builtin_ai_blocker" -> Icons.Rounded.SmartToy
                                 "petal_builtin_translate" -> Icons.Rounded.Translate
                                 "petal_builtin_google_search_fixer" -> Icons.Rounded.Search
+                                "petal_builtin_media_grabber" -> Icons.Rounded.VideoLibrary
                                 else -> Icons.Rounded.Extension
                             },
                             contentDescription = null,

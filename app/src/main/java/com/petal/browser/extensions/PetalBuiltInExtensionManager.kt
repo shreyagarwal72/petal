@@ -81,6 +81,13 @@ object PetalBuiltInExtensionManager {
             label       = "Google Search Fixer",
             description = "Ensures modern full-featured Google Search experience on GeckoView.",
             prefKey     = "petal_builtin_google_search_fixer"
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/media_grabber/",
+            extensionId = "petal-media-grabber@petalbrowser.app",
+            label       = "Petal Media Grabber",
+            description = "Detects and captures media streams (video/audio) playing on any website for download.",
+            prefKey     = "petal_builtin_media_grabber"
         )
     )
 

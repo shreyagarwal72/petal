@@ -223,13 +223,6 @@ object PetalExtensionManager {
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/view-page-archive/"
         ),
         CatalogEntry(
-            id = "google-search-fixer",
-            name = "Google Search Fixer",
-            description = "Overrides the user-agent on Google Search to serve the standard desktop experience.",
-            amoSlug = "google-search-fixer",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/google-search-fixer/"
-        ),
-        CatalogEntry(
             id = "tomato-clock",
             name = "Tomato Clock",
             description = "A simple Pomodoro-style timer for managing focus and productivity sessions.",
