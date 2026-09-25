@@ -430,6 +430,66 @@ object PetalSettingsSearchIndex {
             subtitle = "Browse the open-source repository, star the project, or report issues on GitHub",
             category = SettingsCategory.ABOUT,
             keywords = listOf("developer", "github", "source code", "open source", "repository", "issues")
+        ),
+
+        // ==================== MEDIA & SYNC ====================
+        SettingsSearchItem(
+            id = "media_native_player",
+            title = "Native Video Player",
+            subtitle = "Bypass web player and launch streams directly into hardware-accelerated ExoPlayer",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("video", "player", "native player", "exoplayer", "hardware", "streaming", "fullscreen")
+        ),
+        SettingsSearchItem(
+            id = "media_detect_background",
+            title = "Detect Media in Background",
+            subtitle = "Continuously sniff video/audio streams and M3U8/MPD playlists without interrupting browsing",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("media sniffer", "sniffer", "sniff", "stream", "m3u8", "mpd", "video detection", "background")
+        ),
+        SettingsSearchItem(
+            id = "media_button_address_bar",
+            title = "Show Media Button",
+            subtitle = "Display quick-access media sniffer button on the address bar when playable streams are found",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("media button", "address bar button", "sniffer icon", "video icon")
+        ),
+        SettingsSearchItem(
+            id = "media_auto_open_panel",
+            title = "Automatically Open Media Panel",
+            subtitle = "Pop up the media fetcher sheet automatically when new video sources are extracted",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("auto open", "media panel", "popup", "fetcher")
+        ),
+        SettingsSearchItem(
+            id = "media_validate_streams",
+            title = "Validate Media Before Showing",
+            subtitle = "Perform lightweight HEAD check on sniffing URLs to filter out expired or non-playable links",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("validate media", "head request", "filter streams", "playable")
+        ),
+        SettingsSearchItem(
+            id = "media_ai_blocker",
+            title = "AI Blocker",
+            subtitle = "Automatically clean search results by stripping cluttered generative AI overviews",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("ai blocker", "strip ai", "remove ai overview", "google ai overview", "clean search")
+        ),
+        SettingsSearchItem(
+            id = "media_sync_ecosystem",
+            title = "Petal Sync (Experimental)",
+            subtitle = "Zero-cloud end-to-end encrypted (E2EE) sync across devices, powered by Firefox Accounts & Mozilla Sync",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("sync", "firefox sync", "mozilla account", "e2ee", "encrypted", "cloud", "ecosystem", "tabs sync")
+        ),
+
+        // ==================== DOWNLOADS ====================
+        SettingsSearchItem(
+            id = "download_manager_mode",
+            title = "Download Engine Mode",
+            subtitle = "Choose between Petal Integrated Multi-Thread Engine, Android DownloadManager, or External Downloaders",
+            category = SettingsCategory.DOWNLOADS,
+            keywords = listOf("download", "downloader", "engine", "fetch", "adm", "1dm", "external downloader")
         )
     )
 
@@ -440,6 +500,8 @@ object PetalSettingsSearchIndex {
         SettingsCategory.SEARCH_HOMEPAGE,
         SettingsCategory.DISPLAY_ZOOM,
         SettingsCategory.ADDRESS_BAR,
+        SettingsCategory.MEDIA,
+        SettingsCategory.DOWNLOADS,
         SettingsCategory.EXPERIMENTAL,
         SettingsCategory.TABS,
         SettingsCategory.MISCELLANEOUS,

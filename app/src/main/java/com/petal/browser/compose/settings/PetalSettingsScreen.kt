@@ -43,6 +43,8 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.home_filled),
     DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", com.petal.browser.R.drawable.mobile_vibrate_filled),
     ADDRESS_BAR("Address Bar", "Position, size, gestures and toolbar actions", com.petal.browser.R.drawable.ic_search),
+    MEDIA("Media & Sync", "Video player, media sniffer, background detection & Firefox sync", com.petal.browser.R.drawable.video_filled),
+    DOWNLOADS("Downloads", "Download engine, external downloaders & storage management", com.petal.browser.R.drawable.icon_download),
     EXPERIMENTAL("Experimental", "App language, experimental features and advanced settings", com.petal.browser.R.drawable.build_filled),
     TABS("Tabs", "Inactive tabs, tab groups and tab cleanup", com.petal.browser.R.drawable.icon_tab),
     MISCELLANEOUS("Miscellaneous", "Custom tabs, external apps and camera tools", com.petal.browser.R.drawable.app_registration),
@@ -201,6 +203,10 @@ fun PetalSettingsScreen(
                                 currentCategory = SettingsCategory.ADDRESS_BAR
                                 currentHighlightId = null
                             },
+                            onNavigateToDownloads = {
+                                currentCategory = SettingsCategory.DOWNLOADS
+                                currentHighlightId = null
+                            },
                             onNavigateBack = {
                                 currentCategory = SettingsCategory.OVERVIEW
                                 currentHighlightId = null
@@ -236,6 +242,7 @@ private fun RenderCategoryContent(
     category: SettingsCategory,
     targetHighlightItemId: String? = null,
     onNavigateToAddressBar: () -> Unit = {},
+    onNavigateToDownloads: () -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
     when (category) {
@@ -261,6 +268,16 @@ private fun RenderCategoryContent(
         }
         SettingsCategory.ADDRESS_BAR -> {
             AddressBarSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
+        }
+        SettingsCategory.MEDIA -> {
+            MediaSettingsScreen(
+                onNavigateBack = onNavigateBack,
+                onNavigateToDownloads = onNavigateToDownloads,
+                targetHighlightItemId = targetHighlightItemId
+            )
+        }
+        SettingsCategory.DOWNLOADS -> {
+            DownloadSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
         }
         SettingsCategory.EXPERIMENTAL -> {
             ExperimentalSettingsScreen(onNavigateBack = onNavigateBack)

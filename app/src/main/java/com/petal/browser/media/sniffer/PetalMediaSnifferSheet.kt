@@ -88,6 +88,10 @@ fun PetalMediaSnifferOverlay(
     currentPageUrl: String = "",
     onPlay: (MediaInterceptor.MediaPlaybackRequest) -> Unit
 ) {
+    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val detectBackground = remember { sp.getBoolean("sp_media_detect_background", true) }
+    val autoOpenPanel = remember { sp.getBoolean("sp_media_auto_open_panel", false) }
+
     val media by PetalMediaSniffer.interceptor.playableMedia.collectAsState()
     val platform = remember(currentPageUrl) { SupportedPlatforms.getPlatform(currentPageUrl) }
     val socialOnly = platform != null
@@ -97,10 +101,17 @@ fun PetalMediaSnifferOverlay(
         PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(currentPageUrl)
     }
 
-    LaunchedEffect(currentPageUrl, media, socialOnly) { dismissed = false }
+    LaunchedEffect(currentPageUrl, media, socialOnly) {
+        dismissed = false
+        if (autoOpenPanel && !isSearchOrInternal && (media.isNotEmpty() || socialOnly)) {
+            sheetOpen = true
+        }
+    }
+
+    val isVisible = detectBackground && !isSearchOrInternal && (media.isNotEmpty() || socialOnly) && !dismissed
 
     AnimatedVisibility(
-        visible = !isSearchOrInternal && (media.isNotEmpty() || socialOnly) && !dismissed,
+        visible = isVisible,
         enter = slideInVertically { -it } + fadeIn() + scaleIn(initialScale = .92f),
         exit  = slideOutVertically { -it } + fadeOut() + scaleOut(targetScale = .92f),
         modifier = Modifier.fillMaxWidth()

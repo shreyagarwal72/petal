@@ -4618,6 +4618,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.ui.components.BrowserNavigationDelegate.showOverflowMenu(this);
     }
 
+    public void showQuickTools() {
+        com.petal.browser.ui.components.PetalQuickToolsBridge.showQuickTools(this);
+    }
+
     /**
      * Chrome-style full-screen Omnibox search page, replacing both the legacy
      * AlertDialog-based dialogSearch and the old bottom-sheet PetalOmniboxOverlay.

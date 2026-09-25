@@ -249,6 +249,10 @@ object BrowserNavigationDelegate {
                     activity.showSafeLocker()
                 }
 
+                override fun onOpenQuickTools() {
+                    activity.showQuickTools()
+                }
+
                 override fun onTriggerMediaMode() {
                     val isPipSupported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
                     val isBgPlayEnabled = prefs.getBoolean("sp_background_play", false)

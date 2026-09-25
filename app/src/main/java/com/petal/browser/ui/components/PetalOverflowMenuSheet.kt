@@ -73,6 +73,7 @@ interface PetalOverflowMenuActionHandler {
     fun onOpenExtensionSettings(extensionId: String) {}
     fun onOpenDevConsole() {}
     fun onOpenSafeLocker() {}
+    fun onOpenQuickTools() {}
 }
 
 object PetalOverflowBridge {
@@ -259,6 +260,10 @@ object PetalOverflowBridge {
                             onOpenSafeLocker = {
                                 dialog.dismiss()
                                 handler.onOpenSafeLocker()
+                            },
+                            onOpenQuickTools = {
+                                dialog.dismiss()
+                                handler.onOpenQuickTools()
                             }
                         )
                     }
@@ -313,7 +318,8 @@ fun PetalOverflowMenuSheet(
     onOpenExtensionAction: (String) -> Unit = {},
     onOpenExtensionSettings: (String) -> Unit = {},
     onOpenDevConsole: () -> Unit = {},
-    onOpenSafeLocker: () -> Unit = {}
+    onOpenSafeLocker: () -> Unit = {},
+    onOpenQuickTools: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
@@ -672,6 +678,13 @@ fun PetalOverflowMenuSheet(
                 )
 
                 // Section 4: Tools & Settings
+                MenuRowItem(
+                    icon = Icons.Rounded.Widgets,
+                    title = "Quick Tools",
+                    subtitle = "QR, Translator, PDF, DevTools & Inspector",
+                    onClick = onOpenQuickTools
+                )
+
                 MenuRowItem(
                     icon = Icons.Rounded.Build,
                     title = "More tools",
