@@ -198,7 +198,7 @@ fun PetalWallpaperSheet(
                 if (activeUri != null) {
                     TextButton(
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CONFIRM, 0.4f)
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                             PetalWallpaperManager.clearWallpaper(context)
                         }
                     ) {

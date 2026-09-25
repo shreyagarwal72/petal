@@ -187,7 +187,7 @@ fun PetalProfileSwitchSheet(
                                 } else if (!profile.isDefault) {
                                     IconButton(
                                         onClick = {
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CONFIRM, 0.4f)
+                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                             PetalProfileManager.deleteProfile(context, profile.id)
                                         },
                                         modifier = Modifier.size(32.dp)

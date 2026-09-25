@@ -34,8 +34,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
-import coil.decode.GifDecoder
-import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 
 @OptIn(UnstableApi::class)
@@ -107,13 +105,6 @@ fun PetalAnimatedWallpaperBackground(
                 ImageRequest.Builder(context)
                     .data(wallpaperUri)
                     .crossfade(300)
-                    .decoderFactory(
-                        if (Build.VERSION.SDK_INT >= 28) {
-                            ImageDecoderDecoder.Factory()
-                        } else {
-                            GifDecoder.Factory()
-                        }
-                    )
                     .build()
             }
 

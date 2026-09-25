@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -497,7 +498,7 @@ fun PetalHomeScreen(
             com.petal.browser.wallpaper.PetalWallpaperManager.loadForActiveProfile(context)
             shortcuts = loadHomeShortcuts(context)
             removedUrls = loadRemovedShortcutUrls(context)
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CONFIRM, 0.5f)
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.5f)
             // Entrance: 460f stiffness / 0.78f damping ratio spring bounce
             profileSwitchProgress.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 460f))
         }
