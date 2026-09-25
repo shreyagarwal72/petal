@@ -55,6 +55,11 @@ object PetalEngineStore {
         )
         engine = newEngine
         Log.i(TAG, "Initialized Mozilla GeckoEngine wrapping PetalGeckoRuntime")
+        try {
+            com.petal.browser.extensions.PetalBuiltInExtensions.installAll(newEngine)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to initialize built-in extensions: ${t.message}")
+        }
         return newEngine
     }
 
