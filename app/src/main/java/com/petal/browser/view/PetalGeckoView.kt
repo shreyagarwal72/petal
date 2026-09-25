@@ -1523,7 +1523,7 @@ class PetalGeckoView @JvmOverloads constructor(
     fun setTrackingProtectionLevel(level: Int) { // one of ContentBlocking.EtpLevel.NONE / DEFAULT / STRICT
         try {
             val runtime = com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(context)
-            runtime.settings.contentBlocking.enhancedTrackingProtectionLevel = level
+            runtime.settings.contentBlocking.setEnhancedTrackingProtectionLevel(level)
         } catch (t: Throwable) {
             android.util.Log.w(TAG, "Failed to update ETP level: ${t.message}")
         }

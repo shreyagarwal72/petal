@@ -172,16 +172,17 @@ object PetalGeckoRuntime {
                 // 2. Enhanced Tracking Protection & AdBlock
                 val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
                 val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
-                rt.settings.contentBlocking.enhancedTrackingProtectionLevel = etpLevel
-                rt.settings.contentBlocking.strictSocialTrackingProtection = adBlockEnabled
+                rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)
+                rt.settings.contentBlocking.setStrictSocialTrackingProtection(adBlockEnabled)
 
                 // 3. Block Third-Party / Tracking Cookies (Firefox ETP Cookie Isolation)
                 val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
-                rt.settings.contentBlocking.cookieBehavior = if (blockThirdPartyCookies) {
+                val cookieBehavior = if (blockThirdPartyCookies) {
                     ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
                 } else {
                     ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
                 }
+                rt.settings.contentBlocking.setCookieBehavior(cookieBehavior)
 
                 // 4. Anti-Tracking Flags (Fingerprinting, STP, Cryptominers, WebRTC, Social)
                 val fingerprintProtection = sp.getBoolean("sp_fingerprint_protection", true)
@@ -192,10 +193,10 @@ object PetalGeckoRuntime {
                 if (fingerprintProtection) {
                     antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.FINGERPRINTING
                 }
-                rt.settings.contentBlocking.antiTracking = antiTrackingFlags
+                rt.settings.contentBlocking.setAntiTracking(antiTrackingFlags)
 
                 // 5. Safe Browsing Malware & Phishing Shield
-                rt.settings.contentBlocking.safeBrowsing = ContentBlocking.SafeBrowsing.DEFAULT
+                rt.settings.contentBlocking.setSafeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
 
                 // 6. WebAuthn & Passkeys Autofill
                 val webauthnEnabled = sp.getBoolean("sp_webauthn_enabled", true)
