@@ -29,8 +29,8 @@ object PetalBuiltInExtensions {
                     isInstalled = true
                     Log.i(TAG, "WebCompat extension loaded successfully: ${ext.id}")
                 },
-                onError = { id, e ->
-                    Log.w(TAG, "WebCompat built-in install skipped or not present in AAR assets: $id (${e.message})")
+                onError = { e ->
+                    Log.w(TAG, "WebCompat built-in install skipped or not present in AAR assets: $WEBCOMPAT_ID (${e.message})")
                 }
             )
         } catch (t: Throwable) {
