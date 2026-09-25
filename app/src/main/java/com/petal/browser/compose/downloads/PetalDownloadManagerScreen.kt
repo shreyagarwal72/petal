@@ -352,6 +352,9 @@ fun PetalDownloadManagerScreen(
         val targetIds = items.map { it.id }.toSet()
         pendingDeletedIds = pendingDeletedIds + targetIds
 
+        // Immediately delete from engine, notifications, and storage
+        PetalFetchDownloadBridge.deleteDownloads(context, items)
+
         val message = if (items.size == 1) {
             "Deleted ${items.first().fileName}"
         } else {
@@ -361,17 +364,10 @@ fun PetalDownloadManagerScreen(
         coroutineScope.launch {
             val result = snackbarHostState.showSnackbar(
                 message = message,
-                actionLabel = "Undo",
+                actionLabel = null,
                 duration = SnackbarDuration.Short
             )
-            if (result == SnackbarResult.ActionPerformed) {
-                // Restore optimistic deletion
-                pendingDeletedIds = pendingDeletedIds - targetIds
-            } else {
-                // Snackbar dismissed / timed out -> Commit permanent deletion from disk & database
-                PetalFetchDownloadBridge.deleteDownloads(context, items)
-                pendingDeletedIds = pendingDeletedIds - targetIds
-            }
+            pendingDeletedIds = pendingDeletedIds - targetIds
         }
     }
 

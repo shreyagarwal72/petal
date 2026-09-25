@@ -313,23 +313,32 @@ object PetalFetchDownloadBridge {
                 autoRetryMaxAttempts = 10
             }
             SafeDownloadValues.header(userAgent, 4096)?.let { request.addHeader("User-Agent", it) }
-            SafeDownloadValues.header(cookie, 16384)?.let { request.addHeader("Cookie", it) }
+            // Do not send cookies or custom auth headers to presigned CDN / S3 URLs (e.g. github-production-release-asset)
+            // as AWS S3 rejects requests with SignatureDoesNotMatch if extra headers are present.
+            val isS3OrCdn = url.contains(".s3.amazonaws.com", ignoreCase = true) ||
+                            url.contains(".githubusercontent.com", ignoreCase = true) ||
+                            url.contains("github-production-release-asset", ignoreCase = true)
+            if (!isS3OrCdn) {
+                SafeDownloadValues.header(cookie, 16384)?.let { request.addHeader("Cookie", it) }
+            }
             headers.forEach { (name, value) ->
                 if (name.isBlank() || value.isBlank()) return@forEach
                 if (name.equals("Host", true) || name.equals("Content-Length", true) ||
                     name.equals("Content-Encoding", true) || name.equals("Transfer-Encoding", true) ||
                     name.equals("Connection", true) || name.equals("Accept-Encoding", true) ||
                     name.equals("User-Agent", true) || name.equals("Cookie", true)) return@forEach
+                if (isS3OrCdn && (name.startsWith("x-amz", true) || name.equals("Authorization", true))) return@forEach
                 if ('\r' in name || '\n' in name || '\r' in value || '\n' in value) return@forEach
                 val safeKey = SafeDownloadValues.header(name, 1024) ?: return@forEach
                 val safeValue = SafeDownloadValues.header(value, 4096) ?: return@forEach
                 request.addHeader(safeKey, safeValue)
             }
-            fetchInstance(context).enqueue(request, { updated ->
-                // Start the foreground service + live progress notification, exactly like
-                // BrowserUnit.download() does for normal downloads. Without this, media-sniffer
-                // downloads showed in the list but had no notification and no foreground service,
-                // so Android could kill them once the app went to the background.
+            val fetch = fetchInstance(context)
+            fetch.enqueue(request, { updated ->
+                // Ensure the download starts running immediately rather than idling in Status.ADDED / Status.QUEUED
+                try {
+                    fetch.resume(updated.id)
+                } catch (_: Throwable) {}
                 val trackedName = target.name
                 PetalLiveAlertManager.trackDownload(
                     context.applicationContext,
@@ -423,38 +432,56 @@ object PetalFetchDownloadBridge {
     @JvmStatic
     fun deleteDownload(context: Context, item: DownloadItem, deleteFile: Boolean = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)) {
         ensureInitialized(context)
+        val appContext = context.applicationContext
+        // 1. Immediately terminate active notification tracking and live alert service
+        try {
+            PetalLiveAlertManager.stopTracking(appContext, item.id)
+            val nm = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager
+            nm?.cancel(item.id.toInt())
+        } catch (_: Throwable) {}
+
+        // 2. Check and remove from Mozilla Download Manager / BrowserStore
         val mozillaId = synchronized(mozillaDownloadsMap) {
-            mozillaDownloadsMap.keys.firstOrNull { it.hashCode().toLong() == item.id }
+            mozillaDownloadsMap.keys.firstOrNull { it.hashCode().toLong() == item.id || it == item.id.toString() }
         }
         if (mozillaId != null) {
             try {
-                com.petal.browser.engine.gecko.PetalEngineStore.getStore(context).dispatch(
+                sendMozillaDownloadAction(appContext, item.id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_CANCEL)
+            } catch (_: Throwable) {}
+            try {
+                com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext).dispatch(
                     mozilla.components.browser.state.action.DownloadAction.RemoveDownloadAction(mozillaId)
                 )
-            } catch (_: Throwable) {
-                // Keep physical-file cleanup working even if the BrowserStore is
-                // unavailable during process/helper startup.
-            }
+            } catch (_: Throwable) {}
             synchronized(mozillaDownloadsMap) { mozillaDownloadsMap.remove(mozillaId) }
-            try {
-                item.localUri?.removePrefix("file://")?.let { path ->
-                    if (deleteFile) File(path).takeIf { it.exists() }?.delete()
-                }
-            } catch (_: Throwable) { }
-            publish()
-            return
         }
+
+        // 3. Cancel and delete from Fetch2
+        val fetchId = item.id.toInt()
         try {
-            fetchInstance(context).delete(item.id.toInt())
+            val fetch = fetchInstance(appContext)
+            fetch.cancel(fetchId)
+            fetch.delete(fetchId)
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        removeEntry(item.id.toInt())
+
+        // 4. Remove immediately from memory state maps
+        removeEntry(fetchId)
+
+        // 5. Delete local file and any temporary/partial download file
         try {
             val path = item.localUri?.removePrefix("file://")
             if (!path.isNullOrEmpty()) {
                 val file = File(path)
-                if (deleteFile && file.exists()) file.delete()
+                if (file.exists() && (deleteFile || item.status == DownloadManager.STATUS_RUNNING || item.status == DownloadManager.STATUS_PENDING)) {
+                    file.delete()
+                }
+                // Also clean up Fetch temporary .download or .tmp files
+                val tempFile = File(path + ".download")
+                if (tempFile.exists()) tempFile.delete()
+                val partFile = File(path + ".part")
+                if (partFile.exists()) partFile.delete()
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -508,6 +535,13 @@ object PetalFetchDownloadBridge {
             synchronized(mozillaDownloadsMap) {
                 mozillaDownloadsMap.clear()
                 downloads.forEach { download ->
+                    // Filter out stale unhandled INITIATED downloads (0 B stuck items) from Mozilla pipeline
+                    if (download.status == mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED &&
+                        (download.contentLength == null || download.contentLength == 0L) &&
+                        download.currentBytesCopied == 0L
+                    ) {
+                        return@forEach
+                    }
                     val id = download.id.hashCode().toLong()
                     val status = when (download.status) {
                         mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING -> DownloadManager.STATUS_RUNNING
