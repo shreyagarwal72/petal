@@ -114,6 +114,23 @@ public class HelperUnit {
     private static final int REQUEST_CODE_ASK_PERMISSIONS_3 = 123456;
     private static SharedPreferences sp;
 
+    /** Tracks the single currently-visible Snackbar so we can dismiss it before showing another.
+     *  This prevents the double-stacked FOSS-Browser + Petal M3 snackbar visual bug. */
+    @androidx.annotation.Nullable
+    private static java.lang.ref.WeakReference<Snackbar> sActiveSnackbar;
+
+    /** Dismisses any currently showing Snackbar, then records the new one as active. */
+    private static void trackAndShow(Snackbar snackbar) {
+        if (sActiveSnackbar != null) {
+            Snackbar prev = sActiveSnackbar.get();
+            if (prev != null && prev.isShownOrQueued()) {
+                prev.dismiss();
+            }
+        }
+        sActiveSnackbar = new java.lang.ref.WeakReference<>(snackbar);
+        snackbar.show();
+    }
+
     public static void grantPermissionsLoc(final Activity activity) {
         int hasACCESS_FINE_LOCATION = activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
         if (hasACCESS_FINE_LOCATION != PackageManager.PERMISSION_GRANTED) {
@@ -757,21 +774,36 @@ public class HelperUnit {
             snackbar.getView().setLayoutParams(params);
         }
         snackbar.getView().setElevation(convertDpToPixel(8, parentView.getContext()));
-        snackbar.show();
+        trackAndShow(snackbar);
     }
     /**
      * Creates every legacy View-system Snackbar through the same Petal M3 Expressive surface.
      * Keeping this centralized prevents individual features from drifting visually.
+     * Automatically dismisses any previously active Snackbar to prevent double stacking.
      */
     public static Snackbar makePetalSnackbar(View parent, CharSequence text, int duration) {
+        // Dismiss any currently showing snackbar first to prevent double-stacking
+        if (sActiveSnackbar != null) {
+            Snackbar prev = sActiveSnackbar.get();
+            if (prev != null && prev.isShownOrQueued()) prev.dismiss();
+            sActiveSnackbar = null;
+        }
         Snackbar snackbar = Snackbar.make(parent, text, duration);
         makeSnackbarRound(snackbar);
+        // Track this new snackbar; caller will call .show() on it
+        sActiveSnackbar = new java.lang.ref.WeakReference<>(snackbar);
         return snackbar;
     }
 
     public static Snackbar makePetalSnackbar(View parent, int textResId, int duration) {
+        if (sActiveSnackbar != null) {
+            Snackbar prev = sActiveSnackbar.get();
+            if (prev != null && prev.isShownOrQueued()) prev.dismiss();
+            sActiveSnackbar = null;
+        }
         Snackbar snackbar = Snackbar.make(parent, textResId, duration);
         makeSnackbarRound(snackbar);
+        sActiveSnackbar = new java.lang.ref.WeakReference<>(snackbar);
         return snackbar;
     }
 
