@@ -1848,7 +1848,7 @@ private fun PetalTabCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     AnimatedVisibility(visible = isPinned) {
                         Icon(
@@ -1865,6 +1865,19 @@ private fun PetalTabCard(
                             modifier = Modifier.size(18.dp)
                         ) {
                             Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
+                        }
+                    }
+                    if (!isSelectionMode) {
+                        IconButton(
+                            onClick = onTabClose,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = "Close Tab",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
                 }
@@ -2128,13 +2141,26 @@ private fun PetalTabListItem(
                 }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 AnimatedVisibility(visible = isPinned) {
                     Icon(Icons.Rounded.PushPin, contentDescription = "Pinned", tint = accentColor, modifier = Modifier.size(16.dp))
                 }
                 AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection) {
                     Surface(shape = CircleShape, color = accentColor, modifier = Modifier.size(20.dp)) {
                         Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
+                    }
+                }
+                if (!isSelectionMode) {
+                    IconButton(
+                        onClick = onTabClose,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Close Tab",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
             }

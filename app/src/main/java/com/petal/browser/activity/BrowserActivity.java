@@ -2977,6 +2977,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 );
             } catch (Exception ignored) {}
 
+            BrowserContainer.remove(controller);
             String tabIdToRemove = null;
             if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 tabIdToRemove = ((com.petal.browser.view.PetalGeckoView) controller).getTabId();
