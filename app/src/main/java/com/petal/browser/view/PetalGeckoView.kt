@@ -1492,21 +1492,6 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     /**
-     * Restores GeckoSession history state and back/forward stack from [GeckoSession.SessionState].
-     * Returns true if session state was successfully accepted by GeckoSession.
-     */
-    fun restoreSessionState(sessionState: GeckoSession.SessionState): Boolean {
-        return try {
-            session.restoreState(sessionState)
-            true
-        } catch (t: Throwable) {
-            android.util.Log.w(TAG, "Failed to restore GeckoSession.SessionState: ${t.message}")
-            false
-        }
-    }
-
-
-    /**
      * Updates Enhanced Tracking Protection policy level dynamically.
      */
     fun setTrackingProtectionLevel(level: Int) { // one of ContentBlocking.EtpLevel.NONE / DEFAULT / STRICT

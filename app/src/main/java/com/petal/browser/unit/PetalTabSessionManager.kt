@@ -295,20 +295,7 @@ object PetalTabSessionManager {
                     // mid-render, resulting in a blank screen. showAlbum("about:blank") will display
                     // the native Compose home without any web engine load required.
                     if (record.url.isNotBlank() && !isHomeUrl(record.url)) {
-                        // Check if Mozilla EngineSession has an underlying restored SessionState
-                        val restoredEngineSession = sessionPair.second
-                        val engineHasState = try {
-                            val stateField = restoredEngineSession.javaClass.methods.firstOrNull {
-                                it.parameterCount == 0 && (it.name == "hasSessionState" || it.name == "isRestored")
-                            }
-                            stateField?.invoke(restoredEngineSession) as? Boolean ?: false
-                        } catch (_: Throwable) {
-                            false
-                        }
-
-                        if (!engineHasState) {
-                            geckoView.loadUrl(record.url)
-                        }
+                        geckoView.loadUrl(record.url)
                     }
                     // else: leave GeckoView unloaded; showAlbum() will display the Compose home
 
@@ -405,19 +392,7 @@ object PetalTabSessionManager {
 
         // Fix (Bug 5): same as restoreSession — don't load about:blank for home tabs.
         if (safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
-            val restoredEngineSession = sessionPair.second
-            val engineHasState = try {
-                val stateField = restoredEngineSession.javaClass.methods.firstOrNull {
-                    it.parameterCount == 0 && (it.name == "hasSessionState" || it.name == "isRestored")
-                }
-                stateField?.invoke(restoredEngineSession) as? Boolean ?: false
-            } catch (_: Throwable) {
-                false
-            }
-
-            if (!engineHasState) {
-                geckoView.loadUrl(safeUrl)
-            }
+            geckoView.loadUrl(safeUrl)
         }
         // else: leave GeckoView unloaded; showAlbum() will display the Compose home
 
