@@ -261,4 +261,12 @@
     <string name="pdf_zoom_in">Zoom In</string>
     <string name="pdf_zoom_out">Zoom Out</string>
     <string name="pdf_fit_width">Fit to Width</string>
+
+    <!-- Progressive Web Apps (PWA) Official Firefox-Style -->
+    <string name="pwa_install_title">Install as App</string>
+    <string name="pwa_install_prompt_title">Install %1$s?</string>
+    <string name="pwa_install_button">Install</string>
+    <string name="pwa_install_success">Added %1$s to Home screen</string>
+    <string name="pwa_install_failed">Failed to add to Home screen</string>
+    <string name="pwa_install_empty_page">Cannot install an empty page</string>
 </resources>

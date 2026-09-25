@@ -16,6 +16,8 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.ServiceWorkerClient;
 import android.webkit.ServiceWorkerController;
@@ -23,12 +25,17 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
 import com.petal.browser.unit.HelperUnit;
@@ -37,21 +44,24 @@ import com.petal.browser.view.PetalGeckoView;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * PetalPwaManager
  * Dynamic Progressive Web App (PWA) manager supporting PetalGeckoView (GeckoView engine),
- * providing manifest detection & parsing via JS injection, offline webpage web archive saving,
- * and standalone Web App launching.
+ * providing manifest detection & parsing, high-fidelity app icon extraction matching
+ * official Firefox for Android, offline webpage web archive saving, and standalone Web App launching.
  */
-
 public class PetalPwaManager {
 
     private static final String TAG = "PetalPwaManager";
@@ -243,12 +253,179 @@ public class PetalPwaManager {
         }
     }
 
+    /**
+     * Resolves app metadata and manifest from HTML head if not yet cached or if running in GeckoView.
+     */
+    private static void discoverManifestAndIcons(String pageUrl, PwaManifest manifest, List<String> iconCandidates) {
+        if (pageUrl == null || !pageUrl.startsWith("http")) return;
+        try {
+            URL url = new URL(pageUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36");
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(4000);
+            conn.setInstanceFollowRedirects(true);
+            conn.connect();
+
+            int code = conn.getResponseCode();
+            if (code >= 200 && code < 400) {
+                String actualUrl = conn.getURL().toString();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder headHtml = new StringBuilder();
+                String line;
+                int lineCount = 0;
+                while ((line = reader.readLine()) != null && lineCount++ < 150) {
+                    headHtml.append(line).append("\n");
+                    if (line.toLowerCase().contains("</head>")) break;
+                }
+                reader.close();
+
+                String html = headHtml.toString();
+
+                // 1. Check title
+                Pattern titlePattern = Pattern.compile("<title[^>]*>(.*?)</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+                Matcher titleMatcher = titlePattern.matcher(html);
+                if (titleMatcher.find()) {
+                    String extractedTitle = titleMatcher.group(1).trim();
+                    if (!extractedTitle.isEmpty() && (manifest.name == null || manifest.name.isEmpty())) {
+                        manifest.name = extractedTitle;
+                        manifest.shortName = extractedTitle;
+                    }
+                }
+
+                // 2. Check manifest link
+                Pattern manifestPattern = Pattern.compile("<link[^>]+rel=[\"']manifest[\"'][^>]*href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+                Matcher manifestMatcher = manifestPattern.matcher(html);
+                if (!manifestMatcher.find()) {
+                    manifestPattern = Pattern.compile("<link[^>]+href=[\"']([^\"']+)[\"'][^>]*rel=[\"']manifest[\"']", Pattern.CASE_INSENSITIVE);
+                    manifestMatcher = manifestPattern.matcher(html);
+                }
+                if (manifestMatcher.find()) {
+                    String manifestHref = manifestMatcher.group(1);
+                    String manifestResolvedUrl = resolveUrl(actualUrl, manifestHref);
+                    parseManifestFromNetwork(manifestResolvedUrl, manifest, iconCandidates);
+                }
+
+                // 3. Apple Touch Icons
+                Pattern applePattern = Pattern.compile("<link[^>]+rel=[\"']apple-touch-icon(?:-precomposed)?[\"'][^>]*href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+                Matcher appleMatcher = applePattern.matcher(html);
+                while (appleMatcher.find()) {
+                    String resolved = resolveUrl(actualUrl, appleMatcher.group(1));
+                    if (!iconCandidates.contains(resolved)) {
+                        iconCandidates.add(resolved);
+                    }
+                }
+                applePattern = Pattern.compile("<link[^>]+href=[\"']([^\"']+)[\"'][^>]*rel=[\"']apple-touch-icon(?:-precomposed)?[\"']", Pattern.CASE_INSENSITIVE);
+                appleMatcher = applePattern.matcher(html);
+                while (appleMatcher.find()) {
+                    String resolved = resolveUrl(actualUrl, appleMatcher.group(1));
+                    if (!iconCandidates.contains(resolved)) {
+                        iconCandidates.add(resolved);
+                    }
+                }
+
+                // 4. Standard Icons
+                Pattern iconPattern = Pattern.compile("<link[^>]+rel=[\"'](?:shortcut )?icon[\"'][^>]*href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+                Matcher iconMatcher = iconPattern.matcher(html);
+                while (iconMatcher.find()) {
+                    String resolved = resolveUrl(actualUrl, iconMatcher.group(1));
+                    if (!iconCandidates.contains(resolved)) {
+                        iconCandidates.add(resolved);
+                    }
+                }
+                iconPattern = Pattern.compile("<link[^>]+href=[\"']([^\"']+)[\"'][^>]*rel=[\"'](?:shortcut )?icon[\"']", Pattern.CASE_INSENSITIVE);
+                iconMatcher = iconPattern.matcher(html);
+                while (iconMatcher.find()) {
+                    String resolved = resolveUrl(actualUrl, iconMatcher.group(1));
+                    if (!iconCandidates.contains(resolved)) {
+                        iconCandidates.add(resolved);
+                    }
+                }
+
+                // 5. Theme Color
+                Pattern themePattern = Pattern.compile("<meta[^>]+name=[\"']theme-color[\"'][^>]*content=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+                Matcher themeMatcher = themePattern.matcher(html);
+                if (themeMatcher.find()) {
+                    String color = themeMatcher.group(1).trim();
+                    if (!color.isEmpty() && (manifest.themeColor == null || manifest.themeColor.isEmpty() || "#FFFFFF".equalsIgnoreCase(manifest.themeColor))) {
+                        manifest.themeColor = color;
+                    }
+                }
+            }
+            conn.disconnect();
+        } catch (Exception e) {
+            Log.d(TAG, "Network discovery note: " + e.getMessage());
+        }
+    }
+
+    private static void parseManifestFromNetwork(String manifestUrl, PwaManifest manifest, List<String> iconCandidates) {
+        try {
+            URL url = new URL(manifestUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36");
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(4000);
+            conn.connect();
+
+            if (conn.getResponseCode() == 200) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String l;
+                while ((l = reader.readLine()) != null) sb.append(l);
+                reader.close();
+
+                JSONObject json = new JSONObject(sb.toString());
+                if (json.has("name") && (manifest.name == null || manifest.name.isEmpty())) {
+                    manifest.name = json.optString("name", "");
+                }
+                if (json.has("short_name") && (manifest.shortName == null || manifest.shortName.isEmpty())) {
+                    manifest.shortName = json.optString("short_name", manifest.name);
+                }
+                if (json.has("start_url") && (manifest.startUrl == null || manifest.startUrl.isEmpty())) {
+                    manifest.startUrl = resolveUrl(manifestUrl, json.optString("start_url", ""));
+                }
+                if (json.has("display")) {
+                    manifest.display = json.optString("display", "standalone");
+                }
+                if (json.has("theme_color")) {
+                    manifest.themeColor = json.optString("theme_color", "#FFFFFF");
+                }
+                if (json.has("background_color")) {
+                    manifest.backgroundColor = json.optString("background_color", "#FFFFFF");
+                }
+
+                if (json.has("icons")) {
+                    JSONArray icons = json.getJSONArray("icons");
+                    for (int i = 0; i < icons.length(); i++) {
+                        JSONObject ic = icons.getJSONObject(i);
+                        String src = ic.optString("src", "");
+                        if (!src.isEmpty()) {
+                            String resolved = resolveUrl(manifestUrl, src);
+                            if (!iconCandidates.contains(resolved)) {
+                                // Add manifest icons with high priority
+                                iconCandidates.add(0, resolved);
+                            }
+                        }
+                    }
+                }
+            }
+            conn.disconnect();
+        } catch (Exception e) {
+            Log.d(TAG, "Manifest fetch note: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Creates an adaptive launcher app icon matching official Firefox for Android:
+     * - Generates a clean 192x192 canvas with smooth Material 3 rounded squircle bounds
+     * - Preserves high-resolution edge-to-edge artwork
+     * - Places glyphs and transparent icons cleanly onto an elegant themed or pure container
+     */
     public static Bitmap createAdaptiveAppIcon(Context context, Bitmap rawIcon, String themeColorHex) {
         int targetSize = 192;
         Bitmap output = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(output);
 
-        // If rawIcon is completely missing or recycled, use browser launcher icon
         if (rawIcon == null || rawIcon.isRecycled()) {
             Bitmap appIcon = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher);
             if (appIcon != null) {
@@ -257,12 +434,6 @@ public class PetalPwaManager {
             return output;
         }
 
-        // Check if rawIcon already has content across full bounds and high resolution
-        boolean isHighRes = rawIcon.getWidth() >= 96 && rawIcon.getHeight() >= 96;
-
-        // Determine if rawIcon has transparent areas
-        boolean hasTransparency = rawIcon.hasAlpha();
-
         int bgColor = Color.TRANSPARENT;
         if (themeColorHex != null && !themeColorHex.trim().isEmpty() && !themeColorHex.equalsIgnoreCase("#FFFFFF")) {
             try {
@@ -270,38 +441,48 @@ public class PetalPwaManager {
             } catch (Exception ignored) {}
         }
 
-        // If no distinct theme color is specified or it's white, extract a dominant color from rawIcon or use a subtle dark/tinted rounded background
-        if (bgColor == Color.TRANSPARENT || bgColor == Color.WHITE) {
-            // Sample corner and center pixels to detect if the icon already provides its own solid background
-            int cornerPixel = rawIcon.getPixel(0, 0);
-            int cornerAlpha = Color.alpha(cornerPixel);
-            // Keep only genuinely opaque app artwork edge-to-edge. Many favicon PNGs
-            // have an opaque corner but transparent glyph/background regions; returning
-            // those directly makes the launcher render a seemingly empty icon.
-            if (cornerAlpha > 200 && isHighRes && !hasTransparency) {
-                // Icon is a full solid canvas image (e.g. Nextup / 192x192 PWA icon), draw it directly with smooth rounded corners
-                float cornerRadius = targetSize * 0.22f;
-                RectF rect = new RectF(0, 0, targetSize, targetSize);
-                Path path = new Path();
-                path.addRoundRect(rect, cornerRadius, cornerRadius, Path.Direction.CW);
-                canvas.clipPath(path);
-                Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-                canvas.drawBitmap(rawIcon, null, new Rect(0, 0, targetSize, targetSize), paint);
-                return output;
-            } else {
-                // Transparent favicon: use a neutral background container so white/light glyphs don't disappear on white
-                bgColor = Color.parseColor("#1C1B1F");
-            }
+        boolean isHighRes = rawIcon.getWidth() >= 96 && rawIcon.getHeight() >= 96;
+        boolean hasAlpha = rawIcon.hasAlpha();
+
+        // Check if raw icon already has full solid opaque corners
+        boolean isFullyOpaqueArtwork = false;
+        if (!hasAlpha && isHighRes) {
+            isFullyOpaqueArtwork = true;
+        } else if (isHighRes) {
+            try {
+                int c1 = rawIcon.getPixel(2, 2);
+                int c2 = rawIcon.getPixel(rawIcon.getWidth() - 3, 2);
+                int c3 = rawIcon.getPixel(2, rawIcon.getHeight() - 3);
+                int c4 = rawIcon.getPixel(rawIcon.getWidth() - 3, rawIcon.getHeight() - 3);
+                if (Color.alpha(c1) == 255 && Color.alpha(c2) == 255 && Color.alpha(c3) == 255 && Color.alpha(c4) == 255) {
+                    isFullyOpaqueArtwork = true;
+                }
+            } catch (Exception ignored) {}
         }
 
-        // Draw rounded container
         float cornerRadius = targetSize * 0.22f;
         RectF rect = new RectF(0, 0, targetSize, targetSize);
+        Path path = new Path();
+        path.addRoundRect(rect, cornerRadius, cornerRadius, Path.Direction.CW);
+
+        if (isFullyOpaqueArtwork) {
+            // Full bleed solid artwork (e.g. 512x512 maskable/opaque manifest icon)
+            canvas.clipPath(path);
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+            canvas.drawBitmap(rawIcon, null, new Rect(0, 0, targetSize, targetSize), paint);
+            return output;
+        }
+
+        // Favicon or transparent icon: Draw clean background surface
+        if (bgColor == Color.TRANSPARENT || bgColor == Color.WHITE) {
+            bgColor = Color.parseColor("#F5F5F7");
+        }
+
         Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bgPaint.setColor(bgColor);
         canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint);
 
-        // Center and scale favicon with appropriate padding
+        // Center and scale the icon cleanly with comfortable padding
         int iconPadding = (int) (targetSize * 0.16f);
         Rect destRect = new Rect(iconPadding, iconPadding, targetSize - iconPadding, targetSize - iconPadding);
         Paint iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
@@ -312,7 +493,8 @@ public class PetalPwaManager {
 
     /**
      * Installs PWA / website to Android Home Screen via ShortcutManagerCompat
-     * targeting the dedicated standalone PetalPwaActivity shell.
+     * targeting the dedicated standalone PetalPwaActivity shell with official Firefox-style
+     * confirmation prompt showing app icon preview, editable/custom title, and origin URL.
      */
     public void installCurrentPwa(Activity activity) {
         if (activity == null) return;
@@ -330,7 +512,7 @@ public class PetalPwaManager {
         }
 
         if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim()) || pageUrl.startsWith("petal://")) {
-            activity.runOnUiThread(() -> PetalToast.show(activity, "Cannot install empty page as app", Toast.LENGTH_SHORT));
+            activity.runOnUiThread(() -> PetalToast.show(activity, R.string.pwa_install_empty_page));
             return;
         }
 
@@ -339,52 +521,158 @@ public class PetalPwaManager {
 
         new Thread(() -> {
             try {
-                String candidateUrl = finalPageUrl;
-                String rawTitle = null;
-
+                // Initialize working manifest
+                PwaManifest workingManifest = new PwaManifest();
                 if (currentManifest != null) {
-                    if (!currentManifest.shortName.isEmpty()) {
-                        rawTitle = currentManifest.shortName;
-                    } else if (!currentManifest.name.isEmpty()) {
-                        rawTitle = currentManifest.name;
-                    }
-                    if (!currentManifest.startUrl.isEmpty()) {
-                        candidateUrl = resolveUrl(finalPageUrl, currentManifest.startUrl);
-                    }
+                    workingManifest.name = currentManifest.name;
+                    workingManifest.shortName = currentManifest.shortName;
+                    workingManifest.startUrl = currentManifest.startUrl;
+                    workingManifest.display = currentManifest.display;
+                    workingManifest.themeColor = currentManifest.themeColor;
+                    workingManifest.backgroundColor = currentManifest.backgroundColor;
+                    workingManifest.iconUrl = currentManifest.iconUrl;
                 }
-                final String targetUrl = candidateUrl;
 
+                List<String> iconCandidates = new ArrayList<>();
+                if (workingManifest.iconUrl != null && !workingManifest.iconUrl.isEmpty()) {
+                    iconCandidates.add(resolveUrl(finalPageUrl, workingManifest.iconUrl));
+                }
+
+                // Discover manifest, touch icons, theme-color from HTML head if needed
+                discoverManifestAndIcons(finalPageUrl, workingManifest, iconCandidates);
+
+                // Add fallback icon candidates (domain touch-icon, favicon.ico, Google S2 Favicon service)
+                String host = "";
+                try {
+                    host = new URL(finalPageUrl).getHost();
+                } catch (Exception ignored) {}
+
+                if (!host.isEmpty()) {
+                    String origin = (finalPageUrl.startsWith("https") ? "https://" : "http://") + host;
+                    iconCandidates.add(origin + "/apple-touch-icon.png");
+                    iconCandidates.add(origin + "/apple-touch-icon-precomposed.png");
+                    iconCandidates.add(origin + "/favicon.ico");
+                    iconCandidates.add("https://www.google.com/s2/favicons?domain=" + host + "&sz=256");
+                }
+
+                // Determine title
+                String rawTitle = null;
+                if (!workingManifest.shortName.isEmpty()) {
+                    rawTitle = workingManifest.shortName;
+                } else if (!workingManifest.name.isEmpty()) {
+                    rawTitle = workingManifest.name;
+                }
                 if (rawTitle == null || rawTitle.isEmpty()) {
                     rawTitle = finalController != null && finalController.getTitle() != null && !finalController.getTitle().isEmpty() ? finalController.getTitle() : (webView != null && webView.getTitle() != null && !webView.getTitle().isEmpty() ? webView.getTitle() : HelperUnit.domain(finalPageUrl));
                 }
                 if (rawTitle == null || rawTitle.isEmpty()) {
                     rawTitle = "Web App";
                 }
-                final String title = rawTitle;
+                final String initialTitle = rawTitle;
 
-                Bitmap rawBitmap = null;
-                if (currentManifest != null && !currentManifest.iconUrl.isEmpty()) {
-                    String resolvedIconUrl = resolveUrl(finalPageUrl, currentManifest.iconUrl);
-                    rawBitmap = fetchBitmap(resolvedIconUrl);
+                // Determine target start URL
+                String candidateUrl = finalPageUrl;
+                if (!workingManifest.startUrl.isEmpty()) {
+                    candidateUrl = resolveUrl(finalPageUrl, workingManifest.startUrl);
                 }
+                final String targetUrl = candidateUrl;
+
+                // Fetch high-fidelity website icon
+                Bitmap rawBitmap = null;
+                for (String candidate : iconCandidates) {
+                    if (candidate != null && !candidate.isEmpty()) {
+                        rawBitmap = fetchBitmap(candidate);
+                        if (rawBitmap != null) {
+                            break;
+                        }
+                    }
+                }
+
                 if (rawBitmap == null && finalController instanceof com.petal.browser.view.PetalGeckoView) {
                     rawBitmap = ((com.petal.browser.view.PetalGeckoView) finalController).getFavicon();
                 }
-                
                 if (rawBitmap == null) {
                     com.petal.browser.database.FaviconHelper helper = new com.petal.browser.database.FaviconHelper(activity);
                     rawBitmap = helper.getFavicon(finalPageUrl);
                 }
-                if (rawBitmap == null) {
-                    String domain = HelperUnit.domain(finalPageUrl);
-                    if (domain != null && !domain.isEmpty()) {
-                        rawBitmap = fetchBitmap(com.petal.browser.unit.FaviconGrabberManager.getFaviconGrabberUrl(domain));
+
+                String themeColorHex = workingManifest.themeColor != null && !workingManifest.themeColor.isEmpty() ? workingManifest.themeColor : "#FFFFFF";
+                final Bitmap finalAdaptiveIcon = createAdaptiveAppIcon(activity, rawBitmap, themeColorHex);
+
+                // Display official Firefox-style confirmation dialog on UI thread
+                activity.runOnUiThread(() -> {
+                    if (activity.isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && activity.isDestroyed())) {
+                        return;
                     }
-                }
 
-                String themeColorHex = currentManifest != null ? currentManifest.themeColor : "#FFFFFF";
-                Bitmap finalAdaptiveIcon = createAdaptiveAppIcon(activity, rawBitmap, themeColorHex);
+                    showInstallConfirmationDialog(activity, initialTitle, targetUrl, finalAdaptiveIcon, themeColorHex, workingManifest);
+                });
 
+            } catch (Exception e) {
+                Log.e(TAG, "Error preparing PWA install", e);
+                activity.runOnUiThread(() -> PetalToast.show(activity, R.string.pwa_install_failed));
+            }
+        }).start();
+    }
+
+    /**
+     * Renders an expressive Material 3 confirmation dialog matching Firefox WebAppShortcutManager.
+     */
+    private void showInstallConfirmationDialog(Activity activity, String defaultTitle, String targetUrl,
+                                               Bitmap adaptiveIcon, String themeColorHex, PwaManifest manifest) {
+        try {
+            LayoutInflater inflater = LayoutInflater.from(activity);
+            View dialogView = inflater.inflate(R.layout.dialog_pwa_install, null);
+
+            ImageView iconView = dialogView.findViewById(R.id.dialog_pwa_icon);
+            TextView titleView = dialogView.findViewById(R.id.dialog_pwa_title);
+            TextView urlView = dialogView.findViewById(R.id.dialog_pwa_url);
+            MaterialButton cancelButton = dialogView.findViewById(R.id.dialog_pwa_cancel);
+            MaterialButton installButton = dialogView.findViewById(R.id.dialog_pwa_install);
+
+            if (iconView != null && adaptiveIcon != null) {
+                iconView.setImageBitmap(adaptiveIcon);
+            }
+            if (titleView != null) {
+                titleView.setText(defaultTitle);
+            }
+            if (urlView != null) {
+                String domainText = HelperUnit.domain(targetUrl);
+                if (domainText == null || domainText.isEmpty()) domainText = targetUrl;
+                urlView.setText(domainText);
+            }
+
+            AlertDialog dialog = new MaterialAlertDialogBuilder(activity)
+                    .setView(dialogView)
+                    .create();
+
+            if (cancelButton != null) {
+                cancelButton.setOnClickListener(v -> dialog.dismiss());
+            }
+
+            if (installButton != null) {
+                installButton.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    performShortcutPinning(activity, defaultTitle, targetUrl, adaptiveIcon, themeColorHex, manifest);
+                });
+            }
+
+            dialog.show();
+            HelperUnit.setupDialog(activity, dialog);
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing install dialog, falling back to direct pinning", e);
+            performShortcutPinning(activity, defaultTitle, targetUrl, adaptiveIcon, themeColorHex, manifest);
+        }
+    }
+
+    /**
+     * Executes the home screen shortcut creation, offline web archive snapshot,
+     * and displays completion toast.
+     */
+    private void performShortcutPinning(Activity activity, String title, String targetUrl,
+                                        Bitmap adaptiveIcon, String themeColorHex, PwaManifest manifest) {
+        new Thread(() -> {
+            try {
                 File archiveDir = new File(activity.getFilesDir(), "offline_web_archives");
                 if (!archiveDir.exists()) archiveDir.mkdirs();
                 String filename = "archive_" + Math.abs(targetUrl.hashCode()) + ".mht";
@@ -416,19 +704,18 @@ public class PetalPwaManager {
                 shortcutIntent.putExtra(PetalPwaActivity.EXTRA_URL, targetUrl);
                 shortcutIntent.putExtra(PetalPwaActivity.EXTRA_TITLE, title);
                 shortcutIntent.putExtra(PetalPwaActivity.EXTRA_THEME_COLOR, themeColorHex);
-                shortcutIntent.putExtra(PetalPwaActivity.EXTRA_DISPLAY, currentManifest != null ? currentManifest.display : "standalone");
+                shortcutIntent.putExtra(PetalPwaActivity.EXTRA_DISPLAY, manifest != null ? manifest.display : "standalone");
                 shortcutIntent.putExtra(PetalPwaActivity.EXTRA_OFFLINE_ARCHIVE, archiveFile.getAbsolutePath());
                 shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 
-                IconCompat iconCompat = IconCompat.createWithBitmap(finalAdaptiveIcon);
+                IconCompat iconCompat = IconCompat.createWithBitmap(adaptiveIcon);
                 String shortcutId = "pwa_" + Math.abs(targetUrl.hashCode());
 
                 ShortcutInfoCompat pinShortcutInfo = new ShortcutInfoCompat.Builder(activity, shortcutId)
                         .setShortLabel(title)
-                        .setLongLabel(currentManifest != null && !currentManifest.name.isEmpty() ? currentManifest.name : title)
+                        .setLongLabel(manifest != null && !manifest.name.isEmpty() ? manifest.name : title)
                         .setIcon(iconCompat)
                         .setIntent(shortcutIntent)
-                        .setAlwaysBadged()
                         .build();
 
                 boolean pinned = false;
@@ -444,27 +731,34 @@ public class PetalPwaManager {
                     }
                 }
 
-                activity.runOnUiThread(() -> PetalToast.show(activity, "Installed \"" + title + "\" to Home Screen", Toast.LENGTH_SHORT));
+                String successMsg = activity.getString(R.string.pwa_install_success, title);
+                activity.runOnUiThread(() -> PetalToast.show(activity, successMsg));
             } catch (Exception e) {
-                Log.e(TAG, "Error installing PWA shortcut", e);
-                activity.runOnUiThread(() -> PetalToast.show(activity, "Could not install app shortcut", Toast.LENGTH_SHORT));
+                Log.e(TAG, "Error pinning PWA shortcut", e);
+                activity.runOnUiThread(() -> PetalToast.show(activity, R.string.pwa_install_failed));
             }
         }).start();
     }
 
-    private Bitmap fetchBitmap(String urlStr) {
+    private static Bitmap fetchBitmap(String urlStr) {
         if (urlStr == null || urlStr.isEmpty()) return null;
         try {
             URL url = new URL(urlStr);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36");
             conn.setRequestProperty("Accept", "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(5000);
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(4000);
+            conn.setInstanceFollowRedirects(true);
             conn.setDoInput(true);
             conn.connect();
-            InputStream input = conn.getInputStream();
-            return BitmapFactory.decodeStream(input);
+            if (conn.getResponseCode() >= 200 && conn.getResponseCode() < 400) {
+                InputStream input = conn.getInputStream();
+                Bitmap b = BitmapFactory.decodeStream(input);
+                input.close();
+                return b;
+            }
+            return null;
         } catch (Exception e) {
             return null;
         }
@@ -487,7 +781,6 @@ public class PetalPwaManager {
                 if (json.has("icons")) {
                     JSONArray icons = json.getJSONArray("icons");
                     if (icons.length() > 0) {
-                        // Pick the best icon (prefer 192x192, 512x512, or the largest declared size)
                         String bestIcon = "";
                         int bestSize = 0;
                         for (int i = 0; i < icons.length(); i++) {
