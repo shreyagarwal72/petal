@@ -101,7 +101,7 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
         }
     }
 
-    override fun onToggleActionButton(
+    fun onToggleActionButton(
         extension: WebExtension,
         action: Action,
         session: EngineSession?
