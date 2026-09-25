@@ -101,7 +101,7 @@ object PetalGeckoRuntime {
             .consoleOutput(isDebug)
             .remoteDebuggingEnabled(isDebug)
             .webManifest(true)
-            .extensionsProcessEnabled(true)
+            .extensionsProcessEnabled(!isLowRamDevice)
             .extensionsWebAPIEnabled(true)
             // Enable login autofill API so password manager extensions (Bitwarden, etc.) can
             // intercept login forms via the WebExtension loginAutofill API. Without this,
@@ -112,7 +112,7 @@ object PetalGeckoRuntime {
         try {
             // Low memory device tuning
             if (isLowRamDevice) {
-                Log.i(TAG, "Configuring GeckoRuntime for low-RAM device profile")
+                Log.i(TAG, "Configuring GeckoRuntime for low-RAM device profile (in-process extensions, constrained memory limits)")
             }
         } catch (t: Throwable) {
             Log.w(TAG, "Could not apply optional runtime settings: ${t.message}")
@@ -132,7 +132,18 @@ object PetalGeckoRuntime {
     @JvmStatic
     fun onTrimMemory(context: Context, level: Int) {
         val rt = runtime ?: return
-        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL ||
+            level >= android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
+            try {
+                // Purge all volatile caches (image decodes, network cache, memory caches)
+                rt.storageController.clearData(
+                    org.mozilla.geckoview.StorageController.ClearFlags.ALL_CACHES
+                )
+                Log.d(TAG, "Purged all Gecko caches on critical memory trim level $level")
+            } catch (t: Throwable) {
+                Log.d(TAG, "Failed to purge caches on critical memory: ${t.message}")
+            }
+        } else if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             try {
                 // Purge volatile image caches in StorageController
                 rt.storageController.clearData(

@@ -1126,7 +1126,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onTrimMemory(level);
         try {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.onTrimMemory(this, level);
-            com.petal.browser.unit.TabThumbnailCache.clear();
+            if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+                com.petal.browser.unit.TabThumbnailCache.clearMemory();
+            }
         } catch (Throwable t) {
             Log.d(TAG, "Error in onTrimMemory: " + t.getMessage());
         }
@@ -6609,6 +6611,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onPause() {
         super.onPause();
         try {
+            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).onPause();
+            }
             saveOpenedTabs();
         } catch (Exception e) {
             Log.e(TAG, "Error saving tab session in onPause", e);
@@ -6621,7 +6626,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onLowMemory();
         try {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.onLowMemory(this);
-            com.petal.browser.unit.TabThumbnailCache.clear();
+            com.petal.browser.unit.TabThumbnailCache.clearMemory();
         } catch (Throwable t) {
             Log.d(TAG, "Error in onLowMemory: " + t.getMessage());
         }

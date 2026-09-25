@@ -176,8 +176,18 @@ class PetalApplication : Application() {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         if (!isMainProcess()) return
-        // Tab thumbnail previews must only be cleared when explicitly closed or cleared
-        // in Tab Manager per user configuration. Do not evict disk or memory cache on trim memory.
+        try {
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.onTrimMemory(this, level)
+        } catch (_: Throwable) {}
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        if (!isMainProcess()) return
+        try {
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.onLowMemory(this)
+            com.petal.browser.unit.TabThumbnailCache.clearMemory()
+        } catch (_: Throwable) {}
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

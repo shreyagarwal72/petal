@@ -212,7 +212,7 @@ class PetalGeckoView @JvmOverloads constructor(
             session.open(runtime)
         }
         geckoView.setSession(session)
-        session.setActive(true)
+        session.setActive(isForegroundTab)
         com.petal.browser.extensions.PetalExtensionManager.attachSession(session)
         // Do not mutate GeckoView's compositor child hierarchy during session attachment.
         // Edge-gesture handling is performed lazily from dispatchTouchEvent().
@@ -1418,6 +1418,9 @@ class PetalGeckoView @JvmOverloads constructor(
                 post {
                     try {
                         parent.addView(geckoView, index)
+                        if (isForegroundTab) {
+                            session.setActive(true)
+                        }
                         if (urlToRestore.isNotEmpty() && !urlToRestore.equals("about:blank", ignoreCase = true)) {
                             session.loadUri(urlToRestore)
                         }
@@ -1641,8 +1644,13 @@ class PetalGeckoView @JvmOverloads constructor(
         clearFocus()
         isForegroundTab = false
         album.deactivate()
-        updatePreviewCache()
-        session.setActive(false)
+        // Capture thumbnail preview while Gecko compositor surface is still active
+        try {
+            updatePreviewCache()
+        } catch (_: Throwable) {}
+        try {
+            session.setActive(false)
+        } catch (_: Throwable) {}
     }
 
     override fun getTitle(): String {
@@ -1846,7 +1854,15 @@ class PetalGeckoView @JvmOverloads constructor(
                     val h = bitmap.height
                     val targetWidth = Math.min(w, 480)
                     val targetHeight = Math.max(1, (h.toFloat() * targetWidth / w).toInt())
-                    val scaled = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                    val scaled = try {
+                        val s = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                        if (s !== bitmap && !bitmap.isRecycled) {
+                            bitmap.recycle()
+                        }
+                        s
+                    } catch (_: Throwable) {
+                        bitmap
+                    }
                     cachingConsumer(scaled)
                 } else {
                     cachingConsumer(null)
@@ -1873,7 +1889,9 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun onResume() {
-        session.setActive(true)
+        if (isForegroundTab) {
+            session.setActive(true)
+        }
     }
 
     fun onPause() {
