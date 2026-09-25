@@ -82,6 +82,10 @@ object PetalGeckoRuntime {
         val am = appContext.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
         val isLowRamDevice = am?.isLowRamDevice ?: false
 
+        val isDebug = try {
+            (appContext.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        } catch (_: Throwable) { false }
+
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(false)
             .contentBlocking(
@@ -94,7 +98,8 @@ object PetalGeckoRuntime {
                     .build()
             )
             .javaScriptEnabled(sp.getBoolean("profileStandard_javascript", true))
-            .consoleOutput(false)
+            .consoleOutput(isDebug)
+            .remoteDebuggingEnabled(isDebug)
             .webManifest(true)
             .extensionsProcessEnabled(true)
             .extensionsWebAPIEnabled(true)
@@ -102,7 +107,6 @@ object PetalGeckoRuntime {
             // intercept login forms via the WebExtension loginAutofill API. Without this,
             // extensions receive the form events but cannot fill credentials.
             .loginAutofillEnabled(true)
-
 
         // Firefox official memory and performance optimizations
         try {
