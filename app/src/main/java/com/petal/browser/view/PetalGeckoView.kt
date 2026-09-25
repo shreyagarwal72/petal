@@ -1288,6 +1288,21 @@ class PetalGeckoView @JvmOverloads constructor(
             return
         }
 
+        // Intercept petal://config and about:config to open the advanced settings sheet.
+        val trimmedUrl = url.trim()
+        if (trimmedUrl.equals("petal://config", ignoreCase = true) ||
+            trimmedUrl.equals("petal:config", ignoreCase = true) ||
+            trimmedUrl.equals("about:config", ignoreCase = true)
+        ) {
+            val act = getHostActivity()
+            if (act is com.petal.browser.activity.BrowserActivity) {
+                act.runOnUiThread {
+                    com.petal.browser.ui.components.PetalConfigSheet.show(act)
+                }
+            }
+            return
+        }
+
         val redirected = BrowserUnit.redirectURL(sp, url)
         var targetUrl = BrowserUnit.queryWrapper(context, redirected)
 

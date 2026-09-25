@@ -32,6 +32,21 @@ object PetalMediaSniffer {
     val interceptor = MediaInterceptor()
 
     @JvmStatic
+    fun initPreferences(context: Context) {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        interceptor.isMediaDetectionEnabled = sp.getBoolean("sp_media_detect_background", true)
+        interceptor.isMediaValidationEnabled = sp.getBoolean("sp_media_validate_streams", true)
+        interceptor.isMediaButtonEnabled = sp.getBoolean("sp_media_button_address_bar", true)
+        sp.registerOnSharedPreferenceChangeListener { prefs, key ->
+            when (key) {
+                "sp_media_detect_background" -> interceptor.isMediaDetectionEnabled = prefs.getBoolean("sp_media_detect_background", true)
+                "sp_media_validate_streams" -> interceptor.isMediaValidationEnabled = prefs.getBoolean("sp_media_validate_streams", true)
+                "sp_media_button_address_bar" -> interceptor.isMediaButtonEnabled = prefs.getBoolean("sp_media_button_address_bar", true)
+            }
+        }
+    }
+
+    @JvmStatic
     fun isSearchEngineOrInternalUrl(url: String?): Boolean = interceptor.isSearchEngineOrInternalUrl(url)
 
     fun setActivePage(pageId: String) {

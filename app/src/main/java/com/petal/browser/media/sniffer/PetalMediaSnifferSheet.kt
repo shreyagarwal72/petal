@@ -36,7 +36,13 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material3.FilledTonalButton
+import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.view.PetalToast
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -99,6 +105,14 @@ fun PetalMediaSnifferOverlay(
     var dismissed by remember { mutableStateOf(false) }
     val isSearchOrInternal = remember(currentPageUrl) {
         PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(currentPageUrl)
+    }
+
+    val forceOpen by PetalMediaSnifferOverlayBridge.isSheetForcedOpen
+    LaunchedEffect(forceOpen) {
+        if (forceOpen) {
+            sheetOpen = true
+            PetalMediaSnifferOverlayBridge.isSheetForcedOpen.value = false
+        }
     }
 
     LaunchedEffect(currentPageUrl, media, socialOnly) {
@@ -164,6 +178,19 @@ fun PetalMediaSnifferOverlay(
     }
 }
 
+private fun formatMediaSize(bytes: Long?): String? {
+    if (bytes == null || bytes <= 0L) return null
+    val kb = bytes / 1024.0
+    val mb = kb / 1024.0
+    val gb = mb / 1024.0
+    return when {
+        gb >= 1.0 -> String.format(java.util.Locale.US, "%.1f GB", gb)
+        mb >= 1.0 -> String.format(java.util.Locale.US, "%.1f MB", mb)
+        kb >= 1.0 -> String.format(java.util.Locale.US, "%.0f KB", kb)
+        else -> "$bytes B"
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PetalMediaSheet(
@@ -190,16 +217,41 @@ private fun PetalMediaSheet(
             // giving the user immediate direct stream downloads without waiting for external extractors.
             if (media.isNotEmpty()) {
                 item {
-                    Text(
-                        "Media sources",
-                        style    = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                    )
-                    Text(
-                        "Detected without interrupting playback",
-                        style    = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Media sources",
+                                style    = MaterialTheme.typography.headlineSmall
+                            )
+                            Text(
+                                "Detected without interrupting playback",
+                                style    = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        val directItems = remember(media) {
+                            media.filter { it.type != MediaInterceptor.MediaType.HLS && it.type != MediaInterceptor.MediaType.DASH }
+                        }
+                        if (directItems.size > 1) {
+                            FilledTonalButton(
+                                onClick = {
+                                    directItems.forEach { directItem ->
+                                        PetalMediaSniffer.download(context, directItem)
+                                    }
+                                    PetalToast.show(context, "Queued ${directItems.size} downloads")
+                                    onDismiss()
+                                }
+                            ) {
+                                Icon(Icons.Rounded.Download, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("All (${directItems.size})")
+                            }
+                        }
+                    }
                 }
 
                 items(media, key = { it.url }) { item ->
@@ -220,9 +272,10 @@ private fun PetalMediaSheet(
                                 style    = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.weight(1f)
                             )
+                            val sizeStr = formatMediaSize(item.sizeBytes)
                             FilterChip(
                                 selected = false, onClick = {},
-                                label    = { Text(item.type.name) }
+                                label    = { Text(item.type.name + (if (sizeStr != null) " • $sizeStr" else "")) }
                             )
                         }
                         Text(
@@ -232,7 +285,10 @@ private fun PetalMediaSheet(
                             maxLines = 2,
                             style    = MaterialTheme.typography.bodyMedium
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Button(onClick = { onPlay(item.toPlaybackRequest()); onDismiss() }) {
                                 Icon(Icons.Rounded.PlayArrow, null)
                                 Text("Play", modifier = Modifier.padding(start = 6.dp))
@@ -250,6 +306,20 @@ private fun PetalMediaSheet(
                                     }
                                 )
                             }
+                            AssistChip(
+                                onClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                    val clip = ClipData.newPlainText("Media URL", item.url)
+                                    clipboard?.setPrimaryClip(clip)
+                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                    PetalToast.show(context, "Media link copied")
+                                },
+                                label = {
+                                    Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Copy")
+                                }
+                            )
                         }
                     }
                 }

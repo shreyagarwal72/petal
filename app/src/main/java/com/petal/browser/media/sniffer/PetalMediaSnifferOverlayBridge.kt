@@ -22,6 +22,15 @@ object PetalMediaSnifferOverlayBridge {
     @JvmStatic
     val currentPageUrl = mutableStateOf("")
 
+    /** Mutable flag to force the media sniffer sheet to open from external controls (like the address bar button). */
+    @JvmStatic
+    val isSheetForcedOpen = mutableStateOf(false)
+
+    @JvmStatic
+    fun openMediaSheet() {
+        isSheetForcedOpen.value = true
+    }
+
     /** Call from BrowserActivity (or tab switch events) to keep the Social Download section current. */
     @JvmStatic
     fun setCurrentPageUrl(url: String) {

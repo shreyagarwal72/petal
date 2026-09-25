@@ -179,6 +179,9 @@ object PetalAddressBarBridge {
                         onShareClick = { shareClick?.run() },
                         onAddressClick = { addressClick?.run() },
                         onAiResearchClick = { aiResearchClick?.run() },
+                        onMediaClick = {
+                            com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
+                        },
                         onSwipeNextTab = { swipeNextTab?.run() },
                         onSwipePrevTab = { swipePrevTab?.run() },
                         onPasteAndGo = { pasteAndGo?.invoke(it) },

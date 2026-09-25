@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -38,6 +39,7 @@ import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.media.sniffer.PetalMediaSniffer
 import com.petal.browser.view.PetalToast
 
 /**
@@ -65,6 +67,7 @@ fun PetalAddressBar(
     onShareClick: () -> Unit,
     onAddressClick: () -> Unit,
     onAiResearchClick: () -> Unit = {},
+    onMediaClick: () -> Unit = {},
     onSwipeNextTab: () -> Unit = {},
     onSwipePrevTab: () -> Unit = {},
     onPasteAndGo: (String) -> Unit = {},
@@ -127,6 +130,20 @@ fun PetalAddressBar(
     }
 
     var showQuickActionsMenu by remember { mutableStateOf(false) }
+
+    // Media sniffer: observe hasPlayableMedia and the address-bar button pref
+    var isMediaButtonPrefEnabled by remember { mutableStateOf(sp.getBoolean("sp_media_button_address_bar", true)) }
+    DisposableEffect(sp) {
+        val l = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, k ->
+            if (k == "sp_media_button_address_bar") {
+                isMediaButtonPrefEnabled = prefs.getBoolean("sp_media_button_address_bar", true)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(l)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(l) }
+    }
+    val hasPlayableMedia by PetalMediaSniffer.interceptor.hasPlayableMedia.collectAsState()
+    val showMediaButton = isMediaButtonPrefEnabled && hasPlayableMedia && !isBlankOrSearch
 
     val containerColor = if (isIncognito) {
         com.petal.browser.ui.theme.IncognitoSurfaceContainer
@@ -329,6 +346,40 @@ fun PetalAddressBar(
                 }
 
                 Spacer(modifier = Modifier.width(2.dp))
+
+                // Media sniffer badge: shown when playable streams are detected and button pref is on
+                if (showMediaButton) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = true,
+                        enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(initialScale = 0.8f),
+                        exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(targetScale = 0.8f)
+                    ) {
+                        Box(modifier = Modifier.padding(end = 2.dp)) {
+                            IconButton(
+                                onClick = {
+                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                    onMediaClick()
+                                },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.SmartDisplay,
+                                    contentDescription = "Media found — tap to grab",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            // Red dot indicator
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.error)
+                                    .align(Alignment.TopEnd)
+                            )
+                        }
+                    }
+                }
 
                 // Far Right: Share Icon Button (min 48dp tap target)
                 IconButton(

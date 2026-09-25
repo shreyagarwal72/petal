@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -172,6 +173,64 @@ fun PetalConfigSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Programmatic bridge to open [PetalConfigSheet] from non-Compose contexts (e.g. URL interception).
+ * Follows the BottomSheetDialog pattern used by other Petal sheets.
+ */
+object PetalConfigSheet {
+    @JvmStatic
+    fun show(activity: androidx.activity.ComponentActivity) {
+        try {
+            val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(activity)
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            dialog.setCancelable(true)
+            dialog.setCanceledOnTouchOutside(true)
+            dialog.window?.let { win ->
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
+                win.statusBarColor = android.graphics.Color.TRANSPARENT
+                win.navigationBarColor = android.graphics.Color.TRANSPARENT
+            }
+            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+            val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
+                setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+                setContent {
+                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                    val paletteId = sp.getString("sp_palette_id", "") ?: ""
+                    val dynamicColor = sp.getBoolean("useDynamicColor", false)
+                    val isAmoled = sp.getBoolean("sp_amoled", false)
+                    val appFont = remember(fontName) {
+                        com.petal.browser.ui.theme.AppFont.fromName(fontName)
+                    }
+                    val colorStyle = remember(styleName) {
+                        try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) }
+                        catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                    }
+                    com.petal.browser.ui.theme.PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = appFont,
+                        colorStyle = colorStyle,
+                        paletteId = paletteId
+                    ) {
+                        PetalConfigSheet(onDismissRequest = {
+                            try { dialog.dismiss() } catch (_: Exception) {}
+                        })
+                    }
+                }
+            }
+            dialog.setContentView(composeView)
+            dialog.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

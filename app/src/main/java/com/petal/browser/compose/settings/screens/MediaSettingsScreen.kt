@@ -50,13 +50,13 @@ fun MediaSettingsScreen(
     var showMediaButton by remember { mutableStateOf(sp.getBoolean("sp_media_button_address_bar", true)) }
     var autoOpenPanel by remember { mutableStateOf(sp.getBoolean("sp_media_auto_open_panel", false)) }
     var validateStreams by remember { mutableStateOf(sp.getBoolean("sp_media_validate_streams", true)) }
-    var aiBlocker by remember { mutableStateOf(sp.getBoolean("sp_ai_blocker", true)) }
+    var aiBlocker by remember { mutableStateOf(sp.getBoolean("sp_ai_blocker", sp.getBoolean("petal_builtin_ai_blocker", true))) }
 
     var showSyncScreen by remember { mutableStateOf(false) }
 
     if (showSyncScreen) {
         FirefoxAccountSyncScreen(
-            onNavigateBack = { showSyncScreen = false }
+            onBack = { showSyncScreen = false }
         )
         return
     }
@@ -213,7 +213,13 @@ fun MediaSettingsScreen(
                         checked = aiBlocker,
                         onCheckedChange = { checked ->
                             aiBlocker = checked
-                            sp.edit().putBoolean("sp_ai_blocker", checked).apply()
+                            sp.edit()
+                                .putBoolean("sp_ai_blocker", checked)
+                                .putBoolean("petal_builtin_ai_blocker", checked)
+                                .apply()
+                            com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(
+                                context, "petal_builtin_ai_blocker", checked
+                            )
                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                         }
                     )

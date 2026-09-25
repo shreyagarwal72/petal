@@ -1280,7 +1280,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
             if (gv.canGoBack()) {
                 sp.edit().putBoolean("backPressed", true).apply();
-                gv.stopLoading();
+                // NOTE: Do NOT call gv.stopLoading() here — it cancels GeckoView history traversal
+                // on SPAs (React Router, Next.js, etc.) making the back button appear broken. (#25)
                 gv.goBack();
                 updateOmniBox();
                 updateBackCallbackState();
@@ -2347,7 +2348,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : (currentUrl != null && !currentUrl.isEmpty() ? currentUrl : albumSavedUrl);
 
                 if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl)) {
-                    if (currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl) || !currentUrl.equalsIgnoreCase(targetUrl)) {
+                    // Fix #25: also call loadUrl if the GeckoView session has not yet rendered
+                    // (isStopped == true means the session engine is not running, i.e. cold-start
+                    // or never-displayed tab — onResume() alone won't load it in that case).
+                    if (currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl)
+                            || !currentUrl.equalsIgnoreCase(targetUrl) || geckoView.isStopped()) {
                         geckoView.loadUrl(targetUrl);
                     } else {
                         geckoView.onResume();
@@ -4333,6 +4338,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (mediaSnifferCompose != null) {
             com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.bind(mediaSnifferCompose, this);
         }
+        // Sync detect/validate/button flags from SharedPreferences into the interceptor.
+        com.petal.browser.media.sniffer.PetalMediaSniffer.initPreferences(this);
 
         androidx.compose.ui.platform.ComposeView networkStatusCompose = findViewById(R.id.network_status_compose);
         if (networkStatusCompose != null) {
