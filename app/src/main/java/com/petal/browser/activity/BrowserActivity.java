@@ -2911,8 +2911,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                     tabIdToRemove = ((com.petal.browser.view.PetalGeckoView) controller).getTabId();
                     ((com.petal.browser.view.PetalGeckoView) controller).destroy();
-                } else if (controller instanceof PlaceholderAlbumController) {
-                    tabIdToRemove = ((PlaceholderAlbumController) controller).getTabId();
+                } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
+                    tabIdToRemove = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabId();
                 }
                 com.petal.browser.unit.TabThumbnailCache.removeAllIdentifiers(tabIdToRemove, String.valueOf(controller.hashCode()));
                 if ((predecessor != null) && (BrowserContainer.indexOf(predecessor) != -1)) {
@@ -2974,8 +2974,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 tabIdToRemove = ((com.petal.browser.view.PetalGeckoView) controller).getTabId();
                 com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, tabIdToRemove);
-            } else if (controller instanceof PlaceholderAlbumController) {
-                tabIdToRemove = ((PlaceholderAlbumController) controller).getTabId();
+            } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
+                tabIdToRemove = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabId();
             }
             
             com.petal.browser.unit.TabThumbnailCache.removeAllIdentifiers(tabIdToRemove, String.valueOf(controller.hashCode()));
