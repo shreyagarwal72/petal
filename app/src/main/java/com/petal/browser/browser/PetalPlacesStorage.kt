@@ -53,7 +53,7 @@ object PetalPlacesStorage {
         try {
             val action = RecordAction(context)
             action.open(true)
-            action.clearHistory()
+            action.clearTable(com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
             action.close()
         } catch (_: Throwable) {}
     }

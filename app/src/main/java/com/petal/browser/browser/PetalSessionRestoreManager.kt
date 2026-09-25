@@ -51,7 +51,12 @@ object PetalSessionRestoreManager {
                 val storage = PetalEngineStore.getSessionStorage(context)
                 val restoredState = storage.restore() ?: return@withContext false
                 withContext(Dispatchers.Main) {
-                    store.dispatch(mozilla.components.browser.state.action.TabListAction.RestoreAction(restoredState.tabs))
+                    store.dispatch(
+                        mozilla.components.browser.state.action.TabListAction.RestoreAction(
+                            tabs = restoredState.tabs,
+                            restoreLocation = mozilla.components.browser.state.action.TabListAction.RestoreAction.RestoreLocation.END
+                        )
+                    )
                 }
                 true
             } catch (t: Throwable) {

@@ -37,17 +37,14 @@ object PetalPrivacyController {
             else -> ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
         }
 
-        val builder = ContentBlocking.Settings.Builder()
-            .enhancedTrackingProtectionLevel(level)
-            .cookieBehavior(cookieBehavior)
-            .antiTracking(
-                ContentBlocking.AntiTracking.DEFAULT or
-                ContentBlocking.AntiTracking.STP or
-                ContentBlocking.AntiTracking.AD
-            )
-            .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
-
-        runtime.settings.contentBlocking = builder.build()
+        runtime.settings.contentBlocking.apply {
+            enhancedTrackingProtectionLevel = level
+            cookieBehavior = cookieBehavior
+            antiTracking = ContentBlocking.AntiTracking.DEFAULT or
+                    ContentBlocking.AntiTracking.STP or
+                    ContentBlocking.AntiTracking.AD
+            safeBrowsing = ContentBlocking.SafeBrowsing.DEFAULT
+        }
         sp.edit().putString("sp_etp_mode", mode.name).apply()
     }
 }
