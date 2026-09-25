@@ -49,11 +49,9 @@ object PetalEngineStore {
         val appContext = context.applicationContext
         val runtime = PetalGeckoRuntime.getOrCreate(appContext)
 
-        val delegate = com.petal.browser.extensions.PetalWebExtensionDelegate(appContext)
         val newEngine = GeckoEngine(
             context = appContext,
-            runtime = runtime,
-            webExtensionDelegate = delegate
+            runtime = runtime
         )
         engine = newEngine
         Log.i(TAG, "Initialized Mozilla GeckoEngine wrapping PetalGeckoRuntime")
