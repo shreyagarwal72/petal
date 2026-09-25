@@ -38,12 +38,14 @@ object PetalPrivacyController {
         }
 
         runtime.settings.contentBlocking.apply {
-            enhancedTrackingProtectionLevel = level
-            cookieBehavior = cookieBehavior
-            antiTracking = ContentBlocking.AntiTracking.DEFAULT or
-                    ContentBlocking.AntiTracking.STP or
-                    ContentBlocking.AntiTracking.AD
-            safeBrowsing = ContentBlocking.SafeBrowsing.DEFAULT
+            setEnhancedTrackingProtectionLevel(level)
+            setCookieBehavior(cookieBehavior)
+            setAntiTracking(
+                ContentBlocking.AntiTracking.DEFAULT or
+                ContentBlocking.AntiTracking.STP or
+                ContentBlocking.AntiTracking.AD
+            )
+            setSafeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
         }
         sp.edit().putString("sp_etp_mode", mode.name).apply()
     }
