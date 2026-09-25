@@ -318,7 +318,12 @@ object PetalTabSwitcherBridge {
                             others.forEach { otherAlbum ->
                                 val id = otherAlbum.hashCode().toString()
                                 tabItems.removeAll { it.id == id }
-                                com.petal.browser.unit.TabThumbnailCache.remove(id)
+                                val otherTabId = when (otherAlbum) {
+                                    is com.petal.browser.view.PetalGeckoView -> otherAlbum.getTabId()
+                                    is PlaceholderAlbumController -> otherAlbum.getTabId()
+                                    else -> null
+                                }
+                                com.petal.browser.unit.TabThumbnailCache.removeAllIdentifiers(otherTabId, id)
                                 onCloseTab(otherAlbum)
                             }
                             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)

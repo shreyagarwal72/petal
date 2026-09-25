@@ -118,6 +118,9 @@ object PetalIncognitoSessionManager {
                 incognitoProfile?.webStorage?.deleteAllData()
                 incognitoProfile?.geolocationPermissions?.clearAll()
             }
+
+            // Immediately purge any in-memory private tab thumbnails (Firefox parity)
+            com.petal.browser.unit.TabThumbnailCache.clearPrivateCache()
         } catch (e: Exception) {
             e.printStackTrace()
         }

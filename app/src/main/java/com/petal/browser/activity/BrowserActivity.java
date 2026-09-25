@@ -2907,10 +2907,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } catch (Exception ignored) {}
 
                 BrowserContainer.remove(controller);
+                String tabIdToRemove = null;
                 if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                    tabIdToRemove = ((com.petal.browser.view.PetalGeckoView) controller).getTabId();
                     ((com.petal.browser.view.PetalGeckoView) controller).destroy();
+                } else if (controller instanceof PlaceholderAlbumController) {
+                    tabIdToRemove = ((PlaceholderAlbumController) controller).getTabId();
                 }
-                com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
+                com.petal.browser.unit.TabThumbnailCache.removeAllIdentifiers(tabIdToRemove, String.valueOf(controller.hashCode()));
                 if ((predecessor != null) && (BrowserContainer.indexOf(predecessor) != -1)) {
                     //if predecessor is stored and has not been closed in the meantime
                     showAlbum(predecessor);
@@ -2966,12 +2970,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 );
             } catch (Exception ignored) {}
 
-            BrowserContainer.remove(controller);
+            String tabIdToRemove = null;
             if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, ((com.petal.browser.view.PetalGeckoView) controller).getTabId());
+                tabIdToRemove = ((com.petal.browser.view.PetalGeckoView) controller).getTabId();
+                com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, tabIdToRemove);
+            } else if (controller instanceof PlaceholderAlbumController) {
+                tabIdToRemove = ((PlaceholderAlbumController) controller).getTabId();
             }
             
-            com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
+            com.petal.browser.unit.TabThumbnailCache.removeAllIdentifiers(tabIdToRemove, String.valueOf(controller.hashCode()));
             if (isClosingCurrent && BrowserContainer.size() > 0) {
                 AlbumController nextController = BrowserContainer.get(Math.max(0, BrowserContainer.size() - 1));
                 if (isOverlayScreenShowing) {

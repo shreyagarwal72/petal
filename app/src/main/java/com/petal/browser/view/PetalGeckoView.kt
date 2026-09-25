@@ -1819,13 +1819,13 @@ class PetalGeckoView @JvmOverloads constructor(
 
         val cachingConsumer: (Bitmap?) -> Unit = { bmp ->
             if (bmp != null) {
-                TabThumbnailCache.put(key, bmp)
+                TabThumbnailCache.put(key, bmp, isIncognito)
                 if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
-                    TabThumbnailCache.put(url, bmp)
+                    TabThumbnailCache.put(url, bmp, isIncognito)
                 }
                 val aUrl = getAlbumUrl()
                 if (aUrl.isNotEmpty() && !aUrl.equals("about:blank", ignoreCase = true) && !aUrl.equals(url, ignoreCase = true)) {
-                    TabThumbnailCache.put(aUrl, bmp)
+                    TabThumbnailCache.put(aUrl, bmp, isIncognito)
                 }
             }
             callback.accept(bmp)
@@ -1907,6 +1907,9 @@ class PetalGeckoView @JvmOverloads constructor(
         try { if (session.isOpen) session.close() } catch (_: Throwable) {}
         try { engineSession?.close() } catch (_: Throwable) {}
         try { com.petal.browser.engine.gecko.PetalEngineStore.removeTab(context, tabId) } catch (_: Throwable) {}
+        try {
+            TabThumbnailCache.removeAllIdentifiers(tabId, hashCode().toString(), currentUrl, getAlbumUrl())
+        } catch (_: Throwable) {}
         removeAllViews()
     }
 
