@@ -32,17 +32,7 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build Release APKs
-        run: |
-          mkdir -p raw_apks
-          ./gradlew assembleRelease --stacktrace
-          for apk in app/build/outputs/apk/release/*.apk; do
-            if [ -f "$apk" ]; then
-              cp "$apk" raw_apks/
-            fi
-          done
-
-      - name: Sign & ZipAlign Release APKs
+      - name: Setup Signing Keystore
         env:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           ALIAS: ${{ secrets.ALIAS }}
@@ -74,7 +64,6 @@ jobs:
             keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1 | head -6
           fi
 
-          # Determine alias: if ALIAS_NAME is provided and found, use it; otherwise detect alias dynamically from keystore
           DETECTED_ALIAS=$(keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>/dev/null | grep 'PrivateKeyEntry' | head -n 1 | awk -F ',' '{print $1}' | xargs)
           if [ -n "$ALIAS_NAME" ] && keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1 | grep -q "$ALIAS_NAME"; then
             echo "✅ Specified alias '$ALIAS_NAME' verified in keystore."
@@ -86,12 +75,41 @@ jobs:
             keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1
             exit 1
           fi
-          echo "🔑 Final signing alias: $ALIAS_NAME"
 
+          echo "KEYSTORE_PATH=/tmp/signing.keystore" >> $GITHUB_ENV
+          echo "KEYSTORE_STORE_PASS=$STORE_PASS" >> $GITHUB_ENV
+          echo "KEYSTORE_KEY_PASS=$KEY_PASS" >> $GITHUB_ENV
+          echo "KEYSTORE_ALIAS=$ALIAS_NAME" >> $GITHUB_ENV
+
+      - name: Build Release APKs & AAB Bundle
+        run: |
+          mkdir -p raw_apks raw_aabs
+          ./gradlew assembleRelease bundleRelease \
+            -PRELEASE_STORE_FILE="$KEYSTORE_PATH" \
+            -PRELEASE_STORE_PASSWORD="$KEYSTORE_STORE_PASS" \
+            -PRELEASE_KEY_ALIAS="$KEYSTORE_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$KEYSTORE_KEY_PASS" \
+            --stacktrace
+          for apk in app/build/outputs/apk/release/*.apk; do
+            if [ -f "$apk" ]; then
+              cp "$apk" raw_apks/
+            fi
+          done
+          for aab in app/build/outputs/bundle/release/*.aab; do
+            if [ -f "$aab" ]; then
+              cp "$aab" raw_aabs/
+            fi
+          done
+
+      - name: Sign & ZipAlign Release APKs & AAB
+        run: |
+          STORE_PASS="$KEYSTORE_STORE_PASS"
+          KEY_PASS="$KEYSTORE_KEY_PASS"
+          ALIAS_NAME="$KEYSTORE_ALIAS"
           ANDROID_SDK_BUILD_TOOLS=$(find $ANDROID_HOME/build-tools -mindepth 1 -maxdepth 1 | sort -V | tail -n 1)
           echo "Using Android Build-Tools: $ANDROID_SDK_BUILD_TOOLS"
 
-          mkdir -p signed_apks
+          mkdir -p signed_apks signed_aabs
           for apk in raw_apks/*.apk; do
             if [ -f "$apk" ]; then
               filename=$(basename "$apk")
@@ -113,6 +131,18 @@ jobs:
             fi
           done
 
+          for aab in raw_aabs/*.aab; do
+            if [ -f "$aab" ]; then
+              filename=$(basename "$aab")
+              final_aab="signed_aabs/$filename"
+              cp "$aab" "$final_aab"
+              # bundleRelease is already signed by the Gradle release signingConfig.
+              # Do not run jarsigner again: a second signature adds another
+              # certificate chain, which Google Play rejects for Android App Bundles.
+              jarsigner -verify "$final_aab"
+            fi
+          done
+
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
@@ -122,11 +152,20 @@ jobs:
           path: signed_apks/*.apk
           retention-days: 1
 
-      - name: Prepare Release APK Files
+      - name: Upload Release AAB Bundle Artifact (Play Store)
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: petal-browser-release-bundle
+          path: signed_aabs/*.aab
+          retention-days: 7
+
+      - name: Prepare Release APK & AAB Files
         if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && github.event_name != 'pull_request'
         run: |
           mkdir -p dist
           find signed_apks -type f
+          find signed_aabs -type f
 
           for f in signed_apks/*.apk; do
             if [ -f "$f" ]; then
@@ -143,6 +182,12 @@ jobs:
               else
                 cp "$f" dist/$(basename "$f")
               fi
+            fi
+          done
+
+          for f in signed_aabs/*.aab; do
+            if [ -f "$f" ]; then
+              cp "$f" dist/petal-browser-release.aab
             fi
           done
           ls -la dist/
@@ -180,22 +225,21 @@ jobs:
               --generate-notes
           fi
 
-          echo "Uploading APK assets with retries..."
-          for apk in dist/*.apk; do
-            if [ -f "$apk" ]; then
-              echo "Uploading $apk..."
+          echo "Uploading APK & AAB assets with retries..."
+          for asset in dist/*; do
+            if [ -f "$asset" ]; then
+              echo "Uploading $asset..."
               for attempt in {1..3}; do
-                if gh release upload "$TAG_NAME" "$apk" --clobber; then
-                  echo "Successfully uploaded $apk"
+                if gh release upload "$TAG_NAME" "$asset" --clobber; then
+                  echo "Successfully uploaded $asset"
                   break
                 else
-                  echo "Upload failed for $apk (attempt $attempt/3). Retrying in 5s..."
+                  echo "Upload failed for $asset (attempt $attempt/3). Retrying in 5s..."
                   sleep 5
                   if [ "$attempt" -eq 3 ]; then
-                    echo "Failed to upload $apk after 3 attempts, continuing with remaining assets."
+                    echo "Failed to upload $asset after 3 attempts, continuing with remaining assets."
                   fi
                 fi
               done
             fi
           done
-
