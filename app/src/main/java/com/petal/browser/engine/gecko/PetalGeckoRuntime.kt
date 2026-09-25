@@ -94,10 +94,10 @@ object PetalGeckoRuntime {
                     // Block tracking cookies and isolate the rest (dynamic first-party isolation).
                     .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
-                    .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
+                    .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.DEFAULT)
                     .build()
             )
-            .javaScriptEnabled(sp.getBoolean("profileStandard_javascript", true))
+            .javaScriptEnabled(sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true)))
             .consoleOutput(isDebug)
             .remoteDebuggingEnabled(isDebug)
             .webManifest(true)
