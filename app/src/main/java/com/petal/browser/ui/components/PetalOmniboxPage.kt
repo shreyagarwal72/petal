@@ -225,6 +225,14 @@ fun PetalOmniboxPage(
     fun submitSearch(query: String, saveToHistory: Boolean = false) {
         val normalized = query.trim()
         if (normalized.isBlank()) return
+        try {
+            keyboardController?.hide()
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            val windowToken = (context as? android.app.Activity)?.window?.decorView?.windowToken
+            if (imm != null && windowToken != null) {
+                imm.hideSoftInputFromWindow(windowToken, 0)
+            }
+        } catch (_: Throwable) {}
         if (saveToHistory && !isIncognito) {
             val listKey = "sp_search_history_list"
             val legacyKey = "sp_search_history_queries"
@@ -848,80 +856,6 @@ fun PetalOmniboxPage(
                             }
                         }
 
-                        // Search-engine badges use only the active Material 3 theme.
-                        // Brand colors made the chips visually fight the browser palette.
-                        data class EngineChipData(
-                            val name: String,
-                            val icon: androidx.compose.ui.graphics.vector.ImageVector,
-                            val baseUrl: String
-                        )
-
-                        val engineChips = remember {
-                            listOf(
-                                EngineChipData("Google", Icons.Rounded.Search, "https://www.google.com/search?q="),
-                                EngineChipData("DuckDuckGo", Icons.Rounded.Shield, "https://duckduckgo.com/?q="),
-                                EngineChipData("Brave", Icons.Rounded.Security, "https://search.brave.com/search?q="),
-                                EngineChipData("Wikipedia", Icons.Rounded.MenuBook, "https://en.wikipedia.org/wiki/Special:Search?search="),
-                                EngineChipData("GitHub", Icons.Rounded.Code, "https://github.com/search?q="),
-                                EngineChipData("YouTube", Icons.Rounded.PlayCircle, "https://www.youtube.com/results?search_query="),
-                                EngineChipData("Reddit", Icons.Rounded.Forum, "https://www.reddit.com/search/?q=")
-                            )
-                        }
-
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(engineChips) { chip ->
-                                AssistChip(
-                                    onClick = {
-                                        try {
-                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                                com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
-                                                0.50f
-                                            )
-                                        } catch (_: Throwable) {}
-
-                                        val currentQuery = queryState.text.trim()
-                                        if (currentQuery.isNotBlank()) {
-                                            val encoded = try {
-                                                java.net.URLEncoder.encode(currentQuery, "UTF-8")
-                                            } catch (_: Exception) {
-                                                currentQuery.replace(" ", "+")
-                                            }
-                                            submitSearch(chip.baseUrl + encoded, saveToHistory = true)
-                                        } else {
-                                            submitSearch(chip.baseUrl, saveToHistory = false)
-                                        }
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = chip.icon,
-                                            contentDescription = chip.name,
-                                            modifier = Modifier.size(18.dp),
-                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                    },
-                                    label = {
-                                        Text(
-                                            text = chip.name,
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
-                                        )
-                                    },
-                                    shape = RoundedCornerShape(18.dp),
-                                    colors = AssistChipDefaults.assistChipColors(
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        leadingIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                    ),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
-                                    )
-                                )
-                            }
-                        }
 
                         // Frequently Visited Site Shortcuts Row (Only show when query hasn't been edited)
                         if (cleanPageUrl.isNotBlank() && queryState.text.trim() == cleanPageUrl) {

@@ -7,10 +7,14 @@ import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.os.Build
 import android.util.AttributeSet
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputConnectionWrapper
 import android.graphics.Region
 import android.widget.FrameLayout
 import androidx.annotation.MainThread
@@ -1663,6 +1667,7 @@ class PetalGeckoView @JvmOverloads constructor(
     override fun activate() {
         // Give IME/editor actions to GeckoView itself. Focusing the wrapper FrameLayout
         // leaves webpage fields visually focused but can swallow the keyboard Enter key.
+        geckoView.isFocusable = true
         geckoView.isFocusableInTouchMode = true
         geckoView.requestFocus()
         isForegroundTab = true
@@ -1673,6 +1678,18 @@ class PetalGeckoView @JvmOverloads constructor(
         try {
             com.petal.browser.engine.gecko.PetalEngineStore.selectTab(context, tabId)
         } catch (_: Throwable) {}
+    }
+
+    override fun requestFocus(direction: Int, previouslyFocusedRect: android.graphics.Rect?): Boolean {
+        // Prevent outer FrameLayout from stealing keyboard/IME focus from GeckoView
+        return geckoView.requestFocus(direction, previouslyFocusedRect)
+    }
+
+    override fun requestChildFocus(child: View?, focused: View?) {
+        super.requestChildFocus(child, focused)
+        if (child != geckoView && focused != geckoView) {
+            geckoView.requestFocus()
+        }
     }
 
     override fun deactivate() {
@@ -2402,5 +2419,28 @@ class SafeGeckoView : GeckoView {
             return false
         }
         return super.canScrollVertically(direction)
+    }
+
+    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
+        val ic = super.onCreateInputConnection(outAttrs) ?: return null
+        return object : InputConnectionWrapper(ic, true) {
+            override fun performEditorAction(editorAction: Int): Boolean {
+                if (editorAction == EditorInfo.IME_ACTION_GO ||
+                    editorAction == EditorInfo.IME_ACTION_SEARCH ||
+                    editorAction == EditorInfo.IME_ACTION_SEND ||
+                    editorAction == EditorInfo.IME_ACTION_DONE ||
+                    editorAction == EditorInfo.IME_ACTION_UNSPECIFIED
+                ) {
+                    val down = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER)
+                    val up = KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER)
+                    val handledDown = sendKeyEvent(down)
+                    val handledUp = sendKeyEvent(up)
+                    if (handledDown || handledUp) {
+                        return true
+                    }
+                }
+                return super.performEditorAction(editorAction)
+            }
+        }
     }
 }
