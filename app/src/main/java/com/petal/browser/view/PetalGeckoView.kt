@@ -43,6 +43,7 @@ import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.MediaSession
+import org.mozilla.geckoview.PanZoomController
 import kotlinx.coroutines.launch
 import java.util.function.Consumer
 
@@ -568,7 +569,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 historyList: GeckoSession.HistoryDelegate.HistoryList
             ) {
                 val currentIndex = historyList.currentIndex
-                val size = historyList.size()
+                val size = historyList.size
                 canGoBackVal = currentIndex > 0
                 canGoForwardVal = currentIndex < size - 1
                 if (engineSession != null) {

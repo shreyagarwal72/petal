@@ -78,7 +78,10 @@ fun PetalExpressiveDialog(
         // Android versions. Keep the dialog surface mounted immediately so it never
         // becomes a blank, touch-blocking window.
         Surface(
-            modifier = modifier.fillMaxWidth(0.92f).wrapContentHeight(),
+            modifier = modifier
+                .fillMaxWidth(0.92f)
+                .wrapContentHeight()
+                .modalScaleIn(),
             shape = shape,
             color = containerColor,
             contentColor = MaterialTheme.colorScheme.onSurface,

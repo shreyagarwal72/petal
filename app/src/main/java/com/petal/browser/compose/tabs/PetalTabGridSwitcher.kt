@@ -1501,13 +1501,26 @@ private fun TabCategoryPill(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val animatedBg by androidx.compose.animation.animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
+        label = "tabCategoryBg"
+    )
+    val animatedContentColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (selected) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
+        label = "tabCategoryColor"
+    )
+
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
-        color = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
-        contentColor = if (selected) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
+        color = animatedBg,
+        contentColor = animatedContentColor,
         tonalElevation = if (selected) 2.dp else 0.dp,
-        modifier = modifier.height(36.dp)
+        modifier = modifier
+            .height(36.dp)
+            .bouncyClickable(scaleDown = 0.94f, onClick = onClick)
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),

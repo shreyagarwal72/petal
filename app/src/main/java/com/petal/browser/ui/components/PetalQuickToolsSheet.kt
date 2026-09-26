@@ -225,11 +225,12 @@ fun PetalQuickToolsSheet(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 itemsIndexed(toolsList, key = { _, tool -> tool.id }) { index, tool ->
-                    ExpressiveQuickToolItem(
-                        tool = tool,
-                        isReorderMode = isReorderMode,
-                        canMoveLeft = index > 0,
-                        canMoveRight = index < toolsList.size - 1,
+                    Box(modifier = Modifier.animateItem().entrance(index = index, playKey = tool.id)) {
+                        ExpressiveQuickToolItem(
+                            tool = tool,
+                            isReorderMode = isReorderMode,
+                            canMoveLeft = index > 0,
+                            canMoveRight = index < toolsList.size - 1,
                         onMoveLeft = {
                             if (index > 0) {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
@@ -264,6 +265,7 @@ fun PetalQuickToolsSheet(
                         }
                     )
                 }
+            }
             }
         }
     }
