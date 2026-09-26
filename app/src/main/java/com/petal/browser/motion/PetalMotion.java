@@ -88,11 +88,100 @@ public final class PetalMotion {
     public static void press(View view, boolean pressed) {
         if (view == null || !animationsEnabled(view)) return;
         view.animate()
-                .scaleX(pressed ? 0.97f : 1f)
-                .scaleY(pressed ? 0.97f : 1f)
+                .scaleX(pressed ? 0.95f : 1f)
+                .scaleY(pressed ? 0.95f : 1f)
                 .setDuration(MICRO)
                 .setInterpolator(EMPHASIZED)
                 .start();
+    }
+
+    /** Smooth bottom sheet slide-up entrance with subtle scale. */
+    public static void sheetEnter(View view) {
+        if (view == null) return;
+        if (!animationsEnabled(view)) {
+            view.setAlpha(1f);
+            view.setTranslationY(0f);
+            view.setScaleX(1f);
+            view.setScaleY(1f);
+            return;
+        }
+        view.setAlpha(0f);
+        view.setTranslationY(120f);
+        view.setScaleX(0.97f);
+        view.setScaleY(0.97f);
+        view.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(TRANSITION)
+                .setInterpolator(EMPHASIZED)
+                .withLayer()
+                .start();
+    }
+
+    /** Smooth bottom sheet slide-down exit. */
+    public static void sheetExit(View view, Runnable onComplete) {
+        if (view == null) return;
+        if (!animationsEnabled(view)) {
+            if (onComplete != null) onComplete.run();
+            return;
+        }
+        view.animate()
+                .alpha(0f)
+                .translationY(160f)
+                .scaleX(0.96f)
+                .scaleY(0.96f)
+                .setDuration(COMPONENT)
+                .setInterpolator(EMPHASIZED_ACCELERATE)
+                .withLayer()
+                .withEndAction(() -> {
+                    if (onComplete != null) onComplete.run();
+                })
+                .start();
+    }
+
+    /** Premium modal dialog pop-in entrance. */
+    public static void dialogEnter(View view) {
+        if (view == null) return;
+        if (!animationsEnabled(view)) {
+            view.setAlpha(1f);
+            view.setScaleX(1f);
+            view.setScaleY(1f);
+            return;
+        }
+        view.setAlpha(0f);
+        view.setScaleX(0.90f);
+        view.setScaleY(0.90f);
+        view.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(COMPONENT)
+                .setInterpolator(EMPHASIZED)
+                .withLayer()
+                .start();
+    }
+
+    /** Smooth cross-fade for seamless surface switching without blank frames. */
+    public static void crossfade(View outgoing, View incoming, long duration) {
+        if (incoming != null) {
+            incoming.setVisibility(View.VISIBLE);
+            incoming.setAlpha(0f);
+            incoming.animate()
+                    .alpha(1f)
+                    .setDuration(duration)
+                    .setInterpolator(EMPHASIZED)
+                    .start();
+        }
+        if (outgoing != null) {
+            outgoing.animate()
+                    .alpha(0f)
+                    .setDuration(duration)
+                    .setInterpolator(EMPHASIZED_ACCELERATE)
+                    .withEndAction(() -> outgoing.setVisibility(View.GONE))
+                    .start();
+        }
     }
 
     private static boolean animationsEnabled(View view) {

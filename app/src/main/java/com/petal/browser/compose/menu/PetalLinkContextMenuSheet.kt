@@ -435,18 +435,35 @@ private fun ContextMenuItemRow(
     icon: ImageVector,
     title: String,
     shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(0.dp),
+    index: Int = 0,
     onClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale = animateFloatAsState(
+        targetValue = if (pressed) 0.96f else 1f,
+        animationSpec = spring(dampingRatio = 0.75f, stiffness = 500f),
+        label = "contextItemScale"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .clickable(onClick = {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
-                onClick()
-            })
+            .graphicsLayer {
+                scaleX = scale.value
+                scaleY = scale.value
+            }
+            .clickable(
+                interactionSource = interaction,
+                indication = ripple(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                onClick = {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                        .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                    onClick()
+                }
+            )
             .padding(horizontal = 20.dp, vertical = 11.dp)
     ) {
         Row(

@@ -318,3 +318,58 @@ fun Modifier.surfacePopIn(visible: Boolean = true): Modifier {
         scaleY = s
     }
 }
+
+/**
+ * Universal Card Motion: subtle staggered slide-up + scale-in entrance,
+ * combined with responsive spring press-compression.
+ */
+@Composable
+fun Modifier.petalCardMotion(
+    index: Int = 0,
+    playKey: Any? = null,
+    scaleDown: Float = PetalSpring.PRESS_SCALE_CARD,
+    enabled: Boolean = true,
+    onClick: (() -> Unit)? = null,
+): Modifier {
+    return this
+        .entrance(index = index, playKey = playKey)
+        .bouncyClickable(scaleDown = scaleDown, enabled = enabled, onClick = onClick)
+}
+
+/**
+ * Universal List Item Motion: smooth horizontal or vertical reveal
+ * with tactile touch scale feedback.
+ */
+@Composable
+fun Modifier.petalListItemMotion(
+    index: Int = 0,
+    playKey: Any? = null,
+    onClick: (() -> Unit)? = null,
+): Modifier {
+    return this
+        .entrance(index = index, playKey = playKey)
+        .bouncyClickable(scaleDown = PetalSpring.PRESS_SCALE_BUTTON, onClick = onClick)
+}
+
+/**
+ * Dialog / Sheet Modal Scale-In: fast spring expansion with fade.
+ */
+@Composable
+fun Modifier.modalScaleIn(visible: Boolean = true): Modifier {
+    val reduceMotion = rememberReduceMotion()
+    val scale = animateFloatAsState(
+        targetValue = if (visible) 1f else 0.92f,
+        animationSpec = PetalSpring.enter<Float>().orSnap(reduceMotion),
+        label = "modalScale",
+    )
+    val alpha = animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = PetalSpring.fadeIn<Float>().orSnap(reduceMotion),
+        label = "modalAlpha",
+    )
+    return graphicsLayer {
+        scaleX = scale.value
+        scaleY = scale.value
+        this.alpha = alpha.value
+    }
+}
