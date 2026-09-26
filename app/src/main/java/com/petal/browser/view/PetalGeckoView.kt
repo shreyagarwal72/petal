@@ -1545,11 +1545,12 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun findAllAsync(query: String) {
-        session.finder.find(query, GeckoSession.FINDER_FIND_MATCH_CASE)
+        // Match standard browser search behavior (case-insensitive by default)
+        session.finder.find(query, 0)
     }
 
     fun findNext(forward: Boolean) {
-        val flags = if (forward) GeckoSession.FINDER_FIND_MATCH_CASE else (GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_BACKWARDS)
+        val flags = if (forward) 0 else GeckoSession.FINDER_FIND_BACKWARDS
         session.finder.find(null, flags)
     }
 
