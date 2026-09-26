@@ -86,6 +86,11 @@ fun PetalSiteInfoBottomSheet(
     var isLocationAllowed by remember { mutableStateOf(sp.getBoolean(profile + "_location", false)) }
     var isNotificationsAllowed by remember { mutableStateOf(sp.getBoolean("sp_notifications_$domain", true)) }
 
+    // Enhanced Tracking Protection (ETP) breakdown
+    val isDomainWhitelisted = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.isDomainWhitelisted(domain) }
+    var trackingProtectionEnabled by remember(domain, isDomainWhitelisted) { mutableStateOf(!isDomainWhitelisted) }
+    val blockedCount = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.getBlockedCountForDomain(domain) }
+
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
@@ -254,6 +259,110 @@ fun PetalSiteInfoBottomSheet(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // --- Enhanced Tracking Protection (ETP Shield) Section ---
+            Text(
+                text = "Enhanced Tracking Protection",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
+            )
+
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        PetalShapeIconBadge(
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover.toShape(),
+                            containerColor = if (trackingProtectionEnabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (trackingProtectionEnabled) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                            size = 50.dp,
+                            iconSize = 24.dp
+                        ) {
+                            Icon(
+                                imageVector = if (trackingProtectionEnabled) Icons.Rounded.Shield else Icons.Rounded.ShieldMoon,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (trackingProtectionEnabled) "Protections Active" else "Protections Paused",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = if (trackingProtectionEnabled) {
+                                    if (blockedCount > 0) "$blockedCount trackers & ads blocked on this site" else "Blocking known cross-site trackers & ads"
+                                } else {
+                                    "Protection is disabled for this domain"
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Switch(
+                            checked = trackingProtectionEnabled,
+                            onCheckedChange = { enabled ->
+                                trackingProtectionEnabled = enabled
+                                if (enabled) {
+                                    com.petal.browser.browser.PetalAdBlockEngine.removeDomainFromWhitelist(context, domain)
+                                } else {
+                                    com.petal.browser.browser.PetalAdBlockEngine.addDomainToWhitelist(context, domain)
+                                }
+                                geckoView?.reloadWithoutInit()
+                            }
+                        )
+                    }
+
+                    if (trackingProtectionEnabled) {
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text("Cross-site Cookies", fontSize = 11.sp) },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.weight(1f)
+                            )
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text("Cryptominers", fontSize = 11.sp) },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.weight(1f)
+                            )
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text("Fingerprinters", fontSize = 11.sp) },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }

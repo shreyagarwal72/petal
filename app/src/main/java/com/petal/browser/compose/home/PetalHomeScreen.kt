@@ -504,10 +504,11 @@ fun PetalHomeScreen(
         }
     }
 
-    // Initialize wallpaper and profile managers for active profile
+    // Initialize wallpaper, profile, and tab collections managers for active profile
     LaunchedEffect(Unit) {
         com.petal.browser.profile.PetalProfileManager.init(context)
         com.petal.browser.wallpaper.PetalWallpaperManager.init(context)
+        com.petal.browser.collections.PetalCollectionManager.init(context)
     }
 
     Surface(
@@ -636,6 +637,151 @@ fun PetalHomeScreen(
                                     onEditShortcutItem = { item -> editingItem = item },
                                     onAddShortcutClick = { isAddingNewShortcut = true }
                                 )
+
+                                // ── Tab Collections Section (Firefox-style persistent groups) ──
+                                val collections = com.petal.browser.collections.PetalCollectionManager.collections
+                                if (collections.isNotEmpty()) {
+                                    Spacer(Modifier.height(28.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Collections",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "${collections.size} saved",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(12.dp))
+
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        collections.forEach { col ->
+                                            var isExpanded by remember { mutableStateOf(false) }
+                                            Surface(
+                                                shape = RoundedCornerShape(20.dp),
+                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                            modifier = Modifier.weight(1f).clickable { isExpanded = !isExpanded }
+                                                        ) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(10.dp)
+                                                                    .clip(CircleShape)
+                                                                    .background(
+                                                                        try {
+                                                                            Color(android.graphics.Color.parseColor(col.colorHex))
+                                                                        } catch (_: Exception) {
+                                                                            MaterialTheme.colorScheme.primary
+                                                                        }
+                                                                    )
+                                                            )
+                                                            Text(
+                                                                text = col.name,
+                                                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                                                color = MaterialTheme.colorScheme.onSurface
+                                                            )
+                                                            Text(
+                                                                text = "• ${col.items.size} tabs",
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                        }
+
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            IconButton(
+                                                                onClick = {
+                                                                    // Open all tabs in collection
+                                                                    col.items.forEach { item -> onOpenShortcutUrl(item.url) }
+                                                                },
+                                                                modifier = Modifier.size(32.dp)
+                                                            ) {
+                                                                Icon(
+                                                                    Icons.Rounded.OpenInNew,
+                                                                    contentDescription = "Open All",
+                                                                    tint = MaterialTheme.colorScheme.primary,
+                                                                    modifier = Modifier.size(18.dp)
+                                                                )
+                                                            }
+                                                            IconButton(
+                                                                onClick = {
+                                                                    com.petal.browser.collections.PetalCollectionManager.deleteCollection(context, col.id)
+                                                                },
+                                                                modifier = Modifier.size(32.dp)
+                                                            ) {
+                                                                Icon(
+                                                                    Icons.Rounded.DeleteOutline,
+                                                                    contentDescription = "Delete Collection",
+                                                                    tint = MaterialTheme.colorScheme.error,
+                                                                    modifier = Modifier.size(18.dp)
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+
+                                                    if (isExpanded) {
+                                                        Spacer(Modifier.height(10.dp))
+                                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                                        Spacer(Modifier.height(8.dp))
+                                                        col.items.forEach { tabItem ->
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .clip(RoundedCornerShape(10.dp))
+                                                                    .clickable { onOpenShortcutUrl(tabItem.url) }
+                                                                    .padding(vertical = 6.dp, horizontal = 4.dp),
+                                                                verticalAlignment = Alignment.CenterVertically,
+                                                                horizontalArrangement = Arrangement.SpaceBetween
+                                                            ) {
+                                                                Column(modifier = Modifier.weight(1f)) {
+                                                                    Text(
+                                                                        text = tabItem.title.ifBlank { tabItem.url },
+                                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis
+                                                                    )
+                                                                    Text(
+                                                                        text = tabItem.url,
+                                                                        style = MaterialTheme.typography.bodySmall,
+                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis
+                                                                    )
+                                                                }
+                                                                Icon(
+                                                                    Icons.Rounded.ChevronRight,
+                                                                    contentDescription = null,
+                                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                    modifier = Modifier.size(18.dp)
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
 
                                 Spacer(Modifier.height(96.dp))
                             }

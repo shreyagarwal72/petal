@@ -1075,6 +1075,9 @@ class PetalGeckoView @JvmOverloads constructor(
                 mediaBridge?.setActiveGeckoMediaSession(mediaSession)
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
+                    if (act is com.petal.browser.activity.BrowserActivity) {
+                        act.updatePipParams(true)
+                    }
                     val l = mediaBridge?.listener
                     l?.onMediaPlayingStateChanged(true)
                     l?.onMediaPlay(currentTitle, 0L, 0L)
@@ -1091,6 +1094,9 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onPause(session: GeckoSession, mediaSession: MediaSession) {
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
+                    if (act is com.petal.browser.activity.BrowserActivity) {
+                        act.updatePipParams(false)
+                    }
                     val l = mediaBridge?.listener
                     l?.onMediaPlayingStateChanged(false)
                     l?.onMediaPause(0L, 0L)
@@ -1621,6 +1627,23 @@ class PetalGeckoView @JvmOverloads constructor(
         } catch (t: Throwable) {
             android.util.Log.e(TAG, "Failed to print to PDF: ${t.message}")
             callback?.invoke(false)
+        }
+    }
+
+    /**
+     * Captures the full viewport visible page screenshot at native quality for user capture/export.
+     */
+    fun captureFullPageBitmap(callback: (Bitmap?) -> Unit) {
+        try {
+            geckoView.capturePixels().then({ bitmap ->
+                callback(bitmap)
+                GeckoResult.fromValue(null)
+            }, {
+                callback(null)
+                GeckoResult.fromValue(null)
+            })
+        } catch (e: Exception) {
+            callback(null)
         }
     }
 
