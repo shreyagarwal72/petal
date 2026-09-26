@@ -371,7 +371,7 @@ fun SettingsItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = enabled, onClick = onClick)
+                .bouncyClickable(scaleDown = 0.98f, enabled = enabled, onClick = onClick)
                 .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -492,7 +492,7 @@ fun SwitchSettingItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = enabled) { onCheckedChange(!checked) }
+                .bouncyClickable(scaleDown = 0.985f, enabled = enabled) { onCheckedChange(!checked) }
                 .padding(horizontal = 20.dp, vertical = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -613,7 +613,7 @@ fun ExpressiveCategoryItem(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .clickable(onClick = onClick)
+                .bouncyClickable(scaleDown = 0.98f, onClick = onClick)
                 .padding(20.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
