@@ -304,7 +304,7 @@ fun PetalSiteInfoBottomSheet(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         PetalShapeIconBadge(
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover.toShape(),
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape(),
                             containerColor = if (trackingProtectionEnabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (trackingProtectionEnabled) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                             size = 50.dp,
