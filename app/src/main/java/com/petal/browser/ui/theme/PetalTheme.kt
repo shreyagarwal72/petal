@@ -105,15 +105,15 @@ fun PetalExpressiveTheme(
     },
     fontWidth: Float = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        sp.getFloat("sp_font_width", 92f)
+        com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_font_width", 92f)
     },
     fontWeight: Int = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        sp.getInt("sp_font_weight", 750)
+        com.petal.browser.unit.HelperUnit.getSafeInt(sp, "sp_font_weight", 750)
     },
     fontRoundness: Float = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        sp.getFloat("sp_font_roundness", 100f)
+        com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_font_roundness", 100f)
     },
     gsFlexSettings: GSFlexSettings = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)

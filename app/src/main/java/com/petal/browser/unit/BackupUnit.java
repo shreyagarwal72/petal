@@ -57,10 +57,14 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -141,6 +145,192 @@ public class BackupUnit {
     public static void makeBackupDir(Context context) {
         if (context == null) return;
         getSafeBackupDir(context);
+    }
+
+    private static final String[] KNOWN_FLOAT_SUFFIXES = {
+        "_dim", "_blur", "_width", "_roundness", "_weight", "_opsz", "_grade", "_slant", "_scale", "_spread", "_darkening", "_tilt", "_distance"
+    };
+
+    private static boolean isLikelyFloatKey(String key) {
+        if (key == null) return false;
+        if (key.startsWith("sp_home_wallpaper_dim") || key.startsWith("sp_home_wallpaper_blur") ||
+            key.startsWith("sp_custom_display_") || key.startsWith("sp_custom_headline_") ||
+            key.startsWith("sp_custom_body_") || key.startsWith("sp_reader_font_size") ||
+            key.startsWith("sp_reader_line_height") || key.equals("sp_font_width") ||
+            key.equals("sp_font_roundness") || key.equals("sp_font_size_scale") ||
+            key.equals("sp_zoom_level_scale")) {
+            return true;
+        }
+        for (String suffix : KNOWN_FLOAT_SUFFIXES) {
+            if (key.endsWith(suffix) || key.contains(suffix + "_")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isKnownStringKey(String key) {
+        if (key == null) return false;
+        return "sp_fontSize".equals(key) || "sp_search_engine".equals(key) ||
+                "sp_searchEngine".equals(key) || "sp_userAgent".equals(key) ||
+                "profile".equals(key) || "sp_app_font".equals(key) ||
+                "sp_color_style".equals(key) || "sp_palette_id".equals(key) ||
+                "sp_gs_flex_preset".equals(key) || "sp_reader_theme".equals(key) ||
+                "sp_reader_font".equals(key) || key.startsWith("icon_");
+    }
+
+    private static final String[] BUILTIN_PREF_NAMES = {
+        "petal_settings", "petal_menu", "petal_tab_groups", "petal_inactive_tabs", "petal_ytdlp", "petal_fx_sync_prefs"
+    };
+
+    public static Set<String> getAllKnownPreferenceNames(Context context) {
+        Set<String> names = new HashSet<>(Arrays.asList(BUILTIN_PREF_NAMES));
+        if (context != null) {
+            try {
+                File prefsDir = new File(context.getApplicationInfo().dataDir, "shared_prefs");
+                if (prefsDir.exists() && prefsDir.isDirectory()) {
+                    File[] files = prefsDir.listFiles();
+                    if (files != null) {
+                        String defaultPrefName = context.getPackageName() + "_preferences";
+                        for (File f : files) {
+                            if (f != null && f.getName().endsWith(".xml")) {
+                                String name = f.getName().substring(0, f.getName().length() - 4);
+                                if (!name.equals(defaultPrefName)) {
+                                    names.add(name);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+        return names;
+    }
+
+    public static org.json.JSONObject serializePreferences(SharedPreferences sp) {
+        org.json.JSONObject container = new org.json.JSONObject();
+        if (sp == null) return container;
+        try {
+            org.json.JSONObject valuesObj = new org.json.JSONObject();
+            org.json.JSONObject typesObj = new org.json.JSONObject();
+            for (Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
+                String key = entry.getKey();
+                Object val = entry.getValue();
+                if (key == null || val == null) continue;
+                if (val instanceof Boolean) {
+                    valuesObj.put(key, val);
+                    typesObj.put(key, "bool");
+                } else if (val instanceof Float) {
+                    valuesObj.put(key, ((Float) val).doubleValue());
+                    typesObj.put(key, "float");
+                } else if (val instanceof Integer) {
+                    valuesObj.put(key, val);
+                    typesObj.put(key, "int");
+                } else if (val instanceof Long) {
+                    valuesObj.put(key, val);
+                    typesObj.put(key, "long");
+                } else if (val instanceof String) {
+                    valuesObj.put(key, val);
+                    typesObj.put(key, "string");
+                } else if (val instanceof Set) {
+                    org.json.JSONArray setArr = new org.json.JSONArray();
+                    for (Object item : (Set<?>) val) {
+                        setArr.put(String.valueOf(item));
+                    }
+                    valuesObj.put(key, setArr);
+                    typesObj.put(key, "set");
+                }
+            }
+            container.put("values", valuesObj);
+            container.put("types", typesObj);
+        } catch (Exception e) {
+            Log.e("Petal", "serializePreferences error", e);
+        }
+        return container;
+    }
+
+    public static void restorePreferencesFromJsonObject(SharedPreferences sp, org.json.JSONObject obj) {
+        if (sp == null || obj == null) return;
+        try {
+            org.json.JSONObject valuesObj = obj.has("values") ? obj.optJSONObject("values") : obj;
+            org.json.JSONObject typesObj = obj.optJSONObject("types");
+            if (valuesObj == null) return;
+
+            SharedPreferences.Editor editor = sp.edit();
+            java.util.Iterator<String> clearKeys = valuesObj.keys();
+            while (clearKeys.hasNext()) {
+                editor.remove(clearKeys.next());
+            }
+            editor.apply();
+
+            editor = sp.edit();
+            java.util.Iterator<String> keys = valuesObj.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                Object val = valuesObj.opt(key);
+                if (val == null || val == org.json.JSONObject.NULL) continue;
+
+                String explicitType = typesObj != null ? typesObj.optString(key, null) : null;
+
+                if ("float".equals(explicitType) || (explicitType == null && isLikelyFloatKey(key))) {
+                    if (val instanceof Number) {
+                        editor.putFloat(key, ((Number) val).floatValue());
+                    } else if (val instanceof String) {
+                        try {
+                            editor.putFloat(key, Float.parseFloat((String) val));
+                        } catch (Exception ignored) {
+                            editor.putString(key, (String) val);
+                        }
+                    }
+                } else if ("string".equals(explicitType) || (explicitType == null && isKnownStringKey(key))) {
+                    editor.putString(key, String.valueOf(val));
+                } else if ("bool".equals(explicitType) || val instanceof Boolean) {
+                    if (val instanceof Boolean) {
+                        editor.putBoolean(key, (Boolean) val);
+                    } else if (val instanceof Number) {
+                        editor.putBoolean(key, ((Number) val).intValue() != 0);
+                    } else {
+                        editor.putBoolean(key, Boolean.parseBoolean(String.valueOf(val)));
+                    }
+                } else if ("int".equals(explicitType)) {
+                    if (val instanceof Number) {
+                        editor.putInt(key, ((Number) val).intValue());
+                    } else {
+                        try {
+                            editor.putInt(key, Integer.parseInt(String.valueOf(val)));
+                        } catch (Exception ignored) {}
+                    }
+                } else if ("long".equals(explicitType)) {
+                    if (val instanceof Number) {
+                        editor.putLong(key, ((Number) val).longValue());
+                    } else {
+                        try {
+                            editor.putLong(key, Long.parseLong(String.valueOf(val)));
+                        } catch (Exception ignored) {}
+                    }
+                } else if (val instanceof Integer) {
+                    editor.putInt(key, (Integer) val);
+                } else if (val instanceof Long) {
+                    editor.putLong(key, (Long) val);
+                } else if (val instanceof Double) {
+                    editor.putFloat(key, ((Double) val).floatValue());
+                } else if (val instanceof Float) {
+                    editor.putFloat(key, (Float) val);
+                } else if (val instanceof String) {
+                    editor.putString(key, (String) val);
+                } else if (val instanceof org.json.JSONArray) {
+                    org.json.JSONArray arr = (org.json.JSONArray) val;
+                    Set<String> set = new HashSet<>();
+                    for (int i = 0; i < arr.length(); i++) {
+                        set.add(arr.optString(i));
+                    }
+                    editor.putStringSet(key, set);
+                }
+            }
+            editor.apply();
+        } catch (Exception e) {
+            Log.e("Petal", "restorePreferencesFromJsonObject error", e);
+        }
     }
 
     public static org.json.JSONObject buildBackupJson(Context context, boolean backupBookmarks, boolean backupHistory, boolean backupStartSites, boolean backupTabSessions, boolean backupSavedSites, boolean backupSettings) {
@@ -266,23 +456,25 @@ public class BackupUnit {
 
             if (backupSettings) {
                 try {
-                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-                    org.json.JSONObject settingsObj = new org.json.JSONObject();
-                    for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
-                        Object val = entry.getValue();
-                        if (val instanceof String || val instanceof Integer
-                                || val instanceof Boolean || val instanceof Long
-                                || val instanceof Float) {
-                            settingsObj.put(entry.getKey(), val);
-                        } else if (val instanceof java.util.Set) {
-                            org.json.JSONArray setArr = new org.json.JSONArray();
-                            for (Object item : (java.util.Set<?>) val) {
-                                setArr.put(String.valueOf(item));
+                    SharedPreferences defaultSp = PreferenceManager.getDefaultSharedPreferences(context);
+                    org.json.JSONObject defaultSettingsObj = serializePreferences(defaultSp);
+                    backupJson.put("settings", defaultSettingsObj);
+
+                    // Back up all custom SharedPreferences files
+                    org.json.JSONObject customPrefsObj = new org.json.JSONObject();
+                    for (String prefName : getAllKnownPreferenceNames(context)) {
+                        try {
+                            SharedPreferences customSp = context.getSharedPreferences(prefName, Context.MODE_PRIVATE);
+                            if (customSp != null && !customSp.getAll().isEmpty()) {
+                                customPrefsObj.put(prefName, serializePreferences(customSp));
                             }
-                            settingsObj.put(entry.getKey(), setArr);
+                        } catch (Exception ex) {
+                            Log.w("Petal", "Failed to backup SharedPreferences namespace: " + prefName, ex);
                         }
                     }
-                    backupJson.put("settings", settingsObj);
+                    if (customPrefsObj.length() > 0) {
+                        backupJson.put("custom_preferences", customPrefsObj);
+                    }
                 } catch (Exception e) {
                     Log.e("Petal", "Error extracting settings for JSON backup", e);
                 }
@@ -659,55 +851,31 @@ public class BackupUnit {
                     }
                 }
 
-                if (restoreSettings && backupJson.has("settings")) {
-                    try {
-                        org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
-                        android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-                        android.content.SharedPreferences.Editor editor = sp.edit();
-                        java.util.Iterator<String> keys = settingsObj.keys();
-
-                        while (keys.hasNext()) {
-                            editor.remove(keys.next());
+                if (restoreSettings) {
+                    if (backupJson.has("settings")) {
+                        try {
+                            org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
+                            android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                            restorePreferencesFromJsonObject(sp, settingsObj);
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring settings", e);
                         }
-                        editor.apply();
-
-                        editor = sp.edit();
-                        keys = settingsObj.keys();
-                        while (keys.hasNext()) {
-                            String key = keys.next();
-                            Object val = settingsObj.opt(key);
-                            if (val == null || val == org.json.JSONObject.NULL) continue;
-
-                            boolean isKnownStringKey = "sp_fontSize".equals(key) || "sp_search_engine".equals(key) ||
-                                    "sp_searchEngine".equals(key) || "sp_userAgent".equals(key) ||
-                                    "profile".equals(key) || key.startsWith("icon_");
-
-                            if (isKnownStringKey) {
-                                editor.putString(key, String.valueOf(val));
-                            } else if (val instanceof Boolean) {
-                                editor.putBoolean(key, (Boolean) val);
-                            } else if (val instanceof Integer) {
-                                editor.putInt(key, (Integer) val);
-                            } else if (val instanceof Long) {
-                                editor.putLong(key, (Long) val);
-                            } else if (val instanceof Double) {
-                                editor.putFloat(key, ((Double) val).floatValue());
-                            } else if (val instanceof Float) {
-                                editor.putFloat(key, (Float) val);
-                            } else if (val instanceof String) {
-                                editor.putString(key, (String) val);
-                            } else if (val instanceof org.json.JSONArray) {
-                                org.json.JSONArray arr = (org.json.JSONArray) val;
-                                java.util.Set<String> set = new java.util.HashSet<>();
-                                for (int i = 0; i < arr.length(); i++) {
-                                    set.add(arr.optString(i));
+                    }
+                    if (backupJson.has("custom_preferences")) {
+                        try {
+                            org.json.JSONObject customPrefsObj = backupJson.getJSONObject("custom_preferences");
+                            java.util.Iterator<String> pKeys = customPrefsObj.keys();
+                            while (pKeys.hasNext()) {
+                                String prefName = pKeys.next();
+                                org.json.JSONObject prefJson = customPrefsObj.optJSONObject(prefName);
+                                if (prefJson != null) {
+                                    android.content.SharedPreferences customSp = context.getSharedPreferences(prefName, Context.MODE_PRIVATE);
+                                    restorePreferencesFromJsonObject(customSp, prefJson);
                                 }
-                                editor.putStringSet(key, set);
                             }
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring custom preferences", e);
                         }
-                        editor.apply();
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error restoring settings", e);
                     }
                 }
 
@@ -928,55 +1096,31 @@ public class BackupUnit {
                     }
                 }
 
-                if (restoreSettings && backupJson.has("settings")) {
-                    try {
-                        org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
-                        android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-                        android.content.SharedPreferences.Editor editor = sp.edit();
-                        java.util.Iterator<String> keys = settingsObj.keys();
-
-                        while (keys.hasNext()) {
-                            editor.remove(keys.next());
+                if (restoreSettings) {
+                    if (backupJson.has("settings")) {
+                        try {
+                            org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
+                            android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                            restorePreferencesFromJsonObject(sp, settingsObj);
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring settings", e);
                         }
-                        editor.apply();
-
-                        editor = sp.edit();
-                        keys = settingsObj.keys();
-                        while (keys.hasNext()) {
-                            String key = keys.next();
-                            Object val = settingsObj.opt(key);
-                            if (val == null || val == org.json.JSONObject.NULL) continue;
-
-                            boolean isKnownStringKey = "sp_fontSize".equals(key) || "sp_search_engine".equals(key) ||
-                                    "sp_searchEngine".equals(key) || "sp_userAgent".equals(key) ||
-                                    "profile".equals(key) || key.startsWith("icon_");
-
-                            if (isKnownStringKey) {
-                                editor.putString(key, String.valueOf(val));
-                            } else if (val instanceof Boolean) {
-                                editor.putBoolean(key, (Boolean) val);
-                            } else if (val instanceof Integer) {
-                                editor.putInt(key, (Integer) val);
-                            } else if (val instanceof Long) {
-                                editor.putLong(key, (Long) val);
-                            } else if (val instanceof Double) {
-                                editor.putFloat(key, ((Double) val).floatValue());
-                            } else if (val instanceof Float) {
-                                editor.putFloat(key, (Float) val);
-                            } else if (val instanceof String) {
-                                editor.putString(key, (String) val);
-                            } else if (val instanceof org.json.JSONArray) {
-                                org.json.JSONArray arr = (org.json.JSONArray) val;
-                                java.util.Set<String> set = new java.util.HashSet<>();
-                                for (int i = 0; i < arr.length(); i++) {
-                                    set.add(arr.optString(i));
+                    }
+                    if (backupJson.has("custom_preferences")) {
+                        try {
+                            org.json.JSONObject customPrefsObj = backupJson.getJSONObject("custom_preferences");
+                            java.util.Iterator<String> pKeys = customPrefsObj.keys();
+                            while (pKeys.hasNext()) {
+                                String prefName = pKeys.next();
+                                org.json.JSONObject prefJson = customPrefsObj.optJSONObject(prefName);
+                                if (prefJson != null) {
+                                    android.content.SharedPreferences customSp = context.getSharedPreferences(prefName, Context.MODE_PRIVATE);
+                                    restorePreferencesFromJsonObject(customSp, prefJson);
                                 }
-                                editor.putStringSet(key, set);
                             }
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring custom preferences", e);
                         }
-                        editor.apply();
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error restoring settings", e);
                     }
                 }
 
@@ -1083,14 +1227,23 @@ public class BackupUnit {
                 }
                 backupJson.put("protected_sites", protectArray);
 
-                org.json.JSONObject settingsObj = new org.json.JSONObject();
-                for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
-                    Object val = entry.getValue();
-                    if (val != null) {
-                        settingsObj.put(entry.getKey(), val);
+                backupJson.put("settings", serializePreferences(sp));
+
+                // Also backup custom preferences in auto downgrade snapshot
+                org.json.JSONObject customPrefsObj = new org.json.JSONObject();
+                for (String prefName : getAllKnownPreferenceNames(context)) {
+                    try {
+                        SharedPreferences customSp = context.getSharedPreferences(prefName, Context.MODE_PRIVATE);
+                        if (customSp != null && !customSp.getAll().isEmpty()) {
+                            customPrefsObj.put(prefName, serializePreferences(customSp));
+                        }
+                    } catch (Exception ex) {
+                        Log.w("Petal", "Failed to backup custom pref namespace in auto backup: " + prefName, ex);
                     }
                 }
-                backupJson.put("settings", settingsObj);
+                if (customPrefsObj.length() > 0) {
+                    backupJson.put("custom_preferences", customPrefsObj);
+                }
 
                 File backupDir = getSafeBackupDir(context);
                 File jsonFile = new File(backupDir, "petal_downgrade_snapshot.json");

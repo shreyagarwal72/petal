@@ -1075,6 +1075,23 @@ public class HelperUnit {
         }
     }
 
+    public static float getSafeFloat(SharedPreferences sp, String key, float defaultValue) {
+        try {
+            return sp.getFloat(key, defaultValue);
+        } catch (ClassCastException e) {
+            try {
+                Object val = sp.getAll().get(key);
+                if (val instanceof Number) return ((Number) val).floatValue();
+                if (val instanceof String) {
+                    try { return Float.parseFloat((String) val); } catch (Exception ignored) {}
+                }
+                return defaultValue;
+            } catch (Exception ex) {
+                return defaultValue;
+            }
+        }
+    }
+
     public static int getStatusBarHeight(Context context) {
         if (context == null) return 0;
         int result = 0;

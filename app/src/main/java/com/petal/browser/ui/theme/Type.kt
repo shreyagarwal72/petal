@@ -79,28 +79,28 @@ data class CustomFontSettings(
 fun getCustomFontSettings(sp: android.content.SharedPreferences): CustomFontSettings {
     return CustomFontSettings(
         display = FontAxes(
-            weight = sp.getFloat("sp_custom_display_weight", 950f),
-            width = sp.getFloat("sp_custom_display_width", 100f),
-            opsz = sp.getFloat("sp_custom_display_opsz", 30f),
-            grade = sp.getFloat("sp_custom_display_grade", 0f),
-            slant = sp.getFloat("sp_custom_display_slant", 0f),
-            roundness = sp.getFloat("sp_custom_display_roundness", 100f)
+            weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_weight", 950f),
+            width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_width", 100f),
+            opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_opsz", 30f),
+            grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_grade", 0f),
+            slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_slant", 0f),
+            roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_roundness", 100f)
         ),
         headline = FontAxes(
-            weight = sp.getFloat("sp_custom_headline_weight", 700f),
-            width = sp.getFloat("sp_custom_headline_width", 100f),
-            opsz = sp.getFloat("sp_custom_headline_opsz", 32f),
-            grade = sp.getFloat("sp_custom_headline_grade", 0f),
-            slant = sp.getFloat("sp_custom_headline_slant", 0f),
-            roundness = sp.getFloat("sp_custom_headline_roundness", 60f)
+            weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_weight", 700f),
+            width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_width", 100f),
+            opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_opsz", 32f),
+            grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_grade", 0f),
+            slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_slant", 0f),
+            roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_roundness", 60f)
         ),
         body = FontAxes(
-            weight = sp.getFloat("sp_custom_body_weight", 450f),
-            width = sp.getFloat("sp_custom_body_width", 100f),
-            opsz = sp.getFloat("sp_custom_body_opsz", 16f),
-            grade = sp.getFloat("sp_custom_body_grade", 0f),
-            slant = sp.getFloat("sp_custom_body_slant", 0f),
-            roundness = sp.getFloat("sp_custom_body_roundness", 0f)
+            weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_weight", 450f),
+            width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_width", 100f),
+            opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_opsz", 16f),
+            grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_grade", 0f),
+            slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_slant", 0f),
+            roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_roundness", 0f)
         )
     )
 }
