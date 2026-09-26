@@ -881,11 +881,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             public void onReceive(Context context, Intent intent) {
                 try {
                     String text = getString(R.string.app_done) + ". " + getString(R.string.menu_download) + "?";
-                    View anchor = contentFrame != null ? contentFrame : getWindow().getDecorView();
-                    Snackbar snackbar = HelperUnit.makePetalSnackbar(anchor, text, Snackbar.LENGTH_LONG);
-                    HelperUnit.makeSnackbarRound(snackbar);
-                    snackbar.setAction(context.getString(R.string.app_ok), v -> showDownloads());
-                    snackbar.show();
+                    com.petal.browser.view.PetalToast.show(context, text, com.petal.browser.view.PetalToast.LENGTH_LONG, context.getString(R.string.app_ok), () -> showDownloads());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -1057,12 +1053,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (sp.getBoolean("pdf_create", false)) {
             sp.edit().putBoolean("pdf_create", false).apply();
             String text = getString(R.string.app_done) + ". " + getString(R.string.menu_download) +"?";
-            View anchor = currentAlbumController != null ? currentAlbumController.getAlbumView() : findViewById(android.R.id.content);
-
-            Snackbar snackbar = HelperUnit.makePetalSnackbar(anchor, text, Snackbar.LENGTH_SHORT);
-            HelperUnit.makeSnackbarRound(snackbar);
-            snackbar.setAction(context.getString(R.string.app_ok), v -> showDownloads());
-            snackbar.show();
+            com.petal.browser.view.PetalToast.show(context, text, com.petal.browser.view.PetalToast.LENGTH_SHORT, context.getString(R.string.app_ok), () -> showDownloads());
         }
         // Skip the first post-onCreate resume — dispatchIntent() already ran at the
         // end of onCreate() once all tabs were ready. Every subsequent resume (coming
@@ -4347,6 +4338,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.ui.components.PetalNetworkStatusBridge.INSTANCE.attachComposeView(this, networkStatusCompose);
         }
 
+        androidx.compose.ui.platform.ComposeView snackbarCompose = findViewById(R.id.petal_snackbar_compose);
+        if (snackbarCompose != null) {
+            com.petal.browser.ui.components.PetalSnackbarDispatcher.INSTANCE.attachComposeView(this, snackbarCompose);
+        }
+
         if (contentFrame == null) return;
 
         // Pull distance 80dp with 120dp top touch area threshold matching omni-browser
@@ -5118,9 +5114,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             setProfileIcon(buttonProfile, url);
             buttonProfile.setOnClickListener(v -> {
                 String cat = "    ¯\\_(ツ)_/¯    ";
-                Snackbar snackbar = HelperUnit.makePetalSnackbar(dialogViewFastToggle, cat, Snackbar.LENGTH_LONG);
-                HelperUnit.makeSnackbarRound(snackbar);
-                snackbar.show();
+                com.petal.browser.view.PetalToast.show(context, cat, com.petal.browser.view.PetalToast.LENGTH_LONG);
             });
             buttonProfile.setOnLongClickListener(v -> {
                 sp.edit().putString("profile", "profileStandard").apply();

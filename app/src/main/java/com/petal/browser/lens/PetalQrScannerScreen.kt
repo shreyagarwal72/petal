@@ -9,7 +9,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Size
-import android.widget.Toast
+import com.petal.browser.view.PetalToast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
@@ -393,7 +393,7 @@ fun PetalQrScannerScreen(
                                 PetalHapticEngine.getInstance(context).playClick(context)
                                 val capture = imageCapture
                                 if (capture == null) {
-                                    Toast.makeText(context, "Camera initializing...", Toast.LENGTH_SHORT).show()
+                                    PetalToast.show(context, "Camera initializing...", PetalToast.LENGTH_SHORT)
                                     return@bouncyClickable
                                 }
                                 isCapturing = true
@@ -407,7 +407,7 @@ fun PetalQrScannerScreen(
                                         override fun onError(exc: ImageCaptureException) {
                                             isCapturing = false
                                             output.delete()
-                                            Toast.makeText(context, "Capture failed: ${exc.message}", Toast.LENGTH_SHORT).show()
+                                            PetalToast.show(context, "Capture failed: ${exc.message}", PetalToast.LENGTH_SHORT)
                                         }
 
                                         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
@@ -421,11 +421,11 @@ fun PetalQrScannerScreen(
                                                         vibrateSuccess()
                                                         detectedValue = decoded
                                                     } else {
-                                                        Toast.makeText(context, "No code found in photo", Toast.LENGTH_SHORT).show()
+                                                        PetalToast.show(context, "No code found in photo", PetalToast.LENGTH_SHORT)
                                                     }
                                                 }
                                             } catch (e: Exception) {
-                                                Toast.makeText(context, "Unable to read captured image", Toast.LENGTH_SHORT).show()
+                                                PetalToast.show(context, "Unable to read captured image", PetalToast.LENGTH_SHORT)
                                             } finally {
                                                 output.delete()
                                             }

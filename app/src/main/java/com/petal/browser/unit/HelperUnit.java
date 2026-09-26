@@ -227,13 +227,11 @@ public class HelperUnit {
                                 fos.flush();
                                 fos.close();
                                 String text = activity.getString(R.string.app_done) + ". " + activity.getString(R.string.menu_download) +"?";
-                                Snackbar snackbar = makePetalSnackbar(BrowserActivity.getView(), text, Snackbar.LENGTH_LONG);
-                                snackbar.setAction(activity.getString(R.string.app_ok), v -> {
+                                PetalToast.show(activity, text, PetalToast.LENGTH_LONG, activity.getString(R.string.app_ok), () -> {
                                     if (activity instanceof com.petal.browser.activity.BrowserActivity) {
                                         ((com.petal.browser.activity.BrowserActivity) activity).showDownloads();
                                     }
                                 });
-                                snackbar.show();
                             } else {
                                 String userAgent = WebSettings.getDefaultUserAgent(activity);
                                 CookieManager cookieManager = CookieManager.getInstance();

@@ -76,9 +76,7 @@ public class AdapterCustomRedirect extends RecyclerView.Adapter<RedirectsViewHol
         source.setText(current.getSource());
         target.setText(current.getTarget());
         remove.setOnClickListener(v -> {
-            Snackbar snackbar = HelperUnit.makePetalSnackbar(holder.itemView, R.string.hint_database, Snackbar.LENGTH_SHORT);
-            HelperUnit.makeSnackbarRound(snackbar);
-            snackbar.setAction(context.getString(R.string.app_ok), (v2 -> {
+            PetalToast.show(context, context.getString(R.string.hint_database), PetalToast.LENGTH_SHORT, context.getString(R.string.app_ok), () -> {
                 redirects.remove(position);
                 sp.edit().remove(redirects.get(position).getSource()).apply();
                 notifyItemRemoved(position);
@@ -88,8 +86,7 @@ public class AdapterCustomRedirect extends RecyclerView.Adapter<RedirectsViewHol
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
-            }));
-            snackbar.show();
+            });
         });
 
         LinearLayout textGroup = holder.itemView.findViewById(R.id.textGroup);

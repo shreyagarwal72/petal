@@ -68,7 +68,7 @@ import java.io.OutputStreamWriter
 import java.io.File
 import java.io.FileOutputStream
 import androidx.core.content.FileProvider
-import android.widget.Toast
+import com.petal.browser.view.PetalToast
 
 object PetalStandaloneFileViewerBridge {
 
@@ -400,17 +400,17 @@ private fun TextCodeViewerContent(
                         withContext(Dispatchers.Main) {
                             PetalHapticEngine.getInstance(context).playClick(context)
                             lines = fullContent.split("\n")
-                            Toast.makeText(context, "File saved successfully", Toast.LENGTH_SHORT).show()
+                            PetalToast.show(context, "File saved successfully", PetalToast.LENGTH_SHORT)
                             onEditFinish()
                         }
                     } else {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Could not open file for writing", Toast.LENGTH_LONG).show()
+                            PetalToast.show(context, "Could not open file for writing", PetalToast.LENGTH_LONG)
                         }
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Failed to save: ${e.message}", Toast.LENGTH_LONG).show()
+                        PetalToast.show(context, "Failed to save: ${e.message}", PetalToast.LENGTH_LONG)
                     }
                 } finally {
                     isSaving = false
@@ -1304,7 +1304,7 @@ private fun installApkPackage(context: Context, fileUri: Uri, displayName: Strin
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(settingsIntent)
-                Toast.makeText(context, "Please enable permission to install packages", Toast.LENGTH_LONG).show()
+                PetalToast.show(context, "Please enable permission to install packages", PetalToast.LENGTH_LONG)
                 return
             }
         }
@@ -1329,7 +1329,7 @@ private fun installApkPackage(context: Context, fileUri: Uri, displayName: Strin
         }
         context.startActivity(installIntent)
     } catch (e: Exception) {
-        Toast.makeText(context, "Failed to launch installer: ${e.message}", Toast.LENGTH_LONG).show()
+        PetalToast.show(context, "Failed to launch installer: ${e.message}", PetalToast.LENGTH_LONG)
     }
 }
 

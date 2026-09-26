@@ -146,4 +146,12 @@
 
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- Unified Material 3 Expressive PetalSnackbar Compose Container -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/petal_snackbar_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:elevation="40dp" />
+
 </RelativeLayout>

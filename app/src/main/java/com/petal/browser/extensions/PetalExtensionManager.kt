@@ -12,7 +12,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import android.os.Handler
 import android.os.Looper
-import android.widget.Toast
+import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -864,7 +864,7 @@ object PetalExtensionManager {
             val msg = "${extItem.name} does not have a popup interface."
             _lastError.value = msg
             if (ctx != null) {
-                Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+                PetalToast.show(ctx, msg, PetalToast.LENGTH_SHORT)
             }
         }
     }
@@ -938,7 +938,7 @@ object PetalExtensionManager {
             } else {
                 val msg = "No settings page available for ${extItem.name}."
                 _lastError.value = msg
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                PetalToast.show(context, msg, PetalToast.LENGTH_SHORT)
             }
             return
         }

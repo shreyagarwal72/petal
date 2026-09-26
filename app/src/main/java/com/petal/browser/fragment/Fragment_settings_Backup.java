@@ -64,19 +64,12 @@ public class Fragment_settings_Backup extends BasePreferenceFragment {
 
         Button ib_backup = activity.findViewById(R.id.ib_backup);
         ib_backup.setOnClickListener(v -> {
-            LinearLayout root = getActivity().findViewById(R.id.root);
-            Snackbar snackbarBottom = HelperUnit.makePetalSnackbar(root, R.string.toast_backup, Snackbar.LENGTH_SHORT);
-            HelperUnit.makeSnackbarRound(snackbarBottom);
-            snackbarBottom.setAction(this.getString(R.string.app_ok), (r -> backup(activity)));
-            snackbarBottom.show();
+            com.petal.browser.view.PetalToast.show(activity, getString(R.string.toast_backup), com.petal.browser.view.PetalToast.LENGTH_SHORT, getString(R.string.app_ok), () -> backup(activity));
         });
 
         Button ib_restore = activity.findViewById(R.id.ib_restore);
         ib_restore.setOnClickListener(v -> {
-            LinearLayout root = getActivity().findViewById(R.id.root);
-            Snackbar snackbarBottom = HelperUnit.makePetalSnackbar(root, R.string.hint_database, Snackbar.LENGTH_SHORT);
-            HelperUnit.makeSnackbarRound(snackbarBottom);
-            snackbarBottom.setAction(this.getString(R.string.app_ok), (r -> {
+            com.petal.browser.view.PetalToast.show(activity, getString(R.string.hint_database), com.petal.browser.view.PetalToast.LENGTH_SHORT, getString(R.string.app_ok), () -> {
                 if (!BackupUnit.checkPermissionStorage(context)) {
                     BackupUnit.requestPermission(activity);
                 } else {
@@ -94,8 +87,7 @@ public class Fragment_settings_Backup extends BasePreferenceFragment {
                         BackupUnit.restoreData(getActivity(), 4);
                     }
                 }
-            }));
-            snackbarBottom.show();
+            });
         });
     }
 

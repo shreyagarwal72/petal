@@ -1,60 +1,119 @@
 package com.petal.browser.ui.components
 
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.sp
+import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalBrowserShapes
 
 /**
  * Shared Material 3 Expressive themed Snackbar composable.
- * Dynamically resolves [MaterialTheme.colorScheme.surfaceContainerHighest] for background container,
- * [MaterialTheme.colorScheme.onSurface] for text message, and [MaterialTheme.colorScheme.primary]
- * for action labels (like "Undo"), seamlessly switching between Light and Dark mode.
+ * Delegates to the unified [PetalSnackbar] component with leading status icons,
+ * pill shape, and PetalTheme tokens.
  */
 @Composable
 fun PetalThemedSnackbar(
     snackbarData: SnackbarData,
     modifier: Modifier = Modifier,
-    shape: Shape = PetalBrowserShapes.Snackbar,
+    shape: Shape = RoundedCornerShape(percent = 50),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     actionColor: Color = MaterialTheme.colorScheme.primary,
     dismissActionColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
-    androidx.compose.material3.Surface(
+    val message = snackbarData.visuals.message
+    val type = when {
+        message.contains("failed", ignoreCase = true) ||
+        message.contains("error", ignoreCase = true) ||
+        message.contains("disabled", ignoreCase = true) ||
+        message.contains("crashed", ignoreCase = true) -> PetalSnackbarType.WARNING
+
+        message.contains("success", ignoreCase = true) ||
+        message.contains("saved", ignoreCase = true) ||
+        message.contains("done", ignoreCase = true) ||
+        message.contains("installed", ignoreCase = true) ||
+        message.contains("enabled", ignoreCase = true) -> PetalSnackbarType.SUCCESS
+
+        else -> PetalSnackbarType.INFO
+    }
+
+    val (iconRes, iconTint) = when (type) {
+        PetalSnackbarType.INFO -> Pair(R.drawable.icon_info, actionColor)
+        PetalSnackbarType.SUCCESS -> Pair(R.drawable.icon_check, MaterialTheme.colorScheme.tertiary)
+        PetalSnackbarType.WARNING -> Pair(R.drawable.icon_alert, MaterialTheme.colorScheme.error)
+    }
+
+    Surface(
         modifier = modifier,
         shape = shape,
         color = containerColor,
         contentColor = contentColor,
         tonalElevation = 6.dp,
-        shadowElevation = 10.dp
+        shadowElevation = 8.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(text = snackbarData.visuals.message, modifier = Modifier.weight(1f), color = contentColor, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = type.name,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Text(
+                text = message,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 18.sp
+                ),
+                color = contentColor,
+                maxLines = 2
+            )
+
             snackbarData.visuals.actionLabel?.let { label ->
-                TextButton(onClick = { snackbarData.performAction() }) { Text(label, color = actionColor, fontWeight = FontWeight.Bold) }
+                TextButton(
+                    onClick = { snackbarData.performAction() },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    colors = ButtonDefaults.textButtonColors(contentColor = actionColor)
+                ) {
+                    Text(label, fontWeight = FontWeight.Bold)
+                }
             }
+
             if (snackbarData.visuals.withDismissAction) {
-                IconButton(onClick = { snackbarData.dismiss() }) {
-                    Icon(Icons.Rounded.Close, "Dismiss", tint = dismissActionColor)
+                IconButton(
+                    onClick = { snackbarData.dismiss() },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "Dismiss",
+                        tint = dismissActionColor,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }
@@ -70,7 +129,7 @@ fun PetalThemedSnackbar(
 fun PetalThemedSnackbarHost(
     hostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    shape: Shape = PetalBrowserShapes.Snackbar,
+    shape: Shape = RoundedCornerShape(percent = 50),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     actionColor: Color = MaterialTheme.colorScheme.primary

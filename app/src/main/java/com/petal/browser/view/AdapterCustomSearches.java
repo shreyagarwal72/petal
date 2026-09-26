@@ -74,9 +74,7 @@ public class AdapterCustomSearches extends RecyclerView.Adapter<RedirectsViewHol
         HelperUnit.setHighLightedText(context, target, current.getTarget(), HelperUnit.domain(current.getTarget()));
 
         remove.setOnClickListener(v -> {
-            Snackbar snackbar = HelperUnit.makePetalSnackbar(holder.itemView, R.string.hint_database, Snackbar.LENGTH_SHORT);
-            HelperUnit.makeSnackbarRound(snackbar);
-            snackbar.setAction(context.getString(R.string.app_ok), (v2 -> {
+            PetalToast.show(context, context.getString(R.string.hint_database), PetalToast.LENGTH_SHORT, context.getString(R.string.app_ok), () -> {
                 redirects.remove(position);
                 notifyItemRemoved(position);
                 notifyItemRangeChanged(position, getItemCount());
@@ -85,8 +83,7 @@ public class AdapterCustomSearches extends RecyclerView.Adapter<RedirectsViewHol
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
-            }));
-            snackbar.show();
+            });
         });
         holder.itemView.setOnClickListener(v -> {
             com.petal.browser.browser.BrowserController controller = PetalGeckoView.getBrowserController();

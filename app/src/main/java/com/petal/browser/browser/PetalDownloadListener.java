@@ -198,18 +198,15 @@ public class PetalDownloadListener implements DownloadListener {
                                 } catch (Throwable ignored) {}
                                 webView.post(() -> {
                                     String text = webView.getContext().getString(R.string.app_done) + ". " + webView.getContext().getString(R.string.menu_download) + "?";
-                                    Snackbar snackbar = HelperUnit.makePetalSnackbar(webView, text, Snackbar.LENGTH_SHORT);
-                                    HelperUnit.makeSnackbarRound(snackbar);
-                                    snackbar.setAction(context.getString(R.string.app_ok), (v -> {
-                                         if (context instanceof com.petal.browser.activity.BrowserActivity) {
-                                             ((com.petal.browser.activity.BrowserActivity) context).showDownloads();
-                                         } else {
-                                             try {
-                                                 context.startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-                                             } catch (Exception ignored) {}
-                                         }
-                                     }));
-                                    snackbar.show();
+                                    com.petal.browser.view.PetalToast.show(context, text, com.petal.browser.view.PetalToast.LENGTH_SHORT, context.getString(R.string.app_ok), () -> {
+                                        if (context instanceof com.petal.browser.activity.BrowserActivity) {
+                                            ((com.petal.browser.activity.BrowserActivity) context).showDownloads();
+                                        } else {
+                                            try {
+                                                context.startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                                            } catch (Exception ignored) {}
+                                        }
+                                    });
                                 });
                             } catch (Exception e) {
                                 webView.post(() -> {
