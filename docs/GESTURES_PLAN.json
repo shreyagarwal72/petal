@@ -1,0 +1,141 @@
+{
+  "version": "1.0.0",
+  "name": "Petal Browser Expressive Gestures Plan",
+  "description": "Comprehensive specification and implementation roadmap for modern gesture-driven navigation in Petal Browser, inspired by Firefox for Android (Fenix) and Chrome for Android.",
+  "createdAt": "2026-09-26T20:23:00Z",
+  "architecture": {
+    "touchArbitration": "Layered gesture isolation to prevent collisions between GeckoView web content (canvases, horizontal carousels, maps) and browser UI controls.",
+    "apzIntegration": "SafeGeckoView PanZoomController input detail querying to safely detect overscroll and unhandled touch before intercepting pull or edge gestures.",
+    "physicsEngine": "Material 3 Expressive spring physics with damping ratio 0.75-0.85 and stiffness 400-500 for natural finger tracking and haptic ticks."
+  },
+  "phases": [
+    {
+      "phase": 1,
+      "id": "edge_history_gestures",
+      "title": "Edge Back / Forward Navigation Swipe",
+      "status": "planned",
+      "reference": "Firefox Fenix edge-swipe navigation & Chrome history swipe gestures",
+      "tasks": [
+        {
+          "id": "1.1",
+          "title": "Create PetalEdgeSwipeLayout",
+          "description": "Custom layout / pointerInput wrapper around PetalGeckoView capturing edge touches within a configurable boundary (16dp-32dp) from the left and right screen borders.",
+          "files": [
+            "app/src/main/java/com/petal/browser/gesture/PetalEdgeSwipeLayout.kt"
+          ]
+        },
+        {
+          "id": "1.2",
+          "title": "Fluid Predictive Arrow & Pill Indicator",
+          "description": "Render interactive, spring-backed edge chevron with background circular blur and tactile haptic pulse upon crossing confirmation threshold.",
+          "files": [
+            "app/src/main/java/com/petal/browser/gesture/PetalEdgeSwipeIndicator.kt"
+          ]
+        },
+        {
+          "id": "1.3",
+          "title": "Wire GeckoView Back/Forward Navigation",
+          "description": "Invoke SafeGeckoView canGoBack()/goBack() and canGoForward()/goForward() safely upon release past the trigger threshold.",
+          "files": [
+            "app/src/main/java/com/petal/browser/view/PetalGeckoView.kt",
+            "app/src/main/java/com/petal/browser/activity/BrowserActivity.java"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "id": "toolbar_scrubbing_switcher",
+      "title": "Address Bar Gestures & Tab Scrubbing",
+      "status": "planned",
+      "reference": "Chrome & Firefox toolbar scrub to switch tabs and pull down for tab grid",
+      "tasks": [
+        {
+          "id": "2.1",
+          "title": "Horizontal Tab Scrubbing with Visual Offset",
+          "description": "Upgrade PetalAddressBar horizontal drag to translate adjacent tab previews with 1:1 finger tracking, switching to previous/next tab upon drag completion.",
+          "files": [
+            "app/src/main/java/com/petal/browser/ui/components/PetalAddressBar.kt"
+          ]
+        },
+        {
+          "id": "2.2",
+          "title": "Address Bar Swipe-Down to Open Tab Grid Switcher",
+          "description": "Detect downward vertical flick/drag on the top or bottom address bar pill to directly invoke showOverview() / PetalTabGridSwitcher.",
+          "files": [
+            "app/src/main/java/com/petal/browser/ui/components/PetalAddressBar.kt",
+            "app/src/main/java/com/petal/browser/activity/BrowserActivity.java"
+          ]
+        },
+        {
+          "id": "2.3",
+          "title": "Haptic Detents on Scrub Steps",
+          "description": "Trigger light PetalHapticEngine.Pattern.TICK on crossing tab switch thresholds to give tactile confirmation.",
+          "files": [
+            "app/src/main/java/com/petal/browser/ui/components/PetalAddressBar.kt"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "id": "bottom_nav_fab_gestures",
+      "title": "Bottom Navigation Bar & Quick Action Gestures",
+      "status": "planned",
+      "reference": "Firefox long-press quick tab menu & browser navigation gestures",
+      "tasks": [
+        {
+          "id": "3.1",
+          "title": "Tab Counter Long-Press Menu",
+          "description": "Long-pressing the tab counter pill opens an expressive quick action popup: 'New Tab', 'New Private Tab', 'Close Active Tab', and 'Close All Tabs'.",
+          "files": [
+            "app/src/main/java/com/petal/browser/activity/BrowserActivity.java",
+            "app/src/main/java/com/petal/browser/ui/components/PetalTabGridSwitcher.kt"
+          ]
+        },
+        {
+          "id": "3.2",
+          "title": "Modernize SwipeTouchListener for Navigation Buttons",
+          "description": "Refactor legacy SwipeTouchListener on fab_menu and fab_overview into Kotlin with velocity tracking and haptic feedback.",
+          "files": [
+            "app/src/main/java/com/petal/browser/view/SwipeTouchListener.java",
+            "app/src/main/java/com/petal/browser/util/BrowserGestureHandler.kt"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "id": "gesture_settings_customization",
+      "title": "Settings & Gesture Customization UI",
+      "status": "planned",
+      "reference": "Material 3 Expressive settings screen with interactive toggles and sensitivity options",
+      "tasks": [
+        {
+          "id": "4.1",
+          "title": "Settings Integration in AddressBarSettingsScreen",
+          "description": "Add settings toggles for Edge Swipe Navigation, Address Bar Swipe Down for Tabs, and Sensitivity Slider.",
+          "files": [
+            "app/src/main/java/com/petal/browser/compose/settings/screens/AddressBarSettingsScreen.kt",
+            "app/src/main/java/com/petal/browser/compose/settings/viewmodel/AddressBarSettingsViewModel.kt"
+          ]
+        },
+        {
+          "id": "4.2",
+          "title": "Preferences Repository & SharedPreferences Binding",
+          "description": "Store gesture preferences with reactive StateFlow in SettingsRepository and SettingsRepositoryImpl.",
+          "files": [
+            "app/src/main/java/com/petal/browser/data/repository/SettingsRepository.kt",
+            "app/src/main/java/com/petal/browser/data/repository/SettingsRepositoryImpl.kt"
+          ]
+        }
+      ]
+    }
+  ],
+  "verificationCriteria": [
+    "Web content gestures (Google Maps pan/zoom, web carousels, games) are never hijacked by edge or swipe gestures.",
+    "Compatibility with Android 14+ Predictive Back gestures.",
+    "Zero layout thrashing and 60/120fps motion maintained via graphicsLayer RenderThread execution.",
+    "All settings changes reflect instantaneously without needing app restart."
+  ]
+}
