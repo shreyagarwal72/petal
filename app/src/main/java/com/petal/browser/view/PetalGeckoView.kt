@@ -136,6 +136,7 @@ class PetalGeckoView @JvmOverloads constructor(
         ?: GeckoSession(
             GeckoSessionSettings.Builder()
                 .usePrivateMode(initialIncognito)
+                .allowJavascript(true)
                 .build()
         )
 
@@ -226,7 +227,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 currentScrollX = 0
                 com.petal.browser.media.sniffer.PetalMediaSniffer.clear()
                 currentUrl = url
-                applyGeckoBlockingPolicy(url)
+                applySettings()
 
                 val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", true))
                 if (httpsOnly && url.startsWith("http://", ignoreCase = true)) {
@@ -518,6 +519,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 // without calling open() a second time (which would crash).
                 val popupSession = GeckoSession(GeckoSessionSettings.Builder()
                     .usePrivateMode(this@PetalGeckoView.isIncognito)
+                    .allowJavascript(true)
                     .build())
                 val result = GeckoResult<GeckoSession>()
                 result.complete(popupSession)
@@ -1225,7 +1227,7 @@ class PetalGeckoView @JvmOverloads constructor(
         val desktopEnabled = sp.getBoolean("${profile}_desktop", sp.getBoolean("sp_desktop_site", false))
         applyDesktopMode(desktopEnabled)
         applyGeckoBlockingPolicy(currentUrl)
-        val enableJs = sp.getBoolean("sp_javascript", sp.getBoolean("${profile}_javascript", true))
+        val enableJs = sp.getBoolean("sp_javascript", sp.getBoolean("${profile}_javascript", sp.getBoolean("profileStandard_javascript", true)))
         session.settings.allowJavascript = enableJs
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
@@ -1408,6 +1410,7 @@ class PetalGeckoView @JvmOverloads constructor(
             session = GeckoSession(
                 GeckoSessionSettings.Builder()
                     .usePrivateMode(isIncognito)
+                    .allowJavascript(true)
                     .build()
             )
             sessionInitializationStarted = false
