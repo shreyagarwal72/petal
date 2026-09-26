@@ -88,10 +88,11 @@
                 android:src="@drawable/ic_doll_run_1"
                 android:contentDescription="Live Download Runner" />
 
-            <View
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="1dp"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:orientation="horizontal" />
 
             <!-- Finish Trophy icon positioned at end of downloading line -->
             <TextView
