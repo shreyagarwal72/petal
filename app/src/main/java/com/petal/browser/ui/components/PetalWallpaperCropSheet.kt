@@ -274,6 +274,8 @@ fun PetalWallpaperCropSheet(
                         try {
                             FileOutputStream(targetFile).use { out ->
                                 cropped.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                                out.flush()
+                                runCatching { out.fd.sync() }
                             }
                             PetalHapticEngine.getInstance(context).playClick(context)
                             onWallpaperCropped(Uri.fromFile(targetFile))

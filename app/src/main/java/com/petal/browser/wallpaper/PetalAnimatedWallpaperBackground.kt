@@ -12,6 +12,7 @@ package com.petal.browser.wallpaper
 
 import android.net.Uri
 import android.os.Build
+import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.OptIn
@@ -29,12 +30,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.petal.browser.R
+import java.io.File
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -61,6 +65,7 @@ fun PetalAnimatedWallpaperBackground(
         lower.contains("video-files") ||
         lower.contains("videos.pexels.com") ||
         lower.contains("/video/") ||
+        lower.contains("live_wallpaper_") ||
         runCatching {
             val extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(wallpaperUri)
             val mime = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
@@ -76,41 +81,53 @@ fun PetalAnimatedWallpaperBackground(
         val blurModifier = if (blur > 0.5f) Modifier.blur(blur.dp) else Modifier
 
         if (isVideo) {
-            var exoPlayer by remember(wallpaperUri) {
-                mutableStateOf<ExoPlayer?>(null)
-            }
-
-            DisposableEffect(wallpaperUri) {
-                val mediaUri = if (wallpaperUri.startsWith("/")) {
-                    Uri.fromFile(java.io.File(wallpaperUri))
+            val exoPlayer = remember(wallpaperUri) {
+                val mediaUri = if (wallpaperUri.startsWith("file://")) {
+                    Uri.fromFile(File(wallpaperUri.removePrefix("file://")))
+                } else if (wallpaperUri.startsWith("/")) {
+                    Uri.fromFile(File(wallpaperUri))
                 } else {
                     Uri.parse(wallpaperUri)
                 }
-                val player = ExoPlayer.Builder(context).build().apply {
+
+                ExoPlayer.Builder(context).build().apply {
                     val mediaItem = MediaItem.fromUri(mediaUri)
                     setMediaItem(mediaItem)
                     repeatMode = Player.REPEAT_MODE_ALL
                     volume = 0f // Mute background video
-                    prepare()
                     playWhenReady = true
+                    addListener(object : Player.Listener {
+                        override fun onPlayerError(error: PlaybackException) {
+                            android.util.Log.e("PetalWallpaper", "ExoPlayer error playing wallpaper: $wallpaperUri", error)
+                        }
+                    })
+                    prepare()
+                    play()
                 }
-                exoPlayer = player
+            }
 
+            DisposableEffect(exoPlayer) {
                 onDispose {
-                    player.release()
-                    exoPlayer = null
+                    exoPlayer.stop()
+                    exoPlayer.release()
                 }
             }
 
             AndroidView(
                 factory = { ctx ->
-                    PlayerView(ctx).apply {
+                    val playerView = try {
+                        val inflater = LayoutInflater.from(ctx)
+                        inflater.inflate(R.layout.view_petal_wallpaper_player, null) as PlayerView
+                    } catch (_: Throwable) {
+                        PlayerView(ctx).apply {
+                            useController = false
+                            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                            setSafeSurfaceView(this)
+                        }
+                    }
+
+                    playerView.apply {
                         this.player = exoPlayer
-                        useController = false
-                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                        // TextureView enables real-time RenderEffect blur and Compose Modifier.blur()
-                        // (Default SurfaceView renders on a separate compositor surface that ignores blur shaders)
-                        setSafeSurfaceView(this)
                         layoutParams = FrameLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT
@@ -118,7 +135,9 @@ fun PetalAnimatedWallpaperBackground(
                     }
                 },
                 update = { view ->
-                    view.player = exoPlayer
+                    if (view.player != exoPlayer) {
+                        view.player = exoPlayer
+                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         if (blur > 0.5f) {
                             try {
@@ -143,9 +162,9 @@ fun PetalAnimatedWallpaperBackground(
         } else {
             val imageModel = remember(wallpaperUri) {
                 if (wallpaperUri.startsWith("file://")) {
-                    java.io.File(wallpaperUri.removePrefix("file://"))
+                    File(wallpaperUri.removePrefix("file://"))
                 } else if (wallpaperUri.startsWith("/")) {
-                    java.io.File(wallpaperUri)
+                    File(wallpaperUri)
                 } else {
                     wallpaperUri
                 }
@@ -179,11 +198,10 @@ fun PetalAnimatedWallpaperBackground(
 }
 
 /**
- * Configures PlayerView to use TextureView so blur shaders and RenderEffect apply properly.
+ * Fallback to configure PlayerView to use TextureView if inflated programmatically.
  */
 private fun setSafeSurfaceView(playerView: PlayerView) {
     try {
-        // PlayerView.setVideoSurfaceViewType or reflection/surface_type attribute
         val method = PlayerView::class.java.getMethod("setVideoSurfaceViewType", Int::class.javaPrimitiveType)
         method.invoke(playerView, 2) // 2 is SURFACE_TYPE_TEXTURE_VIEW
     } catch (_: Throwable) {
@@ -194,4 +212,3 @@ private fun setSafeSurfaceView(playerView: PlayerView) {
         } catch (_: Throwable) {}
     }
 }
-

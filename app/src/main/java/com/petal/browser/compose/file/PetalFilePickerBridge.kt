@@ -47,6 +47,7 @@ object PetalFilePickerBridge {
         mimeTypes: Array<String> = emptyArray(),
         allowFolderSelection: Boolean = false,
         allowMultiple: Boolean = false,
+        asModalDialog: Boolean = false,
         onFileSelected: (File) -> Unit,
         onMultipleFilesSelected: ((List<File>) -> Unit)? = null,
         onDismiss: () -> Unit = {},
@@ -111,7 +112,7 @@ object PetalFilePickerBridge {
                             onDismissRequest = {
                                 if (!isHandled) {
                                     isHandled = true
-                                    if (activity is BrowserActivity) {
+                                    if (activity is BrowserActivity && !asModalDialog) {
                                         activity.performBackNavigation()
                                     } else {
                                         try { activeDialog?.dismiss() } catch (_: Exception) {}
@@ -121,26 +122,26 @@ object PetalFilePickerBridge {
                             },
                             onFileSelected = { file ->
                                 isHandled = true
-                                onFileSelected(file)
-                                if (activity is BrowserActivity) {
+                                if (activity is BrowserActivity && !asModalDialog) {
                                     activity.performBackNavigation()
                                 } else {
                                     try { activeDialog?.dismiss() } catch (_: Exception) {}
                                 }
+                                onFileSelected(file)
                             },
                             onMultipleFilesSelected = { files ->
                                 isHandled = true
-                                onMultipleFilesSelected?.invoke(files)
-                                if (activity is BrowserActivity) {
+                                if (activity is BrowserActivity && !asModalDialog) {
                                     activity.performBackNavigation()
                                 } else {
                                     try { activeDialog?.dismiss() } catch (_: Exception) {}
                                 }
+                                onMultipleFilesSelected?.invoke(files)
                             },
                             onPreviewFile = { file ->
                                 val uri = Uri.fromFile(file)
                                 val browserAct = activity as? BrowserActivity
-                                if (browserAct != null) {
+                                if (browserAct != null && !asModalDialog) {
                                     val viewer = PetalFileViewerBridge.createFileViewerView(
                                         browserAct,
                                         uri,
@@ -153,7 +154,7 @@ object PetalFilePickerBridge {
                             },
                             onBrowseSystemFallback = {
                                 isHandled = true
-                                if (activity is BrowserActivity) {
+                                if (activity is BrowserActivity && !asModalDialog) {
                                     activity.performBackNavigation()
                                 } else {
                                     try { activeDialog?.dismiss() } catch (_: Exception) {}
@@ -168,7 +169,7 @@ object PetalFilePickerBridge {
             activeComposeView = composeView
 
             val browserActivity = activity as? BrowserActivity
-            if (browserActivity != null) {
+            if (browserActivity != null && !asModalDialog) {
                 // Clear the old browser content before pushing the picker. This is
                 // important: the picker is a first-class full-screen Petal page,
                 // not a transparent overlay sitting above GeckoView.
@@ -178,9 +179,8 @@ object PetalFilePickerBridge {
                 return@runOnUiThread
             }
 
-            // Non-browser callers still get a full-screen host instead of a
-            // draggable BottomSheet. This keeps the component reusable from
-            // settings/account screens without the old sheet scroll behaviour.
+            // Non-browser callers (or modal dialog callers) get a full-screen host dialog.
+            // This prevents wiping BrowserActivity's contentFrame / destroying active bottom sheets.
             val dialog = Dialog(activity)
             activeDialog = dialog
             dialog.setContentView(composeView)

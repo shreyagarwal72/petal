@@ -260,10 +260,12 @@ fun PetalWallpaperSheet(
                     val localUri = Uri.fromFile(localFile).toString()
                     launch(Dispatchers.Main) {
                         PetalWallpaperManager.setWallpaper(context, localUri, currentDim, currentBlur)
+                        onDismissRequest()
                     }
                 } catch (e: Exception) {
                     launch(Dispatchers.Main) {
                         PetalWallpaperManager.setWallpaper(context, Uri.fromFile(file).toString(), currentDim, currentBlur)
+                        onDismissRequest()
                     }
                 }
             }
@@ -287,15 +289,19 @@ fun PetalWallpaperSheet(
                         context.contentResolver.openInputStream(inputUri)?.use { input ->
                             FileOutputStream(localFile).use { output ->
                                 input.copyTo(output)
+                                output.flush()
+                                runCatching { output.fd.sync() }
                             }
                         }
                         val localUri = Uri.fromFile(localFile).toString()
                         launch(Dispatchers.Main) {
                             PetalWallpaperManager.setWallpaper(context, localUri, currentDim, currentBlur)
+                            onDismissRequest()
                         }
                     } catch (e: Exception) {
                         launch(Dispatchers.Main) {
                             PetalWallpaperManager.setWallpaper(context, inputUri.toString(), currentDim, currentBlur)
+                            onDismissRequest()
                         }
                     }
                 }
@@ -313,6 +319,7 @@ fun PetalWallpaperSheet(
                 mimeTypes = arrayOf("image/*", "video/*"),
                 allowFolderSelection = false,
                 allowMultiple = false,
+                asModalDialog = true,
                 onFileSelected = handleSelectedFile,
                 onBrowseSystemFallback = {
                     systemFallbackLauncher.launch("*/*")
@@ -539,6 +546,7 @@ fun PetalWallpaperSheet(
             onWallpaperCropped = { croppedLocalUri ->
                 pendingCropUri = null
                 PetalWallpaperManager.setWallpaper(context, croppedLocalUri.toString(), currentDim, currentBlur)
+                onDismissRequest()
             }
         )
     }
