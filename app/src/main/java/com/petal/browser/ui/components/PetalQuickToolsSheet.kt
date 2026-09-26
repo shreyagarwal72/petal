@@ -99,8 +99,9 @@ enum class QuickToolId(
     BLOCK_AREA("block_area", "Block Area", Icons.Rounded.VisibilityOff, "Element zapper", 15),
     SPOOF_IDENTITY("spoof_identity", "Spoof Identity", Icons.Rounded.Devices, "Change User-Agent", 16),
     FORCE_ZOOM("force_zoom", "Force Zoom", Icons.Rounded.ZoomIn, "Bypass zoom locks", 0),
-    TORRENT_MAGNET("torrent_magnet", "Torrents", Icons.Rounded.Download, "Magnet & torrent links", 1),
-    PETAL_CONFIG("petal_config", "petal:config", Icons.Rounded.Tune, "Advanced engine flags", 2)
+    SCREENSHOT("screenshot", "Screenshot", Icons.Rounded.Screenshot, "Capture page screenshot", 1),
+    TORRENT_MAGNET("torrent_magnet", "Torrents", Icons.Rounded.Download, "Magnet & torrent links", 2),
+    PETAL_CONFIG("petal_config", "petal:config", Icons.Rounded.Tune, "Advanced engine flags", 3)
 }
 
 interface PetalQuickToolsActionHandler {

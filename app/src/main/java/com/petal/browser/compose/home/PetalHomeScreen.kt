@@ -639,6 +639,9 @@ fun PetalHomeScreen(
                                 )
 
                                 // ── Tab Collections Section (Firefox-style persistent groups) ──
+                                LaunchedEffect(Unit) {
+                                    com.petal.browser.collections.PetalCollectionManager.init(context)
+                                }
                                 val collections = com.petal.browser.collections.PetalCollectionManager.collections
                                 if (collections.isNotEmpty()) {
                                     Spacer(Modifier.height(28.dp))
