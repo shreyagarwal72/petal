@@ -71,7 +71,21 @@ fun PetalWallpaperCropSheet(
     LaunchedEffect(imageUri) {
         withContext(Dispatchers.IO) {
             try {
-                val inputStream: InputStream? = context.contentResolver.openInputStream(imageUri)
+                fun openStream(): InputStream? {
+                    val scheme = imageUri.scheme
+                    val path = imageUri.path
+                    if (scheme == "file" || (scheme == null && path?.startsWith("/") == true)) {
+                        val file = if (path != null) File(path) else File(imageUri.toString().removePrefix("file://"))
+                        if (file.exists()) return file.inputStream()
+                    }
+                    return try {
+                        context.contentResolver.openInputStream(imageUri)
+                    } catch (_: Throwable) {
+                        if (path != null && File(path).exists()) File(path).inputStream() else null
+                    }
+                }
+
+                val inputStream: InputStream? = openStream()
                 val options = BitmapFactory.Options().apply {
                     inJustDecodeBounds = true
                 }
@@ -87,7 +101,7 @@ fun PetalWallpaperCropSheet(
                 val decodeOptions = BitmapFactory.Options().apply {
                     inSampleSize = sampleSize
                 }
-                val freshStream = context.contentResolver.openInputStream(imageUri)
+                val freshStream = openStream()
                 sourceBitmap = BitmapFactory.decodeStream(freshStream, null, decodeOptions)
                 freshStream?.close()
             } catch (e: Throwable) {

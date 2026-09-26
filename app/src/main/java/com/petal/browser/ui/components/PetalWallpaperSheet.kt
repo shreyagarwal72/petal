@@ -42,11 +42,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.activity.ComponentActivity
+import android.content.ContextWrapper
+import com.petal.browser.compose.file.PetalFilePickerBridge
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.wallpaper.PetalWallpaperManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 
 data class WallpaperPreset(
@@ -230,14 +234,52 @@ fun PetalWallpaperSheet(
     var selectedCategory by remember { mutableStateOf("All") }
     var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Built-in device file picker: handles images via Cropper and videos directly
-    val pickerLauncher = rememberLauncherForActivityResult(
+    fun findActivity(): ComponentActivity? {
+        var curr = context
+        while (curr is ContextWrapper) {
+            if (curr is ComponentActivity) return curr
+            curr = curr.baseContext
+        }
+        return null
+    }
+
+    val handleSelectedFile: (File) -> Unit = { file ->
+        val ext = file.extension.lowercase()
+        val isVideoFile = ext in setOf("mp4", "webm", "mkv", "mov", "3gp", "avi", "ts", "flv", "m4v")
+        if (isVideoFile) {
+            // Copy video to app local wallpaper cache and apply directly
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val wallpaperDir = File(context.filesDir, "wallpapers").apply { mkdirs() }
+                    val localFile = File(wallpaperDir, "live_wallpaper_${System.currentTimeMillis()}.$ext")
+                    FileInputStream(file).use { input ->
+                        FileOutputStream(localFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    val localUri = Uri.fromFile(localFile).toString()
+                    launch(Dispatchers.Main) {
+                        PetalWallpaperManager.setWallpaper(context, localUri, currentDim, currentBlur)
+                    }
+                } catch (e: Exception) {
+                    launch(Dispatchers.Main) {
+                        PetalWallpaperManager.setWallpaper(context, Uri.fromFile(file).toString(), currentDim, currentBlur)
+                    }
+                }
+            }
+        } else {
+            // Image file: open the homescreen-scale cropper
+            pendingCropUri = Uri.fromFile(file)
+        }
+    }
+
+    // Built-in device file picker fallback launcher (if activity is not ComponentActivity)
+    val systemFallbackLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { inputUri ->
             val mime = context.contentResolver.getType(inputUri) ?: ""
             if (mime.contains("video", ignoreCase = true)) {
-                // Copy video to local cache and apply
                 scope.launch(Dispatchers.IO) {
                     try {
                         val wallpaperDir = File(context.filesDir, "wallpapers").apply { mkdirs() }
@@ -258,9 +300,26 @@ fun PetalWallpaperSheet(
                     }
                 }
             } else {
-                // Image chosen: open the homescreen-scale cropper
                 pendingCropUri = inputUri
             }
+        }
+    }
+
+    val openDevicePicker = {
+        val act = findActivity()
+        if (act != null) {
+            PetalFilePickerBridge.showFilePicker(
+                activity = act,
+                mimeTypes = arrayOf("image/*", "video/*"),
+                allowFolderSelection = false,
+                allowMultiple = false,
+                onFileSelected = handleSelectedFile,
+                onBrowseSystemFallback = {
+                    systemFallbackLauncher.launch("*/*")
+                }
+            )
+        } else {
+            systemFallbackLauncher.launch("*/*")
         }
     }
 
@@ -317,7 +376,7 @@ fun PetalWallpaperSheet(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 FilledTonalButton(
-                    onClick = { pickerLauncher.launch("*/*") },
+                    onClick = { openDevicePicker() },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp)
                 ) {

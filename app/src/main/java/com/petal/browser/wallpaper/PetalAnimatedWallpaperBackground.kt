@@ -46,10 +46,26 @@ fun PetalAnimatedWallpaperBackground(
 ) {
     val context = LocalContext.current
     val isVideo = remember(wallpaperUri) {
-        wallpaperUri.endsWith(".mp4", ignoreCase = true) ||
-        wallpaperUri.endsWith(".webm", ignoreCase = true) ||
-        wallpaperUri.contains("video-files", ignoreCase = true) ||
-        wallpaperUri.contains("videos.pexels.com", ignoreCase = true)
+        val lower = wallpaperUri.lowercase()
+        lower.endsWith(".mp4") ||
+        lower.endsWith(".webm") ||
+        lower.endsWith(".mkv") ||
+        lower.endsWith(".mov") ||
+        lower.endsWith(".3gp") ||
+        lower.endsWith(".ts") ||
+        lower.endsWith(".avi") ||
+        lower.endsWith(".flv") ||
+        lower.endsWith(".m4v") ||
+        lower.contains(".mp4?") ||
+        lower.contains(".webm?") ||
+        lower.contains("video-files") ||
+        lower.contains("videos.pexels.com") ||
+        lower.contains("/video/") ||
+        runCatching {
+            val extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(wallpaperUri)
+            val mime = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+            mime?.startsWith("video/") == true
+        }.getOrDefault(false)
     }
 
     Box(
@@ -65,8 +81,13 @@ fun PetalAnimatedWallpaperBackground(
             }
 
             DisposableEffect(wallpaperUri) {
+                val mediaUri = if (wallpaperUri.startsWith("/")) {
+                    Uri.fromFile(java.io.File(wallpaperUri))
+                } else {
+                    Uri.parse(wallpaperUri)
+                }
                 val player = ExoPlayer.Builder(context).build().apply {
-                    val mediaItem = MediaItem.fromUri(Uri.parse(wallpaperUri))
+                    val mediaItem = MediaItem.fromUri(mediaUri)
                     setMediaItem(mediaItem)
                     repeatMode = Player.REPEAT_MODE_ALL
                     volume = 0f // Mute background video
@@ -120,9 +141,18 @@ fun PetalAnimatedWallpaperBackground(
                     .then(blurModifier)
             )
         } else {
-            val imageRequest = remember(wallpaperUri) {
+            val imageModel = remember(wallpaperUri) {
+                if (wallpaperUri.startsWith("file://")) {
+                    java.io.File(wallpaperUri.removePrefix("file://"))
+                } else if (wallpaperUri.startsWith("/")) {
+                    java.io.File(wallpaperUri)
+                } else {
+                    wallpaperUri
+                }
+            }
+            val imageRequest = remember(imageModel) {
                 ImageRequest.Builder(context)
-                    .data(wallpaperUri)
+                    .data(imageModel)
                     .crossfade(300)
                     .build()
             }
