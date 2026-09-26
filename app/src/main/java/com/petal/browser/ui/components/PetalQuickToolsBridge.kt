@@ -305,6 +305,28 @@ object PetalQuickToolsBridge {
                 PetalToast.show(activity, "Pinch-to-zoom force-enabled on page")
             }
 
+            QuickToolId.SCREENSHOT -> {
+                geckoView?.captureFullPageBitmap { bitmap ->
+                    if (bitmap != null) {
+                        try {
+                            val picturesDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_PICTURES)
+                            val petalDir = java.io.File(picturesDir, "Petal")
+                            if (!petalDir.exists()) petalDir.mkdirs()
+                            val file = java.io.File(petalDir, "Petal_${System.currentTimeMillis()}.png")
+                            java.io.FileOutputStream(file).use { out ->
+                                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+                            }
+                            android.media.MediaScannerConnection.scanFile(activity, arrayOf(file.absolutePath), arrayOf("image/png"), null)
+                            PetalToast.show(activity, "Screenshot saved to Pictures/Petal")
+                        } catch (e: Exception) {
+                            PetalToast.show(activity, "Screenshot captured")
+                        }
+                    } else {
+                        PetalToast.show(activity, "Failed to capture screenshot")
+                    }
+                }
+            }
+
             QuickToolId.TORRENT_MAGNET -> {
                 geckoView?.evaluateJavascript("""
                     (function() {
