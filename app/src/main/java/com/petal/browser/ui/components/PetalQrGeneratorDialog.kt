@@ -204,10 +204,10 @@ fun PetalQrGeneratorDialog(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Action Buttons: Copy Link & Share Link
+                // Action Buttons: Copy Link, Share QR Image, Share Link
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilledTonalButton(
                         onClick = {
@@ -218,12 +218,37 @@ fun PetalQrGeneratorDialog(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
-                        shape = RoundedCornerShape(16.dp)
+                            .height(46.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Copy", style = MaterialTheme.typography.labelLarge)
+                        Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Copy", style = MaterialTheme.typography.labelMedium)
+                    }
+
+                    FilledTonalButton(
+                        onClick = {
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                            if (qrBitmap != null) {
+                                shareQrImage(context, qrBitmap, title.ifEmpty { "Petal QR" })
+                            } else {
+                                PetalToast.show(context, "QR code not ready")
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .height(46.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
+                    ) {
+                        Icon(Icons.Rounded.QrCode2, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Share QR", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
                     }
 
                     Button(
@@ -238,16 +263,49 @@ fun PetalQrGeneratorDialog(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
-                        shape = RoundedCornerShape(16.dp)
+                            .height(46.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Share", style = MaterialTheme.typography.labelLarge)
+                        Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Link", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * Saves generated QR bitmap to app cache and launches Android system share sheet with image URI.
+ */
+private fun shareQrImage(context: Context, bitmap: Bitmap, title: String) {
+    try {
+        val cachePath = java.io.File(context.cacheDir, "images")
+        cachePath.mkdirs()
+        val qrFile = java.io.File(cachePath, "petal_qr_${System.currentTimeMillis()}.png")
+        java.io.FileOutputStream(qrFile).use { stream ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        }
+
+        val contentUri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            qrFile
+        )
+
+        if (contentUri != null) {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, contentUri)
+                putExtra(Intent.EXTRA_SUBJECT, title)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(shareIntent, "Share QR Code Image"))
+        }
+    } catch (e: Exception) {
+        PetalToast.show(context, "Could not share QR image: ${e.message}")
     }
 }
 
