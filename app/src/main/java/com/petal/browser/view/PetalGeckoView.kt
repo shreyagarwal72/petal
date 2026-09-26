@@ -1510,16 +1510,19 @@ class PetalGeckoView @JvmOverloads constructor(
             null
         }
 
-        if (engineSession != null) {
-            engineSession.reload()
-        } else {
-            try {
-                session.reload(GeckoSession.LOAD_FLAGS_NONE)
-            } catch (_: Throwable) {
-                if (target != null) {
-                    session.loadUri(target)
-                } else {
+        // Directly reload active GeckoSession so that navigating within a tab (e.g. from Google Search
+        // to YouTube) reloads the active page instead of re-triggering Mozilla GeckoEngineSession's
+        // stale initialLoadRequest.
+        try {
+            session.reload(GeckoSession.LOAD_FLAGS_NONE)
+        } catch (_: Throwable) {
+            if (target != null) {
+                session.loadUri(target)
+            } else {
+                try {
                     session.reload()
+                } catch (_: Throwable) {
+                    engineSession?.reload()
                 }
             }
         }
@@ -1692,6 +1695,10 @@ class PetalGeckoView @JvmOverloads constructor(
     fun isPageAtTop(): Boolean {
         if (currentUrl.isBlank() || currentUrl.equals("about:blank", ignoreCase = true) || com.petal.browser.unit.BrowserUnit.isHomePage(currentUrl)) {
             return true
+        }
+        val safeGv = geckoView as? SafeGeckoView
+        if (safeGv != null && !safeGv.canOverscrollTop()) {
+            return false
         }
         return currentScrollY <= PAGE_TOP_TOLERANCE_PX
     }
@@ -2430,6 +2437,108 @@ class SafeGeckoView : GeckoView {
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
+    private var initialDownY: Float = 0f
+    private var gestureCanReachParent: Boolean = true
+    private var inputResult: Int = PanZoomController.INPUT_RESULT_UNHANDLED
+    private var scrollDirections: Int = 0
+    private var overscrollDirections: Int = PanZoomController.OVERSCROLL_FLAG_VERTICAL
+
+    fun canOverscrollTop(): Boolean {
+        return inputResult != PanZoomController.INPUT_RESULT_HANDLED_CONTENT &&
+                (scrollDirections and PanZoomController.SCROLLABLE_FLAG_TOP == 0) &&
+                (overscrollDirections and PanZoomController.OVERSCROLL_FLAG_VERTICAL != 0)
+    }
+
+    fun isTouchHandledByWebsite(): Boolean {
+        return inputResult == PanZoomController.INPUT_RESULT_HANDLED_CONTENT
+    }
+
+    fun isTouchUnhandled(): Boolean {
+        return inputResult == PanZoomController.INPUT_RESULT_UNHANDLED
+    }
+
+    override fun onTouchEvent(ev: MotionEvent): Boolean {
+        val event = MotionEvent.obtain(ev)
+        val action = ev.actionMasked
+        val eventY = ev.y
+
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                // A new gesture started. Disallow parent interception until APZ verifies
+                // that the page is at the top boundary and touch is not handled by webpage.
+                parent?.requestDisallowInterceptTouchEvent(true)
+                initialDownY = eventY
+                gestureCanReachParent = true
+                updateInputResult(event)
+                val handled = super.onTouchEvent(event)
+                event.recycle()
+                return handled
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                val hasDragGestureStarted = eventY != initialDownY
+                if (gestureCanReachParent && hasDragGestureStarted) {
+                    updateInputResult(event)
+                }
+            }
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                inputResult = PanZoomController.INPUT_RESULT_UNHANDLED
+                overscrollDirections = PanZoomController.OVERSCROLL_FLAG_VERTICAL
+                scrollDirections = 0
+                parent?.requestDisallowInterceptTouchEvent(false)
+                gestureCanReachParent = true
+            }
+        }
+
+        val eventHandled = super.onTouchEvent(event)
+        event.recycle()
+        return eventHandled
+    }
+
+    private fun updateInputResult(event: MotionEvent) {
+        val eventAction = event.actionMasked
+        val eventY = event.y
+        try {
+            onTouchEventForDetailResult(event).accept { detail ->
+                if (!gestureCanReachParent || detail == null) {
+                    return@accept
+                }
+                inputResult = detail.handledResult()
+                scrollDirections = detail.scrollableDirections()
+                overscrollDirections = detail.overscrollDirections()
+
+                when (eventAction) {
+                    MotionEvent.ACTION_DOWN -> {
+                        gestureCanReachParent = canOverscrollTop()
+                        if (gestureCanReachParent && isTouchUnhandled()) {
+                            parent?.requestDisallowInterceptTouchEvent(false)
+                        }
+                    }
+
+                    MotionEvent.ACTION_MOVE -> {
+                        if (initialDownY < eventY) {
+                            // Downward pull: permit pull-to-refresh only if webpage touch listeners
+                            // haven't consumed the gesture (e.g. not canvas / inner slider / e.preventDefault).
+                            if (!isTouchHandledByWebsite()) {
+                                parent?.requestDisallowInterceptTouchEvent(false)
+                            }
+                        } else if (initialDownY > eventY) {
+                            // Upward scroll into webpage content: permanently lock parent for this gesture
+                            // so pull-to-refresh can never intersect or hijack mid-scroll / fling.
+                            parent?.requestDisallowInterceptTouchEvent(true)
+                            gestureCanReachParent = false
+                        } else {
+                            parent?.requestDisallowInterceptTouchEvent(false)
+                        }
+                    }
+                }
+            }
+        } catch (_: Throwable) {
+            // Safety guard if APZ detail call throws on transient state
+        }
+    }
+
     override fun onAttachedToWindow() {
         // Do not delay or suppress GeckoView's normal attach lifecycle. The parent
         // BrowserActivity now waits for WindowInsets before adding this view, while
@@ -2473,11 +2582,11 @@ class SafeGeckoView : GeckoView {
             // GeckoView's internal View.canScrollVertically(-1) always returns true
             // by default because it delegates scrolling to its internal compositor surface.
             // Check parent PetalGeckoView's compositor scroll position if attached.
-            val parent = parent
-            if (parent is PetalGeckoView) {
-                return !parent.isPageAtTop()
+            val parentView = parent
+            if (parentView is PetalGeckoView) {
+                return !parentView.isPageAtTop()
             }
-            return false
+            return !canOverscrollTop()
         }
         return super.canScrollVertically(direction)
     }

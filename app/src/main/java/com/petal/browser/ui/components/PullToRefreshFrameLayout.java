@@ -314,6 +314,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     if (getParent() != null) {
                         getParent().requestDisallowInterceptTouchEvent(true);
                     }
+                    sendCancelEvent(ev);
                     return true;
                 }
                 break;
@@ -375,6 +376,20 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     return false;
                 }
                 float curY = event.getY(pointerIndex);
+
+                if (!isDragging && !disallowIntercept) {
+                    float curX = event.getX(pointerIndex);
+                    float dx = curX - initialDownX;
+                    float dy = curY - initialDownY;
+                    if (dy > touchSlop && dy > Math.abs(dx) * VERTICAL_DOMINANCE && !canChildScrollUp() && (canPull == null || canPull.canPull())) {
+                        initialMotionY = initialDownY + touchSlop;
+                        isDragging = true;
+                        isIntercepting = true;
+                        if (getParent() != null) {
+                            getParent().requestDisallowInterceptTouchEvent(true);
+                        }
+                    }
+                }
 
                 if (isDragging) {
                     float overscrollTop = (curY - initialMotionY) * DRAG_RATE;
@@ -444,13 +459,37 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         }
     }
 
+    private void sendCancelEvent(MotionEvent ev) {
+        try {
+            MotionEvent cancelEvent = MotionEvent.obtain(ev);
+            cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
+            for (int i = 0; i < getChildCount(); i++) {
+                getChildAt(i).dispatchTouchEvent(cancelEvent);
+            }
+            cancelEvent.recycle();
+        } catch (Exception ignored) {}
+    }
+
+    @Override
+    public boolean onStartNestedScroll(View child, View target, int nestedScrollAxes) {
+        // Ignoring nested scrolls from descendants while enabled (Firefox VerticalSwipeRefreshLayout):
+        // Allowing descendants to trigger nested scrolls would defeat the purpose of this class
+        // and result in pull to refresh to happen for all movements on the Y axis
+        // (even as part of scale/quick scale gestures) while also doubling the throbber with the overscroll shadow.
+        if (isEnabled()) {
+            return false;
+        }
+        return super.onStartNestedScroll(child, target, nestedScrollAxes);
+    }
+
     @Override
     public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+        // Match Firefox VerticalSwipeRefreshLayout: disable Pull to Refresh on this layout
+        // when requested by child, but do NOT propagate to parent.
         if (isDragging || isIntercepting) {
             return;
         }
         this.disallowIntercept = disallowIntercept;
-        super.requestDisallowInterceptTouchEvent(disallowIntercept);
     }
 
     @Override
