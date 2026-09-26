@@ -167,6 +167,7 @@ class PetalGeckoView @JvmOverloads constructor(
     private var currentProgress: Int = 0
     private var canGoBackVal: Boolean = false
     private var canGoForwardVal: Boolean = false
+    private var currentSelection: GeckoSession.SelectionActionDelegate.Selection? = null
     private var lastRecordedHistoryUrl: String? = null
 
     private var favicon: Bitmap? = null
@@ -278,6 +279,7 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.updateOmniBox()
                         act.updateAddressBar()
                         act.updatePersistentBottomNav()
+                        act.updateBackCallbackState()
                     }
                 }
 
@@ -448,9 +450,6 @@ class PetalGeckoView @JvmOverloads constructor(
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateUrlAndTitle(context, tabId, url, currentTitle)
                 }
-                if (!isIncognito) {
-                    com.petal.browser.browser.PetalPlacesStorage.recordVisit(context, url, currentTitle)
-                }
 
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
@@ -476,6 +475,7 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.updateOmniBox()
                         act.updateAddressBar()
                         act.updatePersistentBottomNav()
+                        act.updateBackCallbackState()
                     }
                 }
             }
@@ -561,16 +561,43 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
-        // Let Gecko own visit detection. This covers redirects, reloads and SPA
-        // navigations consistently instead of inferring visits from lifecycle callbacks.
+        // Let Gecko own visit detection and history state changes (matches official Firefox)
         session.historyDelegate = object : GeckoSession.HistoryDelegate {
+            override fun onHistoryStateChange(
+                session: GeckoSession,
+                historyList: GeckoSession.HistoryDelegate.HistoryList
+            ) {
+                val currentIndex = historyList.currentIndex
+                val size = historyList.size()
+                canGoBackVal = currentIndex > 0
+                canGoForwardVal = currentIndex < size - 1
+                if (engineSession != null) {
+                    com.petal.browser.engine.gecko.PetalEngineStore.updateNavigationState(context, tabId, canGoBackVal, canGoForwardVal)
+                }
+                val act = getHostActivity()
+                if (act is com.petal.browser.activity.BrowserActivity) {
+                    act.runOnUiThread {
+                        act.updateBackCallbackState()
+                        act.updateOmniBox()
+                    }
+                }
+            }
+
             override fun onVisited(
                 session: GeckoSession,
                 url: String,
                 lastVisitedURL: String?,
                 flags: Int
             ): GeckoResult<Boolean> {
-                recordHistoryVisit(url, currentTitle)
+                // Official Firefox logic: filter out non-top-level visits, error pages, and redirect sources
+                val isTopLevel = (flags and GeckoSession.HistoryDelegate.VISIT_TOP_LEVEL) != 0
+                val isError = (flags and GeckoSession.HistoryDelegate.VISIT_UNRECOVERABLE_ERROR) != 0
+                val isRedirect = (flags and GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE) != 0 ||
+                                 (flags and GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT) != 0
+
+                if (isTopLevel && !isError && !isRedirect) {
+                    recordHistoryVisit(url, currentTitle)
+                }
                 return GeckoResult.fromValue(true)
             }
         }
@@ -1046,6 +1073,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 session: GeckoSession,
                 selection: GeckoSession.SelectionActionDelegate.Selection
             ) {
+                currentSelection = selection
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     val selectedText = selection.text
@@ -1055,6 +1083,10 @@ class PetalGeckoView @JvmOverloads constructor(
                         }
                     }
                 }
+            }
+
+            override fun onHideAction(session: GeckoSession, reason: Int) {
+                currentSelection = null
             }
         }
 
@@ -1478,10 +1510,10 @@ class PetalGeckoView @JvmOverloads constructor(
     @JvmOverloads
     fun goBack(userInteraction: Boolean = true) {
         if (canGoBackVal) {
-            if (engineSession != null) {
-                engineSession.goBack(userInteraction = userInteraction)
-            } else {
+            try {
                 session.goBack(userInteraction)
+            } catch (t: Throwable) {
+                engineSession?.goBack(userInteraction = userInteraction)
             }
         }
     }
@@ -1489,10 +1521,10 @@ class PetalGeckoView @JvmOverloads constructor(
     @JvmOverloads
     fun goForward(userInteraction: Boolean = true) {
         if (canGoForwardVal) {
-            if (engineSession != null) {
-                engineSession.goForward(userInteraction = userInteraction)
-            } else {
+            try {
                 session.goForward(userInteraction)
+            } catch (t: Throwable) {
+                engineSession?.goForward(userInteraction = userInteraction)
             }
         }
     }
@@ -1540,6 +1572,24 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun initPreferences(url: String?) {
         applySettings()
+    }
+
+    fun canClearSelection(): Boolean = currentSelection != null
+
+    fun clearWebSelection(): Boolean {
+        return try {
+            val sel = currentSelection
+            if (sel != null) {
+                currentSelection = null
+                sel.collapseToStart()
+                true
+            } else {
+                false
+            }
+        } catch (_: Throwable) {
+            currentSelection = null
+            false
+        }
     }
 
     fun clearMatches() {

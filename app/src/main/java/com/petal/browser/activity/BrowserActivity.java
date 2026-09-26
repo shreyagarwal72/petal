@@ -744,7 +744,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getWindow().setNavigationBarContrastEnforced(false);
         }
 
-        browserBackCallback = new OnBackPressedCallback(false) {
+        browserBackCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
                 // Web content (especially GeckoView) may update gesture-exclusion rects
@@ -1267,6 +1267,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
+        // ── Tier 2.5: Clear Web Text Selection (Firefox Parity) ──
+        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+            if (gv.canClearSelection()) {
+                gv.clearWebSelection();
+                return;
+            }
+        }
+
         // ── Tier 3: Website History Traversal (Firefox / GeckoView Parity) ──
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
@@ -1420,20 +1429,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         boolean requireConfirmExit = sp != null && sp.getBoolean("sp_double_back_exit", false);
 
-        // Keep the Activity back callback registered on Home and web surfaces while predictive back is
-        // enabled at the application level. This prevents Android from falling back to its default
-        // predictive exit animation on those browsing surfaces. They intentionally use normal back
-        // navigation; Compose/Petal screens own their predictive animation through
-        // PetalPredictiveBackSurface.
-        boolean shouldInterceptBack = hasOverlay
-                || hasDialog
-                || hasWebBack
-                || isWebPageNotHome
-                || hasMultipleTabs
-                || requireConfirmExit
-                || isPetalHomeSurfaceShowing
-                || isHomePage(curUrl);
-        browserBackCallback.setEnabled(shouldInterceptBack);
+        // Always keep browserBackCallback enabled while the activity has content.
+        // Android's predictive gesture navigation drops the back gesture if this is false,
+        // prematurely exiting the app. performBackNavigation() handles overlays, fullscreen,
+        // text selection, website history, home fallback, multi-tab closure, and exit dialog.
+        browserBackCallback.setEnabled(true);
     }
 
     public void resetPredictiveBackVisuals() {
@@ -6394,6 +6394,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         updateOmniBox();
         updatePersistentBottomNav();
+        updateBackCallbackState();
         saveOpenedTabs();
         com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(this);
     }
