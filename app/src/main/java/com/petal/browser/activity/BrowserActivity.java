@@ -6588,6 +6588,48 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 gv.printToPdf(fos, success -> {
                     if (success) {
                         runOnUiThread(() -> {
+                            try {
+                                PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                                if (printManager != null) {
+                                    String jobName = getString(R.string.app_name) + " - " + (currentAlbumController.getTitle() != null ? currentAlbumController.getTitle() : "Document");
+                                    printManager.print(jobName, new PrintDocumentAdapter() {
+                                        @Override
+                                        public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes, android.os.CancellationSignal cancellationSignal, LayoutResultCallback callback, android.os.Bundle extras) {
+                                            if (cancellationSignal != null && cancellationSignal.isCanceled()) {
+                                                callback.onLayoutCancelled();
+                                                return;
+                                            }
+                                            android.print.PrintDocumentInfo info = new android.print.PrintDocumentInfo.Builder(jobName)
+                                                    .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                                                    .build();
+                                            callback.onLayoutFinished(info, true);
+                                        }
+
+                                        @Override
+                                        public void onWrite(android.print.PageRange[] pages, android.os.ParcelFileDescriptor destination, android.os.CancellationSignal cancellationSignal, WriteResultCallback callback) {
+                                            if (destination == null) {
+                                                callback.onWriteFailed("No output destination");
+                                                return;
+                                            }
+                                            try (java.io.FileInputStream in = new java.io.FileInputStream(pdfFile);
+                                                 java.io.FileOutputStream out = new java.io.FileOutputStream(destination.getFileDescriptor())) {
+                                                byte[] buf = new byte[16384];
+                                                int len;
+                                                while ((len = in.read(buf)) > 0) {
+                                                    out.write(buf, 0, len);
+                                                }
+                                                callback.onWriteFinished(new android.print.PageRange[]{android.print.PageRange.ALL_PAGES});
+                                            } catch (Exception e) {
+                                                callback.onWriteFailed(e.getMessage());
+                                            }
+                                        }
+                                    }, new PrintAttributes.Builder().build());
+                                    return;
+                                }
+                            } catch (Exception e) {
+                                Log.w(TAG, "PrintManager failed, falling back to intent", e);
+                            }
+
                             Intent intent = new Intent(Intent.ACTION_VIEW);
                             Uri uri = androidx.core.content.FileProvider.getUriForFile(
                                     BrowserActivity.this,
