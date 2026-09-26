@@ -741,42 +741,48 @@ fun PetalHomeScreen(
                                                         }
                                                     }
 
-                                                    if (isExpanded) {
-                                                        Spacer(Modifier.height(10.dp))
-                                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                                                        Spacer(Modifier.height(8.dp))
-                                                        col.items.forEach { tabItem ->
-                                                            Row(
-                                                                modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                                    .clip(RoundedCornerShape(10.dp))
-                                                                    .clickable { onOpenShortcutUrl(tabItem.url) }
-                                                                    .padding(vertical = 6.dp, horizontal = 4.dp),
-                                                                verticalAlignment = Alignment.CenterVertically,
-                                                                horizontalArrangement = Arrangement.SpaceBetween
-                                                            ) {
-                                                                Column(modifier = Modifier.weight(1f)) {
-                                                                    Text(
-                                                                        text = tabItem.title.ifBlank { tabItem.url },
-                                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                                        color = MaterialTheme.colorScheme.onSurface,
-                                                                        maxLines = 1,
-                                                                        overflow = TextOverflow.Ellipsis
-                                                                    )
-                                                                    Text(
-                                                                        text = tabItem.url,
-                                                                        style = MaterialTheme.typography.bodySmall,
-                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                        maxLines = 1,
-                                                                        overflow = TextOverflow.Ellipsis
+                                                    androidx.compose.animation.AnimatedVisibility(
+                                                        visible = isExpanded,
+                                                        enter = androidx.compose.animation.expandVertically(animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.8f, stiffness = 400f)) + androidx.compose.animation.fadeIn(),
+                                                        exit = androidx.compose.animation.shrinkVertically(animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.8f, stiffness = 400f)) + androidx.compose.animation.fadeOut()
+                                                    ) {
+                                                        Column {
+                                                            Spacer(Modifier.height(10.dp))
+                                                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                                            Spacer(Modifier.height(8.dp))
+                                                            col.items.forEach { tabItem ->
+                                                                Row(
+                                                                    modifier = Modifier
+                                                                        .fillMaxWidth()
+                                                                        .clip(RoundedCornerShape(10.dp))
+                                                                        .clickable { onOpenShortcutUrl(tabItem.url) }
+                                                                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                                                                    verticalAlignment = Alignment.CenterVertically,
+                                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                                ) {
+                                                                    Column(modifier = Modifier.weight(1f)) {
+                                                                        Text(
+                                                                            text = tabItem.title.ifBlank { tabItem.url },
+                                                                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                                            color = MaterialTheme.colorScheme.onSurface,
+                                                                            maxLines = 1,
+                                                                            overflow = TextOverflow.Ellipsis
+                                                                        )
+                                                                        Text(
+                                                                            text = tabItem.url,
+                                                                            style = MaterialTheme.typography.bodySmall,
+                                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                            maxLines = 1,
+                                                                            overflow = TextOverflow.Ellipsis
+                                                                        )
+                                                                    }
+                                                                    Icon(
+                                                                        Icons.Rounded.ChevronRight,
+                                                                        contentDescription = null,
+                                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                        modifier = Modifier.size(18.dp)
                                                                     )
                                                                 }
-                                                                Icon(
-                                                                    Icons.Rounded.ChevronRight,
-                                                                    contentDescription = null,
-                                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                    modifier = Modifier.size(18.dp)
-                                                                )
                                                             }
                                                         }
                                                     }
