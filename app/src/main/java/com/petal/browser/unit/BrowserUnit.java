@@ -113,16 +113,46 @@ public class BrowserUnit {
             }
             return query;
         } else {
+            String trimmed = query.trim();
+            String prefix = "";
+            String term = trimmed;
+            if (trimmed.startsWith("@") && trimmed.contains(" ")) {
+                int firstSpace = trimmed.indexOf(" ");
+                prefix = trimmed.substring(0, firstSpace).toLowerCase();
+                term = trimmed.substring(firstSpace + 1).trim();
+            }
+
+            String encodedQuery;
+            try {
+                encodedQuery = URLEncoder.encode(term, "UTF-8");
+            } catch (Exception e) {
+                encodedQuery = term.replace(" ", "+");
+            }
+
+            if (!prefix.isEmpty()) {
+                switch (prefix) {
+                    case "@yt":
+                    case "@youtube":
+                        return "https://m.youtube.com/results?search_query=" + encodedQuery;
+                    case "@wiki":
+                    case "@wikipedia":
+                        return "https://en.m.wikipedia.org/w/index.php?search=" + encodedQuery;
+                    case "@gh":
+                    case "@github":
+                        return "https://github.com/search?q=" + encodedQuery;
+                    case "@reddit":
+                        return "https://www.reddit.com/search/?q=" + encodedQuery;
+                    case "@ddg":
+                        return "https://duckduckgo.com/?q=" + encodedQuery;
+                    case "@b":
+                    case "@bing":
+                        return "https://www.bing.com/search?q=" + encodedQuery;
+                }
+            }
+
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
             String customSearchEngine = sp.getString("sp_search_engine_custom", "");
             String customSearches = sp.getString("sp_search_customSearches", "");
-            
-            String encodedQuery;
-            try {
-                encodedQuery = URLEncoder.encode(query, "UTF-8");
-            } catch (Exception e) {
-                encodedQuery = query.replace(" ", "+");
-            }
 
             if (!customSearches.isEmpty()) {
                 return customSearches + encodedQuery;
