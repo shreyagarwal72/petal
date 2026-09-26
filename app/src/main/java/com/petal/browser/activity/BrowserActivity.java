@@ -4311,7 +4311,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                 };
                 addressBarForMargin.addOnLayoutChangeListener(layoutListener);
-                addressBarForMargin.post(() -> layoutListener.onLayoutChange(addressBarForMargin, 0, 0, 0, 0, 0, 0, 0, 0));
+                addressBarForMargin.post(() -> {
+                    boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
+                    int h = isBottom ? 0 : (addressBarForMargin.getBottom() > 0 ? addressBarForMargin.getBottom() : addressBarForMargin.getHeight());
+                    if (h > 0) {
+                        finalParams.topMargin = h;
+                        finalRefreshBar.setLayoutParams(finalParams);
+                    }
+                });
             }
         }
 
@@ -4350,37 +4357,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         contentFrame.setPullDistanceDp(80f);
         contentFrame.setEdgeThresholdDp(120f);
         contentFrame.setCanPull(() -> {
-            // If internal native Compose views (Settings, History, Downloads, Account) are showing, disable pull to refresh
-            if (isOverlayScreenShowing || hasNonTabTopContent()) {
-                View top = getTopContentChild();
-                if (top != null && !isTabSurface(top) && !isPetalHomeSurfaceShowing) {
-                    return false;
-                }
+            // Strictly exclusive to websites: never allow on home, settings, history, or internal surfaces
+            if (isPetalHomeSurfaceShowing || isOverlayScreenShowing || hasNonTabTopContent()) {
+                return false;
+            }
+            View top = getTopContentChild();
+            if (top != null && !isTabSurface(top)) {
+                return false;
             }
 
             AlbumController controller = currentAlbumController;
             String currentUrl = controller != null ? controller.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : null);
-            if (currentUrl == null) currentUrl = "";
-
-            boolean isOverlayPage = currentUrl.contains("petal://settings") ||
-                    currentUrl.contains("petal://history") ||
-                    currentUrl.contains("petal://downloads") ||
-                    currentUrl.contains("petal://account");
-
-            if (isOverlayPage) {
+            if (currentUrl == null || (!currentUrl.startsWith("http://") && !currentUrl.startsWith("https://"))) {
                 return false;
             }
 
             boolean isScrolledToTop = false;
-            if (isPetalHomeSurfaceShowing || isHomePage(currentUrl) || currentUrl.equalsIgnoreCase("about:blank")) {
-                // Home page is top-level Compose view; allow pull-to-refresh at the top
-                isScrolledToTop = true;
-            } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+            if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) controller).isPageAtTop();
             } else if (ninjaWebView != null) {
                 isScrolledToTop = ninjaWebView.getScrollY() <= 0;
-            } else {
-                isScrolledToTop = true;
             }
 
             return isScrolledToTop && !refreshState.isRefreshing();
@@ -4425,14 +4421,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 contentFrame.postDelayed(refreshTimeoutWatchdog, 8000L);
             }
 
-            String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
-            if (isPetalHomeSurfaceShowing || isHomePage(activeUrl) || "about:blank".equalsIgnoreCase(activeUrl)) {
-                // Refresh home view & shortcuts
-                contentFrame.postDelayed(() -> {
-                    showAlbum(currentAlbumController, "petal://home");
-                    resetRefreshState();
-                }, 600);
-            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 ((com.petal.browser.view.PetalGeckoView) currentAlbumController).reload();
             } else if (ninjaWebView != null) {
                 ninjaWebView.reload();

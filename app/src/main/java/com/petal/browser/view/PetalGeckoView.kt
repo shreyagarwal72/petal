@@ -1493,10 +1493,29 @@ class PetalGeckoView @JvmOverloads constructor(
     fun reload() {
         isStopped = false
         applySettings()
-        if (currentUrl.isNotBlank() && !BrowserUnit.isHomePage(currentUrl) && !currentUrl.equals("about:blank", ignoreCase = true)) {
+        val target = if (currentUrl.isNotBlank() && !BrowserUnit.isHomePage(currentUrl) && !currentUrl.equals("about:blank", ignoreCase = true)) {
             showLoadingSkeleton(currentUrl)
+            currentUrl
+        } else if (persistentUrl.isNotBlank() && !BrowserUnit.isHomePage(persistentUrl) && !persistentUrl.equals("about:blank", ignoreCase = true)) {
+            showLoadingSkeleton(persistentUrl)
+            persistentUrl
+        } else {
+            null
         }
-        if (engineSession != null) engineSession.reload() else session.reload()
+
+        if (engineSession != null) {
+            engineSession.reload()
+        } else {
+            try {
+                session.reload(GeckoSession.LOAD_FLAGS_NONE)
+            } catch (_: Throwable) {
+                if (target != null) {
+                    session.loadUri(target)
+                } else {
+                    session.reload()
+                }
+            }
+        }
     }
 
     fun stopLoading() {
@@ -1945,9 +1964,15 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun onResume() {
-        if (isForegroundTab) {
+        isForegroundTab = true
+        try {
             session.setActive(true)
-        }
+        } catch (_: Throwable) {}
+        try {
+            geckoView.visibility = View.VISIBLE
+            geckoView.requestLayout()
+            geckoView.invalidate()
+        } catch (_: Throwable) {}
     }
 
     fun onPause() {
@@ -2244,6 +2269,13 @@ class PetalGeckoView @JvmOverloads constructor(
             val trimReferrers = sp.getBoolean("sp_trim_referrers", true)
             val fingerprintProtection = sp.getBoolean("sp_fingerprint_protection", sp.getBoolean("profileStandard_fingerPrintProtection", true))
 
+            // Avoid injecting canvas prototype modifications on search engine & challenge domains (Google, Cloudflare, hCaptcha)
+            // as mutating CanvasRenderingContext2D triggers automated bot-detection and endless Captchas.
+            val host = try { android.net.Uri.parse(currentUrl).host?.lowercase() ?: "" } catch (_: Throwable) { "" }
+            val isSearchOrCaptchaDomain = host.contains("google.") || host.contains("gstatic.") ||
+                host.contains("recaptcha") || host.contains("hcaptcha") || host.contains("cloudflare") ||
+                host.contains("bing.com") || host.contains("duckduckgo.com")
+
             val sb = StringBuilder("(function() {\n")
             if (dntGpc) {
                 sb.append("""
@@ -2290,7 +2322,7 @@ class PetalGeckoView @JvmOverloads constructor(
                     } catch(e) {}
                 """.trimIndent()).append("\n")
             }
-            if (fingerprintProtection) {
+            if (fingerprintProtection && !isSearchOrCaptchaDomain) {
                 sb.append("""
                     try {
                         const shift = Math.floor(Math.random() * 2) - 1;

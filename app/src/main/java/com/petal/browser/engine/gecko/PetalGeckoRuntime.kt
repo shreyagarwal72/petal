@@ -86,13 +86,20 @@ object PetalGeckoRuntime {
             (appContext.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         } catch (_: Throwable) { false }
 
+        val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
+        val defaultCookieBehavior = if (blockThirdPartyCookies) {
+            ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
+        } else {
+            ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
+        }
+
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(false)
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
                     .antiTracking(ContentBlocking.AntiTracking.DEFAULT)
-                    // Block tracking cookies and isolate the rest (dynamic first-party isolation).
-                    .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS)
+                    // Accept non-trackers so search engine session tokens (Google NID, CONSENT) persist across queries without triggering bot Captchas
+                    .cookieBehavior(defaultCookieBehavior)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
                     .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.DEFAULT)
                     .build()
