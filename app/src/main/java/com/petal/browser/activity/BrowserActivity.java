@@ -1038,6 +1038,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (browserBackCallback != null) browserBackCallback.setEnabled(true);
         super.onResume();
         predictiveBackStartedOnOverlay = false;
+        resetRefreshState();
         applyAddressBarPosition();
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             ((com.petal.browser.view.PetalGeckoView) currentAlbumController).onResume();
@@ -4349,36 +4350,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         contentFrame.setPullDistanceDp(80f);
         contentFrame.setEdgeThresholdDp(120f);
         contentFrame.setCanPull(() -> {
-            // If internal native Compose views (Settings, History, Downloads, Account) are swapped into contentFrame, disable pull to refresh
-            if (isOverlayScreenShowing) {
-                return false;
-            }
-            if (contentFrame != null && contentFrame.getChildCount() > 0) {
-                for (int i = 0; i < contentFrame.getChildCount(); i++) {
-                    View child = contentFrame.getChildAt(i);
-                    // Disallow pull when native overlays like Settings, Downloads, History are shown
-                    if (child != currentAlbumController && !(child instanceof com.petal.browser.view.PetalGeckoView) && child != ninjaWebView && isOverlayScreenShowing) {
-                        return false;
-                    }
+            // If internal native Compose views (Settings, History, Downloads, Account) are showing, disable pull to refresh
+            if (isOverlayScreenShowing || hasNonTabTopContent()) {
+                View top = getTopContentChild();
+                if (top != null && !isTabSurface(top) && !isPetalHomeSurfaceShowing) {
+                    return false;
                 }
             }
-            String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : null);
+
+            AlbumController controller = currentAlbumController;
+            String currentUrl = controller != null ? controller.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : null);
             if (currentUrl == null) currentUrl = "";
+
             boolean isOverlayPage = currentUrl.contains("petal://settings") ||
                     currentUrl.contains("petal://history") ||
                     currentUrl.contains("petal://downloads") ||
                     currentUrl.contains("petal://account");
 
+            if (isOverlayPage) {
+                return false;
+            }
+
             boolean isScrolledToTop = false;
             if (isPetalHomeSurfaceShowing || isHomePage(currentUrl) || currentUrl.equalsIgnoreCase("about:blank")) {
                 // Home page is top-level Compose view; allow pull-to-refresh at the top
                 isScrolledToTop = true;
-            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isPageAtTop();
+            } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) controller).isPageAtTop();
             } else if (ninjaWebView != null) {
                 isScrolledToTop = ninjaWebView.getScrollY() <= 0;
+            } else {
+                isScrolledToTop = true;
             }
-            return !isOverlayPage && isScrolledToTop && !refreshState.isRefreshing();
+
+            return isScrolledToTop && !refreshState.isRefreshing();
         });
 
         final androidx.compose.ui.platform.ComposeView finalRefreshView = refreshBarCompose;
@@ -4414,6 +4419,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             refreshState.setRefreshing(true);
             refreshState.setPullProgress(1.0f);
 
+            // Firefox safety watchdog: reset refreshing indicator after 8 seconds if page load hangs
+            if (contentFrame != null) {
+                contentFrame.removeCallbacks(refreshTimeoutWatchdog);
+                contentFrame.postDelayed(refreshTimeoutWatchdog, 8000L);
+            }
+
             String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
             if (isPetalHomeSurfaceShowing || isHomePage(activeUrl) || "about:blank".equalsIgnoreCase(activeUrl)) {
                 // Refresh home view & shortcuts
@@ -4431,6 +4442,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         });
     }
 
+    private final Runnable refreshTimeoutWatchdog = this::resetRefreshState;
+
     /**
      * Hides both the pull-to-refresh spinner and the top page-loading progress bar.
      * Call this whenever an internal, non-webpage screen (Settings, Downloads,
@@ -4440,6 +4453,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * (or showing stale progress) on top of a screen that isn't an actual webpage.
      */
     public void hideRefreshAndProgressOverlays() {
+        if (contentFrame != null) {
+            contentFrame.removeCallbacks(refreshTimeoutWatchdog);
+            contentFrame.reset();
+        }
         if (refreshState != null) {
             refreshState.setRefreshing(false);
             refreshState.setPullProgress(0f);
@@ -4464,6 +4481,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void resetRefreshState() {
         runOnUiThread(() -> {
+            if (contentFrame != null) {
+                contentFrame.removeCallbacks(refreshTimeoutWatchdog);
+                contentFrame.reset();
+            }
             if (refreshState != null) {
                 refreshState.setRefreshing(false);
                 refreshState.setPullProgress(0f);

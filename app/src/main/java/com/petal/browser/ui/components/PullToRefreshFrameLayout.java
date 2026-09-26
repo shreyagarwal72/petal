@@ -110,7 +110,16 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         // Maintained for binary compatibility - covers full viewport
     }
 
+    /**
+     * Determines whether child views can scroll upwards.
+     * Aligned with Firefox Android: if canPull callback is supplied, it serves
+     * as the authoritative source for whether the active web/doc surface is at top.
+     * We only fall back to child.canScrollVertically(-1) if canPull allows it.
+     */
     private boolean canChildScrollUp() {
+        if (canPull != null && !canPull.canPull()) {
+            return true;
+        }
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
             if (child.getVisibility() == VISIBLE && child.canScrollVertically(-1)) {
@@ -179,6 +188,17 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     }
 
     /**
+     * Resets touch state and cancels any in-progress drag.
+     */
+    public void reset() {
+        cancelDrag();
+        disallowIntercept = false;
+        hasMultiTouch = false;
+        isQuickScaleInProgress = false;
+        forgetQuickScaleEvents();
+    }
+
+    /**
      * Official Firefox / AOSP slingshot tension calculation.
      * Computes the non-linear pull progress [0f, 1f+] with elastic resistance as user drags down.
      */
@@ -203,6 +223,21 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             return false;
         }
 
+        int action = ev.getActionMasked();
+
+        // Always reset disallowIntercept and state on a fresh ACTION_DOWN (pure Firefox pattern)
+        if (action == MotionEvent.ACTION_DOWN) {
+            disallowIntercept = false;
+            hasMultiTouch = false;
+            isDragging = false;
+            isIntercepting = false;
+            hasTriggeredHaptic = false;
+        }
+
+        if (disallowIntercept) {
+            return false;
+        }
+
         // Multi-touch / pinch-to-zoom protection: Firefox rejects pull if multiple fingers land
         if (ev.getPointerCount() > 1 || hasMultiTouch) {
             hasMultiTouch = true;
@@ -212,7 +247,6 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             return false;
         }
 
-        int action = ev.getActionMasked();
         if (action == MotionEvent.ACTION_CANCEL || (action == MotionEvent.ACTION_UP && isQuickScaleInProgress)) {
             forgetQuickScaleEvents();
             cancelDrag();
@@ -273,7 +307,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 }
 
                 // Page position validation (Firefox model): Full touch area across viewport is valid when scrolled to top
-                if (!canChildScrollUp() && canPull.canPull()) {
+                if (!canChildScrollUp() && (canPull == null || canPull.canPull())) {
                     initialMotionY = initialDownY + touchSlop;
                     isIntercepting = true;
                     isDragging = true;
@@ -300,6 +334,14 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (!isEnabled()) {
+            return false;
+        }
+
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            disallowIntercept = false;
+        }
+
+        if (disallowIntercept && !isDragging) {
             return false;
         }
 
