@@ -86,6 +86,17 @@ fun PetalSiteInfoBottomSheet(
     var isLocationAllowed by remember { mutableStateOf(sp.getBoolean(profile + "_location", false)) }
     var isNotificationsAllowed by remember { mutableStateOf(sp.getBoolean("sp_notifications_$domain", true)) }
 
+    // Site display preferences
+    var isDesktopSite by remember(domain) {
+        mutableStateOf(
+            if (domain.isNotEmpty() && sp.contains("sp_desktop_site_$domain")) {
+                sp.getBoolean("sp_desktop_site_$domain", false)
+            } else {
+                sp.getBoolean("${profile}_desktop", false)
+            }
+        )
+    }
+
     // Enhanced Tracking Protection (ETP) breakdown
     val isDomainWhitelisted = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.isDomainWhitelisted(domain) }
     var trackingProtectionEnabled by remember(domain, isDomainWhitelisted) { mutableStateOf(!isDomainWhitelisted) }
@@ -628,6 +639,33 @@ fun PetalSiteInfoBottomSheet(
                             iconSize = 18.dp
                         ) {
                             Icon(imageVector = Icons.Rounded.Notifications, contentDescription = null)
+                        }
+                    }
+                )
+
+                SettingsTileDivider(startPadding = 64.dp)
+
+                // Desktop Site (Per-site override)
+                SettingsTileSwitchRow(
+                    title = "Desktop Site",
+                    subtitle = if (isDesktopSite) "Requesting desktop version" else "Mobile version",
+                    checked = isDesktopSite,
+                    onCheckedChange = { allowed ->
+                        isDesktopSite = allowed
+                        if (domain.isNotEmpty()) {
+                            sp.edit().putBoolean("sp_desktop_site_$domain", allowed).apply()
+                        }
+                        geckoView?.setDesktopMode(allowed)
+                    },
+                    leadingIcon = {
+                        PetalShapeIconBadge(
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                            containerColor = if (isDesktopSite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (isDesktopSite) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            size = 38.dp,
+                            iconSize = 18.dp
+                        ) {
+                            Icon(imageVector = Icons.Rounded.DesktopWindows, contentDescription = null)
                         }
                     }
                 )

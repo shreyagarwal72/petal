@@ -87,14 +87,15 @@ object PetalGeckoRuntime {
         } catch (_: Throwable) { false }
 
         val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
-        val defaultCookieBehavior = if (blockThirdPartyCookies) {
+        val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", false))
+        val defaultCookieBehavior = if (totalCookieProtection || blockThirdPartyCookies) {
             ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
         } else {
             ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
         }
 
         val settingsBuilder = GeckoRuntimeSettings.Builder()
-            .aboutConfigEnabled(false)
+            .aboutConfigEnabled(true)
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
                     .antiTracking(ContentBlocking.AntiTracking.DEFAULT)

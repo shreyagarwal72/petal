@@ -1229,12 +1229,13 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun applySettings() {
         val profile = getProfile(context)
-        // BrowserNavigationDelegate's "Desktop site" toggle saves under "${profile}_desktop"
-        // (e.g. "profileStandard_desktop") - this used to read the unrelated, never-written
-        // "sp_desktop_site" key instead, so the toggle reverted to mobile on the very next
-        // navigation, new tab, or session restore. "sp_desktop_site" is kept as a fallback
-        // only for anyone who had it set from an older build.
-        val desktopEnabled = sp.getBoolean("${profile}_desktop", sp.getBoolean("sp_desktop_site", false))
+        // Check per-domain desktop site preference first, then fallback to global/profile desktop mode
+        val host = try { android.net.Uri.parse(currentUrl ?: "").host } catch (_: Throwable) { null }
+        val desktopEnabled = if (!host.isNullOrBlank() && sp.contains("sp_desktop_site_$host")) {
+            sp.getBoolean("sp_desktop_site_$host", false)
+        } else {
+            sp.getBoolean("${profile}_desktop", sp.getBoolean("sp_desktop_site", false))
+        }
         applyDesktopMode(desktopEnabled)
         applyGeckoBlockingPolicy(currentUrl)
         val enableJs = sp.getBoolean("sp_javascript", sp.getBoolean("${profile}_javascript", sp.getBoolean("profileStandard_javascript", true)))
