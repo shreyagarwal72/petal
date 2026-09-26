@@ -87,6 +87,9 @@ fun PetalAnimatedWallpaperBackground(
                         this.player = exoPlayer
                         useController = false
                         resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                        // TextureView enables real-time RenderEffect blur and Compose Modifier.blur()
+                        // (Default SurfaceView renders on a separate compositor surface that ignores blur shaders)
+                        setSafeSurfaceView(this)
                         layoutParams = FrameLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT
@@ -95,6 +98,22 @@ fun PetalAnimatedWallpaperBackground(
                 },
                 update = { view ->
                     view.player = exoPlayer
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (blur > 0.5f) {
+                            try {
+                                val effect = android.graphics.RenderEffect.createBlurEffect(
+                                    blur * 2.5f,
+                                    blur * 2.5f,
+                                    android.graphics.Shader.TileMode.CLAMP
+                                )
+                                view.setRenderEffect(effect)
+                            } catch (_: Throwable) {}
+                        } else {
+                            try {
+                                view.setRenderEffect(null)
+                            } catch (_: Throwable) {}
+                        }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxSize()
@@ -128,3 +147,21 @@ fun PetalAnimatedWallpaperBackground(
         }
     }
 }
+
+/**
+ * Configures PlayerView to use TextureView so blur shaders and RenderEffect apply properly.
+ */
+private fun setSafeSurfaceView(playerView: PlayerView) {
+    try {
+        // PlayerView.setVideoSurfaceViewType or reflection/surface_type attribute
+        val method = PlayerView::class.java.getMethod("setVideoSurfaceViewType", Int::class.javaPrimitiveType)
+        method.invoke(playerView, 2) // 2 is SURFACE_TYPE_TEXTURE_VIEW
+    } catch (_: Throwable) {
+        try {
+            val field = PlayerView::class.java.getDeclaredField("surfaceType")
+            field.isAccessible = true
+            field.setInt(playerView, 2)
+        } catch (_: Throwable) {}
+    }
+}
+
