@@ -1053,6 +1053,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             return;
         }
+        if (petalBrowserFeatures != null
+                && petalBrowserFeatures.onActivityResult(requestCode, resultCode, data)) {
+            return;
+        }
         if (requestCode == INPUT_FILE_REQUEST_CODE) {
             if (mFilePathCallback != null) {
                 Uri[] results = null;
