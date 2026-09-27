@@ -24,6 +24,7 @@ object BrowserNavigationDelegate {
     fun showOverflowMenu(activity: BrowserActivity) {
         val currentController = activity.currentAlbumController
         val geckoView = currentController as? com.petal.browser.view.PetalGeckoView
+        val tabSurface = currentController as? com.petal.browser.browser.PetalTabViewController
 
         val isHome = activity.isPetalHomeSurfaceShowing || activity.isCurrentTabHomeOrBlank || com.petal.browser.unit.BrowserUnit.isHomePage(geckoView?.url ?: currentController?.url)
         val title = if (isHome) "Petal Home" else (geckoView?.title ?: currentController?.title ?: "")
@@ -37,8 +38,8 @@ object BrowserNavigationDelegate {
             action.close()
         }
 
-        val canGoBack = geckoView?.canGoBack() ?: false
-        val canGoForward = geckoView?.canGoForward() ?: false
+        val canGoBack = tabSurface?.canGoBack() ?: geckoView?.canGoBack() ?: false
+        val canGoForward = tabSurface?.canGoForward() ?: geckoView?.canGoForward() ?: false
         val profile = PetalGeckoView.getProfile(activity)
         val prefs = activity.sp ?: PreferenceManager.getDefaultSharedPreferences(activity)
         val isDesktopSite = prefs.getBoolean("${profile}_desktop", false)
@@ -57,13 +58,17 @@ object BrowserNavigationDelegate {
             isMediaActive,
             object : PetalOverflowMenuActionHandler {
                 override fun onGoBack() {
-                    if (geckoView != null && geckoView.canGoBack()) {
+                    if (tabSurface != null && tabSurface.canGoBack()) {
+                        tabSurface.goBack()
+                    } else if (geckoView != null && geckoView.canGoBack()) {
                         geckoView.goBack()
                     }
                 }
 
                 override fun onGoForward() {
-                    if (geckoView != null && geckoView.canGoForward()) {
+                    if (tabSurface != null && tabSurface.canGoForward()) {
+                        tabSurface.goForward()
+                    } else if (geckoView != null && geckoView.canGoForward()) {
                         geckoView.goForward()
                     }
                 }
@@ -85,7 +90,7 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onReload() {
-                    geckoView?.reload()
+                    tabSurface?.reload() ?: geckoView?.reload()
                 }
 
                 override fun onToggleDesktopSite(enabled: Boolean) {
@@ -93,7 +98,7 @@ object BrowserNavigationDelegate {
                         .putBoolean("${profile}_desktop", enabled)
                         .putBoolean("profileStandard_desktop", enabled)
                         .apply()
-                    geckoView?.setDesktopMode(enabled)
+                    tabSurface?.setDesktopMode(enabled) ?: geckoView?.setDesktopMode(enabled)
                     PetalToast.show(activity, if (enabled) "Desktop site requested" else "Mobile site requested")
                 }
 
@@ -103,8 +108,10 @@ object BrowserNavigationDelegate {
                         .putBoolean("${profile}_adBlock", enabled)
                         .putBoolean("profileStandard_adBlock", enabled)
                         .apply()
-                    geckoView?.initPreferences(url)
-                    geckoView?.reload()
+                    if (tabSurface != null) tabSurface.reload() else {
+                        geckoView?.initPreferences(url)
+                        geckoView?.reload()
+                    }
                     PetalToast.show(activity, if (enabled) "AdBlocker Enabled" else "AdBlocker Disabled")
                 }
 
