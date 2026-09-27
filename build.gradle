@@ -5,10 +5,10 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.9.3'
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0'
-        classpath 'org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.4.0'
-        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.58'
+        classpath 'com.android.tools.build:gradle:9.4.0'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.20'
+        classpath 'org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.4.20'
+        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.60.1'
     }
 }
 
