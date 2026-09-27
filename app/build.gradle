@@ -102,6 +102,11 @@ android {
         jniLibs {
             useLegacyPackaging true
             pickFirsts += ['**/libxul.so', '**/libc++_shared.so', '**/libmozglue.so']
+            // These are ZIP archives (Python interpreter, ffmpeg, aria2c binaries bundled by
+            // youtubedl-android), not ELF shared objects — named .so only so useLegacyPackaging
+            // extracts them to disk for the library's own ZipFile/RandomAccessFile access.
+            // Excluding them from stripping prevents llvm-strip from failing on non-ELF input.
+            keepDebugSymbols += ['**/libaria2c.zip.so', '**/libffmpeg.zip.so', '**/libpython.zip.so']
         }
         resources {
             pickFirsts += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE*', 'META-INF/NOTICE*']
