@@ -31,13 +31,12 @@ import mozilla.components.feature.contextmenu.ContextMenuUseCases
 class PetalTabViewController private constructor(
     context: Context,
     attrs: AttributeSet?,
-    defStyleAttr: Int,
     private val engineView: EngineView
-) : SwipeRefreshLayout(context, attrs, defStyleAttr), AlbumController, EngineView by engineView {
+) : SwipeRefreshLayout(context, attrs), AlbumController, EngineView by engineView {
 
     @JvmOverloads
-    constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
-        this(context, attrs, defStyleAttr, PetalEngineStore.createEngineView(context))
+    constructor(context: Context, attrs: AttributeSet? = null) :
+        this(context, attrs, PetalEngineStore.createEngineView(context))
 
     private val appContext = context.applicationContext
     private val browserStore: BrowserStore = PetalEngineStore.getStore(appContext)
