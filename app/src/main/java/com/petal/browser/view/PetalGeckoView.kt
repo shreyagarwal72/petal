@@ -102,6 +102,15 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
+        /**
+         * Compatibility bridge for GeckoView APIs that Android Components does not expose
+         * through EngineSession yet, including GeckoView WebExtension delegates.
+         */
+        @JvmStatic
+        fun getEngineGeckoSession(
+            engineSession: mozilla.components.concept.engine.EngineSession?
+        ): GeckoSession? = extractGeckoSession(engineSession)
+
         @JvmField
         var globalBrowserController: BrowserController? = null
 

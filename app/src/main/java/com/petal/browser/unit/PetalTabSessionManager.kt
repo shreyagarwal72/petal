@@ -90,6 +90,10 @@ object PetalTabSessionManager {
                     // persistentUrl holds the last real URL that was explicitly navigated to,
                     // so we never save "about:blank" when the tab actually has real content.
                     val effectiveUrl = when {
+                        controller is com.petal.browser.browser.PetalTabViewController &&
+                        controller.url.isNotBlank() &&
+                        !controller.url.equals("about:blank", ignoreCase = true) ->
+                            controller.url
                         controller is PetalGeckoView &&
                         controller.persistentUrl.isNotBlank() &&
                         !controller.persistentUrl.equals("about:blank", ignoreCase = true) ->
@@ -101,16 +105,19 @@ object PetalTabSessionManager {
 
                     val rawTitle = controller.title ?: ""
                     val tabId = when (controller) {
+                        is com.petal.browser.browser.PetalTabViewController -> controller.getTabId() ?: controller.hashCode().toString()
                         is PetalGeckoView -> controller.getTabId()
                         is PlaceholderAlbumController -> controller.getTabId()
                         else -> controller.hashCode().toString()
                     }
                     val groupId = when (controller) {
+                        is com.petal.browser.browser.PetalTabViewController -> controller.getTabGroupId()
                         is PetalGeckoView -> controller.getTabGroupId()
                         is PlaceholderAlbumController -> controller.getTabGroupId()
                         else -> null
                     }
                     val groupTitle = when (controller) {
+                        is com.petal.browser.browser.PetalTabViewController -> controller.getTabGroupTitle()
                         is PetalGeckoView -> controller.getTabGroupTitle()
                         is PlaceholderAlbumController -> controller.getTabGroupTitle()
                         else -> null
@@ -251,7 +258,7 @@ object PetalTabSessionManager {
             var activeIndex = savedRecords.indexOfFirst { it.isActive }
             if (activeIndex < 0) activeIndex = 0
 
-            var activeGeckoView: PetalGeckoView? = null
+            var activeGeckoView: com.petal.browser.browser.PetalTabViewController? = null
 
             for (i in savedRecords.indices) {
                 val record = savedRecords[i]
@@ -268,32 +275,18 @@ object PetalTabSessionManager {
                         select = true
                     )
 
-                    val geckoView = BrowserWebViewController.createAndConfigureGeckoView(
-                        activity = activity,
-                        title = record.title.ifBlank { activity.getString(R.string.app_name) },
-                        url = record.url,
-                        foreground = true,
-                        isIncognito = false,
-                        adoptedSession = null,
-                        engineSession = sessionPair.second
-                    )
-
-                    geckoView.setTabId(tabId)
-                    geckoView.setBrowserController(activity)
-
-                    if (record.title.isNotBlank()) {
-                        geckoView.setAlbumTitle(record.title, record.url)
-                    }
+                    val geckoView = com.petal.browser.browser.PetalTabViewController(activity)
+                    geckoView.bindTab(sessionPair.first)
+                    geckoView.attachLifecycle(activity)
+                    activity.observePetalTabSurface(geckoView)
                     if (!record.tabGroupId.isNullOrBlank()) {
                         geckoView.setTabGroupId(record.tabGroupId)
                         geckoView.setTabGroupTitle(record.tabGroupTitle)
                     }
 
-                    // Fix (Bug 5): for home-URL tabs, do NOT call geckoView.loadUrl("about:blank").
+                    // Leave native Home routes unloaded; the activity paints their Compose surface.
                     // That redundant load triggers GeckoView's page lifecycle callbacks which race
-                    // with showAlbum() — causing the Compose home surface to be torn down and rebuilt
-                    // mid-render, resulting in a blank screen. showAlbum("about:blank") will display
-                    // the native Compose home without any web engine load required.
+                    // with showAlbum() and creating a transient blank page.
                     if (record.url.isNotBlank() && !isHomeUrl(record.url)) {
                         geckoView.loadUrl(record.url)
                     }
@@ -373,18 +366,10 @@ object PetalTabSessionManager {
             select = !keepOverviewOpen
         )
 
-        val geckoView = BrowserWebViewController.createAndConfigureGeckoView(
-            activity = activity,
-            title = safeTitle,
-            url = safeUrl,
-            foreground = !keepOverviewOpen,
-            isIncognito = isIncognito,
-            adoptedSession = null,
-            engineSession = sessionPair.second
-        )
-        geckoView.setTabId(tabId)
-        geckoView.setBrowserController(activity)
-        geckoView.setAlbumTitle(safeTitle, safeUrl)
+        val geckoView = com.petal.browser.browser.PetalTabViewController(activity)
+        geckoView.bindTab(sessionPair.first)
+        geckoView.attachLifecycle(activity)
+        activity.observePetalTabSurface(geckoView)
         if (!groupId.isNullOrBlank()) {
             geckoView.setTabGroupId(groupId)
             geckoView.setTabGroupTitle(groupTitle)

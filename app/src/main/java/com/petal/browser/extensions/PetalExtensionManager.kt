@@ -568,8 +568,7 @@ object PetalExtensionManager {
     private fun attachExtensionToOpenSessions(extension: WebExtension) {
         val ctx = appContext ?: return
         BrowserContainer.list().forEach { controller ->
-            val gecko = controller as? PetalGeckoView ?: return@forEach
-            val session = gecko.session
+            val session = geckoSessionFor(controller) ?: return@forEach
             if (!session.isOpen) return@forEach
             try {
                 session.webExtensionController.setActionDelegate(extension, object : WebExtension.ActionDelegate {
@@ -601,7 +600,7 @@ object PetalExtensionManager {
                     try {
                         val activity = findBrowserActivity(context) ?: return@post
                         val controller = BrowserContainer.list().firstOrNull {
-                            (it as? PetalGeckoView)?.session === session
+                            geckoSessionFor(it) === session
                         }
                         if (controller != null) activity.removeAlbum(controller)
                     } catch (t: Throwable) {
@@ -620,12 +619,16 @@ object PetalExtensionManager {
                     try {
                         val activity = findBrowserActivity(context) ?: return@post
                         val controller = BrowserContainer.list().firstOrNull {
-                            (it as? PetalGeckoView)?.session === session
+                            geckoSessionFor(it) === session
                         }
-                        val gecko = controller as? PetalGeckoView
-                        if (gecko != null) {
-                            details.url?.takeIf { it.isNotBlank() }?.let(gecko::loadUrl)
-                            if (details.active == true) activity.showAlbum(gecko)
+                        if (controller != null) {
+                            details.url?.takeIf { it.isNotBlank() }?.let { url ->
+                                when (controller) {
+                                    is PetalGeckoView -> controller.loadUrl(url)
+                                    is com.petal.browser.browser.PetalTabViewController -> controller.loadUrl(url)
+                                }
+                            }
+                            if (details.active == true) activity.showAlbum(controller)
                         }
                     } catch (t: Throwable) {
                         Log.w(TAG, "Extension tab update request failed", t)
@@ -955,7 +958,13 @@ object PetalExtensionManager {
 
     private fun currentBrowserSession(context: Context): GeckoSession? {
         val activity = findBrowserActivity(context) ?: return null
-        return (activity.currentAlbumController as? PetalGeckoView)?.session
+        return activity.currentAlbumController?.let(::geckoSessionFor)
+    }
+
+    private fun geckoSessionFor(controller: AlbumController): GeckoSession? = when (controller) {
+        is PetalGeckoView -> controller.session
+        is com.petal.browser.browser.PetalTabViewController -> controller.getGeckoSession()
+        else -> null
     }
 
     private fun findBrowserActivity(context: Context): com.petal.browser.activity.BrowserActivity? {
