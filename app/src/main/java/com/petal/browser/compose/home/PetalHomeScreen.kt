@@ -575,12 +575,23 @@ fun PetalHomeScreen(
                                                 .background(currentProfile.getComposeColor().copy(alpha = 0.25f)),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(
-                                                imageVector = if (currentProfile.isDefault) Icons.Rounded.Person else Icons.Rounded.FolderShared,
-                                                contentDescription = null,
-                                                tint = currentProfile.getComposeColor(),
-                                                modifier = Modifier.size(13.dp)
-                                            )
+                                            if (currentProfile.customAvatarUri != null) {
+                                                AsyncImage(
+                                                    model = currentProfile.customAvatarUri,
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .size(20.dp)
+                                                        .clip(CircleShape),
+                                                    contentScale = ContentScale.Crop
+                                                )
+                                            } else {
+                                                Icon(
+                                                    imageVector = if (currentProfile.isDefault) Icons.Rounded.Person else Icons.Rounded.FolderShared,
+                                                    contentDescription = null,
+                                                    tint = currentProfile.getComposeColor(),
+                                                    modifier = Modifier.size(13.dp)
+                                                )
+                                            }
                                         }
                                         Spacer(Modifier.width(6.dp))
                                         Text(

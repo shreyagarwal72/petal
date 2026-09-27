@@ -17,6 +17,10 @@ import android.graphics.BitmapFactory
 import android.app.Activity
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -442,12 +446,18 @@ fun PetalDownloadManagerScreen(
             }
         },
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-    if (isSettingsOpen) {
-        com.petal.browser.compose.settings.screens.DownloadSettingsScreen(
-            onNavigateBack = { isSettingsOpen = false }
-        )
-    } else {
+    // Two-layer transition, same pattern PetalSettingsScreen.kt uses for category drilling:
+    // the Downloads list stays mounted underneath as its own background layer (isBehind = true)
+    // so PetalScreenWrapper's depth-blur/dim/scale has a real second surface to animate against,
+    // and Download Settings renders as its own foreground layer (isBehind = false) with a fade
+    // transition. The old code ran both screens through one shared PetalScreenWrapper toggled by
+    // a plain boolean, which gave the wrapper nothing correct to interpolate between and produced
+    // the flicker/wrong-animation glitch that only showed up on this entry point.
+    Box(modifier = Modifier.fillMaxSize()) {
+    com.petal.browser.predictive.PetalScreenWrapper(
+        isBehind = isSettingsOpen,
+        backgroundSnapshot = backgroundSnapshot
+    ) {
     Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -650,7 +660,26 @@ fun PetalDownloadManagerScreen(
             }
         }
     }
-}
+    } // closes PetalScreenWrapper (Downloads list background layer)
+    if (isSettingsOpen) {
+        com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+            AnimatedContent(
+                targetState = isSettingsOpen,
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(220)) togetherWith
+                        fadeOut(animationSpec = tween(160)))
+                },
+                label = "downloadSettingsTransition"
+            ) { settingsOpen ->
+                if (settingsOpen) {
+                    com.petal.browser.compose.settings.screens.DownloadSettingsScreen(
+                        onNavigateBack = { isSettingsOpen = false }
+                    )
+                }
+            }
+        }
+    }
+    } // closes Box
 }
 }
 }
