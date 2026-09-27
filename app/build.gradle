@@ -127,7 +127,10 @@ configurations.all {
         force 'org.jetbrains.kotlin:kotlin-stdlib-common:2.4.0'
         force 'org.jetbrains.kotlin:kotlin-reflect:2.4.0'
         // Dagger/Hilt (>= 2.57) no longer shades kotlin-metadata-jvm. Its bundled reader tops out at
-        // Kotlin metadata 2.3.0, but Mozilla Components 155 ships 2.4.0 metadata, so force a matching reader.
+        // Kotlin metadata 2.3.0. This was forced to 2.4.0 to match Mozilla Components 155's metadata
+        // version. UNVERIFIED for Components 156 — if 156 ships newer Kotlin metadata than 2.4.0,
+        // this force may need bumping too, or this whole block may become unnecessary if Hilt's
+        // bundled reader has since been updated. Check the build error here first if compilation fails.
         force 'org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0'
     }
 }
@@ -214,33 +217,33 @@ dependencies {
     implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'
     implementation 'io.github.junkfood02.youtubedl-android:aria2c:0.18.1'
 
-    // Mozilla GeckoView & Android Components (Release channel 155.0.1)
-    implementation 'org.mozilla.geckoview:geckoview:155.0.20260903215306'
-    implementation('org.mozilla.components:browser-engine-gecko:155.0.1') {
+    // Mozilla GeckoView & Android Components (Release channel 156.0.1)
+    implementation 'org.mozilla.geckoview:geckoview:156.0.20260921121718'
+    implementation('org.mozilla.components:browser-engine-gecko:156.0.1') {
         exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
     }
-    implementation 'org.mozilla.components:concept-engine:155.0.1'
-    implementation 'org.mozilla.components:browser-state:155.0.1'
-    implementation 'org.mozilla.components:browser-session-storage:155.0.1'
-    implementation 'org.mozilla.components:lib-state:155.0.1'
-    implementation 'org.mozilla.components:support-base:155.0.1'
-    implementation 'org.mozilla.components:support-utils:155.0.1'
+    implementation 'org.mozilla.components:concept-engine:156.0.1'
+    implementation 'org.mozilla.components:browser-state:156.0.1'
+    implementation 'org.mozilla.components:browser-session-storage:156.0.1'
+    implementation 'org.mozilla.components:lib-state:156.0.1'
+    implementation 'org.mozilla.components:support-base:156.0.1'
+    implementation 'org.mozilla.components:support-utils:156.0.1'
 
-    // Android Components Features (155.0.1)
-    implementation 'org.mozilla.components:feature-readerview:155.0.1'
-    implementation 'org.mozilla.components:feature-session:155.0.1'
+    // Android Components Features (156.0.1)
+    implementation 'org.mozilla.components:feature-readerview:156.0.1'
+    implementation 'org.mozilla.components:feature-session:156.0.1'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    implementation 'org.mozilla.components:feature-findinpage:155.0.1'
-    implementation 'org.mozilla.components:feature-sitepermissions:155.0.1'
-    implementation 'org.mozilla.components:feature-prompts:155.0.1'
-    implementation 'org.mozilla.components:feature-tabs:155.0.1'
-    implementation 'org.mozilla.components:feature-contextmenu:155.0.1'
-    implementation 'org.mozilla.components:feature-pwa:155.0.1'
-    implementation 'org.mozilla.components:feature-downloads:155.0.1'
-    implementation 'org.mozilla.components:feature-search:155.0.1'
-    implementation 'org.mozilla.components:feature-webcompat:155.0.1'
-    implementation 'org.mozilla.components:feature-customtabs:155.0.1'
-    implementation 'org.mozilla.components:feature-media:155.0.1'
+    implementation 'org.mozilla.components:feature-findinpage:156.0.1'
+    implementation 'org.mozilla.components:feature-sitepermissions:156.0.1'
+    implementation 'org.mozilla.components:feature-prompts:156.0.1'
+    implementation 'org.mozilla.components:feature-tabs:156.0.1'
+    implementation 'org.mozilla.components:feature-contextmenu:156.0.1'
+    implementation 'org.mozilla.components:feature-pwa:156.0.1'
+    implementation 'org.mozilla.components:feature-downloads:156.0.1'
+    implementation 'org.mozilla.components:feature-search:156.0.1'
+    implementation 'org.mozilla.components:feature-webcompat:156.0.1'
+    implementation 'org.mozilla.components:feature-customtabs:156.0.1'
+    implementation 'org.mozilla.components:feature-media:156.0.1'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.58'
