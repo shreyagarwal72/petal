@@ -22,6 +22,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.compose.settings.viewmodel.PrivacySettingsViewModel
+import androidx.activity.ComponentActivity
+import com.petal.browser.passwords.PetalPasswordsScreen
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 
@@ -114,6 +116,7 @@ fun PrivacySettingsScreenContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var showPasswordsScreen by remember { mutableStateOf(false) }
     var showWhitelistDialog by remember { mutableStateOf(false) }
     var whitelistDomainInput by remember { mutableStateOf("") }
     var whitelistedDomainsState by remember { mutableStateOf(PetalAdBlockEngine.getWhitelistedDomains()) }
@@ -308,6 +311,55 @@ fun PrivacySettingsScreenContent(
                     cardId = "privacy_security",
                     targetHighlightId = targetHighlightItemId
                 ) {
+                    Surface(
+                        onClick = { showPasswordsScreen = true },
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.CircleShape)
+                                    .androidx.compose.foundation.background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Rounded.VpnKey,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Password Manager & Autofill",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Encrypted local vault, breach checks, multi-brand import/export",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     ToggleRow(
                         title = "HTTPS Security Enforcer",
                         subtitle = "Automatically upgrade connections to HTTPS",
@@ -445,8 +497,19 @@ fun PrivacySettingsScreenContent(
                         Text("Configure Android System Private DNS")
                     }
                 }
+            }
+        }
 
+        if (showPasswordsScreen) {
+            val act = context as? ComponentActivity
+            if (act != null) {
+                PetalPasswordsScreen(
+                    activity = act,
+                    onNavigateBack = { showPasswordsScreen = false }
+                )
             }
         }
     }
 }
+
+

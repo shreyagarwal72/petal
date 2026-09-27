@@ -1,0 +1,22 @@
+{
+    "manifest_version": 2,
+    "name": "Petal Password Manager & Autofill",
+    "version": "1.0.0",
+    "description": "Seamlessly detects login forms and autofills saved credentials from Petal's encrypted local vault.",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "petal-password-autofill@petalbrowser.app"
+        }
+    },
+    "permissions": [
+        "<all_urls>"
+    ],
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["autofill.js"],
+            "run_at": "document_idle",
+            "all_frames": true
+        }
+    ]
+}

@@ -193,6 +193,13 @@ object PetalSettingsSearchIndex {
             keywords = listOf("webauthn", "passkey", "passkeys", "biometrics", "fingerprint login", "credentials")
         ),
         SettingsSearchItem(
+            id = "privacy_passwords",
+            title = "Password Manager & Autofill",
+            subtitle = "Local-only encrypted password vault, autofill, breach detection, and multi-brand import/export",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("passwords", "password manager", "autofill", "vault", "credentials", "logins", "import passwords", "export passwords", "bitwarden", "firefox", "chrome", "1password", "breach")
+        ),
+        SettingsSearchItem(
             id = "privacy_popups",
             title = "Block Pop-ups & Redirects",
             subtitle = "Block unwanted pop-up windows and abusive new tab redirects",

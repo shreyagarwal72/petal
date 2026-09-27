@@ -123,6 +123,20 @@ fun DataBackupSettingsScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = {
                         showBackupDialog = false
+                        com.petal.browser.passwords.PetalCredentialVault.init(context)
+                        val json = com.petal.browser.passwords.PetalCredentialVault.exportToJson()
+                        val timeStamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
+                        val fileName = "petal_passwords_backup_$timeStamp.json"
+                        val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                        if (!downloadsDir.exists()) downloadsDir.mkdirs()
+                        val destFile = java.io.File(downloadsDir, fileName)
+                        destFile.writeText(json, Charsets.UTF_8)
+                        com.petal.browser.view.PetalToast.show(context, "Exported passwords to Downloads/$fileName")
+                    }) {
+                        Text("Export Passwords")
+                    }
+                    OutlinedButton(onClick = {
+                        showBackupDialog = false
                         createBackupLauncher.launch("petal_browser_backup.json")
                     }) {
                         Text("Custom Folder")
