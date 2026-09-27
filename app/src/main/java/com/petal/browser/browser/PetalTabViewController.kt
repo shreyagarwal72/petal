@@ -3,6 +3,7 @@ package com.petal.browser.browser
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
+import androidx.preference.PreferenceManager
 import androidx.annotation.MainThread
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -48,6 +49,7 @@ class PetalTabViewController @JvmOverloads constructor(
     private var mediaTitle = ""
     private var mediaPosition: mozilla.components.concept.engine.mediasession.MediaSession.PositionState? = null
     private var mediaBridge: com.petal.browser.media.PetalMediaBridge? = null
+    private val preferences by lazy { PreferenceManager.getDefaultSharedPreferences(appContext) }
     private var refreshFeature: SwipeRefreshFeature? = null
     private var attachedLifecycle: Lifecycle? = null
     private val engineLifecycleObserver = mozilla.components.concept.engine.LifecycleObserver(this)
@@ -74,6 +76,7 @@ class PetalTabViewController @JvmOverloads constructor(
     private val observer = object : EngineSession.Observer {
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
             pageUrl = url
+            applyPageSettings(url)
             tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, url)) }
             publishState()
         }
@@ -260,6 +263,7 @@ class PetalTabViewController @JvmOverloads constructor(
         pageTitle = tab.content.title
         progress = tab.content.progress
         loading = tab.content.loading
+        applyPageSettings(pageUrl)
         backAvailable = false
         forwardAvailable = false
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
@@ -280,7 +284,49 @@ class PetalTabViewController @JvmOverloads constructor(
     }
 
     fun loadUrl(url: String) {
-        observedSession?.loadUrl(url)
+        val rawUrl = url.trim()
+        if (rawUrl.isEmpty()) return
+        if (rawUrl.equals("Petal Home", ignoreCase = true) || rawUrl.equals("Petal Start", ignoreCase = true)) {
+            pageUrl = "about:blank"
+            pageTitle = "Petal Home"
+            observedSession?.loadUrl("about:blank")
+            publishState()
+            return
+        }
+        if (rawUrl.equals("petal://config", ignoreCase = true) ||
+            rawUrl.equals("petal:config", ignoreCase = true) ||
+            rawUrl.equals("about:config", ignoreCase = true)
+        ) {
+            (context as? com.petal.browser.activity.BrowserActivity)?.let { activity ->
+                activity.runOnUiThread { com.petal.browser.ui.components.PetalConfigSheet.show(activity) }
+            }
+            return
+        }
+        val redirected = com.petal.browser.unit.BrowserUnit.redirectURL(preferences, rawUrl)
+        var targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(appContext, redirected)
+        val httpsOnly = preferences.getBoolean(
+            "sp_https_only",
+            preferences.getBoolean("profileStandard_httpsOnly", false)
+        )
+        if (httpsOnly && targetUrl.startsWith("http://", ignoreCase = true)) {
+            targetUrl = "https://" + targetUrl.substring(7)
+        }
+        if (com.petal.browser.unit.BrowserUnit.isHomePage(targetUrl) ||
+            com.petal.browser.unit.BrowserUnit.isHomePage(rawUrl) ||
+            targetUrl.equals("about:blank", ignoreCase = true)
+        ) {
+            pageUrl = "about:blank"
+            pageTitle = "Petal Home"
+            observedSession?.loadUrl("about:blank")
+        } else {
+            applyPageSettings(targetUrl)
+            pageUrl = targetUrl
+            tab?.let {
+                browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, targetUrl))
+            }
+            observedSession?.loadUrl(targetUrl)
+        }
+        publishState()
     }
 
     fun reload() {
@@ -309,6 +355,29 @@ class PetalTabViewController @JvmOverloads constructor(
 
     fun setDesktopMode(enabled: Boolean) {
         observedSession?.toggleDesktopMode(enabled, reload = true)
+    }
+
+    private fun applyPageSettings(url: String?) {
+        val session = observedSession ?: return
+        val profile = com.petal.browser.view.PetalGeckoView.getProfile(appContext)
+        val javascriptEnabled = preferences.getBoolean(
+            "sp_javascript",
+            preferences.getBoolean("${profile}_javascript", preferences.getBoolean("profileStandard_javascript", true))
+        )
+        session.settings.javascriptEnabled = javascriptEnabled
+
+        val host = try { android.net.Uri.parse(url.orEmpty()).host } catch (_: Throwable) { null }
+        val desktopEnabled = if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
+            preferences.getBoolean("sp_desktop_site_$host", false)
+        } else {
+            preferences.getBoolean("${profile}_desktop", preferences.getBoolean("sp_desktop_site", false))
+        }
+        session.toggleDesktopMode(desktopEnabled, reload = false)
+
+        val trackingProtectionEnabled = com.petal.browser.browser.PetalAdBlockEngine.isAdBlockEnabled(appContext) &&
+            (host.isNullOrBlank() || !com.petal.browser.browser.PetalAdBlockEngine.isDomainWhitelisted(host))
+        setTrackingProtection(trackingProtectionEnabled)
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(preferences)
     }
 
     fun setTrackingProtection(enabled: Boolean) {
