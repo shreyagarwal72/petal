@@ -32,6 +32,7 @@ class PetalTabViewController @JvmOverloads constructor(
     private val appContext = context.applicationContext
     private val browserStore: BrowserStore = PetalEngineStore.getStore(appContext)
     private var tab: TabSessionState? = null
+    private var boundTabId: String? = null
     private var observedSession: EngineSession? = null
     private var active = false
     private var pageTitle = ""
@@ -41,6 +42,9 @@ class PetalTabViewController @JvmOverloads constructor(
     private var loading = false
     private var progress = 0
     private var isSecure = false
+    private var tabGroupId: String? = null
+    private var tabGroupTitle: String? = null
+    private var predecessor: AlbumController? = null
     private var refreshFeature: SwipeRefreshFeature? = null
     private var attachedLifecycle: Lifecycle? = null
     private val engineLifecycleObserver = mozilla.components.concept.engine.LifecycleObserver(this)
@@ -132,6 +136,7 @@ class PetalTabViewController @JvmOverloads constructor(
         refreshFeature = null
         observedSession = session
         this.tab = tab
+        boundTabId = tab.id
         pageUrl = tab.content.url
         pageTitle = tab.content.title
         progress = tab.content.progress
@@ -141,6 +146,7 @@ class PetalTabViewController @JvmOverloads constructor(
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
         engineView.render(session)
         session.register(observer)
+        com.petal.browser.extensions.PetalExtensionManager.attachSession(getGeckoSession())
         refreshFeature = SwipeRefreshFeature(
             store = browserStore,
             reloadUrlUseCase = SessionUseCases(browserStore).reload,
@@ -160,6 +166,22 @@ class PetalTabViewController @JvmOverloads constructor(
 
     fun reload() {
         observedSession?.reload()
+    }
+
+    fun loadData(data: String, mimeType: String, encoding: String) {
+        observedSession?.loadData(data, mimeType, encoding)
+    }
+
+    fun findAll(query: String) {
+        observedSession?.findAll(query)
+    }
+
+    fun findNext(forward: Boolean) {
+        observedSession?.findNext(forward)
+    }
+
+    fun clearFindMatches() {
+        observedSession?.clearFindMatches()
     }
 
     fun stopLoading() {
@@ -227,6 +249,24 @@ class PetalTabViewController @JvmOverloads constructor(
 
     fun canGoForward(): Boolean = forwardAvailable
 
+    fun getTabId(): String? = boundTabId
+
+    /** GeckoView-only integration point used for WebExtension delegates. */
+    fun getGeckoSession(): org.mozilla.geckoview.GeckoSession? =
+        com.petal.browser.view.PetalGeckoView.getEngineGeckoSession(observedSession)
+
+    fun setTabGroupId(value: String?) { tabGroupId = value }
+
+    fun setTabGroupTitle(value: String?) { tabGroupTitle = value }
+
+    fun getTabGroupId(): String? = tabGroupId
+
+    fun getTabGroupTitle(): String? = tabGroupTitle
+
+    fun setPredecessor(value: AlbumController?) { predecessor = value }
+
+    fun getPredecessor(): AlbumController? = predecessor
+
     fun currentState(): State? = tab?.let {
         State(it.id, pageUrl, pageTitle, progress, loading, backAvailable, forwardAvailable, isSecure, it.content.private)
     }
@@ -254,16 +294,19 @@ class PetalTabViewController @JvmOverloads constructor(
     override fun isIncognito(): Boolean = tab?.content?.private ?: false
 
     override fun destroy() {
+        val removedTabId = tab?.id
         active = false
         refreshFeature?.stop()
         refreshFeature = null
         observedSession?.unregister(observer)
         observedSession = null
         tab = null
+        predecessor = null
         onBrowserStateChanged = null
         attachedLifecycle?.removeObserver(engineLifecycleObserver)
         attachedLifecycle = null
         engineView.release()
+        if (removedTabId != null) PetalEngineStore.removeTab(appContext, removedTabId)
     }
 
     private fun publishState() {
