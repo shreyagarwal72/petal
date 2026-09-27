@@ -323,6 +323,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * window has genuine input focus. See {@link #runOrDeferPendingWidgetAction()}.
      */
     public com.petal.browser.media.PetalMediaBridge getActiveMediaBridge() {
+        try {
+            String playingTabId = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this)
+                    .getState().getTabs().stream()
+                    .filter(tab -> tab.getMediaSessionState() != null
+                            && tab.getMediaSessionState().getController() != null)
+                    .map(mozilla.components.browser.state.state.TabSessionState::getId)
+                    .findFirst().orElse(null);
+            if (playingTabId != null) {
+                for (AlbumController controller : BrowserContainer.list()) {
+                    if (controller instanceof com.petal.browser.browser.PetalTabViewController
+                            && playingTabId.equals(((com.petal.browser.browser.PetalTabViewController) controller).getTabId())) {
+                        return ((com.petal.browser.browser.PetalTabViewController) controller).getMediaBridge();
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            return ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).getMediaBridge();
+        }
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             return ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getMediaBridge();
         }
@@ -1292,6 +1311,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
+        // Android Components owns fullscreen state for BrowserStore tabs. Let its feature exit
+        // fullscreen before Back is offered to the page's navigation history.
+        if (petalBrowserFeatures != null && petalBrowserFeatures.onFullScreenBackPressed()) return;
+
         // ── Tier 2: Dialogs, Search-on-site & Modal Overlays ──
         if (dialogOverview != null && dialogOverview.isShowing()) {
             hideOverview();
@@ -1492,7 +1515,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (browserBackCallback == null) return;
         boolean hasOverlay = isOverlayScreenShowing || hasNonTabTopContent();
         boolean hasDialog = (dialogOverview != null && dialogOverview.isShowing()) || isFindInPageShowing || (customView != null) || (fullscreenHolder != null) || (videoView != null);
-        boolean hasWebBack = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView && ((com.petal.browser.view.PetalGeckoView) currentAlbumController).hasBackHistory()) || (ninjaWebView != null && ninjaWebView.canGoBack());
+        boolean hasWebBack = canBrowserGoBack()
+                || (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView
+                && ((com.petal.browser.view.PetalGeckoView) currentAlbumController).hasBackHistory())
+                || (ninjaWebView != null && ninjaWebView.canGoBack());
         String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
         boolean isWebPageNotHome = !isPetalHomeSurfaceShowing && !isHomePage(curUrl) && curUrl != null && !curUrl.isEmpty() && !curUrl.equalsIgnoreCase("about:blank");
         boolean hasMultipleTabs = BrowserContainer.size() > 1;
@@ -1652,6 +1678,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+        if (petalBrowserFeatures != null) petalBrowserFeatures.onPictureInPictureModeChanged(isInPictureInPictureMode);
         try {
             View composeAddressBar = findViewById(R.id.compose_address_bar);
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
@@ -3103,13 +3130,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      */
     public synchronized void switchAdjacentTab(int direction) {
         if (BrowserContainer.size() <= 1) return;
-        boolean isCurrentIncog = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
+        boolean isCurrentIncog = (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController)
+                ? ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).isIncognito()
+                : (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
                 ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
                 : (ninjaWebView != null && ninjaWebView.isIncognito());
 
         List<AlbumController> matchingTabs = new ArrayList<>();
         for (AlbumController ac : BrowserContainer.list()) {
-            boolean tabIncog = (ac instanceof com.petal.browser.view.PetalGeckoView)
+            boolean tabIncog = (ac instanceof com.petal.browser.browser.PetalTabViewController)
+                    ? ((com.petal.browser.browser.PetalTabViewController) ac).isIncognito()
+                    : (ac instanceof com.petal.browser.view.PetalGeckoView)
                     ? ((com.petal.browser.view.PetalGeckoView) ac).isIncognito()
                     : false; // all tabs are GeckoView
             if (tabIncog == isCurrentIncog) {
@@ -4520,7 +4551,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 contentFrame.postDelayed(refreshTimeoutWatchdog, 8000L);
             }
 
-            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).reload();
+            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 ((com.petal.browser.view.PetalGeckoView) currentAlbumController).reload();
             } else if (ninjaWebView != null) {
                 ninjaWebView.reload();
