@@ -103,6 +103,7 @@ public class PetalMediaBridge {
     private WebView webView;
     private com.petal.browser.view.PetalGeckoView geckoView;
     private org.mozilla.geckoview.MediaSession activeGeckoMediaSession;
+    private mozilla.components.concept.engine.mediasession.MediaSession.Controller activeEngineMediaController;
     private MediaStateListener listener;
 
     public interface MediaStateListener {
@@ -158,6 +159,11 @@ public class PetalMediaBridge {
         return activeGeckoMediaSession;
     }
 
+    public void setActiveEngineMediaController(
+            mozilla.components.concept.engine.mediasession.MediaSession.Controller controller) {
+        this.activeEngineMediaController = controller;
+    }
+
     public void injectMediaHooks() {
         if (webView != null) {
             webView.evaluateJavascript(MEDIA_JS_INJECTION, null);
@@ -180,6 +186,12 @@ public class PetalMediaBridge {
                 return;
             } catch (Exception ignored) {}
         }
+        if (activeEngineMediaController != null) {
+            try {
+                activeEngineMediaController.play();
+                return;
+            } catch (Exception ignored) {}
+        }
         if (webView != null) {
             webView.evaluateJavascript(
                     "(function() {" +
@@ -197,6 +209,12 @@ public class PetalMediaBridge {
         if (activeGeckoMediaSession != null) {
             try {
                 activeGeckoMediaSession.pause();
+                return;
+            } catch (Exception ignored) {}
+        }
+        if (activeEngineMediaController != null) {
+            try {
+                activeEngineMediaController.pause();
                 return;
             } catch (Exception ignored) {}
         }
@@ -290,6 +308,12 @@ public class PetalMediaBridge {
                 return;
             } catch (Exception ignored) {}
         }
+        if (activeEngineMediaController != null) {
+            try {
+                activeEngineMediaController.muteAudio(isMutedState);
+                return;
+            } catch (Exception ignored) {}
+        }
         if (webView != null) {
             webView.evaluateJavascript(
                     "(function() {" +
@@ -310,6 +334,15 @@ public class PetalMediaBridge {
                     target = Math.min(lastKnownDurationSec, target);
                 }
                 activeGeckoMediaSession.seekTo(target, false);
+                lastKnownPositionSec = target;
+                return;
+            } catch (Exception ignored) {}
+        }
+        if (activeEngineMediaController != null) {
+            try {
+                double target = Math.max(0.0, lastKnownPositionSec + deltaSeconds);
+                if (lastKnownDurationSec > 0.0) target = Math.min(lastKnownDurationSec, target);
+                activeEngineMediaController.seekTo(target, false);
                 lastKnownPositionSec = target;
                 return;
             } catch (Exception ignored) {}
@@ -339,6 +372,14 @@ public class PetalMediaBridge {
             try {
                 double target = positionMs / 1000.0;
                 activeGeckoMediaSession.seekTo(target, false);
+                lastKnownPositionSec = target;
+                return;
+            } catch (Exception ignored) {}
+        }
+        if (activeEngineMediaController != null) {
+            try {
+                double target = positionMs / 1000.0;
+                activeEngineMediaController.seekTo(target, false);
                 lastKnownPositionSec = target;
                 return;
             } catch (Exception ignored) {}

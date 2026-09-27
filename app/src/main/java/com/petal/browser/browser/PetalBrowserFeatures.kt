@@ -6,6 +6,10 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature
 import mozilla.components.feature.tabs.TabsUseCases
+import mozilla.components.feature.media.fullscreen.MediaSessionFullscreenFeature
+import mozilla.components.feature.session.PictureInPictureFeature
+import mozilla.components.feature.session.FullScreenFeature
+import mozilla.components.feature.session.SessionUseCases
 
 /** Android Components browser features that need an Activity and FragmentManager host. */
 class PetalBrowserFeatures(private val activity: FragmentActivity) {
@@ -34,14 +38,27 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
         store = store
     )
 
+    private val mediaFullscreen = MediaSessionFullscreenFeature(activity, store, null)
+    private val pictureInPicture = PictureInPictureFeature(store, activity)
+    private val fullScreen = FullScreenFeature(
+        store = store,
+        sessionUseCases = SessionUseCases(store),
+        tabId = null,
+        fullScreenChanged = activity::setCustomFullscreen
+    )
+
     fun start() {
         prompts.start()
         sitePermissions.start()
+        mediaFullscreen.start()
+        fullScreen.start()
     }
 
     fun stop() {
         prompts.stop()
         sitePermissions.stop()
+        mediaFullscreen.stop()
+        fullScreen.stop()
     }
 
     fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?): Boolean =
@@ -54,7 +71,13 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
         }
     }
 
+    fun onFullScreenBackPressed(): Boolean = fullScreen.onBackPressed()
+
     fun onBackPressed(): Boolean = prompts.onBackPressed()
+
+    fun onPictureInPictureModeChanged(enabled: Boolean) {
+        pictureInPicture.onPictureInPictureModeChanged(enabled)
+    }
 
     private companion object {
         const val REQUEST_PROMPT_PERMISSIONS = 17320

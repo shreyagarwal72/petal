@@ -45,6 +45,9 @@ class PetalTabViewController @JvmOverloads constructor(
     private var tabGroupId: String? = null
     private var tabGroupTitle: String? = null
     private var predecessor: AlbumController? = null
+    private var mediaTitle = ""
+    private var mediaPosition: mozilla.components.concept.engine.mediasession.MediaSession.PositionState? = null
+    private var mediaBridge: com.petal.browser.media.PetalMediaBridge? = null
     private var refreshFeature: SwipeRefreshFeature? = null
     private var attachedLifecycle: Lifecycle? = null
     private val engineLifecycleObserver = mozilla.components.concept.engine.LifecycleObserver(this)
@@ -116,10 +119,122 @@ class PetalTabViewController @JvmOverloads constructor(
             isSecure = secure
             publishState()
         }
+
+        override fun onMediaActivated(
+            mediaSessionController: mozilla.components.concept.engine.mediasession.MediaSession.Controller
+        ) {
+            mediaBridge?.setActiveEngineMediaController(mediaSessionController)
+            tab?.let { PetalEngineStore.updateMediaController(appContext, it.id, mediaSessionController) }
+        }
+
+        override fun onMediaDeactivated() {
+            mediaBridge?.setActiveEngineMediaController(null)
+            tab?.let { PetalEngineStore.updateMediaController(appContext, it.id, null) }
+            (context as? com.petal.browser.activity.BrowserActivity)?.runOnUiThread {
+                mediaBridge?.listener?.onMediaPlayingStateChanged(false)
+                com.petal.browser.ui.components.PetalFloatingMediaBridge.hide()
+            }
+        }
+
+        override fun onMediaMetadataChanged(
+            metadata: mozilla.components.concept.engine.mediasession.MediaSession.Metadata
+        ) {
+            mediaTitle = metadata.title?.takeIf { it.isNotBlank() } ?: pageTitle
+            tab?.let { PetalEngineStore.updateMediaMetadata(appContext, it.id, metadata) }
+        }
+
+        override fun onMediaPlaybackStateChanged(
+            playbackState: mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState
+        ) {
+            val playing = playbackState ==
+                mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState.PLAYING
+            val position = mediaPosition
+            val positionMs = ((position?.position ?: 0.0) * 1000).toLong()
+            val durationMs = ((position?.duration ?: 0.0) * 1000).toLong()
+            tab?.let { PetalEngineStore.updateMediaPlaybackState(appContext, it.id, playbackState) }
+            if (playing) {
+                mediaBridge?.listener?.onMediaPlay(mediaTitle, positionMs, durationMs)
+                com.petal.browser.ui.components.PetalFloatingMediaBridge.updateState(
+                    isPlaying = true,
+                    title = mediaTitle,
+                    positionMs = positionMs,
+                    durationMs = durationMs,
+                    isMuted = mediaBridge?.isMuted ?: false
+                )
+            } else {
+                mediaBridge?.listener?.onMediaPause(positionMs, durationMs)
+                com.petal.browser.ui.components.PetalFloatingMediaBridge.setPlaying(false)
+                if (playbackState == mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState.STOPPED) {
+                    com.petal.browser.ui.components.PetalFloatingMediaBridge.hide()
+                }
+            }
+            mediaBridge?.listener?.onMediaPlayingStateChanged(playing)
+        }
+
+        override fun onMediaPositionStateChanged(
+            positionState: mozilla.components.concept.engine.mediasession.MediaSession.PositionState
+        ) {
+            mediaPosition = positionState
+            tab?.let { PetalEngineStore.updateMediaPosition(appContext, it.id, positionState) }
+            mediaBridge?.updatePositionState(positionState.position, positionState.duration)
+            val positionMs = (positionState.position * 1000).toLong()
+            val durationMs = (positionState.duration * 1000).toLong()
+            mediaBridge?.listener?.onMediaProgress(positionMs, durationMs)
+            com.petal.browser.ui.components.PetalFloatingMediaBridge.updateProgress(positionMs, durationMs)
+        }
+
+        override fun onMediaFullscreenChanged(
+            fullscreen: Boolean,
+            elementMetadata: mozilla.components.concept.engine.mediasession.MediaSession.ElementMetadata?
+        ) {
+            tab?.let { PetalEngineStore.updateMediaFullscreen(appContext, it.id, fullscreen, elementMetadata) }
+            if (fullscreen && elementMetadata != null && elementMetadata.width > 0 && elementMetadata.height > 0) {
+                mediaBridge?.listener?.onVideoDimensionsChanged(
+                    elementMetadata.width.toInt(),
+                    elementMetadata.height.toInt()
+                )
+            }
+        }
     }
 
     init {
         isNestedScrollingEnabled = true
+        mediaBridge = com.petal.browser.media.PetalMediaBridge(
+            context,
+            object : com.petal.browser.media.PetalMediaBridge.MediaStateListener {
+                override fun onMediaPlay(title: String?, positionMs: Long, durationMs: Long) {
+                    val activity = context as? com.petal.browser.activity.BrowserActivity ?: return
+                    activity.runOnUiThread {
+                        activity.isMediaPlaying = true
+                        activity.updatePipParams(true)
+                        activity.mediaService?.updateMediaState(title, pageTitle, true, positionMs, durationMs)
+                    }
+                }
+
+                override fun onMediaPause(positionMs: Long, durationMs: Long) {
+                    val activity = context as? com.petal.browser.activity.BrowserActivity ?: return
+                    activity.runOnUiThread {
+                        activity.isMediaPlaying = false
+                        activity.updatePipParams(false)
+                        activity.mediaService?.updateMediaState(pageTitle, pageTitle, false, positionMs, durationMs)
+                    }
+                }
+
+                override fun onMediaProgress(positionMs: Long, durationMs: Long) = Unit
+
+                override fun onMediaPlayingStateChanged(isPlaying: Boolean) {
+                    val activity = context as? com.petal.browser.activity.BrowserActivity ?: return
+                    activity.runOnUiThread {
+                        activity.isMediaPlaying = isPlaying
+                        activity.updatePipParams(isPlaying)
+                    }
+                }
+
+                override fun onVideoDimensionsChanged(width: Int, height: Int) {
+                    (context as? com.petal.browser.activity.BrowserActivity)?.updateVideoDimensions(width, height)
+                }
+            }
+        )
         addView(
             engineView.asView(),
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
@@ -258,6 +373,8 @@ class PetalTabViewController @JvmOverloads constructor(
     /** GeckoView-only integration point used for WebExtension delegates. */
     fun getGeckoSession(): org.mozilla.geckoview.GeckoSession? =
         com.petal.browser.view.PetalGeckoView.getEngineGeckoSession(observedSession)
+
+    fun getMediaBridge(): com.petal.browser.media.PetalMediaBridge? = mediaBridge
 
     fun setTabGroupId(value: String?) { tabGroupId = value }
 

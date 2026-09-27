@@ -280,6 +280,19 @@ object PetalEngineStore {
     }
 
     @JvmStatic
+    fun updateMediaController(
+        context: Context,
+        tabId: String,
+        controller: mozilla.components.concept.engine.mediasession.MediaSession.Controller?
+    ) {
+        if (controller == null) {
+            deactivateMediaSession(context, tabId)
+        } else {
+            activateMediaSession(context, tabId, controller)
+        }
+    }
+
+    @JvmStatic
     fun deactivateMediaSession(context: Context, tabId: String) {
         getStore(context).dispatch(
             mozilla.components.browser.state.action.MediaSessionAction.DeactivatedMediaSessionAction(tabId)
