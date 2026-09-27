@@ -171,4 +171,102 @@
     <string name="widget_shortcuts_desc">Favorite shortcuts aur bookmarks ke liye quick access grid.</string>
     <string name="widget_mode_switch_name">Petal Mode Switcher</string>
     <string name="widget_mode_switch_desc">Standard aur Incognito browsing mode ke beech turant switch karein.</string>
+
+    <!-- Crash & Diagnostic Reporting -->
+    <string name="action_export_logs">Logs Export Karein (.zip)</string>
+    <string name="action_install_update">Update Download aur Install Karein</string>
+    <string name="action_report_issue">Issue Report Karein</string>
+    <string name="action_simulate_crash">Crash Simulate Karein</string>
+    <string name="action_view_crash_log">Log Dekhein</string>
+    <string name="crash_reporting_desc">Crash diagnostics automatically capture karein aur issues report karein</string>
+    <string name="crash_reporting_dialog_desc">Petal pichle session me ek unexpected crash se recover hua hai. Diagnostic trace dekhna chahenge ya isse theek karne ke liye report share karna chahenge?</string>
+    <string name="crash_reporting_dialog_title">Petal Browser Crash Ho Gaya</string>
+    <string name="crash_reporting_mode_auto">Auto</string>
+    <string name="crash_reporting_mode_off">Off</string>
+    <string name="crash_reporting_title">Crash aur Diagnostic Reporting</string>
+    <string name="crash_toast_recovered">Petal crash se recover ho gaya. Diagnostic report save ho gayi.</string>
+    <string name="downloading_update_progress">Update download ho raha hai (%1$d%%)</string>
+
+    <!-- File Picker -->
+    <string name="file_picker_downloads">Downloads</string>
+    <string name="file_picker_grant_button">Storage Access Dein</string>
+    <string name="file_picker_grant_permission">Files browse karne ke liye Petal ko storage permission chahiye.</string>
+    <string name="file_picker_internal_storage">Internal Storage</string>
+    <string name="file_picker_no_files">Koi file nahi mili</string>
+    <string name="file_picker_preview">Preview</string>
+    <string name="file_picker_previous_directory">Pichli directory</string>
+    <string name="file_picker_read_error">Yeh directory read nahi ho pa rahi</string>
+    <string name="file_picker_root">Root (/)</string>
+    <string name="file_picker_sd_card">SD Card</string>
+    <string name="file_picker_search_hint">Current folder me search karein…</string>
+    <string name="file_picker_select_folder">Yeh folder select karein</string>
+    <string name="file_picker_select_folder_title">Folder Select Karein</string>
+    <string name="file_picker_show_hidden_files">Hidden files dikhayein</string>
+    <string name="file_picker_sort_date_asc">Date (sabse purani pehle)</string>
+    <string name="file_picker_sort_date_desc">Date (sabse nayi pehle)</string>
+    <string name="file_picker_sort_name_asc">Naam (A–Z)</string>
+    <string name="file_picker_sort_name_desc">Naam (Z–A)</string>
+    <string name="file_picker_sort_size_asc">Size (sabse chhoti pehle)</string>
+    <string name="file_picker_sort_size_desc">Size (sabse badi pehle)</string>
+    <string name="file_picker_title">File Select Karein</string>
+
+    <!-- Live Alerts -->
+    <string name="live_alerts_open_settings">Notification Settings Kholein</string>
+    <string name="live_alerts_permission_button">Permission Dein</string>
+    <string name="live_alerts_permission_desc">Status bar me real-time download progress, speed aur controls dikhane ke liye, Petal ko is device par notification permission chahiye.</string>
+    <string name="live_alerts_permission_title">Live Notifications Enable Karein</string>
+    <string name="live_alerts_promoted_desc">Aapka device promoted status bar live chips support karta hai (Android 16+). Notification channel settings me live alert promotion enabled hona chahiye.</string>
+    <string name="live_updates">Live updates aur alerts</string>
+    <string name="live_updates_sub">Active downloads ke liye status bar aur lock screen par animated doll runner ke saath live progress chip dikhayein.</string>
+
+    <!-- PDF Viewer -->
+    <string name="pdf_clear_annotations">Annotations Clear Karein</string>
+    <string name="pdf_draw_pen">Pen</string>
+    <string name="pdf_edit_mode">Edit aur Annotate</string>
+    <string name="pdf_eraser">Eraser</string>
+    <string name="pdf_find_hint">Text dhoondein…</string>
+    <string name="pdf_find_in_document">Document me dhoondein</string>
+    <string name="pdf_find_no_results">Koi result nahi mila</string>
+    <string name="pdf_fit_width">Width Fit Karein</string>
+    <string name="pdf_highlight">Highlighter</string>
+    <string name="pdf_save_changes">Changes Save Karein</string>
+    <string name="pdf_saved_successfully">PDF successfully save ho gayi</string>
+    <string name="pdf_text_note">Text Note</string>
+    <string name="pdf_zoom_in">Zoom In</string>
+    <string name="pdf_zoom_out">Zoom Out</string>
+
+    <!-- Viewer / App Names -->
+    <string name="petal_custom_tab_name">Petal Custom Tab</string>
+    <string name="petal_file_viewer_name">Petal Universal File Viewer</string>
+    <string name="petal_image_viewer_name">Petal Image Viewer</string>
+    <string name="petal_media_player_name">Petal Media Player</string>
+    <string name="petal_pdf_viewer_name">Petal PDF Viewer</string>
+    <string name="petal_pwa_name">Petal Web App</string>
+
+    <!-- Custom Tabs -->
+    <string name="pref_custom_tabs_copied">Link clipboard me copy ho gaya</string>
+    <string name="pref_custom_tabs_copy">Link copy karein</string>
+    <string name="pref_custom_tabs_desktop">Desktop site</string>
+    <string name="pref_custom_tabs_etp_summary">Custom Tabs me strict content blocking aur tracker isolation enforce karein</string>
+    <string name="pref_custom_tabs_etp_title">Enhanced Tracking Protection</string>
+    <string name="pref_custom_tabs_open_browser">Petal Browser me kholein</string>
+    <string name="pref_custom_tabs_share">Link share karein</string>
+    <string name="pref_custom_tabs_summary">External links ko Firefox GeckoView rendering ke saath ek streamlined Custom Tab overlay me kholein</string>
+    <string name="pref_custom_tabs_title">Custom Tabs</string>
+
+    <!-- PWA Install -->
+    <string name="pwa_install_button">Install</string>
+    <string name="pwa_install_empty_page">Khaali page install nahi ho sakta</string>
+    <string name="pwa_install_failed">Home screen par add nahi ho paya</string>
+    <string name="pwa_install_prompt_title">%1$s install karein?</string>
+    <string name="pwa_install_success">%1$s Home screen par add ho gaya</string>
+    <string name="pwa_install_title">App ki Tarah Install Karein</string>
+
+    <!-- Search Widgets -->
+    <string name="widget_search_petal1_desc">Gradient P emblem, AI sparkle, voice aur camera scanner ke saath Material 3 Expressive pill search bar. Resize karne par shortcuts ke saath expand hota hai.</string>
+    <string name="widget_search_petal1_name">Petal #1</string>
+    <string name="widget_search_petal2_desc">Embedded search pill aur action island ke saath Material 3 Expressive search bar.</string>
+    <string name="widget_search_petal2_name">Petal #2</string>
+    <string name="widget_search_petal3_desc">Left par circular brand badge aur right par AI shortcut ke saath minimalist horizontal pill bar.</string>
+    <string name="widget_search_petal3_name">Petal #3</string>
 </resources>
