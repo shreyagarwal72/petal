@@ -235,7 +235,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 currentUrl = url
                 applySettings()
 
-                val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", true))
+                val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
                 if (httpsOnly && url.startsWith("http://", ignoreCase = true)) {
                     val secureUrl = "https://" + url.substring(7)
                     session.loadUri(secureUrl)
@@ -1354,7 +1354,7 @@ class PetalGeckoView @JvmOverloads constructor(
         var targetUrl = BrowserUnit.queryWrapper(context, redirected)
 
         // Enforce HTTPS-Only Security Upgrade
-        val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", true))
+        val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
         if (httpsOnly && targetUrl.startsWith("http://", ignoreCase = true)) {
             targetUrl = "https://" + targetUrl.substring(7)
         }
