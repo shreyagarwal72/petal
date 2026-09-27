@@ -1788,6 +1788,7 @@ class PetalGeckoView @JvmOverloads constructor(
         isForegroundTab = true
         album.activate()
         session.setActive(true)
+        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(null, session)
         geckoView.visibility = View.VISIBLE
         // Notify BrowserStore of tab selection
         try {
@@ -1818,6 +1819,7 @@ class PetalGeckoView @JvmOverloads constructor(
         try {
             session.setActive(false)
         } catch (_: Throwable) {}
+        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(session, null)
     }
 
     override fun getTitle(): String {
@@ -2091,6 +2093,7 @@ class PetalGeckoView @JvmOverloads constructor(
     override fun destroy() {
         stopLoading()
         try { session.setActive(false) } catch (_: Throwable) {}
+        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(session, null)
         // Detach GeckoView before closing its session. Closing an attached session can
         // race GeckoView's compositor teardown and is particularly fragile on cold start
         // and during Activity destruction.

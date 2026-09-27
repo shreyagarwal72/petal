@@ -31,11 +31,14 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
         store = store,
         fragmentManager = activity.supportFragmentManager,
         tabsUseCases = TabsUseCases(store),
+        isSuggestEmailMaskEnabled = { false },
+        isEmailMaskFeatureEnabled = { false },
         fileUploadsDirCleaner = com.petal.browser.engine.gecko.PetalEngineStore
             .getFileUploadsDirCleaner(activity),
         onNeedToRequestPermissions = { permissions ->
             ActivityCompat.requestPermissions(activity, permissions, REQUEST_PROMPT_PERMISSIONS)
-        }
+        },
+        androidPhotoPicker = null
     )
     fun start() {
         sitePermissions.start()

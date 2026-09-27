@@ -6566,6 +6566,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    /** Handles content calling window.close() from an Android Components tab. */
+    public synchronized void closeContentWindow(
+            com.petal.browser.browser.PetalTabViewController source) {
+        if (BrowserContainer.size() > 1) {
+            removeAlbumSilently(source);
+        } else {
+            String homeUrl = sp.getString("favoriteURL", "about:blank");
+            source.loadUrl(homeUrl);
+            showAlbum(source, homeUrl);
+        }
+        updateOmniBox();
+        updatePersistentBottomNav();
+        updateBackCallbackState();
+    }
+
     /**
      * Adopts an already-opened GeckoSession (returned from GeckoView's onNewSession callback)
      * into a new foreground popup tab. Unlike addAlbumForPopup, this does NOT call session.open()
