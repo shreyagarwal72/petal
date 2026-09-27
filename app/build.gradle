@@ -1,5 +1,5 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-kapt'
+apply plugin: 'com.google.devtools.ksp'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'dagger.hilt.android.plugin'
 
@@ -245,8 +245,7 @@ dependencies {
     implementation 'org.mozilla.components:feature-media:156.0.1'
 
     // Dagger Hilt Dependency Injection
-    implementation 'com.google.dagger:hilt-android:2.58'
-    kapt 'com.google.dagger:hilt-compiler:2.58'
-    kapt 'org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0'
+    implementation 'com.google.dagger:hilt-android:2.60.1'
+    ksp 'com.google.dagger:hilt-compiler:2.60.1'
     implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
 }
