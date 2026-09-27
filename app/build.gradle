@@ -224,6 +224,8 @@ dependencies {
 
     // Android Components Features (155.0.1)
     implementation 'org.mozilla.components:feature-readerview:155.0.1'
+    implementation 'org.mozilla.components:feature-session:155.0.1'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'org.mozilla.components:feature-findinpage:155.0.1'
     implementation 'org.mozilla.components:feature-sitepermissions:155.0.1'
     implementation 'org.mozilla.components:feature-prompts:155.0.1'

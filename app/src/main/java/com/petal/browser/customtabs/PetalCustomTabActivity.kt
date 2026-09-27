@@ -42,8 +42,7 @@ import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.view.PetalToast
-import com.petal.browser.view.PetalGeckoView
-import org.mozilla.geckoview.ContentBlocking
+import com.petal.browser.browser.PetalTabViewController
 
 /**
  * PetalCustomTabActivity
@@ -61,7 +60,8 @@ import org.mozilla.geckoview.ContentBlocking
  */
 class PetalCustomTabActivity : ComponentActivity() {
 
-    private var geckoView: PetalGeckoView? = null
+    private var tabSurface: PetalTabViewController? = null
+    private var customTabId: String? = null
     private var currentUrlState by mutableStateOf("about:blank")
     private var currentTitleState by mutableStateOf("")
     private var isSecureState by mutableStateOf(false)
@@ -83,12 +83,8 @@ class PetalCustomTabActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val gv = geckoView
-                if (gv != null && gv.canGoBack()) {
-                    gv.goBack()
-                } else {
-                    finish()
-                }
+                val gv = tabSurface
+                if (gv == null) finish() else gv.processBackPressed { finish() }
             }
         })
 
@@ -108,7 +104,7 @@ class PetalCustomTabActivity : ComponentActivity() {
                             onToggleDesktop = {
                                 val newState = !isDesktopModeState
                                 isDesktopModeState = newState
-                                geckoView?.setDesktopMode(newState)
+                                tabSurface?.setDesktopMode(newState)
                             },
                             onShare = { shareCurrentUrl() },
                             onCopyUrl = { copyCurrentUrl() },
@@ -134,34 +130,27 @@ class PetalCustomTabActivity : ComponentActivity() {
                                     isIncognito = false,
                                     select = true
                                 )
-                                PetalGeckoView(ctx, engineSession = sessionPair.second).also { gv ->
-                                    gv.setTabId(tabId)
-                                    gv.layoutParams = FrameLayout.LayoutParams(
+                                PetalTabViewController(ctx).also { surface ->
+                                    customTabId = tabId
+                                    surface.bindTab(sessionPair.first)
+                                    surface.attachLifecycle(this@PetalCustomTabActivity)
+                                    surface.onBrowserStateChanged = { state ->
+                                        currentUrlState = state.url
+                                        currentTitleState = state.title
+                                        progressState = state.progress
+                                        isSecureState = state.isSecure
+                                    }
+                                    surface.setTrackingProtection(
+                                        PreferenceManager.getDefaultSharedPreferences(ctx)
+                                            .getBoolean("sp_custom_tabs_etp", true)
+                                    )
+                                    surface.layoutParams = FrameLayout.LayoutParams(
                                         ViewGroup.LayoutParams.MATCH_PARENT,
                                         ViewGroup.LayoutParams.MATCH_PARENT
                                     )
-
-                                    // Apply Enhanced Tracking Protection if enabled by user preference
-                                    val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
-                                    val etpEnabled = sp.getBoolean("sp_custom_tabs_etp", true)
-                                    if (etpEnabled) {
-                                        gv.setTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
-                                    }
-
-                                    // Wire real-time progress, title, and security callbacks
-                                    gv.onPageProgressChanged = { p ->
-                                        progressState = p
-                                    }
-                                    gv.onPageTitleChanged = { t ->
-                                        if (t.isNotBlank()) currentTitleState = t
-                                    }
-                                    gv.onPageSecurityChanged = { sec ->
-                                        isSecureState = sec
-                                    }
-
-                                    geckoView = gv
+                                    tabSurface = surface
                                     if (targetUrl.isNotBlank() && !targetUrl.equals("about:blank", ignoreCase = true)) {
-                                        gv.loadUrl(targetUrl)
+                                        surface.loadUrl(targetUrl)
                                     }
                                 }
                             },
@@ -181,24 +170,24 @@ class PetalCustomTabActivity : ComponentActivity() {
         if (targetUrl.isNotBlank() && !targetUrl.equals("about:blank", ignoreCase = true)) {
             currentUrlState = targetUrl
             isSecureState = targetUrl.startsWith("https://", ignoreCase = true)
-            geckoView?.loadUrl(targetUrl)
+            tabSurface?.loadUrl(targetUrl)
         }
     }
 
     override fun onResume() {
         super.onResume()
-        geckoView?.onResume()
         updateCurrentUrlAndTitle()
     }
 
     override fun onPause() {
         super.onPause()
-        geckoView?.onPause()
     }
 
     override fun onDestroy() {
-        geckoView?.destroy()
-        geckoView = null
+        tabSurface?.destroy()
+        tabSurface = null
+        customTabId?.let { com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, it) }
+        customTabId = null
         super.onDestroy()
     }
 
@@ -232,13 +221,13 @@ class PetalCustomTabActivity : ComponentActivity() {
     }
 
     private fun updateCurrentUrlAndTitle() {
-        val gv = geckoView ?: return
-        val url = gv.url
+        val state = tabSurface?.currentState() ?: return
+        val url = state.url
         if (url.isNotBlank()) {
             currentUrlState = url
-            isSecureState = url.startsWith("https://", ignoreCase = true)
+            isSecureState = state.isSecure
         }
-        val title = gv.title
+        val title = state.title
         if (title.isNotBlank()) {
             currentTitleState = title
         }
@@ -246,7 +235,7 @@ class PetalCustomTabActivity : ComponentActivity() {
 
     private fun shareCurrentUrl() {
         val urlToShare = currentUrlState.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
-            ?: geckoView?.url ?: return
+            ?: tabSurface?.getUrl() ?: return
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, urlToShare)
@@ -257,7 +246,7 @@ class PetalCustomTabActivity : ComponentActivity() {
 
     private fun copyCurrentUrl() {
         val urlToCopy = currentUrlState.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
-            ?: geckoView?.url ?: return
+            ?: tabSurface?.getUrl() ?: return
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
         val clip = ClipData.newPlainText("URL", urlToCopy)
         clipboard?.setPrimaryClip(clip)
@@ -265,7 +254,7 @@ class PetalCustomTabActivity : ComponentActivity() {
     }
 
     private fun openInPetalBrowser() {
-        val urlToOpen = geckoView?.url?.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
+        val urlToOpen = tabSurface?.getUrl()?.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
             ?: currentUrlState.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
             ?: "about:blank"
 
