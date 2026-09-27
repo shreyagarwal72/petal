@@ -26,9 +26,9 @@ import mozilla.components.feature.session.SwipeRefreshFeature
 class PetalTabViewController @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0,
-    private val engineView: EngineView = PetalEngineStore.createEngineView(context)
-) : SwipeRefreshLayout(context, attrs, defStyleAttr), AlbumController, EngineView by engineView {
+    defStyleAttr: Int = 0
+) : SwipeRefreshLayout(context, attrs, defStyleAttr), AlbumController,
+    EngineView by PetalEngineStore.createEngineView(context) {
 
     private val appContext = context.applicationContext
     private val browserStore: BrowserStore = PetalEngineStore.getStore(appContext)
@@ -121,6 +121,22 @@ class PetalTabViewController @JvmOverloads constructor(
         ) {
             isSecure = secure
             publishState()
+        }
+
+        override fun onWindowRequest(
+            windowRequest: mozilla.components.concept.engine.window.WindowRequest
+        ) {
+            val activity = context as? com.petal.browser.activity.BrowserActivity ?: return
+            activity.runOnUiThread {
+                if (windowRequest.type == mozilla.components.concept.engine.window.WindowRequest.Type.OPEN) {
+                    activity.adoptPreparedWindow(this@PetalTabViewController, windowRequest)
+                } else {
+                    activity.removeAlbum(this@PetalTabViewController)
+                }
+                boundTabId?.let {
+                    PetalEngineStore.consumeWindowRequest(appContext, it)
+                }
+            }
         }
 
         override fun onMediaActivated(

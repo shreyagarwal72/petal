@@ -3,7 +3,6 @@ package com.petal.browser.compose.settings.screens
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,7 +21,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.compose.settings.viewmodel.PrivacySettingsViewModel
-import androidx.activity.ComponentActivity
 import com.petal.browser.passwords.PetalPasswordsScreen
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
@@ -511,5 +509,4 @@ fun PrivacySettingsScreenContent(
         }
     }
 }
-
 
