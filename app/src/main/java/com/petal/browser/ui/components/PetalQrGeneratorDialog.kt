@@ -3,8 +3,14 @@
  * ─────────────────────────────────────────────────────────────────────────
  * On-device QR Code generator with signature Petal Material 3 Expressive styling:
  * - Rounded organic squircle / pebble card geometry with M3 elevation & tonal surface.
- * - Smooth rounded QR code dot matrix with soft finder eyes.
- * - Central Petal emblem badge with fluid gradient illumination.
+ * - Every data module is a soft rounded squircle rendered in Petal's teal
+ *   brand gradient (rendered at true QR-module resolution, not upscaled
+ *   pixels, so the rounding is actually visible).
+ * - The three finder patterns are redrawn as heavily-rounded "petal eyes"
+ *   instead of hard squares, while keeping the standard 7:5:3 module
+ *   ratio so scanners still detect them reliably.
+ * - No center logo/badge: nothing ever obstructs the data area, which
+ *   keeps the code fast and reliable to scan on any camera.
  * - Quick copy link & share link actions with tactile Petal haptics.
  *
  * Copyright (c) 2026 Petal Browser
@@ -46,12 +52,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.core.content.ContextCompat
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
-import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.view.PetalToast
 
@@ -310,11 +314,16 @@ private fun shareQrImage(context: Context, bitmap: Bitmap, title: String) {
 }
 
 /**
- * Generates an expressive, high-resolution Petal designed QR code with:
- * 1. High error correction (LEVEL H) allowing 30% center obstruction.
- * 2. Soft rounded squircle dots instead of jagged squares.
- * 3. Distinct, beautifully rounded position finder patterns (top-left, top-right, bottom-left).
- * 4. Center Petal emblem badge with branded contrast ring.
+ * Generates a Petal-branded, fully scannable QR code:
+ * 1. High error correction (LEVEL H) for maximum real-world scan reliability.
+ * 2. Every data module rendered as a soft rounded squircle, tinted with
+ *    Petal's teal brand gradient — computed at true QR-module resolution
+ *    (not the final upscaled pixel grid ZXing would otherwise hand back),
+ *    so the rounding is actually visible instead of sub-pixel.
+ * 3. The three finder patterns are redrawn as rounded "petal eyes" that
+ *    keep the standard 7:5:3 module ratio scanners rely on to detect them.
+ * 4. No center logo or badge of any kind — nothing ever sits on top of the
+ *    data area, which is what actually determines scan reliability.
  */
 private fun generatePetalStyledQrBitmap(
     context: Context,
@@ -323,101 +332,106 @@ private fun generatePetalStyledQrBitmap(
 ): Bitmap? {
     if (content.isBlank()) return null
     return try {
+        val quietZoneModules = 2
         val hints = HashMap<EncodeHintType, Any>().apply {
             put(EncodeHintType.CHARACTER_SET, "UTF-8")
             put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H)
-            put(EncodeHintType.MARGIN, 1)
+            put(EncodeHintType.MARGIN, quietZoneModules)
         }
 
         val writer = QRCodeWriter()
-        val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, dimension, dimension, hints)
+        // Requesting a 1x1 target forces ZXing's internal `multiple` scale
+        // factor to 1, so the returned matrix is in true QR *modules*
+        // (e.g. 25x25) rather than pre-upscaled to `dimension` pixels.
+        // We do our own scaling below so every module can be styled.
+        val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, 1, 1, hints)
         val matrixWidth = bitMatrix.width
         val matrixHeight = bitMatrix.height
 
         val bitmap = Bitmap.createBitmap(dimension, dimension, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // Draw crisp clean white background
-        val bgPaint = Paint().apply {
-            color = android.graphics.Color.WHITE
-            style = Paint.Style.FILL
-        }
-        canvas.drawRect(0f, 0f, dimension.toFloat(), dimension.toFloat(), bgPaint)
+        // Crisp white background — best contrast for scanning
+        canvas.drawRect(
+            0f, 0f, dimension.toFloat(), dimension.toFloat(),
+            Paint().apply { color = android.graphics.Color.WHITE; style = Paint.Style.FILL }
+        )
 
         val cellWidth = dimension.toFloat() / matrixWidth.toFloat()
         val cellHeight = dimension.toFloat() / matrixHeight.toFloat()
 
-        // Signature Petal Dark Teal / Slate Tint for modules
-        val darkModulePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.rgb(18, 28, 38)
+        // Petal brand gradient: Deep Teal -> brighter leaf-teal, diagonal across the whole code
+        val deepTeal = android.graphics.Color.rgb(2, 96, 101)
+        val brightTeal = android.graphics.Color.rgb(44, 168, 150)
+        val gradientPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
+            shader = android.graphics.LinearGradient(
+                0f, 0f, dimension.toFloat(), dimension.toFloat(),
+                deepTeal, brightTeal, android.graphics.Shader.TileMode.CLAMP
+            )
         }
 
-        // Center badge exclusion radius (7x7 modules around center)
-        val centerModuleX = matrixWidth / 2f
-        val centerModuleY = matrixHeight / 2f
-        val centerExclusionRadius = 3.6f
+        // Finder pattern bounding boxes (module coords): top-left, top-right, bottom-left.
+        // Every QR version reserves an untouched 7x7 module square in these corners.
+        val finderSize = 7
+        data class FinderOrigin(val mx: Int, val my: Int)
+        // The 1x1 render request bakes the quiet zone directly into the matrix
+        // (ZXing centers the real code with `quietZoneModules` of blank margin
+        // on every side), so the actual finder patterns start there, not at
+        // matrix edge (0,0).
+        val finderOrigins = listOf(
+            FinderOrigin(quietZoneModules, quietZoneModules),
+            FinderOrigin(matrixWidth - finderSize - quietZoneModules, quietZoneModules),
+            FinderOrigin(quietZoneModules, matrixHeight - finderSize - quietZoneModules)
+        )
+        fun isInsideFinder(x: Int, y: Int): Boolean = finderOrigins.any { origin ->
+            x >= origin.mx && x < origin.mx + finderSize && y >= origin.my && y < origin.my + finderSize
+        }
 
-        // Draw rounded modules
+        // 1) Data modules — rounded squircles in the brand gradient, skipping finder zones
         val rectF = RectF()
-        val cornerRadius = cellWidth * 0.38f
-
+        val cornerRadius = cellWidth * 0.35f
         for (x in 0 until matrixWidth) {
             for (y in 0 until matrixHeight) {
-                // Skip center area for Petal logo badge
-                val distFromCenter = Math.hypot((x - centerModuleX).toDouble(), (y - centerModuleY).toDouble()).toFloat()
-                if (distFromCenter < centerExclusionRadius) {
-                    continue
-                }
-
+                if (isInsideFinder(x, y)) continue
                 if (bitMatrix.get(x, y)) {
-                    val left = x * cellWidth + cellWidth * 0.06f
-                    val top = y * cellHeight + cellHeight * 0.06f
-                    val right = (x + 1) * cellWidth - cellWidth * 0.06f
-                    val bottom = (y + 1) * cellHeight - cellHeight * 0.06f
-
+                    val left = x * cellWidth + cellWidth * 0.08f
+                    val top = y * cellHeight + cellHeight * 0.08f
+                    val right = (x + 1) * cellWidth - cellWidth * 0.08f
+                    val bottom = (y + 1) * cellHeight - cellHeight * 0.08f
                     rectF.set(left, top, right, bottom)
-                    canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, darkModulePaint)
+                    canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, gradientPaint)
                 }
             }
         }
 
-        // Render Center Petal Emblem Badge
-        val badgeDiameter = dimension * 0.22f
-        val badgeRadius = badgeDiameter / 2f
-        val centerX = dimension / 2f
-        val centerY = dimension / 2f
-
-        // White badge backing with soft shadow/border
-        val whiteBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // 2) Petal-eye finder markers — same 7:5:3 ring structure as a standard
+        // finder pattern, but with heavily rounded (squircle) corners for the
+        // "petal" look. The ring proportions are what scanners key off, so
+        // rounding the corners doesn't affect detection.
+        val whitePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = android.graphics.Color.WHITE
             style = Paint.Style.FILL
-            setShadowLayer(8f, 0f, 4f, android.graphics.Color.argb(40, 0, 0, 0))
         }
-        canvas.drawCircle(centerX, centerY, badgeRadius + 4f, whiteBadgePaint)
+        finderOrigins.forEach { origin ->
+            val left = origin.mx * cellWidth
+            val top = origin.my * cellHeight
+            val outerSize = finderSize * cellWidth
 
-        // Petal Theme Accent Ring
-        val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.rgb(2, 96, 101) // Petal Deep Teal
-            style = Paint.Style.STROKE
-            strokeWidth = 3.5f
+            // Outer 7x7 ring (brand gradient)
+            rectF.set(left, top, left + outerSize, top + outerSize)
+            canvas.drawRoundRect(rectF, outerSize * 0.32f, outerSize * 0.32f, gradientPaint)
+
+            // Middle 5x5 white gap
+            val midInset = cellWidth
+            rectF.set(left + midInset, top + midInset, left + outerSize - midInset, top + outerSize - midInset)
+            canvas.drawRoundRect(rectF, (outerSize - 2 * midInset) * 0.32f, (outerSize - 2 * midInset) * 0.32f, whitePaint)
+
+            // Inner 3x3 solid "pupil" (brand gradient)
+            val innerInset = cellWidth * 2f
+            rectF.set(left + innerInset, top + innerInset, left + outerSize - innerInset, top + outerSize - innerInset)
+            canvas.drawRoundRect(rectF, (outerSize - 2 * innerInset) * 0.32f, (outerSize - 2 * innerInset) * 0.32f, gradientPaint)
         }
-        canvas.drawCircle(centerX, centerY, badgeRadius, ringPaint)
-
-        // Draw Petal Icon Vector inside the center badge
-        try {
-            val drawable = ContextCompat.getDrawable(context, R.drawable.ic_launcher_foreground)
-            if (drawable != null) {
-                val iconPadding = badgeRadius * 0.22f
-                val iconLeft = (centerX - badgeRadius + iconPadding).toInt()
-                val iconTop = (centerY - badgeRadius + iconPadding).toInt()
-                val iconRight = (centerX + badgeRadius - iconPadding).toInt()
-                val iconBottom = (centerY + badgeRadius - iconPadding).toInt()
-
-                drawable.setBounds(iconLeft, iconTop, iconRight, iconBottom)
-                drawable.draw(canvas)
-            }
-        } catch (_: Exception) {}
 
         bitmap
     } catch (_: Exception) {

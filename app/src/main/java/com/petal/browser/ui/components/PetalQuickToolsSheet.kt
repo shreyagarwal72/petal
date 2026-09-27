@@ -4,27 +4,26 @@
  * Material 3 Expressive Quick Tools Bottom Sheet matching Omni Browser
  * architecture and Firefox GeckoView engine capabilities.
  *
- * Provides a 4-column reorderable grid of 20 quick web tools:
+ * Provides a 4-column reorderable grid of 16 quick web tools. Tools that
+ * duplicate an item already in the overflow menu (Safe Locker, Save/Print
+ * PDF, Pin Web App, Console Log/Developer Console) were removed from here
+ * on 2026-09-27 — those actions now live only in the overflow menu.
  * 1. QR Scanner (Camera barcode/QR reader)
- * 2. Safe Locker (AES-GCM Biometric private storage)
- * 3. Translator (Page & selection translation)
- * 4. Edit Page (Live contentEditable / designMode)
- * 5. Save PDF (GeckoView Print to PDF)
- * 6. Network (Connection, TLS & IP inspector)
- * 7. Pin Web App (Add PWA to Home Screen)
- * 8. Auto-Scroll (Hands-free page reader with speed HUD)
- * 9. QR Scan Page (In-page barcode & QR code extractor)
- * 10. QR Generator (ZXing QR code generator)
- * 11. Console Log (Live JS REPL & logger)
- * 12. Dev Notes (Per-site encrypted scratchpad)
- * 13. Site Style (Invert, Sepia, High Contrast & Custom Fonts)
- * 14. Image Grabber (Extract & batch download page images)
- * 15. Inspector & DOM (Tap-to-inspect element inspector)
- * 16. Block Area (Element zapper & cosmetic filter rule builder)
- * 17. Spoof Identity (Switch Desktop/Mobile/iOS/macOS User-Agent)
- * 18. Force Zoom (Bypass viewport pinch-to-zoom restrictions)
- * 19. Torrent & Magnet (Magnet link & torrent catcher)
- * 20. petal:config (Internal Gecko preferences & flags)
+ * 2. Translator (Page & selection translation)
+ * 3. Edit Page (Live contentEditable / designMode)
+ * 4. Network (Connection, TLS & IP inspector)
+ * 5. Auto-Scroll (Hands-free page reader with speed HUD)
+ * 6. QR Scan Page (In-page barcode & QR code extractor)
+ * 7. QR Generator (ZXing QR code generator)
+ * 8. Dev Notes (Per-site encrypted scratchpad)
+ * 9. Site Style (Invert, Sepia, High Contrast & Custom Fonts)
+ * 10. Image Grabber (Extract & batch download page images)
+ * 11. Inspector & DOM (Tap-to-inspect element inspector)
+ * 12. Block Area (Element zapper & cosmetic filter rule builder)
+ * 13. Spoof Identity (Switch Desktop/Mobile/iOS/macOS User-Agent)
+ * 14. Force Zoom (Bypass viewport pinch-to-zoom restrictions)
+ * 15. Torrent & Magnet (Magnet link & torrent catcher)
+ * 16. petal:config (Internal Gecko preferences & flags)
  *
  * Enhanced with:
  * - Material 3 Expressive shapes & dynamic tonal container coloring
@@ -82,16 +81,12 @@ enum class QuickToolId(
     val shapeIndex: Int
 ) {
     QR_SCANNER("qr_scanner", "QR Scanner", Icons.Rounded.QrCodeScanner, "Scan QR with camera", 0),
-    SAFE_LOCKER("safe_locker", "Safe Locker", Icons.Rounded.Lock, "Encrypted vault", 1),
     TRANSLATOR("translator", "Translator", Icons.Rounded.Translate, "Translate page", 2),
     EDIT_PAGE("edit_page", "Edit Page", Icons.Rounded.Edit, "Modify text on page", 3),
-    SAVE_PDF("save_pdf", "Save PDF", Icons.Rounded.Print, "Export page to PDF", 4),
     NETWORK("network", "Network", Icons.Rounded.Language, "Connection & DNS inspector", 5),
-    PIN_WEB_APP("pin_web_app", "Pin Web App", Icons.Rounded.OpenInNew, "Add to Home screen", 6),
     AUTO_SCROLL("auto_scroll", "Auto-Scroll", Icons.Rounded.ArrowDownward, "Hands-free reader", 7),
     QR_SCAN_PAGE("qr_scan_page", "QR Scan Page", Icons.Rounded.CropFree, "Find QR codes on page", 8),
     QR_GENERATOR("qr_generator", "QR Generator", Icons.Rounded.QrCode, "Share link as QR", 9),
-    CONSOLE_LOG("console_log", "Console Log", Icons.Rounded.Terminal, "JavaScript REPL", 10),
     DEV_NOTES("dev_notes", "Dev Notes", Icons.Rounded.Description, "Notes for this site", 11),
     SITE_STYLE("site_style", "Site Style", Icons.Rounded.Palette, "Custom color & font themes", 12),
     IMAGE_GRABBER("image_grabber", "Image Grabber", Icons.Rounded.PhotoLibrary, "Extract all images", 13),

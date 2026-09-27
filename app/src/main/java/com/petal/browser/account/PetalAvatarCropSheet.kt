@@ -41,7 +41,8 @@ import java.io.InputStream
 fun PetalAvatarCropSheet(
     imageUri: Uri,
     onDismiss: () -> Unit,
-    onAvatarCropped: () -> Unit
+    onAvatarCropped: () -> Unit,
+    onSaveBitmap: ((Bitmap) -> Unit)? = null
 ) {
     val context = LocalContext.current
     var sourceBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -219,7 +220,11 @@ fun PetalAvatarCropSheet(
                         val cw = if (canvasSize.width > 0) canvasSize.width.toFloat() else 1000f
                         val ch = if (canvasSize.height > 0) canvasSize.height.toFloat() else 1000f
                         val cropped = cropBitmap(bmp, scale, offset, rotationAngle, cw, ch)
-                        GoogleAccountManager.saveCroppedAvatar(context, cropped)
+                        if (onSaveBitmap != null) {
+                            onSaveBitmap(cropped)
+                        } else {
+                            GoogleAccountManager.saveCroppedAvatar(context, cropped)
+                        }
                         PetalHapticEngine.getInstance(context).playClick(context)
                         onAvatarCropped()
                     },

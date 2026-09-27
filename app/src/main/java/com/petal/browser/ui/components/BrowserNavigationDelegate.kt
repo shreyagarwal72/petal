@@ -149,7 +149,7 @@ object BrowserNavigationDelegate {
 
                 override fun onPrintPdf() {
                     try {
-                        activity.savePageOffline()
+                        activity.createWebPrintJob(null)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }

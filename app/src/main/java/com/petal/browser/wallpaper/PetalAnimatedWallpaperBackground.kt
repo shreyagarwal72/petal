@@ -19,7 +19,10 @@ import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clipToBounds
@@ -38,6 +41,7 @@ import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.petal.browser.R
+import com.petal.browser.ui.components.PRESET_WALLPAPERS
 import java.io.File
 
 @OptIn(UnstableApi::class)
@@ -73,6 +77,12 @@ fun PetalAnimatedWallpaperBackground(
         }.getOrDefault(false)
     }
 
+    // Tracks whether the current video actually started playing. A stale/expired CDN link
+    // (e.g. a hotlinked Pexels file URL) fails silently otherwise — ExoPlayer just logs the
+    // error and renders nothing, which looks indistinguishable from "not working".
+    var videoPlaybackFailed by remember(wallpaperUri) { mutableStateOf(false) }
+    var videoBuffering by remember(wallpaperUri) { mutableStateOf(true) }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -80,7 +90,7 @@ fun PetalAnimatedWallpaperBackground(
     ) {
         val blurModifier = if (blur > 0.5f) Modifier.blur(blur.dp) else Modifier
 
-        if (isVideo) {
+        if (isVideo && !videoPlaybackFailed) {
             val exoPlayer = remember(wallpaperUri) {
                 val mediaUri = if (wallpaperUri.startsWith("file://")) {
                     Uri.fromFile(File(wallpaperUri.removePrefix("file://")))
@@ -99,6 +109,11 @@ fun PetalAnimatedWallpaperBackground(
                     addListener(object : Player.Listener {
                         override fun onPlayerError(error: PlaybackException) {
                             android.util.Log.e("PetalWallpaper", "ExoPlayer error playing wallpaper: $wallpaperUri", error)
+                            videoPlaybackFailed = true
+                        }
+
+                        override fun onPlaybackStateChanged(playbackState: Int) {
+                            videoBuffering = playbackState == Player.STATE_BUFFERING
                         }
                     })
                     prepare()
@@ -159,14 +174,29 @@ fun PetalAnimatedWallpaperBackground(
                     .fillMaxSize()
                     .then(blurModifier)
             )
+
+            // Buffering feedback so a slow-loading video isn't mistaken for a broken one.
+            if (videoBuffering) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         } else {
-            val imageModel = remember(wallpaperUri) {
-                if (wallpaperUri.startsWith("file://")) {
-                    File(wallpaperUri.removePrefix("file://"))
-                } else if (wallpaperUri.startsWith("/")) {
-                    File(wallpaperUri)
+            val imageModel = remember(wallpaperUri, videoPlaybackFailed) {
+                // If this was a video that failed to play, fall back to its curated preset's
+                // thumbnail (when known) instead of leaving the background blank.
+                val effectiveUri = if (isVideo && videoPlaybackFailed) {
+                    PRESET_WALLPAPERS.firstOrNull { it.fullUrl == wallpaperUri }?.thumbUrl ?: wallpaperUri
                 } else {
                     wallpaperUri
+                }
+                if (effectiveUri.startsWith("file://")) {
+                    File(effectiveUri.removePrefix("file://"))
+                } else if (effectiveUri.startsWith("/")) {
+                    File(effectiveUri)
+                } else {
+                    effectiveUri
                 }
             }
             val imageRequest = remember(imageModel) {

@@ -193,13 +193,6 @@ object PetalSettingsSearchIndex {
             keywords = listOf("webauthn", "passkey", "passkeys", "biometrics", "fingerprint login", "credentials")
         ),
         SettingsSearchItem(
-            id = "privacy_passwords",
-            title = "Password Manager & Autofill",
-            subtitle = "Local-only encrypted password vault, autofill, breach detection, and multi-brand import/export",
-            category = SettingsCategory.PRIVACY,
-            keywords = listOf("passwords", "password manager", "autofill", "vault", "credentials", "logins", "import passwords", "export passwords", "bitwarden", "firefox", "chrome", "1password", "breach")
-        ),
-        SettingsSearchItem(
             id = "privacy_popups",
             title = "Block Pop-ups & Redirects",
             subtitle = "Block unwanted pop-up windows and abusive new tab redirects",
@@ -488,15 +481,6 @@ object PetalSettingsSearchIndex {
             subtitle = "Zero-cloud end-to-end encrypted (E2EE) sync across devices, powered by Firefox Accounts & Mozilla Sync",
             category = SettingsCategory.MEDIA,
             keywords = listOf("sync", "firefox sync", "mozilla account", "e2ee", "encrypted", "cloud", "ecosystem", "tabs sync")
-        ),
-
-        // ==================== DOWNLOADS ====================
-        SettingsSearchItem(
-            id = "download_manager_mode",
-            title = "Download Engine Mode",
-            subtitle = "Choose between Petal Integrated Multi-Thread Engine, Android DownloadManager, or External Downloaders",
-            category = SettingsCategory.DOWNLOADS,
-            keywords = listOf("download", "downloader", "engine", "fetch", "adm", "1dm", "external downloader")
         )
     )
 
@@ -508,7 +492,6 @@ object PetalSettingsSearchIndex {
         SettingsCategory.DISPLAY_ZOOM,
         SettingsCategory.ADDRESS_BAR,
         SettingsCategory.MEDIA,
-        SettingsCategory.DOWNLOADS,
         SettingsCategory.EXPERIMENTAL,
         SettingsCategory.TABS,
         SettingsCategory.MISCELLANEOUS,

@@ -10,6 +10,10 @@
 
 package com.petal.browser.ui.components
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -33,8 +37,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.petal.browser.account.GoogleAccountManager
 import com.petal.browser.account.GoogleUserProfile
+import com.petal.browser.account.PetalAvatarCropSheet
 import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.profile.PetalProfile
@@ -55,6 +62,18 @@ fun PetalProfileSwitchSheet(
     var newProfileName by remember { mutableStateOf("") }
     var selectedColorHex by remember { mutableStateOf("#4285F4") }
     var selectedAvatarPreset by remember { mutableStateOf("petal_flower") }
+
+    // Custom profile picture state for the create form (Issue #23 avatar wiring).
+    var pendingCropImageUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingCustomAvatarUri by remember { mutableStateOf<String?>(null) }
+
+    val avatarPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            pendingCropImageUri = uri
+        }
+    }
 
     val presetColors = listOf(
         "#4285F4" to "Google Blue",
@@ -152,12 +171,23 @@ fun PetalProfileSwitchSheet(
                                         .background(profileColor.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(
-                                        imageVector = if (profile.isDefault) Icons.Rounded.Person else Icons.Rounded.FolderShared,
-                                        contentDescription = null,
-                                        tint = profileColor,
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                                    if (profile.customAvatarUri != null) {
+                                        AsyncImage(
+                                            model = profile.customAvatarUri,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(38.dp)
+                                                .clip(CircleShape),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = if (profile.isDefault) Icons.Rounded.Person else Icons.Rounded.FolderShared,
+                                            contentDescription = null,
+                                            tint = profileColor,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
 
                                 Spacer(Modifier.width(14.dp))
@@ -212,6 +242,8 @@ fun PetalProfileSwitchSheet(
                     onClick = {
                         isCreatingNew = true
                         newProfileName = "Profile ${profiles.size + 1}"
+                        pendingCropImageUri = null
+                        pendingCustomAvatarUri = null
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
@@ -226,6 +258,62 @@ fun PetalProfileSwitchSheet(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    // Tappable circular avatar area — opens the system photo picker.
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(Color(android.graphics.Color.parseColor(selectedColorHex)).copy(alpha = 0.2f))
+                                .clickable {
+                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                    avatarPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (pendingCustomAvatarUri != null) {
+                                AsyncImage(
+                                    model = pendingCustomAvatarUri,
+                                    contentDescription = "Profile Picture",
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Rounded.Person,
+                                    contentDescription = "Profile Picture",
+                                    tint = Color(android.graphics.Color.parseColor(selectedColorHex)),
+                                    modifier = Modifier.size(34.dp)
+                                )
+                            }
+
+                            // Camera badge to signal the avatar is tappable.
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                                    .border(2.dp, MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.PhotoCamera,
+                                    contentDescription = "Change Profile Picture",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+                        }
+                    }
+
                     OutlinedTextField(
                         value = newProfileName,
                         onValueChange = { newProfileName = it },
@@ -275,7 +363,11 @@ fun PetalProfileSwitchSheet(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         OutlinedButton(
-                            onClick = { isCreatingNew = false },
+                            onClick = {
+                                isCreatingNew = false
+                                pendingCropImageUri = null
+                                pendingCustomAvatarUri = null
+                            },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
@@ -285,13 +377,22 @@ fun PetalProfileSwitchSheet(
                         Button(
                             onClick = {
                                 if (newProfileName.isNotBlank()) {
-                                    PetalProfileManager.createProfile(
+                                    val newProfile = PetalProfileManager.createProfile(
                                         context = context,
                                         name = newProfileName,
                                         colorHex = selectedColorHex,
                                         avatarPresetId = selectedAvatarPreset
                                     )
+                                    val avatarUri = pendingCustomAvatarUri
+                                    if (avatarUri != null) {
+                                        PetalProfileManager.updateProfile(
+                                            context,
+                                            newProfile.copy(customAvatarUri = avatarUri)
+                                        )
+                                    }
                                     isCreatingNew = false
+                                    pendingCropImageUri = null
+                                    pendingCustomAvatarUri = null
                                     onDismissRequest()
                                 }
                             },
@@ -305,4 +406,30 @@ fun PetalProfileSwitchSheet(
             }
         }
     }
+
+    // Avatar crop sheet — opened after a photo is picked from the create-profile form.
+    val cropImageUri = pendingCropImageUri
+    if (cropImageUri != null) {
+        PetalAvatarCropSheet(
+            imageUri = cropImageUri,
+            onDismiss = { pendingCropImageUri = null },
+            onAvatarCropped = { pendingCropImageUri = null },
+            onSaveBitmap = { bitmap ->
+                pendingCustomAvatarUri = savePetalProfileAvatarBitmap(context, bitmap)
+            }
+        )
+    }
+}
+
+/**
+ * Persists a cropped profile-picture bitmap to local app storage and returns its file URI
+ * string, suitable for [PetalProfile.customAvatarUri]. Each save gets a unique filename so
+ * picking a new photo for one profile never clobbers another profile's saved avatar.
+ */
+private fun savePetalProfileAvatarBitmap(context: android.content.Context, bitmap: android.graphics.Bitmap): String {
+    val file = java.io.File(context.filesDir, "petal_profile_avatar_${System.currentTimeMillis()}.png")
+    java.io.FileOutputStream(file).use { out ->
+        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+    }
+    return Uri.fromFile(file).toString()
 }

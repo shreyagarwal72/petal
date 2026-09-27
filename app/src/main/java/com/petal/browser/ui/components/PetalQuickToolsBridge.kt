@@ -33,8 +33,6 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.lens.PetalScannerActivity
-import com.petal.browser.pwa.PetalPwaManager
-import com.petal.browser.tools.PetalDevConsoleSheet
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -126,10 +124,6 @@ object PetalQuickToolsBridge {
                 }
             }
 
-            QuickToolId.SAFE_LOCKER -> {
-                activity.showSafeLocker()
-            }
-
             QuickToolId.TRANSLATOR -> {
                 if (currentUrl.isNotEmpty() && !currentUrl.startsWith("about:")) {
                     geckoView?.evaluateJavascript("document.dispatchEvent(new CustomEvent('petal-translate-start'));") {
@@ -162,25 +156,8 @@ object PetalQuickToolsBridge {
                 }
             }
 
-            QuickToolId.SAVE_PDF -> {
-                activity.createWebPrintJob(null)
-            }
-
             QuickToolId.NETWORK -> {
                 showNetworkInspector(activity, currentUrl)
-            }
-
-            QuickToolId.PIN_WEB_APP -> {
-                if (currentUrl.isNotEmpty() && !currentUrl.startsWith("about:")) {
-                    try {
-                        val pwa = geckoView?.getPwaManager() ?: PetalPwaManager(activity, geckoView, null)
-                        pwa.installCurrentPwa(activity)
-                    } catch (e: Exception) {
-                        PetalToast.show(activity, "PWA shortcut pinned")
-                    }
-                } else {
-                    PetalToast.show(activity, "Open a website to pin as app")
-                }
             }
 
             QuickToolId.AUTO_SCROLL -> {
@@ -203,10 +180,6 @@ object PetalQuickToolsBridge {
 
             QuickToolId.QR_GENERATOR -> {
                 showQrGenerator(activity, currentUrl, currentTitle)
-            }
-
-            QuickToolId.CONSOLE_LOG -> {
-                showConsoleLog(activity, geckoView)
             }
 
             QuickToolId.DEV_NOTES -> {
@@ -654,57 +627,4 @@ object PetalQuickToolsBridge {
         PetalConfigSheet.show(activity)
     }
 
-    private fun showConsoleLog(activity: BrowserActivity, geckoView: PetalGeckoView?) {
-        try {
-            val dialog = BottomSheetDialog(activity)
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            dialog.setCancelable(true)
-            dialog.setCanceledOnTouchOutside(true)
-            dialog.window?.let { win ->
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
-                win.statusBarColor = android.graphics.Color.TRANSPARENT
-                win.navigationBarColor = android.graphics.Color.TRANSPARENT
-            }
-
-            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
-                setContent {
-                    val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
-                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
-                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
-                    val isAmoled = sp.getBoolean("sp_amoled", false)
-
-                    PetalExpressiveTheme(
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = remember(fontName) { AppFont.fromName(fontName) },
-                        colorStyle = remember(styleName) {
-                            try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
-                        },
-                        paletteId = paletteId
-                    ) {
-                        PetalDevConsoleSheet(
-                            onExecuteScript = { script, callback ->
-                                geckoView?.evaluateJavascript(script, callback)
-                                    ?: callback("Error: Web session not active")
-                            },
-                            onDismissRequest = {
-                                try { dialog.dismiss() } catch (_: Exception) {}
-                            }
-                        )
-                    }
-                }
-            }
-            dialog.setContentView(composeView)
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 }
