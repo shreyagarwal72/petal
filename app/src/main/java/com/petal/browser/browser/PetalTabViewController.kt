@@ -15,6 +15,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.session.SessionUseCases
+import mozilla.components.feature.session.FullScreenFeature
 import mozilla.components.feature.session.SwipeRefreshFeature
 
 /**
@@ -23,12 +24,16 @@ import mozilla.components.feature.session.SwipeRefreshFeature
  * The view owns presentation and observation only. Tab lifetime and persistence remain with
  * [BrowserStore], so detaching this view never closes or recreates a tab session.
  */
-class PetalTabViewController @JvmOverloads constructor(
+class PetalTabViewController private constructor(
     context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : SwipeRefreshLayout(context, attrs, defStyleAttr), AlbumController,
-    EngineView by PetalEngineStore.createEngineView(context) {
+    attrs: AttributeSet?,
+    defStyleAttr: Int,
+    private val engineView: EngineView
+) : SwipeRefreshLayout(context, attrs, defStyleAttr), AlbumController, EngineView by engineView {
+
+    @JvmOverloads
+    constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
+        this(context, attrs, defStyleAttr, PetalEngineStore.createEngineView(context))
 
     private val appContext = context.applicationContext
     private val browserStore: BrowserStore = PetalEngineStore.getStore(appContext)
@@ -51,6 +56,7 @@ class PetalTabViewController @JvmOverloads constructor(
     private var mediaBridge: com.petal.browser.media.PetalMediaBridge? = null
     private val preferences by lazy { PreferenceManager.getDefaultSharedPreferences(appContext) }
     private var refreshFeature: SwipeRefreshFeature? = null
+    private var fullScreenFeature: FullScreenFeature? = null
     private var attachedLifecycle: Lifecycle? = null
     private val engineLifecycleObserver = mozilla.components.concept.engine.LifecycleObserver(this)
 
@@ -131,7 +137,7 @@ class PetalTabViewController @JvmOverloads constructor(
                 if (windowRequest.type == mozilla.components.concept.engine.window.WindowRequest.Type.OPEN) {
                     activity.adoptPreparedWindow(this@PetalTabViewController, windowRequest)
                 } else {
-                    activity.removeAlbum(this@PetalTabViewController)
+                    activity.closeContentWindow(this@PetalTabViewController)
                 }
                 boundTabId?.let {
                     PetalEngineStore.consumeWindowRequest(appContext, it)
@@ -275,6 +281,15 @@ class PetalTabViewController @JvmOverloads constructor(
         observedSession = session
         this.tab = tab
         boundTabId = tab.id
+        fullScreenFeature?.stop()
+        fullScreenFeature = FullScreenFeature(
+            store = browserStore,
+            sessionUseCases = SessionUseCases(browserStore),
+            tabId = tab.id,
+            fullScreenChanged = { enabled ->
+                (context as? com.petal.browser.activity.BrowserActivity)?.setCustomFullscreen(enabled)
+            }
+        )
         pageUrl = tab.content.url
         pageTitle = tab.content.title
         progress = tab.content.progress
@@ -295,6 +310,7 @@ class PetalTabViewController @JvmOverloads constructor(
         if (active) {
             PetalEngineStore.selectTab(appContext, tab.id)
             refreshFeature?.start()
+            fullScreenFeature?.start()
         }
         publishState()
     }
@@ -444,6 +460,7 @@ class PetalTabViewController @JvmOverloads constructor(
             onUnhandled()
             return
         }
+        if (fullScreenFeature?.onBackPressed() == true) return
         session.processBackPressed { handled ->
             if (handled) return@processBackPressed
             if (backAvailable) goBack() else onUnhandled()
@@ -485,12 +502,14 @@ class PetalTabViewController @JvmOverloads constructor(
         active = true
         tab?.let { PetalEngineStore.selectTab(appContext, it.id) }
         refreshFeature?.start()
+        fullScreenFeature?.start()
     }
 
     @MainThread
     override fun deactivate() {
         active = false
         refreshFeature?.stop()
+        fullScreenFeature?.stop()
         isRefreshing = false
     }
 
@@ -505,6 +524,8 @@ class PetalTabViewController @JvmOverloads constructor(
         active = false
         refreshFeature?.stop()
         refreshFeature = null
+        fullScreenFeature?.stop()
+        fullScreenFeature = null
         observedSession?.unregister(observer)
         observedSession = null
         tab = null

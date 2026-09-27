@@ -179,6 +179,32 @@ object PetalEngineStore {
         return Pair(tabState, session)
     }
 
+    /** Registers the prepared EngineSession supplied by an Android Components window request. */
+    @JvmStatic
+    fun adoptPreparedSession(
+        context: Context,
+        tabId: String,
+        url: String,
+        title: String,
+        isIncognito: Boolean,
+        session: mozilla.components.concept.engine.EngineSession,
+        select: Boolean = true
+    ): mozilla.components.browser.state.state.TabSessionState {
+        val tabState = mozilla.components.browser.state.state.TabSessionState(
+            id = tabId,
+            content = mozilla.components.browser.state.state.ContentState(
+                url = url,
+                private = isIncognito,
+                title = title
+            ),
+            engineState = mozilla.components.browser.state.state.EngineState(engineSession = session)
+        )
+        getStore(context).dispatch(
+            mozilla.components.browser.state.action.TabListAction.AddTabAction(tabState, select)
+        )
+        return tabState
+    }
+
     /**
      * Removes a tab from [BrowserStore].
      */
@@ -186,6 +212,13 @@ object PetalEngineStore {
     fun removeTab(context: Context, tabId: String) {
         getStore(context).dispatch(
             mozilla.components.browser.state.action.TabListAction.RemoveTabAction(tabId)
+        )
+    }
+
+    @JvmStatic
+    fun consumeWindowRequest(context: Context, tabId: String) {
+        getStore(context).dispatch(
+            mozilla.components.browser.state.action.ContentAction.ConsumeWindowRequestAction(tabId)
         )
     }
 

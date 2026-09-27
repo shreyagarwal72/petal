@@ -34,17 +34,11 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
         mediaFullscreen.stop()
     }
 
-    fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?): Boolean = false
-
     fun onPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
             REQUEST_SITE_PERMISSIONS -> sitePermissions.onPermissionsResult(permissions, grantResults)
         }
     }
-
-    fun onFullScreenBackPressed(): Boolean = false
-
-    fun onBackPressed(): Boolean = false
 
     fun onPictureInPictureModeChanged(enabled: Boolean) {
         pictureInPicture.onPictureInPictureModeChanged(enabled)
