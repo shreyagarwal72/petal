@@ -1053,10 +1053,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             return;
         }
-        if (petalBrowserFeatures != null &&
-                petalBrowserFeatures.onActivityResult(requestCode, resultCode, data)) {
-            return;
-        }
         if (requestCode == INPUT_FILE_REQUEST_CODE) {
             if (mFilePathCallback != null) {
                 Uri[] results = null;
@@ -1311,10 +1307,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        // Android Components owns fullscreen state for BrowserStore tabs. Let its feature exit
-        // fullscreen before Back is offered to the page's navigation history.
-        if (petalBrowserFeatures != null && petalBrowserFeatures.onFullScreenBackPressed()) return;
-
         // ── Tier 2: Dialogs, Search-on-site & Modal Overlays ──
         if (dialogOverview != null && dialogOverview.isShowing()) {
             hideOverview();
@@ -1342,8 +1334,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             updateBackCallbackState();
             return;
         }
-
-        if (petalBrowserFeatures != null && petalBrowserFeatures.onBackPressed()) return;
 
         // ── Tier 2.5: Clear Web Text Selection (Firefox Parity) ──
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
@@ -3024,7 +3014,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 BrowserContainer.remove(controller);
                 String tabIdToRemove = null;
                 if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
-                    tabIdToRemove = ((com.petal.browser.browser.PetalTabViewController) controller).getTabId();
+                    com.petal.browser.browser.PetalTabViewController surface =
+                            (com.petal.browser.browser.PetalTabViewController) controller;
+                    tabIdToRemove = surface.getTabId();
+                    surface.destroy();
                 } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                     tabIdToRemove = ((com.petal.browser.view.PetalGeckoView) controller).getTabId();
                     ((com.petal.browser.view.PetalGeckoView) controller).destroy();
@@ -3092,7 +3085,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             BrowserContainer.remove(controller);
             String tabIdToRemove = null;
             if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
-                tabIdToRemove = ((com.petal.browser.browser.PetalTabViewController) controller).getTabId();
+                com.petal.browser.browser.PetalTabViewController surface =
+                        (com.petal.browser.browser.PetalTabViewController) controller;
+                tabIdToRemove = surface.getTabId();
+                surface.destroy();
             } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 tabIdToRemove = ((com.petal.browser.view.PetalGeckoView) controller).getTabId();
                 com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, tabIdToRemove);
@@ -6521,6 +6517,49 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public synchronized AlbumController addAlbumForPopup(String title, final boolean isIncognito) {
         setWebView(title, null, true, isIncognito, true);
         return currentAlbumController;
+    }
+
+    /** Adds a prepared Android Components window request as a normal BrowserStore tab. */
+    public synchronized void adoptPreparedWindow(
+            com.petal.browser.browser.PetalTabViewController source,
+            mozilla.components.concept.engine.window.WindowRequest request) {
+        mozilla.components.concept.engine.EngineSession engineSession = null;
+        try {
+            engineSession = request.prepare();
+            String url = request.getUrl();
+            if (url == null || url.trim().isEmpty()) url = "about:blank";
+            boolean isIncognito = source.isIncognito();
+            String tabId = "tab_" + System.currentTimeMillis() + "_" +
+                    Math.abs(java.util.UUID.randomUUID().hashCode());
+            mozilla.components.browser.state.state.TabSessionState popupTab =
+                    com.petal.browser.engine.gecko.PetalEngineStore.adoptPreparedSession(
+                            this, tabId, url, getString(R.string.app_name),
+                            isIncognito, engineSession, true
+                    );
+
+            com.petal.browser.browser.PetalTabViewController tabSurface =
+                    new com.petal.browser.browser.PetalTabViewController(this);
+            tabSurface.bindTab(popupTab);
+            tabSurface.attachLifecycle(this);
+            observePetalTabSurface(tabSurface);
+            tabSurface.setPredecessor(source);
+            int sourceIndex = BrowserContainer.indexOf(source);
+            BrowserContainer.add(tabSurface, sourceIndex >= 0 ? sourceIndex + 1 : BrowserContainer.size());
+            hideOverview();
+            tabSurface.activate();
+            if (dialogOverview != null) dialogOverview.cancel();
+            showAlbum(tabSurface);
+            request.start();
+            updateOmniBox();
+            updatePersistentBottomNav();
+            updateBackCallbackState();
+            saveOpenedTabs();
+        } catch (Throwable error) {
+            android.util.Log.e("BrowserActivity", "Failed to adopt Android Components window request", error);
+            if (engineSession != null) {
+                try { engineSession.close(); } catch (Throwable ignored) {}
+            }
+        }
     }
 
     /**
