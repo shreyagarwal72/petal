@@ -3,11 +3,13 @@ package com.petal.browser.compose.settings.screens
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -325,8 +327,8 @@ fun PrivacySettingsScreenContent(
                             Box(
                                 modifier = Modifier
                                     .size(38.dp)
-                                    .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.CircleShape)
-                                    .androidx.compose.foundation.background(MaterialTheme.colorScheme.primaryContainer),
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -350,7 +352,7 @@ fun PrivacySettingsScreenContent(
                                 )
                             }
                             Icon(
-                                Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                                Icons.Rounded.ArrowForwardIos,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp)
