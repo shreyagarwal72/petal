@@ -247,30 +247,4 @@ dependencies {
     kapt 'com.google.dagger:hilt-compiler:2.58'
     kapt 'org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0'
     implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
-}ion 'org.mozilla.components:browser-session-storage:155.0.1'
-    implementation 'org.mozilla.components:lib-state:155.0.1'
-    implementation 'org.mozilla.components:support-base:155.0.1'
-    implementation 'org.mozilla.components:support-utils:155.0.1'
-
-    // Android Components Features (155.0.1)
-    implementation 'org.mozilla.components:feature-readerview:155.0.1'
-    implementation 'org.mozilla.components:feature-session:155.0.1'
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    implementation 'org.mozilla.components:feature-findinpage:155.0.1'
-    implementation 'org.mozilla.components:feature-sitepermissions:155.0.1'
-    implementation 'org.mozilla.components:feature-prompts:155.0.1'
-    implementation 'org.mozilla.components:feature-tabs:155.0.1'
-    implementation 'org.mozilla.components:feature-contextmenu:155.0.1'
-    implementation 'org.mozilla.components:feature-pwa:155.0.1'
-    implementation 'org.mozilla.components:feature-downloads:155.0.1'
-    implementation 'org.mozilla.components:feature-search:155.0.1'
-    implementation 'org.mozilla.components:feature-webcompat:155.0.1'
-    implementation 'org.mozilla.components:feature-customtabs:155.0.1'
-    implementation 'org.mozilla.components:feature-media:155.0.1'
-
-    // Dagger Hilt Dependency Injection
-    implementation 'com.google.dagger:hilt-android:2.58'
-    kapt 'com.google.dagger:hilt-compiler:2.58'
-    kapt 'org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0'
-    implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
 }
