@@ -3,6 +3,11 @@ apply plugin: 'com.google.devtools.ksp'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'dagger.hilt.android.plugin'
 
+def releaseStoreFile = providers.gradleProperty("RELEASE_STORE_FILE").orNull
+def releaseStorePassword = providers.gradleProperty("RELEASE_STORE_PASSWORD").orNull
+def releaseKeyAlias = providers.gradleProperty("RELEASE_KEY_ALIAS").orNull
+def releaseKeyPassword = providers.gradleProperty("RELEASE_KEY_PASSWORD").orNull
+
 android {
 
     compileSdk 36
@@ -58,10 +63,15 @@ android {
             keyPassword 'android'
         }
         release {
-            storeFile file(project.hasProperty('RELEASE_STORE_FILE') ? project.property('RELEASE_STORE_FILE') : (file('release.keystore').exists() ? 'release.keystore' : 'debug.keystore'))
-            storePassword project.hasProperty('RELEASE_STORE_PASSWORD') ? project.property('RELEASE_STORE_PASSWORD') : 'android'
-            keyAlias project.hasProperty('RELEASE_KEY_ALIAS') ? project.property('RELEASE_KEY_ALIAS') : (file('release.keystore').exists() ? 'releasekey' : 'androiddebugkey')
-            keyPassword project.hasProperty('RELEASE_KEY_PASSWORD') ? project.property('RELEASE_KEY_PASSWORD') : 'android'
+            if (releaseStoreFile &&
+                releaseStorePassword &&
+                releaseKeyAlias &&
+                releaseKeyPassword) {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
             v1SigningEnabled true
             v2SigningEnabled true
         }
