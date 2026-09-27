@@ -11,6 +11,9 @@ import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.DownloadMiddleware
+import mozilla.components.feature.prompts.PromptMiddleware
+import mozilla.components.feature.prompts.file.FileUploadsDirCleaner
+import mozilla.components.feature.prompts.file.FileUploadsDirCleanerMiddleware
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import org.mozilla.geckoview.GeckoRuntime
 
@@ -38,6 +41,9 @@ object PetalEngineStore {
 
     @Volatile
     private var autoSave: AutoSave? = null
+
+    @Volatile
+    private var fileUploadsDirCleaner: FileUploadsDirCleaner? = null
 
     private val mainScope = MainScope()
 
@@ -82,10 +88,15 @@ object PetalEngineStore {
             downloadFileUtils = DefaultDownloadFileUtils(appContext),
             deleteFileFromStorage = { true }
         )
+        val uploadCleaner = getFileUploadsDirCleaner(appContext)
 
         val newStore = BrowserStore(
             initialState = BrowserState(),
-            middleware = engineMiddleware + listOf(downloadMiddleware)
+            middleware = listOf(
+                downloadMiddleware,
+                PromptMiddleware(),
+                FileUploadsDirCleanerMiddleware(uploadCleaner)
+            ) + engineMiddleware
         )
         store = newStore
         Log.i(TAG, "Initialized Mozilla BrowserStore with EngineMiddleware and DownloadMiddleware")
@@ -106,6 +117,15 @@ object PetalEngineStore {
         autoSave = storage.autoSave(currentStore)
         Log.i(TAG, "Initialized Mozilla SessionStorage with AutoSave")
         return storage
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getFileUploadsDirCleaner(context: Context): FileUploadsDirCleaner {
+        fileUploadsDirCleaner?.let { return it }
+        return FileUploadsDirCleaner { context.applicationContext.cacheDir }.also {
+            fileUploadsDirCleaner = it
+        }
     }
 
     @JvmStatic

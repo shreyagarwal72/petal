@@ -215,6 +215,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * Must be set BEFORE presentComposeScreen() and cleared by performBackNavigation().
      */
     public Runnable pendingOverlayBackAction = null;
+    private com.petal.browser.browser.PetalBrowserFeatures petalBrowserFeatures;
     public LinearLayout tab_container;
     public FrameLayout fullscreenHolder;
     public com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
@@ -978,6 +979,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onStart() {
         super.onStart();
+        if (petalBrowserFeatures == null) {
+            petalBrowserFeatures = new com.petal.browser.browser.PetalBrowserFeatures(this);
+        }
+        petalBrowserFeatures.start();
         try {
             com.petal.browser.account.GoogleAccountManager.INSTANCE.init(this);
             com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance().initialize(this);
@@ -1029,6 +1034,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             return;
         }
+        if (petalBrowserFeatures != null &&
+                petalBrowserFeatures.onActivityResult(requestCode, resultCode, data)) {
+            return;
+        }
         if (requestCode == INPUT_FILE_REQUEST_CODE) {
             if (mFilePathCallback != null) {
                 Uri[] results = null;
@@ -1057,6 +1066,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 mFilePathCallback = null;
             }
             return;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (petalBrowserFeatures != null) {
+            petalBrowserFeatures.onPermissionsResult(requestCode, permissions, grantResults);
         }
     }
 
@@ -1137,6 +1155,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onStop() {
+        if (petalBrowserFeatures != null) petalBrowserFeatures.stop();
         try {
             if (isFinishing() && sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
                 BrowserUnit.clearOnExit(this);
@@ -1300,6 +1319,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             updateBackCallbackState();
             return;
         }
+
+        if (petalBrowserFeatures != null && petalBrowserFeatures.onBackPressed()) return;
 
         // ── Tier 2.5: Clear Web Text Selection (Firefox Parity) ──
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
