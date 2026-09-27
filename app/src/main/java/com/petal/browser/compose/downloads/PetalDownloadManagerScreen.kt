@@ -684,7 +684,6 @@ fun PetalDownloadManagerScreen(
 }
 }
 }
-}
 
 
 @OptIn(ExperimentalFoundationApi::class)
