@@ -17,6 +17,10 @@ import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.session.FullScreenFeature
 import mozilla.components.feature.session.SwipeRefreshFeature
+import mozilla.components.feature.tabs.TabsUseCases
+import mozilla.components.feature.contextmenu.ContextMenuCandidate
+import mozilla.components.feature.contextmenu.ContextMenuFeature
+import mozilla.components.feature.contextmenu.ContextMenuUseCases
 
 /**
  * A browser tab surface backed by Android Components' engine abstractions.
@@ -57,6 +61,7 @@ class PetalTabViewController private constructor(
     private val preferences by lazy { PreferenceManager.getDefaultSharedPreferences(appContext) }
     private var refreshFeature: SwipeRefreshFeature? = null
     private var fullScreenFeature: FullScreenFeature? = null
+    private var contextMenuFeature: ContextMenuFeature? = null
     private var attachedLifecycle: Lifecycle? = null
     private val engineLifecycleObserver = mozilla.components.concept.engine.LifecycleObserver(this)
 
@@ -301,6 +306,84 @@ class PetalTabViewController private constructor(
         engineView.render(session)
         session.register(observer)
         com.petal.browser.extensions.PetalExtensionManager.attachSession(getGeckoSession())
+        val contextMenuUseCases = ContextMenuUseCases(browserStore)
+        val tabsUseCases = TabsUseCases(browserStore)
+        val contextCandidates = ContextMenuCandidate.defaultCandidates(
+            context = context,
+            tabsUseCases = tabsUseCases,
+            contextMenuUseCases = contextMenuUseCases,
+            snackBarParentView = this,
+            downloadsLocation = {
+                android.os.Environment.getExternalStoragePublicDirectory(
+                    android.os.Environment.DIRECTORY_DOWNLOADS
+                ).absolutePath
+            }
+        ).filterNot { candidate ->
+            candidate.id == "mozac.feature.contextmenu.open_in_new_tab" ||
+                candidate.id == "mozac.feature.contextmenu.open_in_private_tab" ||
+                candidate.id == "mozac.feature.contextmenu.open_image_in_new_tab"
+        }.toMutableList()
+        contextCandidates.add(
+            ContextMenuCandidate(
+                id = "petal.contextmenu.open_in_new_tab",
+                label = context.getString(
+                    mozilla.components.feature.contextmenu.R.string.mozac_feature_contextmenu_open_link_in_new_tab
+                ),
+                showFor = { tabState, hitResult ->
+                    !tabState.content.private &&
+                        contextMenuLink(hitResult).startsWith("http", ignoreCase = true)
+                },
+                action = { _, hitResult ->
+                    (context as? com.petal.browser.activity.BrowserActivity)?.addAlbum(
+                        null, contextMenuLink(hitResult), false, false
+                    )
+                }
+            )
+        )
+        contextCandidates.add(
+            ContextMenuCandidate(
+                id = "petal.contextmenu.open_in_private_tab",
+                label = context.getString(
+                    mozilla.components.feature.contextmenu.R.string.mozac_feature_contextmenu_open_link_in_private_tab
+                ),
+                showFor = { _, hitResult ->
+                    contextMenuLink(hitResult).startsWith("http", ignoreCase = true)
+                },
+                action = { _, hitResult ->
+                    (context as? com.petal.browser.activity.BrowserActivity)?.addAlbum(
+                        null, contextMenuLink(hitResult), false, true
+                    )
+                }
+            )
+        )
+        contextCandidates.add(
+            ContextMenuCandidate(
+                id = "petal.contextmenu.open_image_in_new_tab",
+                label = context.getString(
+                    mozilla.components.feature.contextmenu.R.string.mozac_feature_contextmenu_open_image_in_new_tab
+                ),
+                showFor = { _, hitResult ->
+                    (hitResult is mozilla.components.concept.engine.HitResult.IMAGE ||
+                        hitResult is mozilla.components.concept.engine.HitResult.IMAGE_SRC) &&
+                        hitResult.src.startsWith("http", ignoreCase = true)
+                },
+                action = { tabState, hitResult ->
+                    (context as? com.petal.browser.activity.BrowserActivity)?.addAlbum(
+                        null, hitResult.src, false, tabState.content.private
+                    )
+                }
+            )
+        )
+        contextMenuFeature?.stop()
+        contextMenuFeature = ContextMenuFeature(
+            fragmentManager = (context as? androidx.fragment.app.FragmentActivity)?.supportFragmentManager
+                ?: return,
+            store = browserStore,
+            candidates = contextCandidates,
+            engineView = engineView,
+            useCases = contextMenuUseCases,
+            tabId = tab.id
+        )
         refreshFeature = SwipeRefreshFeature(
             store = browserStore,
             reloadUrlUseCase = SessionUseCases(browserStore).reload,
@@ -311,6 +394,7 @@ class PetalTabViewController private constructor(
             PetalEngineStore.selectTab(appContext, tab.id)
             refreshFeature?.start()
             fullScreenFeature?.start()
+            contextMenuFeature?.start()
         }
         publishState()
     }
@@ -381,6 +465,13 @@ class PetalTabViewController private constructor(
     fun clearFindMatches() {
         observedSession?.clearFindMatches()
     }
+
+    private fun contextMenuLink(hitResult: mozilla.components.concept.engine.HitResult): String =
+        when (hitResult) {
+            is mozilla.components.concept.engine.HitResult.UNKNOWN -> hitResult.src
+            is mozilla.components.concept.engine.HitResult.IMAGE_SRC -> hitResult.uri
+            else -> ""
+        }
 
     fun stopLoading() {
         observedSession?.stopLoading()
@@ -504,6 +595,7 @@ class PetalTabViewController private constructor(
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(null, getGeckoSession())
         refreshFeature?.start()
         fullScreenFeature?.start()
+        contextMenuFeature?.start()
     }
 
     @MainThread
@@ -512,6 +604,7 @@ class PetalTabViewController private constructor(
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
         refreshFeature?.stop()
         fullScreenFeature?.stop()
+        contextMenuFeature?.stop()
         isRefreshing = false
     }
 
@@ -529,6 +622,8 @@ class PetalTabViewController private constructor(
         refreshFeature = null
         fullScreenFeature?.stop()
         fullScreenFeature = null
+        contextMenuFeature?.stop()
+        contextMenuFeature = null
         observedSession?.unregister(observer)
         observedSession = null
         tab = null
