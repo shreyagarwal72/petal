@@ -530,7 +530,7 @@ private fun RenderUserProfileContent(
                 val securityItemCount = 3
                 val isLockActive = sp.getBoolean("sp_app_lock_enabled", false)
                 var isClearOnExit by remember { mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) }
-                var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
+                var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", false)) }
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),

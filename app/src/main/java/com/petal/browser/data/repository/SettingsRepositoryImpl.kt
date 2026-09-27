@@ -183,7 +183,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val httpsOnly: Flow<Boolean> = preferenceFlow("sp_https_only") {
-        sp.getBoolean("sp_https_only", true)
+        sp.getBoolean("sp_https_only", false)
     }
 
     override val javaScriptEnabled: Flow<Boolean> = preferenceFlow("sp_javascript") {

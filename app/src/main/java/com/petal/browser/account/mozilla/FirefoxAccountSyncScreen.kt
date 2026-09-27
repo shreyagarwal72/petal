@@ -105,7 +105,7 @@ fun FirefoxAccountSyncScreen(
         mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))
     }
     var isHttpsOnly by remember {
-        mutableStateOf(sp.getBoolean("sp_https_only", true))
+        mutableStateOf(sp.getBoolean("sp_https_only", false))
     }
 
     // Engine states

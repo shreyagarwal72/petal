@@ -53,7 +53,7 @@ fun PetalConfigSheet(
             ConfigFlag("sp_webgl", "webgl.enabled", "Hardware-accelerated 3D WebGL graphics pipeline", true),
             ConfigFlag("sp_webrtc_protection", "media.peerconnection.enabled", "WebRTC IP leak shield & candidate gathering", true),
             ConfigFlag("sp_dnt_gpc", "privacy.globalprivacycontrol.enabled", "Do Not Track and Global Privacy Control signals", true),
-            ConfigFlag("sp_https_only", "dom.security.https_only_mode", "Enforce HTTPS encryption on all connections", true),
+            ConfigFlag("sp_https_only", "dom.security.https_only_mode", "Enforce HTTPS encryption on all connections", false),
             ConfigFlag("sp_cookies_isolate", "network.cookie.cookieBehavior", "Strict first-party cookie isolation (Total Cookie Protection)", true),
             ConfigFlag("sp_high_refresh_rate", "layout.frame_rate", "Force 90Hz / 120Hz display refresh rate", true),
             ConfigFlag("sp_force_zoom", "browser.viewport.force_zoom", "Allow pinch-to-zoom on sites with viewport restrictions", true),

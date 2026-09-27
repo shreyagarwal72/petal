@@ -576,7 +576,7 @@ public class NinjaWebViewClient extends WebViewClient {
             return true;
         }
 
-        boolean isHttpsOnly = sp.getBoolean("sp_https_only", true);
+        boolean isHttpsOnly = sp.getBoolean("sp_https_only", false);
         if (isHttpsOnly && url.startsWith("http://")) {
             String httpsUrl = "https://" + url.substring(7);
             view.loadUrl(httpsUrl);
