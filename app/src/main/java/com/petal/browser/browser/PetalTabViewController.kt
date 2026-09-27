@@ -330,6 +330,7 @@ class PetalTabViewController @JvmOverloads constructor(
     }
 
     fun reload() {
+        applyPageSettings(pageUrl)
         observedSession?.reload()
     }
 
