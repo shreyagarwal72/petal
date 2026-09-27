@@ -88,6 +88,13 @@ object PetalBuiltInExtensionManager {
             label       = "Petal Media Grabber",
             description = "Detects and captures media streams (video/audio) playing on any website for download.",
             prefKey     = "petal_builtin_media_grabber"
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/petal_password_autofill/",
+            extensionId = "petal-password-autofill@petalbrowser.app",
+            label       = "Petal Password Manager & Autofill",
+            description = "Detects login forms and integrates with Petal's encrypted local password vault.",
+            prefKey     = "petal_builtin_password_autofill"
         )
     )
 
