@@ -501,6 +501,7 @@ class PetalTabViewController private constructor(
     override fun activate() {
         active = true
         tab?.let { PetalEngineStore.selectTab(appContext, it.id) }
+        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(null, getGeckoSession())
         refreshFeature?.start()
         fullScreenFeature?.start()
     }
@@ -508,6 +509,7 @@ class PetalTabViewController private constructor(
     @MainThread
     override fun deactivate() {
         active = false
+        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
         refreshFeature?.stop()
         fullScreenFeature?.stop()
         isRefreshing = false
@@ -522,6 +524,7 @@ class PetalTabViewController private constructor(
     override fun destroy() {
         val removedTabId = tab?.id
         active = false
+        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
         refreshFeature?.stop()
         refreshFeature = null
         fullScreenFeature?.stop()
