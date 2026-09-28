@@ -540,6 +540,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * splash fades away, so the splash dissolves into the ripple instead of cutting to the app.
      */
     private void playSplashExitWithRipple(androidx.core.splashscreen.SplashScreenViewProvider provider) {
+        try {
+            playSplashExitWithRippleInternal(provider);
+        } catch (Throwable t) {
+            // If anything in the custom exit animation throws, the splash view would otherwise stay on
+            // top of the app forever and the window would look blank/black. Always drop it.
+            Log.w(TAG, "Splash exit animation failed; removing splash immediately", t);
+            splashRipplePending = false;
+            try { provider.remove(); } catch (Throwable ignored) {}
+        }
+    }
+
+    private void playSplashExitWithRippleInternal(androidx.core.splashscreen.SplashScreenViewProvider provider) {
         final View splashView = provider.getView();
         // Android 16 can hand back a splash provider whose icon view has already
         // been detached during the exit callback. Treat it as unavailable and
