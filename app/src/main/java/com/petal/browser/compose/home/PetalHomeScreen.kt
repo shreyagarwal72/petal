@@ -41,6 +41,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -79,6 +80,9 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.components.homeLaunchEntrance
+import com.petal.browser.ui.containment.PetalFloatingToolbar
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.mediumIncreased
@@ -681,9 +685,9 @@ fun PetalHomeScreen(
                                     ) {
                                         collections.forEach { col ->
                                             var isExpanded by remember { mutableStateOf(false) }
-                                            Surface(
+                                            PetalHeroCard(
                                                 shape = RoundedCornerShape(20.dp),
-                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
                                                 Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
@@ -1119,11 +1123,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
         label = "search_bar_press_scale"
     )
 
-    Surface(
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        tonalElevation = 4.dp,
-        shadowElevation = 6.dp,
+    PetalFloatingToolbar(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 64.dp)
@@ -1132,12 +1132,8 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
             .clickable(
                 interactionSource = interactionSource,
                 indication = androidx.compose.foundation.LocalIndication.current
-            ) { onSearch("") },
+            ) { onSearch("") }
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 18.dp),
-        ) {
             Icon(
                 imageVector = Icons.Rounded.Search,
                 contentDescription = "Search",
@@ -1178,8 +1174,6 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-        }
-    }
 }
 
 // ── 6b. Greeting Tagline ─────────────────────────────────────────────────────
@@ -1268,11 +1262,9 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         }
     }
 
-    Surface(
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 10.dp, bottomEnd = 28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        shadowElevation = 2.dp,
+    PetalHeroCard(
+        shape = RoundedCornerShape(32.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
@@ -1285,20 +1277,7 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Rounded.AutoAwesome,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
+            PetalGroupIconBadge(Icons.Filled.AutoAwesome, modifier = Modifier.size(36.dp), size = 36.dp, iconSize = 20.dp)
 
             Spacer(Modifier.width(14.dp))
 
@@ -1470,7 +1449,7 @@ private fun EditShortcutDialog(
         matched?.toShape() ?: PetalMaterialShapes.Flower.toShape()
     }
 
-    AlertDialog(
+    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(dialogTitle) },
         text = {

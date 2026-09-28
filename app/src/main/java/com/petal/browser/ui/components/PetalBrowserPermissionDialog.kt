@@ -49,6 +49,10 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupPosition
 
 object PetalBrowserPermissionDialog {
     private const val PREF_LAST_PERMISSION_DIALOG_TIME = "sp_last_permission_dialog_time"
@@ -374,23 +378,17 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             Spacer(Modifier.height(20.dp))
 
             // Zenith-style grouped permission list with connected shapes
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                val totalCount = permissionItems.size
-                permissionItems.forEachIndexed { index, item ->
-                    val shape = getGroupItemShape(index, totalCount)
-                    ZenithPermissionItemRow(
-                        title = item.title,
-                        description = item.description,
-                        icon = item.icon,
-                        isGranted = item.isGranted,
-                        actionText = item.actionText,
-                        shape = shape,
-                        onGrant = item.onGrant
-                    )
-                }
+            PetalGroup(rowCount = permissionItems.size, modifier = Modifier.fillMaxWidth()) { index, position ->
+                val item = permissionItems[index]
+                ZenithPermissionItemRow(
+                    title = item.title,
+                    description = item.description,
+                    icon = item.icon,
+                    isGranted = item.isGranted,
+                    actionText = item.actionText,
+                    position = position,
+                    onGrant = item.onGrant
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -452,96 +450,32 @@ private fun ZenithPermissionItemRow(
     icon: ImageVector,
     isGranted: Boolean,
     actionText: String = "Grant",
-    shape: androidx.compose.ui.graphics.Shape,
+    position: PetalGroupPosition,
     onGrant: () -> Unit
 ) {
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isGranted) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerLow
+    PetalGroupListRow(
+        position = position,
+        selected = isGranted,
+        onClick = { if (!isGranted) onGrant() },
+        leading = {
+            PetalGroupIconBadge(
+                icon = icon,
+                container = if (isGranted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                tint = if (isGranted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+            )
         },
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "bgColor"
-    )
-
-    Surface(
-        onClick = if (!isGranted) onGrant else ({}),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape),
-        shape = shape,
-        color = backgroundColor
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 64.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(
-                        if (isGranted) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(22.dp),
-                    tint = if (isGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(Modifier.width(16.dp))
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isGranted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isGranted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
-                )
-            }
-
-            Spacer(Modifier.width(12.dp))
-
+        content = {
+            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+        trailing = {
             if (isGranted) {
-                Icon(
-                    imageVector = Icons.Outlined.CheckCircle,
-                    contentDescription = "Granted",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
+                Icon(Icons.Outlined.CheckCircle, contentDescription = "Granted", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             } else {
-                Surface(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = CircleShape,
-                    modifier = Modifier.clickable(onClick = onGrant)
-                ) {
-                    Text(
-                        text = actionText,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.labelMedium
-                    )
+                FilledTonalButton(onClick = onGrant, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
+                    Text(actionText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                 }
             }
-        }
-    }
+        },
+    )
 }

@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -93,7 +95,7 @@ fun DownloadSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Download Deletion Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Download deletion",
                     icon = Icons.Rounded.Delete,
                     cardId = "misc_download_delete",
@@ -122,7 +124,7 @@ fun DownloadSettingsScreenContent(
                 }
 
                 // Default Download Manager Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Default Download Manager",
                     icon = Icons.Rounded.Download,
                     cardId = "misc_download",
@@ -188,7 +190,7 @@ fun DownloadSettingsScreenContent(
                     )
 
                     if (showPermissionDialog) {
-                        AlertDialog(
+                        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                             onDismissRequest = { showPermissionDialog = false },
                             icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
                             title = { Text(text = "Enable Live Notifications") },
@@ -218,7 +220,7 @@ fun DownloadSettingsScreenContent(
                     }
 
                     if (showPromotedSettingsDialog) {
-                        AlertDialog(
+                        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                             onDismissRequest = { showPromotedSettingsDialog = false },
                             icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
                             title = { Text(text = "Promoted Live Updates") },

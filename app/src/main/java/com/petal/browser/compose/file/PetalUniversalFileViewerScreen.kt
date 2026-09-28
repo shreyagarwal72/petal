@@ -29,6 +29,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -1098,27 +1099,22 @@ private fun ErrorDisplayBox(error: String) {
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
+        com.petal.browser.ui.containment.PetalHeroCard(
             shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.errorContainer,
-            modifier = Modifier.fillMaxWidth()
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                com.petal.browser.ui.components.PetalShapeIconBadge(
-                    shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
-                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
-                    contentColor = MaterialTheme.colorScheme.error,
+                com.petal.browser.ui.containment.PetalGroupIconBadge(
+                    icon = Icons.Filled.ErrorOutline,
+                    container = MaterialTheme.colorScheme.onErrorContainer,
+                    tint = MaterialTheme.colorScheme.errorContainer,
                     size = 72.dp,
                     iconSize = 36.dp,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ErrorOutline,
-                        contentDescription = null,
-                    )
-                }
+                )
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = "Cannot View File",

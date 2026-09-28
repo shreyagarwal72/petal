@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -179,7 +181,7 @@ fun DisplaySettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Navigation Safeguards Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Navigation Safeguards",
                     icon = Icons.Rounded.ExitToApp,
                     cardId = "nav_safeguards",
@@ -195,7 +197,7 @@ fun DisplaySettingsScreenContent(
                 }
 
                 // Apple Duo (BETA) Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Apple Duo (BETA)",
                     icon = Icons.Rounded.Animation,
                     cardId = "apple_duo",
@@ -397,7 +399,7 @@ fun DisplaySettingsScreenContent(
                     }
                 }
                 // Accessibility & Display Options Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Accessibility & Display Options",
                     iconRes = com.petal.browser.R.drawable.mobile_vibrate_filled,
                     cardId = "display",

@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import android.app.Activity
 import android.content.Context
 import android.os.Build
@@ -188,7 +190,7 @@ fun AppearanceSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Section 1: App Theme & Dynamic Color Palette
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Theme & Color Palette",
                     iconRes = com.petal.browser.R.drawable.brightness_medium_filled,
                     cardId = "appearance_theme",
@@ -424,7 +426,7 @@ fun AppearanceSettingsScreenContent(
                 }
 
                 // Section 2: Custom Fonts & Typography
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Typography & Fonts",
                     iconRes = com.petal.browser.R.drawable.database_filled,
                     cardId = "appearance_font",
@@ -549,7 +551,7 @@ fun AppearanceSettingsScreenContent(
                 }
 
                 // Section 3: Layout & Ambient Morphing Shapes
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Layout & Expressive Motion",
                     iconRes = com.petal.browser.R.drawable.layers_filled,
                     cardId = "appearance_layout",
@@ -636,7 +638,7 @@ fun AppearanceSettingsScreenContent(
                 }
 
                 // Section 4: Display Refresh Rate & Performance
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Display & Performance",
                     icon = Icons.Rounded.Speed,
                     cardId = "appearance_refresh",

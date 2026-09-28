@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -112,7 +114,7 @@ fun UpdaterSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // ── Section 1: Inbuilt Update Engine & Tracker ──
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Update Tracker & Releases",
                     iconRes = com.petal.browser.R.drawable.update_rounded
                 ) {
@@ -248,7 +250,7 @@ fun UpdaterSettingsScreenContent(
                 }
 
                 // ── Section 2: Crash Reporting & Diagnostic Tracker (Inspired by Essentials) ──
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Crash Reporting & Diagnostics",
                     icon = Icons.Rounded.BugReport
                 ) {

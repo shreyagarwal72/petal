@@ -207,7 +207,7 @@ private fun PetalMediaSheet(
     var socialState    by remember { mutableStateOf<SocialState>(SocialState.Idle) }
     var formatMenuOpen by remember { mutableStateOf(false) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    com.petal.browser.ui.containment.PetalSheet(onDismissRequest = onDismiss) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()

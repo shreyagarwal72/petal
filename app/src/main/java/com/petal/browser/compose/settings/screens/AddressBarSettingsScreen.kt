@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -48,7 +50,7 @@ fun AddressBarSettingsScreen(
                 Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                SettingsCategoryCard("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
+                PetalSettingsSection("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
                     Text("Choose where the compact address bar is placed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     com.petal.browser.ui.components.WireframeOptionPicker(
@@ -134,7 +136,7 @@ fun AddressBarSettingsScreen(
                     )
                 }
 
-                SettingsCategoryCard("Size", icon = Icons.Rounded.ViewCompact, cardId = "address_bar_size", targetHighlightId = targetHighlightItemId) {
+                PetalSettingsSection("Size", icon = Icons.Rounded.ViewCompact, cardId = "address_bar_size", targetHighlightId = targetHighlightItemId) {
                     Text("Compact is the recommended short-height layout.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     ChoiceRow(
@@ -144,7 +146,7 @@ fun AddressBarSettingsScreen(
                     )
                 }
 
-                SettingsCategoryCard("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
+                PetalSettingsSection("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
                     Text("Choose the optional action shown beside the address field.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     ChoiceRow(
@@ -154,7 +156,7 @@ fun AddressBarSettingsScreen(
                     )
                 }
 
-                SettingsCategoryCard("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
+                PetalSettingsSection("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
                     ToggleRow(
                         title = "Address Bar Horizontal Swipe to Switch Tabs",
                         subtitle = "Swipe left or right across the address bar pill to fluidly switch between open tabs",

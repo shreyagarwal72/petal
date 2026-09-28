@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.horizontalScroll
@@ -84,7 +86,7 @@ fun ApiIntegrationsSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Dedicated Petal AI & API Keys Hub Card
-                SettingsCategoryCard(title = "Petal AI & API Keys Hub", iconRes = com.petal.browser.R.drawable.ic_ai_stars, cardId = "ai_provider", targetHighlightId = targetHighlightItemId) {
+                PetalSettingsSection(title = "Petal AI & API Keys Hub", iconRes = com.petal.browser.R.drawable.ic_ai_stars, cardId = "ai_provider", targetHighlightId = targetHighlightItemId) {
                     Text(
                         "Configure AI providers, API keys, and model selections for Petal Deep Research, AI Search, and page summarizer.",
                         style = MaterialTheme.typography.bodySmall,
@@ -361,7 +363,7 @@ fun ApiIntegrationsSettingsScreenContent(
     }
 
     if (showCustomAiGuide) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showCustomAiGuide = false },
             title = { Text("Connect any OpenAI-compatible AI") },
             text = { Text("1. Choose Custom AI.\n\n2. From your provider dashboard, copy its OpenAI-compatible base URL (for example https://provider.example/v1). Petal adds /chat/completions automatically.\n\n3. Create and paste an API key if the provider requires one; local servers may leave it blank.\n\n4. Enter the exact model ID shown by the provider, or use Fetch Models.\n\n5. Tap Test Connection before using Petal AI.\n\nUse HTTPS for internet providers. HTTP is allowed only for private/local network servers such as Ollama or LM Studio.") },

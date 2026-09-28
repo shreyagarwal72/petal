@@ -86,11 +86,8 @@ fun PetalProfileSwitchSheet(
         "#FF5722" to "Vibrant Orange"
     )
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismissRequest,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier

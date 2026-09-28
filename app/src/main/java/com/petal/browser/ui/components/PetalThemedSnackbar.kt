@@ -134,38 +134,9 @@ fun PetalThemedSnackbarHost(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     actionColor: Color = MaterialTheme.colorScheme.primary
 ) {
-    SnackbarHost(
+    com.petal.browser.ui.containment.PetalSnackbarHost(
         hostState = hostState,
-        modifier = modifier
-    ) { data ->
-        val dismissState = rememberSwipeToDismissBoxState(
-            confirmValueChange = { value ->
-                if (value != SwipeToDismissBoxValue.Settled) {
-                    data.dismiss()
-                    true
-                } else {
-                    false
-                }
-            }
-        )
-        SwipeToDismissBox(
-            state = dismissState,
-            backgroundContent = {},
-            modifier = Modifier.pointerInput(data) {
-                detectVerticalDragGestures { _, dragAmount ->
-                    if (dragAmount > 12f) { // Swiped downwards to dismiss
-                        data.dismiss()
-                    }
-                }
-            }
-        ) {
-            PetalThemedSnackbar(
-                snackbarData = data,
-                shape = shape,
-                containerColor = containerColor,
-                contentColor = contentColor,
-                actionColor = actionColor
-            )
-        }
-    }
+        modifier = modifier,
+        actionColor = actionColor,
+    )
 }

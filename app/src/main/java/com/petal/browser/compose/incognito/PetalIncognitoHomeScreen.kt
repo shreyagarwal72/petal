@@ -54,6 +54,8 @@ import com.petal.browser.ui.components.PetalAiSearchBridge
 import com.petal.browser.ui.components.PetalVoiceSearchBridge
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
+import com.petal.browser.ui.containment.PetalFloatingToolbar
+import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.theme.PetalIncognitoTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
@@ -336,10 +338,9 @@ fun PetalIncognitoHomeScreen(
                         Spacer(Modifier.height(18.dp))
 
                         // ── 6. Third-Party Cookies Expressive Control Card ──
-                        Surface(
+                        PetalHeroCard(
                             shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            tonalElevation = 2.dp,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .entrance(index = 6)
@@ -413,7 +414,7 @@ fun PetalIncognitoHomeScreen(
 
             // ── Learn More Expressive Dialog ──
             if (showLearnMoreDialog) {
-                AlertDialog(
+                com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                     onDismissRequest = { showLearnMoreDialog = false },
                     shape = RoundedCornerShape(28.dp),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -483,14 +484,11 @@ private fun IncognitoDecoySearchBar(
         label = "incognito_search_scale"
     )
 
-    Surface(
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        tonalElevation = 3.dp,
-        shadowElevation = 3.dp,
+    PetalFloatingToolbar(
+        elevation = 6.dp,
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .heightIn(min = 56.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(RoundedCornerShape(32.dp))
             .clickable(
@@ -498,12 +496,6 @@ private fun IncognitoDecoySearchBar(
                 indication = androidx.compose.foundation.LocalIndication.current
             ) { onSearch() }
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
             Icon(
                 imageVector = Icons.Rounded.Search,
                 contentDescription = "Search",
@@ -561,7 +553,6 @@ private fun IncognitoDecoySearchBar(
                     modifier = Modifier.size(19.dp)
                 )
             }
-        }
     }
 }
 

@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -85,7 +87,7 @@ fun MiscSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // External Applications & Tools Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Snap Photo Scanner",
                     icon = Icons.Rounded.QrCodeScanner,
                     cardId = "misc_snap_photo",
@@ -115,7 +117,7 @@ fun MiscSettingsScreenContent(
                 }
 
                 // External Applications & Custom Tabs Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Custom Tabs & External Links",
                     icon = Icons.Rounded.OpenInBrowser,
                     cardId = "misc_apps",

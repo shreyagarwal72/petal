@@ -121,13 +121,9 @@ fun PetalAiResearchSheet(
         label = "keyChevron"
     )
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 6.dp,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant) }
     ) {
         Column(
             modifier = Modifier

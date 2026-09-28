@@ -128,7 +128,7 @@ fun PetalCrashRecoveryHost(
     if (showCrashDialog) {
         val crashReport = remember { PetalAppLogger.getLastCrashReport() ?: "" }
 
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = handleDismiss,
             icon = {
                 Surface(

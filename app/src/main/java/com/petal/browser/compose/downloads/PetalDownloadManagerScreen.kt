@@ -49,7 +49,7 @@ import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.PetalThemedSnackbarHost
+import com.petal.browser.ui.containment.PetalSnackbarHost
 import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -81,6 +81,9 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.petalGroupPositionFor
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
@@ -287,7 +290,7 @@ fun PetalDownloadManagerScreen(
         showNotificationPermissionDialog = permissionMissing || notificationsDisabled
     }
     if (showNotificationPermissionDialog) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showNotificationPermissionDialog = false },
             icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
             title = { Text("Enable download tracking") },
@@ -376,7 +379,7 @@ fun PetalDownloadManagerScreen(
     }
 
     if (pendingDeleteItems.isNotEmpty()) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { pendingDeleteItems = emptyList() },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -462,7 +465,7 @@ fun PetalDownloadManagerScreen(
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             snackbarHost = {
-                PetalThemedSnackbarHost(
+                PetalSnackbarHost(
                     hostState = snackbarHostState,
                     modifier = Modifier.padding(16.dp)
                 )
@@ -518,7 +521,7 @@ fun PetalDownloadManagerScreen(
                                 contentDescription = "Sort Downloads",
                                 onClick = { sortMenuExpanded = true }
                             )
-                            DropdownMenu(
+                            com.petal.browser.ui.containment.PetalPopupMenu(
                                 expanded = sortMenuExpanded,
                                 onDismissRequest = { sortMenuExpanded = false }
                             ) {
@@ -574,6 +577,7 @@ fun PetalDownloadManagerScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
                     contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {
                     if (autoPreviewDownloadedImages) {
@@ -602,6 +606,7 @@ fun PetalDownloadManagerScreen(
                                 item = item,
                                 isSelected = isSelected,
                                 isSelectionMode = isSelectionMode,
+                                position = petalGroupPositionFor(index, items.size),
                                 showFullDate = (sortOption != DownloadSortOption.DATE_DESC && sortOption != DownloadSortOption.DATE_ASC),
                                 modifier = Modifier
                                     .entrance(index = index, playKey = item.id)
@@ -727,7 +732,7 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                         if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)))
                         else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
                     }
-                    DropdownMenu(expanded = menuItem?.id == item.id, onDismissRequest = { menuItem = null }) {
+                    com.petal.browser.ui.containment.PetalPopupMenu(expanded = menuItem?.id == item.id, onDismissRequest = { menuItem = null }) {
                         DropdownMenuItem(text = { Text("View Image") }, leadingIcon = { Icon(Icons.Rounded.Image, null) }, onClick = {
                             menuItem = null
                             val activity = context as? com.petal.browser.activity.BrowserActivity
@@ -770,6 +775,7 @@ private fun DownloadRowItem(
     item: DownloadItem,
     isSelected: Boolean,
     isSelectionMode: Boolean,
+    position: PetalGroupPosition,
     showFullDate: Boolean = false,
     modifier: Modifier = Modifier,
     onToggleSelect: () -> Unit,
@@ -785,7 +791,7 @@ private fun DownloadRowItem(
     var renameInput by remember { mutableStateOf(item.fileName) }
 
     if (showDeleteDialog) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -807,7 +813,7 @@ private fun DownloadRowItem(
 
 
     if (showRenameDialog) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showRenameDialog = false },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -864,38 +870,17 @@ private fun DownloadRowItem(
         )
     }
 
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surfaceContainerLow,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .combinedClickable(
-                onClick = {
-                    if (isSelectionMode) {
-                        onToggleSelect()
-                    } else if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
-                        onOpenFile()
-                    }
-                },
-                onLongClick = onLongClick
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 56.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+    PetalGroupListRow(
+        position = position,
+        selected = isSelected,
+        onClick = {
+            if (isSelectionMode) onToggleSelect()
+            else if (item.status == DownloadManager.STATUS_SUCCESSFUL) onOpenFile()
+        },
+        onLongClick = onLongClick,
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        leading = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 if (isSelectionMode) {
                     Checkbox(
                         checked = isSelected,
@@ -920,14 +905,10 @@ private fun DownloadRowItem(
                         }
                     }
                 )
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Two-line text column: Title & Subtitle
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Center
-                ) {
+            }
+        },
+        content = {
+            Column(verticalArrangement = Arrangement.Center) {
                     Text(
                         text = item.fileName,
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
@@ -974,9 +955,9 @@ private fun DownloadRowItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
-
-                // Far right vertical 3-dot overflow menu button
+            }
+        },
+        trailing = {
                 Box {
                     IconButton(
                         onClick = { menuExpanded = true },
@@ -989,7 +970,7 @@ private fun DownloadRowItem(
                         )
                     }
 
-                    DropdownMenu(
+                    com.petal.browser.ui.containment.PetalPopupMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
@@ -1067,9 +1048,8 @@ private fun DownloadRowItem(
                         )
                     }
                 }
-            }
         }
-    }
+    )
 }
 
 /**
@@ -1099,7 +1079,7 @@ private fun DownloadProgressRing(
         isPending -> MaterialTheme.colorScheme.tertiary
         else -> MaterialTheme.colorScheme.primary
     }
-    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
+    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
 
     val animatedProgress by animateFloatAsState(
         targetValue = (item.progress ?: 0f).coerceIn(0f, 1f),
@@ -1123,9 +1103,9 @@ private fun DownloadProgressRing(
     // When actively downloading/paused/pending, use theme-aware harmonious container
     val containerBgColor = when {
         isSelected -> MaterialTheme.colorScheme.primary
-        isRunning -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+        isRunning -> MaterialTheme.colorScheme.primaryContainer
         isPaused -> MaterialTheme.colorScheme.surfaceContainerHigh
-        isPending -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+        isPending -> MaterialTheme.colorScheme.tertiaryContainer
         else -> expressiveBgColor
     }
 

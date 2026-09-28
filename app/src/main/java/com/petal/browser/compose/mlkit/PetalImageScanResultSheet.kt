@@ -203,11 +203,9 @@ fun PetalImageScanResultSheet(
         }
     }
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier

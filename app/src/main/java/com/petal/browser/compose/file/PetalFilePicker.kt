@@ -48,6 +48,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.Sort
@@ -75,6 +78,10 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalPopupMenu
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -407,7 +414,7 @@ private fun FilePickerBrowserContent(
                         )
                     }
 
-                    DropdownMenu(
+                    PetalPopupMenu(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false }
                     ) {
@@ -621,32 +628,28 @@ private fun FilePickerBrowserContent(
                     val isRoot = roots.any { it.second.absolutePath == currentDir.absolutePath }
                     if (!isRoot && currentDir.parentFile != null) {
                         item(key = "__parent__") {
-                            Surface(
+                            PetalGroupListRow(
+                                position = PetalGroupPosition.SINGLE,
                                 onClick = {
                                     haptics.playClick(context)
                                     currentDir = currentDir.parentFile!!
                                 },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.5.dp),
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        Icons.AutoMirrored.Filled.ArrowBack,
+                                        container = MaterialTheme.colorScheme.secondaryContainer,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
-                                    Spacer(Modifier.width(16.dp))
+                                },
+                                content = {
                                     Text(
                                         text = stringResource(R.string.file_picker_previous_directory),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.primary
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
-                            }
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                            )
                         }
                     }
 
@@ -675,7 +678,6 @@ private fun FilePickerBrowserContent(
                                 onPreviewFile?.invoke(file)
                             }
                         )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f))
                     }
                 }
             }
@@ -796,151 +798,71 @@ private fun FilePickerRowItem(
         }
     }
 
-    Surface(
+    val detailText = if (isDir) {
+        "${file.list()?.size ?: 0} items"
+    } else {
+        val sizeFormatted = Formatter.formatFileSize(context, file.length())
+        val dateFormatted = SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()).format(Date(file.lastModified()))
+        "$sizeFormatted · $dateFormatted"
+    }
+
+    PetalGroupListRow(
+        position = PetalGroupPosition.SINGLE,
         onClick = onClick,
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else Color.Transparent,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Leading Icon or Thumbnail
-            Box(
-                modifier = Modifier.size(40.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                when {
-                    isDir -> {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Folder,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
-                    thumbnail != null -> {
-                        Image(
-                            bitmap = thumbnail!!,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp))
-                        )
-                    }
-                    packageInfo != null -> {
-                        val appIcon = remember(packageInfo) {
-                            runCatching {
-                                packageInfo!!.applicationInfo?.loadIcon(context.packageManager)
-                            }.getOrNull()
-                        }
-                        if (appIcon != null) {
-                            // Render drawable as icon or fallback
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Android,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        } else {
-                            Icon(Icons.Rounded.Android, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-                        }
-                    }
-                    else -> {
-                        val iconVector = getFileIcon(ext)
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = iconVector,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.width(16.dp))
-
-            // File Name & Details
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = file.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.5.dp),
+        selected = isSelected,
+        leading = {
+            when {
+                isDir -> PetalGroupIconBadge(Icons.Filled.Folder, container = MaterialTheme.colorScheme.secondaryContainer, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                thumbnail != null -> Image(
+                    bitmap = thumbnail!!,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)),
                 )
-                Spacer(Modifier.height(2.dp))
-                val detailText = if (isDir) {
-                    val count = file.list()?.size ?: 0
-                    "$count items"
-                } else {
-                    val sizeFormatted = Formatter.formatFileSize(context, file.length())
-                    val dateFormatted = SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()).format(Date(file.lastModified()))
-                    "$sizeFormatted · $dateFormatted"
-                }
-                Text(
-                    text = detailText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Trailing Actions: Preview Button or Selection Checkbox
-            if (allowMultiple) {
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = { onClick() }
-                )
-            } else if (!isDir) {
-                IconButton(
-                    onClick = onPreview,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Visibility,
-                        contentDescription = stringResource(R.string.file_picker_preview),
+                packageInfo != null -> {
+                    val appIcon = remember(packageInfo) {
+                        runCatching { packageInfo!!.applicationInfo?.loadIcon(context.packageManager) }.getOrNull()
+                    }
+                    PetalGroupIconBadge(
+                        Icons.Filled.Android,
+                        container = if (appIcon != null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
                     )
                 }
+                else -> PetalGroupIconBadge(
+                    getFileIcon(ext),
+                    container = MaterialTheme.colorScheme.surfaceContainerLow,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-        }
-    }
+        },
+        content = {
+            Text(file.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(detailText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        },
+        trailing = {
+            if (allowMultiple) {
+                Checkbox(checked = isSelected, onCheckedChange = { onClick() })
+            } else if (!isDir) {
+                IconButton(onClick = onPreview, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Filled.Visibility, contentDescription = stringResource(R.string.file_picker_preview), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                }
+            }
+        },
+    )
 }
 
 private fun getFileIcon(ext: String): ImageVector {
     return when {
-        ext in APK_EXTENSIONS -> Icons.Rounded.Android
-        ext in IMAGE_EXTENSIONS -> Icons.Rounded.Image
-        ext in VIDEO_EXTENSIONS -> Icons.Rounded.VideoFile
-        ext in AUDIO_EXTENSIONS -> Icons.Rounded.AudioFile
-        ext in CODE_EXTENSIONS -> Icons.Rounded.Code
-        ext in ARCHIVE_EXTENSIONS -> Icons.Rounded.FolderZip
-        ext in DOC_EXTENSIONS -> Icons.Rounded.Description
-        else -> Icons.AutoMirrored.Rounded.InsertDriveFile
+        ext in APK_EXTENSIONS -> Icons.Filled.Android
+        ext in IMAGE_EXTENSIONS -> Icons.Filled.Image
+        ext in VIDEO_EXTENSIONS -> Icons.Filled.VideoFile
+        ext in AUDIO_EXTENSIONS -> Icons.Filled.AudioFile
+        ext in CODE_EXTENSIONS -> Icons.Filled.Code
+        ext in ARCHIVE_EXTENSIONS -> Icons.Filled.FolderZip
+        ext in DOC_EXTENSIONS -> Icons.Filled.Description
+        else -> Icons.AutoMirrored.Filled.InsertDriveFile
     }
 }
 

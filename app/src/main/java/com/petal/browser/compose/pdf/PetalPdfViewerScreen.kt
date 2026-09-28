@@ -594,7 +594,7 @@ fun PetalPdfViewerScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = {
-            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+            com.petal.browser.ui.containment.PetalSnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.navigationBarsPadding()
             )
@@ -966,7 +966,7 @@ fun PetalPdfViewerScreen(
     // ── Add Text Note Dialog ──
     if (showAddNoteDialog) {
         var noteInput by remember { mutableStateOf("") }
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showAddNoteDialog = false },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             shape = RoundedCornerShape(24.dp),
@@ -1051,7 +1051,7 @@ fun PetalPdfViewerScreen(
     val lineBeingEdited = selectedTextLine
     if (lineBeingEdited != null) {
         var editedText by remember(lineBeingEdited) { mutableStateOf(lineBeingEdited.text) }
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { if (!isSavingTextEdit) selectedTextLine = null },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             shape = RoundedCornerShape(24.dp),
@@ -1961,7 +1961,7 @@ private fun PdfJumpToPageDialog(
     var targetPage by remember { mutableIntStateOf(currentPage) }
     var textInput by remember { mutableStateOf(currentPage.toString()) }
 
-    AlertDialog(
+    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(24.dp),
@@ -2054,11 +2054,8 @@ private fun PdfThumbnailSheet(
     onDismiss: () -> Unit,
     onSelectPage: (Int) -> Unit
 ) {
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -2210,11 +2207,8 @@ private fun PdfInfoBottomSheet(
         }
     }
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier

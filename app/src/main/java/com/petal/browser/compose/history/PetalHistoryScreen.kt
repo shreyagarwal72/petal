@@ -15,13 +15,16 @@ import androidx.compose.foundation.background
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,14 +50,17 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.unit.RecordUnit
-import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.compose.composable.ContainedLoadingIndicator
-import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.PetalExpressiveAlertDialog
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.entrance
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalGroupRow
+import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import java.text.SimpleDateFormat
@@ -203,7 +209,7 @@ fun PetalHistoryScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = {
-            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+            com.petal.browser.ui.containment.PetalSnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.padding(16.dp)
             )
@@ -267,44 +273,16 @@ fun PetalHistoryScreen(
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp),
                             contentPadding = PaddingValues(bottom = 24.dp)
                         ) {
                             item(key = "clear_banner") {
-                                Surface(
+                                PetalGroupRow(
+                                    icon = Icons.Filled.CleaningServices,
+                                    title = "Clear browsing data...",
+                                    position = PetalGroupPosition.SINGLE,
                                     onClick = onClearBrowsingData,
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(14.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.CleaningServices,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(22.dp)
-                                            )
-                                            Text(
-                                                text = "Clear browsing data...",
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        }
-                                        Icon(
-                                            Icons.Rounded.ChevronRight,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
+                                )
                             }
 
                             if (filteredHistory.isEmpty()) {
@@ -320,16 +298,51 @@ fun PetalHistoryScreen(
                                     items = filteredHistory,
                                     key = { _, item -> "${item.url}_${item.time}" }
                                 ) { index, record ->
-                                    HistoryCardItem(
-                                        record = record,
-                                        index = index,
+                                    val timeFormatted = remember(record.time) {
+                                        if (record.time > 0L) SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(record.time)) else ""
+                                    }
+                                    val faviconUrl = remember(record.url) {
+                                        val domain = record.domain?.takeIf { it.isNotBlank() }
+                                            ?: try { java.net.URI(record.url ?: "").host } catch (_: Exception) { null }
+                                        if (!domain.isNullOrEmpty()) "https://www.google.com/s2/favicons?domain=$domain&sz=32" else null
+                                    }
+                                    PetalGroupListRow(
+                                        position = petalGroupPositionFor(index, filteredHistory.size),
+                                        onClick = { record.url?.let(onOpenUrl) },
                                         modifier = Modifier.animateItem(
                                             fadeInSpec = PetalSpring.fadeIn(),
                                             fadeOutSpec = PetalSpring.fadeOut(),
                                             placementSpec = PetalSpring.spatial()
-                                        ),
-                                        onSelect = { record.url?.let(onOpenUrl) },
-                                        onDelete = {
+                                        ).entrance(index = index, playKey = "${record.url}_${record.time}"),
+                                        leading = {
+                                            Box(
+                                                Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (faviconUrl != null) {
+                                                    SubcomposeAsyncImage(
+                                                        model = faviconUrl,
+                                                        contentDescription = "Website Icon",
+                                                        modifier = Modifier.size(24.dp).clip(CircleShape),
+                                                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                                        loading = { Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) },
+                                                        error = { Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) }
+                                                    )
+                                                } else Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+                                            }
+                                        },
+                                        content = {
+                                            Text(record.title?.takeIf { it.isNotBlank() } ?: record.domain ?: "Web Page",
+                                                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            if (timeFormatted.isNotEmpty()) Text(timeFormatted, style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary)
+                                        },
+                                        trailing = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                IconButton(onClick = {
                                             val deletedRecord = record
                                             val deletedIndex = rawHistory?.indexOfFirst { it.url == record.url } ?: -1
                                             try {
@@ -366,6 +379,9 @@ fun PetalHistoryScreen(
                                                     }
                                                 }
                                             }
+                                                }) { Icon(Icons.Filled.Close, contentDescription = "Remove entry", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                                                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
                                         }
                                     )
                                 }
@@ -378,119 +394,4 @@ fun PetalHistoryScreen(
     }
 }
 }
-}
-
-@Composable
-private fun HistoryCardItem(
-    record: Record,
-    index: Int,
-    modifier: Modifier = Modifier,
-    onSelect: () -> Unit,
-    onDelete: () -> Unit
-) {
-    val timeFormatted = remember(record.time) {
-        if (record.time > 0L) {
-            SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(record.time))
-        } else ""
-    }
-
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .bouncyClickable(scaleDown = 0.95f, onClick = onSelect)
-            .entrance(index = index, playKey = "${record.url}_${record.time}")
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            val faviconUrl = remember(record.url) {
-                val domain = record.domain?.takeIf { it.isNotBlank() }
-                    ?: try { java.net.URI(record.url ?: "").host } catch (e: Exception) { null }
-                if (!domain.isNullOrEmpty()) "https://www.google.com/s2/favicons?domain=$domain&sz=32" else null
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                if (faviconUrl != null) {
-                    SubcomposeAsyncImage(
-                        model = faviconUrl,
-                        contentDescription = "Website Icon",
-                        modifier = Modifier.size(24.dp).clip(CircleShape),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                        loading = {
-                            Icon(
-                                Icons.Rounded.Public,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        },
-                        error = {
-                            Icon(
-                                Icons.Rounded.Public,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                    )
-                } else {
-                    Icon(
-                        Icons.Rounded.Public,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = record.title?.takeIf { it.isNotBlank() } ?: record.domain ?: "Web Page",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = record.url ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (timeFormatted.isNotEmpty()) {
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = timeFormatted,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Rounded.Close,
-                    contentDescription = "Remove entry",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-    }
 }

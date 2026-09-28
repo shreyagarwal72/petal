@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -124,7 +126,7 @@ fun PrivacySettingsScreenContent(
     var whitelistedDomainsState by remember { mutableStateOf(PetalAdBlockEngine.getWhitelistedDomains()) }
 
     if (showWhitelistDialog) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showWhitelistDialog = false },
             title = { Text("AdBlock Domain Whitelist") },
             text = {
@@ -234,7 +236,7 @@ fun PrivacySettingsScreenContent(
                 )
 
                 // ── Section 1: Shield & Anti-Tracking Protection ──
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Shield & Anti-Tracking",
                     iconRes = com.petal.browser.R.drawable.layers_filled,
                     cardId = "privacy_adblock",
@@ -307,7 +309,7 @@ fun PrivacySettingsScreenContent(
                 }
 
                 // ── Section 2: Security & Authentication ──
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Security & Passkeys",
                     icon = Icons.Rounded.Lock,
                     cardId = "privacy_security",
@@ -379,7 +381,7 @@ fun PrivacySettingsScreenContent(
                 }
 
                 // ── Section 3: Web Content & Navigation ──
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Web Content & Navigation",
                     icon = Icons.Rounded.Code,
                     cardId = "privacy_cookies",
@@ -409,7 +411,7 @@ fun PrivacySettingsScreenContent(
                 }
 
                 // Private DNS Protection Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Private DNS Protection",
                     iconRes = com.petal.browser.R.drawable.database_filled,
                     cardId = "privacy_private_dns",

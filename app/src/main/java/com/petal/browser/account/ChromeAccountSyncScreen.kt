@@ -51,12 +51,13 @@ import coil.compose.AsyncImage
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.compose.home.PetalShortcut
 import com.petal.browser.ui.components.IconSwitch
+import com.petal.browser.ui.containment.petalGroupPositionFor
+import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.components.PetalAboutDeveloperBridge
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.SettingsItem
 import com.petal.browser.ui.components.SwitchSettingItem
-import com.petal.browser.ui.components.getGroupItemShape
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -330,7 +331,7 @@ private fun RenderUserProfileContent(
                 maxSubtitleLines = 1
             )
         },
-        snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = { com.petal.browser.ui.containment.PetalSnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
@@ -547,7 +548,7 @@ private fun RenderUserProfileContent(
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         },
-                        shape = getGroupItemShape(0, securityItemCount),
+                        shape = petalGroupShape(petalGroupPositionFor(0, securityItemCount)),
                         onClick = { onOpenAppLockConfig() }
                     )
 
@@ -568,7 +569,7 @@ private fun RenderUserProfileContent(
                                 )
                             }
                         },
-                        shape = getGroupItemShape(1, securityItemCount),
+                        shape = petalGroupShape(petalGroupPositionFor(1, securityItemCount)),
                         leadingIcon = {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
@@ -587,7 +588,7 @@ private fun RenderUserProfileContent(
                             isHttpsOnly = checked
                             sp.edit().putBoolean("sp_https_only", checked).apply()
                         },
-                        shape = getGroupItemShape(2, securityItemCount),
+                        shape = petalGroupShape(petalGroupPositionFor(2, securityItemCount)),
                         leadingIcon = {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
@@ -659,7 +660,7 @@ private fun RenderUserProfileContent(
                 ) {
                     // Item 0: Web Cache & App Storage with Clear action
                     Surface(
-                        shape = getGroupItemShape(0, storageItemCount),
+                        shape = petalGroupShape(petalGroupPositionFor(0, storageItemCount)),
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -769,7 +770,7 @@ private fun RenderUserProfileContent(
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         },
-                        shape = getGroupItemShape(1, storageItemCount),
+                        shape = petalGroupShape(petalGroupPositionFor(1, storageItemCount)),
                         onClick = { showClearDataDialog = true }
                     )
                 }
@@ -777,7 +778,7 @@ private fun RenderUserProfileContent(
 
             // Edit User Name Dialog
             if (showEditNameDialog) {
-                AlertDialog(
+                com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                     onDismissRequest = { showEditNameDialog = false },
                     title = { Text("Edit User Name", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                     text = {
@@ -835,10 +836,9 @@ private fun RenderUserProfileContent(
 
             // Built-in In-App Photo & Video Media Picker Bottom Sheet
             if (showMediaPickerSheet) {
-                ModalBottomSheet(
+                com.petal.browser.ui.containment.PetalSheet(
                     onDismissRequest = { showMediaPickerSheet = false },
                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     dragHandle = null
                 ) {
                     com.petal.browser.media.PetalMediaPickerBottomSheet(
@@ -1001,7 +1001,7 @@ private fun ProfilePictureCropDialog(
     var offsetY by remember { mutableFloatStateOf(0f) }
     var rotation by remember { mutableFloatStateOf(0f) }
 
-    AlertDialog(
+    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(

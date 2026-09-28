@@ -77,6 +77,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.containment.PetalSheet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -303,7 +304,7 @@ fun PetalImageViewerScreen(
         containerColor = Color.Black,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = {
-            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+            com.petal.browser.ui.containment.PetalSnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.navigationBarsPadding()
             )
@@ -919,11 +920,8 @@ private fun ImageInfoBottomSheet(
         }
     }
 
-    ModalBottomSheet(
+    PetalSheet(
         onDismissRequest  = onDismiss,
-        containerColor    = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape             = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle        = { BottomSheetDefaults.DragHandle() },
     ) {
         Column(
             modifier = Modifier

@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -43,7 +44,11 @@ import com.petal.browser.R
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.SwitchSettingItem
-import com.petal.browser.ui.components.getGroupItemShape
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.petalGroupShape
+import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.BrowserUnit
 
@@ -118,7 +123,7 @@ fun PetalDeleteScreen(
     var showConfirmDialog by remember { mutableStateOf(false) }
 
     if (showConfirmDialog) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showConfirmDialog = false },
             title = {
                 Text(
@@ -186,35 +191,13 @@ fun PetalDeleteScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header / Summary containment card (RvSystemMonitor Card style)
-                    Card(
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    PetalHeroCard {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.primary),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Rounded.DeleteSweep,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            PetalGroupIconBadge(Icons.Filled.DeleteSweep)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Clear Browsing Data",
@@ -231,20 +214,11 @@ fun PetalDeleteScreen(
                     }
 
                     // Stack of position-aware items with RvSystemMonitor containment shape group
-                    Text(
-                        text = "DATA CATEGORIES",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp
-                        ),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
+                    PetalSectionLabel("Data Categories")
 
-                    val optionsCount = 7
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         SwitchSettingItem(
                             title = context.getString(R.string.album_title_history),
@@ -254,7 +228,7 @@ fun PetalDeleteScreen(
                                 clearHistory = it
                                 sp.edit().putBoolean("sp_clear_history", it).apply()
                             },
-                            shape = getGroupItemShape(0, optionsCount),
+                            shape = petalGroupShape(PetalGroupPosition.TOP),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.History,
@@ -272,7 +246,7 @@ fun PetalDeleteScreen(
                                 clearCache = it
                                 sp.edit().putBoolean("sp_clear_cache", it).apply()
                             },
-                            shape = getGroupItemShape(1, optionsCount),
+                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.CleaningServices,
@@ -290,7 +264,7 @@ fun PetalDeleteScreen(
                                 clearIndexedDB = it
                                 sp.edit().putBoolean("sp_clearIndexedDB", it).apply()
                             },
-                            shape = getGroupItemShape(2, optionsCount),
+                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Storage,
@@ -308,7 +282,7 @@ fun PetalDeleteScreen(
                                 clearCookie = it
                                 sp.edit().putBoolean("sp_clear_cookie", it).apply()
                             },
-                            shape = getGroupItemShape(3, optionsCount),
+                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Cookie,
@@ -326,7 +300,7 @@ fun PetalDeleteScreen(
                                 clearDatabase = it
                                 sp.edit().putBoolean("sp_deleteDatabase", it).apply()
                             },
-                            shape = getGroupItemShape(4, optionsCount),
+                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.FolderSpecial,
@@ -344,7 +318,7 @@ fun PetalDeleteScreen(
                                 clearSettings = it
                                 sp.edit().putBoolean("sp_clear_settings", it).apply()
                             },
-                            shape = getGroupItemShape(5, optionsCount),
+                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Tune,
@@ -362,7 +336,7 @@ fun PetalDeleteScreen(
                                 clearQuit = it
                                 sp.edit().putBoolean("sp_clear_quit", it).putBoolean("sp_clear_on_exit", it).apply()
                             },
-                            shape = getGroupItemShape(6, optionsCount),
+                            shape = petalGroupShape(PetalGroupPosition.BOTTOM),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.PowerSettingsNew,
@@ -376,15 +350,7 @@ fun PetalDeleteScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                Card(
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                PetalHeroCard {
                     Box(modifier = Modifier.padding(16.dp)) {
                         Button(
                             onClick = { showConfirmDialog = true },

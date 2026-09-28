@@ -37,6 +37,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -75,10 +76,15 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveTabGroupPill
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.components.PetalThemedSnackbarHost
-import com.petal.browser.ui.components.PetalExpressiveDropdownMenu
+import com.petal.browser.ui.containment.PetalSnackbarHost
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalConnectedButtonGroup
+import com.petal.browser.ui.containment.PetalConnectedButtonItem
+import com.petal.browser.ui.containment.PetalContainmentShapes
 import com.petal.browser.ui.components.PetalExpressiveMenuItem
-import com.petal.browser.ui.components.PetalExpressiveDialog
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -430,7 +436,7 @@ fun PetalTabGridSwitcher(
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = { PetalSnackbarHost(hostState = snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
@@ -498,7 +504,7 @@ fun PetalTabGridSwitcher(
                                 onClick = { isOverflowMenuExpanded = true }
                             )
 
-                            PetalExpressiveDropdownMenu(
+                            com.petal.browser.ui.containment.PetalPopupMenu(
                                 expanded = isOverflowMenuExpanded,
                                 onDismissRequest = { isOverflowMenuExpanded = false }
                             ) {
@@ -555,7 +561,6 @@ fun PetalTabGridSwitcher(
                     // ── 3-Segment Switcher: Regular | Groups | Incognito ──
                     TabCategorySwitcher(
                         selected = selectedCategory,
-                        accentColor = accentColor,
                         onSelect = { selectedCategory = it }
                     )
 
@@ -1058,13 +1063,9 @@ fun PetalTabGridSwitcher(
                     .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
             ) {
                 val selectedTabs = filteredTabs.filter { selectedTabIds.contains(it.id) }
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                    shadowElevation = 10.dp,
-                    tonalElevation = 6.dp,
-                    modifier = Modifier.fillMaxWidth()
+                com.petal.browser.ui.containment.PetalFloatingToolbar(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = 6.dp,
                 ) {
                     Row(
                         modifier = Modifier
@@ -1260,10 +1261,9 @@ fun PetalTabGridSwitcher(
         var newGroupNameInput by remember { mutableStateOf("") }
         var isCreatingNew by remember { mutableStateOf(false) }
 
-        PetalExpressiveDialog(
+        com.petal.browser.ui.containment.PetalDialog(
             onDismissRequest = { showAddToGroupDialog = false },
             modifier = Modifier.fillMaxWidth(0.92f),
-            shape = RoundedCornerShape(28.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -1299,42 +1299,38 @@ fun PetalTabGridSwitcher(
                     ) {
                         items(tabGroups, key = { it.id }) { group ->
                             val gColor = group.parseColor()
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainer,
-                                border = BorderStroke(1.dp, gColor.copy(alpha = 0.5f)),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
+                            PetalGroupListRow(
+                                position = PetalGroupPosition.SINGLE,
+                                onClick = {
                                         selectedTabs.forEach {
                                             PetalTabGroupManager.addTabToGroup(context, group.id, it.id)
                                         }
                                         refreshGroups()
                                         showAddToGroupDialog = false
                                         leaveSelectionMode()
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Surface(shape = CircleShape, color = gColor, modifier = Modifier.size(14.dp)) {}
+                                    },
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        Icons.Rounded.FolderCopy,
+                                        container = gColor.copy(alpha = 0.2f),
+                                        tint = gColor,
+                                    )
+                                },
+                                content = {
                                     Text(
                                         text = group.title,
                                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                         color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.weight(1f)
                                     )
+                                },
+                                trailing = {
                                     Text(
                                         text = "${group.tabIds.size} tabs",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                }
-                            }
+                                },
+                            )
                         }
                     }
 
@@ -1396,28 +1392,19 @@ fun PetalTabGridSwitcher(
 
     // Modal dialog for Close All Tabs confirmation
     if (showCloseAllConfirmDialog) {
-        PetalExpressiveDialog(
+        com.petal.browser.ui.containment.PetalAlertDialog(
             onDismissRequest = { showCloseAllConfirmDialog = false },
-            modifier = Modifier.fillMaxWidth(0.92f),
-            shape = RoundedCornerShape(28.dp)
-        ) {
-            PetalConfirmSheetContent(
-                icon = Icons.Rounded.LayersClear,
-                title = "Close All Tabs?",
-                message = "Are you sure you want to close all ${tabs.size} active tabs?",
-                confirmText = "Close All",
-                cancelText = "Cancel",
-                isDestructive = true,
-                onConfirm = {
-                    showCloseAllConfirmDialog = false
-                    commitPendingRemovals()
-                    onCloseAllTabs()
-                },
-                onCancel = {
-                    showCloseAllConfirmDialog = false
-                }
-            )
-        }
+            title = "Close All Tabs?",
+            message = "Are you sure you want to close all ${tabs.size} active tabs?",
+            icon = Icons.Rounded.LayersClear,
+            destructive = true,
+            confirmText = "Close All",
+            onConfirm = {
+                showCloseAllConfirmDialog = false
+                commitPendingRemovals()
+                onCloseAllTabs()
+            },
+        )
     }
 
     // Fullscreen / Modal Vault Sheet for Recently Closed Tabs
@@ -1452,93 +1439,21 @@ fun PetalTabGridSwitcher(
 @Composable
 private fun TabCategorySwitcher(
     selected: TabCategory,
-    accentColor: Color,
     onSelect: (TabCategory) -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            TabCategoryPill(
-                label = "Regular",
-                icon = Icons.Rounded.Public,
-                selected = selected == TabCategory.REGULAR,
-                accentColor = accentColor,
-                onClick = { onSelect(TabCategory.REGULAR) },
-                modifier = Modifier.weight(1f)
-            )
-            TabCategoryPill(
-                label = "Groups",
-                icon = Icons.Rounded.FolderCopy,
-                selected = selected == TabCategory.GROUPS,
-                accentColor = accentColor,
-                onClick = { onSelect(TabCategory.GROUPS) },
-                modifier = Modifier.weight(1f)
-            )
-            TabCategoryPill(
-                label = "Incognito",
-                icon = Icons.Rounded.VisibilityOff,
-                selected = selected == TabCategory.INCOGNITO,
-                accentColor = accentColor,
-                onClick = { onSelect(TabCategory.INCOGNITO) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun TabCategoryPill(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    selected: Boolean,
-    accentColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val animatedBg by androidx.compose.animation.animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
-        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
-        label = "tabCategoryBg"
+    PetalConnectedButtonGroup(
+        items = listOf(
+            PetalConnectedButtonItem("Regular", Icons.Rounded.Public),
+            PetalConnectedButtonItem("Groups", Icons.Rounded.FolderCopy),
+            PetalConnectedButtonItem("Incognito", Icons.Rounded.VisibilityOff),
+        ),
+        selectedIndex = when (selected) {
+            TabCategory.REGULAR -> 0
+            TabCategory.GROUPS -> 1
+            TabCategory.INCOGNITO -> 2
+        },
+        onSelect = { index -> onSelect(TabCategory.entries[index]) },
     )
-    val animatedContentColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (selected) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
-        label = "tabCategoryColor"
-    )
-
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(50),
-        color = animatedBg,
-        contentColor = animatedContentColor,
-        tonalElevation = if (selected) 2.dp else 0.dp,
-        modifier = modifier
-            .height(36.dp)
-            .bouncyClickable(scaleDown = 0.94f, onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
 }
 
 /**
@@ -1780,14 +1695,9 @@ private fun PetalTabCard(
         else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     }
 
-    val cardShape = RoundedCornerShape(18.dp)
-
-    Surface(
-        shape = cardShape,
-        color = cardBg,
-        border = borderStroke,
-        tonalElevation = if (tab.isSelected || isDragging || isHoveredForMerge) 6.dp else 1.dp,
-        shadowElevation = if (isDragging) 12.dp else if (tab.isSelected || isHoveredForMerge) 6.dp else 1.dp,
+    PetalHeroCard(
+        shape = PetalContainmentShapes.Hero,
+        containerColor = if (tab.isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else cardBg,
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.68f)
@@ -1818,6 +1728,7 @@ private fun PetalTabCard(
                     }
                 )
             }
+            .border(borderStroke, PetalContainmentShapes.Hero)
             .entrance()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -1932,7 +1843,7 @@ private fun PetalTabCard(
             }
         }
 
-        PetalExpressiveDropdownMenu(
+        com.petal.browser.ui.containment.PetalPopupMenu(
             expanded = contextMenuExpanded,
             onDismissRequest = onDismissContextMenu
         ) {
@@ -2068,69 +1979,38 @@ private fun PetalTabListItem(
     onDuplicateTab: () -> Unit = {},
     onCloseOtherTabs: () -> Unit = {}
 ) {
-    val cardBg = MaterialTheme.colorScheme.surfaceContainerHigh
     val textColor = MaterialTheme.colorScheme.onSurface
     var isMuted by remember(tab.id) { mutableStateOf(false) }
 
     val groupColor = tab.groupColorHex?.let {
         try { Color(android.graphics.Color.parseColor(it)) } catch (_: Exception) { null }
     }
-    val borderStroke = when {
-        isHoveredForMerge -> BorderStroke(2.5.dp, MaterialTheme.colorScheme.tertiary)
-        isDragging -> BorderStroke(2.dp, accentColor)
-        isSelectedForSelection || tab.isSelected -> BorderStroke(2.dp, groupColor ?: accentColor)
-        groupColor != null -> BorderStroke(1.5.dp, groupColor.copy(alpha = 0.8f))
-        else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-    }
-
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = cardBg,
-        border = borderStroke,
+    PetalGroupListRow(
+        position = PetalGroupPosition.SINGLE,
+        onClick = onTabSelect,
+        onLongClick = onLongPress,
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
             .graphicsLayer {
                 translationX = dragOffset.x
                 translationY = dragOffset.y
                 alpha = if (isDragging) 0.85f else 1.0f
             }
-            .bouncyClickable(onClick = onTabSelect)
-            .pointerInput(tab.id) {
-                detectTapGestures(onLongPress = { onLongPress() })
-            }
-            .entrance()
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    modifier = Modifier.size(54.dp, 48.dp)
-                ) {
+            .entrance(),
+        selected = isSelectedForSelection || tab.isSelected || isDragging || isHoveredForMerge,
+        leading = {
                     if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
                         Image(
                             bitmap = tab.previewBitmap.asImageBitmap(),
                             contentDescription = "Thumbnail",
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
                         )
                     } else {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            TabFavicon(tab = tab, accentColor = accentColor, size = 22.dp)
-                        }
+                        PetalGroupIconBadge(icon = Icons.Rounded.Public, size = 44.dp)
                     }
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
+        },
+        content = {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             text = if (tab.title.isBlank() || tab.title.equals("about:blank", true) || tab.title.equals("Petal Start", true)) "Petal Home" else tab.title,
@@ -2152,8 +2032,8 @@ private fun PetalTabListItem(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-            }
-
+        },
+        trailing = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 AnimatedVisibility(visible = isPinned) {
                     Icon(Icons.Rounded.PushPin, contentDescription = "Pinned", tint = accentColor, modifier = Modifier.size(16.dp))
@@ -2177,9 +2057,10 @@ private fun PetalTabListItem(
                     }
                 }
             }
-        }
+        },
+    )
 
-        PetalExpressiveDropdownMenu(
+        com.petal.browser.ui.containment.PetalPopupMenu(
             expanded = contextMenuExpanded,
             onDismissRequest = onDismissContextMenu
         ) {
@@ -2198,7 +2079,6 @@ private fun PetalTabListItem(
             PetalExpressiveMenuItem(text = "Close other tabs", leadingIcon = { Icon(Icons.Rounded.CloseFullscreen, null) }, onClick = { onDismissContextMenu(); onCloseOtherTabs() })
             PetalExpressiveMenuItem(text = "Close tab", leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
         }
-    }
 }
 
 /**
@@ -2216,14 +2096,13 @@ private fun PetalTabGroupCard(
     val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
     val headerBg = MaterialTheme.colorScheme.surfaceContainerHigh
 
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = cardBg,
-        border = BorderStroke(1.5.dp, groupColor.copy(alpha = 0.6f)),
-        tonalElevation = 2.dp,
+    PetalHeroCard(
+        shape = PetalContainmentShapes.Hero,
+        containerColor = cardBg,
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.72f)
+            .border(BorderStroke(1.5.dp, groupColor.copy(alpha = 0.6f)), PetalContainmentShapes.Hero)
             .bouncyClickable(onClick = onGroupClick)
             .entrance()
     ) {
@@ -2358,10 +2237,9 @@ private fun PetalTabGroupInspectionDialog(
     var groupNameInput by remember { mutableStateOf(group.title) }
     val groupColor = group.parseColor()
 
-    PetalExpressiveDialog(
+    com.petal.browser.ui.containment.PetalDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxHeight(0.75f),
-        shape = RoundedCornerShape(32.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -2452,27 +2330,11 @@ private fun PetalTabGroupInspectionDialog(
                     modifier = Modifier.weight(1f)
                 ) {
                     items(tabs, key = { it.id }) { tab ->
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onTabSelect(tab) }
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    TabFavicon(tab = tab, accentColor = accentColor, size = 20.dp)
-                                    Column(modifier = Modifier.weight(1f)) {
+                        PetalGroupListRow(
+                            position = PetalGroupPosition.SINGLE,
+                            onClick = { onTabSelect(tab) },
+                            leading = { TabFavicon(tab = tab, accentColor = accentColor, size = 32.dp) },
+                            content = {
                                         Text(
                                             text = tab.title.ifBlank { "New Tab" },
                                             style = MaterialTheme.typography.titleSmall,
@@ -2486,9 +2348,8 @@ private fun PetalTabGroupInspectionDialog(
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                    }
-                                }
-
+                            },
+                            trailing = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(onClick = { onUngroupTab(tab) }) {
                                         Icon(Icons.Rounded.FolderOff, contentDescription = "Ungroup tab", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
@@ -2497,8 +2358,8 @@ private fun PetalTabGroupInspectionDialog(
                                         Icon(Icons.Rounded.Close, contentDescription = "Close tab", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                     }
                                 }
-                            }
-                        }
+                            },
+                        )
                     }
                 }
             }
@@ -2634,12 +2495,7 @@ fun ExpressiveTabUndoBanner(
         exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut() + scaleOut(targetScale = 0.9f),
         modifier = modifier
     ) {
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-            shadowElevation = 8.dp,
-            tonalElevation = 6.dp,
+        com.petal.browser.ui.containment.PetalFloatingToolbar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -2661,32 +2517,18 @@ fun ExpressiveTabUndoBanner(
                     )
                 }
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
                 Row(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = accentColor.copy(alpha = 0.16f),
-                        contentColor = accentColor,
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Rounded.Tab,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
+                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                        icon = Icons.Filled.Tab,
+                        container = MaterialTheme.colorScheme.secondaryContainer,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        size = 34.dp,
+                        iconSize = 18.dp
+                    )
                     val displayText = if (totalClosedCount <= 1) {
                         "Closed \"${initialTabTitle.ifBlank { "Tab" }}\""
                     } else {
@@ -2702,10 +2544,7 @@ fun ExpressiveTabUndoBanner(
                     )
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     TextButton(
                         onClick = onUndo,
                         colors = ButtonDefaults.textButtonColors(
@@ -2737,7 +2576,6 @@ fun ExpressiveTabUndoBanner(
                         )
                     }
                 }
-            }
         }
     }
 }

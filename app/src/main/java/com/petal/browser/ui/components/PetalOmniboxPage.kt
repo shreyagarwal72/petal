@@ -1086,7 +1086,7 @@ fun PetalOmniboxPage(
 
     if (suggestionToRemove != null) {
         val item = suggestionToRemove!!
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { suggestionToRemove = null },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

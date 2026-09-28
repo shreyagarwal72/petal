@@ -1,7 +1,5 @@
 package com.petal.browser.ui.components
 
-import android.os.Build
-import android.view.WindowManager
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -10,14 +8,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,7 +41,7 @@ object PetalExpressivePopupDefaults {
     val menuContainerColor: Color
         @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
     val dialogContainerColor: Color
-        @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
+        @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
     val outline: Color
         @Composable get() = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
 }
@@ -60,42 +55,14 @@ fun PetalExpressiveDialog(
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Dialog(onDismissRequest = onDismissRequest, properties = properties) {
-        val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
-        DisposableEffect(dialogWindow) {
-            dialogWindow?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            dialogWindow?.attributes = dialogWindow?.attributes?.apply { dimAmount = 0.58f }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                dialogWindow?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                dialogWindow?.setBackgroundBlurRadius(34)
-            }
-            onDispose {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) dialogWindow?.setBackgroundBlurRadius(0)
-                dialogWindow?.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-            }
-        }
-        // Compose can measure an AnimatedVisibility first frame at zero size on some
-        // Android versions. Keep the dialog surface mounted immediately so it never
-        // becomes a blank, touch-blocking window.
-        Surface(
-            modifier = modifier
-                .fillMaxWidth(0.92f)
-                .wrapContentHeight()
-                .modalScaleIn(),
-            shape = shape,
-            color = containerColor,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 6.dp,
-            shadowElevation = 12.dp,
-            border = BorderStroke(1.dp, PetalExpressivePopupDefaults.outline)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                content = content
-            )
-        }
-    }
+    com.petal.browser.ui.containment.PetalDialog(
+        onDismissRequest = onDismissRequest,
+        modifier = modifier.modalScaleIn(),
+        shape = shape,
+        containerColor = containerColor,
+        properties = properties,
+        content = content,
+    )
 }
 
 @Composable
@@ -184,15 +151,10 @@ fun PetalExpressiveDropdownMenu(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    DropdownMenu(
+    com.petal.browser.ui.containment.PetalPopupMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        shape = PetalExpressivePopupDefaults.menuShape,
-        containerColor = PetalExpressivePopupDefaults.menuContainerColor,
-        tonalElevation = 3.dp,
-        shadowElevation = 8.dp,
-        border = BorderStroke(1.dp, PetalExpressivePopupDefaults.outline),
         content = content
     )
 }
@@ -206,20 +168,13 @@ fun PetalExpressiveMenuItem(
     trailingIcon: (@Composable (() -> Unit))? = null,
     enabled: Boolean = true
 ) {
-    DropdownMenuItem(
-        text = {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-        },
+    com.petal.browser.ui.containment.PetalPopupMenuItem(
+        text = text,
         onClick = onClick,
-        modifier = modifier.heightIn(min = 56.dp),
+        modifier = modifier,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         enabled = enabled,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
     )
 }
 

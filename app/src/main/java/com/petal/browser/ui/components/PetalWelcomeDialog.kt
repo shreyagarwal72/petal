@@ -1,6 +1,9 @@
 package com.petal.browser.ui.components
 
 import com.petal.browser.view.PetalToast;
+import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupListRow
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -1201,49 +1204,28 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 
     Spacer(Modifier.height(20.dp))
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = RoundedCornerShape(22.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            engines.forEachIndexed { index, (indexStr, name) ->
-                val isSelected = searchEngineIndex == indexStr
-                val shape = getGroupItemShape(index, engines.size)
-                Card(
-                    shape = shape,
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    PetalGroup(rowCount = engines.size, modifier = Modifier.fillMaxWidth()) { index, position ->
+        val (indexStr, name) = engines[index]
+        val isSelected = searchEngineIndex == indexStr
+        PetalGroupListRow(
+            position = position,
+            selected = isSelected,
+            onClick = {
+                searchEngineIndex = indexStr
+                sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).putBoolean("searchEngineSwitch", false).apply()
+            },
+            leading = { PetalGroupIconBadge(Icons.Rounded.Search, size = 40.dp, iconSize = 20.dp) },
+            content = { Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium) },
+            trailing = {
+                RadioButton(
+                    selected = isSelected,
                     onClick = {
                         searchEngineIndex = indexStr
                         sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).putBoolean("searchEngineSwitch", false).apply()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                        RadioButton(
-                            selected = isSelected,
-                            onClick = {
-                                searchEngineIndex = indexStr
-                                sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).putBoolean("searchEngineSwitch", false).apply()
-                            }
-                        )
                     }
-                }
-            }
-        }
+                )
+            },
+        )
     }
 }
 

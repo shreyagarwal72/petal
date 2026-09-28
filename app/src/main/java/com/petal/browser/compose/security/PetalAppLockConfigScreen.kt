@@ -45,6 +45,11 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.PetalDialog
+import com.petal.browser.ui.containment.PetalSelectableOptionCard
+import com.petal.browser.ui.containment.PetalSnackbarHost
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +83,7 @@ fun PetalAppLockConfigScreen(
 
     val content = @Composable {
         Scaffold(
-            snackbarHost = { com.petal.browser.ui.components.PetalThemedSnackbarHost(snackbarHostState) },
+            snackbarHost = { PetalSnackbarHost(snackbarHostState) },
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0)
         ) { innerPadding ->
@@ -111,11 +116,9 @@ fun PetalAppLockConfigScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         // Master Lock Toggle Card
-                        Surface(
-                            shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            tonalElevation = 2.dp,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                        PetalHeroCard(
+                            shape = RoundedCornerShape(32.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -125,20 +128,13 @@ fun PetalAppLockConfigScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (isLockEnabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    modifier = Modifier.size(48.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            Icons.Rounded.Lock,
-                                            contentDescription = null,
-                                            tint = if (isLockEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
+                                PetalGroupIconBadge(
+                                    Icons.Rounded.Lock,
+                                    container = if (isLockEnabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    tint = if (isLockEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    size = 48.dp,
+                                    iconSize = 24.dp,
+                                )
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
@@ -200,11 +196,9 @@ fun PetalAppLockConfigScreen(
                         }
 
                         // Lock Method Selection Card
-                        Surface(
-                            shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            tonalElevation = 2.dp,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                        PetalHeroCard(
+                            shape = RoundedCornerShape(32.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(18.dp)) {
@@ -217,111 +211,43 @@ fun PetalAppLockConfigScreen(
                                 Spacer(Modifier.height(14.dp))
 
                                 // Option 1: Fingerprint (Biometric / Device Credential)
-                                Surface(
-                                    shape = RoundedCornerShape(18.dp),
-                                    color = if (selectedLockType == "FINGERPRINT") MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceContainerLow,
-                                    border = if (selectedLockType == "FINGERPRINT") BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            val activity = context as? AppCompatActivity
-                                            if (isLockEnabled && activity != null) {
-                                                BiometricLockManager.authenticate(
-                                                    activity,
-                                                    "Verify Fingerprint",
-                                                    "Confirm biometric method switch",
-                                                    Runnable {
-                                                        updateLockConfig(isLockEnabled, "FINGERPRINT")
-                                                        coroutineScope.launch {
-                                                            snackbarHostState.showSnackbar("Fingerprint lock selected")
-                                                        }
-                                                    },
-                                                    java.util.function.Consumer { err ->
-                                                        coroutineScope.launch {
-                                                            snackbarHostState.showSnackbar("Fingerprint error: $err")
-                                                        }
-                                                    }
-                                                )
-                                            } else {
-                                                updateLockConfig(isLockEnabled, "FINGERPRINT")
-                                            }
-                                        }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Fingerprint,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = "Biometric / Device Lock",
-                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                                color = MaterialTheme.colorScheme.onSurface
+                                PetalSelectableOptionCard(
+                                    title = "Biometric / Device Lock",
+                                    subtitle = "Unlock with device fingerprint sensor or system PIN",
+                                    selected = selectedLockType == "FINGERPRINT",
+                                    leading = { PetalGroupIconBadge(Icons.Rounded.Fingerprint) },
+                                    onClick = {
+                                        val activity = context as? AppCompatActivity
+                                        if (isLockEnabled && activity != null) {
+                                            BiometricLockManager.authenticate(
+                                                activity,
+                                                "Verify Fingerprint",
+                                                "Confirm biometric method switch",
+                                                Runnable {
+                                                    updateLockConfig(isLockEnabled, "FINGERPRINT")
+                                                    coroutineScope.launch { snackbarHostState.showSnackbar("Fingerprint lock selected") }
+                                                },
+                                                java.util.function.Consumer { err ->
+                                                    coroutineScope.launch { snackbarHostState.showSnackbar("Fingerprint error: $err") }
+                                                }
                                             )
-                                            Text(
-                                                text = "Unlock with device fingerprint sensor or system PIN",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                        RadioButton(
-                                            selected = selectedLockType == "FINGERPRINT",
-                                            onClick = null
-                                        )
+                                        } else updateLockConfig(isLockEnabled, "FINGERPRINT")
                                     }
-                                }
+                                )
 
                                 Spacer(Modifier.height(10.dp))
 
                                 // Option 2: Custom Password Lock
-                                Surface(
-                                    shape = RoundedCornerShape(18.dp),
-                                    color = if (selectedLockType == "PASSWORD") MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceContainerLow,
-                                    border = if (selectedLockType == "PASSWORD") BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            updateLockConfig(isLockEnabled, "PASSWORD")
-                                            if (savedPasscode.isBlank()) {
-                                                showPasscodeConfigDialog = true
-                                            }
-                                        }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Key,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = "Custom Passcode Lock",
-                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                            Text(
-                                                text = if (savedPasscode.isNotBlank()) "Passcode configured • Tap below to change" else "Set custom shaped-mask password for Petal",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                        RadioButton(
-                                            selected = selectedLockType == "PASSWORD",
-                                            onClick = null
-                                        )
+                                PetalSelectableOptionCard(
+                                    title = "Custom Passcode Lock",
+                                    subtitle = if (savedPasscode.isNotBlank()) "Passcode configured • Tap below to change" else "Set custom shaped-mask password for Petal",
+                                    selected = selectedLockType == "PASSWORD",
+                                    leading = { PetalGroupIconBadge(Icons.Rounded.Key) },
+                                    onClick = {
+                                        updateLockConfig(isLockEnabled, "PASSWORD")
+                                        if (savedPasscode.isBlank()) showPasscodeConfigDialog = true
                                     }
-                                }
+                                )
 
                                 if (selectedLockType == "PASSWORD") {
                                     Spacer(Modifier.height(12.dp))
@@ -341,54 +267,34 @@ fun PetalAppLockConfigScreen(
 
                     // Passcode Configuration Dialog
                     if (showPasscodeConfigDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showPasscodeConfigDialog = false },
-                            title = {
-                                Text(
-                                    "Set App Password",
-                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                                )
-                            },
-                            text = {
-                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Text(
-                                        "Enter password for Petal Browser lock screen:",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    PetalShapedPasswordInput(
-                                        value = tempPasscode,
-                                        onValueChange = { tempPasscode = it },
-                                        hintText = "Enter passcode",
-                                        accentColor = MaterialTheme.colorScheme.primary,
-                                        onUnlock = null,
-                                        unlockButtonText = ""
-                                    )
-                                }
-                            },
-                            confirmButton = {
-                                Button(
-                                    onClick = {
-                                        if (tempPasscode.trim().isNotBlank()) {
-                                            savedPasscode = tempPasscode.trim()
-                                            sp.edit().putString("sp_app_lock_passcode", savedPasscode).apply()
-                                            if (isLockEnabled) updateLockConfig(true, "PASSWORD")
-                                            showPasscodeConfigDialog = false
-                                            coroutineScope.launch {
-                                                snackbarHostState.showSnackbar("App password saved successfully")
-                                            }
-                                        }
+                        PetalDialog(onDismissRequest = { showPasscodeConfigDialog = false }) {
+                            Text("Set App Password", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Enter password for Petal Browser lock screen:",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            PetalShapedPasswordInput(
+                                value = tempPasscode,
+                                onValueChange = { tempPasscode = it },
+                                hintText = "Enter passcode",
+                                accentColor = MaterialTheme.colorScheme.primary,
+                                onUnlock = null,
+                                unlockButtonText = "",
+                            )
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                TextButton(onClick = { showPasscodeConfigDialog = false }) { Text("Cancel") }
+                                Button(onClick = {
+                                    if (tempPasscode.trim().isNotBlank()) {
+                                        savedPasscode = tempPasscode.trim()
+                                        sp.edit().putString("sp_app_lock_passcode", savedPasscode).apply()
+                                        if (isLockEnabled) updateLockConfig(true, "PASSWORD")
+                                        showPasscodeConfigDialog = false
+                                        coroutineScope.launch { snackbarHostState.showSnackbar("App password saved successfully") }
                                     }
-                                ) {
-                                    Text("Save Password")
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showPasscodeConfigDialog = false }) {
-                                    Text("Cancel")
-                                }
+                                }) { Text("Save Password", fontWeight = FontWeight.Bold) }
                             }
-                        )
+                        }
                     }
                 }
             }

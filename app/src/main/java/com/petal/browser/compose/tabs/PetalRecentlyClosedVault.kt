@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -34,7 +33,12 @@ import com.petal.browser.security.BiometricLockManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveTabGroupPill
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.PetalExpressiveDialog
+import com.petal.browser.ui.containment.PetalAlertDialog
+import com.petal.browser.ui.containment.PetalDialog
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalSelectableOptionCard
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.unit.ClosedTabRecord
 import com.petal.browser.unit.PetalRecentlyClosedManager
@@ -238,70 +242,23 @@ fun PetalRecentlyClosedVault(
 
     // ── Forgot Lock / Reset Vault Dialog ──
     if (showForgotLockDialog) {
-        AlertDialog(
+        PetalAlertDialog(
             onDismissRequest = { showForgotLockDialog = false },
-            icon = {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    modifier = Modifier.size(52.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.WarningAmber,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
+            title = "Reset Vault & Clear Data?",
+            message = "For security and privacy, resetting the vault lock will permanently erase all ${records.size} saved closed tabs and remove the passcode protection. You will regain immediate access to the vault.\n\nThis cannot be undone.",
+            icon = Icons.Rounded.WarningAmber,
+            destructive = true,
+            confirmText = "Clear All Data & Unlock",
+            onConfirm = {
+                showForgotLockDialog = false
+                PetalRecentlyClosedManager.resetLockAndClearData(context)
+                lockType = "none"
+                isUnlocked = true
+                passwordInput = ""
+                passwordError = false
+                refreshRecords()
+                PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
             },
-            title = {
-                Text(
-                    text = "Reset Vault & Clear Data?",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-            },
-            text = {
-                Text(
-                    text = "For security and privacy, resetting the vault lock will permanently erase all ${records.size} saved closed tabs and remove the passcode protection. You will regain immediate access to the vault.\n\nThis cannot be undone.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showForgotLockDialog = false
-                        PetalRecentlyClosedManager.resetLockAndClearData(context)
-                        lockType = "none"
-                        isUnlocked = true
-                        passwordInput = ""
-                        passwordError = false
-                        refreshRecords()
-                        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Clear All Data & Unlock", fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showForgotLockDialog = false },
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Cancel", fontWeight = FontWeight.SemiBold)
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shape = RoundedCornerShape(28.dp)
         )
     }
 }
@@ -340,23 +297,14 @@ private fun LockScreenContent(
         verticalArrangement = Arrangement.Center
     ) {
         // Expressive Padlock Badge
-        Surface(
-            shape = RoundedCornerShape(32.dp),
-            color = accentColor.copy(alpha = 0.12f),
-            border = BorderStroke(2.dp, accentColor.copy(alpha = 0.4f)),
-            modifier = Modifier
-                .size(96.dp)
-                .scale(pulseScale)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Rounded.Lock,
-                    contentDescription = "Locked",
-                    tint = accentColor,
-                    modifier = Modifier.size(46.dp)
-                )
-            }
-        }
+            PetalGroupIconBadge(
+                icon = Icons.Rounded.Lock,
+                container = MaterialTheme.colorScheme.primaryContainer,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.scale(pulseScale),
+                size = 96.dp,
+                iconSize = 46.dp,
+            )
 
         Spacer(Modifier.height(24.dp))
 
@@ -475,20 +423,13 @@ private fun UnlockedVaultContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Surface(
-                shape = CircleShape,
-                color = accentColor.copy(alpha = 0.12f),
-                modifier = Modifier.size(72.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Rounded.History,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
-            }
+            PetalGroupIconBadge(
+                icon = Icons.Rounded.History,
+                container = MaterialTheme.colorScheme.primaryContainer,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                size = 72.dp,
+                iconSize = 36.dp,
+            )
             Spacer(Modifier.height(18.dp))
             Text(
                 text = "No recently closed tabs",
@@ -549,34 +490,18 @@ private fun UnlockedVaultContent(
                         }
                     }
 
-                    Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = accentColor.copy(alpha = 0.15f),
-                                modifier = Modifier.size(38.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = rec.title.take(1).uppercase().ifBlank { "?" },
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = accentColor
-                                    )
-                                }
-                            }
-
-                            Column(modifier = Modifier.weight(1f)) {
+                    PetalGroupListRow(
+                        position = PetalGroupPosition.SINGLE,
+                        onClick = { onRestore(rec) },
+                        leading = {
+                            PetalGroupIconBadge(
+                                icon = Icons.Rounded.History,
+                                container = MaterialTheme.colorScheme.secondaryContainer,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                size = 44.dp,
+                            )
+                        },
+                        content = {
                                 Text(
                                     text = rec.title.ifBlank { rec.url },
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
@@ -608,13 +533,13 @@ private fun UnlockedVaultContent(
                                     Spacer(Modifier.height(4.dp))
                                     ExpressiveTabGroupPill(groupName = grpTitle, containerColor = grpColor, contentColor = Color.White)
                                 }
-                            }
-
+                        },
+                        trailing = {
                             IconButton(
                                 onClick = { onRestore(rec) },
                                 modifier = Modifier.size(36.dp)
                             ) {
-                                Icon(Icons.Rounded.Add, contentDescription = "Restore tab", tint = accentColor, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Rounded.RestoreFromTrash, contentDescription = "Restore tab", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
 
                             IconButton(
@@ -623,8 +548,8 @@ private fun UnlockedVaultContent(
                             ) {
                                 Icon(Icons.Rounded.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                             }
-                        }
-                    }
+                        },
+                    )
                 }
             }
         }
@@ -648,10 +573,9 @@ private fun VaultSettingsDialog(
     var selectedLockType by remember { mutableStateOf(currentLockType) }
     var newPasswordInput by remember { mutableStateOf("") }
 
-    PetalExpressiveDialog(
+    PetalDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxWidth(0.92f),
-        shape = RoundedCornerShape(28.dp)
     ) {
         Text(
             text = "Vault Settings",
@@ -667,16 +591,12 @@ private fun VaultSettingsDialog(
             color = MaterialTheme.colorScheme.primary
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            listOf("1" to "1d", "7" to "7d", "14" to "14d", "30" to "30d", "never" to "∞").forEach { (days, label) ->
-                FilterChip(
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf("1" to "1 day", "7" to "7 days", "14" to "14 days", "30" to "30 days", "never" to "Never").forEach { (days, label) ->
+                PetalSelectableOptionCard(
+                    title = label,
                     selected = selectedRetention == days,
                     onClick = { selectedRetention = days },
-                    label = { Text(label) },
-                    shape = RoundedCornerShape(12.dp)
                 )
             }
         }
@@ -690,43 +610,11 @@ private fun VaultSettingsDialog(
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { selectedLockType = "none" }
-                    .padding(vertical = 4.dp)
-            ) {
-                RadioButton(selected = selectedLockType == "none", onClick = { selectedLockType = "none" })
-                Spacer(Modifier.width(8.dp))
-                Text("None (Direct access)")
-            }
-
+            PetalSelectableOptionCard("None (Direct access)", selectedLockType == "none", { selectedLockType = "none" })
             if (canBiometric) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { selectedLockType = "biometric" }
-                        .padding(vertical = 4.dp)
-                ) {
-                    RadioButton(selected = selectedLockType == "biometric", onClick = { selectedLockType = "biometric" })
-                    Spacer(Modifier.width(8.dp))
-                    Text("Biometric (Fingerprint / Face)")
-                }
+                PetalSelectableOptionCard("Biometric (Fingerprint / Face)", selectedLockType == "biometric", { selectedLockType = "biometric" })
             }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { selectedLockType = "password" }
-                    .padding(vertical = 4.dp)
-            ) {
-                RadioButton(selected = selectedLockType == "password", onClick = { selectedLockType = "password" })
-                Spacer(Modifier.width(8.dp))
-                Text("Passcode / PIN")
-            }
+            PetalSelectableOptionCard("Passcode / PIN", selectedLockType == "password", { selectedLockType = "password" })
         }
 
         if (selectedLockType == "password") {

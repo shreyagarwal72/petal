@@ -66,20 +66,9 @@ fun PetalAspectRatioSheet(
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        dragHandle = {
-            Surface(
-                modifier = Modifier.padding(vertical = 10.dp),
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = CircleShape
-            ) {
-                Spacer(modifier = Modifier.size(width = 36.dp, height = 4.dp))
-            }
-        },
     ) {
         Column(
             modifier = Modifier

@@ -23,6 +23,7 @@ import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.ScrollFadeRow
+import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.appleduo.AppleDuoManager
 
@@ -69,15 +70,29 @@ fun ExperimentalSettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // App Language Card
-                SettingsCategoryCard(title = "App Language", iconRes = com.petal.browser.R.drawable.translate) {
-                    Text(
-                        "Choose your preferred display language:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                PetalHeroCard {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(
+                                Modifier.size(44.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                androidx.compose.foundation.Image(
+                                    painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.translate),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(22.dp),
+                                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer)
+                                )
+                            }
+                            Text("App Language", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                        Text(
+                            "Choose your preferred display language:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
-                    val languages = listOf(
+                        val languages = listOf(
                         Pair("system", "System Default"),
                         Pair("en", "English"),
                         Pair("hi-Latn", "Hinglish (Hindi in English)"),
@@ -90,13 +105,13 @@ fun ExperimentalSettingsScreenContent(
                         Pair("pt", "Português (Portuguese)"),
                         Pair("ru", "Русский (Russian)"),
                         Pair("ja", "日本語 (Japanese)")
-                    )
+                        )
 
-                    val languageScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = languageScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
+                        val languageScrollState = rememberScrollState()
+                        ScrollFadeRow(
+                            scrollState = languageScrollState,
+                            edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -118,6 +133,7 @@ fun ExperimentalSettingsScreenContent(
                                     } else null
                                 )
                             }
+                        }
                         }
                     }
                 }

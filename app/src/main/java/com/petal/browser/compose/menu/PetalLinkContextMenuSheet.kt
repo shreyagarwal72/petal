@@ -36,7 +36,8 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.AsyncImage
 import com.petal.browser.ui.components.SettingsItem
-import com.petal.browser.ui.components.getGroupItemShape
+import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupRow
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -323,22 +324,19 @@ fun PetalLinkContextMenuSheet(
             }
 
             if (primaryActions.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow
-                ) {
-                    Column {
-                        primaryActions.forEachIndexed { index, spec ->
-                            val shape = getGroupItemShape(index, primaryActions.size, topCorner = 20.dp, bottomCorner = 20.dp, middleCorner = 6.dp, singleCorner = 20.dp)
-                            ContextMenuItemRow(
-                                icon = spec.icon,
-                                title = spec.title,
-                                shape = shape,
-                                onClick = spec.onClick
-                            )
-                        }
-                    }
+                PetalGroup(rowCount = primaryActions.size, modifier = Modifier.padding(horizontal = 16.dp)) { index, position ->
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val spec = primaryActions[index]
+                    PetalGroupRow(
+                        icon = spec.icon,
+                        title = spec.title,
+                        position = position,
+                        onClick = {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                            spec.onClick()
+                        },
+                    )
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -413,88 +411,22 @@ fun PetalLinkContextMenuSheet(
             }
 
             if (shareActions.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow
-                ) {
-                    Column {
-                        shareActions.forEachIndexed { index, spec ->
-                            val shape = getGroupItemShape(index, shareActions.size, topCorner = 20.dp, bottomCorner = 20.dp, middleCorner = 6.dp, singleCorner = 20.dp)
-                            ContextMenuItemRow(
-                                icon = spec.icon,
-                                title = spec.title,
-                                shape = shape,
-                                onClick = spec.onClick
-                            )
-                        }
-                    }
+                PetalGroup(rowCount = shareActions.size, modifier = Modifier.padding(horizontal = 16.dp)) { index, position ->
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val spec = shareActions[index]
+                    PetalGroupRow(
+                        icon = spec.icon,
+                        title = spec.title,
+                        position = position,
+                        onClick = {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                            spec.onClick()
+                        },
+                    )
                 }
                 Spacer(Modifier.height(8.dp))
             }
-        }
-    }
-}
-
-@Composable
-private fun ContextMenuItemRow(
-    icon: ImageVector,
-    title: String,
-    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(0.dp),
-    index: Int = 0,
-    onClick: () -> Unit
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val scale = animateFloatAsState(
-        targetValue = if (pressed) 0.96f else 1f,
-        animationSpec = spring(dampingRatio = 0.75f, stiffness = 500f),
-        label = "contextItemScale"
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .graphicsLayer {
-                scaleX = scale.value
-                scaleY = scale.value
-            }
-            .clickable(
-                interactionSource = interaction,
-                indication = ripple(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                onClick = {
-                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                        .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
-                    onClick()
-                }
-            )
-            .padding(horizontal = 20.dp, vertical = 11.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier.width(28.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }

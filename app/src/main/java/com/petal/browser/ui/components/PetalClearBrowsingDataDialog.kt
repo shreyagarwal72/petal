@@ -34,7 +34,7 @@ fun PetalClearBrowsingDataDialog(
     var clearPermissions by remember { mutableStateOf(false) }
     var splitMenuExpanded by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

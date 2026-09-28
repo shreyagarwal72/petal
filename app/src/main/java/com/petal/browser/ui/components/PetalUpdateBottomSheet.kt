@@ -197,16 +197,13 @@ object PetalUpdateSheetBridge {
                             var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
                                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                                ModalBottomSheet(
+                                com.petal.browser.ui.containment.PetalSheet(
                                     onDismissRequest = {
                                         showSheet = false
                                         val parent = composeView?.parent as? android.view.ViewGroup
                                         parent?.removeView(composeView)
                                     },
                                     sheetState = sheetState,
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                                    dragHandle = { BottomSheetDefaults.DragHandle() }
                                 ) {
                                     PetalChangelogHistorySheetContent(
                                         releases = releases,
@@ -300,16 +297,13 @@ object PetalUpdateSheetBridge {
                             var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
                                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                                ModalBottomSheet(
+                                com.petal.browser.ui.containment.PetalSheet(
                                     onDismissRequest = {
                                         showSheet = false
                                         val parent = composeView?.parent as? android.view.ViewGroup
                                         parent?.removeView(composeView)
                                     },
                                     sheetState = sheetState,
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                                    dragHandle = { BottomSheetDefaults.DragHandle() }
                                 ) {
                                     PetalUpdateSheetContent(
                                         updateInfo = updateInfo,

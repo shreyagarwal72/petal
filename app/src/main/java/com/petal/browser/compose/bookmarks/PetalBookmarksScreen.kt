@@ -22,6 +22,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,6 +53,8 @@ import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.components.PetalExpressiveAlertDialog
 import com.petal.browser.ui.components.PetalExpressiveDialog
 import com.petal.browser.ui.components.bouncyClickable
@@ -181,7 +187,7 @@ fun PetalBookmarksScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = {
-            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+            com.petal.browser.ui.containment.PetalSnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.padding(16.dp)
             )
@@ -215,7 +221,7 @@ fun PetalBookmarksScreen(
                                     contentDescription = "More Options",
                                     onClick = { overflowMenuExpanded = true }
                                 )
-                                DropdownMenu(
+                                com.petal.browser.ui.containment.PetalPopupMenu(
                                     expanded = overflowMenuExpanded,
                                     onDismissRequest = { overflowMenuExpanded = false }
                                 ) {
@@ -326,15 +332,49 @@ fun PetalBookmarksScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         itemsIndexed(filteredBookmarks, key = { _, record -> "${record.url}_${record.time}" }) { index, record ->
-                            BookmarkCardItem(
-                                itemScope = this,
-                                animationIndex = index,
-                                record = record,
+                            val faviconUrl = remember(record.url) { getFaviconUrl(record.url) }
+                            var isFaviconError by remember(record.url) { mutableStateOf(false) }
+                            PetalGroupListRow(
+                                position = petalGroupPositionFor(index, filteredBookmarks.size),
                                 onClick = { onOpenUrl(record.url) },
-                                onDelete = {
+                                modifier = Modifier.animateItem().entrance(index = index, playKey = "${record.url}_${record.time}"),
+                                leading = {
+                                    Box(
+                                        Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (!faviconUrl.isNullOrEmpty() && !isFaviconError) {
+                                            AsyncImage(
+                                                model = faviconUrl,
+                                                contentDescription = record.title,
+                                                onError = { isFaviconError = true },
+                                                modifier = Modifier.size(24.dp).clip(RoundedCornerShape(6.dp))
+                                            )
+                                        } else {
+                                            Icon(if (record.isReadingList) Icons.Filled.AutoStories else Icons.Filled.Bookmark,
+                                                contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+                                        }
+                                    }
+                                },
+                                content = {
+                                    Text(record.title?.ifBlank { record.url } ?: "Bookmark", style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    if (record.isReadingList) {
+                                        Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.tertiaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
+                                            Text("Reading List", style = MaterialTheme.typography.labelSmall,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                },
+                                trailing = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(onClick = {
                                     val deletedRecord = record
                                     try {
                                         val action = RecordAction(context)
@@ -360,6 +400,9 @@ fun PetalBookmarksScreen(
                                             } catch (_: Exception) {}
                                             reloadBookmarks()
                                         }
+                                    }
+                                        }) { Icon(Icons.Filled.Close, "Delete Bookmark", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                                        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             )
@@ -483,109 +526,4 @@ fun PetalBookmarksScreen(
     }
     }
 
-}
-
-
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-@Composable
-private fun BookmarkCardItem(
-    itemScope: androidx.compose.foundation.lazy.LazyItemScope,
-    animationIndex: Int = 0,
-    record: Record,
-    onClick: () -> Unit,
-    onDelete: () -> Unit
-) {
-    val faviconUrl = remember(record.url) { getFaviconUrl(record.url) }
-    var isFaviconError by remember(record.url) { mutableStateOf(false) }
-
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = with(itemScope) {
-            Modifier
-                .fillMaxWidth()
-                .animateItem()
-                .bouncyClickable(scaleDown = 0.97f, onClick = onClick)
-                .entrance(index = animationIndex, playKey = "${record.url}_${record.time}")
-        }
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primary)
-            ) {
-                if (!faviconUrl.isNullOrEmpty() && !isFaviconError) {
-                    AsyncImage(
-                        model = faviconUrl,
-                        contentDescription = record.title,
-                        onError = { isFaviconError = true },
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                    )
-                } else {
-                    Icon(
-                        if (record.isReadingList) Icons.Rounded.AutoStories else Icons.Rounded.Bookmark,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = record.title?.ifBlank { record.url } ?: "Bookmark",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = record.url ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (record.isReadingList) {
-                    Spacer(Modifier.height(4.dp))
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                    ) {
-                        Text(
-                            text = "Reading List",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-            }
-
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Rounded.Close,
-                    contentDescription = "Delete Bookmark",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-    }
 }

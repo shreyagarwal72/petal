@@ -9,15 +9,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CloudUpload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.unit.BackupUnit
 
 @Composable
@@ -81,7 +83,7 @@ fun DataBackupSettingsScreen(
 
 
     if (showBackupDialog) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showBackupDialog = false },
             title = { Text("Backup Options (JSON)") },
             text = {
@@ -166,7 +168,7 @@ fun DataBackupSettingsScreen(
     }
 
     if (showRestoreDialog) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showRestoreDialog = false },
             title = { Text("Restore Options (JSON)") },
             text = {
@@ -239,8 +241,22 @@ fun DataBackupSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Backup & Restore (JSON) Card
-                SettingsCategoryCard(title = "Backup & Restore (JSON)", iconRes = com.petal.browser.R.drawable.backup_filled) {
+                PetalHeroCard {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(
+                                Modifier.size(44.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                androidx.compose.foundation.Image(
+                                    painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.backup_filled),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(22.dp),
+                                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer)
+                                )
+                            }
+                            Text("Backup & Restore (JSON)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        }
                     Text(
                         "Export backups directly to Downloads with Download Manager notifications, or save/restore specific items from any JSON file:",
                         style = MaterialTheme.typography.bodySmall,
@@ -262,7 +278,7 @@ fun DataBackupSettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Filled.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
                                 Text("Backup JSON", maxLines = 1)
                             }
@@ -282,7 +298,7 @@ fun DataBackupSettingsScreen(
                             }
                         }
                     }
-
+                    }
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -315,4 +331,3 @@ fun DataBackupSettingsScreen(
         }
     }
 }
-

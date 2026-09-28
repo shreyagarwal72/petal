@@ -1,5 +1,8 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.PetalSheet
+
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -100,10 +103,9 @@ fun SearchHomeSettingsScreenContent(
     }
 
     if (showEngineSheet) {
-        ModalBottomSheet(
+        PetalSheet(
             onDismissRequest = { showEngineSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             PetalSearchEngineSheetContent(
@@ -137,7 +139,7 @@ fun SearchHomeSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Default Search Engine Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Default Search Engine",
                     iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded,
                     cardId = "search_engine",
@@ -212,7 +214,7 @@ fun SearchHomeSettingsScreenContent(
                 }
 
                 // Homepage & Media Playback Card
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Homepage & Media Playback",
                     iconRes = com.petal.browser.R.drawable.home_filled,
                     cardId = "search_homepage",

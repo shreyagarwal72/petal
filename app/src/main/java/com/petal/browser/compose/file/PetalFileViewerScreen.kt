@@ -28,6 +28,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -1112,38 +1113,22 @@ private fun ArchiveEntryRow(
     onClick: () -> Unit,
 ) {
     val isFolder = entry.isDirectory
-    Surface(
+    com.petal.browser.ui.containment.PetalGroupListRow(
+        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
         onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 1.dp,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 64.dp)
-                .padding(horizontal = 14.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = if (isFolder) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = if (isFolder) Icons.Rounded.Folder else Icons.Rounded.InsertDriveFile,
-                        contentDescription = null,
-                        tint = if (isFolder) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
+        modifier = Modifier.padding(vertical = 1.5.dp),
+        leading = {
+            com.petal.browser.ui.containment.PetalGroupIconBadge(
+                icon = if (isFolder) Icons.Filled.Folder else Icons.Filled.InsertDriveFile,
+                container = if (isFolder) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
+                tint = if (isFolder) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        },
+        content = {
                 Text(
                     text = entry.path.substringAfterLast('/').ifEmpty { entry.path },
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1152,14 +1137,15 @@ private fun ArchiveEntryRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
+        },
+        trailing = {
             Icon(
-                imageVector = if (isFolder) Icons.Rounded.KeyboardArrowRight else Icons.Rounded.OpenInNew,
+                imageVector = if (isFolder) Icons.Filled.ChevronRight else Icons.Filled.OpenInNew,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-    }
+        },
+    )
 }
 
 @Composable

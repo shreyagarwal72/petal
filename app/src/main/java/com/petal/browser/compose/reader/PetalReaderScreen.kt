@@ -41,6 +41,7 @@ import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.PetalSlider
+import com.petal.browser.ui.containment.PetalSheet
 
 enum class ReaderTheme(val title: String, val bg: Color, val text: Color, val surface: Color) {
     SYSTEM("System", Color.Unspecified, Color.Unspecified, Color.Unspecified),
@@ -233,11 +234,7 @@ fun PetalReaderScreen(
 
                     // Appearance Customization Modal Sheet
                     if (showAppearanceSheet) {
-                        ModalBottomSheet(
-                            onDismissRequest = { showAppearanceSheet = false },
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                        ) {
+                        PetalSheet(onDismissRequest = { showAppearanceSheet = false }) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()

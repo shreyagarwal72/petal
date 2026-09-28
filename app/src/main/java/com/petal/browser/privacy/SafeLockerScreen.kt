@@ -235,7 +235,7 @@ fun SafeLockerScreen(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 snackbarHost = {
-                    PetalThemedSnackbarHost(
+                    com.petal.browser.ui.containment.PetalSnackbarHost(
                         hostState = snackbarHostState,
                         modifier = Modifier.padding(16.dp)
                     )

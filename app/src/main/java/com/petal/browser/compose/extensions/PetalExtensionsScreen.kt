@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -65,6 +66,11 @@ import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalSectionLabel
+import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
@@ -205,7 +211,7 @@ fun PetalExtensionsScreen(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 snackbarHost = {
-                    com.petal.browser.ui.components.PetalThemedSnackbarHost(
+                    com.petal.browser.ui.containment.PetalSnackbarHost(
                         hostState = snackbarHostState,
                         modifier = Modifier.padding(16.dp)
                     )
@@ -419,53 +425,31 @@ private fun BuiltInExtensionsList(
             start = 16.dp, end = 16.dp, top = 16.dp,
             bottom = innerPadding.calculateBottomPadding() + 96.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         items(PetalBuiltInExtensionManager.builtIns, key = { it.extensionId }) { spec ->
             var isEnabled by remember { mutableStateOf(sp.getBoolean(spec.prefKey, true)) }
 
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = when (spec.prefKey) {
-                                "petal_builtin_dark_webpages" -> Icons.Rounded.DarkMode
-                                "petal_builtin_clean_link" -> Icons.Rounded.LinkOff
-                                "petal_builtin_universal_copy" -> Icons.Rounded.ContentCopy
-                                "petal_builtin_ai_blocker" -> Icons.Rounded.SmartToy
-                                "petal_builtin_translate" -> Icons.Rounded.Translate
-                                "petal_builtin_google_search_fixer" -> Icons.Rounded.Search
-                                "petal_builtin_media_grabber" -> Icons.Rounded.VideoLibrary
-                                else -> Icons.Rounded.Extension
-                            },
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
+            PetalGroupListRow(
+                position = petalGroupPositionFor(PetalBuiltInExtensionManager.builtIns.indexOf(spec), PetalBuiltInExtensionManager.builtIns.size),
+                onClick = { onOpenSettings(spec) },
+                leading = {
+                        PetalGroupIconBadge(icon = when (spec.prefKey) {
+                            "petal_builtin_dark_webpages" -> Icons.Filled.DarkMode
+                            "petal_builtin_clean_link" -> Icons.Filled.LinkOff
+                            "petal_builtin_universal_copy" -> Icons.Filled.ContentCopy
+                            "petal_builtin_ai_blocker" -> Icons.Filled.SmartToy
+                            "petal_builtin_translate" -> Icons.Filled.Translate
+                            "petal_builtin_google_search_fixer" -> Icons.Filled.Search
+                            "petal_builtin_media_grabber" -> Icons.Filled.VideoLibrary
+                            else -> Icons.Filled.Extension
+                        })
+                },
+                content = {
                         Text(
                             text = spec.label,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -476,30 +460,20 @@ private fun BuiltInExtensionsList(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
-                    }
-
-                    IconButton(
-                        onClick = { onOpenSettings(spec) },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            Icons.Rounded.Settings,
-                            contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    IconSwitch(
-                        checked = isEnabled,
-                        icon = Icons.Rounded.Check,
-                        onCheckedChange = { checked ->
+                },
+                trailing = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { onOpenSettings(spec) }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        IconSwitch(checked = isEnabled, icon = Icons.Rounded.Check, onCheckedChange = { checked ->
                             isEnabled = checked
                             sp.edit().putBoolean(spec.prefKey, checked).apply()
                             PetalBuiltInExtensionManager.setEnabled(context, spec.prefKey, checked)
-                        }
-                    )
+                        })
+                    }
                 }
-            }
+            )
         }
     }
 }
@@ -523,16 +497,11 @@ private fun FirefoxAddonsList(
             start = 16.dp, end = 16.dp, top = 16.dp,
             bottom = innerPadding.calculateBottomPadding() + 96.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         // Section 1: Installed Extensions
         item {
-            Text(
-                text = "Installed Add-ons (${extensions.size})",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+            PetalSectionLabel("Installed Add-ons (${extensions.size})")
         }
 
         if (extensions.isEmpty()) {
@@ -566,6 +535,7 @@ private fun FirefoxAddonsList(
             itemsIndexed(extensions, key = { _, ext -> ext.id }) { index, ext ->
                 ExtensionRow(
                     animationIndex = index,
+                    position = petalGroupPositionFor(index, extensions.size),
                     extension = ext,
                     onToggleEnabled = { enabled -> onToggleEnabled(ext, enabled) },
                     onOpen = { onOpen(ext) },
@@ -584,19 +554,14 @@ private fun FirefoxAddonsList(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Recommended for Petal",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                PetalSectionLabel("Recommended for Petal", Modifier.weight(1f))
                 TextButton(onClick = onAddClick) {
                     Text("Browse All")
                 }
             }
         }
 
-        items(PetalExtensionManager.catalog, key = { it.id }) { entry ->
+        itemsIndexed(PetalExtensionManager.catalog, key = { _, it -> it.id }) { index, entry ->
             val installedExt = extensions.find {
                 it.id.equals(entry.id, ignoreCase = true) ||
                 it.name.equals(entry.name, ignoreCase = true) ||
@@ -606,30 +571,23 @@ private fun FirefoxAddonsList(
             val iconUrl = PetalCuratedExtensionsData.getAmoIconUrl(entry.amoSlug) ?: PetalCuratedExtensionsData.getAmoIconUrl(entry.id)
             val visual = PetalCuratedExtensionsData.getVisual(entry.amoSlug)
 
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable(enabled = !busy) {
+            PetalGroupListRow(
+                position = petalGroupPositionFor(index, PetalExtensionManager.catalog.size),
+                onClick = {
+                    if (!busy) {
                         if (isInstalled && installedExt != null) {
                             PetalExtensionManager.triggerBrowserAction(installedExt.id, context)
                         } else {
                             PetalExtensionManager.install(entry.downloadUrl) { _, _ -> }
                         }
                     }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
+                },
+                leading = {
                     Box(
                         modifier = Modifier
                             .size(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(visual?.accentColor?.copy(alpha = 0.15f) ?: MaterialTheme.colorScheme.surfaceVariant),
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!iconUrl.isNullOrBlank()) {
@@ -651,7 +609,8 @@ private fun FirefoxAddonsList(
                         }
                     }
 
-                    Column(modifier = Modifier.weight(1f)) {
+                },
+                content = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -663,8 +622,9 @@ private fun FirefoxAddonsList(
                             )
                             if (isInstalled) {
                                 Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                    shape = RoundedCornerShape(50),
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 ) {
                                     Text(
                                         text = "Installed",
@@ -683,29 +643,15 @@ private fun FirefoxAddonsList(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
-                    }
-
+                },
+                trailing = {
                     if (isInstalled) {
-                        Icon(
-                            Icons.Rounded.CheckCircle,
-                            contentDescription = "Installed",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    } else {
-                        FilledTonalIconButton(
-                            onClick = { PetalExtensionManager.install(entry.downloadUrl) { _, _ -> } },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.Download,
-                                contentDescription = "Install",
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        Icon(Icons.Rounded.CheckCircle, "Installed", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                    } else FilledTonalIconButton(onClick = { PetalExtensionManager.install(entry.downloadUrl) { _, _ -> } }, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Rounded.Download, "Install", modifier = Modifier.size(18.dp))
                     }
                 }
-            }
+            )
         }
     }
 }
@@ -713,6 +659,7 @@ private fun FirefoxAddonsList(
 @Composable
 private fun ExtensionRow(
     animationIndex: Int = 0,
+    position: PetalGroupPosition = PetalGroupPosition.SINGLE,
     extension: PetalExtensionManager.InstalledExtension,
     onToggleEnabled: (Boolean) -> Unit,
     onOpen: () -> Unit,
@@ -728,27 +675,16 @@ private fun ExtensionRow(
         }
     }
 
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .bouncyClickable(scaleDown = 0.98f, onClick = onOpen)
-            .entrance(index = animationIndex)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
+    PetalGroupListRow(
+        position = position,
+        onClick = onOpen,
+        modifier = Modifier.entrance(index = animationIndex),
+        leading = {
             Box(
                 modifier = Modifier
-                    .size(46.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 if (extension.icon != null) {
@@ -770,17 +706,17 @@ private fun ExtensionRow(
                     Icon(
                         Icons.Rounded.Extension,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
-
-            Column(modifier = Modifier.weight(1f)) {
+        },
+        content = {
                 Text(
                     extension.name,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -791,19 +727,19 @@ private fun ExtensionRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
-
-            IconSwitch(
-                checked = extension.enabled,
-                icon = Icons.Rounded.Check,
-                onCheckedChange = onToggleEnabled
-            )
-
+        },
+        trailing = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconSwitch(
+                    checked = extension.enabled,
+                    icon = Icons.Rounded.Check,
+                    onCheckedChange = onToggleEnabled
+                )
             Box {
                 IconButton(onClick = { showMenu = true }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = "More options")
                 }
-                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                com.petal.browser.ui.containment.PetalPopupMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     if (extension.optionsPageUrl != null) {
                         DropdownMenuItem(
                             text = { Text("Settings") },
@@ -832,8 +768,9 @@ private fun ExtensionRow(
                     )
                 }
             }
+            }
         }
-    }
+    )
 }
 
 @Composable
@@ -849,7 +786,7 @@ private fun BuiltInExtensionSettingsDialog(
             var contrast by remember { mutableStateOf(PetalBuiltInExtensionManager.getDarkWebpagesContrast(context)) }
             var newDomain by remember { mutableStateOf("") }
 
-            AlertDialog(
+            com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                 onDismissRequest = onDismiss,
                 icon = { Icon(Icons.Rounded.DarkMode, contentDescription = null) },
                 title = { Text("Petal Dark Webpages Settings") },
@@ -917,7 +854,7 @@ private fun BuiltInExtensionSettingsDialog(
             )
         }
         else -> {
-            AlertDialog(
+            com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                 onDismissRequest = onDismiss,
                 icon = { Icon(Icons.Rounded.Extension, contentDescription = null) },
                 title = { Text(spec.label) },
@@ -952,7 +889,7 @@ private fun AddExtensionSheet(
     val busy by PetalExtensionManager.busy.collectAsState()
     val extensions by PetalExtensionManager.extensions.collectAsState()
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
+    com.petal.browser.ui.containment.PetalSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1030,7 +967,7 @@ private fun AddExtensionSheet(
     }
 
     if (showMozillaCatalogPrompt) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showMozillaCatalogPrompt = false },
             icon = { Icon(Icons.Rounded.Extension, contentDescription = null) },
             title = { Text("Find Firefox extensions") },
@@ -1056,7 +993,7 @@ private fun ExtensionDetailSheet(
     onOpenLink: (title: String, url: String) -> Unit,
     onOpenPopup: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
+    com.petal.browser.ui.containment.PetalSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
             Text(extension.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Text(
@@ -1138,7 +1075,7 @@ private fun DetailLinkRow(icon: ImageVector, title: String, url: String, onOpenL
 @Composable
 private fun InstallPermissionDialog(prompt: PetalExtensionManager.PendingPrompt) {
     val meta = prompt.extension.metaData
-    AlertDialog(
+    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
         onDismissRequest = { prompt.respond(false) },
         icon = { Icon(Icons.Rounded.Extension, contentDescription = null) },
         title = { Text(if (prompt.isUpdate) "Update ${meta.name ?: prompt.extension.id}?" else "Add ${meta.name ?: prompt.extension.id}?") },
@@ -1503,7 +1440,7 @@ fun PetalExtensionPopupScreen(
         }
 
         pendingTextPrompt?.let { prompt ->
-            AlertDialog(
+            com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                 onDismissRequest = {
                     textPromptResult?.complete(prompt.dismiss())
                     pendingTextPrompt = null

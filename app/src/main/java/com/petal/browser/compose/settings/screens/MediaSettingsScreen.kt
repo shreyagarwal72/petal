@@ -1,4 +1,6 @@
 /*
+
+import com.petal.browser.ui.containment.PetalSettingsSection
  * MediaSettingsScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Material 3 Expressive Media & Sniffer Settings Screen for Petal Browser.
@@ -82,7 +84,7 @@ fun MediaSettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // ── Section 1: MEDIA ──────────────────────────────────────────
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Media Engine",
                     icon = Icons.Rounded.VideoLibrary,
                     cardId = "media_engine",
@@ -174,7 +176,7 @@ fun MediaSettingsScreen(
                 }
 
                 // ── Section 2: SYNC & ECOSYSTEM ──────────────────────────────
-                SettingsCategoryCard(
+                PetalSettingsSection(
                     title = "Sync & Ecosystem",
                     icon = Icons.Rounded.Sync,
                     cardId = "sync_ecosystem",

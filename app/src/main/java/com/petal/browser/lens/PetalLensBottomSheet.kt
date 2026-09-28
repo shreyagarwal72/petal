@@ -183,7 +183,7 @@ fun PetalLensBottomSheet(
     }
 
     if (showSnapProviderChooser) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showSnapProviderChooser = false },
             icon = { Icon(Icons.Rounded.QrCodeScanner, contentDescription = null) },
             title = { Text("Choose Snap Photo scanner") },
