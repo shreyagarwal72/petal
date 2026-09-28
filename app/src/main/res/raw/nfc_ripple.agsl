@@ -20,7 +20,8 @@ half4 main(float2 fragCoord) {
     float wave2 = (uAmplitude * 0.55) * sin(uFrequency * 1.15 * subTime) * exp(-(uDecay * 0.8) * subTime);
     
     float totalWave = wave1 + wave2;
-    float2 n = normalize(pos - uOrigin);
+    float2 d = pos - uOrigin;
+    float2 n = d / max(length(d), 0.0001);
     float2 newPos = pos + totalWave * n;
     
     // Dynamic wave specular highlight
