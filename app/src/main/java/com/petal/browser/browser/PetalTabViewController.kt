@@ -31,9 +31,9 @@ import mozilla.components.feature.contextmenu.ContextMenuUseCases
 class PetalTabViewController private constructor(
     context: Context,
     attrs: AttributeSet?,
-    defStyleAttr: Int,
+    @Suppress("UNUSED_PARAMETER") defStyleAttr: Int,
     private val engineView: EngineView
-) : SwipeRefreshLayout(context, attrs, defStyleAttr), AlbumController, EngineView by engineView {
+) : SwipeRefreshLayout(context, attrs), AlbumController, EngineView by engineView {
 
     @JvmOverloads
     constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :

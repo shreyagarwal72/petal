@@ -37,6 +37,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -60,6 +63,15 @@ object PetalExitConfirmationDialog {
         dialog.setCanceledOnTouchOutside(true)
 
         val composeView = ComposeView(activity).apply {
+            // A Dialog has its own window, so the Activity's view-tree owners are NOT inherited.
+            // Without these, attaching the ComposeView throws
+            // "ViewTreeLifecycleOwner not found from ComposeView".
+            val owner = activity as? androidx.activity.ComponentActivity
+            if (owner != null) {
+                setViewTreeLifecycleOwner(owner)
+                setViewTreeViewModelStoreOwner(owner)
+                setViewTreeSavedStateRegistryOwner(owner)
+            }
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
             setContent {
                 PetalExpressiveTheme {
@@ -75,6 +87,13 @@ object PetalExitConfirmationDialog {
         }
 
         dialog.setContentView(composeView)
+        (activity as? androidx.activity.ComponentActivity)?.let { owner ->
+            dialog.window?.decorView?.let { decor ->
+                decor.setViewTreeLifecycleOwner(owner)
+                decor.setViewTreeViewModelStoreOwner(owner)
+                decor.setViewTreeSavedStateRegistryOwner(owner)
+            }
+        }
         dialog.setOnDismissListener { }
         dialog.setOnShowListener {
             val window = dialog.window ?: return@setOnShowListener
