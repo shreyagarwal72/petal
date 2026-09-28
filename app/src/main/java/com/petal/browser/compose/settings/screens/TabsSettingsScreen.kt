@@ -142,7 +142,7 @@ fun TabsSettingsScreen(
                     }
 
                     // Restore Tabs on Startup Switch
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Restore tabs on startup",
                         subtitle = "Reopen your open tabs when launching Petal or after app restart",
                         icon = Icons.Rounded.Restore,
@@ -154,7 +154,7 @@ fun TabsSettingsScreen(
                     )
 
                     // Cross-device Tab Groups Switch
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Automatically open tab groups from other devices",
                         subtitle = "Sync tab sessions seamlessly across connected devices",
                         icon = Icons.Rounded.Devices,
@@ -166,7 +166,7 @@ fun TabsSettingsScreen(
                     )
 
                     // Confirm Tab Close Switch
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Confirm before closing tab",
                         subtitle = "Prompt for confirmation before closing tabs to prevent accidental dismissal",
                         icon = Icons.Rounded.Close,

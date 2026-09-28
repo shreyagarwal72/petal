@@ -355,7 +355,7 @@ fun AppearanceSettingsScreenContent(
                     }
 
                     // Material You Dynamic Color Toggle
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Material You Dynamic Color",
                         subtitle = "Adapt accent colors from your system wallpaper (Android 12+)",
                         icon = Icons.Rounded.ColorLens,
@@ -366,7 +366,7 @@ fun AppearanceSettingsScreenContent(
                         }
                     )
                     // AMOLED Black Toggle
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "AMOLED Black Dark Mode",
                         subtitle = if (isDarkTheme) "Pure black background ladder for OLED displays" else "Disabled in Light Mode (Requires Dark theme)",
                         icon = Icons.Rounded.DarkMode,
@@ -512,7 +512,7 @@ fun AppearanceSettingsScreenContent(
                     targetHighlightId = targetHighlightItemId
                 ) {
                     // Floating Tab Bar Toggle
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Floating Tab Bar",
                         subtitle = "Show the bottom bar as a floating pill instead of a flat bar",
                         icon = Icons.Rounded.SpaceBar,
@@ -520,7 +520,7 @@ fun AppearanceSettingsScreenContent(
                         onCheckedChange = onFloatingTabBarChange
                     )
                     // Material 3 Expressive Background Morphing Shapes Toggle
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "M3 Expressive Morphing Shapes",
                         subtitle = "Display ambient morphing background shapes across all app screens",
                         icon = Icons.Rounded.BubbleChart,
@@ -598,7 +598,7 @@ fun AppearanceSettingsScreenContent(
                     cardId = "appearance_refresh",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "High Refresh Rate (120Hz+)",
                         subtitle = "Force 120Hz/144Hz peak display refresh rate and smooth 120 FPS frame pacing (Detected hardware peak: ${maxDetectedRefreshRate.toInt()} Hz)",
                         icon = Icons.Rounded.Speed,
@@ -615,7 +615,7 @@ fun AppearanceSettingsScreenContent(
                         }
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "App Launch Ripple Effect",
                         subtitle = "Display fluid liquid displacement ripple animation across the screen when opening the app",
                         icon = Icons.Rounded.WaterDrop,

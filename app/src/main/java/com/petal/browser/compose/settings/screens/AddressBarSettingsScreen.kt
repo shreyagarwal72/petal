@@ -88,14 +88,14 @@ fun AddressBarSettingsScreen(
                 }
 
                 PetalSettingsSection("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Address Bar Horizontal Swipe to Switch Tabs",
                         subtitle = "Swipe left or right across the address bar pill to fluidly switch between open tabs",
                         icon = Icons.Rounded.Swipe,
                         checked = swipeTabs,
                         onCheckedChange = viewModel::setSwipeTabs
                     )
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Address Bar Long-Press Quick Actions",
                         subtitle = "Long press the address bar for quick actions: Clean Copy, Paste & Go, Bookmark, and Hard Refresh",
                         icon = Icons.Rounded.TouchApp,

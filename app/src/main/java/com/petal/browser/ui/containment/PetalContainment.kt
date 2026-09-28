@@ -48,6 +48,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -68,6 +70,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.tween
 
 enum class PetalGroupPosition { SINGLE, TOP, MIDDLE, BOTTOM }
+
+val LocalPetalSectionHighlighted = compositionLocalOf { false }
+
+@Composable
+private fun petalGroupSurfaceColor(): Color {
+    val target = if (LocalPetalSectionHighlighted.current) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    val color by animateColorAsState(target, label = "petalGroupSurface")
+    return color
+}
 
 fun petalGroupShape(position: PetalGroupPosition): RoundedCornerShape = when (position) {
     PetalGroupPosition.SINGLE -> RoundedCornerShape(28.dp)
@@ -169,7 +184,7 @@ fun PetalGroupRow(
         onClick = onClick,
         enabled = enabled,
         shape = petalGroupShape(position),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
         modifier = modifier.fillMaxWidth().scale(scale),
@@ -218,7 +233,7 @@ fun PetalGroupControlRow(
         onClick = { if (enabled) onCheckedChange(!checked) },
         enabled = enabled,
         shape = petalGroupShape(position),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
         modifier = modifier.fillMaxWidth().scale(scale),
@@ -300,7 +315,7 @@ fun PetalGroupToggleRow(
         onClick = { if (enabled) onCheckedChange(!checked) },
         enabled = enabled,
         shape = petalGroupShape(position),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
         modifier = modifier.fillMaxWidth().scale(scale),
@@ -323,6 +338,65 @@ fun PetalGroupToggleRow(
 }
 
 @Composable
+fun PetalSettingsToggleRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+    position: PetalGroupPosition = PetalGroupPosition.SINGLE,
+    modifier: Modifier = Modifier,
+) {
+    val source = remember { MutableInteractionSource() }
+    val scale = rememberPetalGroupPressScale(source)
+    val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+    val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    Card(
+        onClick = { if (enabled) onCheckedChange(!checked) },
+        enabled = enabled,
+        shape = petalGroupShape(position),
+        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = source,
+        modifier = modifier.fillMaxWidth().scale(scale),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PetalGroupIconBadge(icon, badgeContainer, badgeTint)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.38f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (subtitle.isNotBlank()) {
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.38f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            com.petal.browser.ui.components.IconSwitch(
+                checked = checked,
+                icon = icon,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled,
+            )
+        }
+    }
+}
+
+@Composable
 fun PetalGroupListRow(
     position: PetalGroupPosition,
     onClick: () -> Unit,
@@ -337,7 +411,7 @@ fun PetalGroupListRow(
     val scale = rememberPetalGroupPressScale(source)
     val haptics = LocalHapticFeedback.current
     val selectedColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-    Card(shape = petalGroupShape(position), colors = CardDefaults.cardColors(containerColor = if (selected) selectedColor else MaterialTheme.colorScheme.surfaceContainerHigh),
+    Card(shape = petalGroupShape(position), colors = CardDefaults.cardColors(containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else if (selected) selectedColor else petalGroupSurfaceColor()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), modifier = modifier.fillMaxWidth().scale(scale)
             .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -441,7 +515,7 @@ fun PetalHeroCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(modifier = modifier.fillMaxWidth(), shape = shape,
-        colors = CardDefaults.cardColors(containerColor = containerColor),
+        colors = CardDefaults.cardColors(containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else containerColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), content = content)
 }
 
@@ -461,7 +535,7 @@ fun PetalActionCard(
         enabled = enabled,
         modifier = modifier.scale(scale),
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = containerColor),
+        colors = CardDefaults.cardColors(containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else containerColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
         content = content,

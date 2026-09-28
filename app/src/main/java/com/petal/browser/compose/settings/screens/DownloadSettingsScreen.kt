@@ -101,7 +101,7 @@ fun DownloadSettingsScreenContent(
                     cardId = "misc_download_delete",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Confirm file deletion",
                         subtitle = "Ask before removing a download from the device",
                         icon = Icons.Rounded.HelpOutline,
@@ -111,7 +111,7 @@ fun DownloadSettingsScreenContent(
                             preferences.edit().putBoolean("sp_confirm_download_delete", it).apply()
                         }
                     )
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Delete file from storage",
                         subtitle = "Use this as the default choice when deleting a download",
                         icon = Icons.Rounded.DeleteForever,
@@ -136,7 +136,7 @@ fun DownloadSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Auto-preview downloaded images",
                         subtitle = "Show downloaded photos in the manager like Chrome",
                         icon = Icons.Rounded.Image,
@@ -160,7 +160,7 @@ fun DownloadSettingsScreenContent(
                         }
                     }
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Live updates & alerts",
                         subtitle = "Show live progress chip in status bar with animated doll runner for active downloads",
                         icon = Icons.Rounded.NotificationsActive,

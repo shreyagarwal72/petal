@@ -267,7 +267,7 @@ fun SearchHomeSettingsScreenContent(
                         )
                     }
                     // Background Audio & Video Playback
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Background Audio & Video Playback",
                         subtitle = "Keep YouTube & web media playing when switching tabs or backgrounding app",
                         icon = Icons.Rounded.PlayCircle,
@@ -275,7 +275,7 @@ fun SearchHomeSettingsScreenContent(
                         onCheckedChange = onBackgroundPlayChange
                     )
                     // Auto Picture-in-Picture
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = if (isPipSupported) "Auto Picture-in-Picture (PiP)" else "Auto Picture-in-Picture (Not Supported)",
                         subtitle = if (isPipSupported) "Automatically enter floating PiP window when leaving app during video playback" else "Picture-in-Picture mode is not supported on this device",
                         icon = Icons.Rounded.PictureInPicture,

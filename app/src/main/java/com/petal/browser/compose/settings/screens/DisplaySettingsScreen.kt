@@ -187,7 +187,7 @@ fun DisplaySettingsScreenContent(
                     cardId = "nav_safeguards",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Double Back to Exit",
                         subtitle = "Press back twice quickly to exit the browser",
                         icon = Icons.Rounded.ExitToApp,
@@ -209,7 +209,7 @@ fun DisplaySettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Enable Apple Duo Fold Effect",
                         subtitle = "Apply dynamic frosted glass fold animation responding to device tilt",
                         icon = Icons.Rounded.Animation,
@@ -218,7 +218,7 @@ fun DisplaySettingsScreenContent(
                     )
 
                     if (appleDuoEnabled) {
-                        ToggleRow(
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
                             title = "Show in Websites",
                             subtitle = "Keep the 3D frosted fold active when viewing web pages and websites",
                             icon = Icons.Rounded.Language,
@@ -226,7 +226,7 @@ fun DisplaySettingsScreenContent(
                             onCheckedChange = onAppleDuoWebsitesChange
                         )
 
-                        ToggleRow(
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
                             title = if (appleDuoUseSensor && appleDuoHasSensor) "Sensor Motion Tracking" else "Manual Tilt Control",
                             subtitle = if (!appleDuoHasSensor) "Rotation sensor unavailable on this device — manual mode active" else "Use gyroscope and game rotation sensors for 6DoF tilt",
                             icon = if (appleDuoUseSensor && appleDuoHasSensor) Icons.Rounded.ScreenRotation else Icons.Rounded.Tune,
@@ -272,7 +272,7 @@ fun DisplaySettingsScreenContent(
                                 color = MaterialTheme.colorScheme.primary
                             )
 
-                            ToggleRow(
+                            com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                 title = "Auto-Recenter Washout",
                                 subtitle = "Continuously absorb gyro drift and posture changes while phone is still",
                                 icon = Icons.Rounded.Autorenew,
@@ -405,7 +405,7 @@ fun DisplaySettingsScreenContent(
                     cardId = "display",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Predictive Back Animations",
                         subtitle = "Enable fluid predictive back gesture scaling and slide transitions across all screens",
                         icon = Icons.Rounded.Animation,
@@ -413,7 +413,7 @@ fun DisplaySettingsScreenContent(
                         onCheckedChange = onPredictiveBackChange
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Depth Blur Effects",
                         subtitle = "Show 24.dp depth blur and black dim overlay on back pages during navigation and predictive gestures",
                         icon = Icons.Rounded.BlurOn,
@@ -421,7 +421,7 @@ fun DisplaySettingsScreenContent(
                         onCheckedChange = onDepthBlurChange
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Touch Haptics Engine",
                         subtitle = "Tactile feedback on button presses and UI interactions",
                         icon = Icons.Rounded.Vibration,
@@ -434,7 +434,7 @@ fun DisplaySettingsScreenContent(
                         }
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Scroll Haptics",
                         subtitle = "Subtle tactile feedback while scrolling web pages and lists",
                         icon = Icons.Rounded.TouchApp,
@@ -580,7 +580,7 @@ fun DisplaySettingsScreenContent(
                             }
                         }
                     }
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Force Enable Zoom (Override Viewport)",
                         subtitle = "Override website viewport locks (user-scalable=no) to allow pinch-to-zoom on all pages",
                         icon = Icons.Rounded.ZoomIn,
@@ -588,7 +588,7 @@ fun DisplaySettingsScreenContent(
                         onCheckedChange = onForceZoomChange
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Simplified View for Webpages",
                         subtitle = "Detect article content and enable reader mode prompts for clean distraction-free reading",
                         icon = Icons.Rounded.Article,
@@ -596,7 +596,7 @@ fun DisplaySettingsScreenContent(
                         onCheckedChange = onReaderModeDetectionChange
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Caret Browsing (F7 Shortcut)",
                         subtitle = "Navigate and select text within webpages using a movable keyboard cursor (toggle anytime via F7)",
                         icon = Icons.Rounded.TextFormat,
@@ -607,7 +607,7 @@ fun DisplaySettingsScreenContent(
                         }
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Touchpad Two-Finger Navigation",
                         subtitle = "Swipe horizontally with two fingers on a touchpad or trackpad to navigate back and forward in history",
                         icon = Icons.Rounded.Swipe,

@@ -123,7 +123,7 @@ fun MiscSettingsScreenContent(
                     cardId = "misc_apps",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Petal Custom Tabs",
                         subtitle = "Open links from external apps in a fast, lightweight Custom Tab overlay",
                         icon = Icons.Rounded.OpenInBrowser,
@@ -131,7 +131,7 @@ fun MiscSettingsScreenContent(
                         onCheckedChange = onCustomTabsEnabledChange
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Enhanced Tracking Protection",
                         subtitle = "Isolate cross-site trackers and block known tracking scripts inside Custom Tabs",
                         icon = Icons.Rounded.Security,
@@ -139,7 +139,7 @@ fun MiscSettingsScreenContent(
                         onCheckedChange = onCustomTabsEtpChange
                     )
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Auto Open External Apps",
                         subtitle = "Allow YouTube, Maps & Play Store links to open in external native apps instead of Petal",
                         icon = Icons.Rounded.Launch,

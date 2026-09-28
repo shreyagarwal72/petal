@@ -242,7 +242,7 @@ fun PrivacySettingsScreenContent(
                     cardId = "privacy_adblock",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Ad & Tracker Shield",
                         subtitle = "uBlock Origin & AdGuard-grade Trie filter engine & scriptlets",
                         icon = Icons.Rounded.Shield,
@@ -271,35 +271,35 @@ fun PrivacySettingsScreenContent(
                             }
                         }
                     }
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Block Third-Party Tracking Cookies",
                         subtitle = "Isolate and block cross-site cookies used for ad tracking",
                         icon = Icons.Rounded.Cookie,
                         checked = blockThirdPartyCookies,
                         onCheckedChange = onBlockThirdPartyCookiesChange
                     )
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Canvas, Audio & Font Fingerprint Shield",
                         subtitle = "Randomize canvas, WebGL, AudioContext, and font geometry to defeat browser fingerprinting",
                         icon = Icons.Rounded.Fingerprint,
                         checked = fingerprintProtection,
                         onCheckedChange = onFingerprintProtectionChange
                     )
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "WebRTC IP Leak Shield",
                         subtitle = "Prevent local & public IP address leaks via WebRTC STUN/TURN queries",
                         icon = Icons.Rounded.WifiProtectedSetup,
                         checked = webrtcProtection,
                         onCheckedChange = onWebrtcProtectionChange
                     )
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Do Not Track & Global Privacy Control (GPC)",
                         subtitle = "Broadcast DNT: 1 and Sec-GPC: 1 signals requesting websites not to sell or share your data",
                         icon = Icons.Rounded.Security,
                         checked = dntGpc,
                         onCheckedChange = onDntGpcChange
                     )
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Strict Referrer Trimming",
                         subtitle = "Strip cross-origin URL paths from referrer headers to protect browsing privacy",
                         icon = Icons.Rounded.LinkOff,
@@ -364,14 +364,14 @@ fun PrivacySettingsScreenContent(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "HTTPS Security Enforcer",
                         subtitle = "Automatically upgrade connections to HTTPS",
                         icon = Icons.Rounded.Lock,
                         checked = httpsOnly,
                         onCheckedChange = onHttpsOnlyChange
                     )
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "WebAuthn & Passkey Support",
                         subtitle = "Allow websites to authenticate passwordless sign-ins using biometric passkeys, hardware tokens & Google Password Manager",
                         icon = Icons.Rounded.Key,
@@ -387,21 +387,21 @@ fun PrivacySettingsScreenContent(
                     cardId = "privacy_cookies",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Enable JavaScript",
                         subtitle = "Required for modern web features",
                         icon = Icons.Rounded.Code,
                         checked = javaScriptEnabled,
                         onCheckedChange = onJavaScriptEnabledChange
                     )
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Block Popup Windows",
                         subtitle = "Prevent unwanted popups and redirect windows",
                         icon = Icons.Rounded.OpenInNew,
                         checked = blockPopups,
                         onCheckedChange = onBlockPopupsChange
                     )
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Open Redirect Links in Background",
                         subtitle = "Detect external redirect links and spawn them silently in a background tab",
                         icon = Icons.Rounded.TabUnselected,

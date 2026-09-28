@@ -92,7 +92,7 @@ fun MediaSettingsScreen(
                     targetHighlightId = targetHighlightItemId
                 ) {
                     // Native Video Player Toggle
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Native Video Player",
                         subtitle = "Bypass web player and launch streams directly into hardware-accelerated ExoPlayer with gestures & background audio",
                         icon = Icons.Rounded.PlayCircle,
@@ -105,7 +105,7 @@ fun MediaSettingsScreen(
                     )
 
                     // Media Sniffer / Fetcher
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Detect Media in Background",
                         subtitle = "Continuously sniff video/audio streams and M3U8/MPD playlists without interrupting browsing",
                         icon = Icons.Rounded.Sensors,
@@ -118,7 +118,7 @@ fun MediaSettingsScreen(
                     )
 
                     // Show Media Button in address bar
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Show Media Button",
                         subtitle = "Display quick-access media sniffer button on the address bar when playable streams are found",
                         icon = Icons.Rounded.SmartDisplay,
@@ -131,7 +131,7 @@ fun MediaSettingsScreen(
                     )
 
                     // Automatically open media panel
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Automatically Open Media Panel",
                         subtitle = "Pop up the media fetcher sheet automatically when new video sources are extracted",
                         icon = Icons.Rounded.OpenInNew,
@@ -144,7 +144,7 @@ fun MediaSettingsScreen(
                     )
 
                     // Validate media before showing
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Validate Media Before Showing",
                         subtitle = "Perform lightweight HEAD check on sniffing URLs to filter out expired or non-playable links",
                         icon = Icons.Rounded.Verified,
@@ -157,7 +157,7 @@ fun MediaSettingsScreen(
                     )
 
                     // AI Blocker Toggle
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "AI Blocker",
                         subtitle = "Automatically clean search results by stripping cluttered generative AI overviews and promoted summaries",
                         icon = Icons.Rounded.Block,

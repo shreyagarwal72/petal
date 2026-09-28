@@ -118,7 +118,7 @@ fun UpdaterSettingsScreenContent(
                     title = "Update Tracker & Releases",
                     iconRes = com.petal.browser.R.drawable.update_rounded
                 ) {
-                    ToggleRow(
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = "Check for Updates on Launch",
                         subtitle = "Automatically check for new browser releases when app starts",
                         icon = Icons.Rounded.SystemUpdate,

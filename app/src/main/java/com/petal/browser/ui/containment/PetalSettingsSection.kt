@@ -1,7 +1,5 @@
 package com.petal.browser.ui.containment
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -42,12 +40,6 @@ fun PetalSettingsSection(
             highlighted = false
         }
     }
-    val background by animateColorAsState(
-        if (highlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        else MaterialTheme.colorScheme.surfaceContainerHigh,
-        animationSpec = tween(220),
-        label = "petalSettingsSectionHighlight",
-    )
     Column(modifier.fillMaxWidth().bringIntoViewRequester(requester)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             when {
@@ -56,10 +48,12 @@ fun PetalSettingsSection(
             }
             PetalSectionLabel(title, modifier = Modifier.weight(1f))
         }
-        PetalHeroCard(containerColor = background) {
-            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                content()
-            }
+        CompositionLocalProvider(LocalPetalSectionHighlighted provides highlighted) {
+            Column(
+                Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+                content = content,
+            )
         }
     }
 }
