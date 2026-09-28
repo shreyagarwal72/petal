@@ -45,6 +45,8 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 data class PetalUpdateInfo(
     val versionName: String,
@@ -460,7 +462,7 @@ fun PetalUpdateSheetContent(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
-                        text = "What's New",
+                        text = stringResource(R.string.ui_what_s_new),
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 6.dp)
@@ -506,7 +508,7 @@ fun PetalUpdateSheetContent(
                                 trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                             )
                             Text(
-                                text = "Downloading update ($downloadProgress%)",
+                                text = stringResource(R.string.ui_downloading_update, downloadProgress),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -533,12 +535,12 @@ fun PetalUpdateSheetContent(
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Downloading in Background",
+                                    text = stringResource(R.string.ui_downloading_in_background),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
-                                    text = "Download won't stop if app is closed. Installer will open automatically.",
+                                    text = stringResource(R.string.ui_download_won_t_stop_if),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                 )
@@ -549,7 +551,7 @@ fun PetalUpdateSheetContent(
                     var updateSplitExpanded by remember { mutableStateOf(false) }
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         ExpressiveSplitButton(
-                            label = "Download & Install Update",
+                            label = stringResource(R.string.ui_download_install_update),
                             onPrimaryClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
                                 isDownloading = true
@@ -591,7 +593,7 @@ fun PetalUpdateSheetContent(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text("Download in Background") },
+                                text = { Text(stringResource(R.string.ui_download_in_background)) },
                                 leadingIcon = {
                                     Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 },
@@ -607,7 +609,7 @@ fun PetalUpdateSheetContent(
                             )
                             if (updateInfo.releaseUrl.isNotBlank()) {
                                 com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                    text = { Text("Open GitHub Releases") },
+                                    text = { Text(stringResource(R.string.ui_open_github_releases)) },
                                     leadingIcon = {
                                         Icon(Icons.Rounded.OpenInBrowser, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                     },
@@ -641,7 +643,7 @@ fun PetalUpdateSheetContent(
                 ) {
                     Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("View Release Notes on GitHub")
+                    Text(stringResource(R.string.ui_view_release_notes_on_github))
                 }
             }
 
@@ -723,12 +725,12 @@ fun PetalChangelogHistorySheetContent(
             }
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = "Changelog History",
+                text = stringResource(R.string.ui_changelog_history),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Previous browser releases & release notes",
+                text = stringResource(R.string.ui_previous_browser_releases_release_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -740,7 +742,7 @@ fun PetalChangelogHistorySheetContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No changelog releases found.",
+                        text = stringResource(R.string.ui_no_changelog_releases_found),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -791,7 +793,7 @@ fun PetalChangelogHistorySheetContent(
                                         ) {
                                             Icon(
                                                 Icons.Rounded.OpenInNew,
-                                                contentDescription = "View on GitHub",
+                                                contentDescription = stringResource(R.string.ui_view_on_github),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.size(18.dp)
                                             )

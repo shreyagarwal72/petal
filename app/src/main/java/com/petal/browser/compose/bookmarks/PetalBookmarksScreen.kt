@@ -62,6 +62,8 @@ import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.compose.home.getFaviconUrl
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 fun interface BookmarkUrlHandler {
     fun open(url: String)
@@ -228,7 +230,7 @@ fun PetalBookmarksScreen(
                                     com.petal.browser.ui.containment.PetalPopupMenuItem(
                                         text = {
                                             Text(
-                                                "Clear All Bookmarks",
+                                                stringResource(R.string.ui_clear_all_bookmarks),
                                                 color = MaterialTheme.colorScheme.error
                                             )
                                         },
@@ -254,12 +256,12 @@ fun PetalBookmarksScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search bookmarks...") },
+                    placeholder = { Text(stringResource(R.string.ui_search_bookmarks)) },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Rounded.Close, contentDescription = "Clear search")
+                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear_search))
                             }
                         }
                     },
@@ -367,7 +369,7 @@ fun PetalBookmarksScreen(
                                     if (record.isReadingList) {
                                         Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.tertiaryContainer,
                                             contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
-                                            Text("Reading List", style = MaterialTheme.typography.labelSmall,
+                                            Text(stringResource(R.string.ui_reading_list), style = MaterialTheme.typography.labelSmall,
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                                         }
                                     }
@@ -417,10 +419,10 @@ fun PetalBookmarksScreen(
             PetalExpressiveAlertDialog(
                 onDismissRequest = { showClearConfirm = false },
                 icon = Icons.Rounded.DeleteSweep,
-                title = "Clear All Bookmarks?",
-                message = "This will permanently remove all bookmarks from your library. This action cannot be undone.",
-                confirmText = "Clear All",
-                dismissText = "Cancel",
+                title = stringResource(R.string.ui_clear_all_bookmarks_2),
+                message = stringResource(R.string.ui_this_will_permanently_remove_all_2),
+                confirmText = stringResource(R.string.ui_clear_all),
+                dismissText = stringResource(R.string.ui_cancel),
                 destructive = true,
                 onConfirm = {
                     showClearConfirm = false
@@ -460,7 +462,7 @@ fun PetalBookmarksScreen(
                 }
 
                 Text(
-                    text = "Add Bookmark",
+                    text = stringResource(R.string.ui_add_bookmark),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -470,7 +472,7 @@ fun PetalBookmarksScreen(
                     OutlinedTextField(
                         value = newTitle,
                         onValueChange = { newTitle = it },
-                        label = { Text("Title") },
+                        label = { Text(stringResource(R.string.ui_title)) },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -478,7 +480,7 @@ fun PetalBookmarksScreen(
                     OutlinedTextField(
                         value = newUrl,
                         onValueChange = { newUrl = it },
-                        label = { Text("URL") },
+                        label = { Text(stringResource(R.string.ui_url)) },
                         placeholder = { Text("https://example.com") },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
@@ -496,7 +498,7 @@ fun PetalBookmarksScreen(
                         shape = RoundedCornerShape(50),
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.ui_cancel))
                     }
                     Spacer(Modifier.width(8.dp))
                     Button(
@@ -517,7 +519,7 @@ fun PetalBookmarksScreen(
                         shape = RoundedCornerShape(50),
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
-                        Text("Save")
+                        Text(stringResource(R.string.ui_save))
                     }
                 }
             }

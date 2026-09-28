@@ -23,6 +23,8 @@ import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.compose.settings.viewmodel.AddressBarSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun AddressBarSettingsScreen(
@@ -51,7 +53,7 @@ fun AddressBarSettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 PetalSettingsSection("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
-                    Text("Choose where the compact address bar is placed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_choose_where_the_compact_address), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     com.petal.browser.ui.containment.PetalConnectedButtonGroup(
                         items = listOf(
@@ -68,7 +70,7 @@ fun AddressBarSettingsScreen(
                 }
 
                 PetalSettingsSection("Size", icon = Icons.Rounded.ViewCompact, cardId = "address_bar_size", targetHighlightId = targetHighlightItemId) {
-                    Text("Compact is the recommended short-height layout.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_compact_is_the_recommended_short), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     ChoiceRow(
                         options = listOf("COMPACT" to "Compact", "STANDARD" to "Standard"),
@@ -78,7 +80,7 @@ fun AddressBarSettingsScreen(
                 }
 
                 PetalSettingsSection("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
-                    Text("Choose the optional action shown beside the address field.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_choose_the_optional_action_shown), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     ChoiceRow(
                         options = listOf("AI" to "AI", "BOOKMARK" to "Bookmark", "NONE" to "None"),
@@ -89,15 +91,15 @@ fun AddressBarSettingsScreen(
 
                 PetalSettingsSection("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = "Address Bar Horizontal Swipe to Switch Tabs",
-                        subtitle = "Swipe left or right across the address bar pill to fluidly switch between open tabs",
+                        title = stringResource(R.string.ui_address_bar_horizontal_swipe_to),
+                        subtitle = stringResource(R.string.ui_swipe_left_or_right_across),
                         icon = Icons.Rounded.Swipe,
                         checked = swipeTabs,
                         onCheckedChange = viewModel::setSwipeTabs
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = "Address Bar Long-Press Quick Actions",
-                        subtitle = "Long press the address bar for quick actions: Clean Copy, Paste & Go, Bookmark, and Hard Refresh",
+                        title = stringResource(R.string.ui_address_bar_long_press_quick),
+                        subtitle = stringResource(R.string.ui_long_press_the_address_bar),
                         icon = Icons.Rounded.TouchApp,
                         checked = quickActions,
                         onCheckedChange = viewModel::setQuickActions
@@ -111,10 +113,9 @@ fun AddressBarSettingsScreen(
 
 @Composable
 private fun ChoiceRow(options: List<Pair<String, String>>, selected: String, onSelected: (String) -> Unit) {
-    val scroll = rememberScrollState()
-    Row(Modifier.fillMaxWidth().horizontalScroll(scroll), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        options.forEach { (value, label) ->
-            FilterChip(selected = selected.equals(value, true), onClick = { onSelected(value) }, label = { androidx.compose.material3.Text(label) }, leadingIcon = if (selected.equals(value, true)) ({ Icon(Icons.Rounded.Check, null, Modifier.size(16.dp)) }) else null)
-        }
-    }
+    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
+        items = options.map { (_, label) -> com.petal.browser.ui.containment.PetalConnectedButtonItem(label) },
+        selectedIndex = options.indexOfFirst { it.first.equals(selected, true) },
+        onSelect = { index -> options.getOrNull(index)?.first?.let(onSelected) },
+    )
 }

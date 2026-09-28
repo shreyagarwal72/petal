@@ -43,6 +43,8 @@ import com.petal.browser.ui.containment.PetalSelectableOptionCard
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.unit.ClosedTabRecord
 import com.petal.browser.unit.PetalRecentlyClosedManager
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Material 3 Expressive Animated Lock / Unlock Vault Component for Recently Closed Tabs.
@@ -118,12 +120,12 @@ fun PetalRecentlyClosedVault(
                     if (isUnlocked) {
                         HeaderActionIcon(
                             icon = Icons.Rounded.Settings,
-                            contentDescription = "Vault Settings",
+                            contentDescription = stringResource(R.string.ui_vault_settings),
                             onClick = { showSettingsDialog = true }
                         )
                         HeaderActionIcon(
                             icon = Icons.Rounded.Lock,
-                            contentDescription = "Lock Vault",
+                            contentDescription = stringResource(R.string.ui_lock_vault),
                             onClick = {
                                 if (lockType != "none") {
                                     isUnlocked = false
@@ -245,11 +247,11 @@ fun PetalRecentlyClosedVault(
     if (showForgotLockDialog) {
         PetalAlertDialog(
             onDismissRequest = { showForgotLockDialog = false },
-            title = "Reset Vault & Clear Data?",
-            message = "For security and privacy, resetting the vault lock will permanently erase all ${records.size} saved closed tabs and remove the passcode protection. You will regain immediate access to the vault.\n\nThis cannot be undone.",
+            title = stringResource(R.string.ui_reset_vault_clear_data),
+            message = stringResource(R.string.ui_for_security_and_privacy_resetting, records.size),
             icon = Icons.Rounded.WarningAmber,
             destructive = true,
-            confirmText = "Clear All Data & Unlock",
+            confirmText = stringResource(R.string.ui_clear_all_data_unlock),
             onConfirm = {
                 showForgotLockDialog = false
                 PetalRecentlyClosedManager.resetLockAndClearData(context)
@@ -310,7 +312,7 @@ private fun LockScreenContent(
         Spacer(Modifier.height(24.dp))
 
         Text(
-            text = "Closed Tabs Vault",
+            text = stringResource(R.string.ui_closed_tabs_vault),
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
@@ -343,7 +345,7 @@ private fun LockScreenContent(
             if (passwordError) {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Incorrect passcode, try again",
+                    text = stringResource(R.string.ui_incorrect_passcode_try_again),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -361,7 +363,7 @@ private fun LockScreenContent(
             ) {
                 Icon(Icons.Rounded.LockOpen, null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Unlock", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.ui_unlock), fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(12.dp))
@@ -372,7 +374,7 @@ private fun LockScreenContent(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Forgot Passcode?", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.ui_forgot_passcode), fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -387,7 +389,7 @@ private fun LockScreenContent(
             ) {
                 Icon(Icons.Rounded.Fingerprint, null, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Scan Fingerprint", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.ui_scan_fingerprint), fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(12.dp))
@@ -398,7 +400,7 @@ private fun LockScreenContent(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Forgot Lock / Reset Vault", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.ui_forgot_lock_reset_vault), fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -433,13 +435,13 @@ private fun UnlockedVaultContent(
             )
             Spacer(Modifier.height(18.dp))
             Text(
-                text = "No recently closed tabs",
+                text = stringResource(R.string.ui_no_recently_closed_tabs),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "When you close tabs, their metadata will be stored in this private vault without thumbnail previews.",
+                text = stringResource(R.string.ui_when_you_close_tabs_their),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -460,7 +462,7 @@ private fun UnlockedVaultContent(
                 ) {
                     Icon(Icons.Rounded.RestoreFromTrash, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Restore All", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.ui_restore_all_2), style = MaterialTheme.typography.labelLarge)
                 }
                 OutlinedButton(
                     onClick = onClearAll,
@@ -471,7 +473,7 @@ private fun UnlockedVaultContent(
                 ) {
                     Icon(Icons.Rounded.DeleteSweep, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Clear All", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.ui_clear_all), style = MaterialTheme.typography.labelLarge)
                 }
             }
 
@@ -540,14 +542,14 @@ private fun UnlockedVaultContent(
                                 onClick = { onRestore(rec) },
                                 modifier = Modifier.size(36.dp)
                             ) {
-                                Icon(Icons.Rounded.RestoreFromTrash, contentDescription = "Restore tab", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Rounded.RestoreFromTrash, contentDescription = stringResource(R.string.ui_restore_tab), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
 
                             IconButton(
                                 onClick = { onDelete(rec) },
                                 modifier = Modifier.size(36.dp)
                             ) {
-                                Icon(Icons.Rounded.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_remove), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                             }
                         },
                     )
@@ -579,7 +581,7 @@ private fun VaultSettingsDialog(
         modifier = Modifier.fillMaxWidth(0.92f),
     ) {
         Text(
-            text = "Vault Settings",
+            text = stringResource(R.string.ui_vault_settings),
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -587,7 +589,7 @@ private fun VaultSettingsDialog(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "Tab Retention Duration",
+            text = stringResource(R.string.ui_tab_retention_duration),
             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.primary
         )
@@ -605,7 +607,7 @@ private fun VaultSettingsDialog(
         Spacer(Modifier.height(14.dp))
 
         Text(
-            text = "Protection Type",
+            text = stringResource(R.string.ui_protection_type),
             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.primary
         )
@@ -641,7 +643,7 @@ private fun VaultSettingsDialog(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.ui_cancel))
             }
             Button(
                 onClick = {
@@ -651,7 +653,7 @@ private fun VaultSettingsDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Save")
+                Text(stringResource(R.string.ui_save))
             }
         }
     }

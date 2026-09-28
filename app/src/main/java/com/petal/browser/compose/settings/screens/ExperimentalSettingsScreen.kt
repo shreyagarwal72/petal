@@ -27,6 +27,8 @@ import com.petal.browser.ui.components.ScrollFadeRow
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.appleduo.AppleDuoManager
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun ExperimentalSettingsScreen(
@@ -85,10 +87,10 @@ fun ExperimentalSettingsScreenContent(
                                     colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer)
                                 )
                             }
-                            Text("App Language", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.ui_app_language), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         }
                         Text(
-                            "Choose your preferred display language:",
+                            stringResource(R.string.ui_choose_your_preferred_display_language),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

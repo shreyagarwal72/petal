@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Refined Material 3 Expressive Options Sheet / Dialog for Petal Browser featuring
@@ -57,25 +59,25 @@ fun PetalOptionsSheet(
                 com.petal.browser.ui.containment.PetalActionCard(onClick = { onNewTab(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.Add)
-                        Text("New Tab", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                        Text(stringResource(R.string.ui_new_tab), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
                 com.petal.browser.ui.containment.PetalActionCard(onClick = { onBookmarks(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.Bookmarks)
-                        Text("Bookmarks", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                        Text(stringResource(R.string.ui_bookmarks), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
                 com.petal.browser.ui.containment.PetalActionCard(onClick = { onHistory(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.History)
-                        Text("History", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                        Text(stringResource(R.string.ui_history), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
                 com.petal.browser.ui.containment.PetalActionCard(onClick = { onDownloads(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.Download)
-                        Text("Downloads", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                        Text(stringResource(R.string.ui_downloads), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
             }

@@ -43,6 +43,8 @@ import com.petal.browser.ui.containment.PetalHeroCard
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Full-screen page showing all Inactive / Archived tabs.
@@ -122,7 +124,7 @@ fun PetalInactiveTabsSheet(
 
                             HeaderActionIcon(
                                 icon = Icons.Rounded.Settings,
-                                contentDescription = "Inactive Settings",
+                                contentDescription = stringResource(R.string.ui_inactive_settings),
                                 onClick = onOpenSettings
                             )
                         }
@@ -132,7 +134,7 @@ fun PetalInactiveTabsSheet(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search inactive tabs…") },
+                        placeholder = { Text(stringResource(R.string.ui_search_inactive_tabs)) },
                         leadingIcon = {
                             Icon(
                                 Icons.Filled.Search,
@@ -146,7 +148,7 @@ fun PetalInactiveTabsSheet(
                                 IconButton(onClick = { searchQuery = "" }) {
                                     Icon(
                                         Icons.Filled.Close,
-                                        contentDescription = "Clear",
+                                        contentDescription = stringResource(R.string.ui_clear),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -184,7 +186,7 @@ fun PetalInactiveTabsSheet(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text("Restore all (${inactiveTabs.size})")
+                                Text(stringResource(R.string.ui_restore_all, inactiveTabs.size))
                             }
 
                             OutlinedButton(
@@ -204,7 +206,7 @@ fun PetalInactiveTabsSheet(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text("Close all")
+                                Text(stringResource(R.string.ui_close_all))
                             }
                         }
                     }
@@ -228,14 +230,14 @@ fun PetalInactiveTabsSheet(
                                     iconSize = 32.dp,
                                 )
                                 Text(
-                                    text = "No inactive tabs",
+                                    text = stringResource(R.string.ui_no_inactive_tabs),
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Bold
                                     ),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Tabs you haven't used in a while will appear here to reduce clutter.",
+                                    text = stringResource(R.string.ui_tabs_you_haven_t_used),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
@@ -252,7 +254,7 @@ fun PetalInactiveTabsSheet(
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Adjust inactivity settings")
+                                    Text(stringResource(R.string.ui_adjust_inactivity_settings))
                                 }
                             }
                         }
@@ -381,7 +383,7 @@ private fun InactiveTabGridCard(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Filled.Close,
-                            contentDescription = "Close tab",
+                            contentDescription = stringResource(R.string.ui_close_tab_2),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
@@ -504,7 +506,7 @@ private fun InactiveTabPreviewCard(
                     modifier = Modifier.size(14.dp)
                 )
                 Spacer(Modifier.width(4.dp))
-                Text("Restore", style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
+                Text(stringResource(R.string.ui_restore), style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold))
             }
 
             Text(
@@ -604,10 +606,10 @@ private fun InactiveTabListItem(
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onRestore, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Filled.Unarchive, contentDescription = "Restore tab", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Filled.Unarchive, contentDescription = stringResource(R.string.ui_restore_tab), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
                 IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Filled.Close, contentDescription = "Close tab", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.ui_close_tab_2), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                 }
             }
         },

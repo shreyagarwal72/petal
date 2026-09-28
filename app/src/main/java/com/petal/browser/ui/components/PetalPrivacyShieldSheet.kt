@@ -70,6 +70,8 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 object PetalPrivacyShieldSheet {
 
@@ -265,7 +267,7 @@ object PetalPrivacyShieldSheet {
                         }
                         Column {
                             Text(
-                                text = "Petal Shield HUD",
+                                text = stringResource(R.string.ui_petal_shield_hud),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -282,7 +284,7 @@ object PetalPrivacyShieldSheet {
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = "Close",
+                            contentDescription = stringResource(R.string.ui_close),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -308,7 +310,7 @@ object PetalPrivacyShieldSheet {
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Blocked on this site",
+                                text = stringResource(R.string.ui_blocked_on_this_site),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -328,7 +330,7 @@ object PetalPrivacyShieldSheet {
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Total threats stopped",
+                                text = stringResource(R.string.ui_total_threats_stopped),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -386,7 +388,7 @@ object PetalPrivacyShieldSheet {
                 ) {
                     Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                         Text(
-                            text = "Trust & Whitelist Domain",
+                            text = stringResource(R.string.ui_trust_whitelist_domain),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -419,7 +421,7 @@ object PetalPrivacyShieldSheet {
                 ) {
                     Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                         Text(
-                            text = "Master Ad & Tracker Shield",
+                            text = stringResource(R.string.ui_master_ad_tracker_shield),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )

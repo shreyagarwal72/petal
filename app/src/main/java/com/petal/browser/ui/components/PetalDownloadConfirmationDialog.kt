@@ -26,6 +26,8 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import java.io.File
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * NOTE: This is intentionally a *plain* composable (Surface/Column), not a
@@ -121,7 +123,7 @@ fun PetalDownloadConfirmationDialog(
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 ) {
                     Text(
-                        text = "Cancel",
+                        text = stringResource(R.string.ui_cancel),
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
@@ -149,7 +151,7 @@ fun PetalDownloadConfirmationDialog(
                             onDismissRequest = { splitMenuExpanded = false }
                         ) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text("Download with external downloader") },
+                                text = { Text(stringResource(R.string.ui_download_with_external_downloader)) },
                                 onClick = {
                                     splitMenuExpanded = false
                                     onExternalDownload()
@@ -226,7 +228,7 @@ fun PetalFirstTimeDownloadEngineDialog(
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "Choose Default Download Engine",
+                text = stringResource(R.string.ui_choose_default_download_engine),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -234,7 +236,7 @@ fun PetalFirstTimeDownloadEngineDialog(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Select your preferred high-speed engine for downloads, torrents, and magnet links. You can also customize this anytime in Settings.",
+                text = stringResource(R.string.ui_select_your_preferred_high_speed),
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -322,7 +324,7 @@ fun PetalFirstTimeDownloadEngineDialog(
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 ) {
                     Text(
-                        text = "Skip",
+                        text = stringResource(R.string.ui_skip),
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
@@ -342,7 +344,7 @@ fun PetalFirstTimeDownloadEngineDialog(
                     )
                 ) {
                     Text(
-                        text = "Set as Default",
+                        text = stringResource(R.string.ui_set_as_default),
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 }

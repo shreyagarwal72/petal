@@ -66,6 +66,8 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 fun interface HistoryUrlHandler {
     fun open(url: String)
@@ -177,10 +179,10 @@ fun PetalHistoryScreen(
         PetalExpressiveAlertDialog(
             onDismissRequest = { showClearConfirm = false },
             icon = Icons.Rounded.DeleteSweep,
-            title = "Clear All History?",
-            message = "This will permanently remove all visited web pages from your history records.",
-            confirmText = "Clear All",
-            dismissText = "Cancel",
+            title = stringResource(R.string.ui_clear_all_history),
+            message = stringResource(R.string.ui_this_will_permanently_remove_all),
+            confirmText = stringResource(R.string.ui_clear_all),
+            dismissText = stringResource(R.string.ui_cancel),
             destructive = true,
             onConfirm = {
                 try {
@@ -243,12 +245,12 @@ fun PetalHistoryScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 6.dp),
-                    placeholder = { Text("Search history...") },
+                    placeholder = { Text(stringResource(R.string.ui_search_history)) },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear))
                             }
                         }
                     },
@@ -279,7 +281,7 @@ fun PetalHistoryScreen(
                             item(key = "clear_banner") {
                                 PetalGroupRow(
                                     icon = Icons.Filled.CleaningServices,
-                                    title = "Clear browsing data...",
+                                    title = stringResource(R.string.ui_clear_browsing_data_2),
                                     position = PetalGroupPosition.SINGLE,
                                     onClick = onClearBrowsingData,
                                 )
@@ -379,7 +381,7 @@ fun PetalHistoryScreen(
                                                     }
                                                 }
                                             }
-                                                }) { Icon(Icons.Filled.Close, contentDescription = "Remove entry", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                                                }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.ui_remove_entry), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
                                                 Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }

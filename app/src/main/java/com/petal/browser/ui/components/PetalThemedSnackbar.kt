@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalBrowserShapes
+import androidx.compose.ui.res.stringResource
 
 /**
  * Shared Material 3 Expressive themed Snackbar composable.
@@ -110,7 +111,7 @@ fun PetalThemedSnackbar(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Dismiss",
+                        contentDescription = stringResource(R.string.ui_dismiss),
                         tint = dismissActionColor,
                         modifier = Modifier.size(18.dp)
                     )

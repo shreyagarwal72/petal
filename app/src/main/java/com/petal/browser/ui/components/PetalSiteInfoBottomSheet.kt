@@ -30,6 +30,8 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.view.PetalGeckoView
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,7 +135,7 @@ fun PetalSiteInfoBottomSheet(
                         if (favicon != null) {
                             Image(
                                 bitmap = favicon.asImageBitmap(),
-                                contentDescription = "Site Favicon",
+                                contentDescription = stringResource(R.string.ui_site_favicon),
                                 modifier = Modifier
                                     .size(26.dp)
                                     .clip(CircleShape)
@@ -258,7 +260,7 @@ fun PetalSiteInfoBottomSheet(
 
             // --- Enhanced Tracking Protection (ETP Shield) Section ---
             Text(
-                text = "Enhanced Tracking Protection",
+                text = stringResource(R.string.ui_enhanced_tracking_protection),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
@@ -333,19 +335,19 @@ fun PetalSiteInfoBottomSheet(
                         ) {
                             SuggestionChip(
                                 onClick = {},
-                                label = { Text("Cross-site Cookies", fontSize = 11.sp) },
+                                label = { Text(stringResource(R.string.ui_cross_site_cookies), fontSize = 11.sp) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
                             SuggestionChip(
                                 onClick = {},
-                                label = { Text("Cryptominers", fontSize = 11.sp) },
+                                label = { Text(stringResource(R.string.ui_cryptominers), fontSize = 11.sp) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
                             SuggestionChip(
                                 onClick = {},
-                                label = { Text("Fingerprinters", fontSize = 11.sp) },
+                                label = { Text(stringResource(R.string.ui_fingerprinters), fontSize = 11.sp) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
@@ -358,7 +360,7 @@ fun PetalSiteInfoBottomSheet(
 
             // --- Cookies & Site Data Section ---
             Text(
-                text = "Cookies & Site Data",
+                text = stringResource(R.string.ui_cookies_site_data),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
@@ -393,7 +395,7 @@ fun PetalSiteInfoBottomSheet(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Stored Cookies & Cache",
+                            text = stringResource(R.string.ui_stored_cookies_cache),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -408,7 +410,7 @@ fun PetalSiteInfoBottomSheet(
                     var siteResetExpanded by remember { mutableStateOf(false) }
                     Box {
                         ExpressiveSplitButton(
-                            label = "Reset",
+                            label = stringResource(R.string.ui_reset),
                             onPrimaryClick = {
                                 try {
                                     CookieManager.getInstance().removeAllCookies(null)
@@ -434,7 +436,7 @@ fun PetalSiteInfoBottomSheet(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text("Clear Cookies Only") },
+                                text = { Text(stringResource(R.string.ui_clear_cookies_only)) },
                                 leadingIcon = {
                                     Icon(Icons.Rounded.Cookie, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 },
@@ -448,7 +450,7 @@ fun PetalSiteInfoBottomSheet(
                                 }
                             )
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text("Reset Site Permissions") },
+                                text = { Text(stringResource(R.string.ui_reset_site_permissions)) },
                                 leadingIcon = {
                                     Icon(Icons.Rounded.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 },
@@ -470,7 +472,7 @@ fun PetalSiteInfoBottomSheet(
                                 }
                             )
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text("Clear Storage & Cache") },
+                                text = { Text(stringResource(R.string.ui_clear_storage_cache)) },
                                 leadingIcon = {
                                     Icon(Icons.Rounded.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 },
@@ -491,7 +493,7 @@ fun PetalSiteInfoBottomSheet(
 
             // --- Site Permissions Section ---
             Text(
-                text = "Page Permissions",
+                text = stringResource(R.string.ui_page_permissions),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
@@ -500,7 +502,7 @@ fun PetalSiteInfoBottomSheet(
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 // Camera
                 com.petal.browser.ui.containment.PetalGroupToggleRow(
-                    title = "Camera Access",
+                    title = stringResource(R.string.ui_camera_access),
                     subtitle = if (isCameraAllowed) "Allowed" else "Blocked",
                     checked = isCameraAllowed,
                     position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
@@ -527,7 +529,7 @@ fun PetalSiteInfoBottomSheet(
 
                 // Microphone
                 com.petal.browser.ui.containment.PetalGroupToggleRow(
-                    title = "Microphone Access",
+                    title = stringResource(R.string.ui_microphone_access),
                     subtitle = if (isMicAllowed) "Allowed" else "Blocked",
                     checked = isMicAllowed,
                     position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
@@ -554,7 +556,7 @@ fun PetalSiteInfoBottomSheet(
 
                 // Location
                 com.petal.browser.ui.containment.PetalGroupToggleRow(
-                    title = "Location Access",
+                    title = stringResource(R.string.ui_location_access),
                     subtitle = if (isLocationAllowed) "Allowed" else "Blocked",
                     checked = isLocationAllowed,
                     position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
@@ -585,7 +587,7 @@ fun PetalSiteInfoBottomSheet(
 
                 // Notifications
                 com.petal.browser.ui.containment.PetalGroupToggleRow(
-                    title = "Notifications",
+                    title = stringResource(R.string.ui_notifications),
                     subtitle = if (isNotificationsAllowed) "Allowed" else "Blocked",
                     checked = isNotificationsAllowed,
                     position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
@@ -613,7 +615,7 @@ fun PetalSiteInfoBottomSheet(
 
                 // Desktop Site (Per-site override)
                 com.petal.browser.ui.containment.PetalGroupToggleRow(
-                    title = "Desktop Site",
+                    title = stringResource(R.string.ui_desktop_site_2),
                     subtitle = if (isDesktopSite) "Requesting desktop version" else "Mobile version",
                     checked = isDesktopSite,
                     position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,

@@ -42,6 +42,8 @@ import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.ResearchMode
 import com.petal.browser.unit.BrowserUnit
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -159,7 +161,7 @@ fun PetalAiResearchSheet(
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            "AI Web Research",
+                            stringResource(R.string.ui_ai_web_research),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -200,7 +202,7 @@ fun PetalAiResearchSheet(
                     ) {
                         Icon(
                             Icons.Rounded.VpnKey,
-                            contentDescription = "API Keys",
+                            contentDescription = stringResource(R.string.ui_api_keys),
                             modifier = Modifier.size(16.dp),
                             tint = if (apiKey.isBlank() && selectedProvider != AiProvider.CUSTOM)
                                 MaterialTheme.colorScheme.onErrorContainer
@@ -278,7 +280,7 @@ fun PetalAiResearchSheet(
                                             if (provider == AiProvider.GEMINI) {
                                                 Spacer(Modifier.width(6.dp))
                                                 Text(
-                                                    "(Recommended)",
+                                                    stringResource(R.string.ui_recommended),
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.primary
                                                 )
@@ -306,8 +308,8 @@ fun PetalAiResearchSheet(
                                 selectedModel = newModel
                                 PetalAiResearchEngine.setSelectedModel(context, selectedProvider, newModel)
                             },
-                            label = { Text("Model ID") },
-                            placeholder = { Text("llama3, mistral...") },
+                            label = { Text(stringResource(R.string.ui_model_id)) },
+                            placeholder = { Text(stringResource(R.string.ui_llama3_mistral)) },
                             singleLine = true,
                             leadingIcon = { Icon(Icons.Rounded.Memory, contentDescription = null, modifier = Modifier.size(16.dp)) },
                             shape = RoundedCornerShape(12.dp),
@@ -429,8 +431,8 @@ fun PetalAiResearchSheet(
                                     customEndpoint = newEp
                                     PetalAiResearchEngine.setCustomEndpoint(context, newEp)
                                 },
-                                label = { Text("Endpoint URL") },
-                                placeholder = { Text("https://api.openai.com/v1 or http://localhost:11434/v1") },
+                                label = { Text(stringResource(R.string.ui_endpoint_url)) },
+                                placeholder = { Text(stringResource(R.string.ui_https_api_openai_com_v1)) },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp)
@@ -452,7 +454,7 @@ fun PetalAiResearchSheet(
                                         apiKey = ""
                                         PetalAiResearchEngine.setApiKey(context, selectedProvider, "")
                                     }) {
-                                        Icon(Icons.Rounded.Close, contentDescription = "Clear", modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear), modifier = Modifier.size(18.dp))
                                     }
                                 }
                             },
@@ -475,7 +477,7 @@ fun PetalAiResearchSheet(
                                 ) {
                                     Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Get Free Key", style = MaterialTheme.typography.labelMedium)
+                                    Text(stringResource(R.string.ui_get_free_key), style = MaterialTheme.typography.labelMedium)
                                 }
                             } else {
                                 Spacer(Modifier.width(4.dp))
@@ -502,7 +504,7 @@ fun PetalAiResearchSheet(
                                 ) {
                                     Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Manage Keys", style = MaterialTheme.typography.labelMedium)
+                                    Text(stringResource(R.string.ui_manage_keys), style = MaterialTheme.typography.labelMedium)
                                 }
 
                                 if (apiKey.isNotBlank() || selectedProvider == AiProvider.CUSTOM) {
@@ -510,7 +512,7 @@ fun PetalAiResearchSheet(
                                         onClick = { showApiKeyConfig = false },
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
-                                        Text("Done", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                                        Text(stringResource(R.string.ui_done), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                                     }
                                 }
                             }
@@ -522,7 +524,7 @@ fun PetalAiResearchSheet(
             // Research Mode Selector: Pure Horizontal Scroll with Spaced Expressive FilterChips
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Research Mode",
+                    stringResource(R.string.ui_research_mode),
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -537,7 +539,7 @@ fun PetalAiResearchSheet(
                     FilterChip(
                         selected = selectedMode == ResearchMode.SUMMARY,
                         onClick = { selectedMode = ResearchMode.SUMMARY },
-                        label = { Text("Summary") },
+                        label = { Text(stringResource(R.string.ui_summary)) },
                         leadingIcon = {
                             Icon(
                                 if (selectedMode == ResearchMode.SUMMARY) Icons.Rounded.Check else Icons.Rounded.Subject,
@@ -554,7 +556,7 @@ fun PetalAiResearchSheet(
                     FilterChip(
                         selected = selectedMode == ResearchMode.DEEP_RESEARCH,
                         onClick = { selectedMode = ResearchMode.DEEP_RESEARCH },
-                        label = { Text("Deep Research") },
+                        label = { Text(stringResource(R.string.ui_deep_research)) },
                         leadingIcon = {
                             Icon(
                                 if (selectedMode == ResearchMode.DEEP_RESEARCH) Icons.Rounded.Check else Icons.Rounded.Analytics,
@@ -571,7 +573,7 @@ fun PetalAiResearchSheet(
                     FilterChip(
                         selected = selectedMode == ResearchMode.KEY_QA,
                         onClick = { selectedMode = ResearchMode.KEY_QA },
-                        label = { Text("Key Q&A") },
+                        label = { Text(stringResource(R.string.ui_key_q_a)) },
                         leadingIcon = {
                             Icon(
                                 if (selectedMode == ResearchMode.KEY_QA) Icons.Rounded.Check else Icons.Rounded.QuestionAnswer,
@@ -588,7 +590,7 @@ fun PetalAiResearchSheet(
                     FilterChip(
                         selected = selectedMode == ResearchMode.CRITIQUE,
                         onClick = { selectedMode = ResearchMode.CRITIQUE },
-                        label = { Text("Critique & Fact-Check") },
+                        label = { Text(stringResource(R.string.ui_critique_fact_check)) },
                         leadingIcon = {
                             Icon(
                                 if (selectedMode == ResearchMode.CRITIQUE) Icons.Rounded.Check else Icons.Rounded.FactCheck,
@@ -612,7 +614,7 @@ fun PetalAiResearchSheet(
                     customPromptText = it
                     if (it.isNotBlank()) selectedMode = ResearchMode.CUSTOM
                 },
-                placeholder = { Text("Ask custom question about this webpage...") },
+                placeholder = { Text(stringResource(R.string.ui_ask_custom_question_about_this)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
                 leadingIcon = {
@@ -626,7 +628,7 @@ fun PetalAiResearchSheet(
                 trailingIcon = {
                     if (customPromptText.isNotBlank()) {
                         IconButton(onClick = { customPromptText = "" }) {
-                            Icon(Icons.Rounded.Clear, contentDescription = "Clear", modifier = Modifier.size(18.dp))
+                            Icon(Icons.Rounded.Clear, contentDescription = stringResource(R.string.ui_clear), modifier = Modifier.size(18.dp))
                         }
                     }
                 },
@@ -717,7 +719,7 @@ fun PetalAiResearchSheet(
                                 modifier = Modifier.weight(1f)
                             )
                             IconButton(onClick = { errorMessage = null }) {
-                                Icon(Icons.Rounded.Close, contentDescription = "Dismiss", tint = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_dismiss), tint = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -762,7 +764,7 @@ fun PetalAiResearchSheet(
                                         }
                                     }
                                     Text(
-                                        "AI Insights",
+                                        stringResource(R.string.ui_ai_insights),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -777,7 +779,7 @@ fun PetalAiResearchSheet(
                                         },
                                         modifier = Modifier.size(36.dp)
                                     ) {
-                                        Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy), modifier = Modifier.size(18.dp))
                                     }
 
                                     IconButton(
@@ -791,7 +793,7 @@ fun PetalAiResearchSheet(
                                         },
                                         modifier = Modifier.size(36.dp)
                                     ) {
-                                        Icon(Icons.Rounded.Share, contentDescription = "Share", modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.ui_share), modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }

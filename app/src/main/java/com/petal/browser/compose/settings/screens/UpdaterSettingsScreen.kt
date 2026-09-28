@@ -36,6 +36,8 @@ import com.petal.browser.view.PetalToast
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun UpdaterSettingsScreen(
@@ -115,12 +117,12 @@ fun UpdaterSettingsScreenContent(
             ) {
                 // ── Section 1: Inbuilt Update Engine & Tracker ──
                 PetalSettingsSection(
-                    title = "Update Tracker & Releases",
+                    title = stringResource(R.string.ui_update_tracker_releases),
                     iconRes = com.petal.browser.R.drawable.update_rounded
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = "Check for Updates on Launch",
-                        subtitle = "Automatically check for new browser releases when app starts",
+                        title = stringResource(R.string.ui_check_for_updates_on_launch),
+                        subtitle = stringResource(R.string.ui_automatically_check_for_new_browser),
                         icon = Icons.Rounded.SystemUpdate,
                         checked = checkUpdateOnLaunch,
                         onCheckedChange = onCheckUpdateOnLaunchChange
@@ -159,14 +161,14 @@ fun UpdaterSettingsScreenContent(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Petal v$appVersionName ($appVersionCode)",
+                                        text = stringResource(R.string.ui_petal_v, appVersionName, appVersionCode),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = "Channel: GitHub Official • Last Checked: $formattedLastCheck",
+                                        text = stringResource(R.string.ui_channel_github_official_last_checked, formattedLastCheck),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
@@ -217,7 +219,7 @@ fun UpdaterSettingsScreenContent(
                                     ) {
                                         Icon(Icons.Rounded.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Check Now", fontWeight = FontWeight.Bold)
+                                        Text(stringResource(R.string.ui_check_now), fontWeight = FontWeight.Bold)
                                     }
 
                                     OutlinedButton(
@@ -241,7 +243,7 @@ fun UpdaterSettingsScreenContent(
                                     ) {
                                         Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Changelog")
+                                        Text(stringResource(R.string.ui_changelog))
                                     }
                                 }
                             }
@@ -251,7 +253,7 @@ fun UpdaterSettingsScreenContent(
 
                 // ── Section 2: Crash Reporting & Diagnostic Tracker (Inspired by Essentials) ──
                 PetalSettingsSection(
-                    title = "Crash Reporting & Diagnostics",
+                    title = stringResource(R.string.ui_crash_reporting_diagnostics),
                     icon = Icons.Rounded.BugReport
                 ) {
                     PetalCrashReportingPicker(
@@ -273,7 +275,7 @@ fun UpdaterSettingsScreenContent(
                     ) {
                         Icon(Icons.Rounded.FolderZip, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Export Logs (.zip)")
+                        Text(stringResource(R.string.ui_export_logs_zip))
                     }
                 }
 

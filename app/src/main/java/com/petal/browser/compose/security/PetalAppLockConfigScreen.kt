@@ -51,6 +51,8 @@ import com.petal.browser.ui.containment.PetalDialog
 import com.petal.browser.ui.containment.PetalSelectableOptionCard
 import com.petal.browser.ui.containment.PetalSnackbarHost
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,7 +140,7 @@ fun PetalAppLockConfigScreen(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Require Lock on Startup",
+                                        text = stringResource(R.string.ui_require_lock_on_startup),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -203,7 +205,7 @@ fun PetalAppLockConfigScreen(
                         ) {
                             Column(modifier = Modifier.padding(18.dp)) {
                                 Text(
-                                    text = "Choose Authentication Method",
+                                    text = stringResource(R.string.ui_choose_authentication_method),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -212,8 +214,8 @@ fun PetalAppLockConfigScreen(
 
                                 // Option 1: Fingerprint (Biometric / Device Credential)
                                 PetalSelectableOptionCard(
-                                    title = "Biometric / Device Lock",
-                                    subtitle = "Unlock with device fingerprint sensor or system PIN",
+                                    title = stringResource(R.string.ui_biometric_device_lock),
+                                    subtitle = stringResource(R.string.ui_unlock_with_device_fingerprint_sensor),
                                     selected = selectedLockType == "FINGERPRINT",
                                     leading = { PetalGroupIconBadge(Icons.Rounded.Fingerprint) },
                                     onClick = {
@@ -239,7 +241,7 @@ fun PetalAppLockConfigScreen(
 
                                 // Option 2: Custom Password Lock
                                 PetalSelectableOptionCard(
-                                    title = "Custom Passcode Lock",
+                                    title = stringResource(R.string.ui_custom_passcode_lock),
                                     subtitle = if (savedPasscode.isNotBlank()) "Passcode configured • Tap below to change" else "Set custom shaped-mask password for Petal",
                                     selected = selectedLockType == "PASSWORD",
                                     leading = { PetalGroupIconBadge(Icons.Rounded.Key) },
@@ -268,9 +270,9 @@ fun PetalAppLockConfigScreen(
                     // Passcode Configuration Dialog
                     if (showPasscodeConfigDialog) {
                         PetalDialog(onDismissRequest = { showPasscodeConfigDialog = false }) {
-                            Text("Set App Password", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.ui_set_app_password), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                             Text(
-                                "Enter password for Petal Browser lock screen:",
+                                stringResource(R.string.ui_enter_password_for_petal_browser),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -283,7 +285,7 @@ fun PetalAppLockConfigScreen(
                                 unlockButtonText = "",
                             )
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                TextButton(onClick = { showPasscodeConfigDialog = false }) { Text("Cancel") }
+                                TextButton(onClick = { showPasscodeConfigDialog = false }) { Text(stringResource(R.string.ui_cancel)) }
                                 Button(onClick = {
                                     if (tempPasscode.trim().isNotBlank()) {
                                         savedPasscode = tempPasscode.trim()
@@ -292,7 +294,7 @@ fun PetalAppLockConfigScreen(
                                         showPasscodeConfigDialog = false
                                         coroutineScope.launch { snackbarHostState.showSnackbar("App password saved successfully") }
                                     }
-                                }) { Text("Save Password", fontWeight = FontWeight.Bold) }
+                                }) { Text(stringResource(R.string.ui_save_password), fontWeight = FontWeight.Bold) }
                             }
                         }
                     }

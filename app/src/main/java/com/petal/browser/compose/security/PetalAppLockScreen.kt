@@ -44,6 +44,8 @@ import com.petal.browser.ui.containment.PetalSnackbarHost
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -119,11 +121,11 @@ fun PetalAppLockScreen(
     if (showChoiceDialog && isBiometricAvailable) {
         PetalAlertDialog(
             onDismissRequest = { showChoiceDialog = false },
-            title = "Choose Unlock Method",
-            message = "Select how you would like to authenticate and unlock Petal Browser.",
+            title = stringResource(R.string.ui_choose_unlock_method),
+            message = stringResource(R.string.ui_select_how_you_would_like),
             icon = Icons.Rounded.Security,
-            confirmText = "Use Fingerprint",
-            dismissText = "Use Password",
+            confirmText = stringResource(R.string.ui_use_fingerprint),
+            dismissText = stringResource(R.string.ui_use_password),
             onConfirm = {
                 showChoiceDialog = false
                 triggerBiometricUnlock()
@@ -179,7 +181,7 @@ fun PetalAppLockScreen(
                         ) {
                             Icon(
                                 imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
-                                contentDescription = "App Lock",
+                                contentDescription = stringResource(R.string.ui_app_lock),
                                 tint = if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(48.dp)
                             )
@@ -196,7 +198,7 @@ fun PetalAppLockScreen(
                     )
 
                     Text(
-                        text = "Enter your passcode or use biometric authentication",
+                        text = stringResource(R.string.ui_enter_your_passcode_or_use),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -248,7 +250,7 @@ fun PetalAppLockScreen(
                             ) {
                                 Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Fingerprint", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.ui_fingerprint), fontWeight = FontWeight.Bold)
                             }
 
                             IconButton(
@@ -256,7 +258,7 @@ fun PetalAppLockScreen(
                                 colors = IconButtonDefaults.filledTonalIconButtonColors(),
                                 modifier = Modifier.size(48.dp)
                             ) {
-                                Icon(Icons.Rounded.Security, contentDescription = "Choose Lock Option")
+                                Icon(Icons.Rounded.Security, contentDescription = stringResource(R.string.ui_choose_lock_option))
                             }
                         }
                         Spacer(modifier = Modifier.height(12.dp))
@@ -272,7 +274,7 @@ fun PetalAppLockScreen(
                                 errorMessage = null
                             }
                         ) {
-                            Text("Clear Input")
+                            Text(stringResource(R.string.ui_clear_input))
                         }
 
                         TextButton(
@@ -283,7 +285,7 @@ fun PetalAppLockScreen(
                                 contentColor = MaterialTheme.colorScheme.error
                             )
                         ) {
-                            Text("Forgot Password?")
+                            Text(stringResource(R.string.ui_forgot_password))
                         }
                     }
                 }
@@ -294,11 +296,11 @@ fun PetalAppLockScreen(
     if (showForgotPasswordDialog) {
         PetalAlertDialog(
             onDismissRequest = { showForgotPasswordDialog = false },
-            title = "Forgot Password?",
-            message = "Petal uses on-device hardware encryption. To regain access without your password, all app data (bookmarks, browsing history, saved passwords, downloads records, cookies, and app settings) must be completely erased.\n\nThis action cannot be undone.",
+            title = stringResource(R.string.ui_forgot_password),
+            message = stringResource(R.string.ui_petal_uses_on_device_hardware),
             icon = Icons.Rounded.WarningAmber,
             destructive = true,
-            confirmText = "Erase All Data & Unlock",
+            confirmText = stringResource(R.string.ui_erase_all_data_unlock),
             onConfirm = {
                 showForgotPasswordDialog = false
                 com.petal.browser.unit.BrowserUnit.eraseAllAppData(context)

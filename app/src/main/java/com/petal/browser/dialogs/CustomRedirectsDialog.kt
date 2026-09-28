@@ -81,6 +81,8 @@ import com.petal.browser.objects.CustomRedirectsHelper
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.view.PetalToast
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Pure Kotlin & Compose Material 3 Expressive implementation of CustomRedirectsDialog.
@@ -159,12 +161,12 @@ private fun CustomRedirectsDialogContent(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Privacy Redirects",
+                        text = stringResource(R.string.ui_privacy_redirects),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Automatically route tracking links to privacy frontends",
+                        text = stringResource(R.string.ui_automatically_route_tracking_links_to),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -183,7 +185,7 @@ private fun CustomRedirectsDialogContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No custom redirects configured yet",
+                        text = stringResource(R.string.ui_no_custom_redirects_configured_yet),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -240,7 +242,7 @@ private fun CustomRedirectsDialogContent(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Delete,
-                                        contentDescription = "Delete Redirect",
+                                        contentDescription = stringResource(R.string.ui_delete_redirect),
                                         tint = MaterialTheme.colorScheme.error
                                     )
                                 }
@@ -265,14 +267,14 @@ private fun CustomRedirectsDialogContent(
                 ) {
                     Icon(imageVector = Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(text = "Add Redirect")
+                    Text(text = stringResource(R.string.ui_add_redirect))
                 }
 
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.bouncyClickable(onClick = onDismiss)
                 ) {
-                    Text(text = "Done", fontWeight = FontWeight.Bold)
+                    Text(text = stringResource(R.string.ui_done), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -318,7 +320,7 @@ private fun CreateNewRedirectDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "New Custom Redirect",
+                    text = stringResource(R.string.ui_new_custom_redirect),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -326,8 +328,8 @@ private fun CreateNewRedirectDialog(
                 OutlinedTextField(
                     value = sourceText,
                     onValueChange = { sourceText = it },
-                    label = { Text("Source Domain / Pattern") },
-                    placeholder = { Text("e.g. reddit.com") },
+                    label = { Text(stringResource(R.string.ui_source_domain_pattern)) },
+                    placeholder = { Text(stringResource(R.string.ui_e_g_reddit_com)) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -340,8 +342,8 @@ private fun CreateNewRedirectDialog(
                 OutlinedTextField(
                     value = targetText,
                     onValueChange = { targetText = it },
-                    label = { Text("Target Redirect Frontend") },
-                    placeholder = { Text("e.g. redlib.v82.net") },
+                    label = { Text(stringResource(R.string.ui_target_redirect_frontend)) },
+                    placeholder = { Text(stringResource(R.string.ui_e_g_redlib_v82_net)) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -357,7 +359,7 @@ private fun CreateNewRedirectDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss, modifier = Modifier.bouncyClickable(onClick = onDismiss)) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.ui_cancel))
                     }
                     Spacer(Modifier.width(8.dp))
                     Button(
@@ -377,7 +379,7 @@ private fun CreateNewRedirectDialog(
                             }
                         })
                     ) {
-                        Text("Save", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
                     }
                 }
             }

@@ -16,6 +16,8 @@ import com.petal.browser.view.PetalToast
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun PetalPasswordExportDialog(
@@ -26,14 +28,14 @@ fun PetalPasswordExportDialog(
         onDismissRequest = onDismiss
     ) {
         Text(
-            text = "Export Password Backup",
+            text = stringResource(R.string.ui_export_password_backup),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
 
         Text(
-            text = "Your password vault will be exported as a JSON file saved directly to your Downloads folder.\n\nKeep this file secure, as anyone with access can read the exported passwords.",
+            text = stringResource(R.string.ui_your_password_vault_will_be),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -47,7 +49,7 @@ fun PetalPasswordExportDialog(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.ui_cancel))
             }
 
             Button(
@@ -78,7 +80,7 @@ fun PetalPasswordExportDialog(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Export JSON")
+                Text(stringResource(R.string.ui_export_json))
             }
         }
     }

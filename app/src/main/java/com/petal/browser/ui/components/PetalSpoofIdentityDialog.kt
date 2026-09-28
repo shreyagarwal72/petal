@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.containment.PetalDialog
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalSelectableOptionCard
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 enum class IdentityPreset(
     val title: String,
@@ -79,12 +81,12 @@ fun PetalSpoofIdentityDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Spoof Identity (User-Agent)",
+                        text = stringResource(R.string.ui_spoof_identity_user_agent),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = onDismissRequest) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close")
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                     }
                 }
 

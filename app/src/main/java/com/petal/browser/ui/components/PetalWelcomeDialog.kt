@@ -79,6 +79,7 @@ import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.HelperUnit
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
 
 object PetalWelcomeBridge {
     @JvmStatic
@@ -335,13 +336,13 @@ private fun SetupBottomBar(
             ) { targetPage ->
                 if (targetPage == 0) {
                     Text(
-                        text = "Welcome to Petal",
+                        text = stringResource(R.string.ui_welcome_to_petal),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
                 } else {
                     Text(
-                        text = "Step $targetPage of 8",
+                        text = stringResource(R.string.ui_step_of_8, targetPage),
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -373,9 +374,9 @@ private fun SetupBottomBar(
                         label = "FabIconAnim"
                     ) { lastPage ->
                         if (lastPage) {
-                            Icon(Icons.Rounded.Check, contentDescription = "Finish", modifier = Modifier.size(24.dp))
+                            Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.ui_finish), modifier = Modifier.size(24.dp))
                         } else {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Next", modifier = Modifier.size(24.dp))
+                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = stringResource(R.string.ui_next), modifier = Modifier.size(24.dp))
                         }
                     }
                 }
@@ -414,7 +415,7 @@ private fun WelcomeStepPage() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Welcome to",
+            text = stringResource(R.string.ui_welcome_to),
             style = MaterialTheme.typography.displayLarge.copy(
                 fontSize = 38.sp,
                 fontWeight = FontWeight.Normal
@@ -423,7 +424,7 @@ private fun WelcomeStepPage() {
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Petal",
+            text = stringResource(R.string.ui_petal),
             style = MaterialTheme.typography.displayLarge.copy(
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
@@ -451,7 +452,7 @@ private fun WelcomeStepPage() {
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "• Official Release",
+                    text = stringResource(R.string.ui_official_release),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -481,7 +482,7 @@ private fun WelcomeStepPage() {
                 Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = appIconPainter,
-                        contentDescription = "Petal Logo",
+                        contentDescription = stringResource(R.string.ui_petal_logo),
                         modifier = Modifier
                             .size(64.dp)
                             .clip(CircleShape)
@@ -492,7 +493,7 @@ private fun WelcomeStepPage() {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                text = "Fast, private & customizable web browser designed for modern Android with Material 3 Expressive UI.",
+                text = stringResource(R.string.ui_fast_private_customizable_web_browser),
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -506,10 +507,10 @@ private fun WelcomeStepPage() {
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
             ) {
-                SuggestionChip(onClick = {}, label = { Text("Privacy First") }, icon = { Icon(Icons.Rounded.Shield, null, modifier = Modifier.size(16.dp)) })
-                SuggestionChip(onClick = {}, label = { Text("Material 3 Expressive") }, icon = { Icon(Icons.Rounded.Palette, null, modifier = Modifier.size(16.dp)) })
-                SuggestionChip(onClick = {}, label = { Text("AI Deep Research") }, icon = { Icon(Icons.Rounded.AutoAwesome, null, modifier = Modifier.size(16.dp)) })
-                SuggestionChip(onClick = {}, label = { Text("Fast MDM Downloads") }, icon = { Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp)) })
+                SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.ui_privacy_first)) }, icon = { Icon(Icons.Rounded.Shield, null, modifier = Modifier.size(16.dp)) })
+                SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.ui_material_3_expressive)) }, icon = { Icon(Icons.Rounded.Palette, null, modifier = Modifier.size(16.dp)) })
+                SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.ui_ai_deep_research)) }, icon = { Icon(Icons.Rounded.AutoAwesome, null, modifier = Modifier.size(16.dp)) })
+                SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.ui_fast_mdm_downloads)) }, icon = { Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp)) })
             }
         }
     }
@@ -539,7 +540,7 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Essential Permissions",
+        text = stringResource(R.string.ui_essential_permissions),
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -548,7 +549,7 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Grant camera, microphone, and location permissions to allow interactive websites, video calls, and maps to function properly.",
+        text = stringResource(R.string.ui_grant_camera_microphone_and_location),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -564,8 +565,8 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             // Camera
             PermissionStatusRow(
-                title = "Camera Access",
-                description = "For QR scanning, video chats & WebRTC",
+                title = stringResource(R.string.ui_camera_access),
+                description = stringResource(R.string.ui_for_qr_scanning_video_chats),
                 icon = Icons.Rounded.Videocam,
                 isGranted = hasCamera,
                 onGrant = {
@@ -580,8 +581,8 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
 
             // Microphone
             PermissionStatusRow(
-                title = "Microphone Access",
-                description = "For voice search & audio calls",
+                title = stringResource(R.string.ui_microphone_access),
+                description = stringResource(R.string.ui_for_voice_search_audio_calls),
                 icon = Icons.Rounded.Mic,
                 isGranted = hasMic,
                 onGrant = {
@@ -596,8 +597,8 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
 
             // Location
             PermissionStatusRow(
-                title = "Location Access",
-                description = "For web maps & local search results",
+                title = stringResource(R.string.ui_location_access),
+                description = stringResource(R.string.ui_for_web_maps_local_search),
                 icon = Icons.Rounded.MyLocation,
                 isGranted = hasLoc,
                 onGrant = {
@@ -639,11 +640,11 @@ private fun PermissionStatusRow(
             FilledTonalButton(onClick = {}, enabled = false, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Granted", style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.ui_granted), style = MaterialTheme.typography.labelSmall)
             }
         } else {
             Button(onClick = onGrant, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                Text("Grant", style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.ui_grant), style = MaterialTheme.typography.labelSmall)
             }
         }
     }
@@ -677,7 +678,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Downloads & Media Notifications",
+        text = stringResource(R.string.ui_downloads_media_notifications),
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -686,7 +687,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Allow notifications to receive real-time download progress updates, completion alerts, and media playback controls.",
+        text = stringResource(R.string.ui_allow_notifications_to_receive_real),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -783,7 +784,7 @@ private fun BackupFeatureStepPage(context: Context) {
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Restore Data from Backup",
+        text = stringResource(R.string.ui_restore_data_from_backup),
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -792,7 +793,7 @@ private fun BackupFeatureStepPage(context: Context) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Have a previous Petal Browser backup file (.json)? Easily restore your bookmarks, history, web settings, and saved search engines now.",
+        text = stringResource(R.string.ui_have_a_previous_petal_browser),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -815,8 +816,8 @@ private fun BackupFeatureStepPage(context: Context) {
                 }
                 Spacer(Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Restore Existing Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text("Select a .json backup file from device storage", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_restore_existing_backup), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.ui_select_a_json_backup_file), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
             }
@@ -899,7 +900,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Theme & Language",
+        text = stringResource(R.string.ui_theme_language),
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -908,7 +909,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Customize your visual style with light/dark theme modes, OLED pure black, and select your preferred display language.",
+        text = stringResource(R.string.ui_customize_your_visual_style_with),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -922,7 +923,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            Text("App Theme Mode", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.ui_app_theme_mode), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -982,8 +983,8 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("AMOLED Pure Black", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text("Deep OLED pitch black background", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.ui_amoled_pure_black), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.ui_deep_oled_pitch_black_background), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
                         checked = isAmoled,
@@ -997,7 +998,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            Text("Display Language", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.ui_display_language), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(8.dp))
 
             val languages = listOf(
@@ -1075,7 +1076,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Petal AI & Deep Research",
+        text = stringResource(R.string.ui_petal_ai_deep_research),
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -1084,7 +1085,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Configure your preferred AI API key for webpage summaries, instant search answers, and live site translation.",
+        text = stringResource(R.string.ui_configure_your_preferred_ai_api),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -1098,7 +1099,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            Text("Select AI Engine Provider", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.ui_select_ai_engine_provider), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(10.dp))
 
             val providers = listOf("Gemini 2.5 Flash", "OpenAI GPT-4o", "DeepSeek R1", "Groq Llama 3")
@@ -1135,8 +1136,8 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
                     apiKey = input
                     sp.edit().putString("sp_gemini_api_key", input).apply()
                 },
-                label = { Text("API Key (Optional)") },
-                placeholder = { Text("Paste your API key here...") },
+                label = { Text(stringResource(R.string.ui_api_key_optional)) },
+                placeholder = { Text(stringResource(R.string.ui_paste_your_api_key_here)) },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -1144,7 +1145,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
 
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Keys are securely stored in your local encrypted SharedPreferences.",
+                text = stringResource(R.string.ui_keys_are_securely_stored_in),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1185,7 +1186,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Default Search Engine",
+        text = stringResource(R.string.ui_default_search_engine),
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -1194,7 +1195,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Select your default search provider for omnibox address bar queries and homepage searches.",
+        text = stringResource(R.string.ui_select_your_default_search_provider),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -1249,7 +1250,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Typography & Font Family",
+        text = stringResource(R.string.ui_typography_font_family),
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -1258,7 +1259,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Choose between Petal Signature (Google Sans Flex) or import your custom TTF/OTF font file.",
+        text = stringResource(R.string.ui_choose_between_petal_signature_google),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -1287,8 +1288,8 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     Icon(Icons.Rounded.FontDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Petal Signature", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text("Google Sans Flex variable font with dynamic optical sizing", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.ui_petal_signature), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.ui_google_sans_flex_variable_font), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isFlexSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
@@ -1309,8 +1310,8 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     Icon(Icons.Rounded.FolderZip, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Custom Font File", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text("Import custom TTF/OTF variable font from device storage", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.ui_custom_font_file), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.ui_import_custom_ttf_otf_variable), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isCustomSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
@@ -1341,7 +1342,7 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Ad & Tracker Shield",
+        text = stringResource(R.string.ui_ad_tracker_shield),
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -1350,7 +1351,7 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Block intrusive web ads, popups, and tracking scripts automatically for faster page load speeds.",
+        text = stringResource(R.string.ui_block_intrusive_web_ads_popups),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -1380,8 +1381,8 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Enable Petal Shield", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text("Block ads, trackers & popups across all websites", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_enable_petal_shield), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.ui_block_ads_trackers_popups_across), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Switch(
                     checked = isAdBlockEnabled,

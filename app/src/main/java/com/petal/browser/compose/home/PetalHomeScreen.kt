@@ -94,6 +94,8 @@ import org.json.JSONObject
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 // ── 1. Data model & Persistence ───────────────────────────────────────────
 
@@ -550,7 +552,7 @@ fun PetalHomeScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Palette,
-                                        contentDescription = "Customize Wallpaper",
+                                        contentDescription = stringResource(R.string.ui_customize_wallpaper),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(22.dp)
                                     )
@@ -666,12 +668,12 @@ fun PetalHomeScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = "Collections",
+                                            text = stringResource(R.string.ui_collections),
                                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
-                                            text = "${collections.size} saved",
+                                            text = stringResource(R.string.ui_saved, collections.size),
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.primary
                                         )
@@ -719,7 +721,7 @@ fun PetalHomeScreen(
                                                                 color = MaterialTheme.colorScheme.onSurface
                                                             )
                                                             Text(
-                                                                text = "• ${col.items.size} tabs",
+                                                                text = stringResource(R.string.ui_tabs_3, col.items.size),
                                                                 style = MaterialTheme.typography.bodySmall,
                                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                                             )
@@ -735,7 +737,7 @@ fun PetalHomeScreen(
                                                             ) {
                                                                 Icon(
                                                                     Icons.Rounded.OpenInNew,
-                                                                    contentDescription = "Open All",
+                                                                    contentDescription = stringResource(R.string.ui_open_all),
                                                                     tint = MaterialTheme.colorScheme.primary,
                                                                     modifier = Modifier.size(18.dp)
                                                                 )
@@ -748,7 +750,7 @@ fun PetalHomeScreen(
                                                             ) {
                                                                 Icon(
                                                                     Icons.Rounded.DeleteOutline,
-                                                                    contentDescription = "Delete Collection",
+                                                                    contentDescription = stringResource(R.string.ui_delete_collection),
                                                                     tint = MaterialTheme.colorScheme.error,
                                                                     modifier = Modifier.size(18.dp)
                                                                 )
@@ -1077,14 +1079,14 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Rounded.Add,
-                contentDescription = "Add shortcut",
+                contentDescription = stringResource(R.string.ui_add_shortcut),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(26.dp)
             )
         }
         Spacer(Modifier.height(5.dp))
         Text(
-            text = "Add",
+            text = stringResource(R.string.ui_add),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -1136,12 +1138,12 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
     ) {
             Icon(
                 imageVector = Icons.Rounded.Search,
-                contentDescription = "Search",
+                contentDescription = stringResource(R.string.ui_search),
                 tint = MaterialTheme.colorScheme.primary,
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                text = "Search or type URL",
+                text = stringResource(R.string.ui_search_or_type_url_2),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -1156,7 +1158,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
             }) {
                 Icon(
                     Icons.Rounded.AutoAwesome,
-                    contentDescription = "Petal AI",
+                    contentDescription = stringResource(R.string.ui_petal_ai),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1170,7 +1172,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
             }) {
                 Icon(
                     Icons.Rounded.Mic,
-                    contentDescription = "Voice Search",
+                    contentDescription = stringResource(R.string.ui_voice_search_2),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -1309,49 +1311,49 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
 private fun SiteBrandIconTinted(siteId: String, label: String, tint: Color) {
     when (siteId) {
         "youtube" -> {
-            Icon(Icons.Rounded.PlayArrow, contentDescription = "YouTube", tint = tint, modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.ui_youtube), tint = tint, modifier = Modifier.size(26.dp))
         }
         "google", "search" -> {
-            Icon(Icons.Rounded.Search, contentDescription = "Google", tint = tint, modifier = Modifier.size(24.dp))
+            Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.ui_google), tint = tint, modifier = Modifier.size(24.dp))
         }
         "github" -> {
             androidx.compose.foundation.Image(
                 painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_github),
-                contentDescription = "GitHub",
+                contentDescription = stringResource(R.string.ui_github),
                 modifier = Modifier.size(26.dp)
             )
         }
         "wikipedia" -> {
             androidx.compose.foundation.Image(
                 painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_wikipedia),
-                contentDescription = "Wikipedia",
+                contentDescription = stringResource(R.string.ui_wikipedia),
                 modifier = Modifier.size(26.dp)
             )
         }
         "duckduckgo" -> {
             androidx.compose.foundation.Image(
                 painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_duckduckgo),
-                contentDescription = "DuckDuckGo",
+                contentDescription = stringResource(R.string.ui_duckduckgo),
                 modifier = Modifier.size(26.dp)
             )
         }
         "weather" -> {
-            Icon(Icons.Rounded.WbSunny, contentDescription = "Google Weather", tint = Color(0xFFFFD54F), modifier = Modifier.size(24.dp))
+            Icon(Icons.Rounded.WbSunny, contentDescription = stringResource(R.string.ui_google_weather), tint = Color(0xFFFFD54F), modifier = Modifier.size(24.dp))
         }
         "globe" -> {
-            Icon(Icons.Rounded.Public, contentDescription = "Web", tint = tint, modifier = Modifier.size(24.dp))
+            Icon(Icons.Rounded.Public, contentDescription = stringResource(R.string.ui_web), tint = tint, modifier = Modifier.size(24.dp))
         }
         "star" -> {
-            Icon(Icons.Rounded.Star, contentDescription = "Star", tint = tint, modifier = Modifier.size(24.dp))
+            Icon(Icons.Rounded.Star, contentDescription = stringResource(R.string.ui_star), tint = tint, modifier = Modifier.size(24.dp))
         }
         "heart" -> {
-            Icon(Icons.Rounded.Favorite, contentDescription = "Heart", tint = tint, modifier = Modifier.size(24.dp))
+            Icon(Icons.Rounded.Favorite, contentDescription = stringResource(R.string.ui_heart), tint = tint, modifier = Modifier.size(24.dp))
         }
         "bookmark" -> {
-            Icon(Icons.Rounded.Bookmark, contentDescription = "Bookmark", tint = tint, modifier = Modifier.size(24.dp))
+            Icon(Icons.Rounded.Bookmark, contentDescription = stringResource(R.string.ui_bookmark), tint = tint, modifier = Modifier.size(24.dp))
         }
         "lock" -> {
-            Icon(Icons.Rounded.Lock, contentDescription = "Lock", tint = tint, modifier = Modifier.size(24.dp))
+            Icon(Icons.Rounded.Lock, contentDescription = stringResource(R.string.ui_lock), tint = tint, modifier = Modifier.size(24.dp))
         }
         else -> {
             Text(
@@ -1371,49 +1373,49 @@ private fun SiteBrandIconTinted(siteId: String, label: String, tint: Color) {
 private fun SiteBrandIcon(siteId: String, label: String) {
     when (siteId) {
         "youtube" -> {
-            Icon(Icons.Rounded.PlayArrow, contentDescription = "YouTube", tint = Color.White, modifier = Modifier.size(28.dp))
+            Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.ui_youtube), tint = Color.White, modifier = Modifier.size(28.dp))
         }
         "google", "search" -> {
-            Icon(Icons.Rounded.Search, contentDescription = "Google", tint = Color.White, modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.ui_google), tint = Color.White, modifier = Modifier.size(26.dp))
         }
         "github" -> {
             androidx.compose.foundation.Image(
                 painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_github),
-                contentDescription = "GitHub",
+                contentDescription = stringResource(R.string.ui_github),
                 modifier = Modifier.size(28.dp)
             )
         }
         "wikipedia" -> {
             androidx.compose.foundation.Image(
                 painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_wikipedia),
-                contentDescription = "Wikipedia",
+                contentDescription = stringResource(R.string.ui_wikipedia),
                 modifier = Modifier.size(28.dp)
             )
         }
         "duckduckgo" -> {
             androidx.compose.foundation.Image(
                 painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_duckduckgo),
-                contentDescription = "DuckDuckGo",
+                contentDescription = stringResource(R.string.ui_duckduckgo),
                 modifier = Modifier.size(28.dp)
             )
         }
         "weather" -> {
-            Icon(Icons.Rounded.WbSunny, contentDescription = "Google Weather", tint = Color(0xFFFFD54F), modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.WbSunny, contentDescription = stringResource(R.string.ui_google_weather), tint = Color(0xFFFFD54F), modifier = Modifier.size(26.dp))
         }
         "globe" -> {
-            Icon(Icons.Rounded.Public, contentDescription = "Web", tint = Color.White, modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.Public, contentDescription = stringResource(R.string.ui_web), tint = Color.White, modifier = Modifier.size(26.dp))
         }
         "star" -> {
-            Icon(Icons.Rounded.Star, contentDescription = "Star", tint = Color.White, modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.Star, contentDescription = stringResource(R.string.ui_star), tint = Color.White, modifier = Modifier.size(26.dp))
         }
         "heart" -> {
-            Icon(Icons.Rounded.Favorite, contentDescription = "Heart", tint = Color.White, modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.Favorite, contentDescription = stringResource(R.string.ui_heart), tint = Color.White, modifier = Modifier.size(26.dp))
         }
         "bookmark" -> {
-            Icon(Icons.Rounded.Bookmark, contentDescription = "Bookmark", tint = Color.White, modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.Bookmark, contentDescription = stringResource(R.string.ui_bookmark), tint = Color.White, modifier = Modifier.size(26.dp))
         }
         "lock" -> {
-            Icon(Icons.Rounded.Lock, contentDescription = "Lock", tint = Color.White, modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.Lock, contentDescription = stringResource(R.string.ui_lock), tint = Color.White, modifier = Modifier.size(26.dp))
         }
         else -> {
             Text(
@@ -1463,7 +1465,7 @@ private fun EditShortcutDialog(
                 OutlinedTextField(
                     value = nameText,
                     onValueChange = { nameText = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.ui_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1471,14 +1473,14 @@ private fun EditShortcutDialog(
                 OutlinedTextField(
                     value = urlText,
                     onValueChange = { urlText = it },
-                    label = { Text("URL") },
+                    label = { Text(stringResource(R.string.ui_url)) },
                     singleLine = true,
                     placeholder = { Text("example.com") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Text(
-                    text = "Material 3 Expressive Shape",
+                    text = stringResource(R.string.ui_material_3_expressive_shape),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1565,7 +1567,7 @@ private fun EditShortcutDialog(
                         }
                     }
                     Column {
-                        Text("Live Preview (${selectedShapeName})", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.ui_live_preview, selectedShapeName), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                         Text(
                             nameText.ifBlank { "Shortcut" },
                             style = MaterialTheme.typography.bodyMedium,
@@ -1618,7 +1620,7 @@ private fun EditShortcutDialog(
                     )
                 }
             ) {
-                Text("Save")
+                Text(stringResource(R.string.ui_save))
             }
         },
         dismissButton = {
@@ -1628,11 +1630,11 @@ private fun EditShortcutDialog(
                         onClick = onDelete,
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("Delete")
+                        Text(stringResource(R.string.ui_delete))
                     }
                 }
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
             }
         }

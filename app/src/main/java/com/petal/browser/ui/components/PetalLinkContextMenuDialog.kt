@@ -31,6 +31,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Customizable link context menu dialog component styled with RvSystemMonitor containment principles.
@@ -120,7 +122,7 @@ fun PetalLinkContextMenuDialog(
                                 if (favicon != null) {
                                     Image(
                                         bitmap = favicon.asImageBitmap(),
-                                        contentDescription = "Site Favicon",
+                                        contentDescription = stringResource(R.string.ui_site_favicon),
                                         modifier = Modifier
                                             .size(24.dp)
                                             .clip(CircleShape)

@@ -35,6 +35,8 @@ import com.petal.browser.unit.PasswordBreachAuditManager
 import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.launch
 import java.util.UUID
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -162,14 +164,14 @@ fun PetalPasswordsScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search logins & domains...") },
+                    placeholder = { Text(stringResource(R.string.ui_search_logins_domains)) },
                     leadingIcon = {
                         Icon(Icons.Rounded.Search, contentDescription = null)
                     },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Rounded.Clear, contentDescription = "Clear")
+                                Icon(Icons.Rounded.Clear, contentDescription = stringResource(R.string.ui_clear))
                             }
                         }
                     },
@@ -193,7 +195,7 @@ fun PetalPasswordsScreen(
                     ) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Add Login")
+                        Text(stringResource(R.string.ui_add_login))
                     }
 
                     OutlinedButton(
@@ -204,7 +206,7 @@ fun PetalPasswordsScreen(
                     ) {
                         Icon(Icons.Rounded.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Import")
+                        Text(stringResource(R.string.ui_import))
                     }
 
                     OutlinedButton(
@@ -215,7 +217,7 @@ fun PetalPasswordsScreen(
                     ) {
                         Icon(Icons.Rounded.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Export")
+                        Text(stringResource(R.string.ui_export))
                     }
                 }
             }
@@ -341,7 +343,7 @@ private fun CredentialListItem(
             IconButton(onClick = onToggleFavorite) {
                 Icon(
                     imageVector = if (credential.isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                    contentDescription = "Favorite",
+                    contentDescription = stringResource(R.string.ui_favorite),
                     tint = if (credential.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -413,7 +415,7 @@ private fun PasswordDetailsDialog(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Username", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_username), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(credential.username.ifBlank { "(empty)" }, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                 }
                 IconButton(
@@ -423,7 +425,7 @@ private fun PasswordDetailsDialog(
                         PetalToast.show(context, "Username copied")
                     }
                 ) {
-                    Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy), modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -440,7 +442,7 @@ private fun PasswordDetailsDialog(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Password", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_password), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         text = if (isPasswordVisible) credential.password else "••••••••••••",
                         style = MaterialTheme.typography.bodyMedium,
@@ -451,7 +453,7 @@ private fun PasswordDetailsDialog(
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                         Icon(
                             imageVector = if (isPasswordVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                            contentDescription = "Toggle visibility",
+                            contentDescription = stringResource(R.string.ui_toggle_visibility_2),
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -462,7 +464,7 @@ private fun PasswordDetailsDialog(
                             PetalToast.show(context, "Password copied")
                         }
                     ) {
-                        Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(18.dp))
+                        Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy), modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -488,11 +490,11 @@ private fun PasswordDetailsDialog(
             if (isCheckingBreach) {
                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Checking HIBP...")
+                Text(stringResource(R.string.ui_checking_hibp))
             } else {
                 Icon(Icons.Rounded.Security, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Check for Breaches")
+                Text(stringResource(R.string.ui_check_for_breaches))
             }
         }
 
@@ -516,14 +518,14 @@ private fun PasswordDetailsDialog(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Delete")
+                Text(stringResource(R.string.ui_delete))
             }
             Button(
                 onClick = onEdit,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Edit")
+                Text(stringResource(R.string.ui_edit))
             }
         }
     }
@@ -553,7 +555,7 @@ private fun PasswordEditDialog(
             OutlinedTextField(
                 value = domain,
                 onValueChange = { domain = it },
-                label = { Text("Website Domain (e.g. google.com)") },
+                label = { Text(stringResource(R.string.ui_website_domain_e_g_google)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -562,7 +564,7 @@ private fun PasswordEditDialog(
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username or Email") },
+                label = { Text(stringResource(R.string.ui_username_or_email)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -578,7 +580,7 @@ private fun PasswordEditDialog(
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("Notes (optional)") },
+                label = { Text(stringResource(R.string.ui_notes_optional)) },
                 singleLine = false,
                 maxLines = 3,
                 shape = RoundedCornerShape(14.dp),
@@ -595,7 +597,7 @@ private fun PasswordEditDialog(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.ui_cancel))
             }
             Button(
                 onClick = {
@@ -623,7 +625,7 @@ private fun PasswordEditDialog(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Save")
+                Text(stringResource(R.string.ui_save))
             }
         }
     }

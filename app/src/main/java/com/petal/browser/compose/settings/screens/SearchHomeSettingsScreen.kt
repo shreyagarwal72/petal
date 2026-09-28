@@ -28,6 +28,8 @@ import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalSearchEngineSheetContent
 import com.petal.browser.ui.components.ScrollFadeRow
 import com.petal.browser.ui.components.allSearchEngines
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,7 +142,7 @@ fun SearchHomeSettingsScreenContent(
             ) {
                 // Default Search Engine Card
                 PetalSettingsSection(
-                    title = "Default Search Engine",
+                    title = stringResource(R.string.ui_default_search_engine),
                     iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded,
                     cardId = "search_engine",
                     targetHighlightId = targetHighlightItemId
@@ -163,7 +165,7 @@ fun SearchHomeSettingsScreenContent(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Default Search Provider",
+                                    text = stringResource(R.string.ui_default_search_provider),
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -195,12 +197,12 @@ fun SearchHomeSettingsScreenContent(
                         ) {
                             Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                                 Text(
-                                    text = "Engine Selector in Search Box",
+                                    text = stringResource(R.string.ui_engine_selector_in_search_box),
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Show search engine icon on the left of the omnibox to quickly switch providers",
+                                    text = stringResource(R.string.ui_show_search_engine_icon_on),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -215,61 +217,44 @@ fun SearchHomeSettingsScreenContent(
 
                 // Homepage & Media Playback Card
                 PetalSettingsSection(
-                    title = "Homepage & Media Playback",
+                    title = stringResource(R.string.ui_homepage_media_playback),
                     iconRes = com.petal.browser.R.drawable.home_filled,
                     cardId = "search_homepage",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
-                        "Custom Homepage:",
+                        stringResource(R.string.ui_custom_homepage),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    val homeTypeScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = homeTypeScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(homeTypeScrollState),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilterChip(
-                                selected = homepageType == "0",
-                                onClick = { onHomepageTypeChange("0") },
-                                label = { Text("Petal Start Page") },
-                                leadingIcon = if (homepageType == "0") {
-                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null
-                            )
-                            FilterChip(
-                                selected = homepageType == "1",
-                                onClick = { onHomepageTypeChange("1") },
-                                label = { Text("Custom URL") },
-                                leadingIcon = if (homepageType == "1") {
-                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null
-                            )
-                        }
-                    }
+                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
+                        items = listOf(
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem(
+                                stringResource(R.string.ui_petal_start_page), selected = homepageType == "0",
+                            ),
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem(
+                                stringResource(R.string.ui_custom_url), selected = homepageType == "1",
+                            ),
+                        ),
+                        selectedIndex = if (homepageType == "1") 1 else 0,
+                        onSelect = { onHomepageTypeChange(if (it == 1) "1" else "0") },
+                    )
 
                     if (homepageType == "1") {
                         OutlinedTextField(
                             value = customHomepageUrl,
                             onValueChange = onCustomHomepageUrlChange,
                             modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Enter Homepage URL") },
+                            label = { Text(stringResource(R.string.ui_enter_homepage_url)) },
                             singleLine = true,
                             shape = RoundedCornerShape(14.dp)
                         )
                     }
                     // Background Audio & Video Playback
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = "Background Audio & Video Playback",
-                        subtitle = "Keep YouTube & web media playing when switching tabs or backgrounding app",
+                        title = stringResource(R.string.ui_background_audio_video_playback),
+                        subtitle = stringResource(R.string.ui_keep_youtube_web_media_playing),
                         icon = Icons.Rounded.PlayCircle,
                         checked = backgroundPlay,
                         onCheckedChange = onBackgroundPlayChange

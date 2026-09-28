@@ -294,7 +294,7 @@ private fun StoragePermissionRequestState(
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth(0.8f).height(48.dp)
             ) {
-                Text("Open System File Picker")
+                Text(stringResource(R.string.ui_open_system_file_picker))
             }
         }
 
@@ -303,7 +303,7 @@ private fun StoragePermissionRequestState(
             onClick = onDismiss,
             shape = RoundedCornerShape(20.dp)
         ) {
-            Text("Cancel")
+            Text(stringResource(R.string.ui_cancel))
         }
     }
 }
@@ -397,7 +397,7 @@ private fun FilePickerBrowserContent(
                 }) {
                     Icon(
                         imageVector = if (isSearching) Icons.Rounded.Close else Icons.Rounded.Search,
-                        contentDescription = "Search",
+                        contentDescription = stringResource(R.string.ui_search),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -409,7 +409,7 @@ private fun FilePickerBrowserContent(
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.Sort,
-                            contentDescription = "Sort",
+                            contentDescription = stringResource(R.string.ui_sort),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -472,7 +472,7 @@ private fun FilePickerBrowserContent(
                     }) {
                         Icon(
                             imageVector = Icons.Rounded.OpenInBrowser,
-                            contentDescription = "System Picker",
+                            contentDescription = stringResource(R.string.ui_system_picker),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -701,7 +701,7 @@ private fun FilePickerBrowserContent(
                     if (allowFolderSelection) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Current Directory",
+                                text = stringResource(R.string.ui_current_directory),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -726,7 +726,7 @@ private fun FilePickerBrowserContent(
                         }
                     } else if (allowMultiple) {
                         Text(
-                            text = "${selectedFiles.size} selected",
+                            text = stringResource(R.string.ui_selected_2, selectedFiles.size),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -737,7 +737,7 @@ private fun FilePickerBrowserContent(
                             },
                             shape = RoundedCornerShape(18.dp)
                         ) {
-                            Text("Confirm")
+                            Text(stringResource(R.string.ui_confirm))
                         }
                     }
                 }

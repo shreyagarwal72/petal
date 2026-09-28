@@ -50,6 +50,7 @@ import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.BrowserUnit
+import androidx.compose.ui.res.stringResource
 
 object PetalDeleteBridge {
     @JvmStatic
@@ -126,13 +127,13 @@ fun PetalDeleteScreen(
             onDismissRequest = { showConfirmDialog = false },
             title = {
                 Text(
-                    text = "Clear Selected Browsing Data?",
+                    text = stringResource(R.string.ui_clear_selected_browsing_data),
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                 )
             },
             text = {
                 Text(
-                    text = "This action will permanently delete the selected items. This cannot be undone.",
+                    text = stringResource(R.string.ui_this_action_will_permanently_delete),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -145,12 +146,12 @@ fun PetalDeleteScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Clear Now")
+                    Text(stringResource(R.string.ui_clear_now))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
             }
         )
@@ -199,12 +200,12 @@ fun PetalDeleteScreen(
                             PetalGroupIconBadge(Icons.Filled.DeleteSweep)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Clear Browsing Data",
+                                    text = stringResource(R.string.ui_clear_browsing_data),
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Choose items to erase. Settings apply immediately and during clear operations.",
+                                    text = stringResource(R.string.ui_choose_items_to_erase_settings),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -221,7 +222,7 @@ fun PetalDeleteScreen(
                     ) {
                         com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.album_title_history),
-                            subtitle = "Clear visited web pages and address bar history",
+                            subtitle = stringResource(R.string.ui_clear_visited_web_pages_and),
                             checked = clearHistory,
                             onCheckedChange = {
                                 clearHistory = it
@@ -239,7 +240,7 @@ fun PetalDeleteScreen(
 
                         com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.clear_title_cache),
-                            subtitle = "Frees up space by clearing cached images and files",
+                            subtitle = stringResource(R.string.ui_frees_up_space_by_clearing),
                             checked = clearCache,
                             onCheckedChange = {
                                 clearCache = it
@@ -257,7 +258,7 @@ fun PetalDeleteScreen(
 
                         com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.setting_title_dom),
-                            subtitle = "Local website data and offline storage",
+                            subtitle = stringResource(R.string.ui_local_website_data_and_offline),
                             checked = clearIndexedDB,
                             onCheckedChange = {
                                 clearIndexedDB = it
@@ -329,7 +330,7 @@ fun PetalDeleteScreen(
 
                         com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.clear_title_quit),
-                            subtitle = "Automatically clear history, cache, and open tabs on exit",
+                            subtitle = stringResource(R.string.ui_automatically_clear_history_cache_and),
                             checked = clearQuit,
                             onCheckedChange = {
                                 clearQuit = it
@@ -365,7 +366,7 @@ fun PetalDeleteScreen(
                             Icon(Icons.Rounded.DeleteSweep, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                text = "Clear Selected Data",
+                                text = stringResource(R.string.ui_clear_selected_data),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }

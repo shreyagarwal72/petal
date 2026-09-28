@@ -25,6 +25,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Shared popup/dialog language for Petal.
@@ -209,7 +211,7 @@ fun PetalExpressiveTextPromptDialog(
                     onClick = onDismiss,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
@@ -217,7 +219,7 @@ fun PetalExpressiveTextPromptDialog(
                     modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("OK", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -259,7 +261,7 @@ fun PetalExpressiveAuthPromptDialog(
                 OutlinedTextField(
                     value = usernameState.value,
                     onValueChange = { usernameState.value = it },
-                    label = { Text("Username") },
+                    label = { Text(stringResource(R.string.ui_username)) },
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -269,7 +271,7 @@ fun PetalExpressiveAuthPromptDialog(
             OutlinedTextField(
                 value = passwordState.value,
                 onValueChange = { passwordState.value = it },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.ui_password)) },
                 shape = RoundedCornerShape(16.dp),
                 visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                 singleLine = true,
@@ -285,7 +287,7 @@ fun PetalExpressiveAuthPromptDialog(
                     onClick = onDismiss,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
@@ -293,7 +295,7 @@ fun PetalExpressiveAuthPromptDialog(
                     modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Sign In", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_sign_in), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -328,7 +330,7 @@ object PetalExpressivePromptBridge {
                         },
                         title = title,
                         message = message,
-                        confirmText = "OK",
+                        confirmText = stringResource(R.string.ui_ok),
                         onConfirm = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
                             onConfirm.run()
@@ -372,12 +374,12 @@ object PetalExpressivePromptBridge {
                         },
                         title = title,
                         message = message,
-                        confirmText = "OK",
+                        confirmText = stringResource(R.string.ui_ok),
                         onConfirm = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
                             onConfirm.run()
                         },
-                        dismissText = "Cancel",
+                        dismissText = stringResource(R.string.ui_cancel),
                         onDismiss = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
                             onCancel.run()

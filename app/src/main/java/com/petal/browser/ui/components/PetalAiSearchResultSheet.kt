@@ -45,6 +45,8 @@ import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 object PetalAiSearchBridge {
     @JvmStatic
@@ -192,7 +194,7 @@ fun PetalAiSearchResultSheet(
 
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            text = "Petal AI",
+                            text = stringResource(R.string.ui_petal_ai),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -231,7 +233,7 @@ fun PetalAiSearchResultSheet(
                 ) {
                     Icon(
                         Icons.Rounded.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.ui_close),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -265,7 +267,7 @@ fun PetalAiSearchResultSheet(
                         onValueChange = { searchQuery = it },
                         placeholder = {
                             Text(
-                                "Ask anything or search with AI...",
+                                stringResource(R.string.ui_ask_anything_or_search_with),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -296,7 +298,7 @@ fun PetalAiSearchResultSheet(
                         ) {
                             Icon(
                                 Icons.Rounded.Close,
-                                contentDescription = "Clear query",
+                                contentDescription = stringResource(R.string.ui_clear_query),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -318,7 +320,7 @@ fun PetalAiSearchResultSheet(
                     ) {
                         Icon(
                             Icons.Rounded.ArrowForward,
-                            contentDescription = "Submit query",
+                            contentDescription = stringResource(R.string.ui_submit_query),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -419,7 +421,7 @@ fun PetalAiSearchResultSheet(
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
-                                    text = "Web Grounded",
+                                    text = stringResource(R.string.ui_web_grounded),
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
@@ -452,7 +454,7 @@ fun PetalAiSearchResultSheet(
                     ) {
                         Icon(
                             Icons.Rounded.Tune,
-                            contentDescription = "AI Settings",
+                            contentDescription = stringResource(R.string.ui_ai_settings),
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -502,12 +504,12 @@ fun PetalAiSearchResultSheet(
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        text = "Researching & Synthesizing",
+                                        text = stringResource(R.string.ui_researching_synthesizing),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Querying ${selectedProvider.displayName} with web grounding...",
+                                        text = stringResource(R.string.ui_querying_with_web_grounding, selectedProvider.displayName),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -562,7 +564,7 @@ fun PetalAiSearchResultSheet(
 
                                     Column {
                                         Text(
-                                            text = "Search Query Failed",
+                                            text = stringResource(R.string.ui_search_query_failed),
                                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.onErrorContainer
                                         )
@@ -593,7 +595,7 @@ fun PetalAiSearchResultSheet(
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Retry")
+                                        Text(stringResource(R.string.ui_retry))
                                     }
 
                                     FilledTonalButton(
@@ -621,7 +623,7 @@ fun PetalAiSearchResultSheet(
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Configure Key")
+                                        Text(stringResource(R.string.ui_configure_key))
                                     }
                                 }
                             }
@@ -660,7 +662,7 @@ fun PetalAiSearchResultSheet(
                                             Icon(Icons.Rounded.AutoAwesome, contentDescription = null)
                                         }
                                         Text(
-                                            text = "Synthesized Answer",
+                                            text = stringResource(R.string.ui_synthesized_answer),
                                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -701,7 +703,7 @@ fun PetalAiSearchResultSheet(
                                     ) {
                                         Icon(
                                             Icons.Rounded.Refresh,
-                                            contentDescription = "Regenerate",
+                                            contentDescription = stringResource(R.string.ui_regenerate),
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -720,7 +722,7 @@ fun PetalAiSearchResultSheet(
                                     ) {
                                         Icon(
                                             Icons.Rounded.ContentCopy,
-                                            contentDescription = "Copy answer",
+                                            contentDescription = stringResource(R.string.ui_copy_answer),
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -740,7 +742,7 @@ fun PetalAiSearchResultSheet(
                                     ) {
                                         Icon(
                                             Icons.Rounded.Share,
-                                            contentDescription = "Share answer",
+                                            contentDescription = stringResource(R.string.ui_share_answer),
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -776,7 +778,7 @@ fun PetalAiSearchResultSheet(
                                         Icon(Icons.Rounded.Lightbulb, contentDescription = null)
                                     }
                                     Text(
-                                        text = "Suggested Questions",
+                                        text = stringResource(R.string.ui_suggested_questions),
                                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )

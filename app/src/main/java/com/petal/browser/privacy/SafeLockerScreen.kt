@@ -64,6 +64,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 object SafeLockerBridge {
     @JvmStatic
@@ -287,12 +289,12 @@ fun SafeLockerScreen(
                                         )
                                         HeaderActionIcon(
                                             icon = Icons.Rounded.Add,
-                                            contentDescription = "Import File",
+                                            contentDescription = stringResource(R.string.ui_import_file),
                                             onClick = { showSafeLockerPicker = true }
                                         )
                                         HeaderActionIcon(
                                             icon = Icons.Rounded.Lock,
-                                            contentDescription = "Lock Vault",
+                                            contentDescription = stringResource(R.string.ui_lock_vault),
                                             onClick = {
                                                 isUnlocked = false
                                                 authError = null
@@ -308,7 +310,7 @@ fun SafeLockerScreen(
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text("Search encrypted files...") },
+                                placeholder = { Text(stringResource(R.string.ui_search_encrypted_files)) },
                                 leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(20.dp),
@@ -345,7 +347,7 @@ fun SafeLockerScreen(
                                         }
                                     }
                                     Text(
-                                        "Safe Locker is Locked",
+                                        stringResource(R.string.ui_safe_locker_is_locked),
                                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -377,7 +379,7 @@ fun SafeLockerScreen(
                                     ) {
                                         Icon(Icons.Rounded.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Unlock Vault")
+                                        Text(stringResource(R.string.ui_unlock_vault))
                                     }
                                 }
                             }
@@ -453,7 +455,7 @@ fun SafeLockerScreen(
                                             ) {
                                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                                 Spacer(Modifier.width(8.dp))
-                                                Text("Import File")
+                                                Text(stringResource(R.string.ui_import_file))
                                             }
                                         }
                                     }
@@ -558,7 +560,7 @@ fun SafeLockerScreen(
                                                     }) {
                                                         Icon(
                                                             Icons.Rounded.DeleteOutline,
-                                                            contentDescription = "Delete",
+                                                            contentDescription = stringResource(R.string.ui_delete),
                                                             tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                                                         )
                                                     }

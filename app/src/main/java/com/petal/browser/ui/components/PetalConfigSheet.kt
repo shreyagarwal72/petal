@@ -33,6 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 data class ConfigFlag(
     val key: String,
@@ -102,14 +104,14 @@ fun PetalConfigSheet(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "GeckoView Engine Flags & Internal Preferences",
+                        text = stringResource(R.string.ui_geckoview_engine_flags_internal_prefer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 IconButton(onClick = onDismissRequest) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close")
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                 }
             }
 
@@ -119,7 +121,7 @@ fun PetalConfigSheet(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search flags...", fontSize = 13.sp) },
+                placeholder = { Text(stringResource(R.string.ui_search_flags), fontSize = 13.sp) },
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 shape = RoundedCornerShape(16.dp)

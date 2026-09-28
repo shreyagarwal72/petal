@@ -35,6 +35,8 @@ import com.petal.browser.ui.components.PetalSlider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,14 +99,14 @@ fun PetalAvatarCropSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Crop Profile Picture",
+                    text = stringResource(R.string.ui_crop_profile_picture),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close")
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                 }
             }
 
@@ -187,7 +189,7 @@ fun PetalAvatarCropSheet(
                         rotationAngle = (rotationAngle + 90f) % 360f
                         PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
-                        Icon(Icons.Rounded.RotateRight, contentDescription = "Rotate")
+                        Icon(Icons.Rounded.RotateRight, contentDescription = stringResource(R.string.ui_rotate))
                     }
 
                     IconButton(onClick = {
@@ -196,7 +198,7 @@ fun PetalAvatarCropSheet(
                         rotationAngle = 0f
                         PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = "Reset")
+                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.ui_reset))
                     }
 
                     PetalSlider(
@@ -234,7 +236,7 @@ fun PetalAvatarCropSheet(
                     Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Save Profile Picture",
+                        text = stringResource(R.string.ui_save_profile_picture),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                         )

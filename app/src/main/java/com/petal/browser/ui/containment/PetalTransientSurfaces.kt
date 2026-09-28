@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +69,7 @@ fun PetalSnackbarHost(
                     }
                     if (data.visuals.withDismissAction) {
                         IconButton(onClick = data::dismiss, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Filled.Close, contentDescription = "Dismiss", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.ui_dismiss), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }

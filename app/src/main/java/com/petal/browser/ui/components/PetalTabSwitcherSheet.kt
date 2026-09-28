@@ -54,6 +54,8 @@ import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.browser.PlaceholderAlbumController
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 data class TabModel(
     val album: AlbumController,
@@ -423,7 +425,7 @@ fun PetalTabSwitcherContent(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Rounded.Add,
-                                contentDescription = "New Tab",
+                                contentDescription = stringResource(R.string.ui_new_tab),
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -453,7 +455,7 @@ fun PetalTabSwitcherContent(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.ViewList,
-                                        contentDescription = "List View",
+                                        contentDescription = stringResource(R.string.ui_list_view),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -472,7 +474,7 @@ fun PetalTabSwitcherContent(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.GridView,
-                                        contentDescription = "Grid View",
+                                        contentDescription = stringResource(R.string.ui_grid_view),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -488,7 +490,7 @@ fun PetalTabSwitcherContent(
                         ) {
                             Icon(
                                 Icons.Rounded.MoreVert,
-                                contentDescription = "Menu Options",
+                                contentDescription = stringResource(R.string.ui_menu_options),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -498,7 +500,7 @@ fun PetalTabSwitcherContent(
                             onDismissRequest = { showOverflowMenu = false }
                         ) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text("New Tab") },
+                                text = { Text(stringResource(R.string.ui_new_tab)) },
                                 leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                                 onClick = {
                                     showOverflowMenu = false
@@ -506,7 +508,7 @@ fun PetalTabSwitcherContent(
                                 }
                             )
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text("Close All Tabs", color = MaterialTheme.colorScheme.error) },
+                                text = { Text(stringResource(R.string.ui_close_all_tabs), color = MaterialTheme.colorScheme.error) },
                                 leadingIcon = { Icon(Icons.Rounded.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showOverflowMenu = false
@@ -523,7 +525,7 @@ fun PetalTabSwitcherContent(
                     onValueChange = { searchQuery = it },
                     placeholder = {
                         Text(
-                            "Search your tabs",
+                            stringResource(R.string.ui_search_your_tabs),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -531,7 +533,7 @@ fun PetalTabSwitcherContent(
                     leadingIcon = {
                         Icon(
                             Icons.Rounded.Search,
-                            contentDescription = "Search",
+                            contentDescription = stringResource(R.string.ui_search),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -540,7 +542,7 @@ fun PetalTabSwitcherContent(
                             IconButton(onClick = { searchQuery = "" }) {
                                 Icon(
                                     Icons.Rounded.Close,
-                                    contentDescription = "Clear",
+                                    contentDescription = stringResource(R.string.ui_clear),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -676,7 +678,7 @@ fun PetalTabSwitcherContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Tab closed",
+                                text = stringResource(R.string.ui_tab_closed),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -691,7 +693,7 @@ fun PetalTabSwitcherContent(
                                 }
                             ) {
                                 Text(
-                                    text = "Undo",
+                                    text = stringResource(R.string.ui_undo),
                                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -815,7 +817,7 @@ fun TabCard(
                 ) {
                     Icon(
                         Icons.Rounded.Close,
-                        contentDescription = "Close Tab",
+                        contentDescription = stringResource(R.string.ui_close_tab),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -838,7 +840,7 @@ fun TabCard(
                     modifier = Modifier.align(Alignment.End)
                 ) {
                     Text(
-                        text = "Active",
+                        text = stringResource(R.string.ui_active),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )

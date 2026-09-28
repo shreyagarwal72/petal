@@ -93,6 +93,8 @@ import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.PetalRecentlyClosedManager
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Layout mode for the tab grid. Toggled from the top bar's layout-toggle icon button.
@@ -473,7 +475,7 @@ fun PetalTabGridSwitcher(
                             )
                             HeaderActionIcon(
                                 icon = Icons.Rounded.Close,
-                                contentDescription = "Close selected tabs",
+                                contentDescription = stringResource(R.string.ui_close_selected_tabs),
                                 onClick = {
                                     val selected = filteredTabs.filter { selectedTabIds.contains(it.id) }
                                     selected.forEach { requestOptimisticClose(it) }
@@ -482,14 +484,14 @@ fun PetalTabGridSwitcher(
                             )
                             HeaderActionIcon(
                                 icon = Icons.Rounded.Done,
-                                contentDescription = "Finish selection",
+                                contentDescription = stringResource(R.string.ui_finish_selection),
                                 onClick = { leaveSelectionMode() }
                             )
                         }
 
                         HeaderActionIcon(
                             icon = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
-                            contentDescription = "Toggle layout",
+                            contentDescription = stringResource(R.string.ui_toggle_layout),
                             onClick = {
                                 val nextMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
                                 displayMode = nextMode
@@ -500,7 +502,7 @@ fun PetalTabGridSwitcher(
                         Box {
                             HeaderActionIcon(
                                 icon = Icons.Rounded.MoreVert,
-                                contentDescription = "More options",
+                                contentDescription = stringResource(R.string.ui_more_options),
                                 onClick = { isOverflowMenuExpanded = true }
                             )
 
@@ -509,7 +511,7 @@ fun PetalTabGridSwitcher(
                                 onDismissRequest = { isOverflowMenuExpanded = false }
                             ) {
                                 PetalExpressiveMenuItem(
-                                    text = "New Tab",
+                                    text = stringResource(R.string.ui_new_tab),
                                     leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
@@ -519,7 +521,7 @@ fun PetalTabGridSwitcher(
                                     }
                                 )
                                 PetalExpressiveMenuItem(
-                                    text = "New Incognito Tab",
+                                    text = stringResource(R.string.ui_new_incognito_tab),
                                     leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
@@ -530,7 +532,7 @@ fun PetalTabGridSwitcher(
                                 )
                                 HorizontalDivider()
                                 PetalExpressiveMenuItem(
-                                    text = "Tab Manager Settings",
+                                    text = stringResource(R.string.ui_tab_manager_settings),
                                     leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
@@ -539,7 +541,7 @@ fun PetalTabGridSwitcher(
                                 )
                                 HorizontalDivider()
                                 PetalExpressiveMenuItem(
-                                    text = "Close All Tabs",
+                                    text = stringResource(R.string.ui_close_all_tabs),
                                     leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
@@ -579,7 +581,7 @@ fun PetalTabGridSwitcher(
                         leadingIcon = {
                             Icon(
                                 Icons.Rounded.Search,
-                                contentDescription = "Search",
+                                contentDescription = stringResource(R.string.ui_search),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -589,7 +591,7 @@ fun PetalTabGridSwitcher(
                                 IconButton(onClick = { searchQuery = "" }) {
                                     Icon(
                                         Icons.Rounded.Close,
-                                        contentDescription = "Clear search",
+                                        contentDescription = stringResource(R.string.ui_clear_search),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -667,7 +669,7 @@ fun PetalTabGridSwitcher(
 
                                 Icon(
                                     imageVector = Icons.Rounded.ChevronRight,
-                                    contentDescription = "View Inactive Items",
+                                    contentDescription = stringResource(R.string.ui_view_inactive_items),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(22.dp)
                                 )
@@ -723,7 +725,7 @@ fun PetalTabGridSwitcher(
                                 ) {
                                     Icon(
                                         imageVector = if (isThresholdReached) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
-                                        contentDescription = "Closed Tabs Vault Lock",
+                                        contentDescription = stringResource(R.string.ui_closed_tabs_vault_lock),
                                         tint = if (isThresholdReached) MaterialTheme.colorScheme.onPrimary else accentColor,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -755,8 +757,8 @@ fun PetalTabGridSwitcher(
                                     accentColor = accentColor,
                                     textColor = textColor,
                                     isIncognito = false,
-                                    title = "No tab groups yet",
-                                    subtitle = "Drag and drop tabs onto each other in the Tab Manager to create a group",
+                                    title = stringResource(R.string.ui_no_tab_groups_yet),
+                                    subtitle = stringResource(R.string.ui_drag_and_drop_tabs_onto),
                                     onNewTab = {
                                         selectedCategory = TabCategory.REGULAR
                                     }
@@ -765,8 +767,8 @@ fun PetalTabGridSwitcher(
                                 TabManagerEmptyState(
                                     accentColor = accentColor,
                                     textColor = textColor,
-                                    title = "No matching tab groups",
-                                    subtitle = "Try a different search query",
+                                    title = stringResource(R.string.ui_no_matching_tab_groups),
+                                    subtitle = stringResource(R.string.ui_try_a_different_search_query),
                                     onNewTab = null
                                 )
                             } else {
@@ -813,8 +815,8 @@ fun PetalTabGridSwitcher(
                         filteredTabs.isEmpty() -> TabManagerEmptyState(
                             accentColor = accentColor,
                             textColor = textColor,
-                            title = "No matching tabs",
-                            subtitle = "Try searching for a different title or web address",
+                            title = stringResource(R.string.ui_no_matching_tabs),
+                            subtitle = stringResource(R.string.ui_try_searching_for_a_different),
                             onNewTab = null
                         )
 
@@ -1093,9 +1095,9 @@ fun PetalTabGridSwitcher(
                                 }
                             }
                         ) {
-                            Icon(Icons.Rounded.FolderCopy, contentDescription = "Group", tint = accentColor, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Rounded.FolderCopy, contentDescription = stringResource(R.string.ui_group), tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text("Group", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.ui_group), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
                         }
 
                         // Bookmark All
@@ -1106,9 +1108,9 @@ fun PetalTabGridSwitcher(
                                 leaveSelectionMode()
                             }
                         ) {
-                            Icon(Icons.Rounded.BookmarkAdd, contentDescription = "Bookmark", tint = accentColor, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Rounded.BookmarkAdd, contentDescription = stringResource(R.string.ui_bookmark), tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text("Bookmark", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.ui_bookmark), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
                         }
 
                         // Share All (URLs joined by newline)
@@ -1125,9 +1127,9 @@ fun PetalTabGridSwitcher(
                                 leaveSelectionMode()
                             }
                         ) {
-                            Icon(Icons.Rounded.Share, contentDescription = "Share", tint = accentColor, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.ui_share), tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text("Share", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.ui_share), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
                         }
 
                         // Close Selected
@@ -1138,9 +1140,9 @@ fun PetalTabGridSwitcher(
                                 leaveSelectionMode()
                             }
                         ) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text("Close", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.ui_close), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -1277,18 +1279,18 @@ fun PetalTabGridSwitcher(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Add ${selectedTabs.size} tabs to group",
+                        text = stringResource(R.string.ui_add_tabs_to_group, selectedTabs.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = { showAddToGroupDialog = false }) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close")
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                     }
                 }
 
                 if (!isCreatingNew) {
                     Text(
-                        text = "Select an existing group or create a new one:",
+                        text = stringResource(R.string.ui_select_an_existing_group_or),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1325,7 +1327,7 @@ fun PetalTabGridSwitcher(
                                 },
                                 trailing = {
                                     Text(
-                                        text = "${group.tabIds.size} tabs",
+                                        text = stringResource(R.string.ui_tabs_2, group.tabIds.size),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1342,13 +1344,13 @@ fun PetalTabGridSwitcher(
                     ) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("New Group")
+                        Text(stringResource(R.string.ui_new_group))
                     }
                 } else {
                     OutlinedTextField(
                         value = newGroupNameInput,
                         onValueChange = { newGroupNameInput = it },
-                        placeholder = { Text("Group name (optional)") },
+                        placeholder = { Text(stringResource(R.string.ui_group_name_optional)) },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -1363,7 +1365,7 @@ fun PetalTabGridSwitcher(
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Back")
+                            Text(stringResource(R.string.ui_back))
                         }
                         Button(
                             onClick = {
@@ -1382,7 +1384,7 @@ fun PetalTabGridSwitcher(
                             colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Create")
+                            Text(stringResource(R.string.ui_create))
                         }
                     }
                 }
@@ -1394,11 +1396,11 @@ fun PetalTabGridSwitcher(
     if (showCloseAllConfirmDialog) {
         com.petal.browser.ui.containment.PetalAlertDialog(
             onDismissRequest = { showCloseAllConfirmDialog = false },
-            title = "Close All Tabs?",
-            message = "Are you sure you want to close all ${tabs.size} active tabs?",
+            title = stringResource(R.string.ui_close_all_tabs_2),
+            message = stringResource(R.string.ui_are_you_sure_you_want, tabs.size),
             icon = Icons.Rounded.LayersClear,
             destructive = true,
-            confirmText = "Close All",
+            confirmText = stringResource(R.string.ui_close_all_2),
             onConfirm = {
                 showCloseAllConfirmDialog = false
                 commitPendingRemovals()
@@ -1482,7 +1484,7 @@ private fun SwipeToCloseBackground(
         if (isActive) {
             Icon(
                 imageVector = Icons.Rounded.Close,
-                contentDescription = "Swipe to close tab",
+                contentDescription = stringResource(R.string.ui_swipe_to_close_tab),
                 tint = MaterialTheme.colorScheme.onErrorContainer
             )
         }
@@ -1574,14 +1576,14 @@ private fun TabManagerEmptyState(
                 if (isIncognito) {
                     Icon(
                         imageVector = Icons.Rounded.VisibilityOff,
-                        contentDescription = "Incognito",
+                        contentDescription = stringResource(R.string.ui_incognito),
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(48.dp)
                     )
                 } else if (title.contains("group", ignoreCase = true)) {
                     Icon(
                         imageVector = Icons.Rounded.FolderCopy,
-                        contentDescription = "Tab Groups",
+                        contentDescription = stringResource(R.string.ui_tab_groups),
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(48.dp)
                     )
@@ -1777,7 +1779,7 @@ private fun PetalTabCard(
                     AnimatedVisibility(visible = isPinned) {
                         Icon(
                             Icons.Rounded.PushPin,
-                            contentDescription = "Pinned",
+                            contentDescription = stringResource(R.string.ui_pinned),
                             tint = accentColor,
                             modifier = Modifier.size(15.dp)
                         )
@@ -1788,7 +1790,7 @@ private fun PetalTabCard(
                             color = accentColor,
                             modifier = Modifier.size(18.dp)
                         ) {
-                            Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
+                            Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.ui_selected), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
                         }
                     }
                     if (!isSelectionMode) {
@@ -1798,7 +1800,7 @@ private fun PetalTabCard(
                         ) {
                             Icon(
                                 Icons.Rounded.Close,
-                                contentDescription = "Close Tab",
+                                contentDescription = stringResource(R.string.ui_close_tab),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -1833,7 +1835,7 @@ private fun PetalTabCard(
                 if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
                     Image(
                         bitmap = tab.previewBitmap.asImageBitmap(),
-                        contentDescription = "Live preview of ${tab.title}",
+                        contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
                         contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -1847,10 +1849,10 @@ private fun PetalTabCard(
             expanded = contextMenuExpanded,
             onDismissRequest = onDismissContextMenu
         ) {
-            PetalExpressiveMenuItem(text = "Add tab to new group", leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) }, onClick = { onDismissContextMenu(); onCreateGroup() })
-            PetalExpressiveMenuItem(text = "Duplicate tab", leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { onDismissContextMenu(); onDuplicateTab() })
-            PetalExpressiveMenuItem(text = "Add to bookmarks", leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) }, onClick = { onDismissContextMenu(); onBookmark() })
-            PetalExpressiveMenuItem(text = "Share", leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { onDismissContextMenu(); onShare() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_add_tab_to_new_group), leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) }, onClick = { onDismissContextMenu(); onCreateGroup() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_duplicate_tab), leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { onDismissContextMenu(); onDuplicateTab() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_add_to_bookmarks), leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) }, onClick = { onDismissContextMenu(); onBookmark() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_share), leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { onDismissContextMenu(); onShare() })
             PetalExpressiveMenuItem(text = if (isPinned) "Unpin tab" else "Pin tab", leadingIcon = { Icon(Icons.Rounded.PushPin, null) }, onClick = { onDismissContextMenu(); onTogglePin() })
             PetalExpressiveMenuItem(
                 text = if (isMuted) "Unmute Site" else "Mute Site",
@@ -1861,10 +1863,10 @@ private fun PetalTabCard(
                     onMute(isMuted)
                 }
             )
-            PetalExpressiveMenuItem(text = "Select tab", leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) }, onClick = { onDismissContextMenu(); onSelectForSelection() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_select_tab), leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) }, onClick = { onDismissContextMenu(); onSelectForSelection() })
             HorizontalDivider()
-            PetalExpressiveMenuItem(text = "Close other tabs", leadingIcon = { Icon(Icons.Rounded.CloseFullscreen, null) }, onClick = { onDismissContextMenu(); onCloseOtherTabs() })
-            PetalExpressiveMenuItem(text = "Close tab", leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_close_other_tabs), leadingIcon = { Icon(Icons.Rounded.CloseFullscreen, null) }, onClick = { onDismissContextMenu(); onCloseOtherTabs() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_close_tab_2), leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
         }
     }
 }
@@ -2002,7 +2004,7 @@ private fun PetalTabListItem(
                     if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
                         Image(
                             bitmap = tab.previewBitmap.asImageBitmap(),
-                            contentDescription = "Thumbnail",
+                            contentDescription = stringResource(R.string.ui_thumbnail),
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                             modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
                         )
@@ -2035,11 +2037,11 @@ private fun PetalTabListItem(
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 AnimatedVisibility(visible = isPinned) {
-                    Icon(Icons.Rounded.PushPin, contentDescription = "Pinned", tint = accentColor, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Rounded.PushPin, contentDescription = stringResource(R.string.ui_pinned), tint = accentColor, modifier = Modifier.size(16.dp))
                 }
                 AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection) {
                     Surface(shape = CircleShape, color = accentColor, modifier = Modifier.size(20.dp)) {
-                        Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
+                        Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.ui_selected), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
                     }
                 }
                 if (!isSelectionMode) {
@@ -2049,7 +2051,7 @@ private fun PetalTabListItem(
                     ) {
                         Icon(
                             Icons.Rounded.Close,
-                            contentDescription = "Close Tab",
+                            contentDescription = stringResource(R.string.ui_close_tab),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
@@ -2063,20 +2065,20 @@ private fun PetalTabListItem(
             expanded = contextMenuExpanded,
             onDismissRequest = onDismissContextMenu
         ) {
-            PetalExpressiveMenuItem(text = "Add tab to new group", leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) }, onClick = { onDismissContextMenu(); onCreateGroup() })
-            PetalExpressiveMenuItem(text = "Duplicate tab", leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { onDismissContextMenu(); onDuplicateTab() })
-            PetalExpressiveMenuItem(text = "Add to bookmarks", leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) }, onClick = { onDismissContextMenu(); onBookmark() })
-            PetalExpressiveMenuItem(text = "Share", leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { onDismissContextMenu(); onShare() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_add_tab_to_new_group), leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) }, onClick = { onDismissContextMenu(); onCreateGroup() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_duplicate_tab), leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { onDismissContextMenu(); onDuplicateTab() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_add_to_bookmarks), leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) }, onClick = { onDismissContextMenu(); onBookmark() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_share), leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { onDismissContextMenu(); onShare() })
             PetalExpressiveMenuItem(text = if (isPinned) "Unpin tab" else "Pin tab", leadingIcon = { Icon(Icons.Rounded.PushPin, null) }, onClick = { onDismissContextMenu(); onTogglePin() })
             PetalExpressiveMenuItem(
                 text = if (isMuted) "Unmute Site" else "Mute Site",
                 leadingIcon = { Icon(if (isMuted) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeOff, null) },
                 onClick = { isMuted = !isMuted; onDismissContextMenu(); onMute(isMuted) }
             )
-            PetalExpressiveMenuItem(text = "Select tab", leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) }, onClick = { onDismissContextMenu(); onSelectForSelection() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_select_tab), leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) }, onClick = { onDismissContextMenu(); onSelectForSelection() })
             HorizontalDivider()
-            PetalExpressiveMenuItem(text = "Close other tabs", leadingIcon = { Icon(Icons.Rounded.CloseFullscreen, null) }, onClick = { onDismissContextMenu(); onCloseOtherTabs() })
-            PetalExpressiveMenuItem(text = "Close tab", leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_close_other_tabs), leadingIcon = { Icon(Icons.Rounded.CloseFullscreen, null) }, onClick = { onDismissContextMenu(); onCloseOtherTabs() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_close_tab_2), leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
         }
 }
 
@@ -2136,7 +2138,7 @@ private fun PetalTabGroupCard(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = "Dissolve group",
+                            contentDescription = stringResource(R.string.ui_dissolve_group),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
@@ -2152,7 +2154,7 @@ private fun PetalTabGroupCard(
             ) {
                 if (tabs.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Empty Group", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.ui_empty_group), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     val previewItems = tabs.take(4)
@@ -2259,7 +2261,7 @@ private fun PetalTabGroupInspectionDialog(
                                     onRenameGroup(groupNameInput)
                                     isEditingName = false
                                 }) {
-                                    Icon(Icons.Rounded.Check, contentDescription = "Save", tint = accentColor)
+                                    Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.ui_save), tint = accentColor)
                                 }
                             },
                             modifier = Modifier.weight(1f)
@@ -2277,12 +2279,12 @@ private fun PetalTabGroupInspectionDialog(
                                 containerColor = groupColor,
                                 contentColor = Color.White
                             )
-                            Icon(Icons.Rounded.Edit, contentDescription = "Rename", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.ui_rename), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                         }
                     }
 
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close dialog")
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close_dialog))
                     }
                 }
 
@@ -2311,7 +2313,7 @@ private fun PetalTabGroupInspectionDialog(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.Check,
-                                        contentDescription = "Selected color",
+                                        contentDescription = stringResource(R.string.ui_selected_color),
                                         tint = Color.White,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -2351,10 +2353,10 @@ private fun PetalTabGroupInspectionDialog(
                             trailing = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(onClick = { onUngroupTab(tab) }) {
-                                        Icon(Icons.Rounded.FolderOff, contentDescription = "Ungroup tab", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Rounded.FolderOff, contentDescription = stringResource(R.string.ui_ungroup_tab), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                                     }
                                     IconButton(onClick = { onTabClose(tab) }) {
-                                        Icon(Icons.Rounded.Close, contentDescription = "Close tab", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close_tab_2), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                     }
                                 }
                             },
@@ -2558,7 +2560,7 @@ fun ExpressiveTabUndoBanner(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "Undo",
+                            text = stringResource(R.string.ui_undo),
                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                         )
                     }
@@ -2569,7 +2571,7 @@ fun ExpressiveTabUndoBanner(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = "Dismiss",
+                            contentDescription = stringResource(R.string.ui_dismiss),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )

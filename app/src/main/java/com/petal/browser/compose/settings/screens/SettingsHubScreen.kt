@@ -33,6 +33,8 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.containment.petalGroupPositionFor
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Main Settings Hub Screen matching RvSystem-Monitor's SettingsScreen.kt visual structure:
@@ -111,12 +113,12 @@ fun SettingsHubScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 6.dp)
                         .focusRequester(focusRequester),
-                    placeholder = { Text("Search settings...") },
+                    placeholder = { Text(stringResource(R.string.ui_search_settings)) },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { onSearchQueryChange("") }) {
-                                Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear))
                             }
                         }
                     },
@@ -155,7 +157,7 @@ fun SettingsHubScreen(
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Did you mean:",
+                                text = stringResource(R.string.ui_did_you_mean),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
                             )
@@ -166,7 +168,7 @@ fun SettingsHubScreen(
                             )
                         }
                         Text(
-                            text = "Apply",
+                            text = stringResource(R.string.ui_apply),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -277,7 +279,7 @@ fun SettingsHubScreen(
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                 )
                                 Text(
-                                    text = "No settings found for \"$searchQuery\"",
+                                    text = stringResource(R.string.ui_no_settings_found_for, searchQuery),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

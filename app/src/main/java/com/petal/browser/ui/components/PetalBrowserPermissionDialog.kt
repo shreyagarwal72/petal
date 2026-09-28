@@ -53,6 +53,8 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 object PetalBrowserPermissionDialog {
     private const val PREF_LAST_PERMISSION_DIALOG_TIME = "sp_last_permission_dialog_time"
@@ -358,7 +360,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             Spacer(Modifier.height(14.dp))
 
             Text(
-                text = "Permissions Required",
+                text = stringResource(R.string.ui_permissions_required),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -368,7 +370,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             Spacer(Modifier.height(6.dp))
 
             Text(
-                text = "Petal needs these permissions for websites to work properly, including video calls, voice search, maps, and file downloads.",
+                text = stringResource(R.string.ui_petal_needs_these_permissions_for),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -395,7 +397,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
 
             if (missing) {
                 Text(
-                    text = "You can change or grant any permission later in Android Settings.",
+                    text = stringResource(R.string.ui_you_can_change_or_grant),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -470,7 +472,7 @@ private fun ZenithPermissionItemRow(
         },
         trailing = {
             if (isGranted) {
-                Icon(Icons.Outlined.CheckCircle, contentDescription = "Granted", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Outlined.CheckCircle, contentDescription = stringResource(R.string.ui_granted), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             } else {
                 FilledTonalButton(onClick = onGrant, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
                     Text(actionText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)

@@ -48,6 +48,8 @@ import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.BrowserUnit
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Java Interop Bridge to present the Material 3 Expressive "About Developer" sheet.
@@ -276,13 +278,13 @@ fun PetalAboutDeveloperSheetContent(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Petal Browser • Open Source Project",
+                                text = stringResource(R.string.ui_petal_browser_open_source_project),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "Made with Jetpack Compose & Material 3 Expressive UI",
+                                text = stringResource(R.string.ui_made_with_jetpack_compose_material),
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
@@ -355,7 +357,7 @@ fun DeveloperHeroCard(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
-                            text = "VA",
+                            text = stringResource(R.string.ui_va),
                             style = MaterialTheme.typography.headlineMedium.copy(
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 28.sp
@@ -370,14 +372,14 @@ fun DeveloperHeroCard(
 
             // Developer Name & Handle
             Text(
-                text = "Vanshu Agarwal",
+                text = stringResource(R.string.ui_vanshu_agarwal),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = "@shreyagarwal72",
+                text = stringResource(R.string.ui_shreyagarwal72),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Medium),
                 color = primaryColor,
                 textAlign = TextAlign.Center
@@ -387,7 +389,7 @@ fun DeveloperHeroCard(
 
             // Short Executive Bio
             Text(
-                text = "Lead Android & Systems Developer crafting high-performance browsers, native tools, and expressive UI experiences for Android & Termux.",
+                text = stringResource(R.string.ui_lead_android_systems_developer_craftin),
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -401,9 +403,9 @@ fun DeveloperHeroCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                ExpressivePillChip(icon = Icons.Rounded.Code, label = "Kotlin")
-                ExpressivePillChip(icon = Icons.Rounded.AutoAwesome, label = "M3 Expressive")
-                ExpressivePillChip(icon = Icons.Rounded.Terminal, label = "Termux")
+                ExpressivePillChip(icon = Icons.Rounded.Code, label = stringResource(R.string.ui_kotlin))
+                ExpressivePillChip(icon = Icons.Rounded.AutoAwesome, label = stringResource(R.string.ui_m3_expressive))
+                ExpressivePillChip(icon = Icons.Rounded.Terminal, label = stringResource(R.string.ui_termux))
             }
         }
     }
@@ -444,14 +446,14 @@ fun DeveloperMissionCard() {
                 }
 
                 Text(
-                    text = "The Petal Mission",
+                    text = stringResource(R.string.ui_the_petal_mission),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
             Text(
-                text = "Petal Browser was built to prove that an Android web browser can combine uncompromising speed, complete user privacy, and fluid Material 3 Expressive motion physics without corporate telemetry or heavy bloat.",
+                text = stringResource(R.string.ui_petal_browser_was_built_to),
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 21.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -469,22 +471,22 @@ fun DeveloperMetricsGrid() {
         MetricBadgeCard(
             icon = Icons.Rounded.FolderCopy,
             value = "15+ Repositories",
-            label = "Active Open Source Repositories & Libraries"
+            label = stringResource(R.string.ui_active_open_source_repositories_librar)
         )
         MetricBadgeCard(
             icon = Icons.Rounded.Gavel,
             value = "GPL-3.0 License",
-            label = "Free & Open Source — Redistribute and Modify Freely"
+            label = stringResource(R.string.ui_free_open_source_redistribute_and)
         )
         MetricBadgeCard(
             icon = Icons.Rounded.Security,
             value = "Zero Telemetry",
-            label = "100% Private — No Trackers, Telemetry, or Analytics"
+            label = stringResource(R.string.ui_100_private_no_trackers_telemetry)
         )
         MetricBadgeCard(
             icon = Icons.Rounded.DesignServices,
             value = "100% Material 3",
-            label = "Material 3 Expressive Design System & Dynamic Palettes"
+            label = stringResource(R.string.ui_material_3_expressive_design_system)
         )
     }
 }
@@ -576,7 +578,7 @@ fun DeveloperTechStackCard() {
                 }
 
                 Text(
-                    text = "Core Tech Stack",
+                    text = stringResource(R.string.ui_core_tech_stack),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -588,13 +590,13 @@ fun DeveloperTechStackCard() {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                TechChip(label = "Jetpack Compose")
-                TechChip(label = "Kotlin Coroutines & Flow")
-                TechChip(label = "Material 3 Expressive")
-                TechChip(label = "Native WebView Bridges")
-                TechChip(label = "PixelCopy GPU Snapshots")
-                TechChip(label = "AdBlock Rule Engine")
-                TechChip(label = "Termux Integration")
+                TechChip(label = stringResource(R.string.ui_jetpack_compose))
+                TechChip(label = stringResource(R.string.ui_kotlin_coroutines_flow))
+                TechChip(label = stringResource(R.string.ui_material_3_expressive))
+                TechChip(label = stringResource(R.string.ui_native_webview_bridges))
+                TechChip(label = stringResource(R.string.ui_pixelcopy_gpu_snapshots))
+                TechChip(label = stringResource(R.string.ui_adblock_rule_engine))
+                TechChip(label = stringResource(R.string.ui_termux_integration))
             }
         }
     }
@@ -634,7 +636,7 @@ fun DeveloperActionsCard(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = "Community & Connect",
+                text = stringResource(R.string.ui_community_connect),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
@@ -656,7 +658,7 @@ fun DeveloperActionsCard(
                 ) {
                     Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("GitHub", fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(stringResource(R.string.ui_github), fontWeight = FontWeight.Bold, maxLines = 1)
                 }
 
                 Button(
@@ -671,7 +673,7 @@ fun DeveloperActionsCard(
                 ) {
                     Icon(Icons.Rounded.Code, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Source", fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(stringResource(R.string.ui_source), fontWeight = FontWeight.Bold, maxLines = 1)
                 }
             }
 
@@ -688,7 +690,7 @@ fun DeveloperActionsCard(
                 ) {
                     Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Telegram", maxLines = 1)
+                    Text(stringResource(R.string.ui_telegram), maxLines = 1)
                 }
 
                 OutlinedButton(
@@ -700,7 +702,7 @@ fun DeveloperActionsCard(
                 ) {
                     Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Issues", maxLines = 1)
+                    Text(stringResource(R.string.ui_issues), maxLines = 1)
                 }
             }
 
@@ -717,7 +719,7 @@ fun DeveloperActionsCard(
             ) {
                 Icon(Icons.Rounded.Favorite, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Open Source Credits & Developers", fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(stringResource(R.string.ui_open_source_credits_developers), fontWeight = FontWeight.Bold, maxLines = 1)
             }
 
             // ── Diagnostic Logs Export Button ──────────────────────────────
@@ -734,7 +736,7 @@ fun DeveloperActionsCard(
             ) {
                 Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Export Diagnostic Logs (.zip)", fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Text(stringResource(R.string.ui_export_diagnostic_logs_zip), fontWeight = FontWeight.SemiBold, maxLines = 1)
             }
         }
     }
@@ -1083,13 +1085,13 @@ fun PetalCreditsSheetContent(
                                             }
                                         }
                                         Text(
-                                            text = "Gratitude & Attribution",
+                                            text = stringResource(R.string.ui_gratitude_attribution),
                                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                     Text(
-                                        text = "Petal Browser is crafted upon open-source software, design systems, and libraries by passionate engineers worldwide. We honor and celebrate their contributions.",
+                                        text = stringResource(R.string.ui_petal_browser_is_crafted_upon),
                                         style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1100,7 +1102,7 @@ fun PetalCreditsSheetContent(
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text("Search contributors or technologies...") },
+                                placeholder = { Text(stringResource(R.string.ui_search_contributors_or_technologies)) },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Rounded.Search,
@@ -1111,7 +1113,7 @@ fun PetalCreditsSheetContent(
                                 trailingIcon = {
                                     if (searchQuery.isNotEmpty()) {
                                         IconButton(onClick = { searchQuery = "" }) {
-                                            Icon(Icons.Rounded.Close, contentDescription = "Clear search")
+                                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear_search))
                                         }
                                     }
                                 },
@@ -1135,7 +1137,7 @@ fun PetalCreditsSheetContent(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = "No matching credits found",
+                                        text = stringResource(R.string.ui_no_matching_credits_found),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1175,7 +1177,7 @@ fun PetalCreditsSheetContent(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "All project names, trademarks, and open-source licenses belong to their respective copyright holders.",
+                                    text = stringResource(R.string.ui_all_project_names_trademarks_and),
                                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
@@ -1237,7 +1239,7 @@ fun CreditCardItem(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "by ${credit.developer}",
+                        text = stringResource(R.string.ui_by, credit.developer),
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
@@ -1251,7 +1253,7 @@ fun CreditCardItem(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.OpenInNew,
-                        contentDescription = "Open Project",
+                        contentDescription = stringResource(R.string.ui_open_project),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )

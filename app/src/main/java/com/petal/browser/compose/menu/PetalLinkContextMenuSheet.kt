@@ -43,6 +43,8 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.HelperUnit
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 interface PetalLinkContextMenuHandler {
     fun onOpenInNewTab() {}
@@ -155,7 +157,7 @@ fun PetalLinkContextMenuSheet(
                         }
                         Icon(
                             imageVector = headerIcon,
-                            contentDescription = "Content",
+                            contentDescription = stringResource(R.string.ui_content),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(22.dp)
                         )

@@ -52,6 +52,8 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 data class WallpaperPreset(
     val id: String,
@@ -347,12 +349,12 @@ fun PetalWallpaperSheet(
             ) {
                 Column {
                     Text(
-                        text = "Home Wallpaper",
+                        text = stringResource(R.string.ui_home_wallpaper),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Customize your home background style",
+                        text = stringResource(R.string.ui_customize_your_home_background_style),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -367,7 +369,7 @@ fun PetalWallpaperSheet(
                     ) {
                         Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Reset")
+                        Text(stringResource(R.string.ui_reset))
                     }
                 }
             }
@@ -386,7 +388,7 @@ fun PetalWallpaperSheet(
                 ) {
                     Icon(Icons.Rounded.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Device Storage (Crop & Apply)")
+                    Text(stringResource(R.string.ui_device_storage_crop_apply))
                 }
             }
 
@@ -463,7 +465,7 @@ fun PetalWallpaperSheet(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.PlayArrow,
-                                        contentDescription = "Video",
+                                        contentDescription = stringResource(R.string.ui_video),
                                         tint = Color.White,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -483,7 +485,7 @@ fun PetalWallpaperSheet(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.Check,
-                                        contentDescription = "Selected",
+                                        contentDescription = stringResource(R.string.ui_selected),
                                         tint = Color.White,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -499,7 +501,7 @@ fun PetalWallpaperSheet(
             // Sliders for Dim and Blur using Stride Slider (PetalSlider)
             if (activeUri != null) {
                 Text(
-                    text = "Dimming Overlay (${(currentDim * 100).toInt()}%)",
+                    text = stringResource(R.string.ui_dimming_overlay, (currentDim * 100).toInt()),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -517,7 +519,7 @@ fun PetalWallpaperSheet(
                 Spacer(Modifier.height(14.dp))
 
                 Text(
-                    text = "Frosted Glass Blur (${currentBlur.toInt()} dp)",
+                    text = stringResource(R.string.ui_frosted_glass_blur_dp, currentBlur.toInt()),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

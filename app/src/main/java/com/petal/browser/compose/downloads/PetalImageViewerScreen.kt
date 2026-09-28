@@ -84,6 +84,8 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 // ─── Unified image entry — covers local files AND remote/network URLs ─────────
 
@@ -572,7 +574,7 @@ private fun ZoomableImagePage(
                                 Icon(Icons.Rounded.BrokenImage, contentDescription = null)
                             }
                             Spacer(Modifier.height(8.dp))
-                            Text("Failed to load image", color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.ui_failed_to_load_image), color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 },
@@ -673,7 +675,7 @@ private fun ImageViewerTopBar(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.ui_back),
                     tint = Color.White,
                 )
             }
@@ -691,7 +693,7 @@ private fun ImageViewerTopBar(
                 )
                 if (total > 1) {
                     Text(
-                        text  = "${currentIndex + 1} of $total",
+                        text  = stringResource(R.string.ui_of, currentIndex + 1, total),
                         color = Color.White.copy(alpha = 0.7f),
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -700,25 +702,25 @@ private fun ImageViewerTopBar(
 
             // Share
             IconButton(onClick = onShare) {
-                Icon(Icons.Rounded.Share, contentDescription = "Share", tint = Color.White)
+                Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.ui_share), tint = Color.White)
             }
 
             // More options
             Box {
                 IconButton(onClick = { moreMenuExpanded = true }) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = "More", tint = Color.White)
+                    Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.ui_more), tint = Color.White)
                 }
                 com.petal.browser.ui.containment.PetalPopupMenu(
                     expanded    = moreMenuExpanded,
                     onDismissRequest = { moreMenuExpanded = false },
                 ) {
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text("Open in external app") },
+                        text = { Text(stringResource(R.string.ui_open_in_external_app)) },
                         leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) },
                         onClick = { moreMenuExpanded = false; onOpenExternal() },
                     )
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text("Copy URL") },
+                        text = { Text(stringResource(R.string.ui_copy_url)) },
                         leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) },
                         onClick = { moreMenuExpanded = false; onCopyUrl() },
                     )
@@ -772,7 +774,7 @@ private fun ImageViewerBottomBar(
                 // Rotate
                 ViewerActionButton(
                     icon        = Icons.Rounded.RotateRight,
-                    label       = "Rotate",
+                    label       = stringResource(R.string.ui_rotate),
                     tint        = MaterialTheme.colorScheme.onSurface,
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     onClick     = onRotate,
@@ -782,7 +784,7 @@ private fun ImageViewerBottomBar(
                 if (isLocal) {
                     ViewerActionButton(
                         icon    = Icons.Rounded.Delete,
-                        label   = "Delete",
+                        label   = stringResource(R.string.ui_delete),
                         tint    = MaterialTheme.colorScheme.error,
                         containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
                         onClick = onDelete,
@@ -792,7 +794,7 @@ private fun ImageViewerBottomBar(
                 // Set as wallpaper
                 ViewerActionButton(
                     icon        = Icons.Rounded.Wallpaper,
-                    label       = "Wallpaper",
+                    label       = stringResource(R.string.ui_wallpaper),
                     tint        = MaterialTheme.colorScheme.onSurface,
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     onClick     = onWallpaper,
@@ -801,7 +803,7 @@ private fun ImageViewerBottomBar(
                 // Info
                 ViewerActionButton(
                     icon        = Icons.Rounded.Info,
-                    label       = "Info",
+                    label       = stringResource(R.string.ui_info),
                     tint        = MaterialTheme.colorScheme.onSurface,
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     onClick     = onInfo,
@@ -931,29 +933,29 @@ private fun ImageInfoBottomSheet(
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             Text(
-                text      = "Image Info",
+                text      = stringResource(R.string.ui_image_info),
                 style     = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 modifier  = Modifier.padding(bottom = 16.dp),
             )
 
-            InfoRow(label = "Name", value = entry.label)
+            InfoRow(label = stringResource(R.string.ui_name), value = entry.label)
 
             if (entry.isRemote) {
-                InfoRow(label = "Source URL", value = entry.sourceUrl)
-                InfoRow(label = "Type", value = "Remote image")
+                InfoRow(label = stringResource(R.string.ui_source_url), value = entry.sourceUrl)
+                InfoRow(label = stringResource(R.string.ui_type), value = "Remote image")
             } else {
                 // Local file details
                 if (fileInfo != null) {
-                    if (fileInfo!!.third != "—") InfoRow(label = "Dimensions", value = fileInfo!!.third)
-                    InfoRow(label = "File size", value = fileInfo!!.first)
-                    if (fileInfo!!.second != "—") InfoRow(label = "Date", value = fileInfo!!.second)
+                    if (fileInfo!!.third != "—") InfoRow(label = stringResource(R.string.ui_dimensions), value = fileInfo!!.third)
+                    InfoRow(label = stringResource(R.string.ui_file_size), value = fileInfo!!.first)
+                    if (fileInfo!!.second != "—") InfoRow(label = stringResource(R.string.ui_date), value = fileInfo!!.second)
                 }
                 val rawUri = Uri.parse(entry.sourceUrl)
                 val path   = rawUri.path ?: entry.sourceUrl.removePrefix("file://")
-                if (path.isNotBlank()) InfoRow(label = "Path", value = path)
+                if (path.isNotBlank()) InfoRow(label = stringResource(R.string.ui_path), value = path)
                 // Source URL (original download link) if present via downloadItem
                 entry.downloadItem?.fileUrl?.takeIf { it.isNotBlank() }?.let {
-                    InfoRow(label = "Source URL", value = it)
+                    InfoRow(label = stringResource(R.string.ui_source_url), value = it)
                 }
             }
         }

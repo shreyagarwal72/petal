@@ -21,6 +21,8 @@ import com.petal.browser.compose.settings.viewmodel.MiscSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.lens.PetalLensManager
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun MiscSettingsScreen(
@@ -88,13 +90,13 @@ fun MiscSettingsScreenContent(
             ) {
                 // External Applications & Tools Card
                 PetalSettingsSection(
-                    title = "Snap Photo Scanner",
+                    title = stringResource(R.string.ui_snap_photo_scanner),
                     icon = Icons.Rounded.QrCodeScanner,
                     cardId = "misc_snap_photo",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
-                        text = "Choose which scanner receives photos from Snap Photo and all Petal widgets.",
+                        text = stringResource(R.string.ui_choose_which_scanner_receives_photos),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -112,36 +114,36 @@ fun MiscSettingsScreenContent(
                         }
                     }
                     TextButton(onClick = { onSnapProviderChange(PetalLensManager.SnapProvider.ASK) }) {
-                        Text("Choose again next time")
+                        Text(stringResource(R.string.ui_choose_again_next_time))
                     }
                 }
 
                 // External Applications & Custom Tabs Card
                 PetalSettingsSection(
-                    title = "Custom Tabs & External Links",
+                    title = stringResource(R.string.ui_custom_tabs_external_links),
                     icon = Icons.Rounded.OpenInBrowser,
                     cardId = "misc_apps",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = "Petal Custom Tabs",
-                        subtitle = "Open links from external apps in a fast, lightweight Custom Tab overlay",
+                        title = stringResource(R.string.ui_petal_custom_tabs),
+                        subtitle = stringResource(R.string.ui_open_links_from_external_apps),
                         icon = Icons.Rounded.OpenInBrowser,
                         checked = customTabsEnabled,
                         onCheckedChange = onCustomTabsEnabledChange
                     )
 
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = "Enhanced Tracking Protection",
-                        subtitle = "Isolate cross-site trackers and block known tracking scripts inside Custom Tabs",
+                        title = stringResource(R.string.ui_enhanced_tracking_protection),
+                        subtitle = stringResource(R.string.ui_isolate_cross_site_trackers_and),
                         icon = Icons.Rounded.Security,
                         checked = customTabsEtp,
                         onCheckedChange = onCustomTabsEtpChange
                     )
 
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = "Auto Open External Apps",
-                        subtitle = "Allow YouTube, Maps & Play Store links to open in external native apps instead of Petal",
+                        title = stringResource(R.string.ui_auto_open_external_apps),
+                        subtitle = stringResource(R.string.ui_allow_youtube_maps_play_store),
                         icon = Icons.Rounded.Launch,
                         checked = autoOpenApps,
                         onCheckedChange = onAutoOpenAppsChange

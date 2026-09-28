@@ -70,6 +70,8 @@ import java.io.File
 import java.io.FileOutputStream
 import androidx.core.content.FileProvider
 import com.petal.browser.view.PetalToast
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 object PetalStandaloneFileViewerBridge {
 
@@ -265,7 +267,7 @@ private fun UniversalFileViewerTopBar(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.ui_back),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -292,7 +294,7 @@ private fun UniversalFileViewerTopBar(
                     IconButton(onClick = onSave) {
                         Icon(
                             imageVector = Icons.Rounded.Save,
-                            contentDescription = "Save file",
+                            contentDescription = stringResource(R.string.ui_save_file),
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
@@ -317,7 +319,7 @@ private fun UniversalFileViewerTopBar(
             IconButton(onClick = onShare) {
                 Icon(
                     imageVector = Icons.Rounded.Share,
-                    contentDescription = "Share file",
+                    contentDescription = stringResource(R.string.ui_share_file),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -325,7 +327,7 @@ private fun UniversalFileViewerTopBar(
             IconButton(onClick = onOpenExternal) {
                 Icon(
                     imageVector = Icons.Rounded.OpenInNew,
-                    contentDescription = "Open with external app",
+                    contentDescription = stringResource(R.string.ui_open_with_external_app),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -428,7 +430,7 @@ private fun TextCodeViewerContent(
                     if (isSaving) {
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = "Saving changes...",
+                            text = stringResource(R.string.ui_saving_changes),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -614,7 +616,7 @@ private fun PptxViewerContent(fileUri: Uri) {
                                     modifier = Modifier.padding(end = 8.dp)
                                 ) {
                                     Text(
-                                        text = "Slide ${index + 1}",
+                                        text = stringResource(R.string.ui_slide, index + 1),
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -959,7 +961,7 @@ private fun ArchiveViewerContent(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
                     Spacer(Modifier.height(12.dp))
-                    Text("Opening archive…", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.ui_opening_archive), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -1004,7 +1006,7 @@ private fun ArchiveViewerContent(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = "${visibleEntries.size} items",
+                                        text = stringResource(R.string.ui_items, visibleEntries.size),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1039,12 +1041,12 @@ private fun ArchiveViewerContent(
                                 Spacer(Modifier.width(14.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(
-                                        "Archive contents",
+                                        stringResource(R.string.ui_archive_contents),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                     Text(
-                                        "Browse folders and files separately",
+                                        stringResource(R.string.ui_browse_folders_and_files_separately),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     )
@@ -1065,7 +1067,7 @@ private fun ArchiveViewerContent(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        "This folder is empty",
+                                        stringResource(R.string.ui_this_folder_is_empty),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1239,14 +1241,14 @@ private fun ArchiveEntryPreview(
                             Spacer(Modifier.height(16.dp))
                             Text(name, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
                             Spacer(Modifier.height(8.dp))
-                            Text("This entry was extracted successfully. Open it with another app to view this format.", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.ui_this_entry_was_extracted_successfully), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(16.dp))
                             FilledTonalButton(onClick = {
                                 context.startActivity(Intent(Intent.ACTION_VIEW).apply {
                                     setDataAndType(uri, mimeTypeForExtension(ext))
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 })
-                            }) { Text("Open with…") }
+                            }) { Text(stringResource(R.string.ui_open_with)) }
                         }
                     }
                 }
@@ -1363,7 +1365,7 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         ) {
             Icon(Icons.Rounded.OpenInNew, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Open with external application")
+            Text(stringResource(R.string.ui_open_with_external_application))
         }
     }
 }
@@ -1399,7 +1401,7 @@ private fun ErrorDisplayBox(error: String) {
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = "Cannot View File",
+                    text = stringResource(R.string.ui_cannot_view_file),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )

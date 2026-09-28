@@ -78,6 +78,8 @@ import com.petal.browser.media.ytdlp.SupportedPlatforms
 import com.petal.browser.media.ytdlp.YtDlpFormat
 import com.petal.browser.media.ytdlp.YtDlpMediaInfo
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 // ── Social downloader state machine ───────────────────────────────────────────
 private sealed class SocialState {
@@ -160,7 +162,7 @@ fun PetalMediaSnifferOverlay(
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-                AssistChip(onClick = { sheetOpen = true }, label = { Text("View") })
+                AssistChip(onClick = { sheetOpen = true }, label = { Text(stringResource(R.string.ui_view)) })
                 IconButton(onClick = { dismissed = true }, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Rounded.Close, "Dismiss", modifier = Modifier.size(18.dp))
                 }
@@ -226,11 +228,11 @@ private fun PetalMediaSheet(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "Media sources",
+                                stringResource(R.string.ui_media_sources),
                                 style    = MaterialTheme.typography.headlineSmall
                             )
                             Text(
-                                "Detected without interrupting playback",
+                                stringResource(R.string.ui_detected_without_interrupting_playback),
                                 style    = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -249,7 +251,7 @@ private fun PetalMediaSheet(
                             ) {
                                 Icon(Icons.Rounded.Download, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("All (${directItems.size})")
+                                Text(stringResource(R.string.ui_all, directItems.size))
                             }
                         }
                     }
@@ -292,7 +294,7 @@ private fun PetalMediaSheet(
                         ) {
                             Button(onClick = { onPlay(item.toPlaybackRequest()); onDismiss() }) {
                                 Icon(Icons.Rounded.PlayArrow, null)
-                                Text("Play", modifier = Modifier.padding(start = 6.dp))
+                                Text(stringResource(R.string.ui_play), modifier = Modifier.padding(start = 6.dp))
                             }
                             if (item.type != MediaInterceptor.MediaType.HLS &&
                                 item.type != MediaInterceptor.MediaType.DASH) {
@@ -303,7 +305,7 @@ private fun PetalMediaSheet(
                                     },
                                     label = {
                                         Icon(Icons.Rounded.Download, null)
-                                        Text("Download", modifier = Modifier.padding(start = 5.dp))
+                                        Text(stringResource(R.string.ui_download), modifier = Modifier.padding(start = 5.dp))
                                     }
                                 )
                             }
@@ -318,7 +320,7 @@ private fun PetalMediaSheet(
                                 label = {
                                     Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("Copy")
+                                    Text(stringResource(R.string.ui_copy))
                                 }
                             )
                         }
@@ -354,7 +356,7 @@ private fun PetalMediaSheet(
                         }
                         Column(Modifier.weight(1f)) {
                             Text(
-                                "Social download",
+                                stringResource(R.string.ui_social_download),
                                 style = MaterialTheme.typography.titleLarge
                             )
                             Text(
@@ -379,7 +381,7 @@ private fun PetalMediaSheet(
                             when (val state = socialState) {
                                 SocialState.Idle -> {
                                     Text(
-                                        "Fetch the available media formats without interrupting playback.",
+                                        stringResource(R.string.ui_fetch_the_available_media_formats),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -417,7 +419,7 @@ private fun PetalMediaSheet(
                                     ) {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Fetch media info")
+                                        Text(stringResource(R.string.ui_fetch_media_info))
                                     }
                                 }
 
@@ -429,7 +431,7 @@ private fun PetalMediaSheet(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            "Fetching media information…",
+                                            stringResource(R.string.ui_fetching_media_information),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -481,7 +483,7 @@ private fun PetalMediaSheet(
 
                                     Box(modifier = Modifier.fillMaxWidth()) {
                                         ExpressiveSplitButton(
-                                            label = "Download ${selFmt.label}",
+                                            label = stringResource(R.string.ui_download_2, selFmt.label),
                                             onPrimaryClick = {
                                                 val cookies = PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
                                                     ?: try {
@@ -579,7 +581,7 @@ private fun PetalMediaSheet(
                                     ) {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Try again")
+                                        Text(stringResource(R.string.ui_try_again))
                                     }
                                 }
 
@@ -595,7 +597,7 @@ private fun PetalMediaSheet(
                                             tint = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            "Download started. Check Petal's notifications.",
+                                            stringResource(R.string.ui_download_started_check_petal_s),
                                             style = MaterialTheme.typography.bodyMedium
                                         )
                                     }

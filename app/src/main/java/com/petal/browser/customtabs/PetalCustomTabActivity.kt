@@ -43,6 +43,7 @@ import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.view.PetalToast
 import com.petal.browser.browser.PetalTabViewController
+import androidx.compose.ui.res.stringResource
 
 /**
  * PetalCustomTabActivity
@@ -316,13 +317,13 @@ private fun CustomTabTopBar(
                     if (customCloseIcon != null) {
                         Image(
                             bitmap = customCloseIcon.asImageBitmap(),
-                            contentDescription = "Close custom tab",
+                            contentDescription = stringResource(R.string.ui_close_custom_tab),
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = "Close custom tab",
+                            contentDescription = stringResource(R.string.ui_close_custom_tab),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -353,14 +354,14 @@ private fun CustomTabTopBar(
                         if (isSecure) {
                             Icon(
                                 imageVector = Icons.Rounded.Lock,
-                                contentDescription = "Secure connection",
+                                contentDescription = stringResource(R.string.ui_secure_connection),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(13.dp)
                             )
                         } else if (!url.equals("about:blank", ignoreCase = true)) {
                             Icon(
                                 imageVector = Icons.Rounded.WarningAmber,
-                                contentDescription = "Insecure connection",
+                                contentDescription = stringResource(R.string.ui_insecure_connection),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(13.dp)
                             )
@@ -382,7 +383,7 @@ private fun CustomTabTopBar(
                     IconButton(onClick = { menuExpanded = true }) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = "More options",
+                            contentDescription = stringResource(R.string.ui_more_options),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -393,7 +394,7 @@ private fun CustomTabTopBar(
                         shape = RoundedCornerShape(18.dp)
                     ) {
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(text = "Share link", style = MaterialTheme.typography.bodyMedium) },
+                            text = { Text(text = stringResource(R.string.ui_share_link), style = MaterialTheme.typography.bodyMedium) },
                             leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(20.dp)) },
                             onClick = {
                                 menuExpanded = false
@@ -401,7 +402,7 @@ private fun CustomTabTopBar(
                             }
                         )
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(text = "Copy link", style = MaterialTheme.typography.bodyMedium) },
+                            text = { Text(text = stringResource(R.string.ui_copy_link), style = MaterialTheme.typography.bodyMedium) },
                             leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(20.dp)) },
                             onClick = {
                                 menuExpanded = false
@@ -431,7 +432,7 @@ private fun CustomTabTopBar(
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = {
                                 Text(
-                                    text = "Open in Petal Browser",
+                                    text = stringResource(R.string.ui_open_in_petal_browser),
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )

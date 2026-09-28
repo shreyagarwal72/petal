@@ -28,6 +28,8 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
 import org.json.JSONArray
 import org.json.JSONObject
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 data class SearchEngineItem(
     val index: Int,
@@ -151,11 +153,11 @@ fun PetalSearchEngineSheetContent(
             title = { Text(if (editing == null) "Add Search Engine" else "Edit Search Engine") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true)
+                    OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.ui_name)) }, singleLine = true)
                     OutlinedTextField(
                         url, { url = it },
-                        label = { Text("Search URL") },
-                        supportingText = { Text("Use %s or {searchTerms} where the query goes.") },
+                        label = { Text(stringResource(R.string.ui_search_url)) },
+                        supportingText = { Text(stringResource(R.string.ui_use_s_or_searchterms_where)) },
                         singleLine = true
                     )
                     if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -181,7 +183,7 @@ fun PetalSearchEngineSheetContent(
                 }) { Text(if (editing == null) "Add" else "Save") }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false; editingEngine = null }) { Text("Cancel") }
+                TextButton(onClick = { showAddDialog = false; editingEngine = null }) { Text(stringResource(R.string.ui_cancel)) }
             }
         )
     }
@@ -195,8 +197,8 @@ fun PetalSearchEngineSheetContent(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             PetalGroupIconBadge(Icons.Rounded.Search, size = 48.dp)
             Column {
-                Text("Choose Default Search Engine", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                Text("Built-in and unlimited custom engines are supported.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.ui_choose_default_search_engine), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                Text(stringResource(R.string.ui_built_in_and_unlimited_custom), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -235,12 +237,12 @@ fun PetalSearchEngineSheetContent(
         ) {
             Icon(Icons.Rounded.Add, null)
             Spacer(Modifier.width(8.dp))
-            Text("Add custom search engine")
+            Text(stringResource(R.string.ui_add_custom_search_engine))
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onCancel) { Text("Cancel") }
-            Button(onClick = { onConfirm(selectedIndex) }) { Text("Use selected engine") }
+            TextButton(onClick = onCancel) { Text(stringResource(R.string.ui_cancel)) }
+            Button(onClick = { onConfirm(selectedIndex) }) { Text(stringResource(R.string.ui_use_selected_engine)) }
         }
     }
 }
