@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -145,7 +146,23 @@ fun PetalPasswordsScreen(
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // This screen is presented as an overlay on top of Privacy settings. Back must close only this
+    // overlay, not the whole settings stack underneath.
+    androidx.activity.compose.BackHandler(onBack = onNavigateBack)
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            // Opaque base: the animated background below is translucent, and without this the
+            // Privacy settings screen underneath shows through and the two UIs overlap.
+            .background(MaterialTheme.colorScheme.background)
+            // Swallow every touch so taps/scrolls can never reach the screen underneath.
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) { awaitPointerEvent().changes.forEach { it.consume() } }
+                }
+            }
+    ) {
         M3ExpressiveVariableBackground(pageSeed = "petal_passwords_screen")
 
         Column(modifier = Modifier.fillMaxSize()) {
