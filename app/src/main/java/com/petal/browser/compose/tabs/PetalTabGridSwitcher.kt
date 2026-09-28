@@ -4,8 +4,10 @@ import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -318,6 +320,13 @@ fun PetalTabGridSwitcher(
     val recentlyClosedBatch = remember { mutableStateListOf<PetalTabItem>() }
     var isUndoBannerVisible by remember { mutableStateOf(false) }
     var undoBannerKey by remember { mutableLongStateOf(0L) }
+    var newTabLaunchKey by remember { mutableLongStateOf(0L) }
+    val coroutineScope = rememberCoroutineScope()
+    val newTabExitProgress by animateFloatAsState(
+        targetValue = if (newTabLaunchKey == 0L) 0f else 1f,
+        animationSpec = tween(durationMillis = 180),
+        label = "tabManagerNewTabExit",
+    )
 
     LaunchedEffect(undoBannerKey) {
         if (undoBannerKey > 0L && isUndoBannerVisible) {
@@ -371,6 +380,15 @@ fun PetalTabGridSwitcher(
         pendingRemovalIds.clear()
         idsToCommit.forEach { id ->
             tabs.find { it.id == id }?.let { onTabClose(it) }
+        }
+    }
+
+    fun launchNewTab(isIncognito: Boolean) {
+        newTabLaunchKey = System.currentTimeMillis()
+        commitPendingRemovals()
+        coroutineScope.launch {
+            kotlinx.coroutines.delay(160L)
+            onNewTab(isIncognito)
         }
     }
 
@@ -428,7 +446,6 @@ fun PetalTabGridSwitcher(
         effectiveOnBack()
     }
 
-    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
@@ -516,8 +533,7 @@ fun PetalTabGridSwitcher(
                                     onClick = {
                                         isOverflowMenuExpanded = false
                                         selectedCategory = TabCategory.REGULAR
-                                        commitPendingRemovals()
-                                        onNewTab(false)
+                                        launchNewTab(false)
                                     }
                                 )
                                 PetalExpressiveMenuItem(
@@ -526,8 +542,7 @@ fun PetalTabGridSwitcher(
                                     onClick = {
                                         isOverflowMenuExpanded = false
                                         selectedCategory = TabCategory.INCOGNITO
-                                        commitPendingRemovals()
-                                        onNewTab(true)
+                                        launchNewTab(true)
                                     }
                                 )
                                 HorizontalDivider()
@@ -559,7 +574,14 @@ fun PetalTabGridSwitcher(
                     }
                 )
 
-                 Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)) {
+                Column(modifier = Modifier
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
+                    .graphicsLayer {
+                        translationY = 18.dp.toPx() * newTabExitProgress
+                        alpha = 1f - 0.12f * newTabExitProgress
+                        scaleX = 1f - 0.015f * newTabExitProgress
+                        scaleY = 1f - 0.015f * newTabExitProgress
+                    }) {
                     // ── 3-Segment Switcher: Regular | Groups | Incognito ──
                     TabCategorySwitcher(
                         selected = selectedCategory,
@@ -683,6 +705,12 @@ fun PetalTabGridSwitcher(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = 4.dp)
+                        .graphicsLayer {
+                            translationY = 18.dp.toPx() * newTabExitProgress
+                            alpha = 1f - 0.12f * newTabExitProgress
+                            scaleX = 1f - 0.015f * newTabExitProgress
+                            scaleY = 1f - 0.015f * newTabExitProgress
+                        }
                         .nestedScroll(vaultNestedScrollConnection)
                         .animateContentSize(
                             animationSpec = spring(
@@ -809,7 +837,7 @@ fun PetalTabGridSwitcher(
                                 "Pages you view in incognito tabs won't be saved in your browser history."
                             else
                                 "Open tabs to visit different pages at the same time",
-                            onNewTab = { onNewTab(selectedCategory == TabCategory.INCOGNITO) }
+                            onNewTab = { launchNewTab(selectedCategory == TabCategory.INCOGNITO) }
                         )
 
                         filteredTabs.isEmpty() -> TabManagerEmptyState(
@@ -1555,6 +1583,14 @@ private fun TabManagerEmptyState(
     onNewTab: (() -> Unit)?,
     isIncognito: Boolean = false
 ) {
+    var launchPressed by remember { mutableStateOf(false) }
+    LaunchedEffect(launchPressed) {
+        if (launchPressed) {
+            kotlinx.coroutines.delay(120L)
+            onNewTab?.invoke()
+            launchPressed = false
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1618,7 +1654,11 @@ private fun TabManagerEmptyState(
         if (onNewTab != null) {
             Spacer(Modifier.height(24.dp))
             Button(
-                onClick = onNewTab,
+                onClick = { launchPressed = true },
+                modifier = Modifier.graphicsLayer {
+                    scaleX = if (launchPressed) 0.94f else 1f
+                    scaleY = if (launchPressed) 0.94f else 1f
+                },
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = accentColor,
@@ -1658,6 +1698,16 @@ private fun PetalTabCard(
     onDuplicateTab: () -> Unit = {},
     onCloseOtherTabs: () -> Unit = {}
 ) {
+    var cachedPreview by remember(tab.id, tab.previewBitmap) {
+        mutableStateOf(tab.previewBitmap?.takeUnless { it.isRecycled })
+    }
+    LaunchedEffect(tab.id, tab.url, tab.isIncognito) {
+        if (cachedPreview == null && !tab.isIncognito) {
+            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.id, tab.url)) { bitmap ->
+                if (bitmap != null && !bitmap.isRecycled) cachedPreview = bitmap
+            }
+        }
+    }
     val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
     val headerBg = MaterialTheme.colorScheme.surfaceContainerHigh
     val textColor = MaterialTheme.colorScheme.onSurface
@@ -1832,15 +1882,17 @@ private fun PetalTabCard(
                     .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
-                if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
-                    Image(
-                        bitmap = tab.previewBitmap.asImageBitmap(),
-                        contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    PetalHomePreviewCard(tab = tab, accentColor = accentColor)
+                Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, label = "tabPreviewLoad") { preview ->
+                    if (preview != null) {
+                        Image(
+                            bitmap = preview.asImageBitmap(),
+                            contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        PetalHomePreviewCard(tab = tab, accentColor = accentColor)
+                    }
                 }
             }
         }
@@ -1982,6 +2034,16 @@ private fun PetalTabListItem(
     onCloseOtherTabs: () -> Unit = {}
 ) {
     val textColor = MaterialTheme.colorScheme.onSurface
+    var cachedPreview by remember(tab.id, tab.previewBitmap) {
+        mutableStateOf(tab.previewBitmap?.takeUnless { it.isRecycled })
+    }
+    LaunchedEffect(tab.id, tab.url, tab.isIncognito) {
+        if (cachedPreview == null && !tab.isIncognito) {
+            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.id, tab.url)) { bitmap ->
+                if (bitmap != null && !bitmap.isRecycled) cachedPreview = bitmap
+            }
+        }
+    }
     var isMuted by remember(tab.id) { mutableStateOf(false) }
 
     val groupColor = tab.groupColorHex?.let {
@@ -2001,15 +2063,17 @@ private fun PetalTabListItem(
             .entrance(),
         selected = isSelectedForSelection || tab.isSelected || isDragging || isHoveredForMerge,
         leading = {
-                    if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
-                        Image(
-                            bitmap = tab.previewBitmap.asImageBitmap(),
-                            contentDescription = stringResource(R.string.ui_thumbnail),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
-                        )
-                    } else {
-                        PetalGroupIconBadge(icon = Icons.Rounded.Public, size = 44.dp)
+                    Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, label = "tabListThumbnail") { preview ->
+                        if (preview != null) {
+                            Image(
+                                bitmap = preview.asImageBitmap(),
+                                contentDescription = stringResource(R.string.ui_thumbnail),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
+                            )
+                        } else {
+                            PetalGroupIconBadge(icon = Icons.Rounded.Public, size = 44.dp)
+                        }
                     }
         },
         content = {
