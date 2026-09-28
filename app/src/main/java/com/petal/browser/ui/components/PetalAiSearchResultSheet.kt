@@ -176,7 +176,7 @@ fun PetalAiSearchResultSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    PetalShapeIconBadge(
+                    com.petal.browser.ui.containment.PetalGroupIconBadge(
                         shape = PetalMaterialShapes.Cookie6Sided.toShape(),
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -483,7 +483,7 @@ fun PetalAiSearchResultSheet(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                PetalShapeIconBadge(
+                                com.petal.browser.ui.containment.PetalGroupIconBadge(
                                     shape = PetalMaterialShapes.Burst.toShape(),
                                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -547,7 +547,7 @@ fun PetalAiSearchResultSheet(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    PetalShapeIconBadge(
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
                                         shape = PetalMaterialShapes.SoftBoom.toShape(),
                                         containerColor = MaterialTheme.colorScheme.errorContainer,
                                         contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -650,7 +650,7 @@ fun PetalAiSearchResultSheet(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        PetalShapeIconBadge(
+                                        com.petal.browser.ui.containment.PetalGroupIconBadge(
                                             shape = PetalMaterialShapes.Sunny.toShape(),
                                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -766,7 +766,7 @@ fun PetalAiSearchResultSheet(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    PetalShapeIconBadge(
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
                                         shape = PetalMaterialShapes.Cookie6Sided.toShape(),
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -806,7 +806,7 @@ fun PetalAiSearchResultSheet(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            PetalShapeIconBadge(
+                                            com.petal.browser.ui.containment.PetalGroupIconBadge(
                                                 shape = shapeType.toShape(),
                                                 containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                                 contentColor = MaterialTheme.colorScheme.primary,

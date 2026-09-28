@@ -487,11 +487,9 @@ fun PetalUpdateSheetContent(
             // Action Buttons
             if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
                 if (isDownloading) {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        ),
+                    com.petal.browser.ui.containment.PetalHeroCard(
+                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -515,11 +513,9 @@ fun PetalUpdateSheetContent(
                         }
                     }
                 } else if (isDownloadEnqueued) {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        ),
+                    com.petal.browser.ui.containment.PetalHeroCard(
+                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -758,12 +754,9 @@ fun PetalChangelogHistorySheetContent(
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(releases) { rel ->
-                        Card(
-                            shape = RoundedCornerShape(28.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
+                        com.petal.browser.ui.containment.PetalHeroCard(
+                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {

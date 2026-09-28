@@ -467,14 +467,11 @@ fun SafeLockerScreen(
                                 ) {
                                     items(filteredFiles, key = { it.id }) { item ->
                                         val isSelected = selectedFileIds.contains(item.id)
-                                        Card(
-                                            shape = RoundedCornerShape(18.dp),
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = if (isSelected)
-                                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                                                else
-                                                    MaterialTheme.colorScheme.surfaceContainer
-                                            ),
+                                        com.petal.browser.ui.containment.PetalHeroCard(
+                                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                                            containerColor = if (isSelected)
+                                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                                            else MaterialTheme.colorScheme.surfaceContainerHigh,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Row(

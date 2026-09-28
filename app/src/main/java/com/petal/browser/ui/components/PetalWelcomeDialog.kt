@@ -556,9 +556,9 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
 
     Spacer(Modifier.height(20.dp))
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = RoundedCornerShape(22.dp),
+    com.petal.browser.ui.containment.PetalHeroCard(
+        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -694,9 +694,9 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
 
     Spacer(Modifier.height(24.dp))
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = RoundedCornerShape(22.dp),
+    com.petal.browser.ui.containment.PetalHeroCard(
+        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -801,12 +801,10 @@ private fun BackupFeatureStepPage(context: Context) {
     Spacer(Modifier.height(24.dp))
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        Card(
-            onClick = {
-                showRestorePicker = true
-            },
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            shape = RoundedCornerShape(20.dp),
+        com.petal.browser.ui.containment.PetalActionCard(
+            onClick = { showRestorePicker = true },
+            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -918,9 +916,9 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
 
     Spacer(Modifier.height(20.dp))
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = RoundedCornerShape(22.dp),
+    com.petal.browser.ui.containment.PetalHeroCard(
+        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
@@ -1094,9 +1092,9 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
 
     Spacer(Modifier.height(20.dp))
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = RoundedCornerShape(22.dp),
+    com.petal.browser.ui.containment.PetalHeroCard(
+        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
@@ -1268,9 +1266,9 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
 
     Spacer(Modifier.height(20.dp))
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = RoundedCornerShape(22.dp),
+    com.petal.browser.ui.containment.PetalHeroCard(
+        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1360,9 +1358,9 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
 
     Spacer(Modifier.height(24.dp))
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = RoundedCornerShape(22.dp),
+    com.petal.browser.ui.containment.PetalHeroCard(
+        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
         Surface(

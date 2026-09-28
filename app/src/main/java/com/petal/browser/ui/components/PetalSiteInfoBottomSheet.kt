@@ -111,13 +111,9 @@ fun PetalSiteInfoBottomSheet(
                 .padding(horizontal = 20.dp, vertical = 4.dp)
         ) {
             // --- Domain & Security Header ---
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            com.petal.browser.ui.containment.PetalHeroCard(
+                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -127,7 +123,7 @@ fun PetalSiteInfoBottomSheet(
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    PetalShapeIconBadge(
+                    com.petal.browser.ui.containment.PetalGroupIconBadge(
                         shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -182,13 +178,9 @@ fun PetalSiteInfoBottomSheet(
             Spacer(modifier = Modifier.height(14.dp))
 
             // --- SSL & Connection Security Card ---
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            com.petal.browser.ui.containment.PetalHeroCard(
+                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -198,7 +190,7 @@ fun PetalSiteInfoBottomSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    PetalShapeIconBadge(
+                    com.petal.browser.ui.containment.PetalGroupIconBadge(
                         shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
                         containerColor = when {
                             isHttps || isInternalPage -> MaterialTheme.colorScheme.primaryContainer
@@ -272,13 +264,9 @@ fun PetalSiteInfoBottomSheet(
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
             )
 
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            com.petal.browser.ui.containment.PetalHeroCard(
+                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -291,7 +279,7 @@ fun PetalSiteInfoBottomSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        PetalShapeIconBadge(
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(
                             shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape(),
                             containerColor = if (trackingProtectionEnabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (trackingProtectionEnabled) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -376,13 +364,9 @@ fun PetalSiteInfoBottomSheet(
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
             )
 
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            com.petal.browser.ui.containment.PetalHeroCard(
+                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -513,14 +497,13 @@ fun PetalSiteInfoBottomSheet(
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
             )
 
-            SettingsTileGroup(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 // Camera
-                SettingsTileSwitchRow(
+                com.petal.browser.ui.containment.PetalGroupToggleRow(
                     title = "Camera Access",
                     subtitle = if (isCameraAllowed) "Allowed" else "Blocked",
                     checked = isCameraAllowed,
+                    position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                     onCheckedChange = { allowed ->
                         isCameraAllowed = allowed
                         sp.edit().putBoolean(profile + "_camera", allowed).apply()
@@ -530,7 +513,7 @@ fun PetalSiteInfoBottomSheet(
                         geckoView?.reloadWithoutInit()
                     },
                     leadingIcon = {
-                        PetalShapeIconBadge(
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(
                             shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
                             containerColor = if (isCameraAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isCameraAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -542,13 +525,12 @@ fun PetalSiteInfoBottomSheet(
                     }
                 )
 
-                SettingsTileDivider(startPadding = 64.dp)
-
                 // Microphone
-                SettingsTileSwitchRow(
+                com.petal.browser.ui.containment.PetalGroupToggleRow(
                     title = "Microphone Access",
                     subtitle = if (isMicAllowed) "Allowed" else "Blocked",
                     checked = isMicAllowed,
+                    position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                     onCheckedChange = { allowed ->
                         isMicAllowed = allowed
                         sp.edit().putBoolean(profile + "_microphone", allowed).apply()
@@ -558,7 +540,7 @@ fun PetalSiteInfoBottomSheet(
                         geckoView?.reloadWithoutInit()
                     },
                     leadingIcon = {
-                        PetalShapeIconBadge(
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(
                             shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape(),
                             containerColor = if (isMicAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isMicAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -570,13 +552,12 @@ fun PetalSiteInfoBottomSheet(
                     }
                 )
 
-                SettingsTileDivider(startPadding = 64.dp)
-
                 // Location
-                SettingsTileSwitchRow(
+                com.petal.browser.ui.containment.PetalGroupToggleRow(
                     title = "Location Access",
                     subtitle = if (isLocationAllowed) "Allowed" else "Blocked",
                     checked = isLocationAllowed,
+                    position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                     onCheckedChange = { allowed ->
                         isLocationAllowed = allowed
                         sp.edit().putBoolean(profile + "_location", allowed).apply()
@@ -590,7 +571,7 @@ fun PetalSiteInfoBottomSheet(
                         geckoView?.reloadWithoutInit()
                     },
                     leadingIcon = {
-                        PetalShapeIconBadge(
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(
                             shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
                             containerColor = if (isLocationAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isLocationAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -602,13 +583,12 @@ fun PetalSiteInfoBottomSheet(
                     }
                 )
 
-                SettingsTileDivider(startPadding = 64.dp)
-
                 // Notifications
-                SettingsTileSwitchRow(
+                com.petal.browser.ui.containment.PetalGroupToggleRow(
                     title = "Notifications",
                     subtitle = if (isNotificationsAllowed) "Allowed" else "Blocked",
                     checked = isNotificationsAllowed,
+                    position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                     onCheckedChange = { allowed ->
                         isNotificationsAllowed = allowed
                         sp.edit().putBoolean("sp_notifications_$domain", allowed).apply()
@@ -619,7 +599,7 @@ fun PetalSiteInfoBottomSheet(
                         }
                     },
                     leadingIcon = {
-                        PetalShapeIconBadge(
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(
                             shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBurst.toShape(),
                             containerColor = if (isNotificationsAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isNotificationsAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -631,13 +611,12 @@ fun PetalSiteInfoBottomSheet(
                     }
                 )
 
-                SettingsTileDivider(startPadding = 64.dp)
-
                 // Desktop Site (Per-site override)
-                SettingsTileSwitchRow(
+                com.petal.browser.ui.containment.PetalGroupToggleRow(
                     title = "Desktop Site",
                     subtitle = if (isDesktopSite) "Requesting desktop version" else "Mobile version",
                     checked = isDesktopSite,
+                    position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                     onCheckedChange = { allowed ->
                         isDesktopSite = allowed
                         if (domain.isNotEmpty()) {
@@ -646,7 +625,7 @@ fun PetalSiteInfoBottomSheet(
                         geckoView?.setDesktopMode(allowed)
                     },
                     leadingIcon = {
-                        PetalShapeIconBadge(
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(
                             shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
                             containerColor = if (isDesktopSite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isDesktopSite) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,

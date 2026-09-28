@@ -637,7 +637,7 @@ fun PetalPdfViewerScreen(
                                 modifier = Modifier.padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                com.petal.browser.ui.components.PetalShapeIconBadge(
+                                com.petal.browser.ui.components.com.petal.browser.ui.containment.PetalGroupIconBadge(
                                     shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
                                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                                     contentColor = MaterialTheme.colorScheme.error,

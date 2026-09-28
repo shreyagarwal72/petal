@@ -87,13 +87,9 @@ fun PetalLinkContextMenuDialog(
                 exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh)) +
                         scaleOut(targetScale = 0.9f, animationSpec = spring(stiffness = Spring.StiffnessHigh))
             ) {
-                Card(
-                    shape = RoundedCornerShape(28.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isIncognito) Color(0xFF1C1D24) else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                com.petal.browser.ui.containment.PetalHeroCard(
+                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                    containerColor = if (isIncognito) Color(0xFF1C1D24) else MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier
                         .widthIn(max = 360.dp)
                         .fillMaxWidth(0.92f)

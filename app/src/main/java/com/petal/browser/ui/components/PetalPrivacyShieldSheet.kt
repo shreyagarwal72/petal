@@ -295,12 +295,10 @@ object PetalPrivacyShieldSheet {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Card(
+                    com.petal.browser.ui.containment.PetalHeroCard(
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                        )
+                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
@@ -317,12 +315,10 @@ object PetalPrivacyShieldSheet {
                         }
                     }
 
-                    Card(
+                    com.petal.browser.ui.containment.PetalHeroCard(
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                        )
+                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
@@ -343,12 +339,10 @@ object PetalPrivacyShieldSheet {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Connection Security Card
-                Card(
+                com.petal.browser.ui.containment.PetalHeroCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    )
+                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
                     Row(
                         modifier = Modifier

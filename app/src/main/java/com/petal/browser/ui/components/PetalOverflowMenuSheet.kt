@@ -17,6 +17,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DesktopWindows
+import androidx.compose.material.icons.filled.FindInPage
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -377,13 +382,9 @@ fun PetalOverflowMenuSheet(
             .padding(top = 52.dp, end = 12.dp, start = 12.dp, bottom = 72.dp),
         contentAlignment = Alignment.BottomEnd
     ) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        com.petal.browser.ui.containment.PetalHeroCard(
+            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier
                 .fillMaxWidth(0.88f)
                 .widthIn(max = 350.dp)
@@ -459,44 +460,22 @@ fun PetalOverflowMenuSheet(
                 )
 
                 // 4-Column Quick Action Matrix
-                ActionMatrixGrid(
-                    actions = listOf(
-                        ActionMatrixItem(
-                            icon = Icons.Rounded.DesktopWindows,
-                            label = "Desktop",
-                            isActive = isDesktopSite,
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
-                            onClick = { onToggleDesktopSite(!isDesktopSite) }
-                        ),
-                        ActionMatrixItem(
-                            icon = Icons.Rounded.Shield,
-                            label = "AdBlock",
-                            isActive = isAdBlockEnabled,
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Burst.toShape(),
-                            onClick = { onToggleAdBlock(!isAdBlockEnabled) }
-                        ),
-                        ActionMatrixItem(
-                            icon = Icons.Rounded.Share,
-                            label = "Share",
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
-                            onClick = onShareLink
-                        ),
-                        if (!isHomePage) {
-                            ActionMatrixItem(
-                                icon = Icons.Rounded.FindInPage,
-                                label = "Find",
-                                shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
-                                onClick = onSearchOnSite
-                            )
-                        } else {
-                            ActionMatrixItem(
-                                icon = Icons.Rounded.History,
-                                label = "History",
-                                shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
-                                onClick = onOpenHistory
-                            )
+                com.petal.browser.ui.containment.PetalConnectedButtonGroup(
+                    items = listOf(
+                        com.petal.browser.ui.containment.PetalConnectedButtonItem("Desktop", Icons.Filled.DesktopWindows, isDesktopSite),
+                        com.petal.browser.ui.containment.PetalConnectedButtonItem("AdBlock", Icons.Filled.Shield, isAdBlockEnabled),
+                        com.petal.browser.ui.containment.PetalConnectedButtonItem("Share", Icons.Filled.Share),
+                        com.petal.browser.ui.containment.PetalConnectedButtonItem(if (isHomePage) "History" else "Find", if (isHomePage) Icons.Filled.History else Icons.Filled.FindInPage),
+                    ),
+                    selectedIndex = -1,
+                    onSelect = { index ->
+                        when (index) {
+                            0 -> onToggleDesktopSite(!isDesktopSite)
+                            1 -> onToggleAdBlock(!isAdBlockEnabled)
+                            2 -> onShareLink()
+                            3 -> if (isHomePage) onOpenHistory() else onSearchOnSite()
                         }
-                    )
+                    },
                 )
 
                 HorizontalDivider(
@@ -780,16 +759,11 @@ private fun CircularIconButton(
     tint: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
-    Card(
+    Surface(
         shape = CircleShape,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-            contentColor = if (enabled) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier
-            .size(44.dp)
-            .clickable(enabled = enabled, onClick = onClick)
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = if (enabled) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+        modifier = Modifier.size(44.dp).clickable(enabled = enabled, onClick = onClick),
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),

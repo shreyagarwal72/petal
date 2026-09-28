@@ -226,11 +226,9 @@ fun SafeLockerSheet(
                         .heightIn(max = 400.dp)
                 ) {
                     items(lockedFiles, key = { it.id }) { item ->
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            ),
+                        com.petal.browser.ui.containment.PetalHeroCard(
+                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(

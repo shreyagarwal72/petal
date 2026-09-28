@@ -37,6 +37,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -120,6 +121,26 @@ fun PetalGroupIconBadge(
 }
 
 @Composable
+fun PetalGroupIconBadge(
+    shape: Shape,
+    containerColor: Color,
+    contentColor: Color,
+    size: Dp = 44.dp,
+    iconSize: Dp = 22.dp,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = modifier.size(size).clip(shape).background(containerColor),
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides contentColor) {
+            Box(Modifier.size(iconSize), contentAlignment = Alignment.Center) { content() }
+        }
+    }
+}
+
+@Composable
 fun PetalGroupRow(
     icon: ImageVector,
     title: String,
@@ -172,6 +193,45 @@ fun PetalGroupToggleRow(
 }
 
 @Composable
+fun PetalGroupToggleRow(
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    position: PetalGroupPosition,
+    leadingIcon: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val source = remember { MutableInteractionSource() }
+    val scale = rememberPetalGroupPressScale(source)
+    Card(
+        onClick = { if (enabled) onCheckedChange(!checked) },
+        enabled = enabled,
+        shape = petalGroupShape(position),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = source,
+        modifier = modifier.fillMaxWidth().scale(scale),
+    ) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            leadingIcon()
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            }
+            com.petal.browser.ui.components.IconSwitch(
+                checked = checked,
+                icon = androidx.compose.material.icons.Icons.Rounded.Check,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled,
+            )
+        }
+    }
+}
+
+@Composable
 fun PetalGroupListRow(
     position: PetalGroupPosition,
     onClick: () -> Unit,
@@ -201,7 +261,7 @@ fun PetalSectionLabel(text: String, modifier: Modifier = Modifier) {
         fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
 }
 
-data class PetalConnectedButtonItem(val label: String, val icon: ImageVector? = null)
+data class PetalConnectedButtonItem(val label: String, val icon: ImageVector? = null, val selected: Boolean = false)
 
 private fun petalConnectedShape(index: Int, count: Int): Shape = when {
     count <= 1 -> RoundedCornerShape(20.dp)
@@ -215,7 +275,7 @@ fun PetalConnectedButtonGroup(items: List<PetalConnectedButtonItem>, selectedInd
     val haptics = LocalHapticFeedback.current
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy((-1).dp), verticalAlignment = Alignment.CenterVertically) {
         items.forEachIndexed { index, item ->
-            val selected = index == selectedIndex
+            val selected = item.selected || index == selectedIndex
             val shape = petalConnectedShape(index, items.size)
             Surface(onClick = { haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onSelect(index) }, modifier = Modifier.weight(1f),
                 shape = shape, color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -291,4 +351,60 @@ fun PetalHeroCard(
     Card(modifier = modifier.fillMaxWidth(), shape = shape,
         colors = CardDefaults.cardColors(containerColor = containerColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), content = content)
+}
+
+@Composable
+fun PetalActionCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = PetalContainmentShapes.HeroInner,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val source = remember { MutableInteractionSource() }
+    val scale = rememberPetalGroupPressScale(source)
+    Card(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.scale(scale),
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = source,
+        content = content,
+    )
+}
+
+@Composable
+fun PetalStatusHeroCard(
+    title: String,
+    subtitle: String,
+    statusText: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    statusActive: Boolean = true,
+    actionLabel: String? = null,
+    onActionClick: (() -> Unit)? = null,
+) {
+    PetalHeroCard(modifier = modifier, shape = PetalContainmentShapes.Hero, containerColor = MaterialTheme.colorScheme.secondaryContainer) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PetalGroupIconBadge(icon, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.onSecondary, size = 46.dp, iconSize = 24.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Surface(shape = PetalContainmentShapes.Pill, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(if (statusActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline))
+                        Text(statusText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                if (actionLabel != null && onActionClick != null) TextButton(onClick = onActionClick) { Text(actionLabel, fontWeight = FontWeight.Bold) }
+            }
+        }
+    }
 }

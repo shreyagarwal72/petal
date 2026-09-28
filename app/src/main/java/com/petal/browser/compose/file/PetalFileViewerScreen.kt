@@ -1329,7 +1329,7 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        com.petal.browser.ui.components.PetalShapeIconBadge(
+        com.petal.browser.ui.components.com.petal.browser.ui.containment.PetalGroupIconBadge(
             shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie9Sided.toShape(),
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -1385,7 +1385,7 @@ private fun ErrorDisplayBox(error: String) {
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                com.petal.browser.ui.components.PetalShapeIconBadge(
+                com.petal.browser.ui.components.com.petal.browser.ui.containment.PetalGroupIconBadge(
                     shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                     contentColor = MaterialTheme.colorScheme.error,

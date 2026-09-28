@@ -160,12 +160,9 @@ fun PetalDevConsoleSheet(
             Spacer(Modifier.height(8.dp))
 
             // Log Console Output Box
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+            com.petal.browser.ui.containment.PetalHeroCard(
+                shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(240.dp)

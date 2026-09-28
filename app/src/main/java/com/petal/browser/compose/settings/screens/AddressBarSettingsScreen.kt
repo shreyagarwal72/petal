@@ -53,83 +53,14 @@ fun AddressBarSettingsScreen(
                 PetalSettingsSection("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
                     Text("Choose where the compact address bar is placed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
-                    com.petal.browser.ui.components.WireframeOptionPicker(
-                        options = listOf(
-                            com.petal.browser.ui.components.WireframeOption(
-                                value = "TOP",
-                                label = "Top Bar",
-                                previewContent = {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(6.dp),
-                                        verticalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        // Top pill
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(10.dp)
-                                                .clip(RoundedCornerShape(50))
-                                                .background(MaterialTheme.colorScheme.primary)
-                                        )
-                                        // Content dummy lines
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(0.7f)
-                                                .height(6.dp)
-                                                .clip(RoundedCornerShape(3.dp))
-                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                                        )
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(0.9f)
-                                                .height(6.dp)
-                                                .clip(RoundedCornerShape(3.dp))
-                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                                        )
-                                    }
-                                }
-                            ),
-                            com.petal.browser.ui.components.WireframeOption(
-                                value = "BOTTOM",
-                                label = "Bottom Bar",
-                                previewContent = {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(6.dp),
-                                        verticalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(0.9f)
-                                                .height(6.dp)
-                                                .clip(RoundedCornerShape(3.dp))
-                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                                        )
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(0.7f)
-                                                .height(6.dp)
-                                                .clip(RoundedCornerShape(3.dp))
-                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                                        )
-                                        // Bottom pill
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(10.dp)
-                                                .clip(RoundedCornerShape(50))
-                                                .background(MaterialTheme.colorScheme.primary)
-                                        )
-                                    }
-                                }
-                            )
+                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
+                        items = listOf(
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Top Bar"),
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Bottom Bar"),
                         ),
-                        selected = position.uppercase(),
-                        onOptionSelected = {
-                            viewModel.setPosition(it)
+                        selectedIndex = if (position.equals("TOP", ignoreCase = true)) 0 else 1,
+                        onSelect = { selected ->
+                            viewModel.setPosition(if (selected == 0) "TOP" else "BOTTOM")
                             (context as? BrowserActivity)?.applyAddressBarPosition()
                             (context as? BrowserActivity)?.window?.decorView?.post { (context as? BrowserActivity)?.applyAddressBarPosition() }
                         }

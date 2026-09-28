@@ -562,7 +562,7 @@ private fun ZoomableImagePage(
                 error = {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            com.petal.browser.ui.components.PetalShapeIconBadge(
+                            com.petal.browser.ui.components.com.petal.browser.ui.containment.PetalGroupIconBadge(
                                 shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
                                 containerColor = Color.White.copy(alpha = 0.12f),
                                 contentColor = Color.White.copy(alpha = 0.7f),

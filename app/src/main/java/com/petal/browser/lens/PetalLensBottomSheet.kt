@@ -315,17 +315,13 @@ fun PetalLensBottomSheet(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Snap Photo Card
-                Card(
+                com.petal.browser.ui.containment.PetalActionCard(
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
                         beginSnap()
                     },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
@@ -363,7 +359,7 @@ fun PetalLensBottomSheet(
                 }
 
                 // Gallery File Picker Card
-                Card(
+                com.petal.browser.ui.containment.PetalActionCard(
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
                         try {
@@ -373,12 +369,8 @@ fun PetalLensBottomSheet(
                             onDismissRequest()
                         }
                     },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(

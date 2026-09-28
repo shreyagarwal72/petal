@@ -209,69 +209,23 @@ fun AppearanceSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(Modifier.height(4.dp))
-                    com.petal.browser.ui.components.WireframeOptionPicker(
-                        options = listOf(
-                            com.petal.browser.ui.components.WireframeOption(
-                                value = ThemeConfig.FOLLOW_SYSTEM,
-                                label = "System",
-                                previewContent = {
-                                    Row(Modifier.fillMaxSize()) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .fillMaxHeight()
-                                                .background(Color(0xFFE8DEF8))
-                                        )
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .fillMaxHeight()
-                                                .background(Color(0xFF1D1B20))
-                                        )
-                                    }
-                                }
-                            ),
-                            com.petal.browser.ui.components.WireframeOption(
-                                value = ThemeConfig.LIGHT,
-                                label = "Light",
-                                previewContent = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(Color(0xFFFEF7FF)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.LightMode,
-                                            contentDescription = null,
-                                            tint = Color(0xFF6750A4),
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
-                            ),
-                            com.petal.browser.ui.components.WireframeOption(
-                                value = ThemeConfig.DARK,
-                                label = "Dark",
-                                previewContent = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(Color(0xFF141218)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.DarkMode,
-                                            contentDescription = null,
-                                            tint = Color(0xFFD0BCFF),
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
-                            )
+                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
+                        items = listOf(
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem("System"),
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Light"),
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Dark"),
                         ),
-                        selected = themeConfig,
-                        onOptionSelected = { config ->
+                        selectedIndex = when (themeConfig) {
+                            ThemeConfig.FOLLOW_SYSTEM -> 0
+                            ThemeConfig.LIGHT -> 1
+                            ThemeConfig.DARK -> 2
+                        },
+                        onSelect = { index ->
+                            val config = when (index) {
+                                1 -> ThemeConfig.LIGHT
+                                2 -> ThemeConfig.DARK
+                                else -> ThemeConfig.FOLLOW_SYSTEM
+                            }
                             onThemeConfigChange(config)
                             when (config) {
                                 ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)

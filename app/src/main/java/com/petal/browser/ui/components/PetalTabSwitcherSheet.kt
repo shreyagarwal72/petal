@@ -760,17 +760,14 @@ fun TabCard(
     val borderWidth = if (tab.isActive) 2.dp else 0.dp
 
     val context = androidx.compose.ui.platform.LocalContext.current
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (tab.isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-            else MaterialTheme.colorScheme.surfaceContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    com.petal.browser.ui.containment.PetalHeroCard(
+        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+        containerColor = if (tab.isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+        else MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier
             .fillMaxWidth()
             .height(105.dp)
-            .border(borderWidth, borderColor, RoundedCornerShape(20.dp))
+            .border(borderWidth, borderColor, com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner)
             .bouncyClickable { onSelect() }
             .entrance(index = 0)
     ) {
@@ -790,7 +787,7 @@ fun TabCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    PetalShapeIconBadge(
+                    com.petal.browser.ui.containment.PetalGroupIconBadge(
                         shape = com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape(),
                         containerColor = if (tab.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
                         contentColor = if (tab.isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,

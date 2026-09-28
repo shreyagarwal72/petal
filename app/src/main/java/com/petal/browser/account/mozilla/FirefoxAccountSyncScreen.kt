@@ -219,13 +219,9 @@ fun FirefoxAccountSyncScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             // ── Section 1: User Profile Hero Card ─────────────────────
-                            Card(
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    contentColor = MaterialTheme.colorScheme.onSurface
-                                ),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            com.petal.browser.ui.containment.PetalHeroCard(
+                                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(
@@ -381,12 +377,9 @@ fun FirefoxAccountSyncScreen(
                                 modifier = Modifier.padding(start = 8.dp)
                             )
 
-                            Card(
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    contentColor = MaterialTheme.colorScheme.onSurface
-                                ),
+                            com.petal.browser.ui.containment.PetalHeroCard(
+                                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(modifier = Modifier.padding(20.dp)) {

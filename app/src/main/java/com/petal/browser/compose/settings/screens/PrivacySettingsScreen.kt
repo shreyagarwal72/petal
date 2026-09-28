@@ -218,7 +218,7 @@ fun PrivacySettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // ── Hero Privacy Shield Status Banner ──
-                com.petal.browser.ui.components.ExpressiveHeroBanner(
+                com.petal.browser.ui.containment.PetalStatusHeroCard(
                     title = if (adBlockEnabled) "Shield Active & Protecting" else "Shield Paused",
                     subtitle = if (adBlockEnabled) "Real-time Trie tracker blocking, HTTPS-only & anti-fingerprinting active" else "Trackers and ads are not currently being filtered",
                     statusText = if (adBlockEnabled) "Protection Enabled" else "Protection Disabled",
