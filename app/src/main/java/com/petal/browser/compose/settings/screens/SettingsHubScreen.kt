@@ -208,7 +208,7 @@ fun SettingsHubScreen(
                         PetalGroupListRow(
                             position = petalGroupPositionFor(index, matchingItems.size),
                             onClick = { onCategoryClick(item.category, item.id) },
-                            leading = { PetalGroupIconBadge(Icons.Filled.Search) },
+                            leading = { PetalGroupIconBadge(Icons.Rounded.Search) },
                             content = {
                                 Text(item.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis)

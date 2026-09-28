@@ -653,9 +653,8 @@ private fun RenderUserProfileContent(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     // Item 0: Web Cache & App Storage with Clear action
-                    Surface(
-                        position = petalGroupPositionFor(0, storageItemCount),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    com.petal.browser.ui.containment.PetalHeroCard(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(

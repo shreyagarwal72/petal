@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.rounded.Check as RoundedCheck
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -315,7 +314,7 @@ fun PetalGroupToggleRow(
             }
             com.petal.browser.ui.components.IconSwitch(
                 checked = checked,
-                icon = RoundedCheck,
+                icon = Icons.Filled.Check,
                 onCheckedChange = onCheckedChange,
                 enabled = enabled,
             )
