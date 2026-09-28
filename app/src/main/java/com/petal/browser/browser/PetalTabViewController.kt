@@ -487,7 +487,14 @@ class PetalTabViewController private constructor(
             "sp_javascript",
             preferences.getBoolean("${profile}_javascript", preferences.getBoolean("profileStandard_javascript", true))
         )
-        session.settings.javascriptEnabled = javascriptEnabled
+        // Android Components' Settings.javascriptEnabled is an UnsupportedSetting on the
+        // Gecko engine session and throws UnsupportedSettingException. Apply it on the raw
+        // GeckoSession instead. The global runtime value is also synced below.
+        try {
+            getGeckoSession()?.settings?.allowJavascript = javascriptEnabled
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "Could not apply per-session JavaScript setting", t)
+        }
 
         val host = try { android.net.Uri.parse(url.orEmpty()).host } catch (_: Throwable) { null }
         val desktopEnabled = if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
