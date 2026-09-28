@@ -24,7 +24,12 @@
 package com.petal.browser.ui.components
 
 import android.os.Build
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -35,7 +40,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -66,6 +71,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,6 +91,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
+import kotlinx.coroutines.delay
 
 enum class PetalNavTab {
     HOME, NEW_TAB, TABS, MENU
@@ -119,15 +126,12 @@ fun PetalBottomNavBar(
     onSwipeTabRight: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val animatedCount by animateIntAsState(
-        targetValue = tabCount,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "tabCountAnimation"
-    )
+    // Whole-bar entrance: slides up and fades in with a soft spring when first shown
+    val entrance = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        entrance.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 260f))
+    }
+    val entranceOffsetPx = with(LocalDensity.current) { 32.dp.toPx() }
 
     val badgeScale = remember { Animatable(1f) }
     LaunchedEffect(tabCount) {
@@ -141,12 +145,16 @@ fun PetalBottomNavBar(
         )
     }
 
-    val tabsLabel = "Tabs ($animatedCount)"
+    val tabsLabel = "Tabs ($tabCount)"
     val newTabLabel = "New"
 
     if (isFloatingStyle) {
         Box(
             modifier = modifier
+                .graphicsLayer {
+                    translationY = (1f - entrance.value) * entranceOffsetPx
+                    alpha = entrance.value.coerceIn(0f, 1f)
+                }
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
@@ -159,12 +167,21 @@ fun PetalBottomNavBar(
             )
 
             var dragAccumulator by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+            var isDragging by remember { mutableStateOf(false) }
+            val maxDragPx = with(LocalDensity.current) { 28.dp.toPx() }
+            // Bar follows the finger with resistance while swiping, then springs back on release
+            val dragOffsetPx by animateFloatAsState(
+                targetValue = if (isDragging) (dragAccumulator * 0.35f).coerceIn(-maxDragPx, maxDragPx) else 0f,
+                animationSpec = if (isDragging) snap() else spring(dampingRatio = 0.50f, stiffness = 320f),
+                label = "swipe_rubber_band"
+            )
 
             HorizontalFloatingToolbar(
                 expanded = true,
                 modifier = Modifier
                     .wrapContentWidth()
                     .height(64.dp)
+                    .graphicsLayer { translationX = dragOffsetPx }
                     .shadow(16.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
                     .border(
                         0.75.dp,
@@ -179,7 +196,9 @@ fun PetalBottomNavBar(
                     .clip(CircleShape)
                     .pointerInput(Unit) {
                         detectHorizontalDragGestures(
+                            onDragStart = { isDragging = true },
                             onDragEnd = {
+                                isDragging = false
                                 if (dragAccumulator > 70f) {
                                     onSwipeTabLeft()
                                 } else if (dragAccumulator < -70f) {
@@ -187,7 +206,10 @@ fun PetalBottomNavBar(
                                 }
                                 dragAccumulator = 0f
                             },
-                            onDragCancel = { dragAccumulator = 0f },
+                            onDragCancel = {
+                                isDragging = false
+                                dragAccumulator = 0f
+                            },
                             onHorizontalDrag = { _, dragAmount: Float ->
                                 dragAccumulator += dragAmount
                             }
@@ -205,17 +227,24 @@ fun PetalBottomNavBar(
                             animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
                             label = "home_scale"
                         )
-                        Icon(
-                            painter = androidx.compose.ui.res.painterResource(if (isSelected) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home),
-                            contentDescription = "Home",
-                            tint = tint,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .graphicsLayer {
-                                    scaleX = iconScale
-                                    scaleY = iconScale
-                                }
-                        )
+                        Crossfade(
+                            targetState = isSelected,
+                            animationSpec = tween(180),
+                            label = "home_icon_crossfade",
+                            modifier = Modifier.graphicsLayer {
+                                scaleX = iconScale
+                                scaleY = iconScale
+                            }
+                        ) { filled ->
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(
+                                    if (filled) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home
+                                ),
+                                contentDescription = "Home",
+                                tint = tint,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     },
                     onClick = onHomeClick
                 )
@@ -263,7 +292,7 @@ fun PetalBottomNavBar(
                         )
                         TabCountBadge(
                             color = tint,
-                            count = animatedCount,
+                            count = tabCount,
                             scale = badgeScale.value * iconScale
                         )
                     },
@@ -306,6 +335,10 @@ fun PetalBottomNavBar(
         // Material 3 Expressive Non-Floating Bottom Navigation Bar
         Box(
             modifier = modifier
+                .graphicsLayer {
+                    translationY = (1f - entrance.value) * entranceOffsetPx
+                    alpha = entrance.value.coerceIn(0f, 1f)
+                }
                 .fillMaxWidth()
                 .navigationBarsPadding(),
             contentAlignment = Alignment.BottomCenter
@@ -337,19 +370,24 @@ fun PetalBottomNavBar(
                                 animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
                                 label = "home_expressive_scale"
                             )
-                            Icon(
-                                painter = androidx.compose.ui.res.painterResource(
-                                    if (isSelected) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home
-                                ),
-                                contentDescription = "Home",
-                                tint = tint,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .graphicsLayer {
-                                        scaleX = iconScale
-                                        scaleY = iconScale
-                                    }
-                            )
+                            Crossfade(
+                                targetState = isSelected,
+                                animationSpec = tween(180),
+                                label = "home_icon_crossfade",
+                                modifier = Modifier.graphicsLayer {
+                                    scaleX = iconScale
+                                    scaleY = iconScale
+                                }
+                            ) { filled ->
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(
+                                        if (filled) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home
+                                    ),
+                                    contentDescription = "Home",
+                                    tint = tint,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         },
                         onClick = onHomeClick
                     )
@@ -389,7 +427,7 @@ fun PetalBottomNavBar(
                     ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.TABS,
                         label = "Tabs",
-                        badgeText = if (animatedCount > 99) "99+" else animatedCount.toString(),
+                        badgeText = if (tabCount > 99) "99+" else tabCount.toString(),
                         index = 2,
                         modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
@@ -400,7 +438,7 @@ fun PetalBottomNavBar(
                             )
                             TabCountBadge(
                                 color = tint,
-                                count = animatedCount,
+                                count = tabCount,
                                 scale = badgeScale.value * iconScale
                             )
                         },
@@ -475,6 +513,23 @@ private fun FloatingNavTabItem(
         label = "nav_label_$index"
     )
 
+    // Label fades/slides in slightly after the pill starts expanding
+    val labelAlpha by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = if (selected) 220 else 90,
+            delayMillis = if (selected) 90 else 0
+        ),
+        label = "nav_label_alpha_$index"
+    )
+
+    // Staggered pop-in on first appearance
+    val enter = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(index * 55L)
+        enter.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 320f))
+    }
+
     val activeContainerColor = MaterialTheme.colorScheme.primaryContainer
     val activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer
     val inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -498,8 +553,9 @@ private fun FloatingNavTabItem(
             .height(48.dp)
             .width(48.dp + labelWidth)
             .graphicsLayer {
-                scaleX = pressScale
-                scaleY = pressScale
+                scaleX = pressScale * enter.value.coerceAtLeast(0f)
+                scaleY = pressScale * enter.value.coerceAtLeast(0f)
+                alpha = enter.value.coerceIn(0f, 1f)
             }
             .clip(CircleShape)
             .clickable(
@@ -530,7 +586,11 @@ private fun FloatingNavTabItem(
                     ),
                     color = currentContentColor,
                     maxLines = 1,
-                    softWrap = false
+                    softWrap = false,
+                    modifier = Modifier.graphicsLayer {
+                        alpha = labelAlpha
+                        translationX = (1f - labelAlpha) * -8.dp.toPx()
+                    }
                 )
             }
         }
@@ -557,15 +617,28 @@ private fun TabCountBadge(color: Color, count: Int, scale: Float) {
             ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = if (count > 99) "99+" else count.toString(),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
-                fontWeight = FontWeight.ExtraBold
-            ),
-            color = color,
-            textAlign = TextAlign.Center
-        )
+        AnimatedContent(
+            targetState = count,
+            transitionSpec = {
+                val up = targetState > initialState
+                (slideInVertically(spring(dampingRatio = 0.75f, stiffness = 500f)) { if (up) it else -it } + fadeIn(tween(120)))
+                    .togetherWith(
+                        slideOutVertically(spring(dampingRatio = 0.75f, stiffness = 500f)) { if (up) -it else it } + fadeOut(tween(90))
+                    )
+                    .using(SizeTransform(clip = true))
+            },
+            label = "tab_count_roll"
+        ) { value ->
+            Text(
+                text = if (value > 99) "99+" else value.toString(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.ExtraBold
+                ),
+                color = color,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
@@ -649,14 +722,22 @@ private fun ExpressiveNavTabItem(
 
     val labelWeight = if (selected) FontWeight.Bold else FontWeight.Medium
 
+    // Staggered pop-in on first appearance
+    val enter = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(index * 55L)
+        enter.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 320f))
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxHeight()
             .graphicsLayer {
-                scaleX = pressScaleX
-                scaleY = pressScaleY
+                scaleX = pressScaleX * enter.value.coerceAtLeast(0f)
+                scaleY = pressScaleY * enter.value.coerceAtLeast(0f)
+                alpha = enter.value.coerceIn(0f, 1f)
                 translationY = activeLiftY.toPx()
             }
             .clip(RoundedCornerShape(16.dp))
