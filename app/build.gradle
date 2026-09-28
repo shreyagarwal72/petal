@@ -178,11 +178,14 @@ dependencies {
     implementation 'androidx.savedstate:savedstate-ktx:1.2.1'
 
     // Compose Dependencies
-    implementation platform('androidx.compose:compose-bom:2026.06.01')
+    implementation platform('androidx.compose:compose-bom:2026.09.00')
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
-    implementation 'androidx.compose.material3:material3:1.5.0-alpha17'
+    // Pinned alpha for Material 3 Expressive APIs. It MUST stay in step with the BOM's
+    // foundation/ui versions, otherwise text fields crash with AbstractMethodError
+    // (CustomStyle.applyStyle). Bump this and the BOM together.
+    implementation 'androidx.compose.material3:material3:1.5.0-alpha22'
     implementation 'androidx.compose.material:material-icons-extended'
     implementation 'androidx.activity:activity-compose:1.9.3'
     implementation 'androidx.media:media:1.7.0'
