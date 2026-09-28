@@ -467,11 +467,16 @@ fun PrivacySettingsScreenContent(
             }
         }
 
-        if (showPasswordsScreen) {
-            val act = context as? ComponentActivity
-            if (act != null) {
+        val passwordsActivity = context as? ComponentActivity
+        if (passwordsActivity != null) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showPasswordsScreen,
+                enter = com.petal.browser.ui.containment.PetalMotion.forwardEnter(),
+                exit = com.petal.browser.ui.containment.PetalMotion.backExit(),
+                modifier = Modifier.fillMaxSize()
+            ) {
                 PetalPasswordsScreen(
-                    activity = act,
+                    activity = passwordsActivity,
                     onNavigateBack = { showPasswordsScreen = false }
                 )
             }
