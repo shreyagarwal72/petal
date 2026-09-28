@@ -144,11 +144,11 @@ fun PetalDownloadConfirmationDialog(
                             height = 42.dp
                         )
 
-                        DropdownMenu(
+                        com.petal.browser.ui.containment.PetalPopupMenu(
                             expanded = splitMenuExpanded,
                             onDismissRequest = { splitMenuExpanded = false }
                         ) {
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Download with external downloader") },
                                 onClick = {
                                     splitMenuExpanded = false

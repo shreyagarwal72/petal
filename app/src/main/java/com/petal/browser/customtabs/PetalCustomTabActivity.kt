@@ -387,12 +387,12 @@ private fun CustomTabTopBar(
                         )
                     }
 
-                    DropdownMenu(
+                    com.petal.browser.ui.containment.PetalPopupMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
                         shape = RoundedCornerShape(18.dp)
                     ) {
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(text = "Share link", style = MaterialTheme.typography.bodyMedium) },
                             leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(20.dp)) },
                             onClick = {
@@ -400,7 +400,7 @@ private fun CustomTabTopBar(
                                 onShare()
                             }
                         )
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(text = "Copy link", style = MaterialTheme.typography.bodyMedium) },
                             leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(20.dp)) },
                             onClick = {
@@ -408,7 +408,7 @@ private fun CustomTabTopBar(
                                 onCopyUrl()
                             }
                         )
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = {
                                 Text(
                                     text = if (isDesktopMode) "Mobile site" else "Desktop site",
@@ -428,7 +428,7 @@ private fun CustomTabTopBar(
                             }
                         )
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = {
                                 Text(
                                     text = "Open in Petal Browser",

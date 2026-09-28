@@ -1174,6 +1174,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
+    }
 }
 
 // ── 6b. Greeting Tagline ─────────────────────────────────────────────────────

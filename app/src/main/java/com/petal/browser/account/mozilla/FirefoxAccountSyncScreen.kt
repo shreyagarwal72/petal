@@ -58,8 +58,6 @@ import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
-import com.petal.browser.ui.components.SettingsItem
-import com.petal.browser.ui.components.SwitchSettingItem
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
@@ -712,7 +710,7 @@ fun FirefoxAccountSyncScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    SwitchSettingItem(
+                                    com.petal.browser.ui.containment.PetalGroupControlRow(
                                         title = "Bookmarks",
                                         subtitle = "Sync local bookmarks with Firefox mobile and desktop",
                                         checked = syncBookmarks,
@@ -720,7 +718,7 @@ fun FirefoxAccountSyncScreen(
                                             syncBookmarks = checked
                                             fxaManager.setEngineEnabled(SyncEngine.BOOKMARKS, checked)
                                         },
-                                        shape = petalGroupShape(petalGroupPositionFor(0, syncItemsCount)),
+                                        position = petalGroupPositionFor(0, syncItemsCount),
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.Bookmark,
@@ -730,7 +728,7 @@ fun FirefoxAccountSyncScreen(
                                         }
                                     )
 
-                                    SwitchSettingItem(
+                                    com.petal.browser.ui.containment.PetalGroupControlRow(
                                         title = "Browsing History",
                                         subtitle = "Seamlessly sync history across your Firefox sessions",
                                         checked = syncHistory,
@@ -738,7 +736,7 @@ fun FirefoxAccountSyncScreen(
                                             syncHistory = checked
                                             fxaManager.setEngineEnabled(SyncEngine.HISTORY, checked)
                                         },
-                                        shape = petalGroupShape(petalGroupPositionFor(1, syncItemsCount)),
+                                        position = petalGroupPositionFor(1, syncItemsCount),
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.History,
@@ -748,7 +746,7 @@ fun FirefoxAccountSyncScreen(
                                         }
                                     )
 
-                                    SwitchSettingItem(
+                                    com.petal.browser.ui.containment.PetalGroupControlRow(
                                         title = "Open Tabs",
                                         subtitle = "Send and receive active browser tabs across devices",
                                         checked = syncTabs,
@@ -756,7 +754,7 @@ fun FirefoxAccountSyncScreen(
                                             syncTabs = checked
                                             fxaManager.setEngineEnabled(SyncEngine.TABS, checked)
                                         },
-                                        shape = petalGroupShape(petalGroupPositionFor(2, syncItemsCount)),
+                                        position = petalGroupPositionFor(2, syncItemsCount),
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.Tab,
@@ -787,7 +785,7 @@ fun FirefoxAccountSyncScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    SettingsItem(
+                                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
                                         title = "App & Profile Lock",
                                         subtitle = if (isLockActive) "Protection active • Fingerprint or Password" else "Require authentication on app startup",
                                         leadingIcon = {
@@ -797,11 +795,11 @@ fun FirefoxAccountSyncScreen(
                                                 tint = MaterialTheme.colorScheme.onPrimary
                                             )
                                         },
-                                        shape = petalGroupShape(petalGroupPositionFor(0, securityItemCount)),
+                                        position = petalGroupPositionFor(0, securityItemCount),
                                         onClick = { showAppLockConfigPage = true }
                                     )
 
-                                    SwitchSettingItem(
+                                    com.petal.browser.ui.containment.PetalGroupControlRow(
                                         title = "Auto-Clear Data on Exit",
                                         subtitle = "Automatically purge cache, history, and open tabs on exit",
                                         checked = isClearOnExit,
@@ -817,7 +815,7 @@ fun FirefoxAccountSyncScreen(
                                                 )
                                             }
                                         },
-                                        shape = petalGroupShape(petalGroupPositionFor(1, securityItemCount)),
+                                        position = petalGroupPositionFor(1, securityItemCount),
                                         leadingIcon = {
                                             Icon(
                                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
@@ -827,7 +825,7 @@ fun FirefoxAccountSyncScreen(
                                         }
                                     )
 
-                                    SwitchSettingItem(
+                                    com.petal.browser.ui.containment.PetalGroupControlRow(
                                         title = "HTTPS-Only Mode",
                                         subtitle = if (isHttpsOnly) "Active • HTTP automatically upgraded to HTTPS" else "Disabled • Insecure connections allowed",
                                         checked = isHttpsOnly,
@@ -835,7 +833,7 @@ fun FirefoxAccountSyncScreen(
                                             isHttpsOnly = checked
                                             sp.edit().putBoolean("sp_https_only", checked).apply()
                                         },
-                                        shape = petalGroupShape(petalGroupPositionFor(2, securityItemCount)),
+                                        position = petalGroupPositionFor(2, securityItemCount),
                                         leadingIcon = {
                                             Icon(
                                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
@@ -865,7 +863,7 @@ fun FirefoxAccountSyncScreen(
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Surface(
-                                        shape = petalGroupShape(petalGroupPositionFor(0, storageItemCount)),
+                                        position = petalGroupPositionFor(0, storageItemCount),
                                         color = MaterialTheme.colorScheme.surfaceContainerLow,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
@@ -964,7 +962,7 @@ fun FirefoxAccountSyncScreen(
                                         }
                                     }
 
-                                    SettingsItem(
+                                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
                                         title = "Clear Browsing Data",
                                         subtitle = "Select & remove history, cookies, web storage, autofill & permissions",
                                         leadingIcon = {
@@ -974,7 +972,7 @@ fun FirefoxAccountSyncScreen(
                                                 tint = MaterialTheme.colorScheme.onPrimary
                                             )
                                         },
-                                        shape = petalGroupShape(petalGroupPositionFor(1, storageItemCount)),
+                                        position = petalGroupPositionFor(1, storageItemCount),
                                         onClick = { showClearDataDialog = true }
                                     )
                                 }

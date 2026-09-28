@@ -145,21 +145,6 @@ fun PetalExpressiveAlertDialog(
 }
 
 @Composable
-fun PetalExpressiveDropdownMenu(
-    expanded: Boolean,
-    onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    com.petal.browser.ui.containment.PetalPopupMenu(
-        expanded = expanded,
-        onDismissRequest = onDismissRequest,
-        modifier = modifier,
-        content = content
-    )
-}
-
-@Composable
 fun PetalExpressiveMenuItem(
     text: String,
     onClick: () -> Unit,

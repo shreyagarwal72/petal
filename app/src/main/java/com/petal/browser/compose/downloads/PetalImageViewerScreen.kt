@@ -562,7 +562,7 @@ private fun ZoomableImagePage(
                 error = {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            com.petal.browser.ui.components.com.petal.browser.ui.containment.PetalGroupIconBadge(
+                            com.petal.browser.ui.containment.PetalGroupIconBadge(
                                 shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
                                 containerColor = Color.White.copy(alpha = 0.12f),
                                 contentColor = Color.White.copy(alpha = 0.7f),
@@ -708,16 +708,16 @@ private fun ImageViewerTopBar(
                 IconButton(onClick = { moreMenuExpanded = true }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = "More", tint = Color.White)
                 }
-                DropdownMenu(
+                com.petal.browser.ui.containment.PetalPopupMenu(
                     expanded    = moreMenuExpanded,
                     onDismissRequest = { moreMenuExpanded = false },
                 ) {
-                    DropdownMenuItem(
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = { Text("Open in external app") },
                         leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) },
                         onClick = { moreMenuExpanded = false; onOpenExternal() },
                     )
-                    DropdownMenuItem(
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = { Text("Copy URL") },
                         leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) },
                         onClick = { moreMenuExpanded = false; onCopyUrl() },

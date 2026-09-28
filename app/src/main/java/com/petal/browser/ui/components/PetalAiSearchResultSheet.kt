@@ -363,13 +363,13 @@ fun PetalAiSearchResultSheet(
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
                     )
 
-                    DropdownMenu(
+                    com.petal.browser.ui.containment.PetalPopupMenu(
                         expanded = providerMenuExpanded,
                         onDismissRequest = { providerMenuExpanded = false },
                         shape = RoundedCornerShape(20.dp)
                     ) {
                         AiProvider.entries.forEach { provider ->
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = {
                                     Text(
                                         provider.displayName,

@@ -56,8 +56,6 @@ import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.components.PetalAboutDeveloperBridge
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.components.bouncyClickable
-import com.petal.browser.ui.components.SettingsItem
-import com.petal.browser.ui.components.SwitchSettingItem
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -534,7 +532,7 @@ private fun RenderUserProfileContent(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     // Dedicated App & Profile Lock Config Navigation Row
-                    SettingsItem(
+                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
                         title = "App & Profile Lock",
                         subtitle = if (isLockActive) "Protection active • Fingerprint or Password" else "Require authentication on app startup",
                         leadingIcon = {
@@ -544,12 +542,12 @@ private fun RenderUserProfileContent(
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         },
-                        shape = petalGroupShape(petalGroupPositionFor(0, securityItemCount)),
+                        position = petalGroupPositionFor(0, securityItemCount),
                         onClick = { onOpenAppLockConfig() }
                     )
 
                     // Auto-Clear on Exit Preference
-                    SwitchSettingItem(
+                    com.petal.browser.ui.containment.PetalGroupControlRow(
                         title = "Auto-Clear Data on Exit",
                         subtitle = "Automatically purge cache, history, and open tabs on exit (keeps account logins safe)",
                         checked = isClearOnExit,
@@ -565,7 +563,7 @@ private fun RenderUserProfileContent(
                                 )
                             }
                         },
-                        shape = petalGroupShape(petalGroupPositionFor(1, securityItemCount)),
+                        position = petalGroupPositionFor(1, securityItemCount),
                         leadingIcon = {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
@@ -576,7 +574,7 @@ private fun RenderUserProfileContent(
                     )
 
                     // HTTPS-Only Mode Status
-                    SwitchSettingItem(
+                    com.petal.browser.ui.containment.PetalGroupControlRow(
                         title = "HTTPS-Only Mode",
                         subtitle = if (isHttpsOnly) "Active • HTTP automatically upgraded to HTTPS" else "Disabled • Insecure connections allowed",
                         checked = isHttpsOnly,
@@ -584,7 +582,7 @@ private fun RenderUserProfileContent(
                             isHttpsOnly = checked
                             sp.edit().putBoolean("sp_https_only", checked).apply()
                         },
-                        shape = petalGroupShape(petalGroupPositionFor(2, securityItemCount)),
+                        position = petalGroupPositionFor(2, securityItemCount),
                         leadingIcon = {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
@@ -656,7 +654,7 @@ private fun RenderUserProfileContent(
                 ) {
                     // Item 0: Web Cache & App Storage with Clear action
                     Surface(
-                        shape = petalGroupShape(petalGroupPositionFor(0, storageItemCount)),
+                        position = petalGroupPositionFor(0, storageItemCount),
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -756,7 +754,7 @@ private fun RenderUserProfileContent(
                     }
 
                     // Item 1: Clear Browsing Data
-                    SettingsItem(
+                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
                         title = "Clear Browsing Data",
                         subtitle = "Select & remove history, cookies, web storage, autofill & permissions",
                         leadingIcon = {
@@ -766,7 +764,7 @@ private fun RenderUserProfileContent(
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         },
-                        shape = petalGroupShape(petalGroupPositionFor(1, storageItemCount)),
+                        position = petalGroupPositionFor(1, storageItemCount),
                         onClick = { showClearDataDialog = true }
                     )
                 }

@@ -530,12 +530,12 @@ private fun PetalMediaSheet(
                                             modifier = Modifier.fillMaxWidth()
                                         )
 
-                                        DropdownMenu(
+                                        com.petal.browser.ui.containment.PetalPopupMenu(
                                             expanded = formatMenuOpen,
                                             onDismissRequest = { formatMenuOpen = false }
                                         ) {
                                             info.formats.forEach { fmt ->
-                                                DropdownMenuItem(
+                                                com.petal.browser.ui.containment.PetalPopupMenuItem(
                                                     text = { Text(fmt.label) },
                                                     onClick = {
                                                         socialState = SocialState.Ready(info, fmt)

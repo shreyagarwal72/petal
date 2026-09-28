@@ -427,13 +427,13 @@ fun PetalSiteInfoBottomSheet(
                             height = 38.dp
                         )
 
-                        DropdownMenu(
+                        com.petal.browser.ui.containment.PetalPopupMenu(
                             expanded = siteResetExpanded,
                             onDismissRequest = { siteResetExpanded = false },
                             shape = RoundedCornerShape(18.dp),
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Clear Cookies Only") },
                                 leadingIcon = {
                                     Icon(Icons.Rounded.Cookie, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -447,7 +447,7 @@ fun PetalSiteInfoBottomSheet(
                                     } catch (_: Exception) {}
                                 }
                             )
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Reset Site Permissions") },
                                 leadingIcon = {
                                     Icon(Icons.Rounded.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -469,7 +469,7 @@ fun PetalSiteInfoBottomSheet(
                                     } catch (_: Exception) {}
                                 }
                             )
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Clear Storage & Cache") },
                                 leadingIcon = {
                                     Icon(Icons.Rounded.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)

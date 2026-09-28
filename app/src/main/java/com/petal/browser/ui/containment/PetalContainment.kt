@@ -1,6 +1,10 @@
 package com.petal.browser.ui.containment
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -28,6 +32,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.Check as RoundedCheck
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -36,6 +43,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
@@ -57,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.tween
 
 enum class PetalGroupPosition { SINGLE, TOP, MIDDLE, BOTTOM }
 
@@ -193,6 +203,88 @@ fun PetalGroupToggleRow(
 }
 
 @Composable
+fun PetalGroupControlRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    position: PetalGroupPosition,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val source = remember { MutableInteractionSource() }
+    val scale = rememberPetalGroupPressScale(source)
+    Card(
+        onClick = { if (enabled) onCheckedChange(!checked) },
+        enabled = enabled,
+        shape = petalGroupShape(position),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = source,
+        modifier = modifier.fillMaxWidth().scale(scale),
+    ) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (leadingIcon != null) {
+                PetalGroupIconBadge(
+                    shape = RoundedCornerShape(14.dp),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) { leadingIcon() }
+                Spacer(Modifier.width(14.dp))
+            }
+            Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+                if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = { if (enabled) onCheckedChange(it) },
+                enabled = enabled,
+                thumbContent = {
+                    AnimatedContent(targetState = checked, transitionSpec = { fadeIn(tween(100)) togetherWith fadeOut(tween(100)) }, label = "petalSwitchThumb") { isChecked ->
+                        Icon(if (isChecked) Icons.Filled.Check else Icons.Filled.Close, null, Modifier.size(SwitchDefaults.IconSize))
+                    }
+                },
+                colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary, checkedIconColor = MaterialTheme.colorScheme.primary),
+            )
+        }
+    }
+}
+
+@Composable
+fun PetalGroupNavigationRow(
+    title: String,
+    subtitle: String,
+    position: PetalGroupPosition,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    enabled: Boolean = true,
+) {
+    PetalGroupListRow(
+        position = position,
+        onClick = { if (enabled) onClick() },
+        modifier = modifier.alpha(if (enabled) 1f else 0.38f),
+        leading = {
+            if (leadingIcon != null) PetalGroupIconBadge(
+                shape = RoundedCornerShape(14.dp),
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ) { leadingIcon() }
+            else PetalGroupIconBadge(Icons.Filled.Settings)
+        },
+        content = {
+            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        },
+        trailing = trailingIcon ?: { Icon(Icons.Filled.ChevronRight, null, tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)) },
+    )
+}
+
+@Composable
 fun PetalGroupToggleRow(
     title: String,
     subtitle: String? = null,
@@ -223,7 +315,7 @@ fun PetalGroupToggleRow(
             }
             com.petal.browser.ui.components.IconSwitch(
                 checked = checked,
-                icon = androidx.compose.material.icons.Icons.Rounded.Check,
+                icon = RoundedCheck,
                 onCheckedChange = onCheckedChange,
                 enabled = enabled,
             )
@@ -275,7 +367,7 @@ fun PetalConnectedButtonGroup(items: List<PetalConnectedButtonItem>, selectedInd
     val haptics = LocalHapticFeedback.current
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy((-1).dp), verticalAlignment = Alignment.CenterVertically) {
         items.forEachIndexed { index, item ->
-            val selected = item.selected || index == selectedIndex
+            val selected = item.selected || (selectedIndex >= 0 && index == selectedIndex)
             val shape = petalConnectedShape(index, items.size)
             Surface(onClick = { haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onSelect(index) }, modifier = Modifier.weight(1f),
                 shape = shape, color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -297,6 +389,7 @@ fun PetalFloatingToolbar(modifier: Modifier = Modifier, elevation: Dp = 6.dp, co
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun PetalSheet(
     onDismissRequest: () -> Unit,

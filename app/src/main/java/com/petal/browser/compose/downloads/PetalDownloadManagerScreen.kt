@@ -526,7 +526,7 @@ fun PetalDownloadManagerScreen(
                                 onDismissRequest = { sortMenuExpanded = false }
                             ) {
                                 DownloadSortOption.values().forEach { option ->
-                                    DropdownMenuItem(
+                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                                         text = {
                                             Text(
                                                 text = when (option) {
@@ -733,7 +733,7 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                         else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
                     }
                     com.petal.browser.ui.containment.PetalPopupMenu(expanded = menuItem?.id == item.id, onDismissRequest = { menuItem = null }) {
-                        DropdownMenuItem(text = { Text("View Image") }, leadingIcon = { Icon(Icons.Rounded.Image, null) }, onClick = {
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text("View Image") }, leadingIcon = { Icon(Icons.Rounded.Image, null) }, onClick = {
                             menuItem = null
                             val activity = context as? com.petal.browser.activity.BrowserActivity
                             if (activity != null) {
@@ -746,10 +746,10 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                                 activity.runOnUiThread { activity.presentComposeScreen(view) }
                             } else openDownloadedFile(context, item)
                         })
-                        DropdownMenuItem(text = { Text("Open in app") }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) }, onClick = { menuItem = null; openDownloadedFile(context, item) })
-                        DropdownMenuItem(text = { Text("Share") }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { menuItem = null; shareDownloadedFile(context, item) })
-                        DropdownMenuItem(text = { Text("Copy Link") }, leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { menuItem = null; copyDownloadLink(context, item.fileUrl) })
-                        DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) }, onClick = { menuItem = null; deleteDownloadedFile(context, item) })
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text("Open in app") }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) }, onClick = { menuItem = null; openDownloadedFile(context, item) })
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text("Share") }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { menuItem = null; shareDownloadedFile(context, item) })
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text("Copy Link") }, leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { menuItem = null; copyDownloadLink(context, item.fileUrl) })
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) }, onClick = { menuItem = null; deleteDownloadedFile(context, item) })
                     }
                 }
             }
@@ -975,7 +975,7 @@ private fun DownloadRowItem(
                         onDismissRequest = { menuExpanded = false }
                     ) {
                         if (item.status == DownloadManager.STATUS_RUNNING) {
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Pause") },
                                 leadingIcon = { Icon(Icons.Rounded.Pause, contentDescription = null) },
                                 onClick = {
@@ -985,7 +985,7 @@ private fun DownloadRowItem(
                             )
                         }
                         if (item.status == DownloadManager.STATUS_PAUSED) {
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Resume") },
                                 leadingIcon = { Icon(Icons.Rounded.PlayArrow, contentDescription = null) },
                                 onClick = {
@@ -995,7 +995,7 @@ private fun DownloadRowItem(
                             )
                         }
                         if (item.status == DownloadManager.STATUS_FAILED) {
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Retry") },
                                 leadingIcon = { Icon(Icons.Rounded.Refresh, contentDescription = null) },
                                 onClick = {
@@ -1005,7 +1005,7 @@ private fun DownloadRowItem(
                             )
                         }
                         if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Open") },
                                 leadingIcon = { Icon(Icons.Rounded.OpenInNew, contentDescription = null) },
                                 onClick = {
@@ -1013,7 +1013,7 @@ private fun DownloadRowItem(
                                     onOpenFile()
                                 }
                             )
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Share") },
                                 leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
                                 onClick = {
@@ -1021,7 +1021,7 @@ private fun DownloadRowItem(
                                     shareDownloadedFile(context, item)
                                 }
                             )
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Rename") },
                                 leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                                 onClick = {
@@ -1030,7 +1030,7 @@ private fun DownloadRowItem(
                                 }
                             )
                         }
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text("Copy Link") },
                             leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
                             onClick = {
@@ -1038,7 +1038,7 @@ private fun DownloadRowItem(
                                 copyDownloadLink(context, item.fileUrl)
                             }
                         )
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
                             leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                             onClick = {
@@ -1089,7 +1089,7 @@ private fun DownloadProgressRing(
 
     val avatarShape = remember(item.id) {
         val shapes = listOf(
-            com.petal.browser.ui.components.ScallopedShape(lobes = 8, depth = 0.16f),
+            RoundedCornerShape(22.dp),
             com.petal.browser.compose.home.CloverShape,
             com.petal.browser.compose.home.StarburstShape,
             com.petal.browser.compose.home.ArchShape,

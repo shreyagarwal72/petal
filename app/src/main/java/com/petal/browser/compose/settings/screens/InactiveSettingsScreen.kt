@@ -8,6 +8,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +23,7 @@ import com.petal.browser.compose.tabs.PetalInactiveTabManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.components.SettingsSection
+import com.petal.browser.ui.containment.PetalSettingsSection
 
 /**
  * Inactive Tabs Settings Screen — Material 3 Expressive redesign.
@@ -76,16 +78,9 @@ fun InactiveSettingsScreen(
             ) {
 
                 // ── Inactivity Threshold ──
-                SettingsSection(
+                PetalSettingsSection(
                     title = "Inactivity Threshold",
-                    icon = {
-                        Icon(
-                            Icons.Rounded.Timer,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    icon = Icons.Filled.Timer,
                 ) {
                     Text(
                         text = "Move tabs that haven't been opened for this long to the Inactive section.",
@@ -190,16 +185,9 @@ fun InactiveSettingsScreen(
                 }
 
                 // ── Auto-Archive ──
-                SettingsSection(
+                PetalSettingsSection(
                     title = "Auto-Archive",
-                    icon = {
-                        Icon(
-                            Icons.Rounded.Archive,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    icon = Icons.Filled.Archive,
                 ) {
                     // Archive duplicate tabs
                     Surface(

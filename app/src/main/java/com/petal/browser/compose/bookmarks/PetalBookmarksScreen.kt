@@ -225,7 +225,7 @@ fun PetalBookmarksScreen(
                                     expanded = overflowMenuExpanded,
                                     onDismissRequest = { overflowMenuExpanded = false }
                                 ) {
-                                    DropdownMenuItem(
+                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                                         text = {
                                             Text(
                                                 "Clear All Bookmarks",

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,15 +36,8 @@ fun PetalOptionsSheet(
     onSettings: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-        }
     ) {
         Column(
             modifier = Modifier
@@ -51,12 +45,7 @@ fun PetalOptionsSheet(
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Browser Options",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 4.dp).entrance(index = 0)
-            )
+            com.petal.browser.ui.containment.PetalSectionLabel("Browser Options", Modifier.entrance(index = 0))
 
             // Top Quick Grid Action Tiles
             Row(
@@ -65,21 +54,29 @@ fun PetalOptionsSheet(
                     .entrance(index = 1),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OptionTile(Icons.Rounded.Add, "New Tab", Modifier.weight(1f)) {
-                    onNewTab()
-                    onDismiss()
+                com.petal.browser.ui.containment.PetalActionCard(onClick = { onNewTab(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.Add)
+                        Text("New Tab", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    }
                 }
-                OptionTile(Icons.Rounded.Bookmarks, "Bookmarks", Modifier.weight(1f)) {
-                    onBookmarks()
-                    onDismiss()
+                com.petal.browser.ui.containment.PetalActionCard(onClick = { onBookmarks(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.Bookmarks)
+                        Text("Bookmarks", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    }
                 }
-                OptionTile(Icons.Rounded.History, "History", Modifier.weight(1f)) {
-                    onHistory()
-                    onDismiss()
+                com.petal.browser.ui.containment.PetalActionCard(onClick = { onHistory(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.History)
+                        Text("History", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    }
                 }
-                OptionTile(Icons.Rounded.Downloading, "Downloads", Modifier.weight(1f)) {
-                    onDownloads()
-                    onDismiss()
+                com.petal.browser.ui.containment.PetalActionCard(onClick = { onDownloads(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.Download)
+                        Text("Downloads", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    }
                 }
             }
 
@@ -88,72 +85,30 @@ fun PetalOptionsSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .entrance(index = 2),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                SwitchSettingItem(
-                    title = "Desktop Mode",
-                    subtitle = "Request desktop version of websites",
-                    checked = isDesktopSite,
-                    onCheckedChange = onDesktopSiteChange,
-                    shape = getGroupItemShape(0, 2),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Rounded.DesktopWindows,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                )
-
-                SwitchSettingItem(
-                    title = "Private Browsing",
-                    subtitle = "Don't save history or cookies",
-                    checked = isIncognito,
-                    onCheckedChange = onIncognitoChange,
-                    shape = getGroupItemShape(1, 2),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Rounded.Security,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                )
+                com.petal.browser.ui.containment.PetalGroupToggleRow(Icons.Filled.DesktopWindows, "Desktop Mode", "Request desktop version of websites", isDesktopSite, onDesktopSiteChange, com.petal.browser.ui.containment.PetalGroupPosition.TOP)
+                com.petal.browser.ui.containment.PetalGroupToggleRow(Icons.Filled.Security, "Private Browsing", "Don't save history or cookies", isIncognito, onIncognitoChange, com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM)
             }
 
             // Action Items Group with RvSystemMonitor variable corner shape
             val actionItems = listOf(
-                Triple(Icons.Rounded.Search, "Find in Page", onFindInPage),
-                Triple(Icons.Rounded.Share, "Share Web Page", onShare),
-                Triple(Icons.Rounded.Settings, "Browser Settings", onSettings)
+                Triple(Icons.Filled.Search, "Find in Page", onFindInPage),
+                Triple(Icons.Filled.Share, "Share Web Page", onShare),
+                Triple(Icons.Filled.Settings, "Browser Settings", onSettings)
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .entrance(index = 3),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 actionItems.forEachIndexed { index, (icon, label, action) ->
-                    SettingsItem(
+                    com.petal.browser.ui.containment.PetalGroupRow(
+                        icon = icon,
                         title = label,
-                        subtitle = "",
-                        shape = getGroupItemShape(index, actionItems.size),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        },
-                        trailingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        },
+                        position = com.petal.browser.ui.containment.petalGroupPositionFor(index, actionItems.size),
                         onClick = {
                             action()
                             onDismiss()
@@ -163,54 +118,6 @@ fun PetalOptionsSheet(
             }
 
             Spacer(Modifier.height(16.dp))
-        }
-    }
-}
-
-@Composable
-private fun OptionTile(
-    icon: ImageVector,
-    label: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = modifier
-            .height(76.dp)
-            .bouncyClickable(scaleDown = 0.92f, onClick = onClick)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize().padding(6.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1
-            )
         }
     }
 }

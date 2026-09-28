@@ -37,6 +37,7 @@ import com.petal.browser.account.mozilla.FirefoxAccountSyncScreen
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.containment.PetalSettingsSection
 
 @Composable
 fun MediaSettingsScreen(

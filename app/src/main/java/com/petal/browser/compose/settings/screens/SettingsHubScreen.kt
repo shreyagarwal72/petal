@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Search as FilledSearch
 import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
@@ -209,7 +208,7 @@ fun SettingsHubScreen(
                         PetalGroupListRow(
                             position = petalGroupPositionFor(index, matchingItems.size),
                             onClick = { onCategoryClick(item.category, item.id) },
-                            leading = { PetalGroupIconBadge(FilledSearch) },
+                            leading = { PetalGroupIconBadge(Icons.Filled.Search) },
                             content = {
                                 Text(item.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -290,8 +289,3 @@ fun SettingsHubScreen(
         }
     }
 }
-
-/**
- * Card representing a matching settings preference entry within search results.
- */
-@Composable

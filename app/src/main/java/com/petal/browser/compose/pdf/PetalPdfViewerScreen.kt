@@ -637,7 +637,7 @@ fun PetalPdfViewerScreen(
                                 modifier = Modifier.padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                com.petal.browser.ui.components.com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                com.petal.browser.ui.containment.PetalGroupIconBadge(
                                     shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
                                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                                     contentColor = MaterialTheme.colorScheme.error,
@@ -1546,33 +1546,33 @@ private fun PdfViewerTopBar(
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                DropdownMenu(
+                com.petal.browser.ui.containment.PetalPopupMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                     shape = RoundedCornerShape(16.dp),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
-                    DropdownMenuItem(
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = { Text("Edit & Annotate") },
                         leadingIcon = { Icon(Icons.Rounded.Edit, null) },
                         onClick = { menuExpanded = false; onEditMode() }
                     )
-                    DropdownMenuItem(
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = { Text("Jump to page") },
                         leadingIcon = { Icon(Icons.Rounded.FindInPage, null) },
                         onClick = { menuExpanded = false; onJumpPage() }
                     )
-                    DropdownMenuItem(
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = { Text("Print") },
                         leadingIcon = { Icon(Icons.Rounded.Print, null) },
                         onClick = { menuExpanded = false; onPrint() }
                     )
-                    DropdownMenuItem(
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = { Text("Share") },
                         leadingIcon = { Icon(Icons.Rounded.Share, null) },
                         onClick = { menuExpanded = false; onShare() }
                     )
-                    DropdownMenuItem(
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = { Text("Document info") },
                         leadingIcon = { Icon(Icons.Rounded.Info, null) },
                         onClick = { menuExpanded = false; onInfo() }

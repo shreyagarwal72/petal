@@ -150,7 +150,7 @@ fun PetalClearBrowsingDataDialog(
                     height = 44.dp
                 )
 
-                PetalExpressiveDropdownMenu(
+                com.petal.browser.ui.containment.PetalPopupMenu(
                     expanded = splitMenuExpanded,
                     onDismissRequest = { splitMenuExpanded = false }
                 ) {

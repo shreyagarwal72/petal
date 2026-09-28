@@ -262,13 +262,13 @@ fun PetalAiResearchSheet(
                             )
                         )
 
-                        DropdownMenu(
+                        com.petal.browser.ui.containment.PetalPopupMenu(
                             expanded = providerMenuExpanded,
                             onDismissRequest = { providerMenuExpanded = false },
                             modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         ) {
                             AiProvider.entries.forEach { provider ->
-                                DropdownMenuItem(
+                                com.petal.browser.ui.containment.PetalPopupMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
@@ -347,13 +347,13 @@ fun PetalAiResearchSheet(
                                 )
                             )
 
-                            DropdownMenu(
+                            com.petal.browser.ui.containment.PetalPopupMenu(
                                 expanded = modelMenuExpanded,
                                 onDismissRequest = { modelMenuExpanded = false },
                                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
                             ) {
                                 selectedProvider.availableModels.forEach { model ->
-                                    DropdownMenuItem(
+                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                                         text = { Text(model) },
                                         onClick = {
                                             selectedModel = model
@@ -663,12 +663,12 @@ fun PetalAiResearchSheet(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                DropdownMenu(
+                com.petal.browser.ui.containment.PetalPopupMenu(
                     expanded = modeSplitMenuExpanded,
                     onDismissRequest = { modeSplitMenuExpanded = false }
                 ) {
                     ResearchMode.values().forEach { mode ->
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(mode.title.ifBlank { "Custom Query" }) },
                             onClick = {
                                 modeSplitMenuExpanded = false

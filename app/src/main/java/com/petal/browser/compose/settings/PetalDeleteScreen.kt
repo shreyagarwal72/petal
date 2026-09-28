@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  * Material 3 Expressive Clear Browsing Data / Delete History Screen for Petal Browser.
  * Fully follows app theme, color scheme, expressiveness, expressive feature tiles,
- * and RvSystemMonitor containment styling with getGroupItemShape and SwitchSettingItem.
+ * with Petal's shared grouped toggle rows.
  */
 
 package com.petal.browser.compose.settings
@@ -43,7 +43,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.components.SwitchSettingItem
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -220,7 +219,7 @@ fun PetalDeleteScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        SwitchSettingItem(
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.album_title_history),
                             subtitle = "Clear visited web pages and address bar history",
                             checked = clearHistory,
@@ -228,7 +227,7 @@ fun PetalDeleteScreen(
                                 clearHistory = it
                                 sp.edit().putBoolean("sp_clear_history", it).apply()
                             },
-                            shape = petalGroupShape(PetalGroupPosition.TOP),
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.History,
@@ -238,7 +237,7 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        SwitchSettingItem(
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.clear_title_cache),
                             subtitle = "Frees up space by clearing cached images and files",
                             checked = clearCache,
@@ -246,7 +245,7 @@ fun PetalDeleteScreen(
                                 clearCache = it
                                 sp.edit().putBoolean("sp_clear_cache", it).apply()
                             },
-                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.CleaningServices,
@@ -256,7 +255,7 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        SwitchSettingItem(
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.setting_title_dom),
                             subtitle = "Local website data and offline storage",
                             checked = clearIndexedDB,
@@ -264,7 +263,7 @@ fun PetalDeleteScreen(
                                 clearIndexedDB = it
                                 sp.edit().putBoolean("sp_clearIndexedDB", it).apply()
                             },
-                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Storage,
@@ -274,7 +273,7 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        SwitchSettingItem(
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.setting_title_cookie),
                             subtitle = context.getString(R.string.setting_summary_cookie_delete),
                             checked = clearCookie,
@@ -282,7 +281,7 @@ fun PetalDeleteScreen(
                                 clearCookie = it
                                 sp.edit().putBoolean("sp_clear_cookie", it).apply()
                             },
-                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Cookie,
@@ -292,7 +291,7 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        SwitchSettingItem(
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.title_appDatabase),
                             subtitle = context.getString(R.string.setting_backup_sumDatabase),
                             checked = clearDatabase,
@@ -300,7 +299,7 @@ fun PetalDeleteScreen(
                                 clearDatabase = it
                                 sp.edit().putBoolean("sp_deleteDatabase", it).apply()
                             },
-                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.FolderSpecial,
@@ -310,7 +309,7 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        SwitchSettingItem(
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.setting_label),
                             subtitle = context.getString(R.string.setting_backup_sumSettings),
                             checked = clearSettings,
@@ -318,7 +317,7 @@ fun PetalDeleteScreen(
                                 clearSettings = it
                                 sp.edit().putBoolean("sp_clear_settings", it).apply()
                             },
-                            shape = petalGroupShape(PetalGroupPosition.MIDDLE),
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Tune,
@@ -328,7 +327,7 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        SwitchSettingItem(
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
                             title = context.getString(R.string.clear_title_quit),
                             subtitle = "Automatically clear history, cache, and open tabs on exit",
                             checked = clearQuit,
@@ -336,7 +335,7 @@ fun PetalDeleteScreen(
                                 clearQuit = it
                                 sp.edit().putBoolean("sp_clear_quit", it).putBoolean("sp_clear_on_exit", it).apply()
                             },
-                            shape = petalGroupShape(PetalGroupPosition.BOTTOM),
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.PowerSettingsNew,

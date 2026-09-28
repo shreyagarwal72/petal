@@ -493,11 +493,11 @@ fun PetalTabSwitcherContent(
                             )
                         }
 
-                        DropdownMenu(
+                        com.petal.browser.ui.containment.PetalPopupMenu(
                             expanded = showOverflowMenu,
                             onDismissRequest = { showOverflowMenu = false }
                         ) {
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("New Tab") },
                                 leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                                 onClick = {
@@ -505,7 +505,7 @@ fun PetalTabSwitcherContent(
                                     onNewTab()
                                 }
                             )
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Close All Tabs", color = MaterialTheme.colorScheme.error) },
                                 leadingIcon = { Icon(Icons.Rounded.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                 onClick = {

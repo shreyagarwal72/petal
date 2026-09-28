@@ -54,6 +54,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.NorthWest
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.CenterFocusWeak
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -517,7 +520,7 @@ fun PetalOmniboxPage(
                                                 )
                                             }
 
-                                            DropdownMenu(
+                                            com.petal.browser.ui.containment.PetalPopupMenu(
                                                 expanded = showEngineMenu,
                                                 onDismissRequest = { showEngineMenu = false },
                                                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -531,7 +534,7 @@ fun PetalOmniboxPage(
                                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                                                 allEngines.forEach { engine ->
                                                     val isSelected = engine.index == (currentEngineIndexStr.toIntOrNull() ?: 0)
-                                                    DropdownMenuItem(
+                                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                                                         text = {
                                                             Row(
                                                                 verticalAlignment = Alignment.CenterVertically,
@@ -942,8 +945,8 @@ fun PetalOmniboxPage(
 
                         // Suggestions List - fills the remaining space above the keyboard with Material 3 Expressive containment
                         if (suggestions.isNotEmpty()) {
-                            PetalContainmentSurface(
-                                shape = RoundedCornerShape(24.dp),
+                            com.petal.browser.ui.containment.PetalHeroCard(
+                                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -979,17 +982,18 @@ fun PetalOmniboxPage(
                                              items = suggestions,
                                              key = { _, item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
                                          ) { index, item ->
-                                             val itemShape = getGroupItemShape(
-                                                 index = index,
-                                                 count = suggestions.size,
-                                                 topCorner = 16.dp,
-                                                 bottomCorner = 16.dp,
-                                                 middleCorner = 6.dp,
-                                                 singleCorner = 16.dp
-                                             )
-                                             PetalContainmentSurface(
-                                                 shape = itemShape,
-                                                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                             com.petal.browser.ui.containment.PetalGroupListRow(
+                                                 position = com.petal.browser.ui.containment.petalGroupPositionFor(index, suggestions.size),
+                                                 onClick = {
+                                                     val trimmed = item.query.trim()
+                                                     if (trimmed.isNotEmpty()) submitSearch(trimmed)
+                                                 },
+                                                 onLongClick = {
+                                                     try {
+                                                         com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                                     } catch (ignored: Exception) {}
+                                                     suggestionToRemove = item
+                                                 },
                                                  modifier = Modifier
                                                      .fillMaxWidth()
                                                      // Rows fade in/out and slide smoothly into their
@@ -1003,76 +1007,26 @@ fun PetalOmniboxPage(
                                                              dampingRatio = Spring.DampingRatioNoBouncy,
                                                              stiffness = Spring.StiffnessMediumLow
                                                          )
+                                                     ),
+                                                 leading = {
+                                                     com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                                         icon = if (item.isHistory) Icons.Filled.History else Icons.Filled.Search,
+                                                         container = if (item.isHistory) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
+                                                         tint = if (item.isHistory) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                                                      )
-                                                     .clip(itemShape)
-                                                    .combinedClickable(
-                                                        onClick = {
-                                                            val trimmed = item.query.trim()
-                                                            if (trimmed.isNotEmpty()) {
-                                                                submitSearch(trimmed)
-                                                            }
-                                                        },
-                                                        onLongClick = {
-                                                            try {
-                                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                                                            } catch (ignored: Exception) {}
-                                                            suggestionToRemove = item
-                                                        }
-                                                    )
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    // Contained icon badge
-                                                    Surface(
-                                                        shape = CircleShape,
-                                                        color = if (item.isHistory) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                                        modifier = Modifier.size(34.dp)
-                                                    ) {
-                                                        Box(contentAlignment = Alignment.Center) {
-                                                            Icon(
-                                                                imageVector = if (item.isHistory) Icons.Rounded.History else Icons.Rounded.Search,
-                                                                contentDescription = null,
-                                                                tint = if (item.isHistory) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                modifier = Modifier.size(18.dp)
-                                                            )
-                                                        }
-                                                    }
-
-                                                    Spacer(Modifier.width(14.dp))
-
-                                                    // Truncate at the end so the beginning of every
-                                                    // history/search suggestion remains intact.
-                                                    Text(
-                                                        text = item.query,
-                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                        color = MaterialTheme.colorScheme.onSurface,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis,
-                                                        modifier = Modifier.weight(1f)
-                                                    )
-
-                                                    IconButton(
-                                                        onClick = {
-                                                            queryState = TextFieldValue(
-                                                                text = item.query,
-                                                                selection = TextRange(item.query.length)
-                                                            )
-                                                        },
-                                                        modifier = Modifier.size(32.dp)
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Rounded.NorthWest,
-                                                            contentDescription = "Insert query into omnibox",
-                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                                            modifier = Modifier.size(18.dp)
-                                                        )
-                                                    }
-                                                }
-                                            }
+                                                 },
+                                                 content = {
+                                                     Text(item.query, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                 },
+                                                 trailing = {
+                                                     IconButton(
+                                                         onClick = { queryState = TextFieldValue(text = item.query, selection = TextRange(item.query.length)) },
+                                                         modifier = Modifier.size(40.dp),
+                                                     ) {
+                                                         Icon(Icons.Filled.NorthWest, contentDescription = "Insert query into omnibox", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                                     }
+                                                 },
+                                             )
                                         }
                                     }
                                 }

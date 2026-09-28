@@ -741,7 +741,7 @@ private fun ExtensionRow(
                 }
                 com.petal.browser.ui.containment.PetalPopupMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     if (extension.optionsPageUrl != null) {
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text("Settings") },
                             leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
                             onClick = {
@@ -750,7 +750,7 @@ private fun ExtensionRow(
                             }
                         )
                     }
-                    DropdownMenuItem(
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = { Text("Details") },
                         leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
                         onClick = {
@@ -758,7 +758,7 @@ private fun ExtensionRow(
                             onShowDetails()
                         }
                     )
-                    DropdownMenuItem(
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = { Text("Remove") },
                         leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
                         onClick = {

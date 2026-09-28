@@ -418,40 +418,40 @@ private fun FilePickerBrowserContent(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false }
                     ) {
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_name_asc)) },
                             leadingIcon = { if (sortMode == FileSortMode.NAME_ASC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.NAME_ASC; showSortMenu = false }
                         )
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_name_desc)) },
                             leadingIcon = { if (sortMode == FileSortMode.NAME_DESC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.NAME_DESC; showSortMenu = false }
                         )
                         HorizontalDivider()
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_size_desc)) },
                             leadingIcon = { if (sortMode == FileSortMode.SIZE_DESC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.SIZE_DESC; showSortMenu = false }
                         )
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_size_asc)) },
                             leadingIcon = { if (sortMode == FileSortMode.SIZE_ASC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.SIZE_ASC; showSortMenu = false }
                         )
                         HorizontalDivider()
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_date_desc)) },
                             leadingIcon = { if (sortMode == FileSortMode.DATE_DESC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.DATE_DESC; showSortMenu = false }
                         )
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_date_asc)) },
                             leadingIcon = { if (sortMode == FileSortMode.DATE_ASC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.DATE_ASC; showSortMenu = false }
                         )
                         HorizontalDivider()
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_show_hidden_files)) },
                             trailingIcon = {
                                 Switch(

@@ -584,13 +584,13 @@ fun PetalUpdateSheetContent(
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        DropdownMenu(
+                        com.petal.browser.ui.containment.PetalPopupMenu(
                             expanded = updateSplitExpanded,
                             onDismissRequest = { updateSplitExpanded = false },
                             shape = RoundedCornerShape(20.dp),
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
-                            DropdownMenuItem(
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = { Text("Download in Background") },
                                 leadingIcon = {
                                     Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -606,7 +606,7 @@ fun PetalUpdateSheetContent(
                                 }
                             )
                             if (updateInfo.releaseUrl.isNotBlank()) {
-                                DropdownMenuItem(
+                                com.petal.browser.ui.containment.PetalPopupMenuItem(
                                     text = { Text("Open GitHub Releases") },
                                     leadingIcon = {
                                         Icon(Icons.Rounded.OpenInBrowser, contentDescription = null, tint = MaterialTheme.colorScheme.primary)

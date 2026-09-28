@@ -1052,7 +1052,7 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        com.petal.browser.ui.components.com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                com.petal.browser.ui.containment.PetalGroupIconBadge(
             shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie9Sided.toShape(),
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,

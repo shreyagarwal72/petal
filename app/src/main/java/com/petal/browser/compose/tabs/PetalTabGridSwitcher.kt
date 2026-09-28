@@ -2031,7 +2031,6 @@ private fun PetalTabListItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
         },
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
