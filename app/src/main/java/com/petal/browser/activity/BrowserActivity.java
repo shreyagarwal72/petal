@@ -247,12 +247,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void observePetalTabSurface(com.petal.browser.browser.PetalTabViewController surface) {
-        surface.setOnBrowserStateChanged(state -> runOnUiThread(() -> {
-            if (currentAlbumController != surface) return;
-            updateAddressBar();
-            updateBackCallbackState();
-            updateOmniBox();
-        }));
+        surface.setOnBrowserStateChanged(state -> {
+            runOnUiThread(() -> {
+                if (currentAlbumController != surface) return;
+                updateAddressBar();
+                updateBackCallbackState();
+                updateOmniBox();
+            });
+            return kotlin.Unit.INSTANCE;
+        });
     }
 
     private void navigateInCurrentTab(String url) {
@@ -1353,9 +1356,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.browser.PetalTabViewController surface = getActivePetalTabSurface();
             if (surface != null) {
                 if (surface.canGoBack()) sp.edit().putBoolean("backPressed", true).apply();
-                surface.processBackPressed(() -> runOnUiThread(() -> {
-                    if (getActivePetalTabSurface() == surface) performPetalTabBackFallback(currentUrl);
-                }));
+                surface.processBackPressed(() -> {
+                    runOnUiThread(() -> {
+                        if (getActivePetalTabSurface() == surface) performPetalTabBackFallback(currentUrl);
+                    });
+                    return kotlin.Unit.INSTANCE;
+                });
                 return;
             }
         } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
@@ -3230,6 +3236,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             fileChooserParams,
             () -> {
                 launchSystemFileChooserFallback(filePathCallback, fileChooserParams);
+                return kotlin.Unit.INSTANCE;
             }
         );
     }
