@@ -54,9 +54,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.NorthWest
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.CenterFocusWeak
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -93,8 +90,6 @@ import com.petal.browser.unit.SearchSuggestionsManager
 import kotlinx.coroutines.delay
 import org.json.JSONArray
 import java.net.URI
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 data class OmniboxSuggestion(
     val query: String,
@@ -463,7 +458,7 @@ fun PetalOmniboxPage(
                             IconButton(onClick = onBackPress) {
                                 Icon(
                                     imageVector = Icons.Rounded.ArrowBack,
-                                    contentDescription = stringResource(R.string.ui_back),
+                                    contentDescription = "Back",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -489,7 +484,7 @@ fun PetalOmniboxPage(
                                 onValueChange = { queryState = it },
                                 placeholder = {
                                     Text(
-                                        text = stringResource(R.string.ui_search_or_type_url, currentEngine.name),
+                                        text = "Search ${currentEngine.name} or type URL",
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
@@ -516,19 +511,19 @@ fun PetalOmniboxPage(
                                                 }
                                                 Icon(
                                                     imageVector = engineIcon,
-                                                    contentDescription = stringResource(R.string.ui_search_with_tap_to_change, currentEngine.name),
+                                                    contentDescription = "Search with ${currentEngine.name} (Tap to change)",
                                                     tint = MaterialTheme.colorScheme.primary,
                                                     modifier = Modifier.size(20.dp)
                                                 )
                                             }
 
-                                            com.petal.browser.ui.containment.PetalPopupMenu(
+                                            DropdownMenu(
                                                 expanded = showEngineMenu,
                                                 onDismissRequest = { showEngineMenu = false },
                                                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                             ) {
                                                 Text(
-                                                    text = stringResource(R.string.ui_search_engine),
+                                                    text = "Search Engine",
                                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                                     color = MaterialTheme.colorScheme.primary,
                                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
@@ -536,7 +531,7 @@ fun PetalOmniboxPage(
                                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                                                 allEngines.forEach { engine ->
                                                     val isSelected = engine.index == (currentEngineIndexStr.toIntOrNull() ?: 0)
-                                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                                    DropdownMenuItem(
                                                         text = {
                                                             Row(
                                                                 verticalAlignment = Alignment.CenterVertically,
@@ -577,7 +572,7 @@ fun PetalOmniboxPage(
                                             IconButton(onClick = { queryState = TextFieldValue("") }) {
                                                 Icon(
                                                     imageVector = Icons.Rounded.Close,
-                                                    contentDescription = stringResource(R.string.ui_clear_text),
+                                                    contentDescription = "Clear text",
                                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
@@ -587,7 +582,7 @@ fun PetalOmniboxPage(
                                             }) {
                                                 Icon(
                                                     imageVector = Icons.Rounded.CenterFocusWeak,
-                                                    contentDescription = stringResource(R.string.ui_petal_qr_scanner),
+                                                    contentDescription = "Petal QR Scanner",
                                                     tint = MaterialTheme.colorScheme.primary
                                                 )
                                             }
@@ -598,7 +593,7 @@ fun PetalOmniboxPage(
                                             }) {
                                                 Icon(
                                                     imageVector = Icons.Rounded.Mic,
-                                                    contentDescription = stringResource(R.string.ui_voice_search),
+                                                    contentDescription = "Voice search",
                                                     tint = MaterialTheme.colorScheme.primary
                                                 )
                                             }
@@ -648,7 +643,7 @@ fun PetalOmniboxPage(
                                         if (favicon != null) {
                                             Image(
                                                 bitmap = favicon.asImageBitmap(),
-                                                contentDescription = stringResource(R.string.ui_page_favicon),
+                                                contentDescription = "Page Favicon",
                                                 modifier = Modifier
                                                     .size(28.dp)
                                                     .clip(CircleShape)
@@ -719,7 +714,7 @@ fun PetalOmniboxPage(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.Share,
-                                                contentDescription = stringResource(R.string.ui_share_url),
+                                                contentDescription = "Share URL",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
                                             )
@@ -736,7 +731,7 @@ fun PetalOmniboxPage(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.ContentCopy,
-                                                contentDescription = stringResource(R.string.ui_copy_url),
+                                                contentDescription = "Copy URL",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
                                             )
@@ -758,7 +753,7 @@ fun PetalOmniboxPage(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.Edit,
-                                                contentDescription = stringResource(R.string.ui_edit_url),
+                                                contentDescription = "Edit URL",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
                                             )
@@ -851,7 +846,7 @@ fun PetalOmniboxPage(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.NorthWest,
-                                                contentDescription = stringResource(R.string.ui_insert_into_search),
+                                                contentDescription = "Insert into search",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
                                             )
@@ -870,7 +865,7 @@ fun PetalOmniboxPage(
                                     .padding(vertical = 4.dp)
                             ) {
                                 Text(
-                                    text = stringResource(R.string.ui_frequently_visited),
+                                    text = "Frequently Visited",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
@@ -947,8 +942,8 @@ fun PetalOmniboxPage(
 
                         // Suggestions List - fills the remaining space above the keyboard with Material 3 Expressive containment
                         if (suggestions.isNotEmpty()) {
-                            com.petal.browser.ui.containment.PetalHeroCard(
-                                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                            PetalContainmentSurface(
+                                shape = RoundedCornerShape(24.dp),
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -967,7 +962,7 @@ fun PetalOmniboxPage(
                                         .padding(vertical = 6.dp)
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.ui_search_suggestions),
+                                        text = "Search Suggestions",
                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -984,18 +979,17 @@ fun PetalOmniboxPage(
                                              items = suggestions,
                                              key = { _, item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
                                          ) { index, item ->
-                                             com.petal.browser.ui.containment.PetalGroupListRow(
-                                                 position = com.petal.browser.ui.containment.petalGroupPositionFor(index, suggestions.size),
-                                                 onClick = {
-                                                     val trimmed = item.query.trim()
-                                                     if (trimmed.isNotEmpty()) submitSearch(trimmed)
-                                                 },
-                                                 onLongClick = {
-                                                     try {
-                                                         com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                                                     } catch (ignored: Exception) {}
-                                                     suggestionToRemove = item
-                                                 },
+                                             val itemShape = getGroupItemShape(
+                                                 index = index,
+                                                 count = suggestions.size,
+                                                 topCorner = 16.dp,
+                                                 bottomCorner = 16.dp,
+                                                 middleCorner = 6.dp,
+                                                 singleCorner = 16.dp
+                                             )
+                                             PetalContainmentSurface(
+                                                 shape = itemShape,
+                                                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                                                  modifier = Modifier
                                                      .fillMaxWidth()
                                                      // Rows fade in/out and slide smoothly into their
@@ -1009,26 +1003,76 @@ fun PetalOmniboxPage(
                                                              dampingRatio = Spring.DampingRatioNoBouncy,
                                                              stiffness = Spring.StiffnessMediumLow
                                                          )
-                                                     ),
-                                                 leading = {
-                                                     com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                                         icon = if (item.isHistory) Icons.Filled.History else Icons.Filled.Search,
-                                                         container = if (item.isHistory) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
-                                                         tint = if (item.isHistory) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                                                      )
-                                                 },
-                                                 content = {
-                                                     Text(item.query, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                 },
-                                                 trailing = {
-                                                     IconButton(
-                                                         onClick = { queryState = TextFieldValue(text = item.query, selection = TextRange(item.query.length)) },
-                                                         modifier = Modifier.size(40.dp),
-                                                     ) {
-                                                         Icon(Icons.Filled.NorthWest, contentDescription = stringResource(R.string.ui_insert_query_into_omnibox), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                                                     }
-                                                 },
-                                             )
+                                                     .clip(itemShape)
+                                                    .combinedClickable(
+                                                        onClick = {
+                                                            val trimmed = item.query.trim()
+                                                            if (trimmed.isNotEmpty()) {
+                                                                submitSearch(trimmed)
+                                                            }
+                                                        },
+                                                        onLongClick = {
+                                                            try {
+                                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                                            } catch (ignored: Exception) {}
+                                                            suggestionToRemove = item
+                                                        }
+                                                    )
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    // Contained icon badge
+                                                    Surface(
+                                                        shape = CircleShape,
+                                                        color = if (item.isHistory) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                        modifier = Modifier.size(34.dp)
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Icon(
+                                                                imageVector = if (item.isHistory) Icons.Rounded.History else Icons.Rounded.Search,
+                                                                contentDescription = null,
+                                                                tint = if (item.isHistory) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                modifier = Modifier.size(18.dp)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    Spacer(Modifier.width(14.dp))
+
+                                                    // Truncate at the end so the beginning of every
+                                                    // history/search suggestion remains intact.
+                                                    Text(
+                                                        text = item.query,
+                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+
+                                                    IconButton(
+                                                        onClick = {
+                                                            queryState = TextFieldValue(
+                                                                text = item.query,
+                                                                selection = TextRange(item.query.length)
+                                                            )
+                                                        },
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.NorthWest,
+                                                            contentDescription = "Insert query into omnibox",
+                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -1042,7 +1086,7 @@ fun PetalOmniboxPage(
 
     if (suggestionToRemove != null) {
         val item = suggestionToRemove!!
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { suggestionToRemove = null },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -1056,14 +1100,14 @@ fun PetalOmniboxPage(
             },
             title = {
                 Text(
-                    text = stringResource(R.string.ui_remove_suggestion),
+                    text = "Remove Suggestion?",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
                 Text(
-                    text = stringResource(R.string.ui_remove_from_search_suggestions, item.query, if (item.isHistory) "This will also delete it from your browsing history." else ""),
+                    text = "Remove \"${item.query}\" from search suggestions? ${if (item.isHistory) "This will also delete it from your browsing history." else ""}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1123,7 +1167,7 @@ fun PetalOmniboxPage(
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(stringResource(R.string.ui_remove), fontWeight = FontWeight.Bold)
+                    Text("Remove", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -1131,7 +1175,7 @@ fun PetalOmniboxPage(
                     onClick = { suggestionToRemove = null },
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(stringResource(R.string.ui_cancel))
+                    Text("Cancel")
                 }
             }
         )

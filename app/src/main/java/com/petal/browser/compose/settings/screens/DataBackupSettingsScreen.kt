@@ -4,26 +4,21 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.unit.BackupUnit
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun DataBackupSettingsScreen(
@@ -86,41 +81,41 @@ fun DataBackupSettingsScreen(
 
 
     if (showBackupDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showBackupDialog = false },
-            title = { Text(stringResource(R.string.ui_backup_options_json)) },
+            title = { Text("Backup Options (JSON)") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.ui_select_items_to_include_in))
+                    Text("Select items to include in backup file:")
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupBookmarks = !backupBookmarks }) {
                         Checkbox(checked = backupBookmarks, onCheckedChange = { backupBookmarks = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_bookmarks))
+                        Text("Bookmarks")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupHistory = !backupHistory }) {
                         Checkbox(checked = backupHistory, onCheckedChange = { backupHistory = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_browsing_history))
+                        Text("Browsing History")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupStartSites = !backupStartSites }) {
                         Checkbox(checked = backupStartSites, onCheckedChange = { backupStartSites = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_home_screen_top_sites_shortcuts))
+                        Text("Home Screen Top Sites & Shortcuts")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupTabSessions = !backupTabSessions }) {
                         Checkbox(checked = backupTabSessions, onCheckedChange = { backupTabSessions = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_open_tabs_tab_groups))
+                        Text("Open Tabs & Tab Groups")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSavedSites = !backupSavedSites }) {
                         Checkbox(checked = backupSavedSites, onCheckedChange = { backupSavedSites = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_site_whitelists_profiles))
+                        Text("Site Whitelists & Profiles")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSettings = !backupSettings }) {
                         Checkbox(checked = backupSettings, onCheckedChange = { backupSettings = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_browser_themes_accessibility_settings))
+                        Text("Browser, Themes & Accessibility Settings")
                     }
                 }
             },
@@ -138,13 +133,13 @@ fun DataBackupSettingsScreen(
                         destFile.writeText(json, Charsets.UTF_8)
                         com.petal.browser.view.PetalToast.show(context, "Exported passwords to Downloads/$fileName")
                     }) {
-                        Text(stringResource(R.string.ui_export_passwords))
+                        Text("Export Passwords")
                     }
                     OutlinedButton(onClick = {
                         showBackupDialog = false
                         createBackupLauncher.launch("petal_browser_backup.json")
                     }) {
-                        Text(stringResource(R.string.ui_custom_folder))
+                        Text("Custom Folder")
                     }
                     Button(onClick = {
                         showBackupDialog = false
@@ -158,54 +153,54 @@ fun DataBackupSettingsScreen(
                             backupSettings
                         )
                     }) {
-                        Text(stringResource(R.string.ui_download))
+                        Text("Download")
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showBackupDialog = false }) {
-                    Text(stringResource(R.string.ui_cancel))
+                    Text("Cancel")
                 }
             }
         )
     }
 
     if (showRestoreDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showRestoreDialog = false },
-            title = { Text(stringResource(R.string.ui_restore_options_json)) },
+            title = { Text("Restore Options (JSON)") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.ui_select_items_to_restore_from))
+                    Text("Select items to restore from JSON file:")
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreBookmarks = !restoreBookmarks }) {
                         Checkbox(checked = restoreBookmarks, onCheckedChange = { restoreBookmarks = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_bookmarks))
+                        Text("Bookmarks")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreHistory = !restoreHistory }) {
                         Checkbox(checked = restoreHistory, onCheckedChange = { restoreHistory = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_browsing_history))
+                        Text("Browsing History")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreStartSites = !restoreStartSites }) {
                         Checkbox(checked = restoreStartSites, onCheckedChange = { restoreStartSites = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_home_screen_top_sites_shortcuts))
+                        Text("Home Screen Top Sites & Shortcuts")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreTabSessions = !restoreTabSessions }) {
                         Checkbox(checked = restoreTabSessions, onCheckedChange = { restoreTabSessions = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_open_tabs_tab_groups))
+                        Text("Open Tabs & Tab Groups")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSavedSites = !restoreSavedSites }) {
                         Checkbox(checked = restoreSavedSites, onCheckedChange = { restoreSavedSites = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_site_whitelists_profiles))
+                        Text("Site Whitelists & Profiles")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSettings = !restoreSettings }) {
                         Checkbox(checked = restoreSettings, onCheckedChange = { restoreSettings = it })
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_browser_themes_accessibility_settings))
+                        Text("Browser, Themes & Accessibility Settings")
                     }
                 }
             },
@@ -214,12 +209,12 @@ fun DataBackupSettingsScreen(
                     showRestoreDialog = false
                     showRestorePicker = true
                 }) {
-                    Text(stringResource(R.string.ui_choose_backup_file))
+                    Text("Choose Backup File")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRestoreDialog = false }) {
-                    Text(stringResource(R.string.ui_cancel))
+                    Text("Cancel")
                 }
             }
         )
@@ -244,24 +239,10 @@ fun DataBackupSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                PetalHeroCard {
-                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(
-                                Modifier.size(44.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                androidx.compose.foundation.Image(
-                                    painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.backup_filled),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(22.dp),
-                                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer)
-                                )
-                            }
-                            Text(stringResource(R.string.ui_backup_restore_json), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        }
+                // Backup & Restore (JSON) Card
+                SettingsCategoryCard(title = "Backup & Restore (JSON)", iconRes = com.petal.browser.R.drawable.backup_filled) {
                     Text(
-                        stringResource(R.string.ui_export_backups_directly_to_downloads),
+                        "Export backups directly to Downloads with Download Manager notifications, or save/restore specific items from any JSON file:",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -281,9 +262,9 @@ fun DataBackupSettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Filled.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.ui_backup_json), maxLines = 1)
+                                Text("Backup JSON", maxLines = 1)
                             }
                         }
 
@@ -297,11 +278,11 @@ fun DataBackupSettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                Text(stringResource(R.string.ui_restore_json), maxLines = 1)
+                                Text("Restore JSON", maxLines = 1)
                             }
                         }
                     }
-                    }
+
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -334,3 +315,4 @@ fun DataBackupSettingsScreen(
         }
     }
 }
+

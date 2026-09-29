@@ -65,11 +65,8 @@ jobs:
           fi
 
           DETECTED_ALIAS=$(keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>/dev/null | grep 'PrivateKeyEntry' | head -n 1 | awk -F ',' '{print $1}' | xargs)
-          if keytool -list \
-              -keystore /tmp/signing.keystore \
-              -storepass "$STORE_PASS" \
-              -alias "$ALIAS_NAME" >/dev/null 2>&1; then
-            echo "✅ Specified alias '$ALIAS_NAME' verified."
+          if [ -n "$ALIAS_NAME" ] && keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1 | grep -q "$ALIAS_NAME"; then
+            echo "✅ Specified alias '$ALIAS_NAME' verified in keystore."
           elif [ -n "$DETECTED_ALIAS" ]; then
             echo "⚠️ Specified alias '$ALIAS_NAME' not matched, but detected PrivateKeyEntry alias '$DETECTED_ALIAS' in keystore. Using '$DETECTED_ALIAS'."
             ALIAS_NAME="$DETECTED_ALIAS"
@@ -86,25 +83,13 @@ jobs:
 
       - name: Build Release APKs & AAB Bundle
         run: |
-          set -euo pipefail
           mkdir -p raw_apks raw_aabs
-
-          test -f "$KEYSTORE_PATH"
-          test -n "$KEYSTORE_STORE_PASS"
-          test -n "$KEYSTORE_KEY_PASS"
-          test -n "$KEYSTORE_ALIAS"
-
-          keytool -list \
-            -keystore "$KEYSTORE_PATH" \
-            -storepass "$KEYSTORE_STORE_PASS" \
-            -alias "$KEYSTORE_ALIAS" >/dev/null
-
-          ./gradlew :app:assembleRelease :app:bundleRelease \
+          ./gradlew assembleRelease bundleRelease \
             -PRELEASE_STORE_FILE="$KEYSTORE_PATH" \
             -PRELEASE_STORE_PASSWORD="$KEYSTORE_STORE_PASS" \
             -PRELEASE_KEY_ALIAS="$KEYSTORE_ALIAS" \
             -PRELEASE_KEY_PASSWORD="$KEYSTORE_KEY_PASS" \
-            --stacktrace --info
+            --stacktrace
           for apk in app/build/outputs/apk/release/*.apk; do
             if [ -f "$apk" ]; then
               cp "$apk" raw_apks/

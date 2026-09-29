@@ -31,8 +31,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,9 +42,11 @@ fun PetalImageGrabberSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    com.petal.browser.ui.containment.PetalSheet(
+    ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(
             modifier = Modifier
@@ -61,12 +61,12 @@ fun PetalImageGrabberSheet(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.ui_image_grabber),
+                        text = "Image Grabber",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = stringResource(R.string.ui_images_found_on_page, images.size),
+                        text = "${images.size} images found on page",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -81,11 +81,11 @@ fun PetalImageGrabberSheet(
                         ) {
                             Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.ui_download_all), fontSize = 12.sp)
+                            Text("Download All", fontSize = 12.sp)
                         }
                     }
                     IconButton(onClick = onDismissRequest) {
-                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
+                        Icon(Icons.Rounded.Close, contentDescription = "Close")
                     }
                 }
             }
@@ -100,7 +100,7 @@ fun PetalImageGrabberSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_no_images_found_on_this),
+                        text = "No images found on this page",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -136,7 +136,7 @@ fun PetalImageGrabberSheet(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Download,
-                                    contentDescription = stringResource(R.string.ui_download_image),
+                                    contentDescription = "Download Image",
                                     tint = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier
                                         .padding(4.dp)

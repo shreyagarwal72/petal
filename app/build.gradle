@@ -3,11 +3,6 @@ apply plugin: 'com.google.devtools.ksp'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'dagger.hilt.android.plugin'
 
-def releaseStoreFile = providers.gradleProperty("RELEASE_STORE_FILE").orNull
-def releaseStorePassword = providers.gradleProperty("RELEASE_STORE_PASSWORD").orNull
-def releaseKeyAlias = providers.gradleProperty("RELEASE_KEY_ALIAS").orNull
-def releaseKeyPassword = providers.gradleProperty("RELEASE_KEY_PASSWORD").orNull
-
 android {
 
     compileSdk 36
@@ -18,7 +13,6 @@ android {
 
     buildFeatures {
         compose true
-        buildConfig false
     }
 
     defaultConfig {
@@ -63,14 +57,14 @@ android {
             keyPassword 'android'
         }
         release {
-            if (releaseStoreFile &&
-                releaseStorePassword &&
-                releaseKeyAlias &&
-                releaseKeyPassword) {
-                storeFile file(releaseStoreFile)
-                storePassword releaseStorePassword
-                keyAlias releaseKeyAlias
-                keyPassword releaseKeyPassword
+            if (project.hasProperty('RELEASE_STORE_FILE') &&
+                project.hasProperty('RELEASE_STORE_PASSWORD') &&
+                project.hasProperty('RELEASE_KEY_ALIAS') &&
+                project.hasProperty('RELEASE_KEY_PASSWORD')) {
+                storeFile file(RELEASE_STORE_FILE)
+                storePassword RELEASE_STORE_PASSWORD
+                keyAlias RELEASE_KEY_ALIAS
+                keyPassword RELEASE_KEY_PASSWORD
             }
             v1SigningEnabled true
             v2SigningEnabled true
@@ -159,17 +153,14 @@ dependencies {
     implementation 'androidx.graphics:graphics-shapes:1.0.1'
     implementation 'com.airbnb.android:lottie-compose:6.6.2'
 
-    // PDFBox-Android — used only for the "Edit PDF text" feature (real embedded
-    // text extraction + content-stream rewrite). PdfRenderer above stays as the
-    // fast rasterizer for normal viewing; PDFBox only loads when edit mode opens.
-    // NOTE: unverified in a real build — no Android SDK available to compile-check.
-    implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
-
     // Jetpack Glance — used for the home screen widget so it can be built with real
     // Material 3 (Expressive) components/color roles instead of hand-rolled RemoteViews.
     implementation 'androidx.glance:glance:1.1.1'
     implementation 'androidx.glance:glance-appwidget:1.1.1'
     implementation 'androidx.glance:glance-material3:1.1.1'
+
+    // PDFBox-Android — real PDF text editing and geometry extraction
+    implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
 
     // AndroidX Activity, Lifecycle, and SavedState Explicit KTX Dependencies
     implementation 'androidx.core:core-splashscreen:1.0.1'
@@ -265,4 +256,10 @@ dependencies {
     implementation 'com.google.dagger:hilt-android:2.60.1'
     ksp 'com.google.dagger:hilt-compiler:2.60.1'
     implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
+
+    // Google Mobile Ads (AdMob) — Play Store variant only (Supportive Ads)
+    implementation 'com.google.android.gms:play-services-ads:23.6.0'
+
+    // Google Play In-App Updates (Play Store variant only)
+    implementation 'com.google.android.play:app-update-ktx:2.1.0'
 }

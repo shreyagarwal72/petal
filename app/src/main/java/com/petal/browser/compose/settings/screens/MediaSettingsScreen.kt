@@ -1,6 +1,4 @@
 /*
-
-import com.petal.browser.ui.containment.PetalSettingsSection
  * MediaSettingsScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Material 3 Expressive Media & Sniffer Settings Screen for Petal Browser.
@@ -37,9 +35,6 @@ import com.petal.browser.account.mozilla.FirefoxAccountSyncScreen
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.containment.PetalSettingsSection
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun MediaSettingsScreen(
@@ -87,16 +82,16 @@ fun MediaSettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // ── Section 1: MEDIA ──────────────────────────────────────────
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_media_engine),
+                SettingsCategoryCard(
+                    title = "Media Engine",
                     icon = Icons.Rounded.VideoLibrary,
                     cardId = "media_engine",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     // Native Video Player Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_native_video_player),
-                        subtitle = stringResource(R.string.ui_bypass_web_player_and_launch),
+                    ToggleRow(
+                        title = "Native Video Player",
+                        subtitle = "Bypass web player and launch streams directly into hardware-accelerated ExoPlayer with gestures & background audio",
                         icon = Icons.Rounded.PlayCircle,
                         checked = nativeVideoPlayer,
                         onCheckedChange = { checked ->
@@ -107,9 +102,9 @@ fun MediaSettingsScreen(
                     )
 
                     // Media Sniffer / Fetcher
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_detect_media_in_background),
-                        subtitle = stringResource(R.string.ui_continuously_sniff_video_audio_streams),
+                    ToggleRow(
+                        title = "Detect Media in Background",
+                        subtitle = "Continuously sniff video/audio streams and M3U8/MPD playlists without interrupting browsing",
                         icon = Icons.Rounded.Sensors,
                         checked = detectBackground,
                         onCheckedChange = { checked ->
@@ -120,9 +115,9 @@ fun MediaSettingsScreen(
                     )
 
                     // Show Media Button in address bar
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_show_media_button),
-                        subtitle = stringResource(R.string.ui_display_quick_access_media_sniffer),
+                    ToggleRow(
+                        title = "Show Media Button",
+                        subtitle = "Display quick-access media sniffer button on the address bar when playable streams are found",
                         icon = Icons.Rounded.SmartDisplay,
                         checked = showMediaButton,
                         onCheckedChange = { checked ->
@@ -133,9 +128,9 @@ fun MediaSettingsScreen(
                     )
 
                     // Automatically open media panel
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_automatically_open_media_panel),
-                        subtitle = stringResource(R.string.ui_pop_up_the_media_fetcher),
+                    ToggleRow(
+                        title = "Automatically Open Media Panel",
+                        subtitle = "Pop up the media fetcher sheet automatically when new video sources are extracted",
                         icon = Icons.Rounded.OpenInNew,
                         checked = autoOpenPanel,
                         onCheckedChange = { checked ->
@@ -146,9 +141,9 @@ fun MediaSettingsScreen(
                     )
 
                     // Validate media before showing
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_validate_media_before_showing),
-                        subtitle = stringResource(R.string.ui_perform_lightweight_head_check_on),
+                    ToggleRow(
+                        title = "Validate Media Before Showing",
+                        subtitle = "Perform lightweight HEAD check on sniffing URLs to filter out expired or non-playable links",
                         icon = Icons.Rounded.Verified,
                         checked = validateStreams,
                         onCheckedChange = { checked ->
@@ -159,9 +154,9 @@ fun MediaSettingsScreen(
                     )
 
                     // AI Blocker Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_ai_blocker),
-                        subtitle = stringResource(R.string.ui_automatically_clean_search_results_by),
+                    ToggleRow(
+                        title = "AI Blocker",
+                        subtitle = "Automatically clean search results by stripping cluttered generative AI overviews and promoted summaries",
                         icon = Icons.Rounded.Block,
                         checked = aiBlocker,
                         onCheckedChange = { checked ->
@@ -179,8 +174,8 @@ fun MediaSettingsScreen(
                 }
 
                 // ── Section 2: SYNC & ECOSYSTEM ──────────────────────────────
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_sync_ecosystem),
+                SettingsCategoryCard(
+                    title = "Sync & Ecosystem",
                     icon = Icons.Rounded.Sync,
                     cardId = "sync_ecosystem",
                     targetHighlightId = targetHighlightItemId
@@ -220,7 +215,7 @@ fun MediaSettingsScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = stringResource(R.string.ui_petal_sync),
+                                        text = "Petal Sync",
                                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -230,7 +225,7 @@ fun MediaSettingsScreen(
                                         color = MaterialTheme.colorScheme.tertiaryContainer
                                     ) {
                                         Text(
-                                            text = stringResource(R.string.ui_experimental),
+                                            text = "Experimental",
                                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                                             color = MaterialTheme.colorScheme.onTertiaryContainer,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -238,7 +233,7 @@ fun MediaSettingsScreen(
                                     }
                                 }
                                 Text(
-                                    text = stringResource(R.string.ui_zero_cloud_end_to_end),
+                                    text = "Zero-cloud end-to-end encrypted (E2EE) sync across devices, powered by Firefox Accounts & Mozilla Sync protocol",
                                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

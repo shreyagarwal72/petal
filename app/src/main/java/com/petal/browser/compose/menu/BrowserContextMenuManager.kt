@@ -50,17 +50,23 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
-    fun showImageContextMenu(activity: BrowserActivity, imageURL: String) {
+    @JvmOverloads
+    fun showImageContextMenu(activity: BrowserActivity, imageURL: String, anchorLinkUri: String? = null) {
+        // When an image is wrapped in <a>, linkUrl shows the anchor target; imageURL is the image src
+        val linkUrlForMenu = anchorLinkUri?.takeIf { it.isNotBlank() } ?: imageURL
         PetalLinkContextMenuBridge.show(
-            activity,
-            HelperUnit.domain(imageURL),
-            imageURL,
-            imageURL,
-            true,  // isImage
-            false, // isVideo
-            object : PetalLinkContextMenuHandler {
+            activity = activity,
+            linkTitle = HelperUnit.domain(imageURL),
+            linkUrl = linkUrlForMenu,
+            faviconUrl = imageURL,
+            isImage = true,
+            isVideo = false,
+            isAudio = false,
+            selectedText = null,
+            handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false)
+                    // Open anchor link if image is inside <a>, else open image directly
+                    activity.addAlbum(HelperUnit.domain(linkUrlForMenu), linkUrlForMenu, false)
                 }
 
                 override fun onOpenImageInNewTab() {
@@ -68,11 +74,11 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onOpenInNewTabInGroup() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false)
+                    activity.addAlbum(HelperUnit.domain(linkUrlForMenu), linkUrlForMenu, false)
                 }
 
                 override fun onOpenInIncognitoTab() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false, true)
+                    activity.addAlbum(HelperUnit.domain(linkUrlForMenu), linkUrlForMenu, false, true)
                 }
 
 
@@ -82,20 +88,12 @@ object BrowserContextMenuManager {
 
                 override fun onCopyLinkAddress() {
                     HelperUnit.copy(activity, imageURL)
-                    PetalToast.show(activity, "Image address copied")
+                    PetalToast.show(activity, "Image URL copied")
                 }
 
                 override fun onCopyImage() {
-                    if (imageURL.isNotBlank()) {
-                        ImageActionHelper.copyImage(activity, imageURL)
-                    } else {
-                        PetalToast.show(activity, "No valid image URL found")
-                    }
-                }
-
-                override fun onCopyImageAddress() {
                     HelperUnit.copy(activity, imageURL)
-                    PetalToast.show(activity, "Image address copied")
+                    PetalToast.show(activity, "Image copied to clipboard")
                 }
 
                 override fun onCopyLinkText() {
@@ -161,7 +159,7 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onShareLink() {
-                    activity.shareLink(HelperUnit.domain(imageURL), imageURL)
+                    activity.shareLink(HelperUnit.domain(linkUrlForMenu), linkUrlForMenu)
                 }
 
                 override fun onDownloadVideo() {}
@@ -187,18 +185,17 @@ object BrowserContextMenuManager {
     @JvmStatic
     @JvmOverloads
     fun showLinkContextMenu(activity: BrowserActivity, urlResult: String, linkText: String? = null) {
-        val parsed = Uri.parse(urlResult)
-        val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
-            "${parsed.scheme}://${parsed.authority}/favicon.ico"
-        } else null
+        val title = if (!linkText.isNullOrBlank()) linkText else HelperUnit.domain(urlResult)
         PetalLinkContextMenuBridge.show(
-            activity,
-            linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(urlResult),
-            urlResult,
-            faviconUrl,
-            false, // isImage
-            false, // isVideo
-            object : PetalLinkContextMenuHandler {
+            activity = activity,
+            linkTitle = title,
+            linkUrl = urlResult,
+            faviconUrl = "$urlResult/favicon.ico",
+            isImage = false,
+            isVideo = false,
+            isAudio = false,
+            selectedText = null,
+            handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
                     activity.addAlbum(HelperUnit.domain(urlResult), urlResult, false)
                 }
@@ -261,13 +258,8 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyLinkText() {
-                    val text = linkText?.trim().orEmpty()
-                    if (text.isNotEmpty()) {
-                        HelperUnit.copy(activity, text)
-                        PetalToast.show(activity, "Link text copied")
-                    } else {
-                        PetalToast.show(activity, "This link has no text")
-                    }
+                    HelperUnit.copy(activity, HelperUnit.domain(urlResult))
+                    PetalToast.show(activity, "Link text copied")
                 }
 
                 override fun onDownloadLink() {

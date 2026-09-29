@@ -29,7 +29,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -71,8 +70,6 @@ import java.io.File
 import java.io.FileOutputStream
 import androidx.core.content.FileProvider
 import android.widget.Toast
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 object PetalFileViewerBridge {
 
@@ -268,7 +265,7 @@ private fun UniversalFileViewerTopBar(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.ui_back),
+                    contentDescription = "Back",
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -295,7 +292,7 @@ private fun UniversalFileViewerTopBar(
                     IconButton(onClick = onSave) {
                         Icon(
                             imageVector = Icons.Rounded.Save,
-                            contentDescription = stringResource(R.string.ui_save_file),
+                            contentDescription = "Save file",
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
@@ -320,7 +317,7 @@ private fun UniversalFileViewerTopBar(
             IconButton(onClick = onShare) {
                 Icon(
                     imageVector = Icons.Rounded.Share,
-                    contentDescription = stringResource(R.string.ui_share_file),
+                    contentDescription = "Share file",
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -328,7 +325,7 @@ private fun UniversalFileViewerTopBar(
             IconButton(onClick = onOpenExternal) {
                 Icon(
                     imageVector = Icons.Rounded.OpenInNew,
-                    contentDescription = stringResource(R.string.ui_open_with_external_app),
+                    contentDescription = "Open with external app",
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -431,7 +428,7 @@ private fun TextCodeViewerContent(
                     if (isSaving) {
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = stringResource(R.string.ui_saving_changes),
+                            text = "Saving changes...",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -617,7 +614,7 @@ private fun PptxViewerContent(fileUri: Uri) {
                                     modifier = Modifier.padding(end = 8.dp)
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.ui_slide, index + 1),
+                                        text = "Slide ${index + 1}",
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -939,12 +936,12 @@ private fun ArchiveViewerContent(
                             Spacer(Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = stringResource(R.string.ui_android_package_apk),
+                                    text = "Android Package (APK)",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    text = stringResource(R.string.ui_install_this_application_directly),
+                                    text = "Install this application directly",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                 )
@@ -962,7 +959,7 @@ private fun ArchiveViewerContent(
                             ) {
                                 Icon(Icons.Rounded.InstallMobile, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.ui_install_2))
+                                Text("Install")
                             }
                         }
                     }
@@ -1054,7 +1051,7 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-                                com.petal.browser.ui.containment.PetalGroupIconBadge(
+        com.petal.browser.ui.components.PetalShapeIconBadge(
             shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie9Sided.toShape(),
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -1088,7 +1085,7 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         ) {
             Icon(Icons.Rounded.OpenInNew, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.ui_open_with_external_application))
+            Text("Open with external application")
         }
     }
 }
@@ -1101,25 +1098,30 @@ private fun ErrorDisplayBox(error: String) {
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        com.petal.browser.ui.containment.PetalHeroCard(
+        Surface(
             shape = RoundedCornerShape(24.dp),
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.errorContainer,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                com.petal.browser.ui.containment.PetalGroupIconBadge(
-                    icon = Icons.Filled.ErrorOutline,
-                    container = MaterialTheme.colorScheme.onErrorContainer,
-                    tint = MaterialTheme.colorScheme.errorContainer,
+                com.petal.browser.ui.components.PetalShapeIconBadge(
+                    shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
+                    contentColor = MaterialTheme.colorScheme.error,
                     size = 72.dp,
                     iconSize = 36.dp,
-                )
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ErrorOutline,
+                        contentDescription = null,
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = stringResource(R.string.ui_cannot_view_file),
+                    text = "Cannot View File",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )

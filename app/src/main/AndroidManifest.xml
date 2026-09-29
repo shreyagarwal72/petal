@@ -37,7 +37,6 @@
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
@@ -55,7 +54,17 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Queries for Google Lens, Google App and 1DM Downloader integration -->
+    <!-- Remove broad QUERY_ALL_PACKAGES and REQUEST_INSTALL_PACKAGES merged from library manifests
+         (e.g. Mozilla feature-pwa / feature-downloads) to comply with Google Play Store Sensitive Permissions
+         Policy without requiring Play Console permission declaration forms -->
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+        tools:node="remove" />
+
+    <!-- Queries for Google Lens, Google App and external browser intent integration -->
     <queries>
         <package android:name="com.google.ar.lens" />
         <package android:name="com.google.android.googlequicksearchbox" />
@@ -84,6 +93,35 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="googleapp" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="market" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
     </queries>
 
     <application
@@ -104,6 +142,11 @@
         <meta-data
             android:name="android.webkit.WebView.MetricsOptOut"
             android:value="true" />
+
+        <!-- Google AdMob App ID (Play Store variant) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/admob_app_id" />
 
         <!-- AppLocales Metadata Holder Service for AppCompat auto-store locales -->
         <service
@@ -148,6 +191,20 @@
             <intent-filter>
                 <action android:name="android.support.customtabs.action.CustomTabsService" />
             </intent-filter>
+        </service>
+
+        <!-- Petal System Autofill Service -->
+        <service
+            android:name="com.petal.browser.passwords.PetalAutofillService"
+            android:label="@string/petal_autofill_service_name"
+            android:permission="android.permission.BIND_AUTOFILL_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.autofill.AutofillService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.autofill"
+                android:resource="@xml/petal_autofill_service_config" />
         </service>
 
         <activity
@@ -431,10 +488,6 @@
 
         <receiver
             android:name="com.petal.browser.compose.downloads.PetalDownloadCancelReceiver"
-            android:exported="false" />
-
-        <receiver
-            android:name="com.petal.browser.unit.PetalUpdateInstallerReceiver"
             android:exported="false" />
 
 

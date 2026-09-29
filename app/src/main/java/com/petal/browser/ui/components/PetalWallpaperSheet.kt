@@ -52,8 +52,6 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 data class WallpaperPreset(
     val id: String,
@@ -332,8 +330,11 @@ fun PetalWallpaperSheet(
         }
     }
 
-    com.petal.browser.ui.containment.PetalSheet(
+    ModalBottomSheet(
         onDismissRequest = onDismissRequest,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -349,12 +350,12 @@ fun PetalWallpaperSheet(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.ui_home_wallpaper),
+                        text = "Home Wallpaper",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = stringResource(R.string.ui_customize_your_home_background_style),
+                        text = "Customize your home background style",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -369,7 +370,7 @@ fun PetalWallpaperSheet(
                     ) {
                         Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.ui_reset))
+                        Text("Reset")
                     }
                 }
             }
@@ -388,7 +389,7 @@ fun PetalWallpaperSheet(
                 ) {
                     Icon(Icons.Rounded.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.ui_device_storage_crop_apply))
+                    Text("Device Storage (Crop & Apply)")
                 }
             }
 
@@ -465,7 +466,7 @@ fun PetalWallpaperSheet(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.PlayArrow,
-                                        contentDescription = stringResource(R.string.ui_video),
+                                        contentDescription = "Video",
                                         tint = Color.White,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -485,7 +486,7 @@ fun PetalWallpaperSheet(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.Check,
-                                        contentDescription = stringResource(R.string.ui_selected),
+                                        contentDescription = "Selected",
                                         tint = Color.White,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -501,7 +502,7 @@ fun PetalWallpaperSheet(
             // Sliders for Dim and Blur using Stride Slider (PetalSlider)
             if (activeUri != null) {
                 Text(
-                    text = stringResource(R.string.ui_dimming_overlay, (currentDim * 100).toInt()),
+                    text = "Dimming Overlay (${(currentDim * 100).toInt()}%)",
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -519,7 +520,7 @@ fun PetalWallpaperSheet(
                 Spacer(Modifier.height(14.dp))
 
                 Text(
-                    text = stringResource(R.string.ui_frosted_glass_blur_dp, currentBlur.toInt()),
+                    text = "Frosted Glass Blur (${currentBlur.toInt()} dp)",
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

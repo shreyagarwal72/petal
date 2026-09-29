@@ -49,7 +49,7 @@ import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.containment.PetalSnackbarHost
+import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -81,9 +81,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.containment.PetalGroupListRow
-import com.petal.browser.ui.containment.PetalGroupPosition
-import com.petal.browser.ui.containment.petalGroupPositionFor
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
@@ -95,8 +92,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.cos
 import kotlin.math.sin
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 data class DownloadItem(
     val id: Long,
@@ -292,11 +287,11 @@ fun PetalDownloadManagerScreen(
         showNotificationPermissionDialog = permissionMissing || notificationsDisabled
     }
     if (showNotificationPermissionDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showNotificationPermissionDialog = false },
             icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
-            title = { Text(stringResource(R.string.ui_enable_download_tracking)) },
-            text = { Text(stringResource(R.string.ui_allow_notifications_to_see_live)) },
+            title = { Text("Enable download tracking") },
+            text = { Text("Allow notifications to see live download progress, speed, completion, pause, resume, and retry actions. Downloads still work if you decline.") },
             confirmButton = {
                 TextButton(onClick = {
                     showNotificationPermissionDialog = false
@@ -305,9 +300,9 @@ fun PetalDownloadManagerScreen(
                     } else {
                         try { context.startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)) } catch (_: Exception) {}
                     }
-                }) { Text(stringResource(R.string.ui_allow_notifications)) }
+                }) { Text("Allow notifications") }
             },
-            dismissButton = { TextButton(onClick = { showNotificationPermissionDialog = false }) { Text(stringResource(R.string.ui_not_now)) } }
+            dismissButton = { TextButton(onClick = { showNotificationPermissionDialog = false }) { Text("Not now") } }
         )
     }
     // Downloads now flow through Fetch2 (see BrowserUnit.download), which is the only
@@ -381,15 +376,15 @@ fun PetalDownloadManagerScreen(
     }
 
     if (pendingDeleteItems.isNotEmpty()) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { pendingDeleteItems = emptyList() },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.DeleteForever, null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text(stringResource(R.string.ui_delete_downloads), fontWeight = FontWeight.Bold) },
-            text = { Column { Text(stringResource(R.string.ui_remove_downloads_from_the_list, pendingDeleteItems.size)); Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = deleteSelectedFiles, onCheckedChange = { deleteSelectedFiles = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() }); Text(stringResource(R.string.ui_also_delete_files_from_device)) } } },
-            dismissButton = { TextButton(onClick = { pendingDeleteItems = emptyList() }) { Text(stringResource(R.string.ui_cancel)) } },
-            confirmButton = { Button(onClick = { val items = pendingDeleteItems; pendingDeleteItems = emptyList(); performStagedDelete(items) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.ui_delete)) } }
+            title = { Text("Delete downloads?", fontWeight = FontWeight.Bold) },
+            text = { Column { Text("Remove ${pendingDeleteItems.size} downloads from the list?"); Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = deleteSelectedFiles, onCheckedChange = { deleteSelectedFiles = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() }); Text("Also delete files from device storage") } } },
+            dismissButton = { TextButton(onClick = { pendingDeleteItems = emptyList() }) { Text("Cancel") } },
+            confirmButton = { Button(onClick = { val items = pendingDeleteItems; pendingDeleteItems = emptyList(); performStagedDelete(items) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }
         )
     }
 
@@ -467,7 +462,7 @@ fun PetalDownloadManagerScreen(
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             snackbarHost = {
-                PetalSnackbarHost(
+                PetalThemedSnackbarHost(
                     hostState = snackbarHostState,
                     modifier = Modifier.padding(16.dp)
                 )
@@ -501,7 +496,7 @@ fun PetalDownloadManagerScreen(
                         )
                         HeaderActionIcon(
                             icon = Icons.Rounded.Delete,
-                            contentDescription = stringResource(R.string.ui_delete_selected),
+                            contentDescription = "Delete Selected",
                             onClick = {
                                 val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
                                 deleteSelectedFiles = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)
@@ -523,12 +518,12 @@ fun PetalDownloadManagerScreen(
                                 contentDescription = "Sort Downloads",
                                 onClick = { sortMenuExpanded = true }
                             )
-                            com.petal.browser.ui.containment.PetalPopupMenu(
+                            DropdownMenu(
                                 expanded = sortMenuExpanded,
                                 onDismissRequest = { sortMenuExpanded = false }
                             ) {
                                 DownloadSortOption.values().forEach { option ->
-                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                    DropdownMenuItem(
                                         text = {
                                             Text(
                                                 text = when (option) {
@@ -562,7 +557,7 @@ fun PetalDownloadManagerScreen(
                         }
                         HeaderActionIcon(
                             icon = Icons.Rounded.Settings,
-                            contentDescription = stringResource(R.string.ui_download_settings),
+                            contentDescription = "Download Settings",
                             onClick = { isSettingsOpen = true }
                         )
                     }
@@ -579,7 +574,6 @@ fun PetalDownloadManagerScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
                     contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {
                     if (autoPreviewDownloadedImages) {
@@ -608,7 +602,6 @@ fun PetalDownloadManagerScreen(
                                 item = item,
                                 isSelected = isSelected,
                                 isSelectionMode = isSelectionMode,
-                                position = petalGroupPositionFor(index, items.size),
                                 showFullDate = (sortOption != DownloadSortOption.DATE_DESC && sortOption != DownloadSortOption.DATE_ASC),
                                 modifier = Modifier
                                     .entrance(index = index, playKey = item.id)
@@ -701,7 +694,7 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
     val images = downloads.filter { it.status == DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }.take(6)
     if (images.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text(stringResource(R.string.ui_downloaded_images), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text("Downloaded images", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             images.forEach { item ->
@@ -734,8 +727,8 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                         if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)))
                         else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
                     }
-                    com.petal.browser.ui.containment.PetalPopupMenu(expanded = menuItem?.id == item.id, onDismissRequest = { menuItem = null }) {
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_view_image)) }, leadingIcon = { Icon(Icons.Rounded.Image, null) }, onClick = {
+                    DropdownMenu(expanded = menuItem?.id == item.id, onDismissRequest = { menuItem = null }) {
+                        DropdownMenuItem(text = { Text("View Image") }, leadingIcon = { Icon(Icons.Rounded.Image, null) }, onClick = {
                             menuItem = null
                             val activity = context as? com.petal.browser.activity.BrowserActivity
                             if (activity != null) {
@@ -748,10 +741,10 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                                 activity.runOnUiThread { activity.presentComposeScreen(view) }
                             } else openDownloadedFile(context, item)
                         })
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_open_in_app)) }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) }, onClick = { menuItem = null; openDownloadedFile(context, item) })
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_share)) }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { menuItem = null; shareDownloadedFile(context, item) })
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_copy_link_2)) }, leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { menuItem = null; copyDownloadLink(context, item.fileUrl) })
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_delete), color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) }, onClick = { menuItem = null; deleteDownloadedFile(context, item) })
+                        DropdownMenuItem(text = { Text("Open in app") }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) }, onClick = { menuItem = null; openDownloadedFile(context, item) })
+                        DropdownMenuItem(text = { Text("Share") }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { menuItem = null; shareDownloadedFile(context, item) })
+                        DropdownMenuItem(text = { Text("Copy Link") }, leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { menuItem = null; copyDownloadLink(context, item.fileUrl) })
+                        DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) }, onClick = { menuItem = null; deleteDownloadedFile(context, item) })
                     }
                 }
             }
@@ -777,7 +770,6 @@ private fun DownloadRowItem(
     item: DownloadItem,
     isSelected: Boolean,
     isSelectionMode: Boolean,
-    position: PetalGroupPosition,
     showFullDate: Boolean = false,
     modifier: Modifier = Modifier,
     onToggleSelect: () -> Unit,
@@ -793,35 +785,35 @@ private fun DownloadRowItem(
     var renameInput by remember { mutableStateOf(item.fileName) }
 
     if (showDeleteDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text(stringResource(R.string.ui_delete_download), fontWeight = FontWeight.Bold) },
+            title = { Text("Delete download?", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.ui_remove_from_the_download_list, item.fileName))
+                    Text("Remove ${item.fileName} from the download list?")
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = deleteFile, onCheckedChange = { deleteFile = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() })
-                        Text(stringResource(R.string.ui_also_delete_the_file_from))
+                        Text("Also delete the file from device storage")
                     }
                 }
             },
-            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.ui_cancel)) } },
-            confirmButton = { Button(onClick = { showDeleteDialog = false; onDeleteItem() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.ui_delete)) } }
+            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") } },
+            confirmButton = { Button(onClick = { showDeleteDialog = false; onDeleteItem() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }
         )
     }
 
 
     if (showRenameDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showRenameDialog = false },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             title = {
                 Text(
-                    text = stringResource(R.string.ui_rename_file),
+                    text = "Rename File",
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -830,7 +822,7 @@ private fun DownloadRowItem(
                 OutlinedTextField(
                     value = renameInput,
                     onValueChange = { renameInput = it },
-                    label = { Text(stringResource(R.string.ui_file_name)) },
+                    label = { Text("File Name") },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -853,7 +845,7 @@ private fun DownloadRowItem(
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_rename),
+                        text = "Rename",
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 }
@@ -864,7 +856,7 @@ private fun DownloadRowItem(
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_cancel),
+                        text = "Cancel",
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
@@ -872,17 +864,38 @@ private fun DownloadRowItem(
         )
     }
 
-    PetalGroupListRow(
-        position = position,
-        selected = isSelected,
-        onClick = {
-            if (isSelectionMode) onToggleSelect()
-            else if (item.status == DownloadManager.STATUS_SUCCESSFUL) onOpenFile()
-        },
-        onLongClick = onLongClick,
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        leading = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .combinedClickable(
+                onClick = {
+                    if (isSelectionMode) {
+                        onToggleSelect()
+                    } else if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
+                        onOpenFile()
+                    }
+                },
+                onLongClick = onLongClick
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 if (isSelectionMode) {
                     Checkbox(
                         checked = isSelected,
@@ -907,10 +920,14 @@ private fun DownloadRowItem(
                         }
                     }
                 )
-            }
-        },
-        content = {
-            Column(verticalArrangement = Arrangement.Center) {
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Two-line text column: Title & Subtitle
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text(
                         text = item.fileName,
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
@@ -957,9 +974,9 @@ private fun DownloadRowItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-            }
-        },
-        trailing = {
+                }
+
+                // Far right vertical 3-dot overflow menu button
                 Box {
                     IconButton(
                         onClick = { menuExpanded = true },
@@ -967,18 +984,18 @@ private fun DownloadRowItem(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = stringResource(R.string.ui_more_options),
+                            contentDescription = "More options",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    com.petal.browser.ui.containment.PetalPopupMenu(
+                    DropdownMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
                         if (item.status == DownloadManager.STATUS_RUNNING) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_pause)) },
+                            DropdownMenuItem(
+                                text = { Text("Pause") },
                                 leadingIcon = { Icon(Icons.Rounded.Pause, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -987,8 +1004,8 @@ private fun DownloadRowItem(
                             )
                         }
                         if (item.status == DownloadManager.STATUS_PAUSED) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_resume)) },
+                            DropdownMenuItem(
+                                text = { Text("Resume") },
                                 leadingIcon = { Icon(Icons.Rounded.PlayArrow, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -997,8 +1014,8 @@ private fun DownloadRowItem(
                             )
                         }
                         if (item.status == DownloadManager.STATUS_FAILED) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_retry)) },
+                            DropdownMenuItem(
+                                text = { Text("Retry") },
                                 leadingIcon = { Icon(Icons.Rounded.Refresh, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -1007,24 +1024,24 @@ private fun DownloadRowItem(
                             )
                         }
                         if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_open)) },
+                            DropdownMenuItem(
+                                text = { Text("Open") },
                                 leadingIcon = { Icon(Icons.Rounded.OpenInNew, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
                                     onOpenFile()
                                 }
                             )
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_share)) },
+                            DropdownMenuItem(
+                                text = { Text("Share") },
                                 leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
                                     shareDownloadedFile(context, item)
                                 }
                             )
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_rename)) },
+                            DropdownMenuItem(
+                                text = { Text("Rename") },
                                 leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -1032,16 +1049,16 @@ private fun DownloadRowItem(
                                 }
                             )
                         }
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.ui_copy_link_2)) },
+                        DropdownMenuItem(
+                            text = { Text("Copy Link") },
                             leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
                             onClick = {
                                 menuExpanded = false
                                 copyDownloadLink(context, item.fileUrl)
                             }
                         )
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.ui_delete), color = MaterialTheme.colorScheme.error) },
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
                             leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 menuExpanded = false
@@ -1050,8 +1067,9 @@ private fun DownloadRowItem(
                         )
                     }
                 }
+            }
         }
-    )
+    }
 }
 
 /**
@@ -1081,7 +1099,7 @@ private fun DownloadProgressRing(
         isPending -> MaterialTheme.colorScheme.tertiary
         else -> MaterialTheme.colorScheme.primary
     }
-    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
 
     val animatedProgress by animateFloatAsState(
         targetValue = (item.progress ?: 0f).coerceIn(0f, 1f),
@@ -1091,7 +1109,7 @@ private fun DownloadProgressRing(
 
     val avatarShape = remember(item.id) {
         val shapes = listOf(
-            RoundedCornerShape(22.dp),
+            com.petal.browser.ui.components.ScallopedShape(lobes = 8, depth = 0.16f),
             com.petal.browser.compose.home.CloverShape,
             com.petal.browser.compose.home.StarburstShape,
             com.petal.browser.compose.home.ArchShape,
@@ -1105,9 +1123,9 @@ private fun DownloadProgressRing(
     // When actively downloading/paused/pending, use theme-aware harmonious container
     val containerBgColor = when {
         isSelected -> MaterialTheme.colorScheme.primary
-        isRunning -> MaterialTheme.colorScheme.primaryContainer
+        isRunning -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
         isPaused -> MaterialTheme.colorScheme.surfaceContainerHigh
-        isPending -> MaterialTheme.colorScheme.tertiaryContainer
+        isPending -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
         else -> expressiveBgColor
     }
 
@@ -1399,7 +1417,7 @@ private fun deleteMultipleFiles(context: Context, items: List<DownloadItem>) {
 private fun DownloadsEmptyState() {
     com.petal.browser.ui.components.EmptyStateBlob(
         illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.DOWNLOADS,
-        title = stringResource(R.string.ui_no_downloads_yet),
-        description = stringResource(R.string.ui_files_you_download_will_appear)
+        title = "No Downloads Yet",
+        description = "Files you download will appear here"
     )
 }

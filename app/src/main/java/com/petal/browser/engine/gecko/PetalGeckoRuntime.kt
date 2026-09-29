@@ -23,6 +23,14 @@ object PetalGeckoRuntime {
 
     private var geckoAvailable: Boolean? = null
 
+    private fun isJavaScriptEnabled(sp: SharedPreferences): Boolean {
+        val profile = sp.getString("profile", "profileStandard") ?: "profileStandard"
+        return sp.getBoolean(
+            "sp_javascript",
+            sp.getBoolean("${profile}_javascript", sp.getBoolean("profileStandard_javascript", true)),
+        )
+    }
+
     @JvmStatic
     fun isGeckoAvailable(context: Context): Boolean {
         geckoAvailable?.let { return it }
@@ -105,7 +113,7 @@ object PetalGeckoRuntime {
                     .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.DEFAULT)
                     .build()
             )
-            .javaScriptEnabled(sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true)))
+            .javaScriptEnabled(isJavaScriptEnabled(sp))
             .consoleOutput(isDebug)
             .remoteDebuggingEnabled(isDebug)
             .webManifest(true)
@@ -186,7 +194,7 @@ object PetalGeckoRuntime {
         runtime?.let { rt ->
             try {
                 // 1. JavaScript
-                rt.settings.javaScriptEnabled = sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
+                rt.settings.javaScriptEnabled = isJavaScriptEnabled(sp)
 
                 // 2. Enhanced Tracking Protection & AdBlock
                 val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))

@@ -17,11 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DesktopWindows
-import androidx.compose.material.icons.filled.FindInPage
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,8 +40,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 interface PetalOverflowMenuActionHandler {
     fun onGoBack()
@@ -384,9 +377,13 @@ fun PetalOverflowMenuSheet(
             .padding(top = 52.dp, end = 12.dp, start = 12.dp, bottom = 72.dp),
         contentAlignment = Alignment.BottomEnd
     ) {
-        com.petal.browser.ui.containment.PetalHeroCard(
-            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier
                 .fillMaxWidth(0.88f)
                 .widthIn(max = 350.dp)
@@ -431,26 +428,26 @@ fun PetalOverflowMenuSheet(
                 ) {
                     CircularIconButton(
                         icon = Icons.Rounded.ArrowBack,
-                        contentDescription = stringResource(R.string.ui_back),
+                        contentDescription = "Back",
                         enabled = canGoBack,
                         onClick = onGoBack
                     )
                     CircularIconButton(
                         icon = if (isBookmarked && !isHomePage) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                        contentDescription = stringResource(R.string.ui_toggle_bookmark),
+                        contentDescription = "Toggle Bookmark",
                         enabled = !isHomePage,
                         tint = if (isBookmarked && !isHomePage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                         onClick = onToggleBookmark
                     )
                     CircularIconButton(
                         icon = Icons.Rounded.OfflinePin,
-                        contentDescription = stringResource(R.string.ui_install_site_offline),
+                        contentDescription = "Install site offline",
                         enabled = !isHomePage,
                         onClick = onSavePage
                     )
                     CircularIconButton(
                         icon = Icons.Rounded.Refresh,
-                        contentDescription = stringResource(R.string.ui_reload),
+                        contentDescription = "Reload",
                         onClick = onReload
                     )
                 }
@@ -462,22 +459,44 @@ fun PetalOverflowMenuSheet(
                 )
 
                 // 4-Column Quick Action Matrix
-                com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                    items = listOf(
-                        com.petal.browser.ui.containment.PetalConnectedButtonItem("Desktop", Icons.Filled.DesktopWindows, isDesktopSite),
-                        com.petal.browser.ui.containment.PetalConnectedButtonItem("AdBlock", Icons.Filled.Shield, isAdBlockEnabled),
-                        com.petal.browser.ui.containment.PetalConnectedButtonItem("Share", Icons.Filled.Share),
-                        com.petal.browser.ui.containment.PetalConnectedButtonItem(if (isHomePage) "History" else "Find", if (isHomePage) Icons.Filled.History else Icons.Filled.FindInPage),
-                    ),
-                    selectedIndex = -1,
-                    onSelect = { index ->
-                        when (index) {
-                            0 -> onToggleDesktopSite(!isDesktopSite)
-                            1 -> onToggleAdBlock(!isAdBlockEnabled)
-                            2 -> onShareLink()
-                            3 -> if (isHomePage) onOpenHistory() else onSearchOnSite()
+                ActionMatrixGrid(
+                    actions = listOf(
+                        ActionMatrixItem(
+                            icon = Icons.Rounded.DesktopWindows,
+                            label = "Desktop",
+                            isActive = isDesktopSite,
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
+                            onClick = { onToggleDesktopSite(!isDesktopSite) }
+                        ),
+                        ActionMatrixItem(
+                            icon = Icons.Rounded.Shield,
+                            label = "AdBlock",
+                            isActive = isAdBlockEnabled,
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Burst.toShape(),
+                            onClick = { onToggleAdBlock(!isAdBlockEnabled) }
+                        ),
+                        ActionMatrixItem(
+                            icon = Icons.Rounded.Share,
+                            label = "Share",
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                            onClick = onShareLink
+                        ),
+                        if (!isHomePage) {
+                            ActionMatrixItem(
+                                icon = Icons.Rounded.FindInPage,
+                                label = "Find",
+                                shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                                onClick = onSearchOnSite
+                            )
+                        } else {
+                            ActionMatrixItem(
+                                icon = Icons.Rounded.History,
+                                label = "History",
+                                shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                                onClick = onOpenHistory
+                            )
                         }
-                    },
+                    )
                 )
 
                 HorizontalDivider(
@@ -489,13 +508,13 @@ fun PetalOverflowMenuSheet(
                 // Section 1: Tab actions
                 MenuRowItem(
                     icon = Icons.Rounded.Add,
-                    title = stringResource(R.string.ui_new_tab_2),
+                    title = "New tab",
                     onClick = onNewTab
                 )
                 MenuRowItem(
                     icon = Icons.Rounded.VisibilityOff,
-                    title = stringResource(R.string.ui_new_private_incognito_tab),
-                    subtitle = stringResource(R.string.ui_browse_without_saving_search_history),
+                    title = "New Private / Incognito tab",
+                    subtitle = "Browse without saving search history",
                     onClick = onNewIncognitoTab
                 )
 
@@ -528,7 +547,7 @@ fun PetalOverflowMenuSheet(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = stringResource(R.string.ui_adblock_shield_hud),
+                                text = "AdBlock & Shield HUD",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -549,8 +568,8 @@ fun PetalOverflowMenuSheet(
                 if (!isHomePage) {
                     MenuRowSwitchItem(
                         icon = Icons.Rounded.DesktopWindows,
-                        title = stringResource(R.string.ui_desktop_site),
-                        subtitle = stringResource(R.string.ui_request_desktop_version),
+                        title = "Desktop site",
+                        subtitle = "Request desktop version",
                         checked = isDesktopSite,
                         onCheckedChange = onToggleDesktopSite
                     )
@@ -559,8 +578,8 @@ fun PetalOverflowMenuSheet(
                 if (isMediaPlaying) {
                     MenuRowItem(
                         icon = Icons.Rounded.PictureInPicture,
-                        title = stringResource(R.string.ui_play_in_picture_in_picture),
-                        subtitle = stringResource(R.string.ui_floating_video_window),
+                        title = "Play in Picture-in-Picture",
+                        subtitle = "Floating video window",
                         onClick = onTriggerMediaMode
                     )
                 }
@@ -584,8 +603,8 @@ fun PetalOverflowMenuSheet(
                 if (enabledExtensions.isEmpty()) {
                     MenuRowItem(
                         icon = Icons.Rounded.Extension,
-                        title = stringResource(R.string.ui_extensions),
-                        subtitle = stringResource(R.string.ui_install_firefox_add_ons),
+                        title = "Extensions",
+                        subtitle = "Install Firefox add-ons",
                         onClick = onOpenExtensions
                     )
                 } else {
@@ -593,7 +612,7 @@ fun PetalOverflowMenuSheet(
                     val subtitleText = if (enabledExtensions.size == 1) firstExtName else "$firstExtName..."
                     MenuRowItem(
                         icon = Icons.Rounded.Extension,
-                        title = stringResource(R.string.ui_extensions),
+                        title = "Extensions",
                         subtitle = subtitleText,
                         badgeCount = enabledExtensions.size,
                         trailingIcon = if (isExtensionsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
@@ -615,8 +634,8 @@ fun PetalOverflowMenuSheet(
                             }
                             MenuRowItem(
                                 icon = Icons.Rounded.Tune,
-                                title = stringResource(R.string.ui_manage_extensions),
-                                subtitle = stringResource(R.string.ui_install_or_configure_add_ons),
+                                title = "Manage extensions",
+                                subtitle = "Install or configure add-ons",
                                 isSubItem = true,
                                 onClick = { isExtensionsExpanded = false; onOpenExtensions() }
                             )
@@ -633,22 +652,22 @@ fun PetalOverflowMenuSheet(
                 // Section 3: Navigation & Data
                 MenuRowItem(
                     icon = Icons.Rounded.History,
-                    title = stringResource(R.string.ui_history),
+                    title = "History",
                     onClick = onOpenHistory
                 )
                 MenuRowItem(
                     icon = Icons.Rounded.DeleteSweep,
-                    title = stringResource(R.string.ui_delete_browsing_data),
+                    title = "Delete browsing data",
                     onClick = onDeleteBrowsingData
                 )
                 MenuRowItem(
                     icon = Icons.Rounded.Download,
-                    title = stringResource(R.string.ui_downloads),
+                    title = "Downloads",
                     onClick = onOpenDownloads
                 )
                 MenuRowItem(
                     icon = Icons.Rounded.Bookmark,
-                    title = stringResource(R.string.ui_bookmarks),
+                    title = "Bookmarks",
                     onClick = onOpenBookmarks
                 )
 
@@ -661,14 +680,14 @@ fun PetalOverflowMenuSheet(
                 // Section 4: Tools & Settings
                 MenuRowItem(
                     icon = Icons.Rounded.Widgets,
-                    title = stringResource(R.string.ui_quick_tools),
-                    subtitle = stringResource(R.string.ui_qr_translator_pdf_devtools_inspector),
+                    title = "Quick Tools",
+                    subtitle = "QR, Translator, PDF, DevTools & Inspector",
                     onClick = onOpenQuickTools
                 )
 
                 MenuRowItem(
                     icon = Icons.Rounded.Build,
-                    title = stringResource(R.string.ui_more_tools),
+                    title = "More tools",
                     trailingIcon = if (isMoreToolsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                     onClick = { isMoreToolsExpanded = !isMoreToolsExpanded }
                 )
@@ -682,51 +701,51 @@ fun PetalOverflowMenuSheet(
                         if (!isHomePage) {
                             MenuRowItem(
                                 icon = Icons.Rounded.FindInPage,
-                                title = stringResource(R.string.ui_find_in_page),
+                                title = "Find in page",
                                 isSubItem = true,
                                 onClick = onSearchOnSite
                             )
                         }
                         MenuRowItem(
                             icon = Icons.Rounded.MenuBook,
-                            title = stringResource(R.string.ui_reading_mode),
+                            title = "Reading mode",
                             isSubItem = true,
                             onClick = onShowReadingMode
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.Print,
-                            title = stringResource(R.string.ui_print_to_pdf),
+                            title = "Print to PDF",
                             isSubItem = true,
                             onClick = onPrintPdf
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.SaveAlt,
-                            title = stringResource(R.string.ui_save_page),
+                            title = "Save page",
                             isSubItem = true,
                             onClick = onSavePage
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.Share,
-                            title = stringResource(R.string.ui_share_link),
+                            title = "Share link",
                             isSubItem = true,
                             onClick = onShareLink
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.LinkOff,
-                            title = stringResource(R.string.ui_copy_clean_link),
-                            subtitle = stringResource(R.string.ui_strip_tracking_referral_tags),
+                            title = "Copy Clean Link",
+                            subtitle = "Strip tracking & referral tags",
                             isSubItem = true,
                             onClick = onCopyCleanLink
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.Terminal,
-                            title = stringResource(R.string.ui_developer_console),
+                            title = "Developer Console",
                             isSubItem = true,
                             onClick = onOpenDevConsole
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.Lock,
-                            title = stringResource(R.string.ui_safe_locker),
+                            title = "Safe Locker",
                             isSubItem = true,
                             onClick = onOpenSafeLocker
                         )
@@ -736,14 +755,14 @@ fun PetalOverflowMenuSheet(
                 if (!isHomePage) {
                     MenuRowItem(
                         icon = Icons.Rounded.InstallMobile,
-                        title = stringResource(R.string.ui_install_as_app),
+                        title = "Install as App",
                         onClick = onInstallPwa
                     )
                 }
 
                 MenuRowItem(
                     icon = Icons.Rounded.Settings,
-                    title = stringResource(R.string.ui_settings),
+                    title = "Settings",
                     onClick = onOpenSettings
                 )
 
@@ -761,11 +780,16 @@ private fun CircularIconButton(
     tint: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
-    Surface(
+    Card(
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = if (enabled) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-        modifier = Modifier.size(44.dp).clickable(enabled = enabled, onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            contentColor = if (enabled) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier
+            .size(44.dp)
+            .clickable(enabled = enabled, onClick = onClick)
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -932,7 +956,7 @@ private fun ExtensionMenuRowItem(
         ) {
             Icon(
                 imageVector = Icons.Rounded.Settings,
-                contentDescription = stringResource(R.string.ui_extension_settings),
+                contentDescription = "Extension Settings",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )

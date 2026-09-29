@@ -54,11 +54,12 @@ import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.account.getPresetMaterialIcon
 import com.petal.browser.account.PetalAvatarCropSheet
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.containment.petalGroupPositionFor
-import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
+import com.petal.browser.ui.components.SettingsItem
+import com.petal.browser.ui.components.SwitchSettingItem
 import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.components.getGroupItemShape
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
@@ -66,8 +67,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -203,7 +202,7 @@ fun FirefoxAccountSyncScreen(
                             maxSubtitleLines = 1
                         )
                     },
-                    snackbarHost = { com.petal.browser.ui.containment.PetalSnackbarHost(hostState = snackbarHostState) },
+                    snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) },
                     containerColor = MaterialTheme.colorScheme.background,
                     modifier = modifier.fillMaxSize()
                 ) { innerPadding ->
@@ -219,9 +218,13 @@ fun FirefoxAccountSyncScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             // ── Section 1: User Profile Hero Card ─────────────────────
-                            com.petal.browser.ui.containment.PetalHeroCard(
-                                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            Card(
+                                shape = RoundedCornerShape(24.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(
@@ -251,7 +254,7 @@ fun FirefoxAccountSyncScreen(
                                             Box(contentAlignment = Alignment.Center) {
                                                 Icon(
                                                     imageVector = if (profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty()) Icons.Rounded.Crop else Icons.Rounded.AddPhotoAlternate,
-                                                    contentDescription = stringResource(R.string.ui_change_profile_picture),
+                                                    contentDescription = "Change Profile Picture",
                                                     modifier = Modifier.size(16.dp)
                                                 )
                                             }
@@ -286,7 +289,7 @@ fun FirefoxAccountSyncScreen(
                                             Box(contentAlignment = Alignment.Center) {
                                                 Icon(
                                                     Icons.Rounded.Edit,
-                                                    contentDescription = stringResource(R.string.ui_edit_user_name),
+                                                    contentDescription = "Edit User Name",
                                                     modifier = Modifier.size(15.dp)
                                                 )
                                             }
@@ -296,7 +299,7 @@ fun FirefoxAccountSyncScreen(
                                     Spacer(Modifier.height(2.dp))
 
                                     Text(
-                                        text = stringResource(R.string.ui_petal_browser_profile),
+                                        text = "Petal Browser Profile",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -305,7 +308,7 @@ fun FirefoxAccountSyncScreen(
 
                                     // Avatar Preset Row
                                     Text(
-                                        text = stringResource(R.string.ui_choose_profile_picture),
+                                        text = "CHOOSE PROFILE PICTURE",
                                         style = MaterialTheme.typography.labelMedium.copy(
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = 1.2.sp
@@ -335,7 +338,7 @@ fun FirefoxAccountSyncScreen(
                                             Box(contentAlignment = Alignment.Center) {
                                                 Icon(
                                                     Icons.Rounded.AddPhotoAlternate,
-                                                    contentDescription = stringResource(R.string.ui_select_photo_crop),
+                                                    contentDescription = "Select Photo & Crop",
                                                     modifier = Modifier.size(24.dp)
                                                 )
                                             }
@@ -368,7 +371,7 @@ fun FirefoxAccountSyncScreen(
 
                             // ── Section 2: FIREFOX ACCOUNT & SYNC HERO CARD ────────────
                             Text(
-                                text = stringResource(R.string.ui_firefox_account_sync),
+                                text = "FIREFOX ACCOUNT & SYNC",
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.2.sp
@@ -377,9 +380,12 @@ fun FirefoxAccountSyncScreen(
                                 modifier = Modifier.padding(start = 8.dp)
                             )
 
-                            com.petal.browser.ui.containment.PetalHeroCard(
-                                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            Card(
+                                shape = RoundedCornerShape(24.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(modifier = Modifier.padding(20.dp)) {
@@ -405,7 +411,7 @@ fun FirefoxAccountSyncScreen(
                                                 if (!signedIn.avatarUrl.isNullOrBlank()) {
                                                     AsyncImage(
                                                         model = signedIn.avatarUrl,
-                                                        contentDescription = stringResource(R.string.ui_firefox_avatar),
+                                                        contentDescription = "Firefox Avatar",
                                                         modifier = Modifier.fillMaxSize().clip(CircleShape),
                                                         contentScale = ContentScale.Crop
                                                     )
@@ -439,7 +445,7 @@ fun FirefoxAccountSyncScreen(
                                                     color = Color(0xFF4CAF50).copy(alpha = 0.15f)
                                                 ) {
                                                     Text(
-                                                        text = stringResource(R.string.ui_firefox_account_connected),
+                                                        text = "Firefox Account Connected",
                                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                                                         color = Color(0xFF2E7D32),
                                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -478,7 +484,7 @@ fun FirefoxAccountSyncScreen(
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Text(
-                                                    text = stringResource(R.string.ui_last_synced),
+                                                    text = "Last Synced",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
@@ -522,7 +528,7 @@ fun FirefoxAccountSyncScreen(
                                                         modifier = Modifier.size(18.dp)
                                                     )
                                                     Spacer(Modifier.width(6.dp))
-                                                    Text(stringResource(R.string.ui_restore), fontWeight = FontWeight.SemiBold, maxLines = 1)
+                                                    Text("Restore", fontWeight = FontWeight.SemiBold, maxLines = 1)
                                                 }
 
                                                 Button(
@@ -581,7 +587,7 @@ fun FirefoxAccountSyncScreen(
                                         ) {
                                             Icon(Icons.Rounded.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.ui_sign_out_of_firefox), fontWeight = FontWeight.SemiBold)
+                                            Text("Sign Out of Firefox", fontWeight = FontWeight.SemiBold)
                                         }
 
                                     } else {
@@ -608,7 +614,7 @@ fun FirefoxAccountSyncScreen(
                                             Spacer(Modifier.height(12.dp))
 
                                             Text(
-                                                text = stringResource(R.string.ui_sync_with_firefox),
+                                                text = "Sync with Firefox",
                                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
@@ -616,7 +622,7 @@ fun FirefoxAccountSyncScreen(
                                             Spacer(Modifier.height(4.dp))
 
                                             Text(
-                                                text = stringResource(R.string.ui_take_your_bookmarks_history_and),
+                                                text = "Take your bookmarks, history, and open tabs anywhere. Privately synced end-to-end with your Mozilla Firefox Account.",
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 textAlign = TextAlign.Center
@@ -645,7 +651,7 @@ fun FirefoxAccountSyncScreen(
                                             ) {
                                                 Icon(Icons.Rounded.AccountCircle, contentDescription = null)
                                                 Spacer(Modifier.width(8.dp))
-                                                Text(stringResource(R.string.ui_sign_in_with_firefox), fontWeight = FontWeight.Bold)
+                                                Text("Sign In with Firefox", fontWeight = FontWeight.Bold)
                                             }
 
                                             Spacer(Modifier.height(10.dp))
@@ -661,7 +667,7 @@ fun FirefoxAccountSyncScreen(
                                             ) {
                                                 Icon(Icons.Rounded.QrCodeScanner, contentDescription = null)
                                                 Spacer(Modifier.width(8.dp))
-                                                Text(stringResource(R.string.ui_pair_with_firefox_desktop), fontWeight = FontWeight.SemiBold)
+                                                Text("Pair with Firefox Desktop", fontWeight = FontWeight.SemiBold)
                                             }
 
                                             Spacer(Modifier.height(10.dp))
@@ -673,7 +679,7 @@ fun FirefoxAccountSyncScreen(
                                             ) {
                                                 Icon(Icons.Rounded.FileOpen, contentDescription = null)
                                                 Spacer(Modifier.width(8.dp))
-                                                Text(stringResource(R.string.ui_import_firefox_bookmarks_or_history), fontWeight = FontWeight.SemiBold)
+                                                Text("Import Firefox bookmarks or history", fontWeight = FontWeight.SemiBold)
                                             }
                                             Spacer(Modifier.height(10.dp))
 
@@ -688,7 +694,7 @@ fun FirefoxAccountSyncScreen(
                                             ) {
                                                 Icon(Icons.Rounded.Email, contentDescription = null, modifier = Modifier.size(18.dp))
                                                 Spacer(Modifier.width(8.dp))
-                                                Text(stringResource(R.string.ui_sign_in_with_email_directly), fontWeight = FontWeight.Medium)
+                                                Text("Sign In with Email Directly", fontWeight = FontWeight.Medium)
                                             }
                                         }
                                     }
@@ -697,7 +703,7 @@ fun FirefoxAccountSyncScreen(
 
                             // ── Section 3: SYNC ENGINES ────────────────────────────────
                             Text(
-                                text = stringResource(R.string.ui_what_to_sync),
+                                text = "WHAT TO SYNC",
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.2.sp
@@ -712,15 +718,15 @@ fun FirefoxAccountSyncScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    com.petal.browser.ui.containment.PetalGroupControlRow(
-                                        title = stringResource(R.string.ui_bookmarks),
-                                        subtitle = stringResource(R.string.ui_sync_local_bookmarks_with_firefox),
+                                    SwitchSettingItem(
+                                        title = "Bookmarks",
+                                        subtitle = "Sync local bookmarks with Firefox mobile and desktop",
                                         checked = syncBookmarks,
                                         onCheckedChange = { checked ->
                                             syncBookmarks = checked
                                             fxaManager.setEngineEnabled(SyncEngine.BOOKMARKS, checked)
                                         },
-                                        position = petalGroupPositionFor(0, syncItemsCount),
+                                        shape = getGroupItemShape(0, syncItemsCount),
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.Bookmark,
@@ -730,15 +736,15 @@ fun FirefoxAccountSyncScreen(
                                         }
                                     )
 
-                                    com.petal.browser.ui.containment.PetalGroupControlRow(
-                                        title = stringResource(R.string.ui_browsing_history),
-                                        subtitle = stringResource(R.string.ui_seamlessly_sync_history_across_your),
+                                    SwitchSettingItem(
+                                        title = "Browsing History",
+                                        subtitle = "Seamlessly sync history across your Firefox sessions",
                                         checked = syncHistory,
                                         onCheckedChange = { checked ->
                                             syncHistory = checked
                                             fxaManager.setEngineEnabled(SyncEngine.HISTORY, checked)
                                         },
-                                        position = petalGroupPositionFor(1, syncItemsCount),
+                                        shape = getGroupItemShape(1, syncItemsCount),
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.History,
@@ -748,15 +754,15 @@ fun FirefoxAccountSyncScreen(
                                         }
                                     )
 
-                                    com.petal.browser.ui.containment.PetalGroupControlRow(
-                                        title = stringResource(R.string.ui_open_tabs),
-                                        subtitle = stringResource(R.string.ui_send_and_receive_active_browser),
+                                    SwitchSettingItem(
+                                        title = "Open Tabs",
+                                        subtitle = "Send and receive active browser tabs across devices",
                                         checked = syncTabs,
                                         onCheckedChange = { checked ->
                                             syncTabs = checked
                                             fxaManager.setEngineEnabled(SyncEngine.TABS, checked)
                                         },
-                                        position = petalGroupPositionFor(2, syncItemsCount),
+                                        shape = getGroupItemShape(2, syncItemsCount),
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.Tab,
@@ -770,7 +776,7 @@ fun FirefoxAccountSyncScreen(
 
                             // ── Section 4: SECURITY & PRIVACY ──────────────────────────
                             Text(
-                                text = stringResource(R.string.ui_security_privacy),
+                                text = "SECURITY & PRIVACY",
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.2.sp
@@ -787,8 +793,8 @@ fun FirefoxAccountSyncScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
-                                        title = stringResource(R.string.ui_app_profile_lock),
+                                    SettingsItem(
+                                        title = "App & Profile Lock",
                                         subtitle = if (isLockActive) "Protection active • Fingerprint or Password" else "Require authentication on app startup",
                                         leadingIcon = {
                                             Icon(
@@ -797,13 +803,13 @@ fun FirefoxAccountSyncScreen(
                                                 tint = MaterialTheme.colorScheme.onPrimary
                                             )
                                         },
-                                        position = petalGroupPositionFor(0, securityItemCount),
+                                        shape = getGroupItemShape(0, securityItemCount),
                                         onClick = { showAppLockConfigPage = true }
                                     )
 
-                                    com.petal.browser.ui.containment.PetalGroupControlRow(
-                                        title = stringResource(R.string.ui_auto_clear_data_on_exit),
-                                        subtitle = stringResource(R.string.ui_automatically_purge_cache_history_and_2),
+                                    SwitchSettingItem(
+                                        title = "Auto-Clear Data on Exit",
+                                        subtitle = "Automatically purge cache, history, and open tabs on exit",
                                         checked = isClearOnExit,
                                         onCheckedChange = { checked ->
                                             isClearOnExit = checked
@@ -817,7 +823,7 @@ fun FirefoxAccountSyncScreen(
                                                 )
                                             }
                                         },
-                                        position = petalGroupPositionFor(1, securityItemCount),
+                                        shape = getGroupItemShape(1, securityItemCount),
                                         leadingIcon = {
                                             Icon(
                                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
@@ -827,15 +833,15 @@ fun FirefoxAccountSyncScreen(
                                         }
                                     )
 
-                                    com.petal.browser.ui.containment.PetalGroupControlRow(
-                                        title = stringResource(R.string.ui_https_only_mode),
+                                    SwitchSettingItem(
+                                        title = "HTTPS-Only Mode",
                                         subtitle = if (isHttpsOnly) "Active • HTTP automatically upgraded to HTTPS" else "Disabled • Insecure connections allowed",
                                         checked = isHttpsOnly,
                                         onCheckedChange = { checked ->
                                             isHttpsOnly = checked
                                             sp.edit().putBoolean("sp_https_only", checked).apply()
                                         },
-                                        position = petalGroupPositionFor(2, securityItemCount),
+                                        shape = getGroupItemShape(2, securityItemCount),
                                         leadingIcon = {
                                             Icon(
                                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
@@ -849,7 +855,7 @@ fun FirefoxAccountSyncScreen(
 
                             // ── Section 5: STORAGE & DATA ──────────────────────────────
                             Text(
-                                text = stringResource(R.string.ui_storage_data),
+                                text = "STORAGE & DATA",
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.2.sp
@@ -864,8 +870,9 @@ fun FirefoxAccountSyncScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    com.petal.browser.ui.containment.PetalHeroCard(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    Surface(
+                                        shape = getGroupItemShape(0, storageItemCount),
+                                        color = MaterialTheme.colorScheme.surfaceContainerLow,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Column(
@@ -900,12 +907,12 @@ fun FirefoxAccountSyncScreen(
                                                     }
                                                     Column {
                                                         Text(
-                                                            text = stringResource(R.string.ui_web_cache_app_storage),
+                                                            text = "Web Cache & App Storage",
                                                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                         Text(
-                                                            text = stringResource(R.string.ui_temporary_cached_network_files_and),
+                                                            text = "Temporary cached network files and assets",
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                                         )
@@ -957,15 +964,15 @@ fun FirefoxAccountSyncScreen(
                                                         modifier = Modifier.size(18.dp)
                                                     )
                                                     Spacer(Modifier.width(8.dp))
-                                                    Text(stringResource(R.string.ui_clear_web_cache), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                                                    Text("Clear Web Cache", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
                                                 }
                                             }
                                         }
                                     }
 
-                                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
-                                        title = stringResource(R.string.ui_clear_browsing_data),
-                                        subtitle = stringResource(R.string.ui_select_remove_history_cookies_web),
+                                    SettingsItem(
+                                        title = "Clear Browsing Data",
+                                        subtitle = "Select & remove history, cookies, web storage, autofill & permissions",
                                         leadingIcon = {
                                             Icon(
                                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.reset_settings_rounded),
@@ -973,7 +980,7 @@ fun FirefoxAccountSyncScreen(
                                                 tint = MaterialTheme.colorScheme.onPrimary
                                             )
                                         },
-                                        position = petalGroupPositionFor(1, storageItemCount),
+                                        shape = getGroupItemShape(1, storageItemCount),
                                         onClick = { showClearDataDialog = true }
                                     )
                                 }
@@ -1009,23 +1016,23 @@ fun FirefoxAccountSyncScreen(
 
     // Desktop Firefox QR Pairing Dialog
     if (showDesktopPairDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showDesktopPairDialog = false },
             title = {
-                Text(stringResource(R.string.ui_pair_with_firefox_desktop), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                Text("Pair with Firefox Desktop", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        stringResource(R.string.ui_on_your_firefox_desktop_browser),
+                        "On your Firefox Desktop browser, navigate to 'about:preferences#sync' or scan your device pairing code.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     OutlinedTextField(
                         value = desktopPairUrlInput,
                         onValueChange = { desktopPairUrlInput = it },
-                        label = { Text(stringResource(R.string.ui_firefox_pairing_url_code)) },
-                        placeholder = { Text(stringResource(R.string.ui_https_firefox_com_pair_channel)) },
+                        label = { Text("Firefox Pairing URL / Code") },
+                        placeholder = { Text("https://firefox.com/pair?channel=...") },
                         singleLine = false,
                         maxLines = 3,
                         shape = RoundedCornerShape(16.dp),
@@ -1058,7 +1065,7 @@ fun FirefoxAccountSyncScreen(
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.bouncyClickable()
                 ) {
-                    Text(stringResource(R.string.ui_connect), fontWeight = FontWeight.Bold)
+                    Text("Connect", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -1067,7 +1074,7 @@ fun FirefoxAccountSyncScreen(
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.bouncyClickable()
                 ) {
-                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                    Text("Cancel", fontWeight = FontWeight.SemiBold)
                 }
             }
         )
@@ -1075,23 +1082,23 @@ fun FirefoxAccountSyncScreen(
 
     // Direct Email Sign In Dialog
     if (showDirectEmailDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showDirectEmailDialog = false },
             title = {
-                Text(stringResource(R.string.ui_sign_in_with_firefox_email), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                Text("Sign In with Firefox Email", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        stringResource(R.string.ui_enter_your_firefox_account_email),
+                        "Enter your Firefox Account email to enable instant sync for your bookmarks, history, and tabs.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     OutlinedTextField(
                         value = directEmailInput,
                         onValueChange = { directEmailInput = it },
-                        label = { Text(stringResource(R.string.ui_firefox_account_email)) },
-                        placeholder = { Text(stringResource(R.string.ui_you_example_com)) },
+                        label = { Text("Firefox Account Email") },
+                        placeholder = { Text("you@example.com") },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -1123,7 +1130,7 @@ fun FirefoxAccountSyncScreen(
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.bouncyClickable()
                 ) {
-                    Text(stringResource(R.string.ui_sign_in_sync), fontWeight = FontWeight.Bold)
+                    Text("Sign In & Sync", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -1132,7 +1139,7 @@ fun FirefoxAccountSyncScreen(
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.bouncyClickable()
                 ) {
-                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                    Text("Cancel", fontWeight = FontWeight.SemiBold)
                 }
             }
         )
@@ -1140,14 +1147,14 @@ fun FirefoxAccountSyncScreen(
 
     // Edit User Name Dialog
     if (showEditNameDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showEditNameDialog = false },
-            title = { Text(stringResource(R.string.ui_edit_user_name), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+            title = { Text("Edit User Name", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
             text = {
                 OutlinedTextField(
                     value = nameInput,
                     onValueChange = { if (it.length <= 15) nameInput = it },
-                    label = { Text(stringResource(R.string.ui_user_name_max_15_chars)) },
+                    label = { Text("User Name (max 15 chars)") },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -1162,7 +1169,7 @@ fun FirefoxAccountSyncScreen(
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.bouncyClickable()
                 ) {
-                    Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
+                    Text("Save", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -1171,7 +1178,7 @@ fun FirefoxAccountSyncScreen(
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.bouncyClickable()
                 ) {
-                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                    Text("Cancel", fontWeight = FontWeight.SemiBold)
                 }
             }
         )
@@ -1223,9 +1230,10 @@ fun FirefoxAccountSyncScreen(
 
     // Media Picker Bottom Sheet
     if (showMediaPickerSheet) {
-        com.petal.browser.ui.containment.PetalSheet(
+        ModalBottomSheet(
             onDismissRequest = { showMediaPickerSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             dragHandle = null
         ) {
             com.petal.browser.media.PetalMediaPickerBottomSheet(

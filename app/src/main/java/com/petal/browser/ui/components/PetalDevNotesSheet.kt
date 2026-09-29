@@ -26,8 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,9 +42,11 @@ fun PetalDevNotesSheet(
     val clipboardManager = LocalClipboardManager.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    com.petal.browser.ui.containment.PetalSheet(
+    ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(
             modifier = Modifier
@@ -61,7 +61,7 @@ fun PetalDevNotesSheet(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.ui_dev_notes),
+                        text = "Dev Notes",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -76,10 +76,10 @@ fun PetalDevNotesSheet(
                     IconButton(onClick = {
                         clipboardManager.setText(AnnotatedString(noteText))
                     }) {
-                        Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy_notes))
+                        Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy Notes")
                     }
                     IconButton(onClick = onDismissRequest) {
-                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
+                        Icon(Icons.Rounded.Close, contentDescription = "Close")
                     }
                 }
             }
@@ -97,7 +97,7 @@ fun PetalDevNotesSheet(
                     .height(240.dp),
                 placeholder = {
                     Text(
-                        stringResource(R.string.ui_write_notes_css_rules_or),
+                        "Write notes, CSS rules, or tokens for this site...",
                         fontFamily = FontFamily.Monospace,
                         fontSize = 13.sp
                     )
@@ -121,7 +121,7 @@ fun PetalDevNotesSheet(
             ) {
                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.ui_save_notes))
+                Text("Save Notes")
             }
         }
     }

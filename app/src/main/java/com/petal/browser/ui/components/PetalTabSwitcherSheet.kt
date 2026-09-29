@@ -54,8 +54,6 @@ import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.browser.PlaceholderAlbumController
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 data class TabModel(
     val album: AlbumController,
@@ -143,11 +141,15 @@ object PetalTabSwitcherBridge {
                                     val previewBitmap = when (album) {
                                         is com.petal.browser.view.PetalGeckoView -> {
                                             album.getCachedPreviewBitmap()
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.getTabId())
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.getAlbumUrl())
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.url)
                                         }
                                         is PlaceholderAlbumController -> {
-                                            null
+                                            com.petal.browser.unit.TabThumbnailCache.get(album.getTabId())
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.url)
                                         }
-                                        else -> null
+                                        else -> com.petal.browser.unit.TabThumbnailCache.get(album.hashCode().toString())
                                     }
 
 
@@ -299,25 +301,36 @@ object PetalTabSwitcherBridge {
                             (activity as? BrowserActivity)?.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.TABS)
                         },
                         onTabVisible = { tabItem ->
-                            val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
-                            val tabKey = when (targetAlbum) {
-                                is com.petal.browser.view.PetalGeckoView -> targetAlbum.getTabId()
-                                is PlaceholderAlbumController -> targetAlbum.getTabId()
-                                else -> tabItem.id
-                            }
-                            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(
-                                arrayOf(tabKey, tabItem.id, tabItem.url), tabItem.isIncognito,
-                            ) { cached ->
-                                val index = tabItems.indexOfFirst { it.id == tabItem.id }
-                                if (cached != null && index >= 0 && tabItems[index].previewBitmap == null) {
-                                    tabItems[index] = tabItems[index].copy(previewBitmap = cached)
-                                }
-                            }
-                            if (targetAlbum is com.petal.browser.view.PetalGeckoView && tabItem.previewBitmap == null) {
+                            val targetAlbum = BrowserContainer.list()
+                                .find { it.hashCode().toString() == tabItem.id }
+                            if (targetAlbum is com.petal.browser.view.PetalGeckoView) {
                                 targetAlbum.capturePreviewBitmapAsync { bitmap ->
+                                    if (bitmap != null) {
+                                        val index = tabItems.indexOfFirst { it.id == tabItem.id }
+                                        if (index >= 0) {
+                                            tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
+                                        }
+                                    } else {
+                                        // Tab is hidden (GONE) — capturePixels returns null.
+                                        // Fall back to disk-cached thumbnail so all tabs
+                                        // show their saved screenshot in the switcher.
+                                        val cached = targetAlbum.getCachedPreviewBitmap()
+                                            ?: com.petal.browser.unit.TabThumbnailCache.get(tabItem.id)
+                                        if (cached != null && !cached.isRecycled) {
+                                            val index = tabItems.indexOfFirst { it.id == tabItem.id }
+                                            if (index >= 0) {
+                                                tabItems[index] = tabItems[index].copy(previewBitmap = cached)
+                                            }
+                                        }
+                                    }
+                                }
+                            } else if (targetAlbum != null) {
+                                // Non-GeckoView tab: load from disk cache by item ID
+                                val cached = com.petal.browser.unit.TabThumbnailCache.get(tabItem.id)
+                                if (cached != null && !cached.isRecycled) {
                                     val index = tabItems.indexOfFirst { it.id == tabItem.id }
-                                    if (bitmap != null && index >= 0) {
-                                        tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
+                                    if (index >= 0) {
+                                        tabItems[index] = tabItems[index].copy(previewBitmap = cached)
                                     }
                                 }
                             }
@@ -431,7 +444,7 @@ fun PetalTabSwitcherContent(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Rounded.Add,
-                                contentDescription = stringResource(R.string.ui_new_tab),
+                                contentDescription = "New Tab",
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -461,7 +474,7 @@ fun PetalTabSwitcherContent(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.ViewList,
-                                        contentDescription = stringResource(R.string.ui_list_view),
+                                        contentDescription = "List View",
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -480,7 +493,7 @@ fun PetalTabSwitcherContent(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.GridView,
-                                        contentDescription = stringResource(R.string.ui_grid_view),
+                                        contentDescription = "Grid View",
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -496,25 +509,25 @@ fun PetalTabSwitcherContent(
                         ) {
                             Icon(
                                 Icons.Rounded.MoreVert,
-                                contentDescription = stringResource(R.string.ui_menu_options),
+                                contentDescription = "Menu Options",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
-                        com.petal.browser.ui.containment.PetalPopupMenu(
+                        DropdownMenu(
                             expanded = showOverflowMenu,
                             onDismissRequest = { showOverflowMenu = false }
                         ) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_new_tab)) },
+                            DropdownMenuItem(
+                                text = { Text("New Tab") },
                                 leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                                 onClick = {
                                     showOverflowMenu = false
                                     onNewTab()
                                 }
                             )
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_close_all_tabs), color = MaterialTheme.colorScheme.error) },
+                            DropdownMenuItem(
+                                text = { Text("Close All Tabs", color = MaterialTheme.colorScheme.error) },
                                 leadingIcon = { Icon(Icons.Rounded.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showOverflowMenu = false
@@ -531,7 +544,7 @@ fun PetalTabSwitcherContent(
                     onValueChange = { searchQuery = it },
                     placeholder = {
                         Text(
-                            stringResource(R.string.ui_search_your_tabs),
+                            "Search your tabs",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -539,7 +552,7 @@ fun PetalTabSwitcherContent(
                     leadingIcon = {
                         Icon(
                             Icons.Rounded.Search,
-                            contentDescription = stringResource(R.string.ui_search),
+                            contentDescription = "Search",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -548,7 +561,7 @@ fun PetalTabSwitcherContent(
                             IconButton(onClick = { searchQuery = "" }) {
                                 Icon(
                                     Icons.Rounded.Close,
-                                    contentDescription = stringResource(R.string.ui_clear),
+                                    contentDescription = "Clear",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -684,7 +697,7 @@ fun PetalTabSwitcherContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = stringResource(R.string.ui_tab_closed),
+                                text = "Tab closed",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -699,7 +712,7 @@ fun PetalTabSwitcherContent(
                                 }
                             ) {
                                 Text(
-                                    text = stringResource(R.string.ui_undo),
+                                    text = "Undo",
                                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -768,14 +781,17 @@ fun TabCard(
     val borderWidth = if (tab.isActive) 2.dp else 0.dp
 
     val context = androidx.compose.ui.platform.LocalContext.current
-    com.petal.browser.ui.containment.PetalHeroCard(
-        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-        containerColor = if (tab.isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        else MaterialTheme.colorScheme.surfaceContainerHigh,
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (tab.isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            else MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
             .height(105.dp)
-            .border(borderWidth, borderColor, com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner)
+            .border(borderWidth, borderColor, RoundedCornerShape(20.dp))
             .bouncyClickable { onSelect() }
             .entrance(index = 0)
     ) {
@@ -795,7 +811,7 @@ fun TabCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                    PetalShapeIconBadge(
                         shape = com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape(),
                         containerColor = if (tab.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
                         contentColor = if (tab.isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -823,7 +839,7 @@ fun TabCard(
                 ) {
                     Icon(
                         Icons.Rounded.Close,
-                        contentDescription = stringResource(R.string.ui_close_tab),
+                        contentDescription = "Close Tab",
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -846,7 +862,7 @@ fun TabCard(
                     modifier = Modifier.align(Alignment.End)
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_active),
+                        text = "Active",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )

@@ -30,8 +30,6 @@ import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.InetAddress
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun PetalNetworkInspectorDialog(
@@ -86,13 +84,13 @@ fun PetalNetworkInspectorDialog(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = stringResource(R.string.ui_network_inspector),
+                            text = "Network Inspector",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = onDismissRequest) {
-                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
+                        Icon(Icons.Rounded.Close, contentDescription = "Close")
                     }
                 }
 
@@ -111,7 +109,7 @@ fun PetalNetworkInspectorDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text(stringResource(R.string.ui_done))
+                    Text("Done")
                 }
             }
         }

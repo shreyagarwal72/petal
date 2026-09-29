@@ -41,8 +41,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 /**
  * PetalWallpaperCropSheet:
@@ -112,9 +110,11 @@ fun PetalWallpaperCropSheet(
         }
     }
 
-    com.petal.browser.ui.containment.PetalSheet(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             modifier = Modifier
@@ -131,18 +131,18 @@ fun PetalWallpaperCropSheet(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.ui_crop_wallpaper),
+                        text = "Crop Wallpaper",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = stringResource(R.string.ui_scale_and_position_for_your),
+                        text = "Scale and position for your home screen",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
+                    Icon(Icons.Rounded.Close, contentDescription = "Close")
                 }
             }
 
@@ -236,7 +236,7 @@ fun PetalWallpaperCropSheet(
                         rotationAngle = (rotationAngle + 90f) % 360f
                         PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
-                        Icon(Icons.Rounded.RotateRight, contentDescription = stringResource(R.string.ui_rotate))
+                        Icon(Icons.Rounded.RotateRight, contentDescription = "Rotate")
                     }
 
                     IconButton(onClick = {
@@ -245,7 +245,7 @@ fun PetalWallpaperCropSheet(
                         rotationAngle = 0f
                         PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.ui_reset))
+                        Icon(Icons.Rounded.Refresh, contentDescription = "Reset")
                     }
 
                     PetalSlider(
@@ -291,7 +291,7 @@ fun PetalWallpaperCropSheet(
                     Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = stringResource(R.string.ui_set_as_home_wallpaper),
+                        text = "Set as Home Wallpaper",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 }

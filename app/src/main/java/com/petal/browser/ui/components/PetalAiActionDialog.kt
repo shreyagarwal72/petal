@@ -21,8 +21,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun PetalAiActionDialog(
@@ -67,12 +65,12 @@ fun PetalAiActionDialog(
                     }
                     Column {
                         Text(
-                            stringResource(R.string.ui_ai_web_research),
+                            "AI Web Research",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            stringResource(R.string.ui_choose_ai_action_for_webpage),
+                            "Choose AI action for webpage",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -83,8 +81,8 @@ fun PetalAiActionDialog(
 
                 // Option 1: Summarise this page Tile
                 AiActionTile(
-                    title = stringResource(R.string.ui_summarise_this_page),
-                    subtitle = stringResource(R.string.ui_generate_a_concise_executive_summary),
+                    title = "Summarise this page",
+                    subtitle = "Generate a concise executive summary and key insights",
                     icon = Icons.Rounded.Subject,
                     onClick = {
                         onSelectAction("SUMMARIZE", rememberAsDefault)
@@ -93,8 +91,8 @@ fun PetalAiActionDialog(
 
                 // Option 2: Ask a Question Tile
                 AiActionTile(
-                    title = stringResource(R.string.ui_ask_a_question),
-                    subtitle = stringResource(R.string.ui_ask_custom_questions_or_query),
+                    title = "Ask a Question",
+                    subtitle = "Ask custom questions or query specific webpage details",
                     icon = Icons.Rounded.HelpOutline,
                     onClick = {
                         onSelectAction("ASK_QUESTION", rememberAsDefault)
@@ -103,8 +101,8 @@ fun PetalAiActionDialog(
 
                 // Option 3: Petal AI Search Tile
                 AiActionTile(
-                    title = stringResource(R.string.ui_petal_ai_search),
-                    subtitle = stringResource(R.string.ui_real_time_ai_web_search),
+                    title = "Petal AI Search",
+                    subtitle = "Real-time AI web search, grounding and instant answers",
                     icon = Icons.Rounded.Search,
                     onClick = {
                         onSelectAction("AI_SEARCH", rememberAsDefault)
@@ -124,7 +122,7 @@ fun PetalAiActionDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        stringResource(R.string.ui_remember_choice_as_default),
+                        "Remember choice as default",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                         color = MaterialTheme.colorScheme.onSurface
                     )

@@ -75,7 +75,6 @@ import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import kotlinx.coroutines.delay
 import kotlin.math.abs
-import androidx.compose.ui.res.stringResource
 
 /**
  * Petal Video Player Overlay
@@ -291,7 +290,7 @@ fun PetalVideoPlayerOverlay(
                 ) {
                     Icon(
                         imageVector = Icons.Default.BrightnessHigh,
-                        contentDescription = stringResource(R.string.ui_brightness),
+                        contentDescription = "Brightness",
                         tint = Color.White,
                         modifier = Modifier.size(20.dp),
                     )
@@ -324,7 +323,7 @@ fun PetalVideoPlayerOverlay(
                     }
                     Icon(
                         imageVector = volIcon,
-                        contentDescription = stringResource(R.string.ui_volume),
+                        contentDescription = "Volume",
                         tint = Color.White,
                         modifier = Modifier.size(20.dp),
                     )
@@ -390,7 +389,7 @@ fun PetalVideoPlayerOverlay(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.ui_back),
+                                contentDescription = "Back",
                                 tint = Color.White,
                             )
                         }
@@ -421,7 +420,7 @@ fun PetalVideoPlayerOverlay(
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.icon_cast),
-                                contentDescription = stringResource(R.string.ui_cast),
+                                contentDescription = "Cast",
                                 tint = Color.White,
                                 modifier = Modifier.size(22.dp),
                             )
@@ -437,7 +436,7 @@ fun PetalVideoPlayerOverlay(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.FitScreen,
-                                contentDescription = stringResource(R.string.ui_aspect_ratio),
+                                contentDescription = "Aspect Ratio",
                                 tint = Color.White,
                             )
                         }
@@ -452,7 +451,7 @@ fun PetalVideoPlayerOverlay(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Speed,
-                                contentDescription = stringResource(R.string.ui_playback_speed),
+                                contentDescription = "Playback Speed",
                                 tint = Color.White,
                             )
                         }
@@ -464,7 +463,7 @@ fun PetalVideoPlayerOverlay(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.PictureInPictureAlt,
-                                contentDescription = stringResource(R.string.ui_picture_in_picture),
+                                contentDescription = "Picture-in-Picture",
                                 tint = Color.White,
                             )
                         }
@@ -542,7 +541,7 @@ fun PetalVideoPlayerOverlay(
                     ) {
                         Icon(
                             imageVector = Icons.Default.FastRewind,
-                            contentDescription = stringResource(R.string.ui_rewind_10s),
+                            contentDescription = "Rewind 10s",
                             tint = Color.White,
                             modifier = Modifier.size(28.dp),
                         )
@@ -578,7 +577,7 @@ fun PetalVideoPlayerOverlay(
                     ) {
                         Icon(
                             imageVector = Icons.Default.FastForward,
-                            contentDescription = stringResource(R.string.ui_forward_10s),
+                            contentDescription = "Forward 10s",
                             tint = Color.White,
                             modifier = Modifier.size(28.dp),
                         )

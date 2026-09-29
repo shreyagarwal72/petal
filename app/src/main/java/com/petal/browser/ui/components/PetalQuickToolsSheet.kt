@@ -70,8 +70,6 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 private const val PREF_QUICK_TOOLS_ORDER = "sp_quick_tools_order_v1"
 
@@ -171,7 +169,7 @@ fun PetalQuickToolsSheet(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.ui_quick_tools),
+                        text = "Quick Tools",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -195,7 +193,7 @@ fun PetalQuickToolsSheet(
                             },
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                         ) {
-                            Text(stringResource(R.string.ui_reset), style = MaterialTheme.typography.labelMedium)
+                            Text("Reset", style = MaterialTheme.typography.labelMedium)
                         }
 
                         FilledTonalButton(
@@ -206,7 +204,7 @@ fun PetalQuickToolsSheet(
                             },
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
-                            Text(stringResource(R.string.ui_done), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                            Text("Done", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                         }
                     }
                 }
@@ -369,7 +367,7 @@ private fun ExpressiveQuickToolItem(
                 ) {
                     Icon(
                         Icons.Rounded.ChevronLeft,
-                        contentDescription = stringResource(R.string.ui_move_left),
+                        contentDescription = "Move Left",
                         tint = if (canMoveLeft) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
                         modifier = Modifier.size(16.dp)
                     )
@@ -381,7 +379,7 @@ private fun ExpressiveQuickToolItem(
                 ) {
                     Icon(
                         Icons.Rounded.ChevronRight,
-                        contentDescription = stringResource(R.string.ui_move_right),
+                        contentDescription = "Move Right",
                         tint = if (canMoveRight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
                         modifier = Modifier.size(16.dp)
                     )

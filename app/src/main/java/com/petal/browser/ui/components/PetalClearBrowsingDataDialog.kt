@@ -21,8 +21,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun PetalClearBrowsingDataDialog(
@@ -36,7 +34,7 @@ fun PetalClearBrowsingDataDialog(
     var clearPermissions by remember { mutableStateOf(false) }
     var splitMenuExpanded by remember { mutableStateOf(false) }
 
-    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -59,7 +57,7 @@ fun PetalClearBrowsingDataDialog(
         },
         title = {
             Text(
-                text = stringResource(R.string.ui_clear_browsing_data),
+                text = "Clear Browsing Data",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -72,7 +70,7 @@ fun PetalClearBrowsingDataDialog(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.ui_select_browsing_data_and_storage),
+                    text = "Select browsing data and storage to erase:",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 6.dp)
@@ -90,7 +88,7 @@ fun PetalClearBrowsingDataDialog(
                     ) {
                         ExpressiveClearOptionRow(
                             icon = Icons.Rounded.Image,
-                            label = stringResource(R.string.ui_cached_images_and_files),
+                            label = "Cached images and files",
                             checked = clearCache,
                             onCheckedChange = { clearCache = it }
                         )
@@ -100,7 +98,7 @@ fun PetalClearBrowsingDataDialog(
                         )
                         ExpressiveClearOptionRow(
                             icon = Icons.Rounded.Cookie,
-                            label = stringResource(R.string.ui_cookies_and_site_data),
+                            label = "Cookies and site data",
                             checked = clearCookies,
                             onCheckedChange = { clearCookies = it }
                         )
@@ -110,7 +108,7 @@ fun PetalClearBrowsingDataDialog(
                         )
                         ExpressiveClearOptionRow(
                             icon = Icons.Rounded.Storage,
-                            label = stringResource(R.string.ui_site_databases_webstorage),
+                            label = "Site databases & WebStorage",
                             checked = clearStorage,
                             onCheckedChange = { clearStorage = it }
                         )
@@ -120,7 +118,7 @@ fun PetalClearBrowsingDataDialog(
                         )
                         ExpressiveClearOptionRow(
                             icon = Icons.Rounded.Password,
-                            label = stringResource(R.string.ui_autofill_passwords_logins),
+                            label = "Autofill passwords & logins",
                             checked = clearAutofill,
                             onCheckedChange = { clearAutofill = it }
                         )
@@ -130,7 +128,7 @@ fun PetalClearBrowsingDataDialog(
                         )
                         ExpressiveClearOptionRow(
                             icon = Icons.Rounded.Security,
-                            label = stringResource(R.string.ui_site_permissions_location_etc),
+                            label = "Site permissions (Location, etc.)",
                             checked = clearPermissions,
                             onCheckedChange = { clearPermissions = it }
                         )
@@ -141,7 +139,7 @@ fun PetalClearBrowsingDataDialog(
         confirmButton = {
             Box {
                 ExpressiveSplitButton(
-                    label = stringResource(R.string.ui_clear),
+                    label = "Clear",
                     onPrimaryClick = {
                         onPerformClear(clearCache, clearCookies, clearStorage, clearAutofill, clearPermissions)
                     },
@@ -152,12 +150,12 @@ fun PetalClearBrowsingDataDialog(
                     height = 44.dp
                 )
 
-                com.petal.browser.ui.containment.PetalPopupMenu(
+                PetalExpressiveDropdownMenu(
                     expanded = splitMenuExpanded,
                     onDismissRequest = { splitMenuExpanded = false }
                 ) {
                     PetalExpressiveMenuItem(
-                        text = stringResource(R.string.ui_clear_all_time),
+                        text = "Clear All Time",
                         leadingIcon = {
                             Icon(Icons.Rounded.History, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         },
@@ -167,7 +165,7 @@ fun PetalClearBrowsingDataDialog(
                         }
                     )
                     PetalExpressiveMenuItem(
-                        text = stringResource(R.string.ui_clear_cache_only),
+                        text = "Clear Cache Only",
                         leadingIcon = {
                             Icon(Icons.Rounded.Cached, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
@@ -177,7 +175,7 @@ fun PetalClearBrowsingDataDialog(
                         }
                     )
                     PetalExpressiveMenuItem(
-                        text = stringResource(R.string.ui_clear_cookies_cache),
+                        text = "Clear Cookies & Cache",
                         leadingIcon = {
                             Icon(Icons.Rounded.CleaningServices, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
@@ -196,7 +194,7 @@ fun PetalClearBrowsingDataDialog(
                 modifier = Modifier.height(44.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.ui_cancel),
+                    text = "Cancel",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
                 )
             }

@@ -46,8 +46,6 @@ import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.profile.PetalProfile
 import com.petal.browser.profile.PetalProfileManager
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,8 +86,11 @@ fun PetalProfileSwitchSheet(
         "#FF5722" to "Vibrant Orange"
     )
 
-    com.petal.browser.ui.containment.PetalSheet(
+    ModalBottomSheet(
         onDismissRequest = onDismissRequest,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -105,12 +106,12 @@ fun PetalProfileSwitchSheet(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.ui_profiles),
+                        text = "Profiles",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = stringResource(R.string.ui_switch_or_create_browsing_profiles),
+                        text = "Switch or create browsing profiles",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -124,7 +125,7 @@ fun PetalProfileSwitchSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.ManageAccounts,
-                        contentDescription = stringResource(R.string.ui_manage_account),
+                        contentDescription = "Manage Account",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -209,7 +210,7 @@ fun PetalProfileSwitchSheet(
                                 if (isSelected) {
                                     Icon(
                                         imageVector = Icons.Rounded.CheckCircle,
-                                        contentDescription = stringResource(R.string.ui_active),
+                                        contentDescription = "Active",
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(22.dp)
                                     )
@@ -223,7 +224,7 @@ fun PetalProfileSwitchSheet(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Rounded.DeleteOutline,
-                                            contentDescription = stringResource(R.string.ui_delete),
+                                            contentDescription = "Delete",
                                             tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(18.dp)
                                         )
@@ -249,7 +250,7 @@ fun PetalProfileSwitchSheet(
                 ) {
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.ui_add_new_profile))
+                    Text("Add New Profile")
                 }
             } else {
                 // Create New Profile Form
@@ -278,7 +279,7 @@ fun PetalProfileSwitchSheet(
                             if (pendingCustomAvatarUri != null) {
                                 AsyncImage(
                                     model = pendingCustomAvatarUri,
-                                    contentDescription = stringResource(R.string.ui_profile_picture),
+                                    contentDescription = "Profile Picture",
                                     modifier = Modifier
                                         .size(72.dp)
                                         .clip(CircleShape),
@@ -287,7 +288,7 @@ fun PetalProfileSwitchSheet(
                             } else {
                                 Icon(
                                     imageVector = Icons.Rounded.Person,
-                                    contentDescription = stringResource(R.string.ui_profile_picture),
+                                    contentDescription = "Profile Picture",
                                     tint = Color(android.graphics.Color.parseColor(selectedColorHex)),
                                     modifier = Modifier.size(34.dp)
                                 )
@@ -305,7 +306,7 @@ fun PetalProfileSwitchSheet(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.PhotoCamera,
-                                    contentDescription = stringResource(R.string.ui_change_profile_picture),
+                                    contentDescription = "Change Profile Picture",
                                     tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(13.dp)
                                 )
@@ -316,15 +317,15 @@ fun PetalProfileSwitchSheet(
                     OutlinedTextField(
                         value = newProfileName,
                         onValueChange = { newProfileName = it },
-                        label = { Text(stringResource(R.string.ui_profile_name)) },
-                        placeholder = { Text(stringResource(R.string.ui_e_g_work_school_research)) },
+                        label = { Text("Profile Name") },
+                        placeholder = { Text("e.g. Work, School, Research") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp)
                     )
 
                     Text(
-                        text = stringResource(R.string.ui_accent_color),
+                        text = "Accent Color",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -370,7 +371,7 @@ fun PetalProfileSwitchSheet(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(stringResource(R.string.ui_cancel))
+                            Text("Cancel")
                         }
 
                         Button(
@@ -398,7 +399,7 @@ fun PetalProfileSwitchSheet(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(stringResource(R.string.ui_create))
+                            Text("Create")
                         }
                     }
                 }

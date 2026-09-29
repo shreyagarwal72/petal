@@ -11,6 +11,12 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.view.PetalGeckoView
 
@@ -74,6 +80,12 @@ class PetalVideoPlayerOverlayBridge(
         }
 
         val cv = ComposeView(activity).apply {
+            // Explicit view-tree owners so the overlay never depends on being attached under the
+            // Activity decor (fullscreen holder may be re-parented / hosted in its own window).
+            (activity as? androidx.lifecycle.LifecycleOwner)?.let { setViewTreeLifecycleOwner(it) }
+            (activity as? ViewModelStoreOwner)?.let { setViewTreeViewModelStoreOwner(it) }
+            (activity as? SavedStateRegistryOwner)?.let { setViewTreeSavedStateRegistryOwner(it) }
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
             setContent {
                 PetalVideoPlayerOverlay(
                     title = title,

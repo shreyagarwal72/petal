@@ -64,8 +64,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 object SafeLockerBridge {
     @JvmStatic
@@ -237,7 +235,7 @@ fun SafeLockerScreen(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 snackbarHost = {
-                    com.petal.browser.ui.containment.PetalSnackbarHost(
+                    PetalThemedSnackbarHost(
                         hostState = snackbarHostState,
                         modifier = Modifier.padding(16.dp)
                     )
@@ -289,12 +287,12 @@ fun SafeLockerScreen(
                                         )
                                         HeaderActionIcon(
                                             icon = Icons.Rounded.Add,
-                                            contentDescription = stringResource(R.string.ui_import_file),
+                                            contentDescription = "Import File",
                                             onClick = { showSafeLockerPicker = true }
                                         )
                                         HeaderActionIcon(
                                             icon = Icons.Rounded.Lock,
-                                            contentDescription = stringResource(R.string.ui_lock_vault),
+                                            contentDescription = "Lock Vault",
                                             onClick = {
                                                 isUnlocked = false
                                                 authError = null
@@ -310,7 +308,7 @@ fun SafeLockerScreen(
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text(stringResource(R.string.ui_search_encrypted_files)) },
+                                placeholder = { Text("Search encrypted files...") },
                                 leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(20.dp),
@@ -347,7 +345,7 @@ fun SafeLockerScreen(
                                         }
                                     }
                                     Text(
-                                        stringResource(R.string.ui_safe_locker_is_locked),
+                                        "Safe Locker is Locked",
                                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -379,7 +377,7 @@ fun SafeLockerScreen(
                                     ) {
                                         Icon(Icons.Rounded.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(8.dp))
-                                        Text(stringResource(R.string.ui_unlock_vault))
+                                        Text("Unlock Vault")
                                     }
                                 }
                             }
@@ -455,7 +453,7 @@ fun SafeLockerScreen(
                                             ) {
                                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                                 Spacer(Modifier.width(8.dp))
-                                                Text(stringResource(R.string.ui_import_file))
+                                                Text("Import File")
                                             }
                                         }
                                     }
@@ -469,11 +467,14 @@ fun SafeLockerScreen(
                                 ) {
                                     items(filteredFiles, key = { it.id }) { item ->
                                         val isSelected = selectedFileIds.contains(item.id)
-                                        com.petal.browser.ui.containment.PetalHeroCard(
-                                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                                            containerColor = if (isSelected)
-                                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-                                            else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        Card(
+                                            shape = RoundedCornerShape(18.dp),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = if (isSelected)
+                                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                                else
+                                                    MaterialTheme.colorScheme.surfaceContainer
+                                            ),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Row(
@@ -560,7 +561,7 @@ fun SafeLockerScreen(
                                                     }) {
                                                         Icon(
                                                             Icons.Rounded.DeleteOutline,
-                                                            contentDescription = stringResource(R.string.ui_delete),
+                                                            contentDescription = "Delete",
                                                             tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                                                         )
                                                     }

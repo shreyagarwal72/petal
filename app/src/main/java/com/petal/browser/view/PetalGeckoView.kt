@@ -276,7 +276,16 @@ class PetalGeckoView @JvmOverloads constructor(
                 hideLoadingSkeleton()
                 isStopped = true
                 updateProgress(BrowserUnit.LOADING_STOPPED)
+                // Immediate capture attempt
                 updatePreviewCache()
+                // Firefox-style: also capture after GeckoView's compositor has had time
+                // to paint the first contentful frame. capturePixels() on a freshly loaded
+                // page can return a blank bitmap if called before the compositor flushes.
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (isStopped && isShown && isAttachedToWindow) {
+                        updatePreviewCache()
+                    }
+                }, 800L)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, false)
                     com.petal.browser.engine.gecko.PetalEngineStore.updateProgress(context, tabId, 100)
@@ -776,30 +785,38 @@ class PetalGeckoView @JvmOverloads constructor(
                 val linkUri = element.linkUri
                 val srcUri = element.srcUri
                 val elemType = element.type
+                // altText is the stable public GeckoView API for anchor/image alt/title text
+                val altText = element.altText?.takeIf { it.isNotBlank() }
 
                 act.runOnUiThread {
                     when {
                         elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE && !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
+                            // Image long-press: also pass the wrapping anchor linkUri if present
+                            // so the sheet can show "Open link in new tab" for image-inside-<a>
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showImageContextMenu(act, srcUri, linkUri)
                         }
                         elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO && !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showVideoContextMenu(act, srcUri)
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showVideoContextMenu(act, srcUri)
                         }
                         elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO && !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showAudioContextMenu(act, srcUri)
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showAudioContextMenu(act, srcUri)
                         }
                         !linkUri.isNullOrEmpty() -> {
-                            val linkText = runCatching {
-                                element.javaClass.getField("textContent").get(element) as? String
-                            }.getOrNull()
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(act, linkUri, linkText)
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showLinkContextMenu(act, linkUri, altText)
                         }
                         !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
+                            // Fallback: untyped element with a src — treat as image
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showImageContextMenu(act, srcUri, null)
                         }
                     }
                 }
             }
+
         }
 
         // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)
@@ -1094,6 +1111,8 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.runOnUiThread {
                             com.petal.browser.compose.menu.BrowserContextMenuManager.showSelectionContextMenu(act, selectedText)
                         }
+                        // Suppress the native Gecko floating action bar — Petal shows its own sheet
+                        selection.hide()
                     }
                 }
             }
@@ -1102,6 +1121,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 currentSelection = null
             }
         }
+
 
         // Native GeckoView MediaSession Delegate for HTML5 Media & PiP Tracking
         session.mediaSessionDelegate = object : MediaSession.Delegate {
@@ -1979,15 +1999,20 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun getCachedPreviewBitmap(): Bitmap? {
-        var bitmap = TabThumbnailCache.getMemoryOnly(getThumbnailKey(), isIncognito)
+        // Check tabId (primary key) — memory + disk
+        var bitmap = TabThumbnailCache.get(getThumbnailKey())
+        if (bitmap != null && !bitmap.isRecycled) return bitmap
+        // Check hashCode key (what PetalTabSwitcherSheet uses as PetalTabItem.id) — memory + disk
+        val hcKey = hashCode().toString()
+        bitmap = TabThumbnailCache.get(hcKey)
         if (bitmap != null && !bitmap.isRecycled) return bitmap
         if (currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true)) {
-            bitmap = TabThumbnailCache.getMemoryOnly(currentUrl, isIncognito)
+            bitmap = TabThumbnailCache.get(currentUrl)
             if (bitmap != null && !bitmap.isRecycled) return bitmap
         }
         val albumUrl = getAlbumUrl()
         if (albumUrl.isNotEmpty() && !albumUrl.equals("about:blank", ignoreCase = true) && !albumUrl.equals("Petal Home", ignoreCase = true)) {
-            bitmap = TabThumbnailCache.getMemoryOnly(albumUrl, isIncognito)
+            bitmap = TabThumbnailCache.get(albumUrl)
             if (bitmap != null && !bitmap.isRecycled) return bitmap
         }
         return null
@@ -2000,6 +2025,13 @@ class PetalGeckoView @JvmOverloads constructor(
         val cachingConsumer: (Bitmap?) -> Unit = { bmp ->
             if (bmp != null) {
                 TabThumbnailCache.put(key, bmp, isIncognito)
+                // Also store under hashCode() so PetalTabSwitcherSheet (which sets
+                // PetalTabItem.id = album.hashCode().toString()) can find this thumbnail.
+                // The tabId key ("tab_<timestamp>_<hash>") never matches the item ID.
+                val hcKey = hashCode().toString()
+                if (hcKey != key) {
+                    TabThumbnailCache.put(hcKey, bmp, isIncognito)
+                }
                 if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
                     TabThumbnailCache.put(url, bmp, isIncognito)
                 }
@@ -2055,7 +2087,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun getBackPreviewBitmap(): Bitmap? {
         val url = getBackHistoryUrl() ?: return null
-        val bitmap = TabThumbnailCache.getMemoryOnly(url, isIncognito)
+        val bitmap: Bitmap? = TabThumbnailCache.get(url)
         if (bitmap != null && !bitmap.isRecycled) return bitmap
         return null
     }

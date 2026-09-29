@@ -28,7 +28,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -70,8 +69,6 @@ import java.io.File
 import java.io.FileOutputStream
 import androidx.core.content.FileProvider
 import com.petal.browser.view.PetalToast
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 object PetalStandaloneFileViewerBridge {
 
@@ -267,7 +264,7 @@ private fun UniversalFileViewerTopBar(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.ui_back),
+                    contentDescription = "Back",
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -294,7 +291,7 @@ private fun UniversalFileViewerTopBar(
                     IconButton(onClick = onSave) {
                         Icon(
                             imageVector = Icons.Rounded.Save,
-                            contentDescription = stringResource(R.string.ui_save_file),
+                            contentDescription = "Save file",
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
@@ -319,7 +316,7 @@ private fun UniversalFileViewerTopBar(
             IconButton(onClick = onShare) {
                 Icon(
                     imageVector = Icons.Rounded.Share,
-                    contentDescription = stringResource(R.string.ui_share_file),
+                    contentDescription = "Share file",
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -327,7 +324,7 @@ private fun UniversalFileViewerTopBar(
             IconButton(onClick = onOpenExternal) {
                 Icon(
                     imageVector = Icons.Rounded.OpenInNew,
-                    contentDescription = stringResource(R.string.ui_open_with_external_app),
+                    contentDescription = "Open with external app",
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -430,7 +427,7 @@ private fun TextCodeViewerContent(
                     if (isSaving) {
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = stringResource(R.string.ui_saving_changes),
+                            text = "Saving changes...",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -616,7 +613,7 @@ private fun PptxViewerContent(fileUri: Uri) {
                                     modifier = Modifier.padding(end = 8.dp)
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.ui_slide, index + 1),
+                                        text = "Slide ${index + 1}",
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -961,7 +958,7 @@ private fun ArchiveViewerContent(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
                     Spacer(Modifier.height(12.dp))
-                    Text(stringResource(R.string.ui_opening_archive), style = MaterialTheme.typography.bodyMedium)
+                    Text("Opening archive…", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -1006,7 +1003,7 @@ private fun ArchiveViewerContent(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = stringResource(R.string.ui_items, visibleEntries.size),
+                                        text = "${visibleEntries.size} items",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1041,12 +1038,12 @@ private fun ArchiveViewerContent(
                                 Spacer(Modifier.width(14.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(
-                                        stringResource(R.string.ui_archive_contents),
+                                        "Archive contents",
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                     Text(
-                                        stringResource(R.string.ui_browse_folders_and_files_separately),
+                                        "Browse folders and files separately",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     )
@@ -1067,7 +1064,7 @@ private fun ArchiveViewerContent(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        stringResource(R.string.ui_this_folder_is_empty),
+                                        "This folder is empty",
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1115,22 +1112,38 @@ private fun ArchiveEntryRow(
     onClick: () -> Unit,
 ) {
     val isFolder = entry.isDirectory
-    com.petal.browser.ui.containment.PetalGroupListRow(
-        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+    Surface(
         onClick = onClick,
-        modifier = Modifier.padding(vertical = 1.5.dp),
-        leading = {
-            com.petal.browser.ui.containment.PetalGroupIconBadge(
-                icon = if (isFolder) Icons.Filled.Folder else Icons.Filled.InsertDriveFile,
-                container = if (isFolder) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
-                tint = if (isFolder) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-        },
-        content = {
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .padding(horizontal = 14.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = if (isFolder) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = if (isFolder) Icons.Rounded.Folder else Icons.Rounded.InsertDriveFile,
+                        contentDescription = null,
+                        tint = if (isFolder) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
                     text = entry.path.substringAfterLast('/').ifEmpty { entry.path },
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1139,15 +1152,14 @@ private fun ArchiveEntryRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-        },
-        trailing = {
+            }
             Icon(
-                imageVector = if (isFolder) Icons.Filled.ChevronRight else Icons.Filled.OpenInNew,
+                imageVector = if (isFolder) Icons.Rounded.KeyboardArrowRight else Icons.Rounded.OpenInNew,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        },
-    )
+        }
+    }
 }
 
 @Composable
@@ -1241,14 +1253,14 @@ private fun ArchiveEntryPreview(
                             Spacer(Modifier.height(16.dp))
                             Text(name, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
                             Spacer(Modifier.height(8.dp))
-                            Text(stringResource(R.string.ui_this_entry_was_extracted_successfully), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("This entry was extracted successfully. Open it with another app to view this format.", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(16.dp))
                             FilledTonalButton(onClick = {
                                 context.startActivity(Intent(Intent.ACTION_VIEW).apply {
                                     setDataAndType(uri, mimeTypeForExtension(ext))
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 })
-                            }) { Text(stringResource(R.string.ui_open_with)) }
+                            }) { Text("Open with…") }
                         }
                     }
                 }
@@ -1331,7 +1343,7 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        com.petal.browser.ui.containment.PetalGroupIconBadge(
+        com.petal.browser.ui.components.PetalShapeIconBadge(
             shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie9Sided.toShape(),
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -1365,7 +1377,7 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         ) {
             Icon(Icons.Rounded.OpenInNew, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.ui_open_with_external_application))
+            Text("Open with external application")
         }
     }
 }
@@ -1387,7 +1399,7 @@ private fun ErrorDisplayBox(error: String) {
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                com.petal.browser.ui.containment.PetalGroupIconBadge(
+                com.petal.browser.ui.components.PetalShapeIconBadge(
                     shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                     contentColor = MaterialTheme.colorScheme.error,
@@ -1401,7 +1413,7 @@ private fun ErrorDisplayBox(error: String) {
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = stringResource(R.string.ui_cannot_view_file),
+                    text = "Cannot View File",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )

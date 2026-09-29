@@ -540,18 +540,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * splash fades away, so the splash dissolves into the ripple instead of cutting to the app.
      */
     private void playSplashExitWithRipple(androidx.core.splashscreen.SplashScreenViewProvider provider) {
-        try {
-            playSplashExitWithRippleInternal(provider);
-        } catch (Throwable t) {
-            // If anything in the custom exit animation throws, the splash view would otherwise stay on
-            // top of the app forever and the window would look blank/black. Always drop it.
-            Log.w(TAG, "Splash exit animation failed; removing splash immediately", t);
-            splashRipplePending = false;
-            try { provider.remove(); } catch (Throwable ignored) {}
-        }
-    }
-
-    private void playSplashExitWithRippleInternal(androidx.core.splashscreen.SplashScreenViewProvider provider) {
         final View splashView = provider.getView();
         // Android 16 can hand back a splash provider whose icon view has already
         // been detached during the exit callback. Treat it as unavailable and
@@ -3239,16 +3227,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             mFilePathCallback = null;
         }
 
-        // Petal file chooser: auto-routes between the built-in photo/video picker and the built-in
-        // file picker (or asks with a 2-option sheet). The Android system chooser is only a last resort.
+        // Route through PetalFileChooser: auto-selects MEDIA picker, FILE picker, or the
+        // 2-option chooser sheet based on the page's accept/capture attributes.
+        // Falls back to the system file chooser only when the Petal pickers cannot handle it.
         com.petal.browser.compose.file.PetalFileChooser.show(
-                this,
-                filePathCallback,
-                fileChooserParams,
-                () -> {
-                    launchSystemFileChooserFallback(filePathCallback, fileChooserParams);
-                    return kotlin.Unit.INSTANCE;
-                }
+            this,
+            filePathCallback,
+            fileChooserParams,
+            () -> {
+                launchSystemFileChooserFallback(filePathCallback, fileChooserParams);
+                return kotlin.Unit.INSTANCE;
+            }
         );
     }
 
@@ -6537,26 +6526,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     /** Adds a prepared Android Components window request as a normal BrowserStore tab. */
     public synchronized void adoptPreparedWindow(
             com.petal.browser.browser.PetalTabViewController source,
-        mozilla.components.concept.engine.window.WindowRequest request) {
+            mozilla.components.concept.engine.window.WindowRequest request) {
         mozilla.components.concept.engine.EngineSession engineSession = null;
-        com.petal.browser.browser.PetalTabViewController tabSurface = null;
-        String tabId = null;
-        boolean tabRegistered = false;
         try {
             engineSession = request.prepare();
             String url = request.getUrl();
             if (url == null || url.trim().isEmpty()) url = "about:blank";
             boolean isIncognito = source.isIncognito();
-            tabId = "tab_" + System.currentTimeMillis() + "_" +
+            String tabId = "tab_" + System.currentTimeMillis() + "_" +
                     Math.abs(java.util.UUID.randomUUID().hashCode());
             mozilla.components.browser.state.state.TabSessionState popupTab =
                     com.petal.browser.engine.gecko.PetalEngineStore.adoptPreparedSession(
                             this, tabId, url, getString(R.string.app_name),
                             isIncognito, engineSession, true
                     );
-            tabRegistered = true;
 
-            tabSurface = new com.petal.browser.browser.PetalTabViewController(this);
+            com.petal.browser.browser.PetalTabViewController tabSurface =
+                    new com.petal.browser.browser.PetalTabViewController(this);
             tabSurface.bindTab(popupTab);
             tabSurface.attachLifecycle(this);
             observePetalTabSurface(tabSurface);
@@ -6574,20 +6560,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             saveOpenedTabs();
         } catch (Throwable error) {
             android.util.Log.e("BrowserActivity", "Failed to adopt Android Components window request", error);
-            if (tabSurface != null) {
-                if (tab_container != null) tab_container.removeView(tabSurface.getAlbumView());
-                detachTabSurface(tabSurface);
-                BrowserContainer.remove(tabSurface);
-                tabSurface.destroy();
-                if (currentAlbumController == tabSurface) showAlbum(source);
-            } else if (tabRegistered && tabId != null) {
-                com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, tabId);
-            } else if (engineSession != null) {
+            if (engineSession != null) {
                 try { engineSession.close(); } catch (Throwable ignored) {}
             }
-            updateOmniBox();
-            updatePersistentBottomNav();
-            updateBackCallbackState();
         }
     }
 

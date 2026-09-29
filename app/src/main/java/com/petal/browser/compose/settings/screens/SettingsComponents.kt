@@ -69,3 +69,47 @@ fun PetalVariableSlider(
         }
     }
 }
+
+/** Forwards to the containment-based section so older screens keep compiling. */
+@Composable
+fun SettingsCategoryCard(
+    title: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    iconRes: Int? = null,
+    cardId: String? = null,
+    targetHighlightId: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    com.petal.browser.ui.containment.PetalSettingsSection(
+        title = title,
+        modifier = modifier,
+        icon = icon,
+        iconRes = iconRes,
+        cardId = cardId,
+        targetHighlightId = targetHighlightId,
+        content = content,
+    )
+}
+
+/** Forwards to the containment-based toggle row. */
+@Composable
+fun ToggleRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+        title = title,
+        subtitle = subtitle,
+        icon = icon,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        enabled = enabled,
+        modifier = modifier,
+    )
+}

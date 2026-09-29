@@ -1,7 +1,5 @@
 package com.petal.browser.compose.settings.screens
 
-import com.petal.browser.ui.containment.PetalSettingsSection
-
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -30,8 +28,6 @@ import com.petal.browser.compose.settings.viewmodel.DownloadSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.ExternalDownloadManagerHelper
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun DownloadSettingsScreen(
@@ -97,15 +93,15 @@ fun DownloadSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Download Deletion Card
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_download_deletion),
+                SettingsCategoryCard(
+                    title = "Download deletion",
                     icon = Icons.Rounded.Delete,
                     cardId = "misc_download_delete",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_confirm_file_deletion),
-                        subtitle = stringResource(R.string.ui_ask_before_removing_a_download),
+                    ToggleRow(
+                        title = "Confirm file deletion",
+                        subtitle = "Ask before removing a download from the device",
                         icon = Icons.Rounded.HelpOutline,
                         checked = confirmFileDelete,
                         onCheckedChange = {
@@ -113,9 +109,9 @@ fun DownloadSettingsScreenContent(
                             preferences.edit().putBoolean("sp_confirm_download_delete", it).apply()
                         }
                     )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_delete_file_from_storage),
-                        subtitle = stringResource(R.string.ui_use_this_as_the_default),
+                    ToggleRow(
+                        title = "Delete file from storage",
+                        subtitle = "Use this as the default choice when deleting a download",
                         icon = Icons.Rounded.DeleteForever,
                         checked = deleteFromStorage,
                         onCheckedChange = {
@@ -126,21 +122,21 @@ fun DownloadSettingsScreenContent(
                 }
 
                 // Default Download Manager Card
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_default_download_manager),
+                SettingsCategoryCard(
+                    title = "Default Download Manager",
                     icon = Icons.Rounded.Download,
                     cardId = "misc_download",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_choose_whether_downloads_are_handled),
+                        text = "Choose whether downloads are handled by Petal's high-speed in-app downloader or redirected to an external download manager.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_auto_preview_downloaded_images),
-                        subtitle = stringResource(R.string.ui_show_downloaded_photos_in_the),
+                    ToggleRow(
+                        title = "Auto-preview downloaded images",
+                        subtitle = "Show downloaded photos in the manager like Chrome",
                         icon = Icons.Rounded.Image,
                         checked = autoPreviewDownloadedImages,
                         onCheckedChange = onAutoPreviewDownloadedImagesChange
@@ -162,9 +158,9 @@ fun DownloadSettingsScreenContent(
                         }
                     }
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_live_updates_alerts),
-                        subtitle = stringResource(R.string.ui_show_live_progress_chip_in),
+                    ToggleRow(
+                        title = "Live updates & alerts",
+                        subtitle = "Show live progress chip in status bar with animated doll runner for active downloads",
                         icon = Icons.Rounded.NotificationsActive,
                         checked = liveUpdates,
                         onCheckedChange = { enabled ->
@@ -192,13 +188,13 @@ fun DownloadSettingsScreenContent(
                     )
 
                     if (showPermissionDialog) {
-                        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                        AlertDialog(
                             onDismissRequest = { showPermissionDialog = false },
                             icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
-                            title = { Text(text = stringResource(R.string.ui_enable_live_notifications)) },
+                            title = { Text(text = "Enable Live Notifications") },
                             text = {
                                 Text(
-                                    text = stringResource(R.string.ui_to_display_real_time_download)
+                                    text = "To display real-time download progress, velocity, and the animated running doll in your status bar, Petal requires notification permission."
                                 )
                             },
                             confirmButton = {
@@ -210,25 +206,25 @@ fun DownloadSettingsScreenContent(
                                         }
                                     }
                                 ) {
-                                    Text(stringResource(R.string.ui_grant_permission))
+                                    Text("Grant Permission")
                                 }
                             },
                             dismissButton = {
                                 TextButton(onClick = { showPermissionDialog = false }) {
-                                    Text(stringResource(R.string.ui_cancel))
+                                    Text("Cancel")
                                 }
                             }
                         )
                     }
 
                     if (showPromotedSettingsDialog) {
-                        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                        AlertDialog(
                             onDismissRequest = { showPromotedSettingsDialog = false },
                             icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
-                            title = { Text(text = stringResource(R.string.ui_promoted_live_updates)) },
+                            title = { Text(text = "Promoted Live Updates") },
                             text = {
                                 Text(
-                                    text = stringResource(R.string.ui_your_device_supports_promoted_status)
+                                    text = "Your device supports promoted status bar live chips (Android 16+). To display the running doll chip persistently in your status bar, verify live updates are permitted in notification settings."
                                 )
                             },
                             confirmButton = {
@@ -247,12 +243,12 @@ fun DownloadSettingsScreenContent(
                                         }
                                     }
                                 ) {
-                                    Text(stringResource(R.string.ui_open_settings))
+                                    Text("Open Settings")
                                 }
                             },
                             dismissButton = {
                                 TextButton(onClick = { showPromotedSettingsDialog = false }) {
-                                    Text(stringResource(R.string.ui_dismiss))
+                                    Text("Dismiss")
                                 }
                             }
                         )
@@ -293,13 +289,13 @@ fun DownloadSettingsScreenContent(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = stringResource(R.string.ui_in_app_downloader_fast_multi),
+                                    text = "In-App Downloader (Fast, Multi-Threaded)",
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                     color = if (isInApp) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = stringResource(R.string.ui_native_petal_accelerated_downloader_wi),
+                                    text = "Native Petal accelerated downloader with background notifications",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -352,7 +348,7 @@ fun DownloadSettingsScreenContent(
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = stringResource(R.string.ui_installed_external_download_manager_wi),
+                                        text = "Installed external download manager with auto-redirect",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -399,13 +395,13 @@ fun DownloadSettingsScreenContent(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = stringResource(R.string.ui_external_app_auto_chooser),
+                                    text = "External App (Auto Chooser)",
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = stringResource(R.string.ui_prompt_system_chooser_or_dispatch),
+                                    text = "Prompt system chooser or dispatch directly to any available external downloader",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

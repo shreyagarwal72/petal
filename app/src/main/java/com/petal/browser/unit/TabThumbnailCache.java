@@ -15,8 +15,6 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,8 +44,6 @@ public final class TabThumbnailCache {
 
     private static final String TAG = "TabThumbnailCache";
     private static final int MAX_PREVIEW_DIMENSION = 384;
-    private static final long MAX_DISK_CACHE_BYTES = 48L * 1024L * 1024L;
-    private static final long MAX_DISK_ENTRY_AGE_MS = 30L * 24L * 60L * 60L * 1000L;
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
     private static final ExecutorService diskExecutor = Executors.newSingleThreadExecutor();
 
@@ -97,8 +93,6 @@ public final class TabThumbnailCache {
             if (!diskCacheDir.exists()) {
                 diskCacheDir.mkdirs();
             }
-            final File initializedCacheDir = diskCacheDir;
-            diskExecutor.execute(() -> trimDiskCache(initializedCacheDir));
 
             // Register system memory trimming callbacks
             appCtx.registerComponentCallbacks(new ComponentCallbacks2() {
@@ -198,20 +192,6 @@ public final class TabThumbnailCache {
         return null;
     }
 
-    /** Memory-only lookup for UI code that must never decode a disk image inline. */
-    @Nullable
-    public static Bitmap getMemoryOnly(@Nullable String tabId) {
-        return getMemory(tabId);
-    }
-
-    @Nullable
-    public static Bitmap getMemoryOnly(@Nullable String tabId, boolean isPrivate) {
-        if (tabId == null || tabId.isEmpty()) return null;
-        String key = getSafeKey(tabId);
-        Bitmap bitmap = isPrivate ? privateMemoryCache.get(key) : regularMemoryCache.get(key);
-        return bitmap != null && !bitmap.isRecycled() ? bitmap : null;
-    }
-
     /**
      * Asynchronously loads a thumbnail from memory or disk, invoking callback on main thread.
      */
@@ -242,55 +222,6 @@ public final class TabThumbnailCache {
             }
             mainHandler.post(() -> callback.onThumbnailLoaded(diskBmp));
         });
-    }
-
-    /** Loads the first available legacy/current identifier without blocking the caller. */
-    public static void loadFirstAsync(@NonNull String[] identifiers, @NonNull ThumbnailCallback callback) {
-        loadFirstAsync(identifiers, false, callback);
-    }
-
-    /** Private tabs are resolved from volatile memory only and never fall through to disk. */
-    public static void loadFirstAsync(@NonNull String[] identifiers, boolean isPrivate,
-                                      @NonNull ThumbnailCallback callback) {
-        if (identifiers.length == 0) {
-            mainHandler.post(() -> callback.onThumbnailLoaded(null));
-            return;
-        }
-        for (String identifier : identifiers) {
-            Bitmap memory = isPrivate ? getMemoryOnly(identifier, true) : getMemoryOnly(identifier, false);
-            if (memory != null) {
-                mainHandler.post(() -> callback.onThumbnailLoaded(memory));
-                return;
-            }
-        }
-        if (isPrivate) {
-            mainHandler.post(() -> callback.onThumbnailLoaded(null));
-            return;
-        }
-        diskExecutor.execute(() -> {
-            Bitmap result = null;
-            for (String identifier : identifiers) {
-                if (identifier == null || identifier.isEmpty()) continue;
-                String key = getSafeKey(identifier);
-                result = loadFromDisk(key);
-                if (result != null && !result.isRecycled()) {
-                    regularMemoryCache.put(key, result);
-                    break;
-                }
-                result = null;
-            }
-            Bitmap loaded = result;
-            mainHandler.post(() -> callback.onThumbnailLoaded(loaded));
-        });
-    }
-
-    @Nullable
-    private static Bitmap getMemory(@Nullable String identifier) {
-        if (identifier == null || identifier.isEmpty()) return null;
-        String key = getSafeKey(identifier);
-        Bitmap bitmap = privateMemoryCache.get(key);
-        if (bitmap == null || bitmap.isRecycled()) bitmap = regularMemoryCache.get(key);
-        return bitmap != null && !bitmap.isRecycled() ? bitmap : null;
     }
 
     /**
@@ -425,7 +356,6 @@ public final class TabThumbnailCache {
                     }
                     out.flush();
                 }
-                trimDiskCache(dir);
             } catch (Exception e) {
                 Log.e(TAG, "Error saving thumbnail to disk", e);
             }
@@ -438,41 +368,16 @@ public final class TabThumbnailCache {
         try {
             File webpFile = new File(dir, key + ".webp");
             if (webpFile.exists() && webpFile.length() > 0) {
-                webpFile.setLastModified(System.currentTimeMillis());
                 return BitmapFactory.decodeFile(webpFile.getAbsolutePath());
             }
             File pngFile = new File(dir, key + ".png");
             if (pngFile.exists() && pngFile.length() > 0) {
-                pngFile.setLastModified(System.currentTimeMillis());
                 return BitmapFactory.decodeFile(pngFile.getAbsolutePath());
             }
         } catch (Exception e) {
             Log.e(TAG, "Error loading thumbnail from disk", e);
         }
         return null;
-    }
-
-    private static void trimDiskCache(@NonNull File dir) {
-        File[] files = dir.listFiles((parent, name) -> name.endsWith(".webp") || name.endsWith(".png"));
-        if (files == null || files.length == 0) return;
-        Arrays.sort(files, Comparator.comparingLong(File::lastModified));
-        long now = System.currentTimeMillis();
-        long total = 0L;
-        java.util.ArrayList<File> retainedFiles = new java.util.ArrayList<>();
-        for (File file : files) {
-            if (now - file.lastModified() > MAX_DISK_ENTRY_AGE_MS) {
-                file.delete();
-            } else {
-                total += file.length();
-                retainedFiles.add(file);
-            }
-        }
-        if (total <= MAX_DISK_CACHE_BYTES) return;
-        for (File file : retainedFiles) {
-            long length = file.length();
-            if (file.exists() && file.delete()) total -= length;
-            if (total <= MAX_DISK_CACHE_BYTES) break;
-        }
     }
 
     public interface ThumbnailCallback {

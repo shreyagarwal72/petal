@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
@@ -20,21 +19,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.petal.browser.compose.settings.PetalSettingsSearchIndex
 import com.petal.browser.compose.settings.SettingsCategory
+import com.petal.browser.compose.settings.SettingsSearchItem
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.containment.PetalGroupIconBadge
-import com.petal.browser.ui.containment.PetalGroupListRow
-import com.petal.browser.ui.containment.PetalSectionLabel
-import com.petal.browser.ui.containment.petalGroupPositionFor
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
+import com.petal.browser.ui.components.SettingsMenuItem
+import com.petal.browser.ui.components.getGroupItemShape
 
 /**
  * Main Settings Hub Screen matching RvSystem-Monitor's SettingsScreen.kt visual structure:
@@ -42,7 +39,7 @@ import com.petal.browser.R
  * - Settings search input with clear button
  * - Typo tolerance / "Did you mean?" suggestion chip banner
  * - Search results across all settings category contents & preferences
- * - LazyColumn of grouped rows using Petal containment surfaces
+ * - LazyColumn of grouped cards with variable corner radii (getGroupItemShape)
  * - 48dp icon inside primary-tinted rounded box, title, subtitle, trailing chevron
  */
 @Composable
@@ -113,12 +110,12 @@ fun SettingsHubScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 6.dp)
                         .focusRequester(focusRequester),
-                    placeholder = { Text(stringResource(R.string.ui_search_settings)) },
+                    placeholder = { Text("Search settings...") },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { onSearchQueryChange("") }) {
-                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear))
+                                Icon(Icons.Rounded.Close, contentDescription = "Clear")
                             }
                         }
                     },
@@ -157,7 +154,7 @@ fun SettingsHubScreen(
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = stringResource(R.string.ui_did_you_mean),
+                                text = "Did you mean:",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
                             )
@@ -168,7 +165,7 @@ fun SettingsHubScreen(
                             )
                         }
                         Text(
-                            text = stringResource(R.string.ui_apply),
+                            text = "Apply",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -186,7 +183,7 @@ fun SettingsHubScreen(
                     start = 16.dp,
                     end = 16.dp
                 ),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 // Feature Banner Carousel from Zenith (displayed when not actively searching)
                 if (!isSearching) {
@@ -203,26 +200,20 @@ fun SettingsHubScreen(
                 // Matching Detailed Settings Items (when searching)
                 if (isSearching && matchingItems.isNotEmpty()) {
                     item {
-                        PetalSectionLabel("Matching Settings (${matchingItems.size})", Modifier.padding(top = 4.dp))
+                        Text(
+                            text = "Matching Settings (${matchingItems.size})",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 8.dp)
+                        )
                     }
 
                     itemsIndexed(matchingItems) { index, item ->
-                        PetalGroupListRow(
-                            position = petalGroupPositionFor(index, matchingItems.size),
-                            onClick = { onCategoryClick(item.category, item.id) },
-                            leading = { PetalGroupIconBadge(Icons.Rounded.Search) },
-                            content = {
-                                Text(item.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer) {
-                                    Text(item.category.title, style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                }
-                                Text(item.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            },
-                            trailing = { Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        val shape = getGroupItemShape(index, matchingItems.size)
+                        SearchItemCard(
+                            item = item,
+                            shape = shape,
+                            onClick = { onCategoryClick(item.category, item.id) }
                         )
                     }
 
@@ -234,30 +225,22 @@ fun SettingsHubScreen(
                 // Categories Header
                 if (filteredCategories.isNotEmpty()) {
                     item {
-                        PetalSectionLabel(
-                            if (isSearching) "Matching Categories (${filteredCategories.size})" else "Categories"
+                        Text(
+                            text = if (isSearching) "Matching Categories (${filteredCategories.size})" else "Categories",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
                         )
                     }
 
                     itemsIndexed(filteredCategories) { index, category ->
-                        PetalGroupListRow(
-                            position = petalGroupPositionFor(index, filteredCategories.size),
-                            onClick = { onCategoryClick(category, null) },
-                            leading = {
-                                androidx.compose.foundation.layout.Box(
-                                    Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(painterResource(category.iconRes), contentDescription = null, modifier = Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                                }
-                            },
-                            content = {
-                                Text(category.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            },
-                            trailing = { Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        val shape = getGroupItemShape(index, filteredCategories.size)
+                        SettingsMenuItem(
+                            title = category.title,
+                            subtitle = category.subtitle,
+                            icon = painterResource(category.iconRes),
+                            shape = shape,
+                            onClick = { onCategoryClick(category, null) }
                         )
                     }
                 } else if (isSearching && matchingItems.isEmpty()) {
@@ -279,7 +262,7 @@ fun SettingsHubScreen(
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                 )
                                 Text(
-                                    text = stringResource(R.string.ui_no_settings_found_for, searchQuery),
+                                    text = "No settings found for \"$searchQuery\"",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -287,6 +270,86 @@ fun SettingsHubScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Card representing a matching settings preference entry within search results.
+ */
+@Composable
+private fun SearchItemCard(
+    item: SettingsSearchItem,
+    shape: Shape,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(item.category.iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                        text = item.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Text(
+                            text = item.category.title,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                Text(
+                    text = item.subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
