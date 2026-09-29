@@ -2087,7 +2087,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun getBackPreviewBitmap(): Bitmap? {
         val url = getBackHistoryUrl() ?: return null
-        val bitmap = TabThumbnailCache.getMemoryOnly(url, isIncognito)
+        val bitmap: Bitmap? = TabThumbnailCache.get(url)
         if (bitmap != null && !bitmap.isRecycled) return bitmap
         return null
     }
