@@ -371,7 +371,7 @@ fun PetalCameraScreen(
                         FocusRing(point = focusPoint, tick = focusTick)
 
                         // Zoom pill
-                        AnimatedVisibility(
+                        androidx.compose.animation.AnimatedVisibility(
                             visible = shot == null && maxZoom > minZoom && zoom > minZoom + 0.05f,
                             enter = fadeIn() + scaleIn(),
                             exit = fadeOut() + scaleOut(),
