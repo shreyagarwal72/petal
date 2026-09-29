@@ -31,8 +31,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 /**
  * Customizable link context menu dialog component styled with RvSystemMonitor containment principles.
@@ -89,9 +87,13 @@ fun PetalLinkContextMenuDialog(
                 exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh)) +
                         scaleOut(targetScale = 0.9f, animationSpec = spring(stiffness = Spring.StiffnessHigh))
             ) {
-                com.petal.browser.ui.containment.PetalHeroCard(
-                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-                    containerColor = if (isIncognito) Color(0xFF1C1D24) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isIncognito) Color(0xFF1C1D24) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     modifier = Modifier
                         .widthIn(max = 360.dp)
                         .fillMaxWidth(0.92f)
@@ -122,7 +124,7 @@ fun PetalLinkContextMenuDialog(
                                 if (favicon != null) {
                                     Image(
                                         bitmap = favicon.asImageBitmap(),
-                                        contentDescription = stringResource(R.string.ui_site_favicon),
+                                        contentDescription = "Site Favicon",
                                         modifier = Modifier
                                             .size(24.dp)
                                             .clip(CircleShape)

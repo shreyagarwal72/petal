@@ -51,22 +51,22 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Animation
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FontDownload
-import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tab
-import androidx.compose.material.icons.filled.ViewDay
-import androidx.compose.material.icons.filled.VpnLock
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Animation
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.FontDownload
+import androidx.compose.material.icons.outlined.Layers
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.Tab
+import androidx.compose.material.icons.outlined.ViewDay
+import androidx.compose.material.icons.outlined.VpnLock
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -100,8 +100,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.petal.browser.compose.settings.SettingsCategory
-import com.petal.browser.ui.containment.PetalGroupIconBadge
-import com.petal.browser.ui.containment.PetalHeroCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -135,67 +133,67 @@ fun PetalFeaturedCarousel(
             PetalFeaturedItem(
                 title = "Ad & Tracker Shield",
                 description = "uBlock Origin-grade content filter engine",
-                icon = Icons.Filled.Shield,
+                icon = Icons.Outlined.Shield,
                 onClick = { onCategoryClick(SettingsCategory.PRIVACY, "privacy_adblock") }
             ),
             PetalFeaturedItem(
                 title = "Pure Black AMOLED",
                 description = "True pitch-black mode for OLED displays",
-                icon = Icons.Filled.DarkMode,
+                icon = Icons.Outlined.DarkMode,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_theme") }
             ),
             PetalFeaturedItem(
                 title = "Custom Fonts & Typography",
                 description = "Load custom TTF/OTF fonts or Product Sans",
-                icon = Icons.Filled.FontDownload,
+                icon = Icons.Outlined.FontDownload,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_font") }
             ),
             PetalFeaturedItem(
                 title = "High Refresh Rate",
                 description = "Lock 120Hz/144Hz peak display smoothness",
-                icon = Icons.Filled.Speed,
+                icon = Icons.Outlined.Speed,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_refresh") }
             ),
             PetalFeaturedItem(
                 title = "Deep Research AI",
                 description = "Connect Gemini, GPT-4o, Claude or Ollama",
-                icon = Icons.Filled.AutoAwesome,
+                icon = Icons.Outlined.AutoAwesome,
                 onClick = { onCategoryClick(SettingsCategory.API_INTEGRATIONS, "ai") }
             ),
             PetalFeaturedItem(
                 title = "Private DNS Protection",
                 description = "Encrypt queries with Cloudflare & Google DoH",
-                icon = Icons.Filled.VpnLock,
+                icon = Icons.Outlined.VpnLock,
                 onClick = { onCategoryClick(SettingsCategory.PRIVACY, "privacy_private_dns") }
             ),
             PetalFeaturedItem(
                 title = "Bottom Address Bar",
                 description = "Ergonomic one-handed URL search navigation",
-                icon = Icons.Filled.ViewDay,
+                icon = Icons.Outlined.ViewDay,
                 onClick = { onCategoryClick(SettingsCategory.ADDRESS_BAR, "address_bar") }
             ),
             PetalFeaturedItem(
                 title = "M3 Expressive Shapes",
                 description = "Fluid morphing ambient background shapes",
-                icon = Icons.Filled.Layers,
+                icon = Icons.Outlined.Layers,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_layout") }
             ),
             PetalFeaturedItem(
                 title = "Predictive Back Gestures",
                 description = "Fluid Android 14+ predictive back transitions",
-                icon = Icons.Filled.Animation,
+                icon = Icons.Outlined.Animation,
                 onClick = { onCategoryClick(SettingsCategory.DISPLAY_ZOOM, "display") }
             ),
             PetalFeaturedItem(
                 title = "Backup & Restore",
                 description = "Export all bookmarks, history & settings to JSON",
-                icon = Icons.Filled.CloudUpload,
+                icon = Icons.Outlined.CloudUpload,
                 onClick = { onCategoryClick(SettingsCategory.DATA_STORAGE, "data_backup") }
             ),
             PetalFeaturedItem(
                 title = "Material You Dynamic Color",
                 description = "Harmonize browser palette with system wallpaper",
-                icon = Icons.Filled.Palette,
+                icon = Icons.Outlined.Palette,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_theme") }
             )
         ).shuffled().take(3)
@@ -209,7 +207,7 @@ fun PetalFeaturedCarousel(
             PetalFeaturedItem(
                 title = "Support Development",
                 description = "Fuel our mission with a tip on Ko-fi",
-                icon = Icons.Filled.Favorite,
+                icon = Icons.Outlined.Favorite,
                 isTertiary = true,
                 onClick = {
                     try {
@@ -227,7 +225,7 @@ fun PetalFeaturedCarousel(
             PetalFeaturedItem(
                 title = "Star on GitHub",
                 description = "Love Petal? Give us a star on GitHub!",
-                icon = Icons.Filled.Star,
+                icon = Icons.Outlined.Star,
                 isTertiary = true,
                 onClick = {
                     try {
@@ -327,6 +325,12 @@ fun PetalFeaturedCarousel(
 
                     if (currentWeight > 0.005f) {
                         val currentCornerRadius = if (dist < 1.0f) lerp(1000f, 24f, dist) else 24f
+                        val currentAlpha = when {
+                            dist < 1.0f -> lerp(1f, 0.4f, dist)
+                            dist < 2.0f -> lerp(0.4f, 0f, dist - 1.0f)
+                            else -> 0f
+                        }
+
                         val baseColor = if (items[i].isTertiary) {
                             MaterialTheme.colorScheme.tertiaryContainer
                         } else {
@@ -339,7 +343,7 @@ fun PetalFeaturedCarousel(
                             isToTheLeft = i < visualProgress,
                             interactionSource = interactionSources[i],
                             modifier = Modifier.weight(currentWeight),
-                            containerColor = baseColor,
+                            containerColor = baseColor.copy(alpha = currentAlpha),
                             cornerRadius = currentCornerRadius.dp,
                             motionSpec = expressiveSpring
                         )
@@ -436,7 +440,7 @@ private fun CarouselIndicator(
         ),
         label = "IndicatorWidth"
     )
-    val color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
+    val color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
     val animatedColor by animateColorAsState(
         targetValue = color,
         label = "IndicatorColor"
@@ -454,7 +458,7 @@ private fun CarouselIndicator(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(progress)
-                    .background(MaterialTheme.colorScheme.onPrimary)
+                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f))
             )
         }
     }
@@ -474,14 +478,19 @@ private fun RowScope.FeaturedStepCard(
     val isFocused = dist < 0.6f
     val contentColor = if (item.isTertiary) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
 
-    PetalHeroCard(
-        modifier = modifier.fillMaxHeight().clickable(
+    Card(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(cornerRadius))
+            .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(),
                 onClick = {}
             ),
-        containerColor = containerColor,
-        shape = RoundedCornerShape(cornerRadius),
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor
+        ),
+        shape = RoundedCornerShape(cornerRadius)
     ) {
         AnimatedContent(
             targetState = isFocused,
@@ -520,11 +529,20 @@ private fun RowScope.FeaturedStepCard(
                         .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    PetalGroupIconBadge(
-                        icon = item.icon,
-                        container = contentColor,
-                        tint = if (item.isTertiary) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer,
-                    )
+                    Surface(
+                        color = contentColor.copy(alpha = 0.12f),
+                        shape = CircleShape,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = contentColor
+                            )
+                        }
+                    }
 
                     Column(
                         modifier = Modifier
@@ -557,9 +575,9 @@ private fun RowScope.FeaturedStepCard(
                 ) {
                     Icon(
                         imageVector = if (isToTheLeft) {
-                            Icons.AutoMirrored.Filled.KeyboardArrowLeft
+                            Icons.AutoMirrored.Outlined.KeyboardArrowLeft
                         } else {
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight
+                            Icons.AutoMirrored.Outlined.KeyboardArrowRight
                         },
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),

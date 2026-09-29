@@ -1,7 +1,5 @@
 package com.petal.browser.compose.settings.screens
 
-import com.petal.browser.ui.containment.PetalSettingsSection
-
 import android.app.Activity
 import android.content.Context
 import android.os.Build
@@ -41,8 +39,6 @@ import com.petal.browser.ui.components.*
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.PetalHighRefreshRateManager
 import com.petal.browser.widget.PetalSearchWidgetProvider
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun AppearanceSettingsScreen(
@@ -192,42 +188,88 @@ fun AppearanceSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Section 1: App Theme & Dynamic Color Palette
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_theme_color_palette),
+                SettingsCategoryCard(
+                    title = "Theme & Color Palette",
                     iconRes = com.petal.browser.R.drawable.brightness_medium_filled,
                     cardId = "appearance_theme",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
-                        stringResource(R.string.ui_customize_app_color_schemes_dynamic),
+                        "Customize app color schemes, dynamic theming and OLED black mode",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     // Theme Mode Chips
                     Text(
-                        stringResource(R.string.ui_theme_mode),
+                        "Theme Mode:",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(Modifier.height(4.dp))
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = listOf(
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("System"),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Light"),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Dark"),
+                    com.petal.browser.ui.components.WireframeOptionPicker(
+                        options = listOf(
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = ThemeConfig.FOLLOW_SYSTEM,
+                                label = "System",
+                                previewContent = {
+                                    Row(Modifier.fillMaxSize()) {
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxHeight()
+                                                .background(Color(0xFFE8DEF8))
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxHeight()
+                                                .background(Color(0xFF1D1B20))
+                                        )
+                                    }
+                                }
+                            ),
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = ThemeConfig.LIGHT,
+                                label = "Light",
+                                previewContent = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color(0xFFFEF7FF)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.LightMode,
+                                            contentDescription = null,
+                                            tint = Color(0xFF6750A4),
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            ),
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = ThemeConfig.DARK,
+                                label = "Dark",
+                                previewContent = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color(0xFF141218)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.DarkMode,
+                                            contentDescription = null,
+                                            tint = Color(0xFFD0BCFF),
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            )
                         ),
-                        selectedIndex = when (themeConfig) {
-                            ThemeConfig.FOLLOW_SYSTEM -> 0
-                            ThemeConfig.LIGHT -> 1
-                            ThemeConfig.DARK -> 2
-                        },
-                        onSelect = { index ->
-                            val config = when (index) {
-                                1 -> ThemeConfig.LIGHT
-                                2 -> ThemeConfig.DARK
-                                else -> ThemeConfig.FOLLOW_SYSTEM
-                            }
+                        selected = themeConfig,
+                        onOptionSelected = { config ->
                             onThemeConfigChange(config)
                             when (config) {
                                 ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
@@ -238,7 +280,7 @@ fun AppearanceSettingsScreenContent(
                     )
                     // Preset Color Palettes
                     Text(
-                        stringResource(R.string.ui_preset_color_palettes),
+                        "Preset Color Palettes:",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -283,7 +325,7 @@ fun AppearanceSettingsScreenContent(
 
                     // Palette Style Swatches
                     Text(
-                        stringResource(R.string.ui_palette_harmony_style),
+                        "Palette Harmony Style:",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -357,9 +399,9 @@ fun AppearanceSettingsScreenContent(
                     }
 
                     // Material You Dynamic Color Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_material_you_dynamic_color),
-                        subtitle = stringResource(R.string.ui_adapt_accent_colors_from_your),
+                    ToggleRow(
+                        title = "Material You Dynamic Color",
+                        subtitle = "Adapt accent colors from your system wallpaper (Android 12+)",
                         icon = Icons.Rounded.ColorLens,
                         checked = dynamicColor,
                         onCheckedChange = { newValue ->
@@ -368,8 +410,8 @@ fun AppearanceSettingsScreenContent(
                         }
                     )
                     // AMOLED Black Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_amoled_black_dark_mode),
+                    ToggleRow(
+                        title = "AMOLED Black Dark Mode",
                         subtitle = if (isDarkTheme) "Pure black background ladder for OLED displays" else "Disabled in Light Mode (Requires Dark theme)",
                         icon = Icons.Rounded.DarkMode,
                         checked = amoledMode && isDarkTheme,
@@ -382,52 +424,84 @@ fun AppearanceSettingsScreenContent(
                 }
 
                 // Section 2: Custom Fonts & Typography
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_typography_fonts),
+                SettingsCategoryCard(
+                    title = "Typography & Fonts",
                     iconRes = com.petal.browser.R.drawable.database_filled,
                     cardId = "appearance_font",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
-                        stringResource(R.string.ui_choose_typography_style_or_load),
+                        "Choose typography style or load custom TrueType / OpenType font files",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     // Font Family Chips
                     Text(
-                        stringResource(R.string.ui_select_font_family),
+                        "Select Font Family:",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = AppFont.values().map { font ->
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem(font.label, selected = appFont == font)
-                        },
-                        selectedIndex = AppFont.values().indexOf(appFont),
-                        onSelect = { index -> AppFont.values().getOrNull(index)?.let { font ->
-                            onAppFontChange(font)
-                            if (font == AppFont.CUSTOM) showFontPicker = true
-                        } },
-                    )
+                    val fontFamilyScrollState = rememberScrollState()
+                    ScrollFadeRow(
+                        scrollState = fontFamilyScrollState,
+                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(fontFamilyScrollState),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            AppFont.values().forEach { font ->
+                                FilterChip(
+                                    selected = appFont == font,
+                                    onClick = {
+                                        onAppFontChange(font)
+                                        if (font == AppFont.CUSTOM) {
+                                            showFontPicker = true
+                                        }
+                                    },
+                                    label = { Text(font.label) },
+                                    leadingIcon = if (appFont == font) {
+                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                    } else null
+                                )
+                            }
+                        }
+                    }
 
                     // GS Flex Preset Chips (For Petal Signature)
                     AnimatedVisibility(visible = appFont == AppFont.PETAL) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                stringResource(R.string.ui_petal_signature_design_preset),
+                                "Petal Signature Design Preset:",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                                items = GSFlexPreset.values().map { preset ->
-                                    com.petal.browser.ui.containment.PetalConnectedButtonItem(
-                                        preset.label.substringBefore(" ("), selected = gsFlexPreset == preset,
-                                    )
-                                },
-                                selectedIndex = GSFlexPreset.values().indexOf(gsFlexPreset),
-                                onSelect = { index -> GSFlexPreset.values().getOrNull(index)?.let(onGsFlexPresetChange) },
-                            )
+                            val presetScrollState = rememberScrollState()
+                            ScrollFadeRow(
+                                scrollState = presetScrollState,
+                                edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(presetScrollState),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    GSFlexPreset.values().forEach { preset ->
+                                        FilterChip(
+                                            selected = gsFlexPreset == preset,
+                                            onClick = { onGsFlexPresetChange(preset) },
+                                            label = { Text(preset.label.substringBefore(" (")) },
+                                            leadingIcon = if (gsFlexPreset == preset) {
+                                                { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            } else null
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -451,7 +525,7 @@ fun AppearanceSettingsScreenContent(
                                 Spacer(Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = stringResource(R.string.ui_custom_font_file),
+                                        text = "Custom Font File",
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -467,7 +541,7 @@ fun AppearanceSettingsScreenContent(
                                 ) {
                                     Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text(stringResource(R.string.ui_browse))
+                                    Text("Browse")
                                 }
                             }
                         }
@@ -475,24 +549,24 @@ fun AppearanceSettingsScreenContent(
                 }
 
                 // Section 3: Layout & Ambient Morphing Shapes
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_layout_expressive_motion),
+                SettingsCategoryCard(
+                    title = "Layout & Expressive Motion",
                     iconRes = com.petal.browser.R.drawable.layers_filled,
                     cardId = "appearance_layout",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     // Floating Tab Bar Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_floating_tab_bar),
-                        subtitle = stringResource(R.string.ui_show_the_bottom_bar_as),
+                    ToggleRow(
+                        title = "Floating Tab Bar",
+                        subtitle = "Show the bottom bar as a floating pill instead of a flat bar",
                         icon = Icons.Rounded.SpaceBar,
                         checked = floatingTabBar,
                         onCheckedChange = onFloatingTabBarChange
                     )
                     // Material 3 Expressive Background Morphing Shapes Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_m3_expressive_morphing_shapes),
-                        subtitle = stringResource(R.string.ui_display_ambient_morphing_background_sh),
+                    ToggleRow(
+                        title = "M3 Expressive Morphing Shapes",
+                        subtitle = "Display ambient morphing background shapes across all app screens",
                         icon = Icons.Rounded.BubbleChart,
                         checked = expressiveBgShapes,
                         onCheckedChange = onExpressiveBgShapesChange
@@ -506,7 +580,7 @@ fun AppearanceSettingsScreenContent(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = stringResource(R.string.ui_shape_change_mode),
+                                text = "Shape Change Mode:",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -534,12 +608,12 @@ fun AppearanceSettingsScreenContent(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = stringResource(R.string.ui_auto_change_interval),
+                                            text = "Auto-Change Interval:",
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
-                                            text = stringResource(R.string.ui_min, bgShapeRotationMin),
+                                            text = "$bgShapeRotationMin min",
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.primary
                                         )
@@ -562,15 +636,15 @@ fun AppearanceSettingsScreenContent(
                 }
 
                 // Section 4: Display Refresh Rate & Performance
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_display_performance),
+                SettingsCategoryCard(
+                    title = "Display & Performance",
                     icon = Icons.Rounded.Speed,
                     cardId = "appearance_refresh",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_high_refresh_rate_120hz),
-                        subtitle = stringResource(R.string.ui_force_120hz_144hz_peak_display, maxDetectedRefreshRate.toInt()),
+                    ToggleRow(
+                        title = "High Refresh Rate (120Hz+)",
+                        subtitle = "Force 120Hz/144Hz peak display refresh rate and smooth 120 FPS frame pacing (Detected hardware peak: ${maxDetectedRefreshRate.toInt()} Hz)",
                         icon = Icons.Rounded.Speed,
                         checked = highRefreshRate,
                         onCheckedChange = { newValue ->
@@ -585,9 +659,9 @@ fun AppearanceSettingsScreenContent(
                         }
                     )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_app_launch_ripple_effect),
-                        subtitle = stringResource(R.string.ui_display_fluid_liquid_displacement_ripp),
+                    ToggleRow(
+                        title = "App Launch Ripple Effect",
+                        subtitle = "Display fluid liquid displacement ripple animation across the screen when opening the app",
                         icon = Icons.Rounded.WaterDrop,
                         checked = launchRippleEnabled,
                         onCheckedChange = onLaunchRippleEnabledChange

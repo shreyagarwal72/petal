@@ -8,8 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,9 +21,7 @@ import com.petal.browser.compose.tabs.PetalInactiveTabManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.containment.PetalSettingsSection
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
+import com.petal.browser.ui.components.SettingsSection
 
 /**
  * Inactive Tabs Settings Screen — Material 3 Expressive redesign.
@@ -80,12 +76,19 @@ fun InactiveSettingsScreen(
             ) {
 
                 // ── Inactivity Threshold ──
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_inactivity_threshold),
-                    icon = Icons.Filled.Timer,
+                SettingsSection(
+                    title = "Inactivity Threshold",
+                    icon = {
+                        Icon(
+                            Icons.Rounded.Timer,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_move_tabs_that_haven_t),
+                        text = "Move tabs that haven't been opened for this long to the Inactive section.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 4.dp)
@@ -138,7 +141,7 @@ fun InactiveSettingsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        stringResource(R.string.ui_custom_duration),
+                                        "Custom duration",
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -147,7 +150,7 @@ fun InactiveSettingsScreen(
                                         color = MaterialTheme.colorScheme.primaryContainer
                                     ) {
                                         Text(
-                                            text = stringResource(R.string.ui_day, customDays, if (customDays == 1) "" else "s"),
+                                            text = "$customDays day${if (customDays == 1) "" else "s"}",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -171,12 +174,12 @@ fun InactiveSettingsScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        stringResource(R.string.ui_1_day),
+                                        "1 day",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        stringResource(R.string.ui_365_days),
+                                        "365 days",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -187,9 +190,16 @@ fun InactiveSettingsScreen(
                 }
 
                 // ── Auto-Archive ──
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_auto_archive),
-                    icon = Icons.Filled.Archive,
+                SettingsSection(
+                    title = "Auto-Archive",
+                    icon = {
+                        Icon(
+                            Icons.Rounded.Archive,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 ) {
                     // Archive duplicate tabs
                     Surface(
@@ -211,14 +221,14 @@ fun InactiveSettingsScreen(
                                 verticalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
                                 Text(
-                                    stringResource(R.string.ui_archive_duplicate_tabs),
+                                    "Archive duplicate tabs",
                                     style = MaterialTheme.typography.titleSmall.copy(
                                         fontWeight = FontWeight.SemiBold
                                     ),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    stringResource(R.string.ui_keeps_only_the_most_recently),
+                                    "Keeps only the most recently used tab when duplicates are found.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -256,14 +266,14 @@ fun InactiveSettingsScreen(
                                 verticalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
                                 Text(
-                                    stringResource(R.string.ui_auto_close_after_3_months),
+                                    "Auto-close after 3 months",
                                     style = MaterialTheme.typography.titleSmall.copy(
                                         fontWeight = FontWeight.SemiBold
                                     ),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    stringResource(R.string.ui_inactive_tabs_older_than_90),
+                                    "Inactive tabs older than 90 days are permanently removed.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -302,7 +312,7 @@ fun InactiveSettingsScreen(
                                 .padding(top = 1.dp)
                         )
                         Text(
-                            stringResource(R.string.ui_inactive_tabs_are_preserved_with),
+                            "Inactive tabs are preserved with their history and can be restored at any time from the Inactive section in the tab switcher.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )

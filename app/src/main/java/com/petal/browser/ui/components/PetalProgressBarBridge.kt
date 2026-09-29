@@ -1,23 +1,8 @@
 package com.petal.browser.ui.components
 
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -26,12 +11,8 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
-import androidx.compose.ui.semantics.progressBarRangeInfo
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.preference.PreferenceManager
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
@@ -67,7 +48,7 @@ object PetalProgressBarBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    PetalWebProgressIndicator(
+                    PetalFancyWebLoadingBar(
                         progress = progressState.value,
                         visible = visibleState.value
                     )
@@ -110,42 +91,20 @@ object PetalProgressBarBridge {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun PetalWebProgressIndicator(
+fun PetalFancyWebLoadingBar(
     progress: Float,
     visible: Boolean
 ) {
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow,
-        ),
-        label = "petalWebProgress",
-    )
-    val scheme = androidx.compose.material3.MaterialTheme.colorScheme
-
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(tween(140)) + expandHorizontally(expandFrom = Alignment.Start, animationSpec = tween(180)),
-        exit = fadeOut(tween(160)) + shrinkHorizontally(shrinkTowards = Alignment.End, animationSpec = tween(180)),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .clip(CircleShape)
-                .background(scheme.surfaceContainerHigh)
-                .semantics { progressBarRangeInfo = ProgressBarRangeInfo(animatedProgress, 0f..1f) },
-            contentAlignment = Alignment.CenterStart,
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(animatedProgress)
-                    .clip(CircleShape)
-                    .background(scheme.primary),
-            )
-        }
+    if (visible) {
+        // Use the exact Material 3 Expressive component used by Essentials
+        // in its App Updates downloader.
+        LinearWavyProgressIndicator(
+            progress = { progress.coerceIn(0.05f, 1f) },
+            modifier = Modifier.fillMaxWidth(),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+            trackColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+        )
     }
 }

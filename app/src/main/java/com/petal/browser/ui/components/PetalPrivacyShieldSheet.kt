@@ -70,8 +70,6 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 object PetalPrivacyShieldSheet {
 
@@ -267,7 +265,7 @@ object PetalPrivacyShieldSheet {
                         }
                         Column {
                             Text(
-                                text = stringResource(R.string.ui_petal_shield_hud),
+                                text = "Petal Shield HUD",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -284,7 +282,7 @@ object PetalPrivacyShieldSheet {
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.ui_close),
+                            contentDescription = "Close",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -297,10 +295,12 @@ object PetalPrivacyShieldSheet {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    com.petal.browser.ui.containment.PetalHeroCard(
+                    Card(
                         modifier = Modifier.weight(1f),
-                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        )
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
@@ -310,17 +310,19 @@ object PetalPrivacyShieldSheet {
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = stringResource(R.string.ui_blocked_on_this_site),
+                                text = "Blocked on this site",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
 
-                    com.petal.browser.ui.containment.PetalHeroCard(
+                    Card(
                         modifier = Modifier.weight(1f),
-                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
@@ -330,7 +332,7 @@ object PetalPrivacyShieldSheet {
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = stringResource(R.string.ui_total_threats_stopped),
+                                text = "Total threats stopped",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -341,10 +343,12 @@ object PetalPrivacyShieldSheet {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Connection Security Card
-                com.petal.browser.ui.containment.PetalHeroCard(
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    )
                 ) {
                     Row(
                         modifier = Modifier
@@ -388,7 +392,7 @@ object PetalPrivacyShieldSheet {
                 ) {
                     Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                         Text(
-                            text = stringResource(R.string.ui_trust_whitelist_domain),
+                            text = "Trust & Whitelist Domain",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -421,7 +425,7 @@ object PetalPrivacyShieldSheet {
                 ) {
                     Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                         Text(
-                            text = stringResource(R.string.ui_master_ad_tracker_shield),
+                            text = "Master Ad & Tracker Shield",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )

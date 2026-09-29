@@ -1,7 +1,5 @@
 package com.petal.browser.compose.settings.screens
 
-import com.petal.browser.ui.containment.PetalSettingsSection
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -23,8 +21,6 @@ import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.compose.settings.viewmodel.AddressBarSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun AddressBarSettingsScreen(
@@ -52,25 +48,94 @@ fun AddressBarSettingsScreen(
                 Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                PetalSettingsSection("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
-                    Text(stringResource(R.string.ui_choose_where_the_compact_address), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                SettingsCategoryCard("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
+                    Text("Choose where the compact address bar is placed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = listOf(
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Top Bar"),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Bottom Bar"),
+                    com.petal.browser.ui.components.WireframeOptionPicker(
+                        options = listOf(
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = "TOP",
+                                label = "Top Bar",
+                                previewContent = {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(6.dp),
+                                        verticalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        // Top pill
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(10.dp)
+                                                .clip(RoundedCornerShape(50))
+                                                .background(MaterialTheme.colorScheme.primary)
+                                        )
+                                        // Content dummy lines
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.7f)
+                                                .height(6.dp)
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.9f)
+                                                .height(6.dp)
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                        )
+                                    }
+                                }
+                            ),
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = "BOTTOM",
+                                label = "Bottom Bar",
+                                previewContent = {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(6.dp),
+                                        verticalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.9f)
+                                                .height(6.dp)
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.7f)
+                                                .height(6.dp)
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                        )
+                                        // Bottom pill
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(10.dp)
+                                                .clip(RoundedCornerShape(50))
+                                                .background(MaterialTheme.colorScheme.primary)
+                                        )
+                                    }
+                                }
+                            )
                         ),
-                        selectedIndex = if (position.equals("TOP", ignoreCase = true)) 0 else 1,
-                        onSelect = { selected ->
-                            viewModel.setPosition(if (selected == 0) "TOP" else "BOTTOM")
+                        selected = position.uppercase(),
+                        onOptionSelected = {
+                            viewModel.setPosition(it)
                             (context as? BrowserActivity)?.applyAddressBarPosition()
                             (context as? BrowserActivity)?.window?.decorView?.post { (context as? BrowserActivity)?.applyAddressBarPosition() }
                         }
                     )
                 }
 
-                PetalSettingsSection("Size", icon = Icons.Rounded.ViewCompact, cardId = "address_bar_size", targetHighlightId = targetHighlightItemId) {
-                    Text(stringResource(R.string.ui_compact_is_the_recommended_short), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                SettingsCategoryCard("Size", icon = Icons.Rounded.ViewCompact, cardId = "address_bar_size", targetHighlightId = targetHighlightItemId) {
+                    Text("Compact is the recommended short-height layout.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     ChoiceRow(
                         options = listOf("COMPACT" to "Compact", "STANDARD" to "Standard"),
@@ -79,8 +144,8 @@ fun AddressBarSettingsScreen(
                     )
                 }
 
-                PetalSettingsSection("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
-                    Text(stringResource(R.string.ui_choose_the_optional_action_shown), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                SettingsCategoryCard("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
+                    Text("Choose the optional action shown beside the address field.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     ChoiceRow(
                         options = listOf("AI" to "AI", "BOOKMARK" to "Bookmark", "NONE" to "None"),
@@ -89,17 +154,17 @@ fun AddressBarSettingsScreen(
                     )
                 }
 
-                PetalSettingsSection("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_address_bar_horizontal_swipe_to),
-                        subtitle = stringResource(R.string.ui_swipe_left_or_right_across),
+                SettingsCategoryCard("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
+                    ToggleRow(
+                        title = "Address Bar Horizontal Swipe to Switch Tabs",
+                        subtitle = "Swipe left or right across the address bar pill to fluidly switch between open tabs",
                         icon = Icons.Rounded.Swipe,
                         checked = swipeTabs,
                         onCheckedChange = viewModel::setSwipeTabs
                     )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_address_bar_long_press_quick),
-                        subtitle = stringResource(R.string.ui_long_press_the_address_bar),
+                    ToggleRow(
+                        title = "Address Bar Long-Press Quick Actions",
+                        subtitle = "Long press the address bar for quick actions: Clean Copy, Paste & Go, Bookmark, and Hard Refresh",
                         icon = Icons.Rounded.TouchApp,
                         checked = quickActions,
                         onCheckedChange = viewModel::setQuickActions
@@ -113,9 +178,10 @@ fun AddressBarSettingsScreen(
 
 @Composable
 private fun ChoiceRow(options: List<Pair<String, String>>, selected: String, onSelected: (String) -> Unit) {
-    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-        items = options.map { (_, label) -> com.petal.browser.ui.containment.PetalConnectedButtonItem(label) },
-        selectedIndex = options.indexOfFirst { it.first.equals(selected, true) },
-        onSelect = { index -> options.getOrNull(index)?.first?.let(onSelected) },
-    )
+    val scroll = rememberScrollState()
+    Row(Modifier.fillMaxWidth().horizontalScroll(scroll), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        options.forEach { (value, label) ->
+            FilterChip(selected = selected.equals(value, true), onClick = { onSelected(value) }, label = { androidx.compose.material3.Text(label) }, leadingIcon = if (selected.equals(value, true)) ({ Icon(Icons.Rounded.Check, null, Modifier.size(16.dp)) }) else null)
+        }
+    }
 }

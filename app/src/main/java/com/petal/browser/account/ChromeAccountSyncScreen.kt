@@ -51,11 +51,12 @@ import coil.compose.AsyncImage
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.compose.home.PetalShortcut
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.containment.petalGroupPositionFor
-import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.components.PetalAboutDeveloperBridge
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.components.SettingsItem
+import com.petal.browser.ui.components.SwitchSettingItem
+import com.petal.browser.ui.components.getGroupItemShape
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -67,8 +68,6 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import kotlinx.coroutines.launch
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun ProfileAvatarDisplay(
@@ -90,7 +89,7 @@ fun ProfileAvatarDisplay(
             profile.avatarType == AvatarType.GOOGLE_URL && !profile.avatarUrl.isNullOrEmpty() -> {
                 AsyncImage(
                     model = profile.avatarUrl,
-                    contentDescription = stringResource(R.string.ui_profile_photo),
+                    contentDescription = "Profile Photo",
                     modifier = Modifier.size(size).clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
@@ -114,7 +113,7 @@ fun ProfileAvatarDisplay(
                     }
                     AsyncImage(
                         model = imageModel,
-                        contentDescription = stringResource(R.string.ui_custom_photo),
+                        contentDescription = "Custom Photo",
                         modifier = Modifier.size(size).clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
@@ -132,7 +131,7 @@ fun ProfileAvatarDisplay(
                 if (iconVector != null) {
                     Icon(
                         imageVector = iconVector,
-                        contentDescription = stringResource(R.string.ui_preset_avatar),
+                        contentDescription = "Preset Avatar",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(size * 0.5f)
                     )
@@ -331,7 +330,7 @@ private fun RenderUserProfileContent(
                 maxSubtitleLines = 1
             )
         },
-        snackbarHost = { com.petal.browser.ui.containment.PetalSnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
@@ -354,9 +353,13 @@ private fun RenderUserProfileContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
             // Main User Profile Hero Card — containment style matched to Clear Browsing Data screen
-            com.petal.browser.ui.containment.PetalHeroCard(
-                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -386,7 +389,7 @@ private fun RenderUserProfileContent(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = if (profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty()) Icons.Rounded.Crop else Icons.Rounded.AddPhotoAlternate,
-                                    contentDescription = stringResource(R.string.ui_change_profile_picture),
+                                    contentDescription = "Change Profile Picture",
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -421,7 +424,7 @@ private fun RenderUserProfileContent(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Rounded.Edit,
-                                    contentDescription = stringResource(R.string.ui_edit_user_name),
+                                    contentDescription = "Edit User Name",
                                     modifier = Modifier.size(15.dp)
                                 )
                             }
@@ -431,7 +434,7 @@ private fun RenderUserProfileContent(
                     Spacer(Modifier.height(2.dp))
 
                     Text(
-                        text = stringResource(R.string.ui_petal_explorer_profile),
+                        text = "Petal Explorer Profile",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -440,7 +443,7 @@ private fun RenderUserProfileContent(
 
                     // Avatar Selection Section (Built-in Presets vs Gallery)
                     Text(
-                        text = stringResource(R.string.ui_choose_profile_picture),
+                        text = "CHOOSE PROFILE PICTURE",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -471,7 +474,7 @@ private fun RenderUserProfileContent(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Rounded.AddPhotoAlternate,
-                                    contentDescription = stringResource(R.string.ui_select_photo_crop),
+                                    contentDescription = "Select Photo & Crop",
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -515,7 +518,7 @@ private fun RenderUserProfileContent(
 
             // Section 1: SECURITY & PRIVACY — eyebrow label matched to Clear Browsing Data screen
             Text(
-                text = stringResource(R.string.ui_security_privacy),
+                text = "SECURITY & PRIVACY",
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
@@ -534,8 +537,8 @@ private fun RenderUserProfileContent(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     // Dedicated App & Profile Lock Config Navigation Row
-                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
-                        title = stringResource(R.string.ui_app_profile_lock),
+                    SettingsItem(
+                        title = "App & Profile Lock",
                         subtitle = if (isLockActive) "Protection active • Fingerprint or Password" else "Require authentication on app startup",
                         leadingIcon = {
                             Icon(
@@ -544,14 +547,14 @@ private fun RenderUserProfileContent(
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         },
-                        position = petalGroupPositionFor(0, securityItemCount),
+                        shape = getGroupItemShape(0, securityItemCount),
                         onClick = { onOpenAppLockConfig() }
                     )
 
                     // Auto-Clear on Exit Preference
-                    com.petal.browser.ui.containment.PetalGroupControlRow(
-                        title = stringResource(R.string.ui_auto_clear_data_on_exit),
-                        subtitle = stringResource(R.string.ui_automatically_purge_cache_history_and),
+                    SwitchSettingItem(
+                        title = "Auto-Clear Data on Exit",
+                        subtitle = "Automatically purge cache, history, and open tabs on exit (keeps account logins safe)",
                         checked = isClearOnExit,
                         onCheckedChange = { checked ->
                             isClearOnExit = checked
@@ -565,7 +568,7 @@ private fun RenderUserProfileContent(
                                 )
                             }
                         },
-                        position = petalGroupPositionFor(1, securityItemCount),
+                        shape = getGroupItemShape(1, securityItemCount),
                         leadingIcon = {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
@@ -576,15 +579,15 @@ private fun RenderUserProfileContent(
                     )
 
                     // HTTPS-Only Mode Status
-                    com.petal.browser.ui.containment.PetalGroupControlRow(
-                        title = stringResource(R.string.ui_https_only_mode),
+                    SwitchSettingItem(
+                        title = "HTTPS-Only Mode",
                         subtitle = if (isHttpsOnly) "Active • HTTP automatically upgraded to HTTPS" else "Disabled • Insecure connections allowed",
                         checked = isHttpsOnly,
                         onCheckedChange = { checked ->
                             isHttpsOnly = checked
                             sp.edit().putBoolean("sp_https_only", checked).apply()
                         },
-                        position = petalGroupPositionFor(2, securityItemCount),
+                        shape = getGroupItemShape(2, securityItemCount),
                         leadingIcon = {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
@@ -598,7 +601,7 @@ private fun RenderUserProfileContent(
 
             // Section 2: STORAGE & DATA — eyebrow label matched to Clear Browsing Data screen
             Text(
-                text = stringResource(R.string.ui_storage_data),
+                text = "STORAGE & DATA",
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
@@ -655,8 +658,9 @@ private fun RenderUserProfileContent(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     // Item 0: Web Cache & App Storage with Clear action
-                    com.petal.browser.ui.containment.PetalHeroCard(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    Surface(
+                        shape = getGroupItemShape(0, storageItemCount),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -691,12 +695,12 @@ private fun RenderUserProfileContent(
                                     }
                                     Column {
                                         Text(
-                                            text = stringResource(R.string.ui_web_cache_app_storage),
+                                            text = "Web Cache & App Storage",
                                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
-                                            text = stringResource(R.string.ui_temporary_cached_network_files_and),
+                                            text = "Temporary cached network files and assets",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -748,16 +752,16 @@ private fun RenderUserProfileContent(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(Modifier.width(8.dp))
-                                    Text(stringResource(R.string.ui_clear_web_cache), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                                    Text("Clear Web Cache", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
                                 }
                             }
                         }
                     }
 
                     // Item 1: Clear Browsing Data
-                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
-                        title = stringResource(R.string.ui_clear_browsing_data),
-                        subtitle = stringResource(R.string.ui_select_remove_history_cookies_web),
+                    SettingsItem(
+                        title = "Clear Browsing Data",
+                        subtitle = "Select & remove history, cookies, web storage, autofill & permissions",
                         leadingIcon = {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.reset_settings_rounded),
@@ -765,7 +769,7 @@ private fun RenderUserProfileContent(
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         },
-                        position = petalGroupPositionFor(1, storageItemCount),
+                        shape = getGroupItemShape(1, storageItemCount),
                         onClick = { showClearDataDialog = true }
                     )
                 }
@@ -773,14 +777,14 @@ private fun RenderUserProfileContent(
 
             // Edit User Name Dialog
             if (showEditNameDialog) {
-                com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                AlertDialog(
                     onDismissRequest = { showEditNameDialog = false },
-                    title = { Text(stringResource(R.string.ui_edit_user_name), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                    title = { Text("Edit User Name", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                     text = {
                         OutlinedTextField(
                             value = nameInput,
                             onValueChange = { if (it.length <= 15) nameInput = it },
-                            label = { Text(stringResource(R.string.ui_user_name_max_15_chars)) },
+                            label = { Text("User Name (max 15 chars)") },
                             singleLine = true,
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -799,7 +803,7 @@ private fun RenderUserProfileContent(
                             ),
                             modifier = Modifier.bouncyClickable()
                         ) {
-                            Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
+                            Text("Save", fontWeight = FontWeight.Bold)
                         }
                     },
                     dismissButton = {
@@ -808,7 +812,7 @@ private fun RenderUserProfileContent(
                             shape = RoundedCornerShape(20.dp),
                             modifier = Modifier.bouncyClickable()
                         ) {
-                            Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                            Text("Cancel", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 )
@@ -831,9 +835,10 @@ private fun RenderUserProfileContent(
 
             // Built-in In-App Photo & Video Media Picker Bottom Sheet
             if (showMediaPickerSheet) {
-                com.petal.browser.ui.containment.PetalSheet(
+                ModalBottomSheet(
                     onDismissRequest = { showMediaPickerSheet = false },
                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     dragHandle = null
                 ) {
                     com.petal.browser.media.PetalMediaPickerBottomSheet(
@@ -996,11 +1001,11 @@ private fun ProfilePictureCropDialog(
     var offsetY by remember { mutableFloatStateOf(0f) }
     var rotation by remember { mutableFloatStateOf(0f) }
 
-    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                stringResource(R.string.ui_crop_profile_picture),
+                "Crop Profile Picture",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
         },
@@ -1011,7 +1016,7 @@ private fun ProfilePictureCropDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    stringResource(R.string.ui_pinch_to_zoom_or_drag),
+                    "Pinch to zoom or drag to align inside circular crop frame:",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1033,7 +1038,7 @@ private fun ProfilePictureCropDialog(
                 ) {
                     AsyncImage(
                         model = sourceUri,
-                        contentDescription = stringResource(R.string.ui_crop_target),
+                        contentDescription = "Crop Target",
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer {
@@ -1054,7 +1059,7 @@ private fun ProfilePictureCropDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(stringResource(R.string.ui_zoom), style = MaterialTheme.typography.labelMedium)
+                        Text("Zoom", style = MaterialTheme.typography.labelMedium)
                         Text("${(scale * 100).toInt()}%", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                     }
                     com.petal.browser.ui.components.PetalSlider(
@@ -1078,7 +1083,7 @@ private fun ProfilePictureCropDialog(
                                 .bouncyClickable { rotation = (rotation + 90f) % 360f }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Rounded.RotateRight, contentDescription = stringResource(R.string.ui_rotate_90), modifier = Modifier.size(22.dp))
+                                Icon(Icons.Rounded.RotateRight, contentDescription = "Rotate 90°", modifier = Modifier.size(22.dp))
                             }
                         }
                         Surface(
@@ -1101,7 +1106,7 @@ private fun ProfilePictureCropDialog(
                                 }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Rounded.RestartAlt, contentDescription = stringResource(R.string.ui_reset_crop), modifier = Modifier.size(22.dp))
+                                Icon(Icons.Rounded.RestartAlt, contentDescription = "Reset Crop", modifier = Modifier.size(22.dp))
                             }
                         }
                     }
@@ -1133,7 +1138,7 @@ private fun ProfilePictureCropDialog(
             ) {
                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.ui_apply_crop), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                Text("Apply Crop", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
             }
         },
         dismissButton = {
@@ -1142,7 +1147,7 @@ private fun ProfilePictureCropDialog(
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.bouncyClickable()
             ) {
-                Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                Text("Cancel", fontWeight = FontWeight.SemiBold)
             }
         }
     )

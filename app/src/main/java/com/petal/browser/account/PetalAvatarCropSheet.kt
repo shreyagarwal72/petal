@@ -35,8 +35,6 @@ import com.petal.browser.ui.components.PetalSlider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,9 +79,11 @@ fun PetalAvatarCropSheet(
         }
     }
 
-    com.petal.browser.ui.containment.PetalSheet(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             modifier = Modifier
@@ -99,14 +99,14 @@ fun PetalAvatarCropSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(R.string.ui_crop_profile_picture),
+                    text = "Crop Profile Picture",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
+                    Icon(Icons.Rounded.Close, contentDescription = "Close")
                 }
             }
 
@@ -189,7 +189,7 @@ fun PetalAvatarCropSheet(
                         rotationAngle = (rotationAngle + 90f) % 360f
                         PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
-                        Icon(Icons.Rounded.RotateRight, contentDescription = stringResource(R.string.ui_rotate))
+                        Icon(Icons.Rounded.RotateRight, contentDescription = "Rotate")
                     }
 
                     IconButton(onClick = {
@@ -198,7 +198,7 @@ fun PetalAvatarCropSheet(
                         rotationAngle = 0f
                         PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.ui_reset))
+                        Icon(Icons.Rounded.Refresh, contentDescription = "Reset")
                     }
 
                     PetalSlider(
@@ -236,7 +236,7 @@ fun PetalAvatarCropSheet(
                     Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = stringResource(R.string.ui_save_profile_picture),
+                        text = "Save Profile Picture",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                         )

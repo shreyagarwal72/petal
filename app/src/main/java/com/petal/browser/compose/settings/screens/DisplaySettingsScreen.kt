@@ -1,7 +1,5 @@
 package com.petal.browser.compose.settings.screens
 
-import com.petal.browser.ui.containment.PetalSettingsSection
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,8 +28,6 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.ScrollFadeRow
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun DisplaySettingsScreen(
@@ -183,15 +179,15 @@ fun DisplaySettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Navigation Safeguards Card
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_navigation_safeguards),
+                SettingsCategoryCard(
+                    title = "Navigation Safeguards",
                     icon = Icons.Rounded.ExitToApp,
                     cardId = "nav_safeguards",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_double_back_to_exit),
-                        subtitle = stringResource(R.string.ui_press_back_twice_quickly_to),
+                    ToggleRow(
+                        title = "Double Back to Exit",
+                        subtitle = "Press back twice quickly to exit the browser",
                         icon = Icons.Rounded.ExitToApp,
                         checked = doubleBackExit,
                         onCheckedChange = onDoubleBackExitChange
@@ -199,36 +195,36 @@ fun DisplaySettingsScreenContent(
                 }
 
                 // Apple Duo (BETA) Card
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_apple_duo_beta),
+                SettingsCategoryCard(
+                    title = "Apple Duo (BETA)",
                     icon = Icons.Rounded.Animation,
                     cardId = "apple_duo",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_real_time_frosted_glass_fold),
+                        text = "Real-time frosted-glass fold and 3D device tilt perspective animation adapted from Duo-animation by Atomicx7.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_enable_apple_duo_fold_effect),
-                        subtitle = stringResource(R.string.ui_apply_dynamic_frosted_glass_fold),
+                    ToggleRow(
+                        title = "Enable Apple Duo Fold Effect",
+                        subtitle = "Apply dynamic frosted glass fold animation responding to device tilt",
                         icon = Icons.Rounded.Animation,
                         checked = appleDuoEnabled,
                         onCheckedChange = onAppleDuoEnabledChange
                     )
 
                     if (appleDuoEnabled) {
-                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                            title = stringResource(R.string.ui_show_in_websites),
-                            subtitle = stringResource(R.string.ui_keep_the_3d_frosted_fold),
+                        ToggleRow(
+                            title = "Show in Websites",
+                            subtitle = "Keep the 3D frosted fold active when viewing web pages and websites",
                             icon = Icons.Rounded.Language,
                             checked = appleDuoWebsites,
                             onCheckedChange = onAppleDuoWebsitesChange
                         )
 
-                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        ToggleRow(
                             title = if (appleDuoUseSensor && appleDuoHasSensor) "Sensor Motion Tracking" else "Manual Tilt Control",
                             subtitle = if (!appleDuoHasSensor) "Rotation sensor unavailable on this device — manual mode active" else "Use gyroscope and game rotation sensors for 6DoF tilt",
                             icon = if (appleDuoUseSensor && appleDuoHasSensor) Icons.Rounded.ScreenRotation else Icons.Rounded.Tune,
@@ -250,12 +246,12 @@ fun DisplaySettingsScreenContent(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.ui_manual_tilt_angle),
+                                        text = "Manual Tilt Angle",
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = stringResource(R.string.ui_1f_hinge_s).format(appleDuoManualTilt, if (appleDuoManualTilt >= 0f) "Right" else "Left"),
+                                        text = "%.1f° (Hinge %s)".format(appleDuoManualTilt, if (appleDuoManualTilt >= 0f) "Right" else "Left"),
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -269,14 +265,14 @@ fun DisplaySettingsScreenContent(
                             }
                         } else {
                             Text(
-                                text = stringResource(R.string.ui_live_tilt_1f_hinge_s).format(appleDuoCurrentTilt, if (appleDuoCurrentHinge >= 0f) "Right" else "Left"),
+                                text = "Live Tilt: %.1f° · Hinge %s".format(appleDuoCurrentTilt, if (appleDuoCurrentHinge >= 0f) "Right" else "Left"),
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.primary
                             )
 
-                            com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                title = stringResource(R.string.ui_auto_recenter_washout),
-                                subtitle = stringResource(R.string.ui_continuously_absorb_gyro_drift_and),
+                            ToggleRow(
+                                title = "Auto-Recenter Washout",
+                                subtitle = "Continuously absorb gyro drift and posture changes while phone is still",
                                 icon = Icons.Rounded.Autorenew,
                                 checked = appleDuoAutoRecenter,
                                 onCheckedChange = onAppleDuoAutoRecenterChange
@@ -291,7 +287,7 @@ fun DisplaySettingsScreenContent(
                             ) {
                                 Icon(Icons.Rounded.FilterCenterFocus, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.ui_recalibrate_zero_pose))
+                                Text("Recalibrate Zero Pose")
                             }
                         }
 
@@ -301,7 +297,7 @@ fun DisplaySettingsScreenContent(
                         )
 
                         Text(
-                            text = stringResource(R.string.ui_physics_shader_tuning),
+                            text = "Physics & Shader Tuning",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -319,12 +315,12 @@ fun DisplaySettingsScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = stringResource(R.string.ui_eye_distance),
+                                    text = "Eye Distance",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = stringResource(R.string.ui_0f_mm).format(appleDuoEyeDistance),
+                                    text = "%.0f mm".format(appleDuoEyeDistance),
                                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -350,7 +346,7 @@ fun DisplaySettingsScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = stringResource(R.string.ui_blur_spread_radius),
+                                    text = "Blur Spread Radius",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -381,7 +377,7 @@ fun DisplaySettingsScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = stringResource(R.string.ui_glass_frost_darkening),
+                                    text = "Glass Frost Darkening",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -401,31 +397,31 @@ fun DisplaySettingsScreenContent(
                     }
                 }
                 // Accessibility & Display Options Card
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_accessibility_display_options),
+                SettingsCategoryCard(
+                    title = "Accessibility & Display Options",
                     iconRes = com.petal.browser.R.drawable.mobile_vibrate_filled,
                     cardId = "display",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_predictive_back_animations),
-                        subtitle = stringResource(R.string.ui_enable_fluid_predictive_back_gesture),
+                    ToggleRow(
+                        title = "Predictive Back Animations",
+                        subtitle = "Enable fluid predictive back gesture scaling and slide transitions across all screens",
                         icon = Icons.Rounded.Animation,
                         checked = predictiveBack,
                         onCheckedChange = onPredictiveBackChange
                     )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_depth_blur_effects),
-                        subtitle = stringResource(R.string.ui_show_24_dp_depth_blur),
+                    ToggleRow(
+                        title = "Depth Blur Effects",
+                        subtitle = "Show 24.dp depth blur and black dim overlay on back pages during navigation and predictive gestures",
                         icon = Icons.Rounded.BlurOn,
                         checked = depthBlur,
                         onCheckedChange = onDepthBlurChange
                     )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_touch_haptics_engine),
-                        subtitle = stringResource(R.string.ui_tactile_feedback_on_button_presses),
+                    ToggleRow(
+                        title = "Touch Haptics Engine",
+                        subtitle = "Tactile feedback on button presses and UI interactions",
                         icon = Icons.Rounded.Vibration,
                         checked = touchHaptics,
                         onCheckedChange = { newValue ->
@@ -436,9 +432,9 @@ fun DisplaySettingsScreenContent(
                         }
                     )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_scroll_haptics),
-                        subtitle = stringResource(R.string.ui_subtle_tactile_feedback_while_scrollin),
+                    ToggleRow(
+                        title = "Scroll Haptics",
+                        subtitle = "Subtle tactile feedback while scrolling web pages and lists",
                         icon = Icons.Rounded.TouchApp,
                         checked = scrollHaptics,
                         enabled = touchHaptics,
@@ -450,7 +446,11 @@ fun DisplaySettingsScreenContent(
                         }
                     )
                     // Text Font Scale Slider & Live Box
-                    com.petal.browser.ui.containment.PetalHeroCard {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -462,7 +462,7 @@ fun DisplaySettingsScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    stringResource(R.string.ui_text_font_scale),
+                                    "Text Font Scale",
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -487,7 +487,7 @@ fun DisplaySettingsScreenContent(
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
-                                        stringResource(R.string.ui_live_font_preview, (fontSizeScale * 100).toInt()),
+                                        "LIVE FONT PREVIEW (${(fontSizeScale * 100).toInt()}%)",
                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -504,7 +504,11 @@ fun DisplaySettingsScreenContent(
                     }
 
                     // Default Page Zoom Slider & Live Box
-                    com.petal.browser.ui.containment.PetalHeroCard {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -516,7 +520,7 @@ fun DisplaySettingsScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    stringResource(R.string.ui_default_page_zoom),
+                                    "Default Page Zoom",
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -541,7 +545,7 @@ fun DisplaySettingsScreenContent(
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
-                                        stringResource(R.string.ui_live_zoom_preview, (zoomLevelScale * 100).toInt()),
+                                        "LIVE ZOOM PREVIEW (${(zoomLevelScale * 100).toInt()}%)",
                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -557,14 +561,14 @@ fun DisplaySettingsScreenContent(
                                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                 Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size((12 * zoomLevelScale).dp)) {}
                                                 Text(
-                                                    stringResource(R.string.ui_sample_web_page_article),
+                                                    "Sample Web Page Article",
                                                     fontSize = (12 * zoomLevelScale).sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.onSurface
                                                 )
                                             }
                                             Text(
-                                                stringResource(R.string.ui_rendering_responsive_web_content_at, (zoomLevelScale * 100).toInt()),
+                                                "Rendering responsive web content at ${(zoomLevelScale * 100).toInt()}% zoom scale.",
                                                 fontSize = (10 * zoomLevelScale).sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
@@ -574,25 +578,25 @@ fun DisplaySettingsScreenContent(
                             }
                         }
                     }
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_force_enable_zoom_override_viewport),
-                        subtitle = stringResource(R.string.ui_override_website_viewport_locks_user),
+                    ToggleRow(
+                        title = "Force Enable Zoom (Override Viewport)",
+                        subtitle = "Override website viewport locks (user-scalable=no) to allow pinch-to-zoom on all pages",
                         icon = Icons.Rounded.ZoomIn,
                         checked = forceZoom,
                         onCheckedChange = onForceZoomChange
                     )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_simplified_view_for_webpages),
-                        subtitle = stringResource(R.string.ui_detect_article_content_and_enable),
+                    ToggleRow(
+                        title = "Simplified View for Webpages",
+                        subtitle = "Detect article content and enable reader mode prompts for clean distraction-free reading",
                         icon = Icons.Rounded.Article,
                         checked = readerModeDetection,
                         onCheckedChange = onReaderModeDetectionChange
                     )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_caret_browsing_f7_shortcut),
-                        subtitle = stringResource(R.string.ui_navigate_and_select_text_within),
+                    ToggleRow(
+                        title = "Caret Browsing (F7 Shortcut)",
+                        subtitle = "Navigate and select text within webpages using a movable keyboard cursor (toggle anytime via F7)",
                         icon = Icons.Rounded.TextFormat,
                         checked = caretBrowsing,
                         onCheckedChange = { newValue ->
@@ -601,9 +605,9 @@ fun DisplaySettingsScreenContent(
                         }
                     )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_touchpad_two_finger_navigation),
-                        subtitle = stringResource(R.string.ui_swipe_horizontally_with_two_fingers),
+                    ToggleRow(
+                        title = "Touchpad Two-Finger Navigation",
+                        subtitle = "Swipe horizontally with two fingers on a touchpad or trackpad to navigate back and forward in history",
                         icon = Icons.Rounded.Swipe,
                         checked = touchpadSwipeNav,
                         onCheckedChange = onTouchpadSwipeNavChange
@@ -640,12 +644,12 @@ fun DisplaySettingsScreenContent(
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = stringResource(R.string.ui_system_captions_preferences),
+                                    text = "System Captions Preferences",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = stringResource(R.string.ui_configure_system_level_closed_captioni),
+                                    text = "Configure system-level closed captioning, subtitles, and text styling",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

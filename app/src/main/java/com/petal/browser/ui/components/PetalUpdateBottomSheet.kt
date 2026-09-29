@@ -45,8 +45,6 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 data class PetalUpdateInfo(
     val versionName: String,
@@ -199,13 +197,16 @@ object PetalUpdateSheetBridge {
                             var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
                                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                                com.petal.browser.ui.containment.PetalSheet(
+                                ModalBottomSheet(
                                     onDismissRequest = {
                                         showSheet = false
                                         val parent = composeView?.parent as? android.view.ViewGroup
                                         parent?.removeView(composeView)
                                     },
                                     sheetState = sheetState,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                                    dragHandle = { BottomSheetDefaults.DragHandle() }
                                 ) {
                                     PetalChangelogHistorySheetContent(
                                         releases = releases,
@@ -299,13 +300,16 @@ object PetalUpdateSheetBridge {
                             var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
                                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                                com.petal.browser.ui.containment.PetalSheet(
+                                ModalBottomSheet(
                                     onDismissRequest = {
                                         showSheet = false
                                         val parent = composeView?.parent as? android.view.ViewGroup
                                         parent?.removeView(composeView)
                                     },
                                     sheetState = sheetState,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                                    dragHandle = { BottomSheetDefaults.DragHandle() }
                                 ) {
                                     PetalUpdateSheetContent(
                                         updateInfo = updateInfo,
@@ -462,7 +466,7 @@ fun PetalUpdateSheetContent(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_what_s_new),
+                        text = "What's New",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 6.dp)
@@ -489,9 +493,11 @@ fun PetalUpdateSheetContent(
             // Action Buttons
             if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
                 if (isDownloading) {
-                    com.petal.browser.ui.containment.PetalHeroCard(
-                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -508,16 +514,18 @@ fun PetalUpdateSheetContent(
                                 trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                             )
                             Text(
-                                text = stringResource(R.string.ui_downloading_update, downloadProgress),
+                                text = "Downloading update ($downloadProgress%)",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 } else if (isDownloadEnqueued) {
-                    com.petal.browser.ui.containment.PetalHeroCard(
-                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -535,12 +543,12 @@ fun PetalUpdateSheetContent(
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = stringResource(R.string.ui_downloading_in_background),
+                                    text = "Downloading in Background",
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
-                                    text = stringResource(R.string.ui_download_won_t_stop_if),
+                                    text = "Download won't stop if app is closed. Installer will open automatically.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                 )
@@ -551,7 +559,7 @@ fun PetalUpdateSheetContent(
                     var updateSplitExpanded by remember { mutableStateOf(false) }
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         ExpressiveSplitButton(
-                            label = stringResource(R.string.ui_download_install_update),
+                            label = "Download & Install Update",
                             onPrimaryClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
                                 isDownloading = true
@@ -586,14 +594,14 @@ fun PetalUpdateSheetContent(
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        com.petal.browser.ui.containment.PetalPopupMenu(
+                        DropdownMenu(
                             expanded = updateSplitExpanded,
                             onDismissRequest = { updateSplitExpanded = false },
                             shape = RoundedCornerShape(20.dp),
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_download_in_background)) },
+                            DropdownMenuItem(
+                                text = { Text("Download in Background") },
                                 leadingIcon = {
                                     Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 },
@@ -608,8 +616,8 @@ fun PetalUpdateSheetContent(
                                 }
                             )
                             if (updateInfo.releaseUrl.isNotBlank()) {
-                                com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                    text = { Text(stringResource(R.string.ui_open_github_releases)) },
+                                DropdownMenuItem(
+                                    text = { Text("Open GitHub Releases") },
                                     leadingIcon = {
                                         Icon(Icons.Rounded.OpenInBrowser, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                     },
@@ -643,7 +651,7 @@ fun PetalUpdateSheetContent(
                 ) {
                     Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.ui_view_release_notes_on_github))
+                    Text("View Release Notes on GitHub")
                 }
             }
 
@@ -725,12 +733,12 @@ fun PetalChangelogHistorySheetContent(
             }
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = stringResource(R.string.ui_changelog_history),
+                text = "Changelog History",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = stringResource(R.string.ui_previous_browser_releases_release_note),
+                text = "Previous browser releases & release notes",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -742,7 +750,7 @@ fun PetalChangelogHistorySheetContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_no_changelog_releases_found),
+                        text = "No changelog releases found.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -756,9 +764,12 @@ fun PetalChangelogHistorySheetContent(
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(releases) { rel ->
-                        com.petal.browser.ui.containment.PetalHeroCard(
-                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        Card(
+                            shape = RoundedCornerShape(28.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
@@ -793,7 +804,7 @@ fun PetalChangelogHistorySheetContent(
                                         ) {
                                             Icon(
                                                 Icons.Rounded.OpenInNew,
-                                                contentDescription = stringResource(R.string.ui_view_on_github),
+                                                contentDescription = "View on GitHub",
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.size(18.dp)
                                             )

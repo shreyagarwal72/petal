@@ -10,8 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun PetalPwaInstallBanner(
@@ -43,18 +41,18 @@ fun PetalPwaInstallBanner(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.GetApp,
-                    contentDescription = stringResource(R.string.ui_install_pwa_app),
+                    contentDescription = "Install PWA App",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = stringResource(R.string.ui_install, appName),
+                        text = "Install $appName",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     Text(
-                        text = stringResource(R.string.ui_add_to_home_screen_as),
+                        text = "Add to Home screen as web app",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
@@ -63,13 +61,13 @@ fun PetalPwaInstallBanner(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onDismissClick) {
-                    Text(stringResource(R.string.ui_dismiss))
+                    Text("Dismiss")
                 }
                 Button(
                     onClick = onInstallClick,
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text(stringResource(R.string.ui_install_2))
+                    Text("Install")
                 }
             }
         }

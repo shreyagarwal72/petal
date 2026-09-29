@@ -65,8 +65,6 @@ import com.petal.browser.ui.layout.LiquidRippleEffect
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -197,7 +195,7 @@ fun PetalBiometricExpressiveSheet(
                                 errorMessage != null -> Icons.Rounded.Warning
                                 else -> Icons.Rounded.Fingerprint
                             },
-                            contentDescription = stringResource(R.string.ui_biometric_icon),
+                            contentDescription = "Biometric Icon",
                             tint = when {
                                 isSuccess -> MaterialTheme.colorScheme.primary
                                 errorMessage != null -> MaterialTheme.colorScheme.error
@@ -266,7 +264,7 @@ fun PetalBiometricExpressiveSheet(
                         ) {
                             Icon(Icons.Rounded.Key, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.ui_use_password), fontWeight = FontWeight.SemiBold)
+                            Text("Use Password", fontWeight = FontWeight.SemiBold)
                         }
                     }
 
@@ -291,7 +289,7 @@ fun PetalBiometricExpressiveSheet(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        stringResource(R.string.ui_cancel),
+                        "Cancel",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelLarge
                     )

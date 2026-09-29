@@ -18,8 +18,6 @@ import androidx.compose.ui.Modifier;
 import androidx.compose.ui.draw.clip;
 import androidx.compose.ui.graphics.Color;
 import androidx.compose.ui.unit.dp;
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 /**
  * ExpressiveQuickActionsPill renders a floating quick-settings bottom pill bar for web toggles.
@@ -49,26 +47,26 @@ fun ExpressiveQuickActionsPill(
             FilterChip(
                 selected = isDesktopMode,
                 onClick = onToggleDesktopMode,
-                label = { Text(stringResource(R.string.ui_desktop)) },
+                label = { Text("Desktop") },
                 leadingIcon = { Icon(Icons.Rounded.Computer, contentDescription = null, modifier = Modifier.size(16.dp)) }
             )
 
             FilterChip(
                 selected = isAdBlock,
                 onClick = onToggleAdBlock,
-                label = { Text(stringResource(R.string.ui_adblock)) },
+                label = { Text("AdBlock") },
                 leadingIcon = { Icon(Icons.Rounded.Shield, contentDescription = null, modifier = Modifier.size(16.dp)) }
             )
 
             FilterChip(
                 selected = isDarkMode,
                 onClick = onToggleDarkMode,
-                label = { Text(stringResource(R.string.ui_dark)) },
+                label = { Text("Dark") },
                 leadingIcon = { Icon(Icons.Rounded.DarkMode, contentDescription = null, modifier = Modifier.size(16.dp)) }
             )
 
             IconButton(onClick = onTranslate) {
-                Icon(Icons.Rounded.Translate, contentDescription = stringResource(R.string.ui_translate))
+                Icon(Icons.Rounded.Translate, contentDescription = "Translate")
             }
         }
     }

@@ -84,8 +84,6 @@ import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 data class MediaPlaybackState(
     val isVisible: Boolean = false,
@@ -338,7 +336,7 @@ fun PetalFloatingMediaIslandContent(
                     IconButton(onClick = onSkipBackward, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = Icons.Rounded.FastRewind,
-                            contentDescription = stringResource(R.string.ui_skip_back_10s),
+                            contentDescription = "Skip back 10s",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
@@ -366,7 +364,7 @@ fun PetalFloatingMediaIslandContent(
                     IconButton(onClick = onSkipForward, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = Icons.Rounded.FastForward,
-                            contentDescription = stringResource(R.string.ui_skip_forward_10s),
+                            contentDescription = "Skip forward 10s",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
@@ -376,7 +374,7 @@ fun PetalFloatingMediaIslandContent(
                     IconButton(onClick = onMuteToggle, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = if (state.isMuted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
-                            contentDescription = stringResource(R.string.ui_mute_toggle),
+                            contentDescription = "Mute toggle",
                             tint = if (state.isMuted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
@@ -386,7 +384,7 @@ fun PetalFloatingMediaIslandContent(
                     IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.ui_dismiss),
+                            contentDescription = "Dismiss",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )

@@ -54,12 +54,9 @@ import com.petal.browser.ui.components.PetalAiSearchBridge
 import com.petal.browser.ui.components.PetalVoiceSearchBridge
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
-import com.petal.browser.ui.containment.PetalFloatingToolbar
-import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.theme.PetalIncognitoTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
-import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,7 +155,7 @@ fun PetalIncognitoHomeScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
-                                contentDescription = stringResource(R.string.ui_close_all_incognito_tabs),
+                                contentDescription = "Close all Incognito tabs",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -226,7 +223,7 @@ fun PetalIncognitoHomeScreen(
                                 ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.icon_incognito),
-                                        contentDescription = stringResource(R.string.ui_incognito_fedora_and_glasses),
+                                        contentDescription = "Incognito Fedora and Glasses",
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(44.dp)
                                     )
@@ -238,7 +235,7 @@ fun PetalIncognitoHomeScreen(
 
                         // ── 2. Hero Headline ──
                         Text(
-                            text = stringResource(R.string.ui_you_ve_gone_incognito),
+                            text = "You've gone Incognito",
                             style = MaterialTheme.typography.headlineMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 letterSpacing = (-0.2).sp
@@ -252,7 +249,7 @@ fun PetalIncognitoHomeScreen(
 
                         // ── 3. Chrome-Exact Primary Narrative ──
                         Text(
-                            text = stringResource(R.string.ui_now_you_can_browse_privately),
+                            text = "Now you can browse privately, and other people who use this device won't see your activity. However, downloads, bookmarks and reading list items will be saved.",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 lineHeight = 21.sp,
                                 letterSpacing = 0.1.sp
@@ -320,7 +317,7 @@ fun PetalIncognitoHomeScreen(
                                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
                             ) {
                                 Text(
-                                    text = stringResource(R.string.ui_learn_more),
+                                    text = "Learn more",
                                     style = MaterialTheme.typography.labelLarge.copy(
                                         fontWeight = FontWeight.SemiBold
                                     ),
@@ -339,9 +336,10 @@ fun PetalIncognitoHomeScreen(
                         Spacer(Modifier.height(18.dp))
 
                         // ── 6. Third-Party Cookies Expressive Control Card ──
-                        PetalHeroCard(
+                        Surface(
                             shape = RoundedCornerShape(20.dp),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            tonalElevation = 2.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .entrance(index = 6)
@@ -359,13 +357,13 @@ fun PetalIncognitoHomeScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = stringResource(R.string.ui_block_third_party_cookies),
+                                        text = "Block third-party cookies",
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Text(
-                                        text = stringResource(R.string.ui_when_on_sites_can_t),
+                                        text = "When on, sites can't use cookies that track you across the web. Features on some sites may break.",
                                         style = MaterialTheme.typography.bodySmall.copy(
                                             lineHeight = 17.sp,
                                             letterSpacing = 0.1.sp
@@ -415,7 +413,7 @@ fun PetalIncognitoHomeScreen(
 
             // ── Learn More Expressive Dialog ──
             if (showLearnMoreDialog) {
-                com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                AlertDialog(
                     onDismissRequest = { showLearnMoreDialog = false },
                     shape = RoundedCornerShape(28.dp),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -429,7 +427,7 @@ fun PetalIncognitoHomeScreen(
                     },
                     title = {
                         Text(
-                            text = stringResource(R.string.ui_about_incognito_browsing),
+                            text = "About Incognito Browsing",
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                             textAlign = TextAlign.Center
                         )
@@ -440,13 +438,13 @@ fun PetalIncognitoHomeScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = stringResource(R.string.ui_petal_won_t_remember_your),
+                                text = "Petal won't remember your browsing history, cookies, site data, or form inputs once you close your private tabs.",
                                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                             Text(
-                                text = stringResource(R.string.ui_important_safeguards),
+                                text = "Important Safeguards:",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -462,7 +460,7 @@ fun PetalIncognitoHomeScreen(
                                 showLearnMoreDialog = false
                             }
                         ) {
-                            Text(stringResource(R.string.ui_got_it), fontWeight = FontWeight.SemiBold)
+                            Text("Got it", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 )
@@ -485,11 +483,14 @@ private fun IncognitoDecoySearchBar(
         label = "incognito_search_scale"
     )
 
-    PetalFloatingToolbar(
-        elevation = 6.dp,
+    Surface(
+        shape = RoundedCornerShape(32.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        tonalElevation = 3.dp,
+        shadowElevation = 3.dp,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
+            .height(56.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(RoundedCornerShape(32.dp))
             .clickable(
@@ -497,15 +498,21 @@ private fun IncognitoDecoySearchBar(
                 indication = androidx.compose.foundation.LocalIndication.current
             ) { onSearch() }
     ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
             Icon(
                 imageVector = Icons.Rounded.Search,
-                contentDescription = stringResource(R.string.ui_search),
+                contentDescription = "Search",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(22.dp)
             )
             Spacer(Modifier.width(12.dp))
             Text(
-                text = stringResource(R.string.ui_search_or_type_web_address),
+                text = "Search or type web address",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -526,7 +533,7 @@ private fun IncognitoDecoySearchBar(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.CenterFocusWeak,
-                    contentDescription = stringResource(R.string.ui_visual_search),
+                    contentDescription = "Visual Search",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(19.dp)
                 )
@@ -549,11 +556,12 @@ private fun IncognitoDecoySearchBar(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Mic,
-                    contentDescription = stringResource(R.string.ui_voice_search_2),
+                    contentDescription = "Voice Search",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(19.dp)
                 )
             }
+        }
     }
 }
 

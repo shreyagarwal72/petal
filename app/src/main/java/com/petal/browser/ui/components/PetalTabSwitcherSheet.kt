@@ -310,27 +310,6 @@ object PetalTabSwitcherBridge {
                                         if (index >= 0) {
                                             tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
                                         }
-                                    } else {
-                                        // Tab is hidden (GONE) — capturePixels returns null.
-                                        // Fall back to disk-cached thumbnail so all tabs
-                                        // show their saved screenshot in the switcher.
-                                        val cached = targetAlbum.getCachedPreviewBitmap()
-                                            ?: com.petal.browser.unit.TabThumbnailCache.get(tabItem.id)
-                                        if (cached != null && !cached.isRecycled) {
-                                            val index = tabItems.indexOfFirst { it.id == tabItem.id }
-                                            if (index >= 0) {
-                                                tabItems[index] = tabItems[index].copy(previewBitmap = cached)
-                                            }
-                                        }
-                                    }
-                                }
-                            } else if (targetAlbum != null) {
-                                // Non-GeckoView tab: load from disk cache by item ID
-                                val cached = com.petal.browser.unit.TabThumbnailCache.get(tabItem.id)
-                                if (cached != null && !cached.isRecycled) {
-                                    val index = tabItems.indexOfFirst { it.id == tabItem.id }
-                                    if (index >= 0) {
-                                        tabItems[index] = tabItems[index].copy(previewBitmap = cached)
                                     }
                                 }
                             }

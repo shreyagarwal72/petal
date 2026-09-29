@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  * Material 3 Expressive Clear Browsing Data / Delete History Screen for Petal Browser.
  * Fully follows app theme, color scheme, expressiveness, expressive feature tiles,
- * with Petal's shared grouped toggle rows.
+ * and RvSystemMonitor containment styling with getGroupItemShape and SwitchSettingItem.
  */
 
 package com.petal.browser.compose.settings
@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -43,14 +42,10 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.containment.PetalGroupIconBadge
-import com.petal.browser.ui.containment.PetalHeroCard
-import com.petal.browser.ui.containment.PetalGroupPosition
-import com.petal.browser.ui.containment.petalGroupShape
-import com.petal.browser.ui.containment.PetalSectionLabel
+import com.petal.browser.ui.components.SwitchSettingItem
+import com.petal.browser.ui.components.getGroupItemShape
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.BrowserUnit
-import androidx.compose.ui.res.stringResource
 
 object PetalDeleteBridge {
     @JvmStatic
@@ -123,17 +118,17 @@ fun PetalDeleteScreen(
     var showConfirmDialog by remember { mutableStateOf(false) }
 
     if (showConfirmDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
             title = {
                 Text(
-                    text = stringResource(R.string.ui_clear_selected_browsing_data),
+                    text = "Clear Selected Browsing Data?",
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                 )
             },
             text = {
                 Text(
-                    text = stringResource(R.string.ui_this_action_will_permanently_delete),
+                    text = "This action will permanently delete the selected items. This cannot be undone.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -146,12 +141,12 @@ fun PetalDeleteScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text(stringResource(R.string.ui_clear_now))
+                    Text("Clear Now")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = false }) {
-                    Text(stringResource(R.string.ui_cancel))
+                    Text("Cancel")
                 }
             }
         )
@@ -191,21 +186,43 @@ fun PetalDeleteScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    PetalHeroCard {
+                    // Header / Summary containment card (RvSystemMonitor Card style)
+                    Card(
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Row(
-                            modifier = Modifier.padding(20.dp),
+                            modifier = Modifier.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            PetalGroupIconBadge(Icons.Filled.DeleteSweep)
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.primary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Rounded.DeleteSweep,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = stringResource(R.string.ui_clear_browsing_data),
+                                    text = "Clear Browsing Data",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = stringResource(R.string.ui_choose_items_to_erase_settings),
+                                    text = "Choose items to erase. Settings apply immediately and during clear operations.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -214,21 +231,30 @@ fun PetalDeleteScreen(
                     }
 
                     // Stack of position-aware items with RvSystemMonitor containment shape group
-                    PetalSectionLabel("Data Categories")
+                    Text(
+                        text = "DATA CATEGORIES",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
 
+                    val optionsCount = 7
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                        SwitchSettingItem(
                             title = context.getString(R.string.album_title_history),
-                            subtitle = stringResource(R.string.ui_clear_visited_web_pages_and),
+                            subtitle = "Clear visited web pages and address bar history",
                             checked = clearHistory,
                             onCheckedChange = {
                                 clearHistory = it
                                 sp.edit().putBoolean("sp_clear_history", it).apply()
                             },
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
+                            shape = getGroupItemShape(0, optionsCount),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.History,
@@ -238,15 +264,15 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                        SwitchSettingItem(
                             title = context.getString(R.string.clear_title_cache),
-                            subtitle = stringResource(R.string.ui_frees_up_space_by_clearing),
+                            subtitle = "Frees up space by clearing cached images and files",
                             checked = clearCache,
                             onCheckedChange = {
                                 clearCache = it
                                 sp.edit().putBoolean("sp_clear_cache", it).apply()
                             },
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            shape = getGroupItemShape(1, optionsCount),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.CleaningServices,
@@ -256,15 +282,15 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                        SwitchSettingItem(
                             title = context.getString(R.string.setting_title_dom),
-                            subtitle = stringResource(R.string.ui_local_website_data_and_offline),
+                            subtitle = "Local website data and offline storage",
                             checked = clearIndexedDB,
                             onCheckedChange = {
                                 clearIndexedDB = it
                                 sp.edit().putBoolean("sp_clearIndexedDB", it).apply()
                             },
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            shape = getGroupItemShape(2, optionsCount),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Storage,
@@ -274,7 +300,7 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                        SwitchSettingItem(
                             title = context.getString(R.string.setting_title_cookie),
                             subtitle = context.getString(R.string.setting_summary_cookie_delete),
                             checked = clearCookie,
@@ -282,7 +308,7 @@ fun PetalDeleteScreen(
                                 clearCookie = it
                                 sp.edit().putBoolean("sp_clear_cookie", it).apply()
                             },
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            shape = getGroupItemShape(3, optionsCount),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Cookie,
@@ -292,7 +318,7 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                        SwitchSettingItem(
                             title = context.getString(R.string.title_appDatabase),
                             subtitle = context.getString(R.string.setting_backup_sumDatabase),
                             checked = clearDatabase,
@@ -300,7 +326,7 @@ fun PetalDeleteScreen(
                                 clearDatabase = it
                                 sp.edit().putBoolean("sp_deleteDatabase", it).apply()
                             },
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            shape = getGroupItemShape(4, optionsCount),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.FolderSpecial,
@@ -310,7 +336,7 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                        SwitchSettingItem(
                             title = context.getString(R.string.setting_label),
                             subtitle = context.getString(R.string.setting_backup_sumSettings),
                             checked = clearSettings,
@@ -318,7 +344,7 @@ fun PetalDeleteScreen(
                                 clearSettings = it
                                 sp.edit().putBoolean("sp_clear_settings", it).apply()
                             },
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            shape = getGroupItemShape(5, optionsCount),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Tune,
@@ -328,15 +354,15 @@ fun PetalDeleteScreen(
                             }
                         )
 
-                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                        SwitchSettingItem(
                             title = context.getString(R.string.clear_title_quit),
-                            subtitle = stringResource(R.string.ui_automatically_clear_history_cache_and),
+                            subtitle = "Automatically clear history, cache, and open tabs on exit",
                             checked = clearQuit,
                             onCheckedChange = {
                                 clearQuit = it
                                 sp.edit().putBoolean("sp_clear_quit", it).putBoolean("sp_clear_on_exit", it).apply()
                             },
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                            shape = getGroupItemShape(6, optionsCount),
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.PowerSettingsNew,
@@ -350,7 +376,15 @@ fun PetalDeleteScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                PetalHeroCard {
+                Card(
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Box(modifier = Modifier.padding(16.dp)) {
                         Button(
                             onClick = { showConfirmDialog = true },
@@ -366,7 +400,7 @@ fun PetalDeleteScreen(
                             Icon(Icons.Rounded.DeleteSweep, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                text = stringResource(R.string.ui_clear_selected_data),
+                                text = "Clear Selected Data",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }

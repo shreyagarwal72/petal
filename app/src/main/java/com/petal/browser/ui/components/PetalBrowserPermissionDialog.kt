@@ -49,12 +49,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.containment.PetalGroupIconBadge
-import com.petal.browser.ui.containment.PetalGroup
-import com.petal.browser.ui.containment.PetalGroupListRow
-import com.petal.browser.ui.containment.PetalGroupPosition
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 object PetalBrowserPermissionDialog {
     private const val PREF_LAST_PERMISSION_DIALOG_TIME = "sp_last_permission_dialog_time"
@@ -360,7 +354,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             Spacer(Modifier.height(14.dp))
 
             Text(
-                text = stringResource(R.string.ui_permissions_required),
+                text = "Permissions Required",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -370,7 +364,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             Spacer(Modifier.height(6.dp))
 
             Text(
-                text = stringResource(R.string.ui_petal_needs_these_permissions_for),
+                text = "Petal needs these permissions for websites to work properly, including video calls, voice search, maps, and file downloads.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -380,24 +374,30 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             Spacer(Modifier.height(20.dp))
 
             // Zenith-style grouped permission list with connected shapes
-            PetalGroup(rowCount = permissionItems.size, modifier = Modifier.fillMaxWidth()) { index, position ->
-                val item = permissionItems[index]
-                ZenithPermissionItemRow(
-                    title = item.title,
-                    description = item.description,
-                    icon = item.icon,
-                    isGranted = item.isGranted,
-                    actionText = item.actionText,
-                    position = position,
-                    onGrant = item.onGrant
-                )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                val totalCount = permissionItems.size
+                permissionItems.forEachIndexed { index, item ->
+                    val shape = getGroupItemShape(index, totalCount)
+                    ZenithPermissionItemRow(
+                        title = item.title,
+                        description = item.description,
+                        icon = item.icon,
+                        isGranted = item.isGranted,
+                        actionText = item.actionText,
+                        shape = shape,
+                        onGrant = item.onGrant
+                    )
+                }
             }
 
             Spacer(Modifier.height(16.dp))
 
             if (missing) {
                 Text(
-                    text = stringResource(R.string.ui_you_can_change_or_grant),
+                    text = "You can change or grant any permission later in Android Settings.",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -452,32 +452,96 @@ private fun ZenithPermissionItemRow(
     icon: ImageVector,
     isGranted: Boolean,
     actionText: String = "Grant",
-    position: PetalGroupPosition,
+    shape: androidx.compose.ui.graphics.Shape,
     onGrant: () -> Unit
 ) {
-    PetalGroupListRow(
-        position = position,
-        selected = isGranted,
-        onClick = { if (!isGranted) onGrant() },
-        leading = {
-            PetalGroupIconBadge(
-                icon = icon,
-                container = if (isGranted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                tint = if (isGranted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
-            )
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isGranted) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerLow
         },
-        content = {
-            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        },
-        trailing = {
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "bgColor"
+    )
+
+    Surface(
+        onClick = if (!isGranted) onGrant else ({}),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape),
+        shape = shape,
+        color = backgroundColor
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(
+                        if (isGranted) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = if (isGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(Modifier.width(16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isGranted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isGranted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+                )
+            }
+
+            Spacer(Modifier.width(12.dp))
+
             if (isGranted) {
-                Icon(Icons.Outlined.CheckCircle, contentDescription = stringResource(R.string.ui_granted), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                Icon(
+                    imageVector = Icons.Outlined.CheckCircle,
+                    contentDescription = "Granted",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
             } else {
-                FilledTonalButton(onClick = onGrant, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
-                    Text(actionText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                Surface(
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = CircleShape,
+                    modifier = Modifier.clickable(onClick = onGrant)
+                ) {
+                    Text(
+                        text = actionText,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
             }
-        },
-    )
+        }
+    }
 }

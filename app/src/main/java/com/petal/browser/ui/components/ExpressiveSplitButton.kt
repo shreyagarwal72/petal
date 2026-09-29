@@ -32,8 +32,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 enum class SplitButtonVariant {
     FILLED, TONAL, ELEVATED, OUTLINED
@@ -226,7 +224,7 @@ fun ExpressiveSplitButton(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = stringResource(R.string.ui_show_more_options),
+                    contentDescription = "Show more options",
                     tint = contentColor,
                     modifier = Modifier
                         .size((height.value * 0.48f).dp)

@@ -2,6 +2,8 @@ package com.petal.browser.ui.components
 
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -23,13 +26,8 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.containment.PetalGroup
-import com.petal.browser.ui.containment.PetalGroupIconBadge
-import com.petal.browser.ui.containment.PetalGroupListRow
 import org.json.JSONArray
 import org.json.JSONObject
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 data class SearchEngineItem(
     val index: Int,
@@ -148,16 +146,16 @@ fun PetalSearchEngineSheetContent(
         var url by remember(editing?.index) { mutableStateOf(editing?.url ?: "") }
         var error by remember(editing?.index) { mutableStateOf<String?>(null) }
 
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        AlertDialog(
             onDismissRequest = { showAddDialog = false; editingEngine = null },
             title = { Text(if (editing == null) "Add Search Engine" else "Edit Search Engine") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.ui_name)) }, singleLine = true)
+                    OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true)
                     OutlinedTextField(
                         url, { url = it },
-                        label = { Text(stringResource(R.string.ui_search_url)) },
-                        supportingText = { Text(stringResource(R.string.ui_use_s_or_searchterms_where)) },
+                        label = { Text("Search URL") },
+                        supportingText = { Text("Use %s or {searchTerms} where the query goes.") },
                         singleLine = true
                     )
                     if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -183,7 +181,7 @@ fun PetalSearchEngineSheetContent(
                 }) { Text(if (editing == null) "Add" else "Save") }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false; editingEngine = null }) { Text(stringResource(R.string.ui_cancel)) }
+                TextButton(onClick = { showAddDialog = false; editingEngine = null }) { Text("Cancel") }
             }
         )
     }
@@ -194,40 +192,48 @@ fun PetalSearchEngineSheetContent(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            PetalGroupIconBadge(Icons.Rounded.Search, size = 48.dp)
-            Column {
-                Text(stringResource(R.string.ui_choose_default_search_engine), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                Text(stringResource(R.string.ui_built_in_and_unlimited_custom), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Search, null, tint = MaterialTheme.colorScheme.onPrimary)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Choose Default Search Engine", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                    Text("Built-in and unlimited custom engines are supported.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
 
-        PetalGroup(rowCount = engines.size, modifier = Modifier.fillMaxWidth()) { index, position ->
-            val engine = engines[index]
-            val isSelected = engine.index == selectedIndex
-            PetalGroupListRow(
-                position = position,
-                selected = isSelected,
-                onClick = { selectedIndex = engine.index },
-                leading = { PetalGroupIconBadge(if (engine.custom) Icons.Rounded.Tune else Icons.Rounded.Search, size = 40.dp, iconSize = 20.dp) },
-                content = {
-                    Text(engine.name, fontWeight = FontWeight.SemiBold)
-                    Text(engine.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                },
-                trailing = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (engine.custom) {
-                    IconButton(onClick = { editingEngine = engine }) { Icon(Icons.Rounded.Edit, "Edit") }
-                    IconButton(onClick = {
-                        customEngines = customEngines.filterNot { it.index == engine.index }
-                        saveCustomSearchEngines(context, customEngines)
-                        if (selectedIndex == engine.index) selectedIndex = 0
-                    }) { Icon(Icons.Rounded.DeleteOutline, "Delete") }
-                        }
-                        RadioButton(selected = isSelected, onClick = { selectedIndex = engine.index })
+        engines.forEachIndexed { index, engine ->
+            Card(
+                shape = getGroupItemShape(index, engines.size),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (engine.index == selectedIndex) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .65f)
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .7f)
+                ),
+                modifier = Modifier.fillMaxWidth().clickable { selectedIndex = engine.index }
+            ) {
+                Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(if (engine.custom) Icons.Rounded.Tune else Icons.Rounded.Search, null, tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.weight(1f)) {
+                        Text(engine.name, fontWeight = FontWeight.SemiBold)
+                        Text(engine.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                },
-            )
+                    if (engine.custom) {
+                        IconButton(onClick = { editingEngine = engine }) { Icon(Icons.Rounded.Edit, "Edit") }
+                        IconButton(onClick = {
+                            customEngines = customEngines.filterNot { it.index == engine.index }
+                            saveCustomSearchEngines(context, customEngines)
+                            if (selectedIndex == engine.index) selectedIndex = 0
+                        }) { Icon(Icons.Rounded.DeleteOutline, "Delete") }
+                    }
+                    RadioButton(selected = engine.index == selectedIndex, onClick = { selectedIndex = engine.index })
+                }
+            }
         }
 
         OutlinedButton(
@@ -237,12 +243,12 @@ fun PetalSearchEngineSheetContent(
         ) {
             Icon(Icons.Rounded.Add, null)
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.ui_add_custom_search_engine))
+            Text("Add custom search engine")
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onCancel) { Text(stringResource(R.string.ui_cancel)) }
-            Button(onClick = { onConfirm(selectedIndex) }) { Text(stringResource(R.string.ui_use_selected_engine)) }
+            TextButton(onClick = onCancel) { Text("Cancel") }
+            Button(onClick = { onConfirm(selectedIndex) }) { Text("Use selected engine") }
         }
     }
 }

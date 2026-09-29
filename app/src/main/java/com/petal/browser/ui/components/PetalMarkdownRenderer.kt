@@ -35,8 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.unit.BrowserUnit
 import java.util.regex.Pattern
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 sealed class MarkdownBlock {
     data class Heading(val level: Int, val text: String) : MarkdownBlock()
@@ -240,9 +238,9 @@ fun PetalMarkdownText(
                                     },
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
-                                    Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy_code), modifier = Modifier.size(14.dp))
+                                    Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy Code", modifier = Modifier.size(14.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text(stringResource(R.string.ui_copy), style = MaterialTheme.typography.labelSmall)
+                                    Text("Copy", style = MaterialTheme.typography.labelSmall)
                                 }
                             }
 
