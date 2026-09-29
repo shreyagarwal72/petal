@@ -116,6 +116,67 @@ fun rememberPetalGroupPressScale(interactionSource: MutableInteractionSource): F
     return scale
 }
 
+enum class PetalBadgeVariant {
+    PRIMARY,
+    SECONDARY,
+    TERTIARY,
+    SURFACE_TONAL,
+    OUTLINE,
+    ERROR;
+
+    @Composable
+    fun colors(): Pair<Color, Color> = when (this) {
+        PRIMARY -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        SECONDARY -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        TERTIARY -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        SURFACE_TONAL -> MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant
+        OUTLINE -> MaterialTheme.colorScheme.surface to MaterialTheme.colorScheme.primary
+        ERROR -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+    }
+}
+
+@Composable
+fun PetalGroupIconBadge(
+    icon: ImageVector,
+    variant: PetalBadgeVariant,
+    modifier: Modifier = Modifier,
+    size: Dp = 44.dp,
+    iconSize: Dp = 22.dp,
+    shape: Shape = RoundedCornerShape(14.dp),
+) {
+    val (container, tint) = variant.colors()
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(shape)
+            .background(container),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
+    }
+}
+
+@Composable
+fun PetalGroupIconBadge(
+    painter: Painter,
+    variant: PetalBadgeVariant,
+    modifier: Modifier = Modifier,
+    size: Dp = 44.dp,
+    iconSize: Dp = 22.dp,
+    shape: Shape = RoundedCornerShape(14.dp),
+) {
+    val (container, tint) = variant.colors()
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(shape)
+            .background(container),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(painter, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
+    }
+}
+
 @Composable
 fun PetalGroupIconBadge(
     icon: ImageVector,
@@ -277,7 +338,9 @@ fun PetalGroupNavigationRow(
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
+    variant: PetalBadgeVariant = PetalBadgeVariant.PRIMARY,
 ) {
+    val (containerColor, contentColor) = variant.colors()
     PetalGroupListRow(
         position = position,
         onClick = { if (enabled) onClick() },
@@ -285,10 +348,10 @@ fun PetalGroupNavigationRow(
         leading = {
             if (leadingIcon != null) PetalGroupIconBadge(
                 shape = RoundedCornerShape(14.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = containerColor,
+                contentColor = contentColor,
             ) { leadingIcon() }
-            else PetalGroupIconBadge(Icons.Filled.Settings)
+            else PetalGroupIconBadge(Icons.Filled.Settings, variant = variant)
         },
         content = {
             Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)

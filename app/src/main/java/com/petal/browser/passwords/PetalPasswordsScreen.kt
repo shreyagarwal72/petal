@@ -230,6 +230,8 @@ fun PetalPasswordsScreen(
                                     title = "Add New Login",
                                     subtitle = "Store a username and password",
                                     position = position,
+                                    iconContainer = MaterialTheme.colorScheme.primaryContainer,
+                                    iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     onClick = { isAddingNew = true }
                                 )
                                 1 -> PetalGroupRow(
@@ -237,6 +239,8 @@ fun PetalPasswordsScreen(
                                     title = "Import Passwords",
                                     subtitle = "Chrome, Firefox, Bitwarden, 1Password, Petal",
                                     position = position,
+                                    iconContainer = MaterialTheme.colorScheme.secondaryContainer,
+                                    iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     onClick = { showImportSheet = true }
                                 )
                                 2 -> PetalGroupRow(
@@ -244,6 +248,8 @@ fun PetalPasswordsScreen(
                                     title = "Export Backup",
                                     subtitle = "Encrypted (.petal) or JSON backup",
                                     position = position,
+                                    iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
+                                    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
                                     onClick = { showExportDialog = true }
                                 )
                             }
@@ -306,10 +312,16 @@ fun PetalPasswordsScreen(
                                 position = position,
                                 onClick = { selectedCredentialForDetails = item },
                                 leading = {
+                                    val (badgeBg, badgeFg) = when (index % 4) {
+                                        0 -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+                                        1 -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+                                        2 -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+                                        else -> MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
                                     PetalGroupIconBadge(
-                                        shape = CircleShape,
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        shape = RoundedCornerShape(12.dp),
+                                        containerColor = badgeBg,
+                                        contentColor = badgeFg,
                                         size = 40.dp
                                     ) {
                                         Text(
