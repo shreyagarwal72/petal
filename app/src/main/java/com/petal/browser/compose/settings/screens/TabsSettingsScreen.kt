@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +21,8 @@ import com.petal.browser.compose.tabs.PetalInactiveTabManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.PetalTabSessionManager
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Tabs Settings Overview Screen matching Chrome/Brave layout from images.png:
@@ -84,14 +88,14 @@ fun TabsSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                SettingsCategoryCard(
-                    title = "Tab Management",
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_tab_management),
                     icon = Icons.Rounded.Tab,
                     cardId = "tabs_management",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
-                        text = "Configure inactive tab archiving and multi-device tab sync",
+                        text = stringResource(R.string.ui_configure_inactive_tab_archiving_and),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -119,7 +123,7 @@ fun TabsSettingsScreen(
                                 verticalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
                                 Text(
-                                    text = "Inactive",
+                                    text = stringResource(R.string.ui_inactive),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -140,9 +144,9 @@ fun TabsSettingsScreen(
                     }
 
                     // Restore Tabs on Startup Switch
-                    ToggleRow(
-                        title = "Restore tabs on startup",
-                        subtitle = "Reopen your open tabs when launching Petal or after app restart",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_restore_tabs_on_startup),
+                        subtitle = stringResource(R.string.ui_reopen_your_open_tabs_when),
                         icon = Icons.Rounded.Restore,
                         checked = restoreTabsOnStart,
                         onCheckedChange = {
@@ -152,9 +156,9 @@ fun TabsSettingsScreen(
                     )
 
                     // Cross-device Tab Groups Switch
-                    ToggleRow(
-                        title = "Automatically open tab groups from other devices",
-                        subtitle = "Sync tab sessions seamlessly across connected devices",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_automatically_open_tab_groups_from),
+                        subtitle = stringResource(R.string.ui_sync_tab_sessions_seamlessly_across),
                         icon = Icons.Rounded.Devices,
                         checked = autoOpenFromOtherDevices,
                         onCheckedChange = {
@@ -164,9 +168,9 @@ fun TabsSettingsScreen(
                     )
 
                     // Confirm Tab Close Switch
-                    ToggleRow(
-                        title = "Confirm before closing tab",
-                        subtitle = "Prompt for confirmation before closing tabs to prevent accidental dismissal",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_confirm_before_closing_tab),
+                        subtitle = stringResource(R.string.ui_prompt_for_confirmation_before_closing),
                         icon = Icons.Rounded.Close,
                         checked = confirmTabClose,
                         onCheckedChange = {

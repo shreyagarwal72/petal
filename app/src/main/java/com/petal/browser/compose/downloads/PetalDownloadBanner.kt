@@ -55,6 +55,8 @@ import kotlinx.coroutines.delay
 import java.io.File
 import java.net.URI
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 enum class BannerState {
     IDLE,
@@ -288,7 +290,7 @@ fun PetalDownloadBanner(
                     )
                     Icon(
                         imageVector = Icons.Rounded.Download,
-                        contentDescription = "Downloading",
+                        contentDescription = stringResource(R.string.ui_downloading),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )

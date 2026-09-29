@@ -41,6 +41,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,11 +92,9 @@ fun SafeLockerSheet(
         }
     }
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismissRequest,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             modifier = Modifier
@@ -127,7 +127,7 @@ fun SafeLockerSheet(
                     }
                     Column {
                         Text(
-                            "Safe Locker",
+                            stringResource(R.string.ui_safe_locker),
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -146,7 +146,7 @@ fun SafeLockerSheet(
                     ) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Import", fontSize = 13.sp)
+                        Text(stringResource(R.string.ui_import), fontSize = 13.sp)
                     }
                 }
             }
@@ -184,7 +184,7 @@ fun SafeLockerSheet(
                                     onError = { authError = it }
                                 )
                             }) {
-                                Text("Retry Authentication")
+                                Text(stringResource(R.string.ui_retry_authentication))
                             }
                         }
                     }
@@ -208,12 +208,12 @@ fun SafeLockerSheet(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
                         Text(
-                            "Safe Locker is empty",
+                            stringResource(R.string.ui_safe_locker_is_empty),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "Import sensitive downloads, receipts, or photos",
+                            stringResource(R.string.ui_import_sensitive_downloads_receipts_or),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -228,11 +228,9 @@ fun SafeLockerSheet(
                         .heightIn(max = 400.dp)
                 ) {
                     items(lockedFiles, key = { it.id }) { item ->
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            ),
+                        com.petal.browser.ui.containment.PetalHeroCard(
+                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -299,7 +297,7 @@ fun SafeLockerSheet(
                                 }) {
                                     Icon(
                                         Icons.Rounded.DeleteOutline,
-                                        contentDescription = "Delete",
+                                        contentDescription = stringResource(R.string.ui_delete),
                                         tint = MaterialTheme.colorScheme.error
                                     )
                                 }

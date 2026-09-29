@@ -98,6 +98,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 data class AudioTrackMetadata(
     val title: String,
@@ -272,13 +274,13 @@ fun PetalAudioPlayerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.ui_back),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
                 Text(
-                    text = "NOW PLAYING",
+                    text = stringResource(R.string.ui_now_playing),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp,
@@ -291,7 +293,7 @@ fun PetalAudioPlayerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Speed,
-                        contentDescription = "Playback Speed",
+                        contentDescription = stringResource(R.string.ui_playback_speed),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
@@ -364,7 +366,7 @@ fun PetalAudioPlayerScreen(
                 if (metadata.artwork != null) {
                     Image(
                         bitmap = metadata.artwork!!.asImageBitmap(),
-                        contentDescription = "Album Artwork",
+                        contentDescription = stringResource(R.string.ui_album_artwork),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize()
@@ -475,7 +477,7 @@ fun PetalAudioPlayerScreen(
                 ) {
                     Icon(
                         imageVector = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
-                        contentDescription = "Repeat Mode",
+                        contentDescription = stringResource(R.string.ui_repeat_mode),
                         tint = if (repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -495,7 +497,7 @@ fun PetalAudioPlayerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.FastRewind,
-                        contentDescription = "Rewind 10s",
+                        contentDescription = stringResource(R.string.ui_rewind_10s),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(28.dp),
                     )
@@ -540,7 +542,7 @@ fun PetalAudioPlayerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.FastForward,
-                        contentDescription = "Forward 10s",
+                        contentDescription = stringResource(R.string.ui_forward_10s),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(28.dp),
                     )

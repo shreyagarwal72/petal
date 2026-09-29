@@ -50,6 +50,8 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 enum class NetworkAlertState {
     IDLE,
@@ -255,7 +257,7 @@ fun PetalNetworkStatusBanner(
 
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Dismiss",
+                        contentDescription = stringResource(R.string.ui_dismiss),
                         tint = contentColor.copy(alpha = 0.7f),
                         modifier = Modifier
                             .size(16.dp)
