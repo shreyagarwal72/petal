@@ -50,6 +50,19 @@ import com.petal.browser.unit.BrowserUnit
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
+import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.PetalStatusHeroCard
+import com.petal.browser.ui.containment.petalGroupShape
+import com.petal.browser.ui.containment.rememberPetalGroupPressScale
 
 /**
  * Java Interop Bridge to present the Material 3 Expressive "About Developer" sheet.
@@ -998,6 +1011,7 @@ object PetalCreditsBridge {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PetalCreditsSheetContent(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
@@ -1006,6 +1020,7 @@ fun PetalCreditsSheetContent(
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
+    var expandedTitle by remember { mutableStateOf<String?>(null) }
 
     val filteredCredits = remember(searchQuery) {
         if (searchQuery.isBlank()) {
@@ -1018,6 +1033,26 @@ fun PetalCreditsSheetContent(
                 it.role.lowercase().contains(q) ||
                 it.tags.any { tag -> tag.lowercase().contains(q) }
             }
+        }
+    }
+
+    fun openCredit(url: String) {
+        try {
+            val activity = context as? com.petal.browser.activity.BrowserActivity
+            if (activity != null) {
+                onClose()
+                val ctrl = activity.currentAlbumController
+                if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                    ctrl.loadUrl(url)
+                    activity.showAlbum(ctrl, url)
+                } else {
+                    activity.addAlbum(null, url, true)
+                }
+            } else {
+                BrowserUnit.intentURL(context, Uri.parse(url))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -1037,9 +1072,7 @@ fun PetalCreditsSheetContent(
                 ) {
                     M3ExpressiveVariableBackground(pageSeed = "credits_page")
 
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
+                    Column(modifier = Modifier.fillMaxSize()) {
                         ExpressiveHeader(
                             title = "Open Source Credits",
                             subtitle = "Standing on the shoulders of giants",
@@ -1049,131 +1082,80 @@ fun PetalCreditsSheetContent(
 
                         Column(
                             modifier = Modifier
-                                .fillMaxSize()
+                                .fillMaxWidth()
+                                .weight(1f)
                                 .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Intro Attribution Card
-                            Surface(
-                                shape = RoundedCornerShape(24.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                tonalElevation = 2.dp,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(18.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.primaryContainer,
-                                            modifier = Modifier.size(36.dp)
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.Favorite,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                            }
-                                        }
-                                        Text(
-                                            text = stringResource(R.string.ui_gratitude_attribution),
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                    Text(
-                                        text = stringResource(R.string.ui_petal_browser_is_crafted_upon),
-                                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            // Search / Filter Input
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                placeholder = { Text(stringResource(R.string.ui_search_contributors_or_technologies)) },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Rounded.Search,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                trailingIcon = {
-                                    if (searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { searchQuery = "" }) {
-                                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear_search))
-                                        }
-                                    }
-                                },
-                                singleLine = true,
-                                shape = RoundedCornerShape(20.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                                ),
-                                modifier = Modifier.fillMaxWidth()
+                            PetalStatusHeroCard(
+                                title = stringResource(R.string.ui_gratitude_attribution),
+                                subtitle = stringResource(R.string.ui_petal_browser_is_crafted_upon),
+                                statusText = "${petalAppCredits.size} projects credited",
+                                icon = Icons.Rounded.Favorite
                             )
 
-                            // Credit List Items
-                            if (filteredCredits.isEmpty()) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(32.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.ui_no_matching_credits_found),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                            CreditsSearchField(
+                                query = searchQuery,
+                                onQueryChange = {
+                                    searchQuery = it
+                                    expandedTitle = null
                                 }
-                            } else {
-                                filteredCredits.forEach { credit ->
-                                    CreditCardItem(
-                                        credit = credit,
-                                        onClick = {
-                                            try {
-                                                val activity = context as? com.petal.browser.activity.BrowserActivity
-                                                if (activity != null) {
-                                                    onClose()
-                                                    val ctrl = activity.currentAlbumController
-                                                    if (ctrl is com.petal.browser.view.PetalGeckoView) {
-                                                        ctrl.loadUrl(credit.url)
-                                                        activity.showAlbum(ctrl, credit.url)
-                                                    } else {
-                                                        activity.addAlbum(null, credit.url, true)
-                                                    }
-                                                } else {
-                                                    BrowserUnit.intentURL(context, Uri.parse(credit.url))
-                                                }
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                            }
+                            )
+
+                            PetalSettingsSection(
+                                title = if (searchQuery.isBlank()) "Projects & contributors" else "${filteredCredits.size} matching",
+                                icon = Icons.Rounded.Code
+                            ) {
+                                if (filteredCredits.isEmpty()) {
+                                    PetalHeroCard {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(32.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            PetalGroupIconBadge(
+                                                Icons.Rounded.SearchOff,
+                                                container = MaterialTheme.colorScheme.secondaryContainer,
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                size = 56.dp,
+                                                iconSize = 28.dp
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.ui_no_matching_credits_found),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center
+                                            )
                                         }
-                                    )
+                                    }
+                                } else {
+                                    PetalGroup(
+                                        rowCount = filteredCredits.size,
+                                        modifier = Modifier.animateContentSize(
+                                            animationSpec = spring(dampingRatio = 0.8f, stiffness = 380f)
+                                        )
+                                    ) { index, position ->
+                                        val credit = filteredCredits[index]
+                                        CreditGroupCard(
+                                            credit = credit,
+                                            position = position,
+                                            expanded = expandedTitle == credit.title,
+                                            onToggle = {
+                                                expandedTitle = if (expandedTitle == credit.title) null else credit.title
+                                            },
+                                            onOpen = { openCredit(credit.url) }
+                                        )
+                                    }
                                 }
                             }
 
-                            // Footer
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 16.dp),
+                                    .padding(vertical = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
@@ -1183,6 +1165,8 @@ fun PetalCreditsSheetContent(
                                     textAlign = TextAlign.Center
                                 )
                             }
+
+                            Spacer(Modifier.height(24.dp))
                         }
                     }
                 }
@@ -1191,116 +1175,205 @@ fun PetalCreditsSheetContent(
     }
 }
 
+/** Stadium-shaped search container matching the omnibox / AI search styling. */
 @Composable
-fun CreditCardItem(
-    credit: AppCreditItem,
-    onClick: () -> Unit
+private fun CreditsSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 2.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        modifier = Modifier
-            .fillMaxWidth()
-            .bouncyClickable(onClick = onClick)
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = credit.containerColor.copy(alpha = 0.16f),
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = credit.icon,
-                            contentDescription = null,
-                            tint = credit.containerColor,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-                }
-
-                Spacer(Modifier.width(14.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = credit.title,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = stringResource(R.string.ui_by, credit.developer),
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                IconButton(
-                    onClick = onClick,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.OpenInNew,
-                        contentDescription = stringResource(R.string.ui_open_project),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = credit.role,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                )
-            }
-
-            Text(
-                text = credit.description,
-                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Icon(
+                Icons.Rounded.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
             )
-
-            OptIn(ExperimentalLayoutApi::class)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.fillMaxWidth()
+            Spacer(Modifier.width(10.dp))
+            TextField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = {
+                    Text(
+                        stringResource(R.string.ui_search_contributors_or_technologies),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colorScheme.primary
+                ),
+                modifier = Modifier.weight(1f)
+            )
+            AnimatedVisibility(
+                visible = query.isNotEmpty(),
+                enter = fadeIn() + scaleIn(),
+                exit = fadeOut() + scaleOut()
             ) {
-                credit.tags.forEach { tag ->
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                    ) {
-                        Text(
-                            text = tag,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
-                    }
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.ui_clear_search),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
     }
 }
 
+/**
+ * One credited project as a containment group row. Collapsed it shows the project and its
+ * author; tapping expands the role, description, tags and an "open project" action.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CreditGroupCard(
+    credit: AppCreditItem,
+    position: PetalGroupPosition,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    onOpen: () -> Unit
+) {
+    val source = remember { MutableInteractionSource() }
+    val pressScale = rememberPetalGroupPressScale(source)
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
+        label = "creditChevron"
+    )
+
+    Card(
+        onClick = onToggle,
+        shape = petalGroupShape(position),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = source,
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(pressScale)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(animationSpec = spring(dampingRatio = 0.8f, stiffness = 380f))
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 44.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PetalGroupIconBadge(
+                    credit.icon,
+                    container = credit.containerColor.copy(alpha = 0.16f),
+                    tint = credit.containerColor
+                )
+
+                Spacer(Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = credit.title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = stringResource(R.string.ui_by, credit.developer),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Icon(
+                    Icons.Rounded.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.rotate(chevronRotation)
+                )
+            }
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = fadeIn(spring(stiffness = 500f)) + expandVertically(),
+                exit = fadeOut(spring(stiffness = 700f)) + shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Text(
+                            text = credit.role,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+
+                    Text(
+                        text = credit.description,
+                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        credit.tags.forEach { tag ->
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.secondaryContainer
+                            ) {
+                                Text(
+                                    text = tag,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    FilledTonalButton(
+                        onClick = onOpen,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.ui_open_project), fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
