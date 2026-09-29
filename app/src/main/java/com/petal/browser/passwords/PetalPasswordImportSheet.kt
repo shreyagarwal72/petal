@@ -25,8 +25,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +73,9 @@ fun PetalPasswordImportSheet(
                     "PETAL_JSON" -> {
                         count = PetalCredentialVault.importFromJson(content)
                     }
+                    "PETAL_ENC" -> {
+                        count = PetalCredentialVault.importEncrypted(content)
+                    }
                     else -> {
                         val (_, creds) = PetalCredentialImporter.detectAndImport(file.name, content)
                         creds.forEach { PetalCredentialVault.save(it) }
@@ -96,8 +97,10 @@ fun PetalPasswordImportSheet(
         }
     }
 
-    com.petal.browser.ui.containment.PetalSheet(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Column(
             modifier = Modifier
@@ -106,14 +109,14 @@ fun PetalPasswordImportSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = stringResource(R.string.ui_import_passwords),
+                text = "Import Passwords",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = stringResource(R.string.ui_select_source_format_to_browse),
+                text = "Select source format to browse files using Petal File Picker",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -136,12 +139,13 @@ fun PetalPasswordImportSheet(
                     item {
                         ImportSourceOption(
                             icon = Icons.Rounded.Key,
-                            title = stringResource(R.string.ui_google_chrome_chromium),
-                            subtitle = stringResource(R.string.ui_csv_export_csv),
+                            title = "Google Chrome / Chromium",
+                            subtitle = "CSV export (*.csv)",
                             onClick = {
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "CHROME") },
                                     onDismiss = {}
                                 )
@@ -151,12 +155,13 @@ fun PetalPasswordImportSheet(
                     item {
                         ImportSourceOption(
                             icon = Icons.Rounded.Public,
-                            title = stringResource(R.string.ui_mozilla_firefox),
-                            subtitle = stringResource(R.string.ui_csv_export_csv),
+                            title = "Mozilla Firefox",
+                            subtitle = "CSV export (*.csv)",
                             onClick = {
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "FIREFOX") },
                                     onDismiss = {}
                                 )
@@ -166,12 +171,13 @@ fun PetalPasswordImportSheet(
                     item {
                         ImportSourceOption(
                             icon = Icons.Rounded.Shield,
-                            title = stringResource(R.string.ui_bitwarden),
-                            subtitle = stringResource(R.string.ui_json_export_json),
+                            title = "Bitwarden",
+                            subtitle = "JSON export (*.json)",
                             onClick = {
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("application/json", "text/plain"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "BITWARDEN") },
                                     onDismiss = {}
                                 )
@@ -181,12 +187,13 @@ fun PetalPasswordImportSheet(
                     item {
                         ImportSourceOption(
                             icon = Icons.Rounded.Lock,
-                            title = stringResource(R.string.ui_1password),
-                            subtitle = stringResource(R.string.ui_1password_csv_export_csv),
+                            title = "1Password",
+                            subtitle = "1Password CSV export (*.csv)",
                             onClick = {
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "ONE_PASSWORD") },
                                     onDismiss = {}
                                 )
@@ -196,12 +203,13 @@ fun PetalPasswordImportSheet(
                     item {
                         ImportSourceOption(
                             icon = Icons.Rounded.VpnKey,
-                            title = stringResource(R.string.ui_dashlane),
-                            subtitle = stringResource(R.string.ui_dashlane_csv_export_csv),
+                            title = "Dashlane",
+                            subtitle = "Dashlane CSV export (*.csv)",
                             onClick = {
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "DASHLANE") },
                                     onDismiss = {}
                                 )
@@ -211,13 +219,30 @@ fun PetalPasswordImportSheet(
                     item {
                         ImportSourceOption(
                             icon = Icons.Rounded.Backup,
-                            title = stringResource(R.string.ui_petal_vault_backup),
-                            subtitle = stringResource(R.string.ui_petal_backup_json_json),
+                            title = "Petal Vault Backup",
+                            subtitle = "Petal backup JSON (*.json)",
                             onClick = {
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("application/json", "text/plain"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "PETAL_JSON") },
+                                    onDismiss = {}
+                                )
+                            }
+                        )
+                    }
+                    item {
+                        ImportSourceOption(
+                            icon = Icons.Rounded.EnhancedEncryption,
+                            title = "Encrypted Petal Vault",
+                            subtitle = "Hardware-encrypted Petal backup (*.petal)",
+                            onClick = {
+                                PetalFilePickerBridge.showFilePicker(
+                                    activity = activity,
+                                    mimeTypes = arrayOf("*/*", "application/octet-stream", "text/plain"),
+                                    asModalDialog = true,
+                                    onFileSelected = { file -> processFile(file, "PETAL_ENC") },
                                     onDismiss = {}
                                 )
                             }
