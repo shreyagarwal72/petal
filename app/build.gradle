@@ -57,14 +57,14 @@ android {
             keyPassword 'android'
         }
         release {
-            if (releaseStoreFile &&
-                releaseStorePassword &&
-                releaseKeyAlias &&
-                releaseKeyPassword) {
-                storeFile file(releaseStoreFile)
-                storePassword releaseStorePassword
-                keyAlias releaseKeyAlias
-                keyPassword releaseKeyPassword
+            if (project.hasProperty('RELEASE_STORE_FILE') &&
+                project.hasProperty('RELEASE_STORE_PASSWORD') &&
+                project.hasProperty('RELEASE_KEY_ALIAS') &&
+                project.hasProperty('RELEASE_KEY_PASSWORD')) {
+                storeFile file(RELEASE_STORE_FILE)
+                storePassword RELEASE_STORE_PASSWORD
+                keyAlias RELEASE_KEY_ALIAS
+                keyPassword RELEASE_KEY_PASSWORD
             }
             v1SigningEnabled true
             v2SigningEnabled true
