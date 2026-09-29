@@ -3239,23 +3239,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             mFilePathCallback = null;
         }
 
-        // Launch in-browser Material 3 Expressive Media Picker with permissions and camera support
-        com.petal.browser.media.PetalMediaPickerBridge.showMediaPicker(
-            this,
-            filePathCallback,
-            fileChooserParams,
-            () -> {
-                com.petal.browser.compose.file.PetalFilePickerBridge.handleFileChooser(
-                    this,
-                    filePathCallback,
-                    fileChooserParams,
-                    () -> {
-                        launchSystemFileChooserFallback(filePathCallback, fileChooserParams);
-                        return kotlin.Unit.INSTANCE;
-                    }
-                );
-                return kotlin.Unit.INSTANCE;
-            }
+        // Petal file chooser: auto-routes between the built-in photo/video picker and the built-in
+        // file picker (or asks with a 2-option sheet). The Android system chooser is only a last resort.
+        com.petal.browser.compose.file.PetalFileChooser.show(
+                this,
+                filePathCallback,
+                fileChooserParams,
+                () -> {
+                    launchSystemFileChooserFallback(filePathCallback, fileChooserParams);
+                    return kotlin.Unit.INSTANCE;
+                }
         );
     }
 
