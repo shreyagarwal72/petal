@@ -1,7 +1,0 @@
-- Upgraded browser rendering architecture to Mozilla Android Components GeckoEngine (v155.0.1) & BrowserStore
-- Integrated reactive BrowserStore tab lifecycle, selection, and navigation state tracking
-- Improved session restoration performance and process recovery across cold starts and background re-entry
-- Resolved MediaInterceptor crash and fixed layout squishing on Firefox Sync action panels
-- Hardened Incognito mode to prevent search query leakages and keep notification persistent until all tabs close
-- Added dynamic Material 3 Expressive theming support and auto-reload to Petal Privacy Shield HUD
-- Enhanced custom tabs stability and warmup responsiveness with GeckoEngine

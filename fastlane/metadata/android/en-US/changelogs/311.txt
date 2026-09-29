@@ -1,3 +1,0 @@
-- Fixed bottom address bar overlapping bottom navigation bars (both floating and non-floating)
-- Fixed address bar disappearing or failing to restore during web page scroll
-- Ensured proper address bar visibility and reset state across page reloads and tab navigation
