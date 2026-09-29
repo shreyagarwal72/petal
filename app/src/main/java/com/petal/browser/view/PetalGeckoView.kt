@@ -276,7 +276,16 @@ class PetalGeckoView @JvmOverloads constructor(
                 hideLoadingSkeleton()
                 isStopped = true
                 updateProgress(BrowserUnit.LOADING_STOPPED)
+                // Immediate capture attempt
                 updatePreviewCache()
+                // Firefox-style: also capture after GeckoView's compositor has had time
+                // to paint the first contentful frame. capturePixels() on a freshly loaded
+                // page can return a blank bitmap if called before the compositor flushes.
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (isStopped && isShown && isAttachedToWindow) {
+                        updatePreviewCache()
+                    }
+                }, 800L)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, false)
                     com.petal.browser.engine.gecko.PetalEngineStore.updateProgress(context, tabId, 100)
@@ -1979,15 +1988,20 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun getCachedPreviewBitmap(): Bitmap? {
-        var bitmap = TabThumbnailCache.getMemoryOnly(getThumbnailKey(), isIncognito)
+        // Check tabId (primary key) — memory + disk
+        var bitmap = TabThumbnailCache.get(getThumbnailKey())
+        if (bitmap != null && !bitmap.isRecycled) return bitmap
+        // Check hashCode key (what PetalTabSwitcherSheet uses as PetalTabItem.id) — memory + disk
+        val hcKey = hashCode().toString()
+        bitmap = TabThumbnailCache.get(hcKey)
         if (bitmap != null && !bitmap.isRecycled) return bitmap
         if (currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true)) {
-            bitmap = TabThumbnailCache.getMemoryOnly(currentUrl, isIncognito)
+            bitmap = TabThumbnailCache.get(currentUrl)
             if (bitmap != null && !bitmap.isRecycled) return bitmap
         }
         val albumUrl = getAlbumUrl()
         if (albumUrl.isNotEmpty() && !albumUrl.equals("about:blank", ignoreCase = true) && !albumUrl.equals("Petal Home", ignoreCase = true)) {
-            bitmap = TabThumbnailCache.getMemoryOnly(albumUrl, isIncognito)
+            bitmap = TabThumbnailCache.get(albumUrl)
             if (bitmap != null && !bitmap.isRecycled) return bitmap
         }
         return null
@@ -2000,6 +2014,13 @@ class PetalGeckoView @JvmOverloads constructor(
         val cachingConsumer: (Bitmap?) -> Unit = { bmp ->
             if (bmp != null) {
                 TabThumbnailCache.put(key, bmp, isIncognito)
+                // Also store under hashCode() so PetalTabSwitcherSheet (which sets
+                // PetalTabItem.id = album.hashCode().toString()) can find this thumbnail.
+                // The tabId key ("tab_<timestamp>_<hash>") never matches the item ID.
+                val hcKey = hashCode().toString()
+                if (hcKey != key) {
+                    TabThumbnailCache.put(hcKey, bmp, isIncognito)
+                }
                 if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
                     TabThumbnailCache.put(url, bmp, isIncognito)
                 }
