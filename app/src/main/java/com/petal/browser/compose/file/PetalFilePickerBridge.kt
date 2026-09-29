@@ -51,8 +51,7 @@ object PetalFilePickerBridge {
         onFileSelected: (File) -> Unit,
         onMultipleFilesSelected: ((List<File>) -> Unit)? = null,
         onDismiss: () -> Unit = {},
-        onBrowseSystemFallback: (() -> Unit)? = null,
-        onSwitchToMedia: (() -> Unit)? = null
+        onBrowseSystemFallback: (() -> Unit)? = null
     ) {
         activity.runOnUiThread {
             // The browser file chooser is a real Petal page, not a BottomSheet.
@@ -161,17 +160,6 @@ object PetalFilePickerBridge {
                                     try { activeDialog?.dismiss() } catch (_: Exception) {}
                                 }
                                 onBrowseSystemFallback?.invoke()
-                            },
-                            onSwitchToMedia = onSwitchToMedia?.let { switch ->
-                                {
-                                    isHandled = true
-                                    if (activity is BrowserActivity && !asModalDialog) {
-                                        activity.performBackNavigation()
-                                    } else {
-                                        try { activeDialog?.dismiss() } catch (_: Exception) {}
-                                    }
-                                    switch()
-                                }
                             }
                         )
                     }

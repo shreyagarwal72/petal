@@ -31,6 +31,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.components.bouncyClickable
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * PetalFindInPageBar
@@ -107,7 +109,7 @@ fun PetalFindInPageBar(
                 ) {
                     if (query.isEmpty()) {
                         Text(
-                            text = "Find in page…",
+                            text = stringResource(R.string.ui_find_in_page_2),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
@@ -138,7 +140,7 @@ fun PetalFindInPageBar(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.KeyboardArrowUp,
-                        contentDescription = "Previous match",
+                        contentDescription = stringResource(R.string.ui_previous_match),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -150,7 +152,7 @@ fun PetalFindInPageBar(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.KeyboardArrowDown,
-                        contentDescription = "Next match",
+                        contentDescription = stringResource(R.string.ui_next_match),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -165,7 +167,7 @@ fun PetalFindInPageBar(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Close find in page",
+                        contentDescription = stringResource(R.string.ui_close_find_in_page),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )

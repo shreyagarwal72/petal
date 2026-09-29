@@ -20,6 +20,8 @@ import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.ui.components.*
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.view.PetalToast
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun AboutSettingsScreen(
@@ -97,13 +99,13 @@ fun AboutSettingsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Petal Browser • Open Source Project",
+                        text = stringResource(R.string.ui_petal_browser_open_source_project),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Made with Jetpack Compose & Material 3 Expressive UI",
+                        text = stringResource(R.string.ui_made_with_jetpack_compose_material),
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )

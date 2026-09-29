@@ -55,6 +55,8 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.logger.PetalAppLogger
 import com.petal.browser.view.PetalToast
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Material 3 Expressive Crash Recovery Dialog for Petal Browser.
@@ -128,7 +130,7 @@ fun PetalCrashRecoveryHost(
     if (showCrashDialog) {
         val crashReport = remember { PetalAppLogger.getLastCrashReport() ?: "" }
 
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = handleDismiss,
             icon = {
                 Surface(
@@ -148,7 +150,7 @@ fun PetalCrashRecoveryHost(
             },
             title = {
                 Text(
-                    text = "Petal Browser Crashed",
+                    text = stringResource(R.string.ui_petal_browser_crashed),
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                 )
             },
@@ -158,7 +160,7 @@ fun PetalCrashRecoveryHost(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "Petal recovered from an unexpected crash during its previous session. You can inspect the diagnostic trace or submit an issue report to help keep Petal rock-solid.",
+                        text = stringResource(R.string.ui_petal_recovered_from_an_unexpected),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -194,7 +196,7 @@ fun PetalCrashRecoveryHost(
                 ) {
                     Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Report on GitHub")
+                    Text(stringResource(R.string.ui_report_on_github))
                 }
             },
             dismissButton = {
@@ -206,12 +208,12 @@ fun PetalCrashRecoveryHost(
                         },
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("View Log")
+                        Text(stringResource(R.string.ui_view_log))
                     }
                     TextButton(
                         onClick = handleDismiss
                     ) {
-                        Text("Dismiss")
+                        Text(stringResource(R.string.ui_dismiss))
                     }
                 }
             },
@@ -242,11 +244,11 @@ fun PetalCrashRecoveryHost(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Crash Diagnostics",
+                            text = stringResource(R.string.ui_crash_diagnostics),
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                         )
                         IconButton(onClick = { showFullTraceDialog = false }) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Close")
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                         }
                     }
 
@@ -301,7 +303,7 @@ fun PetalCrashRecoveryHost(
                         ) {
                             Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Copy")
+                            Text(stringResource(R.string.ui_copy))
                         }
 
                         Button(
@@ -313,7 +315,7 @@ fun PetalCrashRecoveryHost(
                         ) {
                             Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Share ZIP")
+                            Text(stringResource(R.string.ui_share_zip))
                         }
                     }
                 }
@@ -368,7 +370,7 @@ fun PetalCrashReportingPicker(
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Crash & Diagnostics Reporting",
+                        text = stringResource(R.string.ui_crash_diagnostics_reporting),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )

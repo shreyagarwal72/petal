@@ -167,8 +167,7 @@ fun PetalFilePickerScreen(
     onFileSelected: (File) -> Unit,
     onMultipleFilesSelected: ((List<File>) -> Unit)? = null,
     onPreviewFile: ((File) -> Unit)? = null,
-    onBrowseSystemFallback: (() -> Unit)? = null,
-    onSwitchToMedia: (() -> Unit)? = null
+    onBrowseSystemFallback: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val haptics = remember { PetalHapticEngine.getInstance(context) }
@@ -227,8 +226,7 @@ fun PetalFilePickerScreen(
                         onFileSelected = onFileSelected,
                         onMultipleFilesSelected = onMultipleFilesSelected,
                         onPreviewFile = onPreviewFile,
-                        onBrowseSystemFallback = onBrowseSystemFallback,
-                        onSwitchToMedia = onSwitchToMedia
+                        onBrowseSystemFallback = onBrowseSystemFallback
                     )
                 }
             }
@@ -319,8 +317,7 @@ private fun FilePickerBrowserContent(
     onFileSelected: (File) -> Unit,
     onMultipleFilesSelected: ((List<File>) -> Unit)?,
     onPreviewFile: ((File) -> Unit)?,
-    onBrowseSystemFallback: (() -> Unit)?,
-    onSwitchToMedia: (() -> Unit)? = null
+    onBrowseSystemFallback: (() -> Unit)?
 ) {
     val context = LocalContext.current
     val haptics = remember { PetalHapticEngine.getInstance(context) }
@@ -464,19 +461,6 @@ private fun FilePickerBrowserContent(
                                 )
                             },
                             onClick = { showHiddenFiles = !showHiddenFiles; showSortMenu = false }
-                        )
-                    }
-                }
-
-                if (onSwitchToMedia != null) {
-                    IconButton(onClick = {
-                        haptics.playClick(context)
-                        onSwitchToMedia()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Rounded.PhotoLibrary,
-                            contentDescription = "Photos & videos",
-                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -893,11 +877,6 @@ private fun matchesMimeType(ext: String, mimeTypes: Array<String>): Boolean {
         if (lower.contains("package-archive") && ext in APK_EXTENSIONS) return true
         if (lower.contains("zip") && (ext == "zip" || ext in ARCHIVE_EXTENSIONS)) return true
         if (lower.contains("text/") && (ext in CODE_EXTENSIONS || ext == "txt" || ext == "md" || ext == "csv" || ext == "log")) return true
-        // Extension token from the page's accept list, e.g. ".docx"
-        if (lower.startsWith(".") && lower.removePrefix(".") == ext) return true
-        // Resolve the file's real MIME type so office docs, json, epub... are not hidden by accept filters.
-        val resolved = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
-        if (resolved != null && (lower == resolved || (lower.endsWith("/*") && resolved.startsWith(lower.dropLast(1))))) return true
     }
     return false
 }

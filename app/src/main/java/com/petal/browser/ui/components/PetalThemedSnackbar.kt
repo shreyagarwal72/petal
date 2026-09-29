@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalBrowserShapes
+import androidx.compose.ui.res.stringResource
 
 /**
  * Shared Material 3 Expressive themed Snackbar composable.
@@ -110,7 +111,7 @@ fun PetalThemedSnackbar(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Dismiss",
+                        contentDescription = stringResource(R.string.ui_dismiss),
                         tint = dismissActionColor,
                         modifier = Modifier.size(18.dp)
                     )
@@ -134,38 +135,9 @@ fun PetalThemedSnackbarHost(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     actionColor: Color = MaterialTheme.colorScheme.primary
 ) {
-    SnackbarHost(
+    com.petal.browser.ui.containment.PetalSnackbarHost(
         hostState = hostState,
-        modifier = modifier
-    ) { data ->
-        val dismissState = rememberSwipeToDismissBoxState(
-            confirmValueChange = { value ->
-                if (value != SwipeToDismissBoxValue.Settled) {
-                    data.dismiss()
-                    true
-                } else {
-                    false
-                }
-            }
-        )
-        SwipeToDismissBox(
-            state = dismissState,
-            backgroundContent = {},
-            modifier = Modifier.pointerInput(data) {
-                detectVerticalDragGestures { _, dragAmount ->
-                    if (dragAmount > 12f) { // Swiped downwards to dismiss
-                        data.dismiss()
-                    }
-                }
-            }
-        ) {
-            PetalThemedSnackbar(
-                snackbarData = data,
-                shape = shape,
-                containerColor = containerColor,
-                contentColor = contentColor,
-                actionColor = actionColor
-            )
-        }
-    }
+        modifier = modifier,
+        actionColor = actionColor,
+    )
 }

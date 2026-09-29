@@ -58,6 +58,8 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.view.PetalToast
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun PetalQrGeneratorDialog(
@@ -116,12 +118,12 @@ fun PetalQrGeneratorDialog(
                         }
                         Column {
                             Text(
-                                text = "Petal Share QR",
+                                text = stringResource(R.string.ui_petal_share_qr),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Scan to open immediately",
+                                text = stringResource(R.string.ui_scan_to_open_immediately),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -134,7 +136,7 @@ fun PetalQrGeneratorDialog(
                             onDismissRequest()
                         }
                     ) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close")
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                     }
                 }
 
@@ -162,12 +164,12 @@ fun PetalQrGeneratorDialog(
                     if (qrBitmap != null) {
                         Image(
                             bitmap = qrBitmap.asImageBitmap(),
-                            contentDescription = "Petal Designed QR Code",
+                            contentDescription = stringResource(R.string.ui_petal_designed_qr_code),
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
                         Text(
-                            text = "Could not generate QR code",
+                            text = stringResource(R.string.ui_could_not_generate_qr_code),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -228,7 +230,7 @@ fun PetalQrGeneratorDialog(
                     ) {
                         Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Copy", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.ui_copy), style = MaterialTheme.typography.labelMedium)
                     }
 
                     FilledTonalButton(
@@ -252,7 +254,7 @@ fun PetalQrGeneratorDialog(
                     ) {
                         Icon(Icons.Rounded.QrCode2, contentDescription = null, modifier = Modifier.size(17.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Share QR", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
+                        Text(stringResource(R.string.ui_share_qr), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
                     }
 
                     Button(
@@ -273,7 +275,7 @@ fun PetalQrGeneratorDialog(
                     ) {
                         Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Link", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.ui_link), style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }

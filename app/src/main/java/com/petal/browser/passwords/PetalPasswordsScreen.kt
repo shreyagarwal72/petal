@@ -3,19 +3,17 @@ package com.petal.browser.passwords
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
-import android.os.Build
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,10 +32,12 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalExpressiveDialog
 import com.petal.browser.ui.components.PetalShapedPasswordInput
-import com.petal.browser.ui.containment.*
 import com.petal.browser.unit.PasswordBreachAuditManager
 import com.petal.browser.view.PetalToast
+import kotlinx.coroutines.launch
 import java.util.UUID
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -144,9 +146,22 @@ fun PetalPasswordsScreen(
         )
     }
 
-    Box(modifier = modifier
-        .fillMaxSize()
-        .background(MaterialTheme.colorScheme.background)
+    // This screen is presented as an overlay on top of Privacy settings. Back must close only this
+    // overlay, not the whole settings stack underneath.
+    androidx.activity.compose.BackHandler(onBack = onNavigateBack)
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            // Opaque base: the animated background below is translucent, and without this the
+            // Privacy settings screen underneath shows through and the two UIs overlap.
+            .background(MaterialTheme.colorScheme.background)
+            // Swallow every touch so taps/scrolls can never reach the screen underneath.
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) { awaitPointerEvent().changes.forEach { it.consume() } }
+                }
+            }
     ) {
         M3ExpressiveVariableBackground(pageSeed = "petal_passwords_screen")
 
@@ -157,210 +172,197 @@ fun PetalPasswordsScreen(
                 onBack = onNavigateBack
             )
 
-            LazyColumn(
+            // Search and action bar
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                // 1. Status Hero Card (Hardware Vault status & stats)
-                item {
-                    PetalStatusHeroCard(
-                        title = "Petal Secure Vault",
-                        subtitle = "${credentials.size} passwords stored locally • AES-256 GCM",
-                        statusText = "Hardware Encrypted",
-                        icon = Icons.Rounded.Security,
-                        statusActive = true,
-                        actionLabel = "System Autofill",
-                        onActionClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                try {
-                                    val intent = Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).apply {
-                                        data = android.net.Uri.parse("package:${context.packageName}")
-                                    }
-                                    activity.startActivity(intent)
-                                } catch (_: Exception) {
-                                    try {
-                                        val intent = Intent(Settings.ACTION_SETTINGS)
-                                        activity.startActivity(intent)
-                                    } catch (_: Exception) {
-                                        PetalToast.show(context, "Open Android Settings > System > Autofill")
-                                    }
-                                }
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(stringResource(R.string.ui_search_logins_domains)) },
+                    leadingIcon = {
+                        Icon(Icons.Rounded.Search, contentDescription = null)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Rounded.Clear, contentDescription = stringResource(R.string.ui_clear))
                             }
                         }
-                    )
-                }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-                // 2. Search & Filter Bar
-                item {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search logins & domains...") },
-                        leadingIcon = {
-                            Icon(Icons.Rounded.Search, contentDescription = null)
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Rounded.Clear, contentDescription = "Clear")
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // 3. Quick Actions Group
-                item {
-                    PetalSettingsSection(
-                        title = "Vault Management",
-                        icon = Icons.Rounded.ManageAccounts
+                // Action buttons: Add, Import, Export
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilledTonalButton(
+                        onClick = { isAddingNew = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
                     ) {
-                        PetalGroup(rowCount = 3) { index, position ->
-                            when (index) {
-                                0 -> PetalGroupRow(
-                                    icon = Icons.Rounded.AddCircle,
-                                    title = "Add New Login",
-                                    subtitle = "Store a username and password",
-                                    position = position,
-                                    onClick = { isAddingNew = true }
-                                )
-                                1 -> PetalGroupRow(
-                                    icon = Icons.Rounded.FileDownload,
-                                    title = "Import Passwords",
-                                    subtitle = "Chrome, Firefox, Bitwarden, 1Password, Petal",
-                                    position = position,
-                                    onClick = { showImportSheet = true }
-                                )
-                                2 -> PetalGroupRow(
-                                    icon = Icons.Rounded.FileUpload,
-                                    title = "Export Backup",
-                                    subtitle = "Encrypted (.petal) or JSON backup",
-                                    position = position,
-                                    onClick = { showExportDialog = true }
+                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.ui_add_login))
+                    }
+
+                    OutlinedButton(
+                        onClick = { showImportSheet = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
+                    ) {
+                        Icon(Icons.Rounded.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.ui_import))
+                    }
+
+                    OutlinedButton(
+                        onClick = { showExportDialog = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
+                    ) {
+                        Icon(Icons.Rounded.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.ui_export))
+                    }
+                }
+            }
+
+            // List of saved logins
+            if (filteredList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.Lock,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(36.dp)
                                 )
                             }
                         }
+                        Text(
+                            text = if (searchQuery.isBlank()) "No Saved Passwords" else "No Matching Passwords",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (searchQuery.isBlank())
+                                "Your passwords saved in Petal or imported from Chrome, Firefox, or Bitwarden will appear here."
+                            else "Try searching for a different domain or username.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
                     }
                 }
-
-                // 4. Saved Logins Section
-                item {
-                    PetalSectionLabel(
-                        text = if (searchQuery.isBlank()) "Saved Logins (${filteredList.size})" else "Matching Logins (${filteredList.size})"
-                    )
-                }
-
-                if (filteredList.isEmpty()) {
-                    item {
-                        PetalHeroCard(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(28.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    modifier = Modifier.size(56.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            Icons.Rounded.Lock,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(28.dp)
-                                        )
-                                    }
-                                }
-                                Text(
-                                    text = if (searchQuery.isBlank()) "No Passwords Stored" else "No Matches Found",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = if (searchQuery.isBlank())
-                                        "Saved logins in Petal or imported from Chrome, Firefox, or Bitwarden will appear here."
-                                    else "Try searching for a different domain or username.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(filteredList, key = { it.id }) { item ->
+                        CredentialListItem(
+                            credential = item,
+                            onClick = { selectedCredentialForDetails = item },
+                            onToggleFavorite = {
+                                PetalCredentialVault.toggleFavorite(item.id)
+                                reloadCredentials()
                             }
-                        }
-                    }
-                } else {
-                    item {
-                        PetalGroup(rowCount = filteredList.size) { index, position ->
-                            val item = filteredList[index]
-                            PetalGroupListRow(
-                                position = position,
-                                onClick = { selectedCredentialForDetails = item },
-                                leading = {
-                                    PetalGroupIconBadge(
-                                        shape = CircleShape,
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        size = 40.dp
-                                    ) {
-                                        Text(
-                                            text = item.domain.take(1).uppercase(),
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                },
-                                content = {
-                                    Text(
-                                        text = item.domain,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        text = item.username.ifBlank { "Password only" },
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
-                                trailing = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        IconButton(
-                                            onClick = {
-                                                PetalCredentialVault.toggleFavorite(item.id)
-                                                reloadCredentials()
-                                            }
-                                        ) {
-                                            Icon(
-                                                imageVector = if (item.isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                                                contentDescription = "Favorite",
-                                                tint = if (item.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                        Icon(
-                                            Icons.Rounded.ChevronRight,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                            )
-                        }
+                        )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CredentialListItem(
+    credential: PetalCredential,
+    onClick: () -> Unit,
+    onToggleFavorite: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = credential.domain.take(1).uppercase(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = credential.domain,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = credential.username.ifBlank { "Password only" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (credential.isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                    contentDescription = stringResource(R.string.ui_favorite),
+                    tint = if (credential.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -430,7 +432,7 @@ private fun PasswordDetailsDialog(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Username", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_username), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(credential.username.ifBlank { "(empty)" }, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                 }
                 IconButton(
@@ -440,7 +442,7 @@ private fun PasswordDetailsDialog(
                         PetalToast.show(context, "Username copied")
                     }
                 ) {
-                    Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy), modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -457,7 +459,7 @@ private fun PasswordDetailsDialog(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Password", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_password), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         text = if (isPasswordVisible) credential.password else "••••••••••••",
                         style = MaterialTheme.typography.bodyMedium,
@@ -468,7 +470,7 @@ private fun PasswordDetailsDialog(
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                         Icon(
                             imageVector = if (isPasswordVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                            contentDescription = "Toggle visibility",
+                            contentDescription = stringResource(R.string.ui_toggle_visibility_2),
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -479,7 +481,7 @@ private fun PasswordDetailsDialog(
                             PetalToast.show(context, "Password copied")
                         }
                     ) {
-                        Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(18.dp))
+                        Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy), modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -505,11 +507,11 @@ private fun PasswordDetailsDialog(
             if (isCheckingBreach) {
                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Checking HIBP...")
+                Text(stringResource(R.string.ui_checking_hibp))
             } else {
                 Icon(Icons.Rounded.Security, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Check for Breaches")
+                Text(stringResource(R.string.ui_check_for_breaches))
             }
         }
 
@@ -533,14 +535,14 @@ private fun PasswordDetailsDialog(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Delete")
+                Text(stringResource(R.string.ui_delete))
             }
             Button(
                 onClick = onEdit,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Edit")
+                Text(stringResource(R.string.ui_edit))
             }
         }
     }
@@ -570,7 +572,7 @@ private fun PasswordEditDialog(
             OutlinedTextField(
                 value = domain,
                 onValueChange = { domain = it },
-                label = { Text("Website Domain (e.g. google.com)") },
+                label = { Text(stringResource(R.string.ui_website_domain_e_g_google)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -579,7 +581,7 @@ private fun PasswordEditDialog(
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username or Email") },
+                label = { Text(stringResource(R.string.ui_username_or_email)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -595,7 +597,7 @@ private fun PasswordEditDialog(
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("Notes (optional)") },
+                label = { Text(stringResource(R.string.ui_notes_optional)) },
                 singleLine = false,
                 maxLines = 3,
                 shape = RoundedCornerShape(14.dp),
@@ -612,7 +614,7 @@ private fun PasswordEditDialog(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.ui_cancel))
             }
             Button(
                 onClick = {
@@ -640,7 +642,7 @@ private fun PasswordEditDialog(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Save")
+                Text(stringResource(R.string.ui_save))
             }
         }
     }

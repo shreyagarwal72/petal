@@ -31,13 +31,12 @@ import mozilla.components.feature.contextmenu.ContextMenuUseCases
 class PetalTabViewController private constructor(
     context: Context,
     attrs: AttributeSet?,
-    @Suppress("UNUSED_PARAMETER") defStyleAttr: Int,
     private val engineView: EngineView
 ) : SwipeRefreshLayout(context, attrs), AlbumController, EngineView by engineView {
 
     @JvmOverloads
-    constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
-        this(context, attrs, defStyleAttr, PetalEngineStore.createEngineView(context))
+    constructor(context: Context, attrs: AttributeSet? = null) :
+        this(context, attrs, PetalEngineStore.createEngineView(context))
 
     private val appContext = context.applicationContext
     private val browserStore: BrowserStore = PetalEngineStore.getStore(appContext)
@@ -483,9 +482,20 @@ class PetalTabViewController private constructor(
 
     private fun applyPageSettings(url: String?) {
         val session = observedSession ?: return
-        // JavaScript is controlled by GeckoRuntime and applied by syncPreferences below.
-        // The generic EngineSession setting is unsupported by this Gecko engine adapter.
         val profile = com.petal.browser.view.PetalGeckoView.getProfile(appContext)
+        val javascriptEnabled = preferences.getBoolean(
+            "sp_javascript",
+            preferences.getBoolean("${profile}_javascript", preferences.getBoolean("profileStandard_javascript", true))
+        )
+        // Android Components' Settings.javascriptEnabled is an UnsupportedSetting on the
+        // Gecko engine session and throws UnsupportedSettingException. Apply it on the raw
+        // GeckoSession instead. The global runtime value is also synced below.
+        try {
+            getGeckoSession()?.settings?.allowJavascript = javascriptEnabled
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "Could not apply per-session JavaScript setting", t)
+        }
+
         val host = try { android.net.Uri.parse(url.orEmpty()).host } catch (_: Throwable) { null }
         val desktopEnabled = if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
             preferences.getBoolean("sp_desktop_site_$host", false)

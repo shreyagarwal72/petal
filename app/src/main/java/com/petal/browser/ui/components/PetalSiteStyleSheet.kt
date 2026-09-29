@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 enum class SiteStylePreset(
     val title: String,
@@ -76,11 +78,9 @@ fun PetalSiteStyleSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(
             modifier = Modifier
@@ -89,7 +89,7 @@ fun PetalSiteStyleSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Site Style",
+                text = stringResource(R.string.ui_site_style),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -147,7 +147,7 @@ fun PetalSiteStyleSheet(
                             if (isSelected) {
                                 Icon(
                                     Icons.Rounded.CheckCircle,
-                                    contentDescription = "Selected",
+                                    contentDescription = stringResource(R.string.ui_selected),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(22.dp)
                                 )

@@ -104,6 +104,8 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 // ─── Annotation Data Models ──────────────────────────────────────────────────
 
@@ -594,7 +596,7 @@ fun PetalPdfViewerScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = {
-            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+            com.petal.browser.ui.containment.PetalSnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.navigationBarsPadding()
             )
@@ -613,7 +615,7 @@ fun PetalPdfViewerScreen(
                             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.height(16.dp))
                             Text(
-                                text = "Loading PDF...",
+                                text = stringResource(R.string.ui_loading_pdf),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -637,7 +639,7 @@ fun PetalPdfViewerScreen(
                                 modifier = Modifier.padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                com.petal.browser.ui.components.PetalShapeIconBadge(
+                                com.petal.browser.ui.containment.PetalGroupIconBadge(
                                     shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
                                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                                     contentColor = MaterialTheme.colorScheme.error,
@@ -651,7 +653,7 @@ fun PetalPdfViewerScreen(
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Text(
-                                    text = "Cannot Display PDF",
+                                    text = stringResource(R.string.ui_cannot_display_pdf),
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onErrorContainer
                                 )
@@ -667,7 +669,7 @@ fun PetalPdfViewerScreen(
                                     onClick = onBackPress,
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
-                                    Text("Go Back")
+                                    Text(stringResource(R.string.ui_go_back))
                                 }
                             }
                         }
@@ -966,7 +968,7 @@ fun PetalPdfViewerScreen(
     // ── Add Text Note Dialog ──
     if (showAddNoteDialog) {
         var noteInput by remember { mutableStateOf("") }
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showAddNoteDialog = false },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             shape = RoundedCornerShape(24.dp),
@@ -979,14 +981,14 @@ fun PetalPdfViewerScreen(
                 )
             },
             title = {
-                Text("Add Text Note", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.ui_add_text_note), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             },
             text = {
                 OutlinedTextField(
                     value = noteInput,
                     onValueChange = { noteInput = it },
-                    label = { Text("Note content") },
-                    placeholder = { Text("Enter text to add to document…") },
+                    label = { Text(stringResource(R.string.ui_note_content)) },
+                    placeholder = { Text(stringResource(R.string.ui_enter_text_to_add_to)) },
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1010,12 +1012,12 @@ fun PetalPdfViewerScreen(
                     },
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Add Note")
+                    Text(stringResource(R.string.ui_add_note))
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showAddNoteDialog = false }, shape = RoundedCornerShape(12.dp)) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
             }
         )
@@ -1051,7 +1053,7 @@ fun PetalPdfViewerScreen(
     val lineBeingEdited = selectedTextLine
     if (lineBeingEdited != null) {
         var editedText by remember(lineBeingEdited) { mutableStateOf(lineBeingEdited.text) }
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { if (!isSavingTextEdit) selectedTextLine = null },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             shape = RoundedCornerShape(24.dp),
@@ -1064,14 +1066,14 @@ fun PetalPdfViewerScreen(
                 )
             },
             title = {
-                Text("Edit Text", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.ui_edit_text), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             },
             text = {
                 Column {
                     OutlinedTextField(
                         value = editedText,
                         onValueChange = { editedText = it },
-                        label = { Text("Line text") },
+                        label = { Text(stringResource(R.string.ui_line_text)) },
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -1103,7 +1105,7 @@ fun PetalPdfViewerScreen(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Save")
+                        Text(stringResource(R.string.ui_save))
                     }
                 }
             },
@@ -1113,7 +1115,7 @@ fun PetalPdfViewerScreen(
                     enabled = !isSavingTextEdit,
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
             }
         )
@@ -1414,11 +1416,11 @@ private fun PdfTextEditTopBar(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = onClose, modifier = Modifier.size(38.dp)) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close text editing")
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close_text_editing))
                     }
 
                     Text(
-                        text = "Edit document text",
+                        text = stringResource(R.string.ui_edit_document_text),
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -1440,7 +1442,7 @@ private fun PdfTextEditTopBar(
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.Undo,
-                                contentDescription = "Undo last text edit",
+                                contentDescription = stringResource(R.string.ui_undo_last_text_edit),
                                 tint = if (canUndo) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.35f)
                             )
                         }
@@ -1500,7 +1502,7 @@ private fun PdfViewerTopBar(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.ui_back),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -1521,7 +1523,7 @@ private fun PdfViewerTopBar(
                 )
                 if (totalPages > 0) {
                     Text(
-                        text = "Page $currentPage of $totalPages",
+                        text = stringResource(R.string.ui_page_of, currentPage, totalPages),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
@@ -1533,7 +1535,7 @@ private fun PdfViewerTopBar(
             IconButton(onClick = onFindText) {
                 Icon(
                     imageVector = Icons.Rounded.Search,
-                    contentDescription = "Find text",
+                    contentDescription = stringResource(R.string.ui_find_text),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -1542,38 +1544,38 @@ private fun PdfViewerTopBar(
                 IconButton(onClick = { menuExpanded = true }) {
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = "More",
+                        contentDescription = stringResource(R.string.ui_more),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                DropdownMenu(
+                com.petal.browser.ui.containment.PetalPopupMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                     shape = RoundedCornerShape(16.dp),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Edit & Annotate") },
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = { Text(stringResource(R.string.ui_edit_annotate)) },
                         leadingIcon = { Icon(Icons.Rounded.Edit, null) },
                         onClick = { menuExpanded = false; onEditMode() }
                     )
-                    DropdownMenuItem(
-                        text = { Text("Jump to page") },
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = { Text(stringResource(R.string.ui_jump_to_page)) },
                         leadingIcon = { Icon(Icons.Rounded.FindInPage, null) },
                         onClick = { menuExpanded = false; onJumpPage() }
                     )
-                    DropdownMenuItem(
-                        text = { Text("Print") },
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = { Text(stringResource(R.string.ui_print)) },
                         leadingIcon = { Icon(Icons.Rounded.Print, null) },
                         onClick = { menuExpanded = false; onPrint() }
                     )
-                    DropdownMenuItem(
-                        text = { Text("Share") },
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = { Text(stringResource(R.string.ui_share)) },
                         leadingIcon = { Icon(Icons.Rounded.Share, null) },
                         onClick = { menuExpanded = false; onShare() }
                     )
-                    DropdownMenuItem(
-                        text = { Text("Document info") },
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = { Text(stringResource(R.string.ui_document_info)) },
                         leadingIcon = { Icon(Icons.Rounded.Info, null) },
                         onClick = { menuExpanded = false; onInfo() }
                     )
@@ -1633,7 +1635,7 @@ private fun PdfFindBar(
                 OutlinedTextField(
                     value = query,
                     onValueChange = onQueryChange,
-                    placeholder = { Text("Find text or page #…", fontSize = 14.sp) },
+                    placeholder = { Text(stringResource(R.string.ui_find_text_or_page), fontSize = 14.sp) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color.Transparent,
@@ -1651,16 +1653,16 @@ private fun PdfFindBar(
                     )
 
                     IconButton(onClick = onPrevious, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Previous")
+                        Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = stringResource(R.string.ui_previous))
                     }
 
                     IconButton(onClick = onNext, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Next")
+                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = stringResource(R.string.ui_next))
                     }
                 }
 
                 IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close search")
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close_search))
                 }
             }
         }
@@ -1716,14 +1718,14 @@ private fun PdfEditTopBar(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = onCancel, modifier = Modifier.size(38.dp)) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Cancel")
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_cancel))
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         FilterChip(
                             selected = selectedTool == AnnotationTool.PEN,
                             onClick = { onToolChange(AnnotationTool.PEN) },
-                            label = { Text("Pen") },
+                            label = { Text(stringResource(R.string.ui_pen)) },
                             leadingIcon = { Icon(Icons.Rounded.Draw, null, Modifier.size(16.dp)) },
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -1731,7 +1733,7 @@ private fun PdfEditTopBar(
                         FilterChip(
                             selected = selectedTool == AnnotationTool.HIGHLIGHTER,
                             onClick = { onToolChange(AnnotationTool.HIGHLIGHTER) },
-                            label = { Text("Highlighter") },
+                            label = { Text(stringResource(R.string.ui_highlighter)) },
                             leadingIcon = { Icon(Icons.Rounded.Highlight, null, Modifier.size(16.dp)) },
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -1739,7 +1741,7 @@ private fun PdfEditTopBar(
                         FilterChip(
                             selected = selectedTool == AnnotationTool.TEXT,
                             onClick = { onToolChange(AnnotationTool.TEXT) },
-                            label = { Text("Text") },
+                            label = { Text(stringResource(R.string.ui_text)) },
                             leadingIcon = { Icon(Icons.Rounded.TextFields, null, Modifier.size(16.dp)) },
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -1751,13 +1753,13 @@ private fun PdfEditTopBar(
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.Undo,
-                                contentDescription = "Undo",
+                                contentDescription = stringResource(R.string.ui_undo),
                                 tint = if (canUndo) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.35f)
                             )
                         }
 
                         IconButton(onClick = onClearAnnotations, modifier = Modifier.size(38.dp)) {
-                            Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear")
+                            Icon(Icons.Rounded.DeleteSweep, contentDescription = stringResource(R.string.ui_clear))
                         }
                     }
 
@@ -1774,7 +1776,7 @@ private fun PdfEditTopBar(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text("Save", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -1788,7 +1790,7 @@ private fun PdfEditTopBar(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Color:",
+                        text = stringResource(R.string.ui_color),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1882,7 +1884,7 @@ private fun PdfViewerBottomBar(
                 IconButton(onClick = onShowThumbnails, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.GridView,
-                        contentDescription = "Thumbnails",
+                        contentDescription = stringResource(R.string.ui_thumbnails),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
@@ -1892,7 +1894,7 @@ private fun PdfViewerBottomBar(
                 IconButton(onClick = onEditText, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.TextFields,
-                        contentDescription = "Edit document text",
+                        contentDescription = stringResource(R.string.ui_edit_document_text),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
@@ -1902,7 +1904,7 @@ private fun PdfViewerBottomBar(
                 IconButton(onClick = onZoomOut, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.Remove,
-                        contentDescription = "Zoom Out",
+                        contentDescription = stringResource(R.string.ui_zoom_out_2),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
@@ -1912,7 +1914,7 @@ private fun PdfViewerBottomBar(
                 IconButton(onClick = onZoomIn, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.Add,
-                        contentDescription = "Zoom In",
+                        contentDescription = stringResource(R.string.ui_zoom_in_2),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
@@ -1931,7 +1933,7 @@ private fun PdfViewerBottomBar(
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.ZoomOutMap,
-                                contentDescription = "Reset zoom",
+                                contentDescription = stringResource(R.string.ui_reset_zoom),
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.size(14.dp)
                             )
@@ -1961,7 +1963,7 @@ private fun PdfJumpToPageDialog(
     var targetPage by remember { mutableIntStateOf(currentPage) }
     var textInput by remember { mutableStateOf(currentPage.toString()) }
 
-    AlertDialog(
+    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(24.dp),
@@ -1974,7 +1976,7 @@ private fun PdfJumpToPageDialog(
             )
         },
         title = {
-            Text("Jump to Page", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(stringResource(R.string.ui_jump_to_page_2), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         },
         text = {
             Column(
@@ -1982,7 +1984,7 @@ private fun PdfJumpToPageDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Page $targetPage of $totalPages",
+                    text = stringResource(R.string.ui_page_of, targetPage, totalPages),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2012,7 +2014,7 @@ private fun PdfJumpToPageDialog(
                             targetPage = parsed
                         }
                     },
-                    label = { Text("Page number") },
+                    label = { Text(stringResource(R.string.ui_page_number)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = {
                         val parsed = textInput.toIntOrNull() ?: targetPage
@@ -2032,12 +2034,12 @@ private fun PdfJumpToPageDialog(
                 },
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Jump")
+                Text(stringResource(R.string.ui_jump))
             }
         },
         dismissButton = {
             OutlinedButton(onClick = onDismiss, shape = RoundedCornerShape(12.dp)) {
-                Text("Cancel")
+                Text(stringResource(R.string.ui_cancel))
             }
         }
     )
@@ -2054,11 +2056,8 @@ private fun PdfThumbnailSheet(
     onDismiss: () -> Unit,
     onSelectPage: (Int) -> Unit
 ) {
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -2067,7 +2066,7 @@ private fun PdfThumbnailSheet(
                 .padding(bottom = 24.dp)
         ) {
             Text(
-                text = "Pages ($pageCount)",
+                text = stringResource(R.string.ui_pages, pageCount),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
@@ -2210,11 +2209,8 @@ private fun PdfInfoBottomSheet(
         }
     }
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -2223,7 +2219,7 @@ private fun PdfInfoBottomSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Document Info",
+                text = stringResource(R.string.ui_document_info_2),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(bottom = 16.dp)
             )

@@ -13,8 +13,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,6 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 data class ConfigFlag(
     val key: String,
@@ -74,11 +79,9 @@ fun PetalConfigSheet(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(
             modifier = Modifier
@@ -101,14 +104,14 @@ fun PetalConfigSheet(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "GeckoView Engine Flags & Internal Preferences",
+                        text = stringResource(R.string.ui_geckoview_engine_flags_internal_prefer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 IconButton(onClick = onDismissRequest) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close")
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                 }
             }
 
@@ -118,9 +121,9 @@ fun PetalConfigSheet(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search flags...", fontSize = 13.sp) },
+                placeholder = { Text(stringResource(R.string.ui_search_flags), fontSize = 13.sp) },
                 singleLine = true,
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 shape = RoundedCornerShape(16.dp)
             )
 
@@ -130,41 +133,30 @@ fun PetalConfigSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 420.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                items(filteredFlags, key = { it.key }) { flag ->
+                itemsIndexed(filteredFlags, key = { _, flag -> flag.key }) { index, flag ->
                     var isEnabled by remember {
                         mutableStateOf(sp.getBoolean(flag.key, flag.defaultValue))
                     }
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = flag.title,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = flag.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
+                    com.petal.browser.ui.containment.PetalGroupListRow(
+                        position = com.petal.browser.ui.containment.petalGroupPositionFor(index, filteredFlags.size),
+                        onClick = {
+                            isEnabled = !isEnabled
+                            sp.edit().putBoolean(flag.key, isEnabled).apply()
+                        },
+                        leading = {
+                            com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                Icons.Filled.Settings,
+                                container = MaterialTheme.colorScheme.secondaryContainer,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            )
+                        },
+                        content = {
+                            Text(flag.title, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium, maxLines = 1)
+                            Text(flag.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                        },
+                        trailing = {
                             Switch(
                                 checked = isEnabled,
                                 onCheckedChange = {
@@ -172,8 +164,8 @@ fun PetalConfigSheet(
                                     sp.edit().putBoolean(flag.key, it).apply()
                                 }
                             )
-                        }
-                    }
+                        },
+                    )
                 }
             }
         }

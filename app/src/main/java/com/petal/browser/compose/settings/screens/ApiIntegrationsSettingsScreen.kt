@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.horizontalScroll
@@ -25,6 +27,8 @@ import com.petal.browser.compose.settings.viewmodel.SearchHomeSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.ScrollFadeRow
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun ApiIntegrationsSettingsScreen(
@@ -84,15 +88,15 @@ fun ApiIntegrationsSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Dedicated Petal AI & API Keys Hub Card
-                SettingsCategoryCard(title = "Petal AI & API Keys Hub", iconRes = com.petal.browser.R.drawable.ic_ai_stars, cardId = "ai_provider", targetHighlightId = targetHighlightItemId) {
+                PetalSettingsSection(title = stringResource(R.string.ui_petal_ai_api_keys_hub), iconRes = com.petal.browser.R.drawable.ic_ai_stars, cardId = "ai_provider", targetHighlightId = targetHighlightItemId) {
                     Text(
-                        "Configure AI providers, API keys, and model selections for Petal Deep Research, AI Search, and page summarizer.",
+                        stringResource(R.string.ui_configure_ai_providers_api_keys),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Text(
-                        text = "Active AI Provider:",
+                        text = stringResource(R.string.ui_active_ai_provider),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -132,7 +136,7 @@ fun ApiIntegrationsSettingsScreenContent(
                         TextButton(onClick = { showCustomAiGuide = true }) {
                             Icon(Icons.Rounded.Info, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("How to connect a custom AI")
+                            Text(stringResource(R.string.ui_how_to_connect_a_custom))
                         }
                         Spacer(Modifier.height(4.dp))
                         OutlinedTextField(
@@ -142,8 +146,8 @@ fun ApiIntegrationsSettingsScreenContent(
                                 PetalAiResearchEngine.setCustomEndpoint(context, newEndpoint)
                                 testResultMsg = null
                             },
-                            label = { Text("Custom Endpoint URL") },
-                            placeholder = { Text("https://api.openai.com/v1 or http://localhost:11434/v1") },
+                            label = { Text(stringResource(R.string.ui_custom_endpoint_url)) },
+                            placeholder = { Text(stringResource(R.string.ui_https_api_openai_com_v1)) },
                             singleLine = true,
                             leadingIcon = { Icon(Icons.Rounded.CloudQueue, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             shape = RoundedCornerShape(16.dp),
@@ -170,7 +174,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 IconButton(onClick = { isKeyVisible = !isKeyVisible }) {
                                     Icon(
                                         if (isKeyVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                                        contentDescription = "Toggle Visibility"
+                                        contentDescription = stringResource(R.string.ui_toggle_visibility)
                                     )
                                 }
                                 if (currentKey.isNotBlank()) {
@@ -179,7 +183,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                         PetalAiResearchEngine.setApiKey(context, selectedProvider, "")
                                         testResultMsg = null
                                     }) {
-                                        Icon(Icons.Rounded.Close, contentDescription = "Clear Key")
+                                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear_key))
                                     }
                                 }
                             }
@@ -200,7 +204,7 @@ fun ApiIntegrationsSettingsScreenContent(
                             }) {
                                 Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Get Free ${selectedProvider.displayName} Key", style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(R.string.ui_get_free_key_2, selectedProvider.displayName), style = MaterialTheme.typography.labelSmall)
                             }
                         } else if (selectedProvider == AiProvider.CUSTOM) {
                             TextButton(
@@ -230,7 +234,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                     Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
                                 }
-                                Text("Fetch Models", style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(R.string.ui_fetch_models), style = MaterialTheme.typography.labelSmall)
                             }
                         } else {
                             Spacer(Modifier.width(8.dp))
@@ -262,7 +266,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 Icon(Icons.Rounded.NetworkCheck, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
                             }
-                            Text("Test Connection", style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.ui_test_connection), style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
@@ -276,7 +280,7 @@ fun ApiIntegrationsSettingsScreenContent(
                     }
 
                     Text(
-                        text = "Preferred ${selectedProvider.displayName} Model:",
+                        text = stringResource(R.string.ui_preferred_model, selectedProvider.displayName),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -288,8 +292,8 @@ fun ApiIntegrationsSettingsScreenContent(
                                 selectedModel = newModel
                                 PetalAiResearchEngine.setSelectedModel(context, selectedProvider, newModel)
                             },
-                            label = { Text("Custom Model ID / Name") },
-                            placeholder = { Text("e.g. llama3:latest, deepseek-r1, gpt-4o") },
+                            label = { Text(stringResource(R.string.ui_custom_model_id_name)) },
+                            placeholder = { Text(stringResource(R.string.ui_e_g_llama3_latest_deepseek)) },
                             singleLine = true,
                             leadingIcon = { Icon(Icons.Rounded.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             shape = RoundedCornerShape(16.dp),
@@ -361,11 +365,11 @@ fun ApiIntegrationsSettingsScreenContent(
     }
 
     if (showCustomAiGuide) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showCustomAiGuide = false },
-            title = { Text("Connect any OpenAI-compatible AI") },
-            text = { Text("1. Choose Custom AI.\n\n2. From your provider dashboard, copy its OpenAI-compatible base URL (for example https://provider.example/v1). Petal adds /chat/completions automatically.\n\n3. Create and paste an API key if the provider requires one; local servers may leave it blank.\n\n4. Enter the exact model ID shown by the provider, or use Fetch Models.\n\n5. Tap Test Connection before using Petal AI.\n\nUse HTTPS for internet providers. HTTP is allowed only for private/local network servers such as Ollama or LM Studio.") },
-            confirmButton = { TextButton(onClick = { showCustomAiGuide = false }) { Text("Got it") } }
+            title = { Text(stringResource(R.string.ui_connect_any_openai_compatible_ai)) },
+            text = { Text(stringResource(R.string.ui_1_choose_custom_ai_2)) },
+            confirmButton = { TextButton(onClick = { showCustomAiGuide = false }) { Text(stringResource(R.string.ui_got_it)) } }
         )
     }
 }
