@@ -28,6 +28,8 @@ import androidx.compose.ui.window.Dialog
 import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.ResearchMode
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun PetalSummaryBoxDialog(
@@ -122,7 +124,7 @@ fun PetalSummaryBoxDialog(
                         }
                         Column {
                             Text(
-                                "Page Summary",
+                                stringResource(R.string.ui_page_summary),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -136,10 +138,10 @@ fun PetalSummaryBoxDialog(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = onOpenSettings) {
-                            Icon(Icons.Rounded.Settings, contentDescription = "AI Settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.ui_ai_settings), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Close")
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                         }
                     }
                 }
@@ -166,7 +168,7 @@ fun PetalSummaryBoxDialog(
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "Generating summary...",
+                                stringResource(R.string.ui_generating_summary),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -183,7 +185,7 @@ fun PetalSummaryBoxDialog(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                                    Text("Summary Failed", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onErrorContainer)
+                                    Text(stringResource(R.string.ui_summary_failed), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onErrorContainer)
                                 }
                                 Text(errorMessage!!, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
                                 Row(
@@ -197,7 +199,7 @@ fun PetalSummaryBoxDialog(
                                     ) {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Retry")
+                                        Text(stringResource(R.string.ui_retry))
                                     }
                                     OutlinedButton(
                                         onClick = onOpenSettings,
@@ -205,7 +207,7 @@ fun PetalSummaryBoxDialog(
                                     ) {
                                         Icon(Icons.Rounded.Key, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Configure Key")
+                                        Text(stringResource(R.string.ui_configure_key))
                                     }
                                 }
                             }
@@ -240,7 +242,7 @@ fun PetalSummaryBoxDialog(
                                 }
                             }
                         ) {
-                            Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy Summary", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy_summary), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
 
                         IconButton(
@@ -256,7 +258,7 @@ fun PetalSummaryBoxDialog(
                                 }
                             }
                         ) {
-                            Icon(Icons.Rounded.Share, contentDescription = "Share Summary", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.ui_share_summary), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -268,7 +270,7 @@ fun PetalSummaryBoxDialog(
                     ) {
                         Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Ask Question", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.ui_ask_question), fontWeight = FontWeight.Bold)
                     }
                 }
             }

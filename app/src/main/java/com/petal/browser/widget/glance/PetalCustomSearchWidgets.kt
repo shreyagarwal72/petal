@@ -69,6 +69,7 @@ import com.petal.browser.widget.PetalSearchWidgetProvider
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.res.ResourcesCompat
 import com.petal.browser.ui.theme.AppFont
+import androidx.compose.ui.res.stringResource
 
 private fun getWidgetColorScheme(context: Context): androidx.compose.material3.ColorScheme {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -361,7 +362,7 @@ private fun Petal1Content(isExpanded: Boolean) {
                     verticalAlignment = Alignment.Vertical.CenterVertically
                 ) {
                     WidgetShortcutTile(
-                        label = "New Tab",
+                        label = stringResource(R.string.ui_new_tab),
                         iconRes = R.drawable.icon_tab_plus,
                         bgColor = GlanceTheme.colors.primaryContainer,
                         iconTint = GlanceTheme.colors.onPrimaryContainer,
@@ -372,7 +373,7 @@ private fun Petal1Content(isExpanded: Boolean) {
                     Spacer(modifier = GlanceModifier.width(6.dp))
 
                     WidgetShortcutTile(
-                        label = "Bookmarks",
+                        label = stringResource(R.string.ui_bookmarks),
                         iconRes = R.drawable.icon_bookmark,
                         bgColor = GlanceTheme.colors.secondaryContainer,
                         iconTint = GlanceTheme.colors.onSecondaryContainer,
@@ -383,7 +384,7 @@ private fun Petal1Content(isExpanded: Boolean) {
                     Spacer(modifier = GlanceModifier.width(6.dp))
 
                     WidgetShortcutTile(
-                        label = "Downloads",
+                        label = stringResource(R.string.ui_downloads),
                         iconRes = R.drawable.ic_download,
                         bgColor = GlanceTheme.colors.tertiaryContainer,
                         iconTint = GlanceTheme.colors.onTertiaryContainer,
@@ -394,7 +395,7 @@ private fun Petal1Content(isExpanded: Boolean) {
                     Spacer(modifier = GlanceModifier.width(6.dp))
 
                     WidgetShortcutTile(
-                        label = "Private",
+                        label = stringResource(R.string.ui_private),
                         iconRes = R.drawable.icon_incognito,
                         bgColor = GlanceTheme.colors.surfaceVariant,
                         iconTint = GlanceTheme.colors.onSurfaceVariant,
@@ -444,7 +445,7 @@ private fun Petal1GoogleStyleSearchRow(
         ) {
             Image(
                 provider = ImageProvider(badgeBitmap),
-                contentDescription = "Petal",
+                contentDescription = stringResource(R.string.ui_petal),
                 modifier = GlanceModifier.size(36.dp)
             )
         }
@@ -467,7 +468,7 @@ private fun Petal1GoogleStyleSearchRow(
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_search_sparkle),
-                contentDescription = "Petal AI Search",
+                contentDescription = stringResource(R.string.ui_petal_ai_search),
                 modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
             )
@@ -485,7 +486,7 @@ private fun Petal1GoogleStyleSearchRow(
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_mic),
-                contentDescription = "Voice Search",
+                contentDescription = stringResource(R.string.ui_voice_search_2),
                 modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
             )
@@ -503,7 +504,7 @@ private fun Petal1GoogleStyleSearchRow(
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_lens_camera_google),
-                contentDescription = "Visual Camera Scanner",
+                contentDescription = stringResource(R.string.ui_visual_camera_scanner),
                 modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
             )
@@ -608,7 +609,7 @@ private fun Petal2Content() {
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = "Search",
+                    text = stringResource(R.string.ui_search),
                     maxLines = 1,
                     style = TextStyle(
                         fontSize = 15.sp,
@@ -623,7 +624,7 @@ private fun Petal2Content() {
             // AI Action Squircle Button - primaryContainer
             SquircleGlanceActionButton(
                 iconRes = R.drawable.ic_auto_awesome,
-                contentDescription = "AI Assistant",
+                contentDescription = stringResource(R.string.ui_ai_assistant),
                 containerColor = GlanceTheme.colors.primaryContainer,
                 contentColor = GlanceTheme.colors.onPrimaryContainer,
                 action = aiAction
@@ -634,7 +635,7 @@ private fun Petal2Content() {
             // Incognito Action Squircle Button - secondaryContainer
             SquircleGlanceActionButton(
                 iconRes = R.drawable.icon_incognito,
-                contentDescription = "Incognito Mode",
+                contentDescription = stringResource(R.string.ui_incognito_mode),
                 containerColor = GlanceTheme.colors.secondaryContainer,
                 contentColor = GlanceTheme.colors.onSecondaryContainer,
                 action = incognitoAction
@@ -645,7 +646,7 @@ private fun Petal2Content() {
             // Camera / Lens Action Squircle Button - tertiaryContainer (direct snap photo / Lens handoff)
             SquircleGlanceActionButton(
                 iconRes = R.drawable.ic_lens_camera_google,
-                contentDescription = "Visual Camera Scanner",
+                contentDescription = stringResource(R.string.ui_visual_camera_scanner),
                 containerColor = GlanceTheme.colors.tertiaryContainer,
                 contentColor = GlanceTheme.colors.onTertiaryContainer,
                 action = snapCameraAction
@@ -744,7 +745,7 @@ private fun Petal3Content() {
             ) {
                 Image(
                     provider = ImageProvider(badgeBitmap),
-                    contentDescription = "Petal Home",
+                    contentDescription = stringResource(R.string.ui_petal_home),
                     modifier = GlanceModifier.fillMaxSize()
                 )
             }
@@ -759,7 +760,7 @@ private fun Petal3Content() {
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = "Search or type URL",
+                    text = stringResource(R.string.ui_search_or_type_url_2),
                     maxLines = 1,
                     style = TextStyle(
                         fontSize = 15.sp,
@@ -779,7 +780,7 @@ private fun Petal3Content() {
             ) {
                 Image(
                     provider = ImageProvider(R.drawable.ic_sparkle_clean),
-                    contentDescription = "Ask Petal AI",
+                    contentDescription = stringResource(R.string.ui_ask_petal_ai),
                     modifier = GlanceModifier.size(24.dp),
                     colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
                 )

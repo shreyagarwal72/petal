@@ -82,6 +82,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Data specification for configuring a [PetalFloatingStatusCard].
@@ -346,7 +348,7 @@ fun PetalFloatingStatusCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
-                                contentDescription = "Dismiss status card",
+                                contentDescription = stringResource(R.string.ui_dismiss_status_card),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
                             )

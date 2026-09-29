@@ -49,6 +49,8 @@ import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.view.PetalGeckoView
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Shows a page preview in a constrained card without navigating the user's
@@ -159,7 +161,7 @@ private fun PetalPagePreviewSheet(
                 IconButton(onClick = onOpenFullTab) {
                     Icon(
                         Icons.Rounded.OpenInNew,
-                        contentDescription = "Open in new tab",
+                        contentDescription = stringResource(R.string.ui_open_in_new_tab),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
@@ -167,7 +169,7 @@ private fun PetalPagePreviewSheet(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         Icons.Rounded.Close,
-                        contentDescription = "Close preview",
+                        contentDescription = stringResource(R.string.ui_close_preview),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )

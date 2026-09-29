@@ -191,6 +191,40 @@ private fun buildTypography(t: Tiers): Typography = Typography(
     labelSmall = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.2.sp)
 )
 
+@OptIn(ExperimentalTextApi::class)
+private fun expressivePetalTypography(): Typography {
+    fun flex(weight: Float, width: Float, rond: Float, opsz: Float): FontFamily = try {
+        FontFamily(Font(
+            resId = R.font.google_sans_flex_variable,
+            weight = FontWeight(weight.toInt().coerceIn(1, 1000)),
+            variationSettings = FontVariation.Settings(
+                FontVariation.weight(weight.toInt().coerceIn(1, 1000)),
+                FontVariation.width(width),
+                FontVariation.Setting("ROND", rond),
+                FontVariation.Setting("opsz", opsz),
+                FontVariation.grade(0),
+                FontVariation.slant(0f),
+            ),
+        ))
+    } catch (_: Throwable) { FontFamily.Default }
+
+    fun style(weight: Float, width: Float, rond: Float, size: Int, line: Int) = TextStyle(
+        fontFamily = flex(weight, width, rond, size.toFloat()),
+        fontWeight = FontWeight(weight.toInt().coerceIn(1, 1000)), fontSize = size.sp, lineHeight = line.sp,
+    )
+
+    return Typography(
+        displayLarge = style(760f, 122f, 42f, 57, 64), displayMedium = style(740f, 120f, 40f, 45, 52),
+        displaySmall = style(720f, 118f, 38f, 36, 44), headlineLarge = style(800f, 122f, 40f, 32, 40),
+        headlineMedium = style(780f, 120f, 38f, 28, 36), headlineSmall = style(760f, 116f, 36f, 24, 32),
+        titleLarge = style(640f, 110f, 30f, 22, 28), titleMedium = style(600f, 106f, 28f, 16, 24),
+        titleSmall = style(580f, 105f, 26f, 14, 20), bodyLarge = style(440f, 102f, 18f, 16, 24),
+        bodyMedium = style(430f, 102f, 18f, 15, 22), bodySmall = style(420f, 100f, 16f, 13, 18),
+        labelLarge = style(680f, 108f, 46f, 14, 20), labelMedium = style(660f, 108f, 44f, 12, 16),
+        labelSmall = style(660f, 108f, 44f, 11, 16),
+    )
+}
+
 private fun systemTypography(fontWeight: Int): Typography {
     val boldWeight = fontWeight.coerceAtLeast(750)
     val displayF = variableFont(R.font.google_sans_flex_variable, 950, 92f, 100f)
@@ -277,6 +311,7 @@ fun petalTypography(
 ): Typography = try {
     when (appFont) {
         AppFont.PETAL -> {
+            if (gsFlexSettings.preset == GSFlexPreset.PETAL) expressivePetalTypography() else {
             val effectiveAxes = getPresetFontAxes(gsFlexSettings.preset)
             val displayFont = FontFamily(Font(
                 resId = R.font.google_sans_flex_variable,
@@ -294,6 +329,7 @@ fun petalTypography(
                 weight = FontWeight(effectiveAxes.third.weight.toInt().coerceIn(1, 1000))
             ))
             buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
+            }
         }
         AppFont.CUSTOM -> {
             val validPath = customFontPath?.takeIf { it.isNotBlank() }
@@ -321,4 +357,3 @@ fun petalTypography(
 }
 
 val StrideTypography: Typography = Typography()
-

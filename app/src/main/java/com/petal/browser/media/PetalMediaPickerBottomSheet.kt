@@ -81,6 +81,8 @@ import com.petal.browser.haptics.PetalHapticEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun PetalMediaPickerBottomSheet(
@@ -249,7 +251,7 @@ fun PetalMediaPickerBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.ui_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -298,7 +300,7 @@ fun PetalMediaPickerBottomSheet(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "Camera",
+                            text = stringResource(R.string.ui_camera),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
@@ -339,7 +341,7 @@ fun PetalMediaPickerBottomSheet(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "Photo Picker",
+                            text = stringResource(R.string.ui_photo_picker),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
@@ -370,7 +372,7 @@ fun PetalMediaPickerBottomSheet(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "Files",
+                            text = stringResource(R.string.ui_files_2),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
@@ -437,13 +439,13 @@ fun PetalMediaPickerBottomSheet(
                         }
 
                         Text(
-                            text = "Media Access Required",
+                            text = stringResource(R.string.ui_media_access_required),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Text(
-                            text = "Grant storage permission so you can browse, preview, and select photos and videos directly in Petal Browser.",
+                            text = stringResource(R.string.ui_grant_storage_permission_so_you),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -459,7 +461,7 @@ fun PetalMediaPickerBottomSheet(
                         ) {
                             Icon(Icons.Rounded.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Grant Access", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.ui_grant_access), fontWeight = FontWeight.Bold)
                         }
 
                         OutlinedButton(
@@ -482,7 +484,7 @@ fun PetalMediaPickerBottomSheet(
                         ) {
                             Icon(Icons.Rounded.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Select via System Photo Picker", fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.ui_select_via_system_photo_picker), fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -494,7 +496,7 @@ fun PetalMediaPickerBottomSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Loading media gallery...",
+                        text = stringResource(R.string.ui_loading_media_gallery),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -530,13 +532,13 @@ fun PetalMediaPickerBottomSheet(
                         }
 
                         Text(
-                            text = "No indexed media found",
+                            text = stringResource(R.string.ui_no_indexed_media_found),
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Text(
-                            text = "MediaStore has not indexed recent photos/videos or scoped storage is filtering them. You can browse all device files and albums directly via the system picker.",
+                            text = stringResource(R.string.ui_mediastore_has_not_indexed_recent),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -562,7 +564,7 @@ fun PetalMediaPickerBottomSheet(
                         ) {
                             Icon(Icons.Rounded.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Browse Device Files & Gallery", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.ui_browse_device_files_gallery), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -662,7 +664,7 @@ fun PetalMediaPickerBottomSheet(
                                         Box(contentAlignment = Alignment.Center) {
                                             Icon(
                                                 imageVector = Icons.Rounded.Check,
-                                                contentDescription = "Selected",
+                                                contentDescription = stringResource(R.string.ui_selected),
                                                 tint = MaterialTheme.colorScheme.onPrimary,
                                                 modifier = Modifier.size(14.dp)
                                             )
@@ -696,7 +698,7 @@ fun PetalMediaPickerBottomSheet(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "${selectedUris.size} item${if (selectedUris.size > 1) "s" else ""} selected",
+                            text = stringResource(R.string.ui_item_selected, selectedUris.size, if (selectedUris.size > 1) "s" else ""),
                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -709,7 +711,7 @@ fun PetalMediaPickerBottomSheet(
                             },
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Done", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.ui_done), fontWeight = FontWeight.Bold)
                         }
                     }
                 }

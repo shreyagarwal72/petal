@@ -43,6 +43,17 @@ class LiquidRippleEffect(view: View) {
     private val viewRef = WeakReference(view)
     private val shader: RuntimeShader
     private var animator: ValueAnimator? = null
+    private var safetyClear: Runnable? = null
+
+    /** Removes the runtime-shader effect from the view no matter how the animation ended. */
+    private fun clearEffect() {
+        val view = viewRef.get() ?: return
+        safetyClear?.let { view.removeCallbacks(it) }
+        try {
+            view.setRenderEffect(null)
+            view.invalidate()
+        } catch (ignored: Throwable) {}
+    }
 
     init {
         val shaderCode = loadShaderSource(view.context)
@@ -76,6 +87,7 @@ class LiquidRippleEffect(view: View) {
         shader.setFloatUniform("uSpeed", speed)
 
         animator?.cancel()
+        safetyClear?.let { view.removeCallbacks(it) }
         animator = ValueAnimator.ofFloat(0f, durationSec).apply {
             duration = (durationSec * 1000f).toLong()
             interpolator = LinearInterpolator()
@@ -90,13 +102,18 @@ class LiquidRippleEffect(view: View) {
             }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    try {
-                        view.setRenderEffect(null)
-                        view.invalidate()
-                    } catch (ignored: Exception) {}
+                    clearEffect()
+                }
+                override fun onAnimationCancel(animation: Animator) {
+                    clearEffect()
                 }
             })
             start()
+        }
+        // Safety net: if the animator is ever paused/never finishes (app backgrounded, window
+        // recreated mid-launch), the effect is still removed so the UI can't stay blank.
+        safetyClear = Runnable { clearEffect() }.also {
+            view.postDelayed(it, (durationSec * 1000f).toLong() + 600L)
         }
     }
 

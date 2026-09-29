@@ -43,6 +43,8 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Minimal standalone [LifecycleOwner] for the voice search [BottomSheetDialog].
@@ -271,11 +273,9 @@ fun PetalVoiceSearchSheet(
         }
     }
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -289,7 +289,7 @@ fun PetalVoiceSearchSheet(
                 horizontalArrangement = Arrangement.End
             ) {
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close")
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                 }
             }
 
@@ -318,7 +318,7 @@ fun PetalVoiceSearchSheet(
             ) {
                 Icon(
                     imageVector = if (isListening) Icons.Rounded.Mic else Icons.Rounded.MicOff,
-                    contentDescription = "Voice Search Mic",
+                    contentDescription = stringResource(R.string.ui_voice_search_mic),
                     tint = if (isListening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(44.dp)
                 )
@@ -336,13 +336,9 @@ fun PetalVoiceSearchSheet(
             Spacer(Modifier.height(12.dp))
 
             if (spokenText.isNotBlank()) {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                com.petal.browser.ui.containment.PetalHeroCard(
+                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
                 ) {
                     Text(
@@ -355,7 +351,7 @@ fun PetalVoiceSearchSheet(
                 }
             } else {
                 Text(
-                    text = "Try saying: \"Weather in India\" or \"Open github.com\"",
+                    text = stringResource(R.string.ui_try_saying_weather_in_india),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center

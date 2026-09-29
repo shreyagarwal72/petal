@@ -284,11 +284,9 @@ object PetalTabSessionManager {
                         geckoView.setTabGroupTitle(record.tabGroupTitle)
                     }
 
-                    // Fix (Bug 5): for home-URL tabs, do NOT call geckoView.loadUrl("about:blank").
+                    // Leave native Home routes unloaded; the activity paints their Compose surface.
                     // That redundant load triggers GeckoView's page lifecycle callbacks which race
-                    // with showAlbum() — causing the Compose home surface to be torn down and rebuilt
-                    // mid-render, resulting in a blank screen. showAlbum("about:blank") will display
-                    // the native Compose home without any web engine load required.
+                    // with showAlbum() and creating a transient blank page.
                     if (record.url.isNotBlank() && !isHomeUrl(record.url)) {
                         geckoView.loadUrl(record.url)
                     }

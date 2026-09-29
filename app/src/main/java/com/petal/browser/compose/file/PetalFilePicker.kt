@@ -48,6 +48,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.Sort
@@ -75,6 +78,10 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalPopupMenu
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -160,7 +167,8 @@ fun PetalFilePickerScreen(
     onFileSelected: (File) -> Unit,
     onMultipleFilesSelected: ((List<File>) -> Unit)? = null,
     onPreviewFile: ((File) -> Unit)? = null,
-    onBrowseSystemFallback: (() -> Unit)? = null
+    onBrowseSystemFallback: (() -> Unit)? = null,
+    onSwitchToMedia: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val haptics = remember { PetalHapticEngine.getInstance(context) }
@@ -219,7 +227,8 @@ fun PetalFilePickerScreen(
                         onFileSelected = onFileSelected,
                         onMultipleFilesSelected = onMultipleFilesSelected,
                         onPreviewFile = onPreviewFile,
-                        onBrowseSystemFallback = onBrowseSystemFallback
+                        onBrowseSystemFallback = onBrowseSystemFallback,
+                        onSwitchToMedia = onSwitchToMedia
                     )
                 }
             }
@@ -287,7 +296,7 @@ private fun StoragePermissionRequestState(
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth(0.8f).height(48.dp)
             ) {
-                Text("Open System File Picker")
+                Text(stringResource(R.string.ui_open_system_file_picker))
             }
         }
 
@@ -296,7 +305,7 @@ private fun StoragePermissionRequestState(
             onClick = onDismiss,
             shape = RoundedCornerShape(20.dp)
         ) {
-            Text("Cancel")
+            Text(stringResource(R.string.ui_cancel))
         }
     }
 }
@@ -310,7 +319,8 @@ private fun FilePickerBrowserContent(
     onFileSelected: (File) -> Unit,
     onMultipleFilesSelected: ((List<File>) -> Unit)?,
     onPreviewFile: ((File) -> Unit)?,
-    onBrowseSystemFallback: (() -> Unit)?
+    onBrowseSystemFallback: (() -> Unit)?,
+    onSwitchToMedia: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val haptics = remember { PetalHapticEngine.getInstance(context) }
@@ -390,7 +400,7 @@ private fun FilePickerBrowserContent(
                 }) {
                     Icon(
                         imageVector = if (isSearching) Icons.Rounded.Close else Icons.Rounded.Search,
-                        contentDescription = "Search",
+                        contentDescription = stringResource(R.string.ui_search),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -402,49 +412,49 @@ private fun FilePickerBrowserContent(
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.Sort,
-                            contentDescription = "Sort",
+                            contentDescription = stringResource(R.string.ui_sort),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
-                    DropdownMenu(
+                    PetalPopupMenu(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false }
                     ) {
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_name_asc)) },
                             leadingIcon = { if (sortMode == FileSortMode.NAME_ASC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.NAME_ASC; showSortMenu = false }
                         )
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_name_desc)) },
                             leadingIcon = { if (sortMode == FileSortMode.NAME_DESC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.NAME_DESC; showSortMenu = false }
                         )
                         HorizontalDivider()
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_size_desc)) },
                             leadingIcon = { if (sortMode == FileSortMode.SIZE_DESC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.SIZE_DESC; showSortMenu = false }
                         )
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_size_asc)) },
                             leadingIcon = { if (sortMode == FileSortMode.SIZE_ASC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.SIZE_ASC; showSortMenu = false }
                         )
                         HorizontalDivider()
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_date_desc)) },
                             leadingIcon = { if (sortMode == FileSortMode.DATE_DESC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.DATE_DESC; showSortMenu = false }
                         )
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_sort_date_asc)) },
                             leadingIcon = { if (sortMode == FileSortMode.DATE_ASC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.DATE_ASC; showSortMenu = false }
                         )
                         HorizontalDivider()
-                        DropdownMenuItem(
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_show_hidden_files)) },
                             trailingIcon = {
                                 Switch(
@@ -458,6 +468,19 @@ private fun FilePickerBrowserContent(
                     }
                 }
 
+                if (onSwitchToMedia != null) {
+                    IconButton(onClick = {
+                        haptics.playClick(context)
+                        onSwitchToMedia()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Rounded.PhotoLibrary,
+                            contentDescription = "Photos & videos",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
                 if (onBrowseSystemFallback != null) {
                     IconButton(onClick = {
                         haptics.playClick(context)
@@ -465,7 +488,7 @@ private fun FilePickerBrowserContent(
                     }) {
                         Icon(
                             imageVector = Icons.Rounded.OpenInBrowser,
-                            contentDescription = "System Picker",
+                            contentDescription = stringResource(R.string.ui_system_picker),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -621,32 +644,28 @@ private fun FilePickerBrowserContent(
                     val isRoot = roots.any { it.second.absolutePath == currentDir.absolutePath }
                     if (!isRoot && currentDir.parentFile != null) {
                         item(key = "__parent__") {
-                            Surface(
+                            PetalGroupListRow(
+                                position = PetalGroupPosition.SINGLE,
                                 onClick = {
                                     haptics.playClick(context)
                                     currentDir = currentDir.parentFile!!
                                 },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.5.dp),
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        Icons.AutoMirrored.Filled.ArrowBack,
+                                        container = MaterialTheme.colorScheme.secondaryContainer,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
-                                    Spacer(Modifier.width(16.dp))
+                                },
+                                content = {
                                     Text(
                                         text = stringResource(R.string.file_picker_previous_directory),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.primary
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
-                            }
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                            )
                         }
                     }
 
@@ -675,7 +694,6 @@ private fun FilePickerBrowserContent(
                                 onPreviewFile?.invoke(file)
                             }
                         )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f))
                     }
                 }
             }
@@ -699,7 +717,7 @@ private fun FilePickerBrowserContent(
                     if (allowFolderSelection) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Current Directory",
+                                text = stringResource(R.string.ui_current_directory),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -724,7 +742,7 @@ private fun FilePickerBrowserContent(
                         }
                     } else if (allowMultiple) {
                         Text(
-                            text = "${selectedFiles.size} selected",
+                            text = stringResource(R.string.ui_selected_2, selectedFiles.size),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -735,7 +753,7 @@ private fun FilePickerBrowserContent(
                             },
                             shape = RoundedCornerShape(18.dp)
                         ) {
-                            Text("Confirm")
+                            Text(stringResource(R.string.ui_confirm))
                         }
                     }
                 }
@@ -796,151 +814,71 @@ private fun FilePickerRowItem(
         }
     }
 
-    Surface(
+    val detailText = if (isDir) {
+        "${file.list()?.size ?: 0} items"
+    } else {
+        val sizeFormatted = Formatter.formatFileSize(context, file.length())
+        val dateFormatted = SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()).format(Date(file.lastModified()))
+        "$sizeFormatted · $dateFormatted"
+    }
+
+    PetalGroupListRow(
+        position = PetalGroupPosition.SINGLE,
         onClick = onClick,
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else Color.Transparent,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Leading Icon or Thumbnail
-            Box(
-                modifier = Modifier.size(40.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                when {
-                    isDir -> {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Folder,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
-                    thumbnail != null -> {
-                        Image(
-                            bitmap = thumbnail!!,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp))
-                        )
-                    }
-                    packageInfo != null -> {
-                        val appIcon = remember(packageInfo) {
-                            runCatching {
-                                packageInfo!!.applicationInfo?.loadIcon(context.packageManager)
-                            }.getOrNull()
-                        }
-                        if (appIcon != null) {
-                            // Render drawable as icon or fallback
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Android,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        } else {
-                            Icon(Icons.Rounded.Android, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-                        }
-                    }
-                    else -> {
-                        val iconVector = getFileIcon(ext)
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = iconVector,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.width(16.dp))
-
-            // File Name & Details
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = file.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.5.dp),
+        selected = isSelected,
+        leading = {
+            when {
+                isDir -> PetalGroupIconBadge(Icons.Filled.Folder, container = MaterialTheme.colorScheme.secondaryContainer, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                thumbnail != null -> Image(
+                    bitmap = thumbnail!!,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)),
                 )
-                Spacer(Modifier.height(2.dp))
-                val detailText = if (isDir) {
-                    val count = file.list()?.size ?: 0
-                    "$count items"
-                } else {
-                    val sizeFormatted = Formatter.formatFileSize(context, file.length())
-                    val dateFormatted = SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()).format(Date(file.lastModified()))
-                    "$sizeFormatted · $dateFormatted"
-                }
-                Text(
-                    text = detailText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Trailing Actions: Preview Button or Selection Checkbox
-            if (allowMultiple) {
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = { onClick() }
-                )
-            } else if (!isDir) {
-                IconButton(
-                    onClick = onPreview,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Visibility,
-                        contentDescription = stringResource(R.string.file_picker_preview),
+                packageInfo != null -> {
+                    val appIcon = remember(packageInfo) {
+                        runCatching { packageInfo!!.applicationInfo?.loadIcon(context.packageManager) }.getOrNull()
+                    }
+                    PetalGroupIconBadge(
+                        Icons.Filled.Android,
+                        container = if (appIcon != null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
                     )
                 }
+                else -> PetalGroupIconBadge(
+                    getFileIcon(ext),
+                    container = MaterialTheme.colorScheme.surfaceContainerLow,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-        }
-    }
+        },
+        content = {
+            Text(file.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(detailText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        },
+        trailing = {
+            if (allowMultiple) {
+                Checkbox(checked = isSelected, onCheckedChange = { onClick() })
+            } else if (!isDir) {
+                IconButton(onClick = onPreview, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Filled.Visibility, contentDescription = stringResource(R.string.file_picker_preview), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                }
+            }
+        },
+    )
 }
 
 private fun getFileIcon(ext: String): ImageVector {
     return when {
-        ext in APK_EXTENSIONS -> Icons.Rounded.Android
-        ext in IMAGE_EXTENSIONS -> Icons.Rounded.Image
-        ext in VIDEO_EXTENSIONS -> Icons.Rounded.VideoFile
-        ext in AUDIO_EXTENSIONS -> Icons.Rounded.AudioFile
-        ext in CODE_EXTENSIONS -> Icons.Rounded.Code
-        ext in ARCHIVE_EXTENSIONS -> Icons.Rounded.FolderZip
-        ext in DOC_EXTENSIONS -> Icons.Rounded.Description
-        else -> Icons.AutoMirrored.Rounded.InsertDriveFile
+        ext in APK_EXTENSIONS -> Icons.Filled.Android
+        ext in IMAGE_EXTENSIONS -> Icons.Filled.Image
+        ext in VIDEO_EXTENSIONS -> Icons.Filled.VideoFile
+        ext in AUDIO_EXTENSIONS -> Icons.Filled.AudioFile
+        ext in CODE_EXTENSIONS -> Icons.Filled.Code
+        ext in ARCHIVE_EXTENSIONS -> Icons.Filled.FolderZip
+        ext in DOC_EXTENSIONS -> Icons.Filled.Description
+        else -> Icons.AutoMirrored.Filled.InsertDriveFile
     }
 }
 
@@ -955,6 +893,11 @@ private fun matchesMimeType(ext: String, mimeTypes: Array<String>): Boolean {
         if (lower.contains("package-archive") && ext in APK_EXTENSIONS) return true
         if (lower.contains("zip") && (ext == "zip" || ext in ARCHIVE_EXTENSIONS)) return true
         if (lower.contains("text/") && (ext in CODE_EXTENSIONS || ext == "txt" || ext == "md" || ext == "csv" || ext == "log")) return true
+        // Extension token from the page's accept list, e.g. ".docx"
+        if (lower.startsWith(".") && lower.removePrefix(".") == ext) return true
+        // Resolve the file's real MIME type so office docs, json, epub... are not hidden by accept filters.
+        val resolved = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+        if (resolved != null && (lower == resolved || (lower.endsWith("/*") && resolved.startsWith(lower.dropLast(1))))) return true
     }
     return false
 }

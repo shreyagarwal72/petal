@@ -151,6 +151,70 @@ public class ImageActionHelper {
         }).start();
     }
 
+    /**
+     * Copies the actual image (not its URL) to the system clipboard as an image/* content URI,
+     * so it can be pasted into messengers, notes and editors that accept images.
+     */
+    public static void copyImage(Context context, String imageUrl) {
+        if (context == null || imageUrl == null || imageUrl.trim().isEmpty()) {
+            return;
+        }
+
+        new Thread(() -> {
+            try {
+                byte[] bytes = getImageBytes(context, imageUrl);
+
+                BitmapFactory.Options bounds = new BitmapFactory.Options();
+                bounds.inJustDecodeBounds = true;
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.length, bounds);
+                String mime = bounds.outMimeType != null ? bounds.outMimeType : "image/jpeg";
+                String ext;
+                switch (mime) {
+                    case "image/png": ext = ".png"; break;
+                    case "image/webp": ext = ".webp"; break;
+                    case "image/gif": ext = ".gif"; break;
+                    default: ext = ".jpg"; break;
+                }
+
+                File cacheDir = new File(context.getCacheDir(), "shared_images");
+                if (!cacheDir.exists()) cacheDir.mkdirs();
+                File[] old = cacheDir.listFiles((dir, name) -> name.startsWith("copied_image_"));
+                if (old != null) {
+                    for (File f : old) f.delete();
+                }
+                File file = new File(cacheDir, "copied_image_" + System.currentTimeMillis() + ext);
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    fos.write(bytes);
+                    fos.flush();
+                }
+
+                Uri contentUri = FileProvider.getUriForFile(
+                    context,
+                    context.getPackageName() + ".fileprovider",
+                    file
+                );
+
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    try {
+                        android.content.ClipboardManager clipboard =
+                            (android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                        if (clipboard != null) {
+                            android.content.ClipData clip = android.content.ClipData.newUri(
+                                context.getContentResolver(), "image", contentUri);
+                            clipboard.setPrimaryClip(clip);
+                            PetalToast.show(context, "Image copied");
+                        }
+                    } catch (Exception e) {
+                        PetalToast.show(context, "Couldn't copy image");
+                    }
+                });
+            } catch (Exception e) {
+                new android.os.Handler(android.os.Looper.getMainLooper())
+                    .post(() -> PetalToast.show(context, "Couldn't copy image"));
+            }
+        }).start();
+    }
+
     public static byte[] getImageBytes(Context context, String imageUrl) throws Exception {
         if (imageUrl.startsWith("data:image")) {
             String base64Data = imageUrl.substring(imageUrl.indexOf(",") + 1);

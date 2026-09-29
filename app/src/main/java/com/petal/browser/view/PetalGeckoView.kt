@@ -789,7 +789,10 @@ class PetalGeckoView @JvmOverloads constructor(
                             com.petal.browser.compose.menu.BrowserContextMenuManager.showAudioContextMenu(act, srcUri)
                         }
                         !linkUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(act, linkUri)
+                            val linkText = runCatching {
+                                element.javaClass.getField("textContent").get(element) as? String
+                            }.getOrNull()
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(act, linkUri, linkText)
                         }
                         !srcUri.isNullOrEmpty() -> {
                             com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
@@ -1976,15 +1979,15 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun getCachedPreviewBitmap(): Bitmap? {
-        var bitmap = TabThumbnailCache.get(getThumbnailKey())
+        var bitmap = TabThumbnailCache.getMemoryOnly(getThumbnailKey(), isIncognito)
         if (bitmap != null && !bitmap.isRecycled) return bitmap
         if (currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true)) {
-            bitmap = TabThumbnailCache.get(currentUrl)
+            bitmap = TabThumbnailCache.getMemoryOnly(currentUrl, isIncognito)
             if (bitmap != null && !bitmap.isRecycled) return bitmap
         }
         val albumUrl = getAlbumUrl()
         if (albumUrl.isNotEmpty() && !albumUrl.equals("about:blank", ignoreCase = true) && !albumUrl.equals("Petal Home", ignoreCase = true)) {
-            bitmap = TabThumbnailCache.get(albumUrl)
+            bitmap = TabThumbnailCache.getMemoryOnly(albumUrl, isIncognito)
             if (bitmap != null && !bitmap.isRecycled) return bitmap
         }
         return null
@@ -2052,7 +2055,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun getBackPreviewBitmap(): Bitmap? {
         val url = getBackHistoryUrl() ?: return null
-        val bitmap = TabThumbnailCache.get(url)
+        val bitmap = TabThumbnailCache.getMemoryOnly(url, isIncognito)
         if (bitmap != null && !bitmap.isRecycled) return bitmap
         return null
     }

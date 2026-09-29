@@ -36,6 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 data class ConsoleMessage(
     val id: Long = System.nanoTime(),
@@ -86,11 +88,9 @@ fun PetalDevConsoleSheet(
         focusManager.clearFocus()
     }
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismissRequest,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             modifier = Modifier
@@ -123,12 +123,12 @@ fun PetalDevConsoleSheet(
                     }
                     Column {
                         Text(
-                            "Developer Console",
+                            stringResource(R.string.ui_developer_console),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "JavaScript REPL & Page Inspector",
+                            stringResource(R.string.ui_javascript_repl_page_inspector),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -137,7 +137,7 @@ fun PetalDevConsoleSheet(
 
                 if (messages.isNotEmpty()) {
                     IconButton(onClick = { messages.clear() }) {
-                        Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear logs", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Rounded.DeleteSweep, contentDescription = stringResource(R.string.ui_clear_logs), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -162,12 +162,9 @@ fun PetalDevConsoleSheet(
             Spacer(Modifier.height(8.dp))
 
             // Log Console Output Box
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+            com.petal.browser.ui.containment.PetalHeroCard(
+                shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(240.dp)
@@ -178,7 +175,7 @@ fun PetalDevConsoleSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "Type JavaScript expression or tap preset above",
+                            stringResource(R.string.ui_type_javascript_expression_or_tap),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
@@ -221,7 +218,7 @@ fun PetalDevConsoleSheet(
                     value = inputText,
                     onValueChange = { inputText = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("console.log(...) or JS snippet", fontSize = 13.sp) },
+                    placeholder = { Text(stringResource(R.string.ui_console_log_or_js_snippet), fontSize = 13.sp) },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -234,7 +231,7 @@ fun PetalDevConsoleSheet(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Icon(Icons.Rounded.PlayArrow, contentDescription = "Run", tint = MaterialTheme.colorScheme.onPrimary)
+                    Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.ui_run), tint = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }
