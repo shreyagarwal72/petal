@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
 import com.petal.browser.ui.components.PetalExpressiveDialog
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 object PetalPasswordTermsManager {
     const val PREF_TERMS_ACCEPTED = "sp_password_terms_accepted_v1"
@@ -75,14 +77,14 @@ fun PetalPasswordTermsDialog(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Petal Passwords & Autofill",
+                text = stringResource(R.string.ui_petal_passwords_autofill),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Secure, hardware-backed, completely local",
+                text = stringResource(R.string.ui_secure_hardware_backed_completely_loca),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -99,18 +101,18 @@ fun PetalPasswordTermsDialog(
         ) {
             TermsBulletPoint(
                 icon = Icons.Rounded.Shield,
-                title = "100% Local & Encrypted",
-                description = "All usernames and passwords are encrypted locally using AES-256 GCM authenticated encryption via the Android Keystore. Nothing is ever uploaded to any cloud or remote server."
+                title = stringResource(R.string.ui_100_local_encrypted),
+                description = stringResource(R.string.ui_all_usernames_and_passwords_are)
             )
             TermsBulletPoint(
                 icon = Icons.Rounded.Security,
-                title = "Zero Telemetry or Tracking",
-                description = "Petal Browser respects absolute privacy. No analytics, tracking, or logs of your credentials exist. Your vault belongs purely to your device."
+                title = stringResource(R.string.ui_zero_telemetry_or_tracking),
+                description = stringResource(R.string.ui_petal_browser_respects_absolute_privac)
             )
             TermsBulletPoint(
                 icon = Icons.Rounded.CheckCircle,
-                title = "User Responsibility for Backups",
-                description = "Because Petal never stores your credentials on any external cloud server, you are responsible for maintaining vault backups using the built-in JSON backup and export features."
+                title = stringResource(R.string.ui_user_responsibility_for_backups),
+                description = stringResource(R.string.ui_because_petal_never_stores_your)
             )
         }
 
@@ -124,7 +126,7 @@ fun PetalPasswordTermsDialog(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Decline")
+                Text(stringResource(R.string.ui_decline))
             }
             Button(
                 onClick = {
@@ -134,7 +136,7 @@ fun PetalPasswordTermsDialog(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Agree & Continue")
+                Text(stringResource(R.string.ui_agree_continue))
             }
         }
     }

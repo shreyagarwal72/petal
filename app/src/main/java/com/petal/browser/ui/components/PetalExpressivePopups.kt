@@ -1,7 +1,5 @@
 package com.petal.browser.ui.components
 
-import android.os.Build
-import android.view.WindowManager
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -10,14 +8,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +25,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Shared popup/dialog language for Petal.
@@ -46,7 +43,7 @@ object PetalExpressivePopupDefaults {
     val menuContainerColor: Color
         @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
     val dialogContainerColor: Color
-        @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
+        @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
     val outline: Color
         @Composable get() = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
 }
@@ -60,42 +57,14 @@ fun PetalExpressiveDialog(
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Dialog(onDismissRequest = onDismissRequest, properties = properties) {
-        val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
-        DisposableEffect(dialogWindow) {
-            dialogWindow?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            dialogWindow?.attributes = dialogWindow?.attributes?.apply { dimAmount = 0.58f }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                dialogWindow?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                dialogWindow?.setBackgroundBlurRadius(34)
-            }
-            onDispose {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) dialogWindow?.setBackgroundBlurRadius(0)
-                dialogWindow?.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-            }
-        }
-        // Compose can measure an AnimatedVisibility first frame at zero size on some
-        // Android versions. Keep the dialog surface mounted immediately so it never
-        // becomes a blank, touch-blocking window.
-        Surface(
-            modifier = modifier
-                .fillMaxWidth(0.92f)
-                .wrapContentHeight()
-                .modalScaleIn(),
-            shape = shape,
-            color = containerColor,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 6.dp,
-            shadowElevation = 12.dp,
-            border = BorderStroke(1.dp, PetalExpressivePopupDefaults.outline)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                content = content
-            )
-        }
-    }
+    com.petal.browser.ui.containment.PetalDialog(
+        onDismissRequest = onDismissRequest,
+        modifier = modifier.modalScaleIn(),
+        shape = shape,
+        containerColor = containerColor,
+        properties = properties,
+        content = content,
+    )
 }
 
 @Composable
@@ -178,26 +147,6 @@ fun PetalExpressiveAlertDialog(
 }
 
 @Composable
-fun PetalExpressiveDropdownMenu(
-    expanded: Boolean,
-    onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismissRequest,
-        modifier = modifier,
-        shape = PetalExpressivePopupDefaults.menuShape,
-        containerColor = PetalExpressivePopupDefaults.menuContainerColor,
-        tonalElevation = 3.dp,
-        shadowElevation = 8.dp,
-        border = BorderStroke(1.dp, PetalExpressivePopupDefaults.outline),
-        content = content
-    )
-}
-
-@Composable
 fun PetalExpressiveMenuItem(
     text: String,
     onClick: () -> Unit,
@@ -206,20 +155,13 @@ fun PetalExpressiveMenuItem(
     trailingIcon: (@Composable (() -> Unit))? = null,
     enabled: Boolean = true
 ) {
-    DropdownMenuItem(
-        text = {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-        },
+    com.petal.browser.ui.containment.PetalPopupMenuItem(
+        text = text,
         onClick = onClick,
-        modifier = modifier.heightIn(min = 56.dp),
+        modifier = modifier,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         enabled = enabled,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
     )
 }
 
@@ -269,7 +211,7 @@ fun PetalExpressiveTextPromptDialog(
                     onClick = onDismiss,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
@@ -277,7 +219,7 @@ fun PetalExpressiveTextPromptDialog(
                     modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("OK", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -319,7 +261,7 @@ fun PetalExpressiveAuthPromptDialog(
                 OutlinedTextField(
                     value = usernameState.value,
                     onValueChange = { usernameState.value = it },
-                    label = { Text("Username") },
+                    label = { Text(stringResource(R.string.ui_username)) },
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -329,7 +271,7 @@ fun PetalExpressiveAuthPromptDialog(
             OutlinedTextField(
                 value = passwordState.value,
                 onValueChange = { passwordState.value = it },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.ui_password)) },
                 shape = RoundedCornerShape(16.dp),
                 visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                 singleLine = true,
@@ -345,7 +287,7 @@ fun PetalExpressiveAuthPromptDialog(
                     onClick = onDismiss,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.ui_cancel))
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
@@ -353,7 +295,7 @@ fun PetalExpressiveAuthPromptDialog(
                     modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Sign In", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_sign_in), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -388,7 +330,7 @@ object PetalExpressivePromptBridge {
                         },
                         title = title,
                         message = message,
-                        confirmText = "OK",
+                        confirmText = stringResource(R.string.ui_ok),
                         onConfirm = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
                             onConfirm.run()
@@ -432,12 +374,12 @@ object PetalExpressivePromptBridge {
                         },
                         title = title,
                         message = message,
-                        confirmText = "OK",
+                        confirmText = stringResource(R.string.ui_ok),
                         onConfirm = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
                             onConfirm.run()
                         },
-                        dismissText = "Cancel",
+                        dismissText = stringResource(R.string.ui_cancel),
                         onDismiss = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
                             onCancel.run()

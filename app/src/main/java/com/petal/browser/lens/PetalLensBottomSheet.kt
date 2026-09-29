@@ -44,6 +44,8 @@ import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Petal Lens Sheet Content & BottomSheet launcher wrapper.
@@ -183,27 +185,27 @@ fun PetalLensBottomSheet(
     }
 
     if (showSnapProviderChooser) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showSnapProviderChooser = false },
             icon = { Icon(Icons.Rounded.QrCodeScanner, contentDescription = null) },
-            title = { Text("Choose Snap Photo scanner") },
-            text = { Text("Choose what should process the photo. You can change this later in Miscellaneous settings.") },
+            title = { Text(stringResource(R.string.ui_choose_snap_photo_scanner)) },
+            text = { Text(stringResource(R.string.ui_choose_what_should_process_the)) },
             confirmButton = {
                 Column {
                     TextButton(onClick = {
                         PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
                         showSnapProviderChooser = false
                         beginSnap()
-                    }) { Text("Google Lens") }
+                    }) { Text(stringResource(R.string.ui_google_lens)) }
                     TextButton(onClick = {
                         PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
                         showSnapProviderChooser = false
                         beginSnap()
-                    }) { Text("Petal QR Scanner") }
+                    }) { Text(stringResource(R.string.ui_petal_qr_scanner)) }
                     TextButton(onClick = {
                         showSnapProviderChooser = false
                         beginSnap()
-                    }) { Text("Ask every time") }
+                    }) { Text(stringResource(R.string.ui_ask_every_time)) }
                 }
             }
         )
@@ -274,7 +276,7 @@ fun PetalLensBottomSheet(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Rounded.CenterFocusWeak,
-                                contentDescription = "Petal QR Scanner",
+                                contentDescription = stringResource(R.string.ui_petal_qr_scanner),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -282,12 +284,12 @@ fun PetalLensBottomSheet(
                     }
                     Column {
                         Text(
-                            text = "Petal QR Scanner",
+                            text = stringResource(R.string.ui_petal_qr_scanner),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Select a photo or snap a new one to search",
+                            text = stringResource(R.string.ui_select_a_photo_or_snap),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -303,7 +305,7 @@ fun PetalLensBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.ui_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -315,17 +317,13 @@ fun PetalLensBottomSheet(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Snap Photo Card
-                Card(
+                com.petal.browser.ui.containment.PetalActionCard(
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
                         beginSnap()
                     },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
@@ -349,12 +347,12 @@ fun PetalLensBottomSheet(
                         }
                         Column {
                             Text(
-                                text = "Snap Photo",
+                                text = stringResource(R.string.ui_snap_photo),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Use camera",
+                                text = stringResource(R.string.ui_use_camera),
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -363,7 +361,7 @@ fun PetalLensBottomSheet(
                 }
 
                 // Gallery File Picker Card
-                Card(
+                com.petal.browser.ui.containment.PetalActionCard(
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
                         try {
@@ -373,12 +371,8 @@ fun PetalLensBottomSheet(
                             onDismissRequest()
                         }
                     },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
@@ -402,12 +396,12 @@ fun PetalLensBottomSheet(
                         }
                         Column {
                             Text(
-                                text = "Android System Picker",
+                                text = stringResource(R.string.ui_android_system_picker),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Photos picker",
+                                text = stringResource(R.string.ui_photos_picker),
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -427,7 +421,7 @@ fun PetalLensBottomSheet(
             ) {
                 Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Gallery Chooser")
+                Text(stringResource(R.string.ui_gallery_chooser))
             }
 
             // Builtin Photos Gallery Grid
@@ -451,12 +445,12 @@ fun PetalLensBottomSheet(
                             modifier = Modifier.size(32.dp)
                         )
                         Text(
-                            text = "Photo Gallery Access",
+                            text = stringResource(R.string.ui_photo_gallery_access),
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Allow Petal Browser to display your recent photos directly for fast visual searching.",
+                            text = stringResource(R.string.ui_allow_petal_browser_to_display),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -469,7 +463,7 @@ fun PetalLensBottomSheet(
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Grant Photo Access", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.ui_grant_photo_access), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -504,12 +498,12 @@ fun PetalLensBottomSheet(
                             modifier = Modifier.size(28.dp)
                         )
                         Text(
-                            text = "No indexed photos found in MediaStore",
+                            text = stringResource(R.string.ui_no_indexed_photos_found_in),
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "You can browse your device gallery, Google Photos, or Cloud Drive directly using the system picker.",
+                            text = stringResource(R.string.ui_you_can_browse_your_device),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -529,13 +523,13 @@ fun PetalLensBottomSheet(
                         ) {
                             Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Browse Photos & Files", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.ui_browse_photos_files), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             } else {
                 Text(
-                    text = "Recent Photos",
+                    text = stringResource(R.string.ui_recent_photos),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.align(Alignment.Start)

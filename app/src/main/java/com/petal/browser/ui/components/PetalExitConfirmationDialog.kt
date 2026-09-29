@@ -46,6 +46,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Material 3 Expressive exit confirmation dialog used by the browser activity.
@@ -174,7 +176,7 @@ private fun ExitDialogContent(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
-                    contentDescription = "Close",
+                    contentDescription = stringResource(R.string.ui_close),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .semantics { contentDescription = "Close" }
@@ -185,7 +187,7 @@ private fun ExitDialogContent(
                 Spacer(Modifier.height(10.dp))
 
                 Text(
-                    text = "Leave Petal Browser?",
+                    text = stringResource(R.string.ui_leave_petal_browser),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -193,7 +195,7 @@ private fun ExitDialogContent(
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    text = "Do you want to exit the browser?",
+                    text = stringResource(R.string.ui_do_you_want_to_exit),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -209,7 +211,7 @@ private fun ExitDialogContent(
                         onClick = onStay,
                         modifier = Modifier.semantics { role = Role.Button },
                     ) {
-                        Text("Stay")
+                        Text(stringResource(R.string.ui_stay))
                     }
 
                     Spacer(Modifier.width(8.dp))
@@ -224,7 +226,7 @@ private fun ExitDialogContent(
                         contentPadding = ButtonDefaults.ContentPadding,
                         modifier = Modifier.semantics { role = Role.Button },
                     ) {
-                        Text("Exit")
+                        Text(stringResource(R.string.ui_exit))
                     }
                 }
             }

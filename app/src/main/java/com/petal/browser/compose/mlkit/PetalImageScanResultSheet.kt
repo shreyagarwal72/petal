@@ -48,6 +48,8 @@ import com.google.zxing.Result
 import com.google.zxing.DecodeHintType
 import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.RGBLuminanceSource
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 object PetalImageScannerManager {
 
@@ -203,11 +205,9 @@ fun PetalImageScanResultSheet(
         }
     }
 
-    ModalBottomSheet(
+    com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -238,18 +238,18 @@ fun PetalImageScanResultSheet(
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Image Recognition",
+                        text = stringResource(R.string.ui_image_recognition),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Google ML Kit On-Device Recognition",
+                        text = stringResource(R.string.ui_google_ml_kit_on_device),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close")
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                 }
             }
 
@@ -269,7 +269,7 @@ fun PetalImageScanResultSheet(
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        text = "Scanning image for text & barcodes...",
+                        text = stringResource(R.string.ui_scanning_image_for_text_barcodes),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -285,7 +285,7 @@ fun PetalImageScanResultSheet(
                             Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                "Recognition Error",
+                                stringResource(R.string.ui_recognition_error),
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
@@ -318,13 +318,13 @@ fun PetalImageScanResultSheet(
                         )
                         Spacer(Modifier.height(10.dp))
                         Text(
-                            text = "Nothing recognized",
+                            text = stringResource(R.string.ui_nothing_recognized),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "No text or QR/barcodes were detected in this image.",
+                            text = stringResource(R.string.ui_no_text_or_qr_barcodes),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -334,7 +334,7 @@ fun PetalImageScanResultSheet(
                 // Barcode Results
                 if (!detectedBarcodes.isNullOrEmpty()) {
                     Text(
-                        text = "Barcodes & QR Codes",
+                        text = stringResource(R.string.ui_barcodes_qr_codes),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -372,7 +372,7 @@ fun PetalImageScanResultSheet(
                                             BrowserUnit.intentURL(context, Uri.parse(barcode.rawValue))
                                         } catch (e: Exception) { e.printStackTrace() }
                                     }) {
-                                        Icon(Icons.Rounded.OpenInNew, contentDescription = "Open Link", tint = MaterialTheme.colorScheme.primary)
+                                        Icon(Icons.Rounded.OpenInNew, contentDescription = stringResource(R.string.ui_open_link), tint = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                                 IconButton(onClick = {
@@ -380,7 +380,7 @@ fun PetalImageScanResultSheet(
                                     clipboard.setPrimaryClip(ClipData.newPlainText("Barcode Result", barcode.rawValue))
                                     com.petal.browser.view.PetalToast.show(context, "Barcode copied to clipboard")
                                 }) {
-                                    Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy Barcode", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy_barcode), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -391,7 +391,7 @@ fun PetalImageScanResultSheet(
                 // Text Recognition Results
                 if (!detectedText.isNullOrBlank()) {
                     Text(
-                        text = "Detected Text",
+                        text = stringResource(R.string.ui_detected_text),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -421,7 +421,7 @@ fun PetalImageScanResultSheet(
                                 ) {
                                     Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Copy Text")
+                                    Text(stringResource(R.string.ui_copy_text))
                                 }
                             }
                         }

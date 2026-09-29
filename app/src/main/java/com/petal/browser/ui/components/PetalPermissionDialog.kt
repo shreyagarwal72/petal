@@ -37,6 +37,8 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 enum class PetalPermissionType(
     val title: String,
@@ -161,7 +163,7 @@ fun PetalPermissionDialog(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Remember this decision",
+                    text = stringResource(R.string.ui_remember_this_decision),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -185,7 +187,7 @@ fun PetalPermissionDialog(
                     Icon(Icons.Rounded.Close, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Block",
+                        text = stringResource(R.string.ui_block),
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
@@ -204,7 +206,7 @@ fun PetalPermissionDialog(
                     Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Allow",
+                        text = stringResource(R.string.ui_allow),
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 }

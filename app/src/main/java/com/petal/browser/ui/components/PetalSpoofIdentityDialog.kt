@@ -8,7 +8,6 @@
 
 package com.petal.browser.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,7 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import com.petal.browser.ui.containment.PetalDialog
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalSelectableOptionCard
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 enum class IdentityPreset(
     val title: String,
@@ -66,17 +69,11 @@ fun PetalSpoofIdentityDialog(
     onSelectIdentity: (IdentityPreset) -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismissRequest) {
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            modifier = Modifier.widthIn(max = 380.dp)
-        ) {
+    PetalDialog(onDismissRequest = onDismissRequest, modifier = Modifier.widthIn(max = 380.dp)) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp)
+                    .padding(vertical = 4.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -84,12 +81,12 @@ fun PetalSpoofIdentityDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Spoof Identity (User-Agent)",
+                        text = stringResource(R.string.ui_spoof_identity_user_agent),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = onDismissRequest) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close")
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                     }
                 }
 
@@ -97,46 +94,15 @@ fun PetalSpoofIdentityDialog(
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     IdentityPreset.values().forEach { preset ->
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onSelectIdentity(preset)
-                                    onDismissRequest()
-                                }
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = preset.icon,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(14.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = preset.title,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = preset.subtitle,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
+                        PetalSelectableOptionCard(
+                            title = preset.title,
+                            subtitle = preset.subtitle,
+                            selected = currentUa == preset.userAgent,
+                            onClick = { onSelectIdentity(preset); onDismissRequest() },
+                            leading = { PetalGroupIconBadge(preset.icon) },
+                        )
                     }
                 }
             }
-        }
     }
 }

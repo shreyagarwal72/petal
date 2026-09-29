@@ -52,6 +52,8 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.bouncyClickable
 import java.io.File
 import java.util.concurrent.Executors
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun PetalQrScannerScreen(
@@ -140,7 +142,7 @@ fun PetalQrScannerScreen(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = "Cancel scanning",
+                            contentDescription = stringResource(R.string.ui_cancel_scanning),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(22.dp)
                         )
@@ -151,7 +153,7 @@ fun PetalQrScannerScreen(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Petal QR Scanner",
+                        text = stringResource(R.string.ui_petal_qr_scanner),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = Color.White
                     )
@@ -294,7 +296,7 @@ fun PetalQrScannerScreen(
                                     modifier = Modifier.size(48.dp)
                                 )
                                 Text(
-                                    text = "Camera permission is required to scan QR codes",
+                                    text = stringResource(R.string.ui_camera_permission_is_required_to),
                                     color = Color.White,
                                     textAlign = TextAlign.Center,
                                     style = MaterialTheme.typography.bodyMedium
@@ -303,7 +305,7 @@ fun PetalQrScannerScreen(
                                     onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
                                     shape = RoundedCornerShape(16.dp)
                                 ) {
-                                    Text("Grant Permission")
+                                    Text(stringResource(R.string.ui_grant_permission))
                                 }
                             }
                         }
@@ -326,14 +328,14 @@ fun PetalQrScannerScreen(
 
             // Subtitle Guidance
             Text(
-                text = "Align QR code or barcode inside the frame",
+                text = stringResource(R.string.ui_align_qr_code_or_barcode),
                 color = Color.White,
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Auto-scan detects instantly or tap capture below",
+                text = stringResource(R.string.ui_auto_scan_detects_instantly_or),
                 color = Color.White.copy(alpha = 0.7f),
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center
@@ -375,7 +377,7 @@ fun PetalQrScannerScreen(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Rounded.Cameraswitch,
-                                contentDescription = "Switch Camera",
+                                contentDescription = stringResource(R.string.ui_switch_camera),
                                 tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -444,7 +446,7 @@ fun PetalQrScannerScreen(
                             } else {
                                 Icon(
                                     imageVector = Icons.Rounded.CameraAlt,
-                                    contentDescription = "Capture photo to scan",
+                                    contentDescription = stringResource(R.string.ui_capture_photo_to_scan),
                                     tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(32.dp)
                                 )
@@ -467,7 +469,7 @@ fun PetalQrScannerScreen(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = if (torchEnabled) Icons.Rounded.FlashOn else Icons.Rounded.FlashOff,
-                                contentDescription = "Toggle Torch",
+                                contentDescription = stringResource(R.string.ui_toggle_torch),
                                 tint = if (torchEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -517,7 +519,7 @@ fun PetalQrScannerScreen(
                         }
                         Column {
                             Text(
-                                text = "Code Detected",
+                                text = stringResource(R.string.ui_code_detected),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -556,7 +558,7 @@ fun PetalQrScannerScreen(
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Scan Again")
+                            Text(stringResource(R.string.ui_scan_again))
                         }
 
                         Button(

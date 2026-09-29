@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @Composable
 fun PetalAutoScrollOverlay(
@@ -98,7 +100,7 @@ fun PetalAutoScrollOverlay(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
-                    contentDescription = "Close Auto-Scroll",
+                    contentDescription = stringResource(R.string.ui_close_auto_scroll),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )

@@ -1,24 +1,24 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.containment.PetalSettingsSection
+
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,9 +26,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.compose.settings.viewmodel.PrivacySettingsViewModel
+import androidx.activity.ComponentActivity
 import com.petal.browser.passwords.PetalPasswordsScreen
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -125,13 +128,13 @@ fun PrivacySettingsScreenContent(
     var whitelistedDomainsState by remember { mutableStateOf(PetalAdBlockEngine.getWhitelistedDomains()) }
 
     if (showWhitelistDialog) {
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showWhitelistDialog = false },
-            title = { Text("AdBlock Domain Whitelist") },
+            title = { Text(stringResource(R.string.ui_adblock_domain_whitelist)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Domains added here will bypass ad and tracker filtering:",
+                        stringResource(R.string.ui_domains_added_here_will_bypass),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -155,7 +158,7 @@ fun PrivacySettingsScreenContent(
                                 }
                             }
                         ) {
-                            Text("Add")
+                            Text(stringResource(R.string.ui_add))
                         }
                     }
 
@@ -163,7 +166,7 @@ fun PrivacySettingsScreenContent(
 
                     if (whitelistedDomainsState.isEmpty()) {
                         Text(
-                            "No whitelisted domains.",
+                            stringResource(R.string.ui_no_whitelisted_domains),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -181,7 +184,7 @@ fun PrivacySettingsScreenContent(
                                     },
                                     label = { Text(domain) },
                                     trailingIcon = {
-                                        Icon(Icons.Rounded.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_remove), modifier = Modifier.size(16.dp))
                                     }
                                 )
                             }
@@ -191,7 +194,7 @@ fun PrivacySettingsScreenContent(
             },
             confirmButton = {
                 TextButton(onClick = { showWhitelistDialog = false }) {
-                    Text("Done")
+                    Text(stringResource(R.string.ui_done))
                 }
             }
         )
@@ -217,7 +220,7 @@ fun PrivacySettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // ── Hero Privacy Shield Status Banner ──
-                com.petal.browser.ui.components.ExpressiveHeroBanner(
+                com.petal.browser.ui.containment.PetalStatusHeroCard(
                     title = if (adBlockEnabled) "Shield Active & Protecting" else "Shield Paused",
                     subtitle = if (adBlockEnabled) "Real-time Trie tracker blocking, HTTPS-only & anti-fingerprinting active" else "Trackers and ads are not currently being filtered",
                     statusText = if (adBlockEnabled) "Protection Enabled" else "Protection Disabled",
@@ -235,15 +238,15 @@ fun PrivacySettingsScreenContent(
                 )
 
                 // ── Section 1: Shield & Anti-Tracking Protection ──
-                SettingsCategoryCard(
-                    title = "Shield & Anti-Tracking",
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_shield_anti_tracking),
                     iconRes = com.petal.browser.R.drawable.layers_filled,
                     cardId = "privacy_adblock",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    ToggleRow(
-                        title = "Ad & Tracker Shield",
-                        subtitle = "uBlock Origin & AdGuard-grade Trie filter engine & scriptlets",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_ad_tracker_shield),
+                        subtitle = stringResource(R.string.ui_ublock_origin_adguard_grade_trie),
                         icon = Icons.Rounded.Shield,
                         checked = adBlockEnabled,
                         onCheckedChange = { newValue ->
@@ -261,46 +264,46 @@ fun PrivacySettingsScreenContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Whitelisted Domains (${whitelistedDomainsState.size})",
+                                text = stringResource(R.string.ui_whitelisted_domains, whitelistedDomainsState.size),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             TextButton(onClick = { showWhitelistDialog = true }) {
-                                Text("Manage Whitelist")
+                                Text(stringResource(R.string.ui_manage_whitelist))
                             }
                         }
                     }
-                    ToggleRow(
-                        title = "Block Third-Party Tracking Cookies",
-                        subtitle = "Isolate and block cross-site cookies used for ad tracking",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_block_third_party_tracking_cookies),
+                        subtitle = stringResource(R.string.ui_isolate_and_block_cross_site),
                         icon = Icons.Rounded.Cookie,
                         checked = blockThirdPartyCookies,
                         onCheckedChange = onBlockThirdPartyCookiesChange
                     )
-                    ToggleRow(
-                        title = "Canvas, Audio & Font Fingerprint Shield",
-                        subtitle = "Randomize canvas, WebGL, AudioContext, and font geometry to defeat browser fingerprinting",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_canvas_audio_font_fingerprint_shield),
+                        subtitle = stringResource(R.string.ui_randomize_canvas_webgl_audiocontext_an),
                         icon = Icons.Rounded.Fingerprint,
                         checked = fingerprintProtection,
                         onCheckedChange = onFingerprintProtectionChange
                     )
-                    ToggleRow(
-                        title = "WebRTC IP Leak Shield",
-                        subtitle = "Prevent local & public IP address leaks via WebRTC STUN/TURN queries",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_webrtc_ip_leak_shield),
+                        subtitle = stringResource(R.string.ui_prevent_local_public_ip_address),
                         icon = Icons.Rounded.WifiProtectedSetup,
                         checked = webrtcProtection,
                         onCheckedChange = onWebrtcProtectionChange
                     )
-                    ToggleRow(
-                        title = "Do Not Track & Global Privacy Control (GPC)",
-                        subtitle = "Broadcast DNT: 1 and Sec-GPC: 1 signals requesting websites not to sell or share your data",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_do_not_track_global_privacy),
+                        subtitle = stringResource(R.string.ui_broadcast_dnt_1_and_sec),
                         icon = Icons.Rounded.Security,
                         checked = dntGpc,
                         onCheckedChange = onDntGpcChange
                     )
-                    ToggleRow(
-                        title = "Strict Referrer Trimming",
-                        subtitle = "Strip cross-origin URL paths from referrer headers to protect browsing privacy",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_strict_referrer_trimming),
+                        subtitle = stringResource(R.string.ui_strip_cross_origin_url_paths),
                         icon = Icons.Rounded.LinkOff,
                         checked = trimReferrers,
                         onCheckedChange = onTrimReferrersChange
@@ -308,71 +311,32 @@ fun PrivacySettingsScreenContent(
                 }
 
                 // ── Section 2: Security & Authentication ──
-                SettingsCategoryCard(
-                    title = "Security & Passkeys",
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_security_passkeys),
                     icon = Icons.Rounded.Lock,
                     cardId = "privacy_security",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    Surface(
+                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
+                        title = stringResource(R.string.ui_password_manager_autofill),
+                        subtitle = stringResource(R.string.ui_encrypted_local_vault_breach_checks),
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                         onClick = { showPasswordsScreen = true },
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Rounded.VpnKey,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Password Manager & Autofill",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "Encrypted local vault, breach checks, multi-brand import/export",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+                        leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null) },
+                    )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    ToggleRow(
-                        title = "HTTPS Security Enforcer",
-                        subtitle = "Automatically upgrade connections to HTTPS",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_https_security_enforcer),
+                        subtitle = stringResource(R.string.ui_automatically_upgrade_connections_to_h),
                         icon = Icons.Rounded.Lock,
                         checked = httpsOnly,
                         onCheckedChange = onHttpsOnlyChange
                     )
-                    ToggleRow(
-                        title = "WebAuthn & Passkey Support",
-                        subtitle = "Allow websites to authenticate passwordless sign-ins using biometric passkeys, hardware tokens & Google Password Manager",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_webauthn_passkey_support),
+                        subtitle = stringResource(R.string.ui_allow_websites_to_authenticate_passwor),
                         icon = Icons.Rounded.Key,
                         checked = webauthnEnabled,
                         onCheckedChange = onWebauthnEnabledChange
@@ -380,29 +344,29 @@ fun PrivacySettingsScreenContent(
                 }
 
                 // ── Section 3: Web Content & Navigation ──
-                SettingsCategoryCard(
-                    title = "Web Content & Navigation",
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_web_content_navigation),
                     icon = Icons.Rounded.Code,
                     cardId = "privacy_cookies",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    ToggleRow(
-                        title = "Enable JavaScript",
-                        subtitle = "Required for modern web features",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_enable_javascript),
+                        subtitle = stringResource(R.string.ui_required_for_modern_web_features),
                         icon = Icons.Rounded.Code,
                         checked = javaScriptEnabled,
                         onCheckedChange = onJavaScriptEnabledChange
                     )
-                    ToggleRow(
-                        title = "Block Popup Windows",
-                        subtitle = "Prevent unwanted popups and redirect windows",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_block_popup_windows),
+                        subtitle = stringResource(R.string.ui_prevent_unwanted_popups_and_redirect),
                         icon = Icons.Rounded.OpenInNew,
                         checked = blockPopups,
                         onCheckedChange = onBlockPopupsChange
                     )
-                    ToggleRow(
-                        title = "Open Redirect Links in Background",
-                        subtitle = "Detect external redirect links and spawn them silently in a background tab",
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_open_redirect_links_in_background),
+                        subtitle = stringResource(R.string.ui_detect_external_redirect_links_and),
                         icon = Icons.Rounded.TabUnselected,
                         checked = openRedirectsInBackground,
                         onCheckedChange = onOpenRedirectsInBackgroundChange
@@ -410,14 +374,14 @@ fun PrivacySettingsScreenContent(
                 }
 
                 // Private DNS Protection Card
-                SettingsCategoryCard(
-                    title = "Private DNS Protection",
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_private_dns_protection),
                     iconRes = com.petal.browser.R.drawable.database_filled,
                     cardId = "privacy_private_dns",
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
-                        "Encrypt DNS queries to prevent tracking & block malicious content:",
+                        stringResource(R.string.ui_encrypt_dns_queries_to_prevent),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -466,7 +430,7 @@ fun PrivacySettingsScreenContent(
                         OutlinedTextField(
                             value = customDohUrl,
                             onValueChange = onCustomDohUrlChange,
-                            label = { Text("Custom DoH Endpoint URL") },
+                            label = { Text(stringResource(R.string.ui_custom_doh_endpoint_url)) },
                             placeholder = { Text("https://dns.adguard-dns.com/dns-query") },
                             leadingIcon = { Icon(Icons.Rounded.Dns, contentDescription = null) },
                             singleLine = true,
@@ -497,20 +461,26 @@ fun PrivacySettingsScreenContent(
                     ) {
                         Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Configure Android System Private DNS")
+                        Text(stringResource(R.string.ui_configure_android_system_private_dns))
                     }
                 }
             }
         }
 
-        if (showPasswordsScreen) {
-            val act = context as? ComponentActivity
-            if (act != null) {
+        val passwordsActivity = context as? ComponentActivity
+        if (passwordsActivity != null) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showPasswordsScreen,
+                enter = com.petal.browser.ui.containment.PetalMotion.forwardEnter(),
+                exit = com.petal.browser.ui.containment.PetalMotion.backExit(),
+                modifier = Modifier.fillMaxSize()
+            ) {
                 PetalPasswordsScreen(
-                    activity = act,
+                    activity = passwordsActivity,
                     onNavigateBack = { showPasswordsScreen = false }
                 )
             }
         }
     }
 }
+
