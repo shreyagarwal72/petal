@@ -50,17 +50,22 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
-    fun showImageContextMenu(activity: BrowserActivity, imageURL: String) {
+    fun showImageContextMenu(activity: BrowserActivity, imageURL: String, anchorLinkUri: String? = null) {
+        // When an image is wrapped in <a>, linkUrl shows the anchor target; imageURL is the image src
+        val linkUrlForMenu = anchorLinkUri?.takeIf { it.isNotBlank() } ?: imageURL
         PetalLinkContextMenuBridge.show(
-            activity,
-            HelperUnit.domain(imageURL),
-            imageURL,
-            imageURL,
-            true,  // isImage
-            false, // isVideo
-            object : PetalLinkContextMenuHandler {
+            activity = activity,
+            linkTitle = HelperUnit.domain(imageURL),
+            linkUrl = linkUrlForMenu,
+            faviconUrl = imageURL,
+            isImage = true,
+            isVideo = false,
+            isAudio = false,
+            selectedText = null,
+            handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false)
+                    // Open anchor link if image is inside <a>, else open image directly
+                    activity.addAlbum(HelperUnit.domain(linkUrlForMenu), linkUrlForMenu, false)
                 }
 
                 override fun onOpenImageInNewTab() {
@@ -68,11 +73,11 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onOpenInNewTabInGroup() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false)
+                    activity.addAlbum(HelperUnit.domain(linkUrlForMenu), linkUrlForMenu, false)
                 }
 
                 override fun onOpenInIncognitoTab() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false, true)
+                    activity.addAlbum(HelperUnit.domain(linkUrlForMenu), linkUrlForMenu, false, true)
                 }
 
 
@@ -153,7 +158,7 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onShareLink() {
-                    activity.shareLink(HelperUnit.domain(imageURL), imageURL)
+                    activity.shareLink(HelperUnit.domain(linkUrlForMenu), linkUrlForMenu)
                 }
 
                 override fun onDownloadVideo() {}
@@ -177,15 +182,18 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
-    fun showLinkContextMenu(activity: BrowserActivity, urlResult: String) {
+    fun showLinkContextMenu(activity: BrowserActivity, urlResult: String, linkText: String? = null) {
+        val title = if (!linkText.isNullOrBlank()) linkText else HelperUnit.domain(urlResult)
         PetalLinkContextMenuBridge.show(
-            activity,
-            HelperUnit.domain(urlResult),
-            urlResult,
-            "$urlResult/favicon.ico",
-            false, // isImage
-            false, // isVideo
-            object : PetalLinkContextMenuHandler {
+            activity = activity,
+            linkTitle = title,
+            linkUrl = urlResult,
+            faviconUrl = "$urlResult/favicon.ico",
+            isImage = false,
+            isVideo = false,
+            isAudio = false,
+            selectedText = null,
+            handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
                     activity.addAlbum(HelperUnit.domain(urlResult), urlResult, false)
                 }

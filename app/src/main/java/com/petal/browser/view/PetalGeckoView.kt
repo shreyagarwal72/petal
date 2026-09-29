@@ -785,30 +785,38 @@ class PetalGeckoView @JvmOverloads constructor(
                 val linkUri = element.linkUri
                 val srcUri = element.srcUri
                 val elemType = element.type
+                // altText is the stable public GeckoView API for anchor/image alt/title text
+                val altText = element.altText?.takeIf { it.isNotBlank() }
 
                 act.runOnUiThread {
                     when {
                         elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE && !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
+                            // Image long-press: also pass the wrapping anchor linkUri if present
+                            // so the sheet can show "Open link in new tab" for image-inside-<a>
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showImageContextMenu(act, srcUri, linkUri)
                         }
                         elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO && !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showVideoContextMenu(act, srcUri)
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showVideoContextMenu(act, srcUri)
                         }
                         elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO && !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showAudioContextMenu(act, srcUri)
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showAudioContextMenu(act, srcUri)
                         }
                         !linkUri.isNullOrEmpty() -> {
-                            val linkText = runCatching {
-                                element.javaClass.getField("textContent").get(element) as? String
-                            }.getOrNull()
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(act, linkUri, linkText)
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showLinkContextMenu(act, linkUri, altText)
                         }
                         !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
+                            // Fallback: untyped element with a src — treat as image
+                            com.petal.browser.compose.menu.BrowserContextMenuManager
+                                .showImageContextMenu(act, srcUri, null)
                         }
                     }
                 }
             }
+
         }
 
         // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)
@@ -1103,6 +1111,8 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.runOnUiThread {
                             com.petal.browser.compose.menu.BrowserContextMenuManager.showSelectionContextMenu(act, selectedText)
                         }
+                        // Suppress the native Gecko floating action bar — Petal shows its own sheet
+                        selection.hide()
                     }
                 }
             }
@@ -1111,6 +1121,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 currentSelection = null
             }
         }
+
 
         // Native GeckoView MediaSession Delegate for HTML5 Media & PiP Tracking
         session.mediaSessionDelegate = object : MediaSession.Delegate {
