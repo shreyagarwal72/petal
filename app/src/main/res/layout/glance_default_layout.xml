@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Branded initial RemoteViews shown while Glance builds its content. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Placeholder layout Android inflates while Glance builds its real widget content. -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:singleLine="true"
-        android:ellipsize="end"
-        android:text="@string/widget_search_hint"
-        android:textColor="#1B1B1F"
-        android:textSize="16sp"
-        android:background="@drawable/bg_petal_widget" />
-</LinearLayout>
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        style="?android:attr/progressBarStyleSmall" />
+</RelativeLayout>

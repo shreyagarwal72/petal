@@ -482,14 +482,10 @@ class PetalTabViewController private constructor(
     }
 
     private fun applyPageSettings(url: String?) {
-        val session = observedSession ?: return
+        if (observedSession == null) return
+        // JavaScript is controlled by GeckoRuntime and applied by syncPreferences below.
+        // The generic EngineSession setting is unsupported by this Gecko engine adapter.
         val profile = com.petal.browser.view.PetalGeckoView.getProfile(appContext)
-        val javascriptEnabled = preferences.getBoolean(
-            "sp_javascript",
-            preferences.getBoolean("${profile}_javascript", preferences.getBoolean("profileStandard_javascript", true))
-        )
-        session.settings.javascriptEnabled = javascriptEnabled
-
         val host = try { android.net.Uri.parse(url.orEmpty()).host } catch (_: Throwable) { null }
         val desktopEnabled = if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
             preferences.getBoolean("sp_desktop_site_$host", false)

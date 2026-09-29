@@ -307,9 +307,8 @@ abstract class PetalSearchGlanceWidget : GlanceAppWidget(errorUiLayout = R.layou
 class PetalSearchPetal1Widget : PetalSearchGlanceWidget() {
 
     companion object {
-        // Keep responsive breakpoints at or above the provider's declared host minimums.
-        private val COMPACT_1X1 = DpSize(250.dp, 56.dp)
-        private val EXPANDED_1X2 = DpSize(250.dp, 112.dp)
+        private val COMPACT_1X1 = DpSize(200.dp, 48.dp)
+        private val EXPANDED_1X2 = DpSize(240.dp, 90.dp)
     }
 
     override val sizeMode: SizeMode = SizeMode.Responsive(
@@ -591,9 +590,7 @@ private fun WidgetShortcutTile(
  * - Expressive action island squircle buttons on right: AI Assistant, Incognito, and Lens/Camera
  */
 class PetalSearchPetal2Widget : PetalSearchGlanceWidget() {
-    override val sizeMode: SizeMode = SizeMode.Responsive(
-        setOf(DpSize(180.dp, 56.dp), DpSize(250.dp, 56.dp), DpSize(330.dp, 56.dp))
-    )
+    override val sizeMode: SizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
@@ -719,9 +716,7 @@ private fun SquircleGlanceActionButton(
  * shortcut icon aligned on the right.
  */
 class PetalSearchPetal3Widget : PetalSearchGlanceWidget() {
-    override val sizeMode: SizeMode = SizeMode.Responsive(
-        setOf(DpSize(180.dp, 56.dp), DpSize(250.dp, 56.dp), DpSize(330.dp, 56.dp))
-    )
+    override val sizeMode: SizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
