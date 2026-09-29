@@ -40,6 +40,8 @@ import com.petal.browser.ui.components.ExpressivePasswordShapes
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.PetalAlertDialog
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSnackbarHost
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import kotlinx.coroutines.delay
@@ -151,7 +153,7 @@ fun PetalAppLockScreen(
 
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -167,125 +169,147 @@ fun PetalAppLockScreen(
                         )
                     }
 
-                    Surface(
-                        shape = com.petal.browser.ui.theme.PetalMaterialShapes.Bun.toShape(),
-                        modifier = Modifier
-                            .size(112.dp)
-                            .scale(avatarScale.value),
-                        color = if (isUnlockedSuccess) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
-                        tonalElevation = 6.dp
+                    // ── Containment Hero Card ──────────────────────────────
+                    com.petal.browser.ui.containment.PetalHeroCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 28.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(0.dp)
                         ) {
-                            Icon(
-                                imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
-                                contentDescription = stringResource(R.string.ui_app_lock),
-                                tint = if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(48.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Text(
-                        text = if (isUnlockedSuccess) "Unlocked Successfully" else "App Protected",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-
-                    Text(
-                        text = stringResource(R.string.ui_enter_your_passcode_or_use),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
-                    )
-
-                    PetalShapedPasswordInput(
-                        value = enteredPasscode,
-                        onValueChange = { newValue ->
-                            enteredPasscode = newValue
-                            if (errorMessage != null) errorMessage = null
-                            if (savedPasscode.isNotBlank() && newValue.trim() == savedPasscode.trim()) {
-                                verifyPasscode()
+                            // Icon badge
+                            com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                shape = com.petal.browser.ui.theme.PetalMaterialShapes.Bun.toShape(),
+                                containerColor = if (isUnlockedSuccess)
+                                    MaterialTheme.colorScheme.primaryContainer
+                                else
+                                    MaterialTheme.colorScheme.primary,
+                                contentColor = if (isUnlockedSuccess)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onPrimary,
+                                size = 96.dp,
+                                iconSize = 44.dp,
+                                modifier = Modifier.scale(avatarScale.value)
+                            ) {
+                                Icon(
+                                    imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
+                                    contentDescription = stringResource(R.string.ui_app_lock),
+                                    modifier = Modifier.size(44.dp)
+                                )
                             }
-                        },
-                        hintText = "Enter App Password",
-                        isError = errorMessage != null,
-                        accentColor = MaterialTheme.colorScheme.primary,
-                        onUnlock = { verifyPasscode() },
-                        unlockButtonText = "Unlock"
-                    )
 
-                    AnimatedVisibility(
-                        visible = errorMessage != null,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        if (errorMessage != null) {
+                            Spacer(modifier = Modifier.height(20.dp))
+
                             Text(
-                                text = errorMessage!!,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(top = 8.dp)
+                                text = if (isUnlockedSuccess) "Unlocked Successfully" else "App Protected",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    if (isBiometricAvailable) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = { triggerBiometricUnlock() },
-                                shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.ui_fingerprint), fontWeight = FontWeight.Bold)
-                            }
-
-                            IconButton(
-                                onClick = { showChoiceDialog = true },
-                                colors = IconButtonDefaults.filledTonalIconButtonColors(),
-                                modifier = Modifier.size(48.dp)
-                            ) {
-                                Icon(Icons.Rounded.Security, contentDescription = stringResource(R.string.ui_choose_lock_option))
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = {
-                                enteredPasscode = ""
-                                errorMessage = null
-                            }
-                        ) {
-                            Text(stringResource(R.string.ui_clear_input))
-                        }
-
-                        TextButton(
-                            onClick = {
-                                showForgotPasswordDialog = true
-                            },
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
+                            Text(
+                                text = stringResource(R.string.ui_enter_your_passcode_or_use),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
                             )
-                        ) {
-                            Text(stringResource(R.string.ui_forgot_password))
+
+                            PetalShapedPasswordInput(
+                                value = enteredPasscode,
+                                onValueChange = { newValue ->
+                                    enteredPasscode = newValue
+                                    if (errorMessage != null) errorMessage = null
+                                    if (savedPasscode.isNotBlank() && newValue.trim() == savedPasscode.trim()) {
+                                        verifyPasscode()
+                                    }
+                                },
+                                hintText = "Enter App Password",
+                                isError = errorMessage != null,
+                                accentColor = MaterialTheme.colorScheme.primary,
+                                onUnlock = { verifyPasscode() },
+                                unlockButtonText = "Unlock"
+                            )
+
+                            AnimatedVisibility(
+                                visible = errorMessage != null,
+                                enter = fadeIn(),
+                                exit = fadeOut()
+                            ) {
+                                if (errorMessage != null) {
+                                    Text(
+                                        text = errorMessage!!,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            if (isBiometricAvailable) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    FilledTonalButton(
+                                        onClick = { triggerBiometricUnlock() },
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        ),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(stringResource(R.string.ui_fingerprint), fontWeight = FontWeight.Bold)
+                                    }
+
+                                    FilledTonalIconButton(
+                                        onClick = { showChoiceDialog = true },
+                                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        ),
+                                        modifier = Modifier.size(48.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.Security, contentDescription = stringResource(R.string.ui_choose_lock_option))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        enteredPasscode = ""
+                                        errorMessage = null
+                                    }
+                                ) {
+                                    Text(stringResource(R.string.ui_clear_input))
+                                }
+
+                                TextButton(
+                                    onClick = {
+                                        showForgotPasswordDialog = true
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.ui_forgot_password))
+                                }
+                            }
                         }
                     }
                 }

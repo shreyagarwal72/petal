@@ -789,51 +789,40 @@ fun PetalAiSearchResultSheet(
                                     "How to optimize Android app performance?" to PetalMaterialShapes.Burst
                                 )
 
-                                samplePrompts.forEach { (prompt, shapeType) ->
-                                    Surface(
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                searchQuery = prompt
-                                                executeSearch(prompt)
-                                            }
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            PetalShapeIconBadge(
+                                samplePrompts.forEachIndexed { index, (prompt, shapeType) ->
+                                    com.petal.browser.ui.containment.PetalGroupListRow(
+                                        position = com.petal.browser.ui.containment.petalGroupPositionFor(index, samplePrompts.size),
+                                        onClick = {
+                                            searchQuery = prompt
+                                            executeSearch(prompt)
+                                        },
+                                        leading = {
+                                            com.petal.browser.ui.containment.PetalGroupIconBadge(
                                                 shape = shapeType.toShape(),
-                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                                contentColor = MaterialTheme.colorScheme.primary,
-                                                size = 34.dp,
-                                                iconSize = 16.dp
+                                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                size = 40.dp,
+                                                iconSize = 18.dp
                                             ) {
-                                                Icon(
-                                                    Icons.Rounded.AutoAwesome,
-                                                    contentDescription = null
-                                                )
+                                                Icon(Icons.Rounded.AutoAwesome, contentDescription = null)
                                             }
-
+                                        },
+                                        content = {
                                             Text(
                                                 text = prompt,
                                                 style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                modifier = Modifier.weight(1f)
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
-
+                                        },
+                                        trailing = {
                                             Icon(
                                                 Icons.Rounded.ArrowOutward,
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                                tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(18.dp)
                                             )
                                         }
-                                    }
+                                    )
                                 }
                             }
                         }

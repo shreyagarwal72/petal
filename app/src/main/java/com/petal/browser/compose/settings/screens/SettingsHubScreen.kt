@@ -32,6 +32,9 @@ import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.SettingsMenuItem
 import com.petal.browser.ui.components.getGroupItemShape
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupNavigationRow
+import com.petal.browser.ui.containment.petalGroupPositionFor
 
 /**
  * Main Settings Hub Screen matching RvSystem-Monitor's SettingsScreen.kt visual structure:
@@ -209,10 +212,9 @@ fun SettingsHubScreen(
                     }
 
                     itemsIndexed(matchingItems) { index, item ->
-                        val shape = getGroupItemShape(index, matchingItems.size)
                         SearchItemCard(
                             item = item,
-                            shape = shape,
+                            shape = getGroupItemShape(index, matchingItems.size),
                             onClick = { onCategoryClick(item.category, item.id) }
                         )
                     }
@@ -234,13 +236,18 @@ fun SettingsHubScreen(
                     }
 
                     itemsIndexed(filteredCategories) { index, category ->
-                        val shape = getGroupItemShape(index, filteredCategories.size)
-                        SettingsMenuItem(
+                        PetalGroupNavigationRow(
                             title = category.title,
                             subtitle = category.subtitle,
-                            icon = painterResource(category.iconRes),
-                            shape = shape,
-                            onClick = { onCategoryClick(category, null) }
+                            position = petalGroupPositionFor(index, filteredCategories.size),
+                            onClick = { onCategoryClick(category, null) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(category.iconRes),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
                         )
                     }
                 } else if (isSearching && matchingItems.isEmpty()) {
@@ -284,73 +291,51 @@ private fun SearchItemCard(
     shape: Shape,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(item.category.iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+    com.petal.browser.ui.containment.PetalGroupListRow(
+        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+        onClick = onClick,
+        leading = {
+            PetalGroupIconBadge(
+                painter = painterResource(item.category.iconRes)
+            )
+        },
+        content = {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
             ) {
                 Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ) {
-                        Text(
-                            text = item.category.title,
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                Text(
-                    text = item.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
+                    text = item.category.title,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
+            Text(
+                text = item.subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        trailing = {
+            Icon(
+                Icons.Rounded.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
         }
-    }
+    )
 }
