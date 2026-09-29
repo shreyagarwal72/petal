@@ -144,7 +144,10 @@ fun PetalPasswordsScreen(
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier
+        .fillMaxSize()
+        .background(MaterialTheme.colorScheme.background)
+    ) {
         M3ExpressiveVariableBackground(pageSeed = "petal_passwords_screen")
 
         Column(modifier = Modifier.fillMaxSize()) {
