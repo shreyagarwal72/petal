@@ -70,6 +70,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -93,6 +97,13 @@ class CustomRedirectsDialog : DialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         return ComposeView(requireContext()).apply {
+            // The dialog window is separate from the Activity decor; bind owners explicitly so
+            // attaching never throws "ViewTreeLifecycleOwner not found from ComposeView".
+            val host = requireActivity()
+            setViewTreeLifecycleOwner(viewLifecycleOwner)
+            if (host is androidx.lifecycle.ViewModelStoreOwner) setViewTreeViewModelStoreOwner(host)
+            if (host is androidx.savedstate.SavedStateRegistryOwner) setViewTreeSavedStateRegistryOwner(host)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 PetalExpressiveTheme {
                     CustomRedirectsDialogContent(
