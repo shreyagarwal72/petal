@@ -163,20 +163,20 @@ fun PetalProfileSwitchSheet(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Profile color ring & indicator
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(CircleShape)
-                                        .background(profileColor.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center
+                                com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                    shape = RoundedCornerShape(12.dp),
+                                    containerColor = profileColor.copy(alpha = 0.22f),
+                                    contentColor = profileColor,
+                                    size = 42.dp,
+                                    iconSize = 22.dp
                                 ) {
                                     if (profile.customAvatarUri != null) {
                                         AsyncImage(
                                             model = profile.customAvatarUri,
                                             contentDescription = null,
                                             modifier = Modifier
-                                                .size(38.dp)
-                                                .clip(CircleShape),
+                                                .size(42.dp)
+                                                .clip(RoundedCornerShape(12.dp)),
                                             contentScale = ContentScale.Crop
                                         )
                                     } else {
@@ -184,7 +184,7 @@ fun PetalProfileSwitchSheet(
                                             imageVector = if (profile.isDefault) Icons.Rounded.Person else Icons.Rounded.FolderShared,
                                             contentDescription = null,
                                             tint = profileColor,
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(22.dp)
                                         )
                                     }
                                 }

@@ -229,11 +229,11 @@ fun PetalDeleteScreen(
                                 sp.edit().putBoolean("sp_clear_history", it).apply()
                             },
                             position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.History,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         )
@@ -247,11 +247,11 @@ fun PetalDeleteScreen(
                                 sp.edit().putBoolean("sp_clear_cache", it).apply()
                             },
                             position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.CleaningServices,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         )
@@ -265,11 +265,11 @@ fun PetalDeleteScreen(
                                 sp.edit().putBoolean("sp_clearIndexedDB", it).apply()
                             },
                             position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Storage,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         )
@@ -283,11 +283,11 @@ fun PetalDeleteScreen(
                                 sp.edit().putBoolean("sp_clear_cookie", it).apply()
                             },
                             position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Cookie,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         )
@@ -301,11 +301,11 @@ fun PetalDeleteScreen(
                                 sp.edit().putBoolean("sp_deleteDatabase", it).apply()
                             },
                             position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.FolderSpecial,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         )
@@ -319,11 +319,11 @@ fun PetalDeleteScreen(
                                 sp.edit().putBoolean("sp_clear_settings", it).apply()
                             },
                             position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Tune,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         )
@@ -337,11 +337,11 @@ fun PetalDeleteScreen(
                                 sp.edit().putBoolean("sp_clear_quit", it).putBoolean("sp_clear_on_exit", it).apply()
                             },
                             position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.ERROR,
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.PowerSettingsNew,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         )

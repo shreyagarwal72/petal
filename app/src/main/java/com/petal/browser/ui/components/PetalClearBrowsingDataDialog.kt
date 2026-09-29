@@ -241,11 +241,12 @@ private fun ExpressiveClearOptionRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.size(20.dp)
+            com.petal.browser.ui.containment.PetalGroupIconBadge(
+                icon = icon,
+                variant = if (checked) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL,
+                size = 36.dp,
+                iconSize = 18.dp,
+                shape = RoundedCornerShape(10.dp)
             )
             Text(
                 text = label,

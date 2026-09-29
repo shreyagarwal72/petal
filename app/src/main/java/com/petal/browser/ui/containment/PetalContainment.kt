@@ -287,7 +287,9 @@ fun PetalGroupControlRow(
     leadingIcon: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    variant: PetalBadgeVariant = PetalBadgeVariant.PRIMARY,
 ) {
+    val (containerColor, contentColor) = variant.colors()
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
     Card(
@@ -303,8 +305,8 @@ fun PetalGroupControlRow(
             if (leadingIcon != null) {
                 PetalGroupIconBadge(
                     shape = RoundedCornerShape(14.dp),
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = containerColor,
+                    contentColor = contentColor,
                 ) { leadingIcon() }
                 Spacer(Modifier.width(14.dp))
             }

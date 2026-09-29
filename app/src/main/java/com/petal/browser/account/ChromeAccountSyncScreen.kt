@@ -541,10 +541,10 @@ private fun RenderUserProfileContent(
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.mobile_vibrate_filled),
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         },
                         position = petalGroupPositionFor(0, securityItemCount),
+                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
                         onClick = { onOpenAppLockConfig() }
                     )
 
@@ -566,11 +566,11 @@ private fun RenderUserProfileContent(
                             }
                         },
                         position = petalGroupPositionFor(1, securityItemCount),
+                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY,
                         leadingIcon = {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     )
@@ -585,11 +585,11 @@ private fun RenderUserProfileContent(
                             sp.edit().putBoolean("sp_https_only", checked).apply()
                         },
                         position = petalGroupPositionFor(2, securityItemCount),
+                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY,
                         leadingIcon = {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     )
@@ -762,10 +762,10 @@ private fun RenderUserProfileContent(
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.reset_settings_rounded),
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         },
                         position = petalGroupPositionFor(1, storageItemCount),
+                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.ERROR,
                         onClick = { showClearDataDialog = true }
                     )
                 }
