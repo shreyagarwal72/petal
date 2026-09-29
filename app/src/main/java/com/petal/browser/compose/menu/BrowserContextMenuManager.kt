@@ -82,12 +82,20 @@ object BrowserContextMenuManager {
 
                 override fun onCopyLinkAddress() {
                     HelperUnit.copy(activity, imageURL)
-                    PetalToast.show(activity, "Image URL copied")
+                    PetalToast.show(activity, "Image address copied")
                 }
 
                 override fun onCopyImage() {
+                    if (imageURL.isNotBlank()) {
+                        ImageActionHelper.copyImage(activity, imageURL)
+                    } else {
+                        PetalToast.show(activity, "No valid image URL found")
+                    }
+                }
+
+                override fun onCopyImageAddress() {
                     HelperUnit.copy(activity, imageURL)
-                    PetalToast.show(activity, "Image copied to clipboard")
+                    PetalToast.show(activity, "Image address copied")
                 }
 
                 override fun onCopyLinkText() {
@@ -177,12 +185,17 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
-    fun showLinkContextMenu(activity: BrowserActivity, urlResult: String) {
+    @JvmOverloads
+    fun showLinkContextMenu(activity: BrowserActivity, urlResult: String, linkText: String? = null) {
+        val parsed = Uri.parse(urlResult)
+        val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
+            "${parsed.scheme}://${parsed.authority}/favicon.ico"
+        } else null
         PetalLinkContextMenuBridge.show(
             activity,
-            HelperUnit.domain(urlResult),
+            linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(urlResult),
             urlResult,
-            "$urlResult/favicon.ico",
+            faviconUrl,
             false, // isImage
             false, // isVideo
             object : PetalLinkContextMenuHandler {
@@ -248,8 +261,13 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyLinkText() {
-                    HelperUnit.copy(activity, HelperUnit.domain(urlResult))
-                    PetalToast.show(activity, "Link text copied")
+                    val text = linkText?.trim().orEmpty()
+                    if (text.isNotEmpty()) {
+                        HelperUnit.copy(activity, text)
+                        PetalToast.show(activity, "Link text copied")
+                    } else {
+                        PetalToast.show(activity, "This link has no text")
+                    }
                 }
 
                 override fun onDownloadLink() {
