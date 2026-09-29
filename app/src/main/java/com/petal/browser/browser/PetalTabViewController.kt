@@ -482,7 +482,7 @@ class PetalTabViewController private constructor(
     }
 
     private fun applyPageSettings(url: String?) {
-        if (observedSession == null) return
+        val session = observedSession ?: return
         // JavaScript is controlled by GeckoRuntime and applied by syncPreferences below.
         // The generic EngineSession setting is unsupported by this Gecko engine adapter.
         val profile = com.petal.browser.view.PetalGeckoView.getProfile(appContext)
