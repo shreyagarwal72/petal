@@ -1402,4 +1402,5 @@
     <string name="ui_petal_home">Petal Home</string>
     <string name="ui_ask_petal_ai">Ask Petal AI</string>
     <string name="petal_autofill_service_name">Petal Autofill</string>
+    <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
 </resources>
