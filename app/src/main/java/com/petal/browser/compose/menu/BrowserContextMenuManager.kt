@@ -50,6 +50,7 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
+    @JvmOverloads
     fun showImageContextMenu(activity: BrowserActivity, imageURL: String, anchorLinkUri: String? = null) {
         // When an image is wrapped in <a>, linkUrl shows the anchor target; imageURL is the image src
         val linkUrlForMenu = anchorLinkUri?.takeIf { it.isNotBlank() } ?: imageURL
@@ -182,6 +183,7 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
+    @JvmOverloads
     fun showLinkContextMenu(activity: BrowserActivity, urlResult: String, linkText: String? = null) {
         val title = if (!linkText.isNullOrBlank()) linkText else HelperUnit.domain(urlResult)
         PetalLinkContextMenuBridge.show(
