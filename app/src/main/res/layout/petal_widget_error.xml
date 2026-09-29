@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/petal_widget_error_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="8dp"
+    android:background="@drawable/bg_petal_widget">
+
+    <TextView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:text="P"
+        android:textColor="#FFFFFF"
+        android:textSize="21sp"
+        android:textStyle="bold"
+        android:background="#6750A4" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="4dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:text="@string/widget_search_hint"
+        android:textColor="#1B1B1F"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/petal_widget_error_new_tab"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:singleLine="true"
+        android:text="@string/ui_new_tab"
+        android:textColor="#381E72"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:background="#EADDFF" />
+</LinearLayout>

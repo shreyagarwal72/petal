@@ -2,6 +2,8 @@ package com.petal.browser.widget.glance
 
 import android.content.Context
 import android.content.Intent
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -57,6 +59,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
 import androidx.preference.PreferenceManager
+import android.widget.RemoteViews
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.ui.theme.ColorStyle
@@ -267,6 +270,32 @@ private fun createMonogramBadgeBitmap(
     return bitmap
 }
 
+/** Gives launchers a usable Petal surface if Glance composition fails. */
+abstract class PetalSearchGlanceWidget : GlanceAppWidget(errorUiLayout = R.layout.petal_widget_error) {
+    override fun onCompositionError(
+        context: Context,
+        glanceId: GlanceId,
+        appWidgetId: Int,
+        throwable: Throwable,
+    ) {
+        android.util.Log.e("PetalWidget", "Glance composition failed for widget $appWidgetId", throwable)
+        val views = RemoteViews(context.packageName, R.layout.petal_widget_error)
+        val searchIntent = widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH)
+        val newTabIntent = widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB)
+        val immutable = PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+        views.setOnClickPendingIntent(
+            R.id.petal_widget_error_root,
+            PendingIntent.getActivity(context, appWidgetId * 2, searchIntent, immutable),
+        )
+        views.setOnClickPendingIntent(
+            R.id.petal_widget_error_new_tab,
+            PendingIntent.getActivity(context, appWidgetId * 2 + 1, newTabIntent, immutable),
+        )
+        AppWidgetManager.getInstance(context).updateAppWidget(appWidgetId, views)
+    }
+}
+
 /**
  * Petal Search Widget #1:
  * - At x x 1 (compact): Mirrors Google search widget from screenshot:
@@ -275,11 +304,12 @@ private fun createMonogramBadgeBitmap(
  * - At x x 2 (expanded tall): Combines top search bar pill with bottom shortcuts grid
  *   (New Tab, Bookmarks, Downloads, Incognito).
  */
-class PetalSearchPetal1Widget : GlanceAppWidget() {
+class PetalSearchPetal1Widget : PetalSearchGlanceWidget() {
 
     companion object {
-        private val COMPACT_1X1 = DpSize(200.dp, 48.dp)
-        private val EXPANDED_1X2 = DpSize(240.dp, 90.dp)
+        // Keep responsive breakpoints at or above the provider's declared host minimums.
+        private val COMPACT_1X1 = DpSize(250.dp, 56.dp)
+        private val EXPANDED_1X2 = DpSize(250.dp, 112.dp)
     }
 
     override val sizeMode: SizeMode = SizeMode.Responsive(
@@ -560,8 +590,10 @@ private fun WidgetShortcutTile(
  * - Pill search bar on left with elevated surface
  * - Expressive action island squircle buttons on right: AI Assistant, Incognito, and Lens/Camera
  */
-class PetalSearchPetal2Widget : GlanceAppWidget() {
-    override val sizeMode: SizeMode = SizeMode.Single
+class PetalSearchPetal2Widget : PetalSearchGlanceWidget() {
+    override val sizeMode: SizeMode = SizeMode.Responsive(
+        setOf(DpSize(180.dp, 56.dp), DpSize(250.dp, 56.dp), DpSize(330.dp, 56.dp))
+    )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
@@ -686,8 +718,10 @@ private fun SquircleGlanceActionButton(
  * holding the app logo / lettermark "P", leading into an open search area with a single AI sparkle
  * shortcut icon aligned on the right.
  */
-class PetalSearchPetal3Widget : GlanceAppWidget() {
-    override val sizeMode: SizeMode = SizeMode.Single
+class PetalSearchPetal3Widget : PetalSearchGlanceWidget() {
+    override val sizeMode: SizeMode = SizeMode.Responsive(
+        setOf(DpSize(180.dp, 56.dp), DpSize(250.dp, 56.dp), DpSize(330.dp, 56.dp))
+    )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
