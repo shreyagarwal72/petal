@@ -789,7 +789,10 @@ class PetalGeckoView @JvmOverloads constructor(
                             com.petal.browser.compose.menu.BrowserContextMenuManager.showAudioContextMenu(act, srcUri)
                         }
                         !linkUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(act, linkUri)
+                            val linkText = runCatching {
+                                element.javaClass.getField("textContent").get(element) as? String
+                            }.getOrNull()
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(act, linkUri, linkText)
                         }
                         !srcUri.isNullOrEmpty() -> {
                             com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
