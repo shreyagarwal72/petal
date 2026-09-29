@@ -3,17 +3,19 @@ package com.petal.browser.passwords
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,20 +23,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.petal.browser.compose.settings.screens.SettingsCategoryCard
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalExpressiveDialog
 import com.petal.browser.ui.components.PetalShapedPasswordInput
+import com.petal.browser.ui.containment.*
 import com.petal.browser.unit.PasswordBreachAuditManager
 import com.petal.browser.view.PetalToast
-import kotlinx.coroutines.launch
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -154,197 +154,212 @@ fun PetalPasswordsScreen(
                 onBack = onNavigateBack
             )
 
-            // Search and action bar
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)
             ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search logins & domains...") },
-                    leadingIcon = {
-                        Icon(Icons.Rounded.Search, contentDescription = null)
-                    },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Rounded.Clear, contentDescription = "Clear")
+                // 1. Status Hero Card (Hardware Vault status & stats)
+                item {
+                    PetalStatusHeroCard(
+                        title = "Petal Secure Vault",
+                        subtitle = "${credentials.size} passwords stored locally • AES-256 GCM",
+                        statusText = "Hardware Encrypted",
+                        icon = Icons.Rounded.Security,
+                        statusActive = true,
+                        actionLabel = "System Autofill",
+                        onActionClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                try {
+                                    val intent = Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).apply {
+                                        data = android.net.Uri.parse("package:${context.packageName}")
+                                    }
+                                    activity.startActivity(intent)
+                                } catch (_: Exception) {
+                                    try {
+                                        val intent = Intent(Settings.ACTION_SETTINGS)
+                                        activity.startActivity(intent)
+                                    } catch (_: Exception) {
+                                        PetalToast.show(context, "Open Android Settings > System > Autofill")
+                                    }
+                                }
                             }
                         }
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Action buttons: Add, Import, Export
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilledTonalButton(
-                        onClick = { isAddingNew = true },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
-                    ) {
-                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Add Login")
-                    }
-
-                    OutlinedButton(
-                        onClick = { showImportSheet = true },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
-                    ) {
-                        Icon(Icons.Rounded.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Import")
-                    }
-
-                    OutlinedButton(
-                        onClick = { showExportDialog = true },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
-                    ) {
-                        Icon(Icons.Rounded.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Export")
-                    }
+                    )
                 }
-            }
 
-            // List of saved logins
-            if (filteredList.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                // 2. Search & Filter Bar
+                item {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search logins & domains...") },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.Search, contentDescription = null)
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Rounded.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // 3. Quick Actions Group
+                item {
+                    PetalSettingsSection(
+                        title = "Vault Management",
+                        icon = Icons.Rounded.ManageAccounts
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.size(72.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.Lock,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(36.dp)
+                        PetalGroup(rowCount = 3) { index, position ->
+                            when (index) {
+                                0 -> PetalGroupRow(
+                                    icon = Icons.Rounded.AddCircle,
+                                    title = "Add New Login",
+                                    subtitle = "Store a username and password",
+                                    position = position,
+                                    onClick = { isAddingNew = true }
+                                )
+                                1 -> PetalGroupRow(
+                                    icon = Icons.Rounded.FileDownload,
+                                    title = "Import Passwords",
+                                    subtitle = "Chrome, Firefox, Bitwarden, 1Password, Petal",
+                                    position = position,
+                                    onClick = { showImportSheet = true }
+                                )
+                                2 -> PetalGroupRow(
+                                    icon = Icons.Rounded.FileUpload,
+                                    title = "Export Backup",
+                                    subtitle = "Encrypted (.petal) or JSON backup",
+                                    position = position,
+                                    onClick = { showExportDialog = true }
                                 )
                             }
                         }
-                        Text(
-                            text = if (searchQuery.isBlank()) "No Saved Passwords" else "No Matching Passwords",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = if (searchQuery.isBlank())
-                                "Your passwords saved in Petal or imported from Chrome, Firefox, or Bitwarden will appear here."
-                            else "Try searching for a different domain or username.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 24.dp)
-                        )
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp)
-                ) {
-                    items(filteredList, key = { it.id }) { item ->
-                        CredentialListItem(
-                            credential = item,
-                            onClick = { selectedCredentialForDetails = item },
-                            onToggleFavorite = {
-                                PetalCredentialVault.toggleFavorite(item.id)
-                                reloadCredentials()
+
+                // 4. Saved Logins Section
+                item {
+                    PetalSectionLabel(
+                        text = if (searchQuery.isBlank()) "Saved Logins (${filteredList.size})" else "Matching Logins (${filteredList.size})"
+                    )
+                }
+
+                if (filteredList.isEmpty()) {
+                    item {
+                        PetalHeroCard(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(28.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    modifier = Modifier.size(56.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Rounded.Lock,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = if (searchQuery.isBlank()) "No Passwords Stored" else "No Matches Found",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (searchQuery.isBlank())
+                                        "Saved logins in Petal or imported from Chrome, Firefox, or Bitwarden will appear here."
+                                    else "Try searching for a different domain or username.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                        )
+                        }
+                    }
+                } else {
+                    item {
+                        PetalGroup(rowCount = filteredList.size) { index, position ->
+                            val item = filteredList[index]
+                            PetalGroupListRow(
+                                position = position,
+                                onClick = { selectedCredentialForDetails = item },
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        shape = CircleShape,
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        size = 40.dp
+                                    ) {
+                                        Text(
+                                            text = item.domain.take(1).uppercase(),
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                },
+                                headline = {
+                                    Text(
+                                        text = item.domain,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                supporting = {
+                                    Text(
+                                        text = item.username.ifBlank { "Password only" },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                trailing = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(
+                                            onClick = {
+                                                PetalCredentialVault.toggleFavorite(item.id)
+                                                reloadCredentials()
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = if (item.isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                                                contentDescription = "Favorite",
+                                                tint = if (item.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Icon(
+                                            Icons.Rounded.ChevronRight,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CredentialListItem(
-    credential: PetalCredential,
-    onClick: () -> Unit,
-    onToggleFavorite: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = credential.domain.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = credential.domain,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = credential.username.ifBlank { "Password only" },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            IconButton(onClick = onToggleFavorite) {
-                Icon(
-                    imageVector = if (credential.isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                    contentDescription = "Favorite",
-                    tint = if (credential.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

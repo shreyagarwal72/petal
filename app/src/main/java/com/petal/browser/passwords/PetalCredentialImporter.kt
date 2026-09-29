@@ -303,6 +303,10 @@ object PetalCredentialImporter {
         val lowerContent = content.take(1000).lowercase()
 
         return when {
+            PetalCredentialVault.isEncryptedBackup(content) || lowerName.endsWith(".petal") -> {
+                val imported = PetalCredentialVault.importEncrypted(content)
+                "Encrypted Petal Backup ($imported imported)" to emptyList()
+            }
             lowerName.endsWith(".json") || lowerContent.startsWith("{") || lowerContent.startsWith("[") -> {
                 if (lowerContent.contains("\"items\"") && lowerContent.contains("\"login\"")) {
                     "Bitwarden JSON" to importFromBitwardenJson(content)

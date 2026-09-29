@@ -208,6 +208,64 @@ object PetalCredentialVault {
         return gson.toJson(credentials)
     }
 
+    private const val ENCRYPTED_BACKUP_MAGIC = "PETAL_ENC_VAULT_V1:"
+
+    /**
+     * Exports credentials encrypted with hardware-backed AES-256 GCM key so it can ONLY be restored by Petal.
+     * Returns a string prefixed with PETAL_ENC_VAULT_V1: followed by Base64(IV + Ciphertext).
+     */
+    @Synchronized
+    fun exportEncrypted(): String {
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, getSecretKey())
+        val iv = cipher.iv
+        val jsonBytes = gson.toJson(credentials).toByteArray(Charsets.UTF_8)
+        val ciphertext = cipher.doFinal(jsonBytes)
+        val combined = ByteArray(iv.size + ciphertext.size)
+        System.arraycopy(iv, 0, combined, 0, iv.size)
+        System.arraycopy(ciphertext, 0, combined, iv.size, ciphertext.size)
+        return ENCRYPTED_BACKUP_MAGIC + Base64.encodeToString(combined, Base64.NO_WRAP)
+    }
+
+    /**
+     * Checks if a content string is an encrypted Petal backup.
+     */
+    fun isEncryptedBackup(content: String): Boolean {
+        return content.trim().startsWith(ENCRYPTED_BACKUP_MAGIC)
+    }
+
+    /**
+     * Imports credentials from an encrypted Petal backup.
+     */
+    @Synchronized
+    fun importEncrypted(content: String): Int {
+        return try {
+            val trimmed = content.trim()
+            if (!trimmed.startsWith(ENCRYPTED_BACKUP_MAGIC)) {
+                return 0
+            }
+            val base64Data = trimmed.removePrefix(ENCRYPTED_BACKUP_MAGIC)
+            val combined = Base64.decode(base64Data, Base64.DEFAULT)
+            if (combined.size <= GCM_IV_LENGTH) return 0
+
+            val iv = ByteArray(GCM_IV_LENGTH)
+            System.arraycopy(combined, 0, iv, 0, GCM_IV_LENGTH)
+            val cipherTextSize = combined.size - GCM_IV_LENGTH
+            val ciphertext = ByteArray(cipherTextSize)
+            System.arraycopy(combined, GCM_IV_LENGTH, ciphertext, 0, cipherTextSize)
+
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
+            cipher.init(Cipher.DECRYPT_MODE, getSecretKey(), spec)
+            val decryptedBytes = cipher.doFinal(ciphertext)
+            val json = String(decryptedBytes, Charsets.UTF_8)
+            importFromJson(json)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to decrypt and import encrypted backup", e)
+            0
+        }
+    }
+
     @Synchronized
     fun importFromJson(json: String): Int {
         return try {

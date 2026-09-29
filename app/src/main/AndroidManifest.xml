@@ -193,6 +193,20 @@
             </intent-filter>
         </service>
 
+        <!-- Petal System Autofill Service -->
+        <service
+            android:name="com.petal.browser.passwords.PetalAutofillService"
+            android:label="@string/petal_autofill_service_name"
+            android:permission="android.permission.BIND_AUTOFILL_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.autofill.AutofillService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.autofill"
+                android:resource="@xml/petal_autofill_service_config" />
+        </service>
+
         <activity
             android:name="com.petal.browser.activity.BrowserActivity"
             android:theme="@style/Theme.Petal.Splash"

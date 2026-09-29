@@ -73,6 +73,9 @@ fun PetalPasswordImportSheet(
                     "PETAL_JSON" -> {
                         count = PetalCredentialVault.importFromJson(content)
                     }
+                    "PETAL_ENC" -> {
+                        count = PetalCredentialVault.importEncrypted(content)
+                    }
                     else -> {
                         val (_, creds) = PetalCredentialImporter.detectAndImport(file.name, content)
                         creds.forEach { PetalCredentialVault.save(it) }
@@ -142,6 +145,7 @@ fun PetalPasswordImportSheet(
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "CHROME") },
                                     onDismiss = {}
                                 )
@@ -157,6 +161,7 @@ fun PetalPasswordImportSheet(
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "FIREFOX") },
                                     onDismiss = {}
                                 )
@@ -172,6 +177,7 @@ fun PetalPasswordImportSheet(
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("application/json", "text/plain"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "BITWARDEN") },
                                     onDismiss = {}
                                 )
@@ -187,6 +193,7 @@ fun PetalPasswordImportSheet(
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "ONE_PASSWORD") },
                                     onDismiss = {}
                                 )
@@ -202,6 +209,7 @@ fun PetalPasswordImportSheet(
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "DASHLANE") },
                                     onDismiss = {}
                                 )
@@ -217,7 +225,24 @@ fun PetalPasswordImportSheet(
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,
                                     mimeTypes = arrayOf("application/json", "text/plain"),
+                                    asModalDialog = true,
                                     onFileSelected = { file -> processFile(file, "PETAL_JSON") },
+                                    onDismiss = {}
+                                )
+                            }
+                        )
+                    }
+                    item {
+                        ImportSourceOption(
+                            icon = Icons.Rounded.EnhancedEncryption,
+                            title = "Encrypted Petal Vault",
+                            subtitle = "Hardware-encrypted Petal backup (*.petal)",
+                            onClick = {
+                                PetalFilePickerBridge.showFilePicker(
+                                    activity = activity,
+                                    mimeTypes = arrayOf("*/*", "application/octet-stream", "text/plain"),
+                                    asModalDialog = true,
+                                    onFileSelected = { file -> processFile(file, "PETAL_ENC") },
                                     onDismiss = {}
                                 )
                             }
