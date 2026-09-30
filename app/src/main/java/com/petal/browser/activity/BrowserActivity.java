@@ -250,10 +250,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         surface.setOnBrowserStateChanged(state -> {
             runOnUiThread(() -> {
                 if (currentAlbumController != surface) return;
+                String stateUrl = state.getUrl();
+                boolean isStateHome = isHomePage(stateUrl);
+                if (isStateHome != isPetalHomeSurfaceShowing) {
+                    showAlbum(surface, stateUrl);
+                    return;
+                }
                 updateAddressBar();
                 updateBackCallbackState();
                 updateOmniBox();
-                if (Boolean.TRUE.equals(state.getLoading())) {
+                if (!isStateHome && Boolean.TRUE.equals(state.getLoading())) {
                     updateProgress(Math.max(10, state.getProgress()));
                 } else {
                     updateProgress(100);
