@@ -32,7 +32,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.lens.PetalScannerActivity
+import com.petal.browser.lens.PetalLensBridge
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -117,8 +117,7 @@ object PetalQuickToolsBridge {
         when (tool) {
             QuickToolId.QR_SCANNER -> {
                 try {
-                    val intent = Intent(activity, PetalScannerActivity::class.java)
-                    activity.startActivity(intent)
+                    PetalLensBridge.showPetalScannerDirectly(activity)
                 } catch (e: Exception) {
                     PetalToast.show(activity, "Opening Scanner...")
                 }
