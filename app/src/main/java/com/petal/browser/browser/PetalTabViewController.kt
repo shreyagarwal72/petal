@@ -597,17 +597,17 @@ class PetalTabViewController private constructor(
             return
         }
         try {
-            geckoView.capturePixels().then({ bitmap ->
+            geckoView.capturePixels().then({ bitmap: Bitmap? ->
                 val current = key == boundTabId && revision == previewRevision && sequence == previewCaptureSequence
                 if (bitmap != null && current) {
                     TabThumbnailCache.put(key, bitmap, privateTab)
                     capturedPreviewRevision = revision
                 }
                 callback(if (current) bitmap else null)
-                mozilla.geckoview.GeckoResult.fromValue(null)
+                org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
             }, {
                 callback(null)
-                mozilla.geckoview.GeckoResult.fromValue(null)
+                org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
             })
         } catch (_: Throwable) {
             callback(null)
