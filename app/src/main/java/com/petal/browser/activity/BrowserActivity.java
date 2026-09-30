@@ -3239,23 +3239,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             mFilePathCallback = null;
         }
 
-        // Launch in-browser Material 3 Expressive Media Picker with permissions and camera support
-        com.petal.browser.media.PetalMediaPickerBridge.showMediaPicker(
-            this,
-            filePathCallback,
-            fileChooserParams,
-            () -> {
-                com.petal.browser.compose.file.PetalFilePickerBridge.handleFileChooser(
-                    this,
-                    filePathCallback,
-                    fileChooserParams,
-                    () -> {
-                        launchSystemFileChooserFallback(filePathCallback, fileChooserParams);
-                        return kotlin.Unit.INSTANCE;
-                    }
-                );
-                return kotlin.Unit.INSTANCE;
-            }
+        // Petal-only upload flow: route media and document requests to their dedicated pickers.
+        com.petal.browser.compose.file.PetalUploadChooser.show(
+                this,
+                filePathCallback,
+                fileChooserParams,
+                () -> {
+                    Log.e(TAG, "Both Petal pickers failed to open");
+                    return kotlin.Unit.INSTANCE;
+                }
         );
     }
 

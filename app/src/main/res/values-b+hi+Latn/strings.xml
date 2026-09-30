@@ -1401,4 +1401,9 @@
     <string name="ui_incognito_mode">Incognito Mode</string>
     <string name="ui_petal_home">Petal Home</string>
     <string name="ui_ask_petal_ai">Petal AI se Puchein</string>
+    <string name="upload_chooser_title">Upload source chunein</string>
+    <string name="upload_chooser_files_title">Files</string>
+    <string name="upload_chooser_files_desc">Petal ke file picker se folders aur documents dekhein</string>
+    <string name="upload_chooser_media_title">Photos &amp; videos</string>
+    <string name="upload_chooser_media_desc">Gallery se chunein ya nayi photo lein</string>
 </resources>

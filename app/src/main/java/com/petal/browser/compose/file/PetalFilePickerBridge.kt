@@ -225,7 +225,7 @@ object PetalFilePickerBridge {
         activity: ComponentActivity,
         filePathCallback: ValueCallback<Array<Uri>>?,
         fileChooserParams: WebChromeClient.FileChooserParams?,
-        onSystemFallback: () -> Unit
+        onSystemFallback: (() -> Unit)? = null
     ) {
         val allowMultiple = fileChooserParams?.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
         val acceptTypes = fileChooserParams?.acceptTypes ?: emptyArray()
@@ -246,9 +246,7 @@ object PetalFilePickerBridge {
             onDismiss = {
                 filePathCallback?.onReceiveValue(null)
             },
-            onBrowseSystemFallback = {
-                onSystemFallback()
-            }
+            onBrowseSystemFallback = onSystemFallback
         )
     }
 }

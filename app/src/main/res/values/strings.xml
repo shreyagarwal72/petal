@@ -1403,4 +1403,9 @@
     <string name="ui_ask_petal_ai">Ask Petal AI</string>
     <string name="petal_autofill_service_name">Petal Autofill</string>
     <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
+    <string name="upload_chooser_title">Choose upload source</string>
+    <string name="upload_chooser_files_title">Files</string>
+    <string name="upload_chooser_files_desc">Browse folders and documents with Petal\'s file picker</string>
+    <string name="upload_chooser_media_title">Photos &amp; videos</string>
+    <string name="upload_chooser_media_desc">Pick from your gallery or take a new one</string>
 </resources>
