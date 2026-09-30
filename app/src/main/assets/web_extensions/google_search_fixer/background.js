@@ -1,18 +1,49 @@
 // background.js for Google Search Fixer
-// Spoofs Chrome for Android User-Agent header specifically on Google Search endpoints
-// to serve modern, interactive widgets, AMP cards, and rich layout.
+// Serves modern interactive search widgets while preserving genuine Chrome Client Hints
+// to prevent automated bot detection and first-search Captchas.
 
-const CHROME_MOBILE_UA = "Mozilla/5.0 (Linux; Android 14; Mobile; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36";
+const CHROME_VERSION = "131";
+const CHROME_MOBILE_UA = "Mozilla/5.0 (Linux; Android 14; Mobile; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
 
 browser.webRequest.onBeforeSendHeaders.addListener(
     function(details) {
-        for (let header of details.requestHeaders) {
-            if (header.name.toLowerCase() === "user-agent") {
-                header.value = CHROME_MOBILE_UA;
-                break;
+        let headers = details.requestHeaders;
+        let hasUa = false;
+        let hasSecChUa = false;
+        let hasSecChUaMobile = false;
+        let hasSecChUaPlatform = false;
+
+        for (let i = 0; i < headers.length; i++) {
+            const name = headers[i].name.toLowerCase();
+            if (name === "user-agent") {
+                headers[i].value = CHROME_MOBILE_UA;
+                hasUa = true;
+            } else if (name === "sec-ch-ua") {
+                headers[i].value = `"Chromium";v="${CHROME_VERSION}", "Not_A Brand";v="24", "Google Chrome";v="${CHROME_VERSION}"`;
+                hasSecChUa = true;
+            } else if (name === "sec-ch-ua-mobile") {
+                headers[i].value = "?1";
+                hasSecChUaMobile = true;
+            } else if (name === "sec-ch-ua-platform") {
+                headers[i].value = '"Android"';
+                hasSecChUaPlatform = true;
             }
         }
-        return { requestHeaders: details.requestHeaders };
+
+        if (!hasUa) {
+            headers.push({ name: "User-Agent", value: CHROME_MOBILE_UA });
+        }
+        if (!hasSecChUa) {
+            headers.push({ name: "Sec-CH-UA", value: `"Chromium";v="${CHROME_VERSION}", "Not_A Brand";v="24", "Google Chrome";v="${CHROME_VERSION}"` });
+        }
+        if (!hasSecChUaMobile) {
+            headers.push({ name: "Sec-CH-UA-Mobile", value: "?1" });
+        }
+        if (!hasSecChUaPlatform) {
+            headers.push({ name: "Sec-CH-UA-Platform", value: '"Android"' });
+        }
+
+        return { requestHeaders: headers };
     },
     {
         urls: [

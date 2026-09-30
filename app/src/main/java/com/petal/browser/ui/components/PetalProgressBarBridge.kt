@@ -10,12 +10,12 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
@@ -26,8 +26,6 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
@@ -58,7 +56,7 @@ class ProgressViewState(
             }
             visibleState.value = true
         } else {
-            // Firefox behavior: smoothly complete to 100%, linger for 180ms, fade out, then reset
+            // Smoothly complete to 100%, linger for 180ms, fade out, then reset
             progressState.value = 1f
             visibleState.value = true
 
@@ -137,6 +135,7 @@ object PetalProgressBarBridge {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PetalWebProgressIndicator(
     progress: Float,
@@ -151,7 +150,6 @@ fun PetalWebProgressIndicator(
         },
         label = "petalWebProgress",
     )
-    val scheme = androidx.compose.material3.MaterialTheme.colorScheme
 
     AnimatedVisibility(
         visible = visible,
@@ -161,18 +159,15 @@ fun PetalWebProgressIndicator(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(3.dp)
-                .clip(CircleShape)
-                .background(scheme.surfaceContainerHigh.copy(alpha = 0.6f))
-                .semantics { progressBarRangeInfo = ProgressBarRangeInfo(animatedProgress, 0f..1f) },
-            contentAlignment = Alignment.CenterStart,
+                .semantics { progressBarRangeInfo = ProgressBarRangeInfo(animatedProgress, 0f..1f) }
         ) {
-            Box(
+            LinearWavyProgressIndicator(
+                progress = { animatedProgress },
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(animatedProgress)
-                    .clip(CircleShape)
-                    .background(scheme.primary),
+                    .fillMaxWidth()
+                    .height(4.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
             )
         }
     }

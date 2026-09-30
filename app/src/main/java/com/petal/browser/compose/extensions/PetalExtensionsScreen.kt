@@ -785,7 +785,6 @@ private fun BuiltInExtensionSettingsDialog(
     when (spec.prefKey) {
         "petal_builtin_dark_webpages" -> {
             var whitelist by remember { mutableStateOf(PetalBuiltInExtensionManager.getDarkWebpagesWhitelist(context)) }
-            var contrast by remember { mutableStateOf(PetalBuiltInExtensionManager.getDarkWebpagesContrast(context)) }
             var newDomain by remember { mutableStateOf("") }
 
             com.petal.browser.ui.containment.PetalMaterialAlertDialog(
@@ -794,18 +793,6 @@ private fun BuiltInExtensionSettingsDialog(
                 title = { Text(stringResource(R.string.ui_petal_dark_webpages_settings)) },
                 text = {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        Text(stringResource(R.string.ui_contrast_inversion_level, contrast), style = MaterialTheme.typography.bodyMedium)
-                        Slider(
-                            value = contrast.toFloat(),
-                            onValueChange = {
-                                contrast = it.toInt()
-                                PetalBuiltInExtensionManager.setDarkWebpagesContrast(context, contrast)
-                            },
-                            valueRange = 50f..100f,
-                            steps = 10
-                        )
-
-                        Spacer(Modifier.height(16.dp))
                         Text(stringResource(R.string.ui_whitelisted_domains_disable_dark_mode), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(8.dp))
 

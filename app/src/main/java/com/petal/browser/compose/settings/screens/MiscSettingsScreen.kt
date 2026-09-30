@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -21,6 +22,9 @@ import com.petal.browser.compose.settings.viewmodel.MiscSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.lens.PetalLensManager
+import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.petalGroupShape
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -74,8 +78,8 @@ fun MiscSettingsScreenContent(
 
         Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
-                title = "Miscellaneous",
-                subtitle = "Custom tabs, external apps and camera tools",
+                title = stringResource(R.string.ui_miscellaneous),
+                subtitle = stringResource(R.string.ui_custom_tabs_external_apps_and),
                 onBack = onNavigateBack
             )
 
@@ -88,7 +92,7 @@ fun MiscSettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // External Applications & Tools Card
+                // External Applications & Tools Card: Snap Photo Scanner
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_snap_photo_scanner),
                     icon = Icons.Rounded.QrCodeScanner,
@@ -98,23 +102,55 @@ fun MiscSettingsScreenContent(
                     Text(
                         text = stringResource(R.string.ui_choose_which_scanner_receives_photos),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                     )
-                    listOf(
-                        PetalLensManager.SnapProvider.ASK to "Ask every time",
-                        PetalLensManager.SnapProvider.GOOGLE_LENS to "Google Lens",
-                        PetalLensManager.SnapProvider.PETAL_SCANNER to "Petal QR Scanner"
-                    ).forEach { (provider, label) ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clickable { onSnapProviderChange(provider) },
-                            verticalAlignment = Alignment.CenterVertically
+
+                    val snapOptions = listOf(
+                        Triple(PetalLensManager.SnapProvider.ASK, stringResource(R.string.ui_snap_provider_ask), Icons.Rounded.HelpOutline),
+                        Triple(PetalLensManager.SnapProvider.GOOGLE_LENS, stringResource(R.string.ui_snap_provider_google_lens), Icons.Rounded.Search),
+                        Triple(PetalLensManager.SnapProvider.PETAL_SCANNER, stringResource(R.string.ui_snap_provider_petal_scanner), Icons.Rounded.QrCodeScanner)
+                    )
+
+                    PetalGroup(rowCount = snapOptions.size) { index, position ->
+                        val (provider, label, icon) = snapOptions[index]
+                        val isSelected = snapProvider == provider
+                        Card(
+                            onClick = { onSnapProviderChange(provider) },
+                            shape = petalGroupShape(position),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                                else MaterialTheme.colorScheme.surfaceContainerHigh
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            RadioButton(selected = snapProvider == provider, onClick = { onSnapProviderChange(provider) })
-                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 60.dp)
+                                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                PetalGroupIconBadge(
+                                    icon = icon,
+                                    container = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                RadioButton(
+                                    selected = isSelected,
+                                    onClick = { onSnapProviderChange(provider) }
+                                )
+                            }
                         }
-                    }
-                    TextButton(onClick = { onSnapProviderChange(PetalLensManager.SnapProvider.ASK) }) {
-                        Text(stringResource(R.string.ui_choose_again_next_time))
                     }
                 }
 

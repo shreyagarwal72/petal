@@ -954,6 +954,9 @@
     <string name="ui_custom_tabs_external_apps_and">Custom tabs, external apps aur camera tools</string>
     <string name="ui_snap_photo_scanner">Snap Photo Scanner</string>
     <string name="ui_choose_which_scanner_receives_photos">Chunein ki Snap Photo aur sabhi Petal widgets ki photos kaun sa scanner paayega.</string>
+    <string name="ui_snap_provider_ask">Har baar poochhein</string>
+    <string name="ui_snap_provider_google_lens">Google Lens</string>
+    <string name="ui_snap_provider_petal_scanner">Petal QR Scanner</string>
     <string name="ui_choose_again_next_time">Agli baar phir chunein</string>
     <string name="ui_custom_tabs_external_links">Custom Tabs aur External Links</string>
     <string name="ui_petal_custom_tabs">Petal Custom Tabs</string>

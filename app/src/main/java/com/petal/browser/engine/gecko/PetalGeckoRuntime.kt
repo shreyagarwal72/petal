@@ -188,29 +188,26 @@ object PetalGeckoRuntime {
                 // 1. JavaScript
                 rt.settings.javaScriptEnabled = sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
 
-                // 2. Enhanced Tracking Protection & AdBlock
+                // 2. Enhanced Tracking Protection & AdBlock (use DEFAULT matching Firefox to preserve legitimate search engine tokens)
                 val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-                val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
+                val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.DEFAULT else ContentBlocking.EtpLevel.NONE
                 rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)
-                rt.settings.contentBlocking.setStrictSocialTrackingProtection(adBlockEnabled)
+                rt.settings.contentBlocking.setStrictSocialTrackingProtection(false)
 
                 // 3. Block Third-Party / Tracking Cookies (Firefox ETP Cookie Isolation)
                 val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
-                val cookieBehavior = if (blockThirdPartyCookies) {
+                val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", false))
+                val cookieBehavior = if (totalCookieProtection || blockThirdPartyCookies) {
                     ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
                 } else {
                     ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
                 }
                 rt.settings.contentBlocking.setCookieBehavior(cookieBehavior)
 
-                // 4. Anti-Tracking Flags (Fingerprinting, STP, Cryptominers, WebRTC, Social)
-                val fingerprintProtection = sp.getBoolean("sp_fingerprint_protection", true)
+                // 4. Anti-Tracking Flags (STP, Cryptominers, WebRTC, Social)
                 var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
                 if (adBlockEnabled) {
                     antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or ContentBlocking.AntiTracking.STP
-                }
-                if (fingerprintProtection) {
-                    antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.FINGERPRINTING
                 }
                 rt.settings.contentBlocking.setAntiTracking(antiTrackingFlags)
 
