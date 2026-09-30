@@ -138,6 +138,15 @@ private fun getWidgetColorScheme(context: Context): androidx.compose.material3.C
     return scheme
 }
 
+private fun surfaceContainerLowProvider(scheme: androidx.compose.material3.ColorScheme): ColorProvider =
+    ColorProvider(scheme.surfaceContainerLow)
+
+private fun surfaceContainerHighProvider(scheme: androidx.compose.material3.ColorScheme): ColorProvider =
+    ColorProvider(scheme.surfaceContainerHigh)
+
+private fun surfaceContainerHighestProvider(scheme: androidx.compose.material3.ColorScheme): ColorProvider =
+    ColorProvider(scheme.surfaceContainerHighest)
+
 private fun getWidgetTypeface(context: Context): Typeface {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val appFont = AppFont.fromName(sp.getString("sp_app_font", "PETAL"))
@@ -292,7 +301,7 @@ class PetalSearchPetal1Widget : GlanceAppWidget() {
             GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
                 val size = LocalSize.current
                 val isExpanded = size.height >= 85.dp
-                Petal1Content(isExpanded = isExpanded)
+                Petal1Content(scheme = scheme, isExpanded = isExpanded)
             }
         }
     }
@@ -303,7 +312,7 @@ class PetalSearchPetal1WidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun Petal1Content(isExpanded: Boolean) {
+private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpanded: Boolean) {
     val context = LocalContext.current
     val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
@@ -333,7 +342,7 @@ private fun Petal1Content(isExpanded: Boolean) {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(28.dp)
-                .background(GlanceTheme.colors.surfaceContainerLow)
+                .background(surfaceContainerLowProvider(scheme))
                 .padding(10.dp)
         ) {
             Column(
@@ -346,7 +355,7 @@ private fun Petal1Content(isExpanded: Boolean) {
                         .fillMaxWidth()
                         .height(48.dp)
                         .cornerRadius(24.dp)
-                        .background(GlanceTheme.colors.surfaceContainerHigh)
+                        .background(surfaceContainerHighProvider(scheme))
                         .padding(horizontal = 6.dp),
                     badgeBitmap = pBadgeBitmap,
                     searchAction = searchAction,
@@ -400,7 +409,7 @@ private fun Petal1Content(isExpanded: Boolean) {
                     WidgetShortcutTile(
                         label = stringResource(R.string.ui_private),
                         iconRes = R.drawable.icon_incognito,
-                        bgColor = GlanceTheme.colors.surfaceContainerHighest,
+                        bgColor = surfaceContainerHighestProvider(scheme),
                         iconTint = GlanceTheme.colors.onSurface,
                         action = incognitoAction,
                         modifier = GlanceModifier.defaultWeight()
@@ -414,7 +423,7 @@ private fun Petal1Content(isExpanded: Boolean) {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(28.dp)
-                .background(GlanceTheme.colors.surfaceContainerHigh)
+                .background(surfaceContainerHighProvider(scheme))
                 .padding(horizontal = 6.dp),
             badgeBitmap = pBadgeBitmap,
             searchAction = searchAction,
@@ -582,7 +591,7 @@ class PetalSearchPetal2Widget : GlanceAppWidget() {
         provideContent {
             val scheme = getWidgetColorScheme(context)
             GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
-                Petal2Content()
+                Petal2Content(scheme = scheme)
             }
         }
     }
@@ -593,7 +602,7 @@ class PetalSearchPetal2WidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun Petal2Content() {
+private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
     val context = LocalContext.current
     val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
@@ -604,7 +613,7 @@ private fun Petal2Content() {
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
-            .background(GlanceTheme.colors.surfaceContainerLow)
+            .background(surfaceContainerLowProvider(scheme))
             .padding(6.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -618,7 +627,7 @@ private fun Petal2Content() {
                     .fillMaxHeight()
                     .defaultWeight()
                     .cornerRadius(22.dp)
-                    .background(GlanceTheme.colors.surfaceContainerHigh)
+                    .background(surfaceContainerHighProvider(scheme))
                     .clickable(searchAction)
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart
@@ -718,7 +727,7 @@ class PetalSearchPetal3Widget : GlanceAppWidget() {
         provideContent {
             val scheme = getWidgetColorScheme(context)
             GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
-                Petal3Content()
+                Petal3Content(scheme = scheme)
             }
         }
     }
@@ -729,7 +738,7 @@ class PetalSearchPetal3WidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun Petal3Content() {
+private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
     val context = LocalContext.current
     val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
@@ -752,7 +761,7 @@ private fun Petal3Content() {
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
-            .background(GlanceTheme.colors.surfaceContainerHigh)
+            .background(surfaceContainerHighProvider(scheme))
             .clickable(searchAction)
             .padding(start = 6.dp, end = 12.dp),
         contentAlignment = Alignment.Center
