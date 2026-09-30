@@ -721,11 +721,12 @@ fun FirefoxAccountSyncScreen(
                                             fxaManager.setEngineEnabled(SyncEngine.BOOKMARKS, checked)
                                         },
                                         position = petalGroupPositionFor(0, syncItemsCount),
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.Bookmark,
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimary
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
                                         }
                                     )
@@ -739,11 +740,12 @@ fun FirefoxAccountSyncScreen(
                                             fxaManager.setEngineEnabled(SyncEngine.HISTORY, checked)
                                         },
                                         position = petalGroupPositionFor(1, syncItemsCount),
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY,
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.History,
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimary
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer
                                             )
                                         }
                                     )
@@ -757,11 +759,12 @@ fun FirefoxAccountSyncScreen(
                                             fxaManager.setEngineEnabled(SyncEngine.TABS, checked)
                                         },
                                         position = petalGroupPositionFor(2, syncItemsCount),
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY,
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.Tab,
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimary
+                                                tint = MaterialTheme.colorScheme.onTertiaryContainer
                                             )
                                         }
                                     )
@@ -798,6 +801,7 @@ fun FirefoxAccountSyncScreen(
                                             )
                                         },
                                         position = petalGroupPositionFor(0, securityItemCount),
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
                                         onClick = { showAppLockConfigPage = true }
                                     )
 
@@ -818,11 +822,12 @@ fun FirefoxAccountSyncScreen(
                                             }
                                         },
                                         position = petalGroupPositionFor(1, securityItemCount),
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY,
                                         leadingIcon = {
                                             Icon(
                                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimary
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer
                                             )
                                         }
                                     )
@@ -836,11 +841,12 @@ fun FirefoxAccountSyncScreen(
                                             sp.edit().putBoolean("sp_https_only", checked).apply()
                                         },
                                         position = petalGroupPositionFor(2, securityItemCount),
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY,
                                         leadingIcon = {
                                             Icon(
                                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimary
+                                                tint = MaterialTheme.colorScheme.onTertiaryContainer
                                             )
                                         }
                                     )
@@ -888,13 +894,13 @@ fun FirefoxAccountSyncScreen(
                                                         modifier = Modifier
                                                             .size(44.dp)
                                                             .clip(RoundedCornerShape(12.dp))
-                                                            .background(MaterialTheme.colorScheme.primaryContainer),
+                                                            .background(MaterialTheme.colorScheme.secondaryContainer),
                                                         contentAlignment = Alignment.Center
                                                     ) {
                                                         Icon(
                                                             painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.database_filled),
                                                             contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                                             modifier = Modifier.size(22.dp)
                                                         )
                                                     }
@@ -974,6 +980,7 @@ fun FirefoxAccountSyncScreen(
                                             )
                                         },
                                         position = petalGroupPositionFor(1, storageItemCount),
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY,
                                         onClick = { showClearDataDialog = true }
                                     )
                                 }

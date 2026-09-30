@@ -669,19 +669,21 @@ fun PetalDownloadManagerScreen(
     }
     } // closes PetalScreenWrapper (Downloads list background layer)
     if (isSettingsOpen) {
-        com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
-            AnimatedContent(
-                targetState = isSettingsOpen,
-                transitionSpec = {
-                    (fadeIn(animationSpec = tween(220)) togetherWith
-                        fadeOut(animationSpec = tween(160)))
-                },
-                label = "downloadSettingsTransition"
-            ) { settingsOpen ->
-                if (settingsOpen) {
-                    com.petal.browser.compose.settings.screens.DownloadSettingsScreen(
-                        onNavigateBack = { isSettingsOpen = false }
-                    )
+        CompositionLocalProvider(com.petal.browser.predictive.LocalIsUnderlayPreview provides false) {
+            com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                AnimatedContent(
+                    targetState = isSettingsOpen,
+                    transitionSpec = {
+                        (fadeIn(animationSpec = tween(220)) togetherWith
+                            fadeOut(animationSpec = tween(160)))
+                    },
+                    label = "downloadSettingsTransition"
+                ) { settingsOpen ->
+                    if (settingsOpen) {
+                        com.petal.browser.compose.settings.screens.DownloadSettingsScreen(
+                            onNavigateBack = { isSettingsOpen = false }
+                        )
+                    }
                 }
             }
         }
