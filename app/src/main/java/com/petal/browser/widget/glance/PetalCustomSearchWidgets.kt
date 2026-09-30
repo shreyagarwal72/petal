@@ -69,7 +69,7 @@ import com.petal.browser.widget.PetalSearchWidgetProvider
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.res.ResourcesCompat
 import com.petal.browser.ui.theme.AppFont
-import androidx.compose.ui.res.stringResource
+
 
 private fun getWidgetColorScheme(context: Context): androidx.compose.material3.ColorScheme {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -374,7 +374,7 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
                     verticalAlignment = Alignment.Vertical.CenterVertically
                 ) {
                     WidgetShortcutTile(
-                        label = stringResource(R.string.ui_new_tab),
+                        label = context.getString(R.string.ui_new_tab),
                         iconRes = R.drawable.icon_tab_plus,
                         bgColor = GlanceTheme.colors.primaryContainer,
                         iconTint = GlanceTheme.colors.onPrimaryContainer,
@@ -385,7 +385,7 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
                     Spacer(modifier = GlanceModifier.width(6.dp))
 
                     WidgetShortcutTile(
-                        label = stringResource(R.string.ui_bookmarks),
+                        label = context.getString(R.string.ui_bookmarks),
                         iconRes = R.drawable.icon_bookmark,
                         bgColor = GlanceTheme.colors.secondaryContainer,
                         iconTint = GlanceTheme.colors.onSecondaryContainer,
@@ -396,7 +396,7 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
                     Spacer(modifier = GlanceModifier.width(6.dp))
 
                     WidgetShortcutTile(
-                        label = stringResource(R.string.ui_downloads),
+                        label = context.getString(R.string.ui_downloads),
                         iconRes = R.drawable.ic_download,
                         bgColor = GlanceTheme.colors.tertiaryContainer,
                         iconTint = GlanceTheme.colors.onTertiaryContainer,
@@ -407,7 +407,7 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
                     Spacer(modifier = GlanceModifier.width(6.dp))
 
                     WidgetShortcutTile(
-                        label = stringResource(R.string.ui_private),
+                        label = context.getString(R.string.ui_private),
                         iconRes = R.drawable.icon_incognito,
                         bgColor = surfaceContainerHighestProvider(scheme),
                         iconTint = GlanceTheme.colors.onSurface,
@@ -443,6 +443,7 @@ private fun Petal1ExpressiveSearchRow(
     voiceAction: androidx.glance.action.Action,
     snapCameraAction: androidx.glance.action.Action
 ) {
+    val context = LocalContext.current
     Row(
         modifier = modifier
             .clickable(searchAction),
@@ -457,7 +458,7 @@ private fun Petal1ExpressiveSearchRow(
         ) {
             Image(
                 provider = ImageProvider(badgeBitmap),
-                contentDescription = stringResource(R.string.ui_petal),
+                contentDescription = context.getString(R.string.ui_petal),
                 modifier = GlanceModifier.size(38.dp)
             )
         }
@@ -472,7 +473,7 @@ private fun Petal1ExpressiveSearchRow(
             contentAlignment = Alignment.CenterStart
         ) {
             Text(
-                text = stringResource(R.string.ui_search),
+                text = context.getString(R.string.ui_search),
                 maxLines = 1,
                 style = TextStyle(
                     fontSize = 15.sp,
@@ -492,7 +493,7 @@ private fun Petal1ExpressiveSearchRow(
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_search_sparkle),
-                contentDescription = stringResource(R.string.ui_petal_ai_search),
+                contentDescription = context.getString(R.string.ui_petal_ai_search),
                 modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
             )
@@ -510,7 +511,7 @@ private fun Petal1ExpressiveSearchRow(
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_mic),
-                contentDescription = stringResource(R.string.ui_voice_search_2),
+                contentDescription = context.getString(R.string.ui_voice_search_2),
                 modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
             )
@@ -528,7 +529,7 @@ private fun Petal1ExpressiveSearchRow(
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_lens_camera_google),
-                contentDescription = stringResource(R.string.ui_visual_camera_scanner),
+                contentDescription = context.getString(R.string.ui_visual_camera_scanner),
                 modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
             )
@@ -635,13 +636,13 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
                 Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
                     Image(
                         provider = ImageProvider(R.drawable.icon_search),
-                        contentDescription = stringResource(R.string.ui_search),
+                        contentDescription = context.getString(R.string.ui_search),
                         modifier = GlanceModifier.size(20.dp),
                         colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
                     )
                     Spacer(modifier = GlanceModifier.width(10.dp))
                     Text(
-                        text = stringResource(R.string.ui_search),
+                        text = context.getString(R.string.ui_search),
                         maxLines = 1,
                         style = TextStyle(
                             fontSize = 15.sp,
@@ -657,7 +658,7 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
             // AI Action Squircle Button - primaryContainer
             SquircleGlanceActionButton(
                 iconRes = R.drawable.ic_auto_awesome,
-                contentDescription = stringResource(R.string.ui_ai_assistant),
+                contentDescription = context.getString(R.string.ui_ai_assistant),
                 containerColor = GlanceTheme.colors.primaryContainer,
                 contentColor = GlanceTheme.colors.onPrimaryContainer,
                 action = aiAction
@@ -668,7 +669,7 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
             // Incognito Action Squircle Button - secondaryContainer
             SquircleGlanceActionButton(
                 iconRes = R.drawable.icon_incognito,
-                contentDescription = stringResource(R.string.ui_incognito_mode),
+                contentDescription = context.getString(R.string.ui_incognito_mode),
                 containerColor = GlanceTheme.colors.secondaryContainer,
                 contentColor = GlanceTheme.colors.onSecondaryContainer,
                 action = incognitoAction
@@ -679,7 +680,7 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
             // Camera / Lens Action Squircle Button - tertiaryContainer
             SquircleGlanceActionButton(
                 iconRes = R.drawable.ic_lens_camera_google,
-                contentDescription = stringResource(R.string.ui_visual_camera_scanner),
+                contentDescription = context.getString(R.string.ui_visual_camera_scanner),
                 containerColor = GlanceTheme.colors.tertiaryContainer,
                 contentColor = GlanceTheme.colors.onTertiaryContainer,
                 action = snapCameraAction
@@ -779,7 +780,7 @@ private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
             ) {
                 Image(
                     provider = ImageProvider(badgeBitmap),
-                    contentDescription = stringResource(R.string.ui_petal_home),
+                    contentDescription = context.getString(R.string.ui_petal_home),
                     modifier = GlanceModifier.fillMaxSize()
                 )
             }
@@ -794,7 +795,7 @@ private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = stringResource(R.string.ui_search_or_type_url_2),
+                    text = context.getString(R.string.ui_search_or_type_url_2),
                     maxLines = 1,
                     style = TextStyle(
                         fontSize = 15.sp,
@@ -815,7 +816,7 @@ private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
             ) {
                 Image(
                     provider = ImageProvider(R.drawable.ic_sparkle_clean),
-                    contentDescription = stringResource(R.string.ui_ask_petal_ai),
+                    contentDescription = context.getString(R.string.ui_ask_petal_ai),
                     modifier = GlanceModifier.size(22.dp),
                     colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer)
                 )

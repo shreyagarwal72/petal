@@ -67,7 +67,11 @@ object PetalSetupBridge {
                     fontWeight = fontWeight, fontRoundness = fontRoundness,
                     colorStyle = colorStyle, paletteId = paletteId
                 ) {
-                    PetalSetupScreen(activity, model, sp, onFinished)
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        androidx.activity.compose.LocalActivityResultRegistryOwner provides activity
+                    ) {
+                        PetalSetupScreen(activity, model, sp, onFinished)
+                    }
                 }
             }
         }
@@ -111,8 +115,14 @@ object PetalSetupBridge {
                     showStage(activity)
                 }
                 activity.presentComposeScreen(view)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                android.util.Log.e("PetalSetup", "Failed to present setup stage", e)
+                activity.isOverlayScreenShowing = false
+                activity.pendingOverlayBackAction = null
+                activity.showAlbum(activity.currentAlbumController)
+                activity.updatePersistentBottomNav()
                 activeActivity = null
+                setupView = null
             }
         }
     }

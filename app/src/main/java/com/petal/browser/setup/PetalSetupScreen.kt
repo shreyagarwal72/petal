@@ -66,7 +66,8 @@ fun PetalSetupScreen(
     val localizedContext = remember(language, context) { PetalSetupBridge.localizedContext(context, language) }
     androidx.compose.runtime.CompositionLocalProvider(
         LocalContext provides localizedContext,
-        androidx.compose.ui.platform.LocalConfiguration provides localizedContext.resources.configuration
+        androidx.compose.ui.platform.LocalConfiguration provides localizedContext.resources.configuration,
+        androidx.activity.compose.LocalActivityResultRegistryOwner provides activity
     ) {
         PetalSetupContent(activity, state, sp, onFinished)
     }
@@ -187,7 +188,11 @@ private fun PetalSetupContent(
                                             context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
                                         } else {
                                             sp.edit().putBoolean("setup_permission_asked_${permission.id}", true).apply()
-                                            permissionLauncher.launch(permission.permissions.toTypedArray())
+                                            try {
+                                                permissionLauncher.launch(permission.permissions.toTypedArray())
+                                            } catch (_: Exception) {
+                                                androidx.core.app.ActivityCompat.requestPermissions(activity, permission.permissions.toTypedArray(), 17322)
+                                            }
                                         }
                                     }, { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))) })
                                     2 -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
