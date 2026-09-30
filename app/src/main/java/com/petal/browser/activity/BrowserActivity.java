@@ -2482,7 +2482,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     geckoView.onResume();
                 }
 
-                geckoView.updatePreviewCache();
                 geckoView.setOnScrollChangeListener(new com.petal.browser.view.PetalGeckoView.OnScrollChangeListener() {
                     @Override
                     public void onScrollDown() {
@@ -2522,8 +2521,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     ninjaWebView.resumeTimers();
                 }
 
-                ninjaWebView.updatePreviewCache();
-                
             }
         }
         updateOmniBox();
@@ -6883,7 +6880,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onPause();
         try {
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).onPause();
+                com.petal.browser.view.PetalGeckoView activeGecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+                activeGecko.updatePreviewCache();
+                activeGecko.onPause();
             }
             saveOpenedTabs();
         } catch (Exception e) {

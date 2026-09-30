@@ -158,6 +158,9 @@ class PetalGeckoView @JvmOverloads constructor(
     private var isIncognito: Boolean = initialIncognito
     private var isForegroundTab: Boolean = false
     private var isStopped: Boolean = false
+    private var previewRevision: Long = 0L
+    private var capturedPreviewRevision: Long = -1L
+    private var previewCaptureSequence: Long = 0L
 
     private var tabId: String = "tab_${System.currentTimeMillis()}_${Math.abs(hashCode())}"
     private var tabGroupId: String? = null
@@ -237,6 +240,7 @@ class PetalGeckoView @JvmOverloads constructor(
         // Progress & Loading Delegate
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
             override fun onPageStart(session: GeckoSession, url: String) {
+                previewRevision++
                 isStopped = false
                 currentScrollY = 0
                 currentScrollX = 0
@@ -447,6 +451,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 hasUserGesture: Boolean
             ) {
                 if (url.isNullOrBlank() || url.equals(currentUrl, ignoreCase = true)) return
+                previewRevision++
                 currentUrl = url
                 // Update persistentUrl for navigations (redirects, SPA pushState) so the
                 // save-on-pause always has the final visible URL, not the initial request URL.
@@ -1975,40 +1980,28 @@ class PetalGeckoView @JvmOverloads constructor(
     fun getThumbnailKey(): String = getTabId()
 
     fun updatePreviewCache() {
+        if (capturedPreviewRevision == previewRevision) return
         capturePreviewBitmapAsync { /* cache updated */ }
     }
 
     fun getCachedPreviewBitmap(): Bitmap? {
-        var bitmap = TabThumbnailCache.getMemoryOnly(getThumbnailKey(), isIncognito)
-        if (bitmap != null && !bitmap.isRecycled) return bitmap
-        if (currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true)) {
-            bitmap = TabThumbnailCache.getMemoryOnly(currentUrl, isIncognito)
-            if (bitmap != null && !bitmap.isRecycled) return bitmap
-        }
-        val albumUrl = getAlbumUrl()
-        if (albumUrl.isNotEmpty() && !albumUrl.equals("about:blank", ignoreCase = true) && !albumUrl.equals("Petal Home", ignoreCase = true)) {
-            bitmap = TabThumbnailCache.getMemoryOnly(albumUrl, isIncognito)
-            if (bitmap != null && !bitmap.isRecycled) return bitmap
-        }
-        return null
+        return TabThumbnailCache.getMemoryOnly(getThumbnailKey(), isIncognito)
     }
 
     fun capturePreviewBitmapAsync(callback: Consumer<Bitmap?>) {
         val key = getThumbnailKey()
-        val url = currentUrl
+        val revision = previewRevision
+        val captureSequence = ++previewCaptureSequence
+        val privateTab = isIncognito
 
         val cachingConsumer: (Bitmap?) -> Unit = { bmp ->
-            if (bmp != null) {
-                TabThumbnailCache.put(key, bmp, isIncognito)
-                if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
-                    TabThumbnailCache.put(url, bmp, isIncognito)
-                }
-                val aUrl = getAlbumUrl()
-                if (aUrl.isNotEmpty() && !aUrl.equals("about:blank", ignoreCase = true) && !aUrl.equals(url, ignoreCase = true)) {
-                    TabThumbnailCache.put(aUrl, bmp, isIncognito)
-                }
+            val current = key == getThumbnailKey() && revision == previewRevision &&
+                captureSequence == previewCaptureSequence
+            if (bmp != null && current) {
+                TabThumbnailCache.put(key, bmp, privateTab)
+                capturedPreviewRevision = revision
             }
-            callback.accept(bmp)
+            callback.accept(if (current) bmp else null)
         }
 
         try {
@@ -2016,7 +2009,7 @@ class PetalGeckoView @JvmOverloads constructor(
             // "attached" no longer implies "on screen". Capturing a hidden GeckoView
             // yields a blank frame that would overwrite the good cached thumbnail.
             if (!isAttachedToWindow || geckoView.parent == null || !geckoView.isAttachedToWindow ||
-                !isShown || !geckoView.isShown) {
+                !isShown || !geckoView.isShown || !isForegroundTab || geckoView.width <= 0 || geckoView.height <= 0) {
                 cachingConsumer(null)
                 return
             }
@@ -2054,9 +2047,6 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun getBackPreviewBitmap(): Bitmap? {
-        val url = getBackHistoryUrl() ?: return null
-        val bitmap = TabThumbnailCache.getMemoryOnly(url, isIncognito)
-        if (bitmap != null && !bitmap.isRecycled) return bitmap
         return null
     }
 
@@ -2105,7 +2095,11 @@ class PetalGeckoView @JvmOverloads constructor(
         try { engineSession?.close() } catch (_: Throwable) {}
         try { com.petal.browser.engine.gecko.PetalEngineStore.removeTab(context, tabId) } catch (_: Throwable) {}
         try {
-            TabThumbnailCache.removeAllIdentifiers(tabId, hashCode().toString(), currentUrl, getAlbumUrl())
+            if (isIncognito) {
+                TabThumbnailCache.removePrivate(tabId)
+            } else {
+                TabThumbnailCache.removeAllIdentifiers(tabId, hashCode().toString())
+            }
         } catch (_: Throwable) {}
         removeAllViews()
     }

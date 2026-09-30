@@ -122,6 +122,7 @@ enum class TabCategory {
  */
 data class PetalTabItem(
     val id: String,
+    val thumbnailKey: String = id,
     val title: String,
     val url: String,
     val faviconBitmap: Bitmap? = null,
@@ -1698,13 +1699,14 @@ private fun PetalTabCard(
     onDuplicateTab: () -> Unit = {},
     onCloseOtherTabs: () -> Unit = {}
 ) {
-    var cachedPreview by remember(tab.id, tab.previewBitmap) {
+    var cachedPreview by remember(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito, tab.previewBitmap) {
         mutableStateOf(tab.previewBitmap?.takeUnless { it.isRecycled })
     }
-    LaunchedEffect(tab.id, tab.url, tab.isIncognito) {
-        if (cachedPreview == null && !tab.isIncognito) {
-            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.id, tab.url)) { bitmap ->
-                if (bitmap != null && !bitmap.isRecycled) cachedPreview = bitmap
+    LaunchedEffect(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito) {
+        cachedPreview = tab.previewBitmap?.takeUnless { it.isRecycled }
+        if (cachedPreview == null) {
+            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey), tab.isIncognito) { bitmap ->
+                if (bitmap != null && !bitmap.isRecycled && tab.thumbnailKey.isNotBlank()) cachedPreview = bitmap
             }
         }
     }
@@ -2034,13 +2036,14 @@ private fun PetalTabListItem(
     onCloseOtherTabs: () -> Unit = {}
 ) {
     val textColor = MaterialTheme.colorScheme.onSurface
-    var cachedPreview by remember(tab.id, tab.previewBitmap) {
+    var cachedPreview by remember(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito, tab.previewBitmap) {
         mutableStateOf(tab.previewBitmap?.takeUnless { it.isRecycled })
     }
-    LaunchedEffect(tab.id, tab.url, tab.isIncognito) {
-        if (cachedPreview == null && !tab.isIncognito) {
-            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.id, tab.url)) { bitmap ->
-                if (bitmap != null && !bitmap.isRecycled) cachedPreview = bitmap
+    LaunchedEffect(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito) {
+        cachedPreview = tab.previewBitmap?.takeUnless { it.isRecycled }
+        if (cachedPreview == null) {
+            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey), tab.isIncognito) { bitmap ->
+                if (bitmap != null && !bitmap.isRecycled && tab.thumbnailKey.isNotBlank()) cachedPreview = bitmap
             }
         }
     }

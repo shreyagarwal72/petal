@@ -1,6 +1,7 @@
 package com.petal.browser.browser
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.util.AttributeSet
 import android.view.View
 import androidx.preference.PreferenceManager
@@ -8,6 +9,7 @@ import androidx.annotation.MainThread
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.petal.browser.unit.TabThumbnailCache
 import com.petal.browser.engine.gecko.PetalEngineStore
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.state.TabSessionState
@@ -44,6 +46,9 @@ class PetalTabViewController private constructor(
     private var boundTabId: String? = null
     private var observedSession: EngineSession? = null
     private var active = false
+    private var previewRevision = 0L
+    private var capturedPreviewRevision = -1L
+    private var previewCaptureSequence = 0L
     private var pageTitle = ""
     private var pageUrl = "about:blank"
     private var backAvailable = false
@@ -85,6 +90,7 @@ class PetalTabViewController private constructor(
 
     private val observer = object : EngineSession.Observer {
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
+            if (pageUrl != url) previewRevision++
             pageUrl = url
             applyPageSettings(url)
             tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, url)) }
@@ -104,8 +110,10 @@ class PetalTabViewController private constructor(
         }
 
         override fun onLoadingStateChange(loading: Boolean) {
+            if (this@PetalTabViewController.loading != loading && loading) previewRevision++
             this@PetalTabViewController.loading = loading
             tab?.let { browserStore.dispatch(ContentAction.UpdateLoadingStateAction(it.id, loading)) }
+            if (!loading) updatePreviewCache()
             publishState()
         }
 
@@ -570,6 +578,42 @@ class PetalTabViewController private constructor(
 
     fun getTabId(): String? = boundTabId
 
+    fun getCachedPreviewBitmap(): Bitmap? = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
+
+    fun updatePreviewCache() {
+        if (capturedPreviewRevision == previewRevision) return
+        capturePreviewBitmapAsync { }
+    }
+
+    fun capturePreviewBitmapAsync(callback: (Bitmap?) -> Unit) {
+        val key = boundTabId ?: run { callback(null); return }
+        val revision = previewRevision
+        val sequence = ++previewCaptureSequence
+        val privateTab = isIncognito()
+        val geckoView = engineView.asView() as? org.mozilla.geckoview.GeckoView
+        if (!active || geckoView == null || !isAttachedToWindow || !isShown || !geckoView.isShown ||
+            geckoView.width <= 0 || geckoView.height <= 0) {
+            callback(null)
+            return
+        }
+        try {
+            geckoView.capturePixels().then({ bitmap ->
+                val current = key == boundTabId && revision == previewRevision && sequence == previewCaptureSequence
+                if (bitmap != null && current) {
+                    TabThumbnailCache.put(key, bitmap, privateTab)
+                    capturedPreviewRevision = revision
+                }
+                callback(if (current) bitmap else null)
+                mozilla.geckoview.GeckoResult.fromValue(null)
+            }, {
+                callback(null)
+                mozilla.geckoview.GeckoResult.fromValue(null)
+            })
+        } catch (_: Throwable) {
+            callback(null)
+        }
+    }
+
     /** GeckoView-only integration point used for WebExtension delegates. */
     fun getGeckoSession(): org.mozilla.geckoview.GeckoSession? =
         com.petal.browser.view.PetalGeckoView.getEngineGeckoSession(observedSession)
@@ -606,6 +650,7 @@ class PetalTabViewController private constructor(
 
     @MainThread
     override fun deactivate() {
+        updatePreviewCache()
         active = false
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
         refreshFeature?.stop()
@@ -623,6 +668,11 @@ class PetalTabViewController private constructor(
     override fun destroy() {
         val removedTabId = tab?.id
         active = false
+        if (isIncognito()) {
+            removedTabId?.let(TabThumbnailCache::removePrivate)
+        } else {
+            removedTabId?.let(TabThumbnailCache::remove)
+        }
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
         refreshFeature?.stop()
         refreshFeature = null
