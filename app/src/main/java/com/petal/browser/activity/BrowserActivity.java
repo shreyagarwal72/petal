@@ -2381,21 +2381,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             composeView.bringToFront();
             composeView.requestLayout();
             composeView.post(() -> {
-                // A later queued surface switch may have happened while Compose was being
-                // attached. Only repair the Home view if it is still the active surface.
-                if (surfaceGeneration == albumSurfaceGeneration
-                        && currentAlbumController == resolvedController
-                        && getTopContentChild() == composeView) {
+                if (currentAlbumController == resolvedController && isPetalHomeSurfaceShowing) {
                     composeView.setVisibility(VISIBLE);
                     composeView.setAlpha(1f);
                     composeView.bringToFront();
                     composeView.requestLayout();
                     composeView.invalidate();
                     contentFrame.invalidate();
-                    // Safety net for blank home screen: if the ComposeView measured at
-                    // height=0 (caused by mainContent.setPadding() using an inflated
-                    // bottomNavContainer height), re-apply the position to recompute
-                    // correct padding values from the now-measured views.
                     if (composeView.getHeight() == 0) {
                         android.util.Log.w("BrowserActivity",
                                 "showAlbum: home ComposeView height=0 — re-applying address bar position");
@@ -2412,10 +2404,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // surface goes View.VISIBLE. This is the same code path for PetalGeckoView and
             // tabs.
             hideTabSurfacesExcept(av);
+            removeOverlayViews();
             if (av.getParent() == contentFrame) {
                 // Warm path: this tab's surface is already mounted. No removeView/addView, no
                 // GeckoView.onAttachedToWindow(), no insets wait - just show it.
                 av.setVisibility(VISIBLE);
+                av.bringToFront();
                 scheduleSurfaceHeightCheck(contentFrame, av, controller);
                 // activate() ran while the view was still GONE, so requestFocus() inside it
                 // could not take focus; hand focus to the now-visible surface.
@@ -2430,19 +2424,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT
                 ));
-                // GeckoView.onAttachedToWindow() synchronously calls Display.acquire() ->
-                // onGlobalLayout(), which unconditionally calls
-                // getRootWindowInsets().getInsets(...). If the window hasn't dispatched its
-                // WindowInsets yet (happens right after activity/window creation, and on some
-                // OEM skins like ColorOS/Realme after a fast home->tab transition),
-                // getRootWindowInsets() returns null and GeckoView crashes with a fatal NPE
-                // before the page ever renders — the app falls back to a blank/home screen.
-                // Wait for the decor view to have root insets before attaching, retrying across
-                // a few frames (some OEM skins dispatch insets late), and always attach inside a
-                // try/catch: if GeckoView still throws, retry rather than leaving contentFrame
-                // permanently empty (which is exactly what produced the blank page/home screen).
                 attachAlbumViewSafely(contentFrame, av, controller, 0);
             }
+            av.bringToFront();
             // Keep the live browser surface stable. GeckoView/WebView owns its compositor;
             // alpha/scale animations during attach/resume can produce a persistent blank
             // surface. App-level animations are applied to native overlays instead.
