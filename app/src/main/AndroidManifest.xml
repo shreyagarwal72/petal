@@ -275,6 +275,22 @@
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.xpi" />
             </intent-filter>
 
+            <!-- Encrypted Petal password backups open directly into the vault importer. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" android:host="*" android:pathPattern=".*\\.petal" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.petal" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" android:mimeType="application/vnd.petal.password-vault" />
+                <data android:scheme="file" android:mimeType="application/vnd.petal.password-vault" />
+            </intent-filter>
+
             <!-- Text über das Android 'Teilen'-Menü empfangen -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />

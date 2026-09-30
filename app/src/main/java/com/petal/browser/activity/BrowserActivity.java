@@ -6167,6 +6167,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return;
             }
 
+            // Petal password backups are imported into the local vault, never rendered as text.
+            boolean isPetalBackup = (fileName != null && fileName.toLowerCase(Locale.ROOT).endsWith(".petal"))
+                    || "application/vnd.petal.password-vault".equalsIgnoreCase(mimeType);
+            if (isPetalBackup) {
+                sp.edit().putBoolean("show_overview", false).apply();
+                getIntent().setAction("");
+                getIntent().setData(null);
+                new Thread(() -> {
+                    try {
+                        com.petal.browser.passwords.PetalCredentialVault.INSTANCE.init(this);
+                        String backup = com.petal.browser.util.BrowserIntentHandler.readTextFromUri(this, dataUri);
+                        int imported = com.petal.browser.passwords.PetalCredentialVault.INSTANCE.importEncryptedOrThrow(backup);
+                        runOnUiThread(() -> PetalToast.show(this, imported > 0
+                                ? "Imported " + imported + " passwords from Petal backup"
+                                : "No new passwords imported; these entries may already be in your vault."));
+                    } catch (Exception e) {
+                        String message = e.getMessage() != null ? e.getMessage() : "Could not import the Petal backup.";
+                        runOnUiThread(() -> PetalToast.show(this, message));
+                    }
+                }, "PetalBackupImport").start();
+                return;
+            }
+
             // 2. Dateiendung prüfen und filtern
             if (fileName != null) {
                 String extension = "";

@@ -74,7 +74,7 @@ fun PetalPasswordImportSheet(
                         count = PetalCredentialVault.importFromJson(content)
                     }
                     "PETAL_ENC" -> {
-                        count = PetalCredentialVault.importEncrypted(content)
+                        count = PetalCredentialVault.importEncryptedOrThrow(content)
                     }
                     else -> {
                         val (_, creds) = PetalCredentialImporter.detectAndImport(file.name, content)
@@ -84,7 +84,11 @@ fun PetalPasswordImportSheet(
                 }
                 withContext(Dispatchers.Main) {
                     isImporting = false
-                    PetalToast.show(activity, "Successfully imported $count passwords")
+                    PetalToast.show(
+                        activity,
+                        if (count > 0) "Successfully imported $count passwords"
+                        else "No new passwords imported; the backup may be empty or its entries already exist."
+                    )
                     onImportComplete(count)
                     onDismiss()
                 }

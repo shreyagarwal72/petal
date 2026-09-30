@@ -240,30 +240,41 @@ object PetalCredentialVault {
     @Synchronized
     fun importEncrypted(content: String): Int {
         return try {
-            val trimmed = content.trim()
-            if (!trimmed.startsWith(ENCRYPTED_BACKUP_MAGIC)) {
-                return 0
-            }
-            val base64Data = trimmed.removePrefix(ENCRYPTED_BACKUP_MAGIC)
-            val combined = Base64.decode(base64Data, Base64.DEFAULT)
-            if (combined.size <= GCM_IV_LENGTH) return 0
-
-            val iv = ByteArray(GCM_IV_LENGTH)
-            System.arraycopy(combined, 0, iv, 0, GCM_IV_LENGTH)
-            val cipherTextSize = combined.size - GCM_IV_LENGTH
-            val ciphertext = ByteArray(cipherTextSize)
-            System.arraycopy(combined, GCM_IV_LENGTH, ciphertext, 0, cipherTextSize)
-
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
-            cipher.init(Cipher.DECRYPT_MODE, getSecretKey(), spec)
-            val decryptedBytes = cipher.doFinal(ciphertext)
-            val json = String(decryptedBytes, Charsets.UTF_8)
-            importFromJson(json)
+            importEncryptedOrThrow(content)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to decrypt and import encrypted backup", e)
             0
         }
+    }
+
+    /** Imports an encrypted backup and throws when the file cannot be decrypted or parsed. */
+    @Synchronized
+    fun importEncryptedOrThrow(content: String): Int {
+        val trimmed = content.trim()
+        require(trimmed.startsWith(ENCRYPTED_BACKUP_MAGIC)) {
+            "This is not a valid encrypted Petal backup."
+        }
+
+        val combined = try {
+            Base64.decode(trimmed.removePrefix(ENCRYPTED_BACKUP_MAGIC), Base64.DEFAULT)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("The encrypted Petal backup is damaged.", e)
+        }
+        require(combined.size > GCM_IV_LENGTH) { "The encrypted Petal backup is incomplete." }
+
+        val iv = combined.copyOfRange(0, GCM_IV_LENGTH)
+        val ciphertext = combined.copyOfRange(GCM_IV_LENGTH, combined.size)
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.DECRYPT_MODE, getSecretKey(), GCMParameterSpec(GCM_TAG_LENGTH, iv))
+        val decryptedBytes = try {
+            cipher.doFinal(ciphertext)
+        } catch (e: Exception) {
+            throw IllegalStateException(
+                "This .petal backup was encrypted by a different Petal installation or is damaged.",
+                e
+            )
+        }
+        return importFromJson(String(decryptedBytes, Charsets.UTF_8))
     }
 
     @Synchronized
