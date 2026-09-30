@@ -331,7 +331,7 @@ fun PetalPasswordsScreen(
                                         )
                                     }
                                 },
-                                headline = {
+                                content = {
                                     Text(
                                         text = item.domain,
                                         style = MaterialTheme.typography.bodyLarge,
@@ -339,8 +339,6 @@ fun PetalPasswordsScreen(
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
-                                },
-                                supporting = {
                                     Text(
                                         text = item.username.ifBlank { "Password only" },
                                         style = MaterialTheme.typography.bodySmall,
