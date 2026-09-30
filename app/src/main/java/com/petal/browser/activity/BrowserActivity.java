@@ -1050,6 +1050,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else if (!welcomeShown) {
                 sp.edit().putBoolean("sp_welcome_shown", true).apply();
             }
+            if (!sp.getBoolean("sp_setup_v2_done", false)) {
+                getWindow().getDecorView().post(() ->
+                        com.petal.browser.setup.PetalSetupBridge.showSetup(this));
+            }
         }
     }
 
