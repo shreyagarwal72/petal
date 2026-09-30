@@ -1454,7 +1454,7 @@
     <string name="petal_setup_camera">Camera</string>
     <string name="petal_setup_camera_reason">Codes scan karein aur page se media capture karein.</string>
     <string name="petal_setup_media">Photos aur videos</string>
-    <string name="petal_setup_media_reason">Upload ya profile picture ke liye media chunein.</string>
+    <string name="petal_setup_media_reason">Upload ke liye files chunein aur downloads device me save karein.</string>
     <string name="petal_setup_microphone">Microphone</string>
     <string name="petal_setup_microphone_reason">Voice search aur audio wali sites use karein.</string>
     <string name="petal_setup_location">Location</string>
@@ -1484,7 +1484,7 @@
     <string name="petal_setup_ext_media_reason">Page par chal raha downloadable media dhoonde.</string>
     <string name="petal_setup_ext_password">Petal Password Manager and Autofill</string>
     <string name="petal_setup_ext_password_reason">Login forms ko local password vault se jode.</string>
-    <string name="petal_setup_you_body">Picture jodein, Firefox Sync connect karein, ya Petal AI set karein. Sab optional hai.</string>
+    <string name="petal_setup_you_body">Apna pasandeeda search engine chunein aur optional features jaise Petal AI set karein.</string>
     <string name="petal_setup_profile_photo">Profile picture</string>
     <string name="petal_setup_choose_gallery">Gallery se picture chunein</string>
     <string name="petal_setup_mozilla">Mozilla se sign in</string>
@@ -1495,6 +1495,9 @@
     <string name="petal_setup_ai_optional">Petal AI set karein (optional)</string>
     <string name="petal_setup_ai_reason">Optional AI tools ke liye API key jodein.</string>
     <string name="petal_setup_ai_key">API key</string>
-    <string name="petal_setup_finish_body">Available engine list se Petal ka search engine chunein.</string>
-    <string name="petal_setup_no_engine">Koi search engine available nahi hai.</string>
+    <string name="petal_setup_restore_title">Apna data restore karein</string>
+    <string name="petal_setup_restore_desc">Puraane Petal backup se bookmarks, history, start sites aur settings restore karein.</string>
+    <string name="petal_setup_restore_button">Backup se restore karein</string>
+    <string name="petal_setup_restore_success">Data aur settings kamyabi se restore ho gaye!</string>
+    <string name="petal_setup_skip_button">Setup skip karein</string>
 </resources>

@@ -17,14 +17,11 @@ class PetalSetupState(private val savedStateHandle: SavedStateHandle) : ViewMode
     private val _skipConfirmation = MutableStateFlow(savedStateHandle[KEY_SKIP_CONFIRMATION] ?: false)
     val skipConfirmation: StateFlow<Boolean> = _skipConfirmation.asStateFlow()
 
-    private val _avatarUri = MutableStateFlow(savedStateHandle[KEY_AVATAR_URI] ?: "")
-    val avatarUri: StateFlow<String> = _avatarUri.asStateFlow()
-
     private val _selectedEngine = MutableStateFlow(savedStateHandle[KEY_ENGINE] ?: 0)
     val selectedEngine: StateFlow<Int> = _selectedEngine.asStateFlow()
 
     fun goTo(stage: Int) {
-        _stage.value = stage.coerceIn(0, 4)
+        _stage.value = stage.coerceIn(0, 3)
         savedStateHandle[KEY_STAGE] = _stage.value
         _skipConfirmation.value = false
         savedStateHandle[KEY_SKIP_CONFIRMATION] = false
@@ -46,11 +43,6 @@ class PetalSetupState(private val savedStateHandle: SavedStateHandle) : ViewMode
     fun setLanguage(language: String) {
         _language.value = language
         savedStateHandle[KEY_LANGUAGE] = language
-    }
-
-    fun setAvatarUri(uri: String) {
-        _avatarUri.value = uri
-        savedStateHandle[KEY_AVATAR_URI] = uri
     }
 
     fun setSelectedEngine(index: Int) {

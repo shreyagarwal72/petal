@@ -1456,7 +1456,7 @@
     <string name="petal_setup_camera">Camera</string>
     <string name="petal_setup_camera_reason">Scan codes and capture media from a page.</string>
     <string name="petal_setup_media">Photos and videos</string>
-    <string name="petal_setup_media_reason">Choose media to upload or set a profile picture.</string>
+    <string name="petal_setup_media_reason">Choose files to upload and save downloads to your device.</string>
     <string name="petal_setup_microphone">Microphone</string>
     <string name="petal_setup_microphone_reason">Use voice search and sites that need audio.</string>
     <string name="petal_setup_location">Location</string>
@@ -1486,7 +1486,7 @@
     <string name="petal_setup_ext_media_reason">Find downloadable media playing on a page.</string>
     <string name="petal_setup_ext_password">Petal Password Manager and Autofill</string>
     <string name="petal_setup_ext_password_reason">Connect login forms to your local password vault.</string>
-    <string name="petal_setup_you_body">Add a picture, connect Firefox Sync, or set up Petal AI. Each option is optional.</string>
+    <string name="petal_setup_you_body">Pick your preferred search engine and set up optional features like Petal AI.</string>
     <string name="petal_setup_profile_photo">Profile picture</string>
     <string name="petal_setup_choose_gallery">Choose a picture from your gallery</string>
     <string name="petal_setup_mozilla">Sign in with Mozilla</string>
@@ -1497,6 +1497,9 @@
     <string name="petal_setup_ai_optional">Set up Petal AI (optional)</string>
     <string name="petal_setup_ai_reason">Add an API key to enable optional AI tools.</string>
     <string name="petal_setup_ai_key">API key</string>
-    <string name="petal_setup_finish_body">Choose the search engine Petal should use from the available engine list.</string>
-    <string name="petal_setup_no_engine">No search engines are available.</string>
+    <string name="petal_setup_restore_title">Restore your data</string>
+    <string name="petal_setup_restore_desc">Restore bookmarks, history, start sites and settings from an existing Petal backup.</string>
+    <string name="petal_setup_restore_button">Restore from backup</string>
+    <string name="petal_setup_restore_success">Data and settings restored successfully!</string>
+    <string name="petal_setup_skip_button">Skip setup</string>
 </resources>
