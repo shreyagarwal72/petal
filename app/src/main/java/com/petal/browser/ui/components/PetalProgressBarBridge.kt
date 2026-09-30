@@ -1,14 +1,14 @@
 package com.petal.browser.ui.components
 
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -37,18 +37,65 @@ import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
+class ProgressViewState(
+    val progressState: MutableState<Float> = mutableStateOf(0f),
+    val visibleState: MutableState<Boolean> = mutableStateOf(false)
+) {
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var hideRunnable: Runnable? = null
+    private var resetRunnable: Runnable? = null
+
+    fun updateProgress(progress: Int) {
+        hideRunnable?.let { mainHandler.removeCallbacks(it) }
+        resetRunnable?.let { mainHandler.removeCallbacks(it) }
+
+        if (progress < 100) {
+            // Firefox behavior: start immediately at minimum ~12% progress so user feels instant response
+            val targetFrac = (progress.coerceIn(12, 99)) / 100f
+            // Never animate progress backwards while loading
+            if (targetFrac > progressState.value || !visibleState.value) {
+                progressState.value = targetFrac
+            }
+            visibleState.value = true
+        } else {
+            // Firefox behavior: smoothly complete to 100%, linger for 180ms, fade out, then reset
+            progressState.value = 1f
+            visibleState.value = true
+
+            val hideTask = Runnable {
+                visibleState.value = false
+                val resetTask = Runnable {
+                    if (!visibleState.value) {
+                        progressState.value = 0f
+                    }
+                }
+                resetRunnable = resetTask
+                mainHandler.postDelayed(resetTask, 250L)
+            }
+            hideRunnable = hideTask
+            mainHandler.postDelayed(hideTask, 180L)
+        }
+    }
+
+    fun hide() {
+        hideRunnable?.let { mainHandler.removeCallbacks(it) }
+        resetRunnable?.let { mainHandler.removeCallbacks(it) }
+        visibleState.value = false
+        progressState.value = 0f
+    }
+}
+
 object PetalProgressBarBridge {
     @JvmStatic
     fun createProgressView(activity: ComponentActivity): ComposeView {
-        val progressState = mutableStateOf(0f)
-        val visibleState = mutableStateOf(false)
+        val state = ProgressViewState()
 
         val composeView = ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setTag(com.petal.browser.R.id.main_progress_bar_compose, Pair(progressState, visibleState))
+            setTag(com.petal.browser.R.id.main_progress_bar_compose, state)
             setContent {
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
@@ -68,8 +115,8 @@ object PetalProgressBarBridge {
                     paletteId = paletteId
                 ) {
                     PetalWebProgressIndicator(
-                        progress = progressState.value,
-                        visible = visibleState.value
+                        progress = state.progressState.value,
+                        visible = state.visibleState.value
                     )
                 }
             }
@@ -79,34 +126,14 @@ object PetalProgressBarBridge {
 
     @JvmStatic
     fun updateProgress(composeView: ComposeView, progress: Int) {
-        val tag = composeView.getTag(com.petal.browser.R.id.main_progress_bar_compose) as? Pair<MutableState<Float>, MutableState<Boolean>>
-        if (tag != null) {
-            val (progressState, visibleState) = tag
-            if (progress < 100) {
-                progressState.value = (progress.coerceAtLeast(5) / 100f)
-                visibleState.value = true
-            } else {
-                progressState.value = 1f
-                visibleState.value = false
-            }
-        }
+        val state = composeView.getTag(com.petal.browser.R.id.main_progress_bar_compose) as? ProgressViewState
+        state?.updateProgress(progress)
     }
 
-    /**
-     * Hides the bar without touching the ComposeView's own Android visibility -
-     * only the internal Compose state that drives its AnimatedVisibility. Used
-     * whenever a pull-to-refresh reload is in flight or an internal (non-web)
-     * screen - settings, downloads, history, account sync, home - is showing.
-     *
-     * Do NOT call composeView.setVisibility(GONE) for this: a GONE ComposeView
-     * never composes again, so calling updateProgress() later - once a real
-     * page starts loading - has nothing to make visible and the bar stays gone
-     * for the rest of the session.
-     */
     @JvmStatic
     fun hide(composeView: ComposeView) {
-        val tag = composeView.getTag(com.petal.browser.R.id.main_progress_bar_compose) as? Pair<MutableState<Float>, MutableState<Boolean>>
-        tag?.second?.value = false
+        val state = composeView.getTag(com.petal.browser.R.id.main_progress_bar_compose) as? ProgressViewState
+        state?.hide()
     }
 }
 
@@ -117,25 +144,26 @@ fun PetalWebProgressIndicator(
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow,
-        ),
+        animationSpec = if (progress >= 1f) {
+            tween(durationMillis = 180, easing = LinearOutSlowInEasing)
+        } else {
+            tween(durationMillis = 300, easing = FastOutSlowInEasing)
+        },
         label = "petalWebProgress",
     )
     val scheme = androidx.compose.material3.MaterialTheme.colorScheme
 
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(tween(140)) + expandHorizontally(expandFrom = Alignment.Start, animationSpec = tween(180)),
-        exit = fadeOut(tween(160)) + shrinkHorizontally(shrinkTowards = Alignment.End, animationSpec = tween(180)),
+        enter = fadeIn(animationSpec = tween(durationMillis = 150, easing = LinearOutSlowInEasing)),
+        exit = fadeOut(animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(3.dp)
                 .clip(CircleShape)
-                .background(scheme.surfaceContainerHigh)
+                .background(scheme.surfaceContainerHigh.copy(alpha = 0.6f))
                 .semantics { progressBarRangeInfo = ProgressBarRangeInfo(animatedProgress, 0f..1f) },
             contentAlignment = Alignment.CenterStart,
         ) {

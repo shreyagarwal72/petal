@@ -253,6 +253,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 updateAddressBar();
                 updateBackCallbackState();
                 updateOmniBox();
+                if (Boolean.TRUE.equals(state.getLoading())) {
+                    updateProgress(Math.max(10, state.getProgress()));
+                } else {
+                    updateProgress(100);
+                }
             });
             return kotlin.Unit.INSTANCE;
         });
@@ -2527,6 +2532,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         applyAddressBarPosition();
         updatePersistentBottomNav();
         updateBackCallbackState();
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            com.petal.browser.browser.PetalTabViewController tabSurface = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+            com.petal.browser.browser.PetalTabViewController.State s = tabSurface.currentState();
+            if (s != null && Boolean.TRUE.equals(s.getLoading())) {
+                updateProgress(Math.max(10, s.getProgress()));
+            } else {
+                updateProgress(100);
+            }
+        }
         View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         if (refreshBarCompose != null) {
             refreshBarCompose.bringToFront();
