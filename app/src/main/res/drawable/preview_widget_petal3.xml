@@ -1,33 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Accurate Live Preview Vector for Petal #3 Search Widget (Minimalist Brand Pill) -->
+<!-- Accurate Live Preview Vector for Petal #3 Search Widget (M3 Expressive Minimalist Pill) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="280dp"
     android:height="56dp"
     android:viewportWidth="280"
     android:viewportHeight="56">
 
-    <!-- Search Bar Outer Pill Container (height 56, corner radius 28) -->
+    <!-- Search Bar Outer Pill Container (height 56, corner radius 28, surfaceContainerHigh) -->
     <path
-        android:fillColor="@color/md_theme_surfaceVariant"
+        android:fillColor="@color/md_theme_surfaceContainerHigh"
         android:pathData="M28,0 L252,0 A28,28 0 0 1 280,28 A28,28 0 0 1 252,56 L28,56 A28,28 0 0 1 0,28 A28,28 0 0 1 28,0 Z" />
 
-    <!-- Anchored Left Circular Brand Badge (cx=28, cy=28, r=20) -->
+    <!-- Anchored Left 10-point Scallop Brand Badge (cx=28, cy=28, outer r=20, inner r=17) -->
+    <!-- Approximate 10-point scalloped star matching RoundedPolygon.star(10) in Glance -->
     <path
         android:fillColor="@color/md_theme_primaryContainer"
-        android:pathData="M28,8 A20,20 0 1 1 27.99,8 Z" />
+        android:pathData="M28,8 C30.5,8 31.7,10.2 33.7,10.9 C35.7,11.6 38,11.1 39.7,12.5 C41.4,13.9 41.9,16.2 43,18 C44.1,19.8 46.1,20.9 46.6,23 C47.1,25.1 45.9,27.2 45.9,29.3 C45.9,31.4 47.1,33.5 46.6,35.6 C46.1,37.7 44.1,38.8 43,40.6 C41.9,42.4 41.4,44.7 39.7,46.1 C38,47.5 35.7,47 33.7,47.7 C31.7,48.4 30.5,50.6 28,50.6 C25.5,50.6 24.3,48.4 22.3,47.7 C20.3,47 18,47.5 16.3,46.1 C14.6,44.7 14.1,42.4 13,40.6 C11.9,38.8 9.9,37.7 9.4,35.6 C8.9,33.5 10.1,31.4 10.1,29.3 C10.1,27.2 8.9,25.1 9.4,23 C9.9,20.9 11.9,19.8 13,18 C14.1,16.2 14.6,13.9 16.3,12.5 C18,11.1 20.3,11.6 22.3,10.9 C24.3,10.2 25.5,8 28,8 Z" />
 
-    <!-- Monogram Letter "P" inside Left Badge -->
+    <!-- Monogram Letter "P" inside Left Scallop Badge -->
     <path
         android:fillColor="@color/md_theme_onPrimaryContainer"
-        android:pathData="M23,17 L30.5,17 C34.09,17 37,19.91 37,23.5 C37,27.09 34.09,30 30.5,30 L27,30 L27,39 L23,39 Z M27,26 L30.5,26 C31.88,26 33,24.88 33,23.5 C33,22.12 31.88,21 30.5,21 L27,21 Z" />
+        android:pathData="M23,19 L30.5,19 C33.5,19 35.8,21.3 35.8,24.3 C35.8,27.3 33.5,29.6 30.5,29.6 L26.6,29.6 L26.6,37 L23,37 Z M26.6,26.4 L30.3,26.4 C31.5,26.4 32.4,25.5 32.4,24.3 C32.4,23.1 31.5,22.2 30.3,22.2 L26.6,22.2 Z" />
 
-    <!-- Open Search Area Hint Line Placeholder (start x=58, end x=220, y=28) -->
+    <!-- Open Search Area Hint Line Placeholder (start x=58, end x=150, y=28) -->
     <path
         android:fillColor="@color/md_theme_onSurfaceVariant"
-        android:pathData="M58,26 L150,26 A2,2 0 0 1 150,30 L58,30 A2,2 0 0 1 58,26 Z" />
+        android:pathData="M58,26 L140,26 A2,2 0 0 1 140,30 L58,30 A2,2 0 0 1 58,26 Z" />
 
-    <!-- Right: Single AI Sparkle Shortcut Icon (cx=254, cy=28) -->
+    <!-- Right: Elevated Circular AI Sparkle Button (cx=252, cy=28, r=18, primaryContainer) -->
     <path
-        android:fillColor="@color/md_theme_onSurfaceVariant"
-        android:pathData="M254,16 C254,22.6 259.4,28 266,28 C259.4,28 254,33.4 254,40 C254,33.4 248.6,28 242,28 C248.6,28 254,22.6 254,16 Z" />
+        android:fillColor="@color/md_theme_primaryContainer"
+        android:pathData="M252,10 A18,18 0 1 1 251.99,10 Z" />
+
+    <!-- AI Sparkle Icon inside Button (onPrimaryContainer, cx=252, cy=28) -->
+    <path
+        android:fillColor="@color/md_theme_onPrimaryContainer"
+        android:pathData="M252,18 L253.5,24.5 L260,26 L253.5,27.5 L252,34 L250.5,27.5 L244,26 L250.5,24.5 Z" />
+    <path
+        android:fillColor="@color/md_theme_onPrimaryContainer"
+        android:pathData="M258,30 L258.8,33.2 L262,34 L258.8,34.8 L258,38 L257.2,34.8 L254,34 L257.2,33.2 Z" />
 </vector>

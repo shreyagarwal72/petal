@@ -166,7 +166,7 @@ private fun widgetActionIntent(context: Context, action: String): Intent =
     }
 
 /**
- * Generates an anti-aliased bitmap with a vibrant subtle radial gradient and bold letter "P".
+ * Generates an anti-aliased bitmap with an expressive radial gradient and bold letter "P".
  */
 private fun createGoogleStylePBadgeBitmap(
     sizeDp: Int = 42,
@@ -269,11 +269,11 @@ private fun createMonogramBadgeBitmap(
 
 /**
  * Petal Search Widget #1:
- * - At x x 1 (compact): Mirrors Google search widget from screenshot:
- *   Gradient "P" emblem badge on far left, clear search click surface in middle,
- *   and 3 right action icons: AI Search Sparkle, Voice Mic, and Snap Camera Lens.
- * - At x x 2 (expanded tall): Combines top search bar pill with bottom shortcuts grid
- *   (New Tab, Bookmarks, Downloads, Incognito).
+ * Material 3 Expressive Pill & Expandable Grid
+ * - Compact (height < 85dp): Material 3 Expressive Pill with gradient "P" brand badge,
+ *   subtle search trigger area, and interactive expressive action circles (AI, Voice, Lens).
+ * - Expanded (height >= 85dp): Combines the search pill header with expressive squircle
+ *   shortcut tiles with icons and labels (New Tab, Bookmarks, Downloads, Incognito).
  */
 class PetalSearchPetal1Widget : GlanceAppWidget() {
 
@@ -320,7 +320,7 @@ private fun Petal1Content(isExpanded: Boolean) {
 
     val pBadgeBitmap = remember(pPrimary, pContainer, pOnPrimary) {
         createGoogleStylePBadgeBitmap(
-            sizeDp = 40,
+            sizeDp = 42,
             primaryColor = pPrimary,
             containerColor = pContainer,
             textColor = pOnPrimary,
@@ -333,7 +333,7 @@ private fun Petal1Content(isExpanded: Boolean) {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(28.dp)
-                .background(GlanceTheme.colors.surface)
+                .background(GlanceTheme.colors.surfaceContainerLow)
                 .padding(10.dp)
         ) {
             Column(
@@ -341,10 +341,13 @@ private fun Petal1Content(isExpanded: Boolean) {
                 verticalAlignment = Alignment.Vertical.CenterVertically
             ) {
                 // Top Search Pill Row
-                Petal1GoogleStyleSearchRow(
+                Petal1ExpressiveSearchRow(
                     modifier = GlanceModifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .height(48.dp)
+                        .cornerRadius(24.dp)
+                        .background(GlanceTheme.colors.surfaceContainerHigh)
+                        .padding(horizontal = 6.dp),
                     badgeBitmap = pBadgeBitmap,
                     searchAction = searchAction,
                     aiAction = aiAction,
@@ -354,7 +357,7 @@ private fun Petal1Content(isExpanded: Boolean) {
 
                 Spacer(modifier = GlanceModifier.height(8.dp))
 
-                // Bottom Row: Chrome-Style Expressive Shortcuts Grid
+                // Bottom Row: Expressive Squircle Shortcuts Grid
                 Row(
                     modifier = GlanceModifier
                         .fillMaxWidth()
@@ -397,8 +400,8 @@ private fun Petal1Content(isExpanded: Boolean) {
                     WidgetShortcutTile(
                         label = stringResource(R.string.ui_private),
                         iconRes = R.drawable.icon_incognito,
-                        bgColor = GlanceTheme.colors.surfaceVariant,
-                        iconTint = GlanceTheme.colors.onSurfaceVariant,
+                        bgColor = GlanceTheme.colors.surfaceContainerHighest,
+                        iconTint = GlanceTheme.colors.onSurface,
                         action = incognitoAction,
                         modifier = GlanceModifier.defaultWeight()
                     )
@@ -406,12 +409,12 @@ private fun Petal1Content(isExpanded: Boolean) {
             }
         }
     } else {
-        // x x 1 Compact Pill Mode
-        Petal1GoogleStyleSearchRow(
+        // Compact Pill Mode
+        Petal1ExpressiveSearchRow(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(28.dp)
-                .background(GlanceTheme.colors.surfaceVariant)
+                .background(GlanceTheme.colors.surfaceContainerHigh)
                 .padding(horizontal = 6.dp),
             badgeBitmap = pBadgeBitmap,
             searchAction = searchAction,
@@ -423,7 +426,7 @@ private fun Petal1Content(isExpanded: Boolean) {
 }
 
 @Composable
-private fun Petal1GoogleStyleSearchRow(
+private fun Petal1ExpressiveSearchRow(
     modifier: GlanceModifier,
     badgeBitmap: Bitmap,
     searchAction: androidx.glance.action.Action,
@@ -446,17 +449,29 @@ private fun Petal1GoogleStyleSearchRow(
             Image(
                 provider = ImageProvider(badgeBitmap),
                 contentDescription = stringResource(R.string.ui_petal),
-                modifier = GlanceModifier.size(36.dp)
+                modifier = GlanceModifier.size(38.dp)
             )
         }
 
-        // Middle: Open Search Click Area
+        // Middle: Search Hint / Area
         Box(
             modifier = GlanceModifier
                 .fillMaxHeight()
                 .defaultWeight()
                 .clickable(searchAction)
-        ) {}
+                .padding(start = 10.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = stringResource(R.string.ui_search),
+                maxLines = 1,
+                style = TextStyle(
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = GlanceTheme.colors.onSurfaceVariant
+                )
+            )
+        }
 
         // Right 1: AI Search Sparkle Icon
         Box(
@@ -470,7 +485,7 @@ private fun Petal1GoogleStyleSearchRow(
                 provider = ImageProvider(R.drawable.ic_search_sparkle),
                 contentDescription = stringResource(R.string.ui_petal_ai_search),
                 modifier = GlanceModifier.size(24.dp),
-                colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
             )
         }
 
@@ -494,7 +509,7 @@ private fun Petal1GoogleStyleSearchRow(
 
         Spacer(modifier = GlanceModifier.width(2.dp))
 
-        // Right 3: Google Lens Camera Scanner Icon (direct auto snap camera handoff)
+        // Right 3: Lens Camera Scanner Icon
         Box(
             modifier = GlanceModifier
                 .size(38.dp)
@@ -524,7 +539,7 @@ private fun WidgetShortcutTile(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .cornerRadius(18.dp)
+            .cornerRadius(20.dp)
             .background(bgColor)
             .clickable(action),
         contentAlignment = Alignment.Center
@@ -532,15 +547,15 @@ private fun WidgetShortcutTile(
         Column(
             horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
             verticalAlignment = Alignment.Vertical.CenterVertically,
-            modifier = GlanceModifier.padding(vertical = 4.dp, horizontal = 2.dp)
+            modifier = GlanceModifier.padding(vertical = 6.dp, horizontal = 2.dp)
         ) {
             Image(
                 provider = ImageProvider(iconRes),
                 contentDescription = label,
-                modifier = GlanceModifier.size(20.dp),
+                modifier = GlanceModifier.size(22.dp),
                 colorFilter = ColorFilter.tint(iconTint)
             )
-            Spacer(modifier = GlanceModifier.height(2.dp))
+            Spacer(modifier = GlanceModifier.height(3.dp))
             Text(
                 text = label,
                 maxLines = 1,
@@ -556,9 +571,9 @@ private fun WidgetShortcutTile(
 
 /**
  * Petal Search Widget #2:
- * Material 3 Expressive Search Bar Widget:
- * - Pill search bar on left with elevated surface
- * - Expressive action island squircle buttons on right: AI Assistant, Incognito, and Lens/Camera
+ * Material 3 Expressive Search Bar & Action Island
+ * - Left: Dedicated nested pill search field inside the container
+ * - Right: Expressive squircle action island buttons (AI, Incognito, Visual Camera)
  */
 class PetalSearchPetal2Widget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Single
@@ -589,34 +604,43 @@ private fun Petal2Content() {
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
-            .background(GlanceTheme.colors.surface)
-            .padding(8.dp),
+            .background(GlanceTheme.colors.surfaceContainerLow)
+            .padding(6.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = GlanceModifier.fillMaxSize(),
             verticalAlignment = Alignment.Vertical.CenterVertically
         ) {
-            // Flexible-width Pill Search Trigger
+            // Left: Nested Search Input Pill
             Box(
                 modifier = GlanceModifier
                     .fillMaxHeight()
                     .defaultWeight()
-                    .cornerRadius(24.dp)
-                    .background(GlanceTheme.colors.surfaceVariant)
+                    .cornerRadius(22.dp)
+                    .background(GlanceTheme.colors.surfaceContainerHigh)
                     .clickable(searchAction)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                Text(
-                    text = stringResource(R.string.ui_search),
-                    maxLines = 1,
-                    style = TextStyle(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.onSurfaceVariant
+                Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
+                    Image(
+                        provider = ImageProvider(R.drawable.icon_search),
+                        contentDescription = stringResource(R.string.ui_search),
+                        modifier = GlanceModifier.size(20.dp),
+                        colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
                     )
-                )
+                    Spacer(modifier = GlanceModifier.width(10.dp))
+                    Text(
+                        text = stringResource(R.string.ui_search),
+                        maxLines = 1,
+                        style = TextStyle(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = GlanceTheme.colors.onSurfaceVariant
+                        )
+                    )
+                }
             }
 
             Spacer(modifier = GlanceModifier.width(8.dp))
@@ -643,7 +667,7 @@ private fun Petal2Content() {
 
             Spacer(modifier = GlanceModifier.width(6.dp))
 
-            // Camera / Lens Action Squircle Button - tertiaryContainer (direct snap photo / Lens handoff)
+            // Camera / Lens Action Squircle Button - tertiaryContainer
             SquircleGlanceActionButton(
                 iconRes = R.drawable.ic_lens_camera_google,
                 contentDescription = stringResource(R.string.ui_visual_camera_scanner),
@@ -666,7 +690,7 @@ private fun SquircleGlanceActionButton(
     Box(
         modifier = GlanceModifier
             .size(44.dp)
-            .cornerRadius(16.dp)
+            .cornerRadius(18.dp)
             .background(containerColor)
             .clickable(action),
         contentAlignment = Alignment.Center
@@ -682,9 +706,10 @@ private fun SquircleGlanceActionButton(
 
 /**
  * Petal Search Widget #3:
- * Minimalist horizontal pill bar with a clean circular brand badge anchored to the far left
- * holding the app logo / lettermark "P", leading into an open search area with a single AI sparkle
- * shortcut icon aligned on the right.
+ * Expressive Scalloped Brand Pill Bar
+ * - Anchored left: 10-point rounded scallop monogram badge holding "P" in primaryContainer
+ * - Open center: Fluid search prompt in onSurfaceVariant
+ * - Right: Expressive elevated AI sparkle badge
  */
 class PetalSearchPetal3Widget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Single
@@ -713,7 +738,7 @@ private fun Petal3Content() {
     val badgeFgInt = GlanceTheme.colors.onPrimaryContainer.getColor(context).toArgb()
     val badgeBitmap = remember(badgeBgInt, badgeFgInt) {
         createMonogramBadgeBitmap(
-            isScallop = false,
+            isScallop = true,
             sizeDp = 44,
             bgColor = badgeBgInt,
             textColor = badgeFgInt,
@@ -722,21 +747,21 @@ private fun Petal3Content() {
         )
     }
 
-    // Minimalist Horizontal Pill Bar (height 56dp, corner radius 28dp)
+    // Material 3 Expressive Pill Bar (height 56dp, corner radius 28dp)
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
-            .background(GlanceTheme.colors.surfaceVariant)
+            .background(GlanceTheme.colors.surfaceContainerHigh)
             .clickable(searchAction)
-            .padding(start = 6.dp, end = 16.dp),
+            .padding(start = 6.dp, end = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = GlanceModifier.fillMaxSize(),
             verticalAlignment = Alignment.Vertical.CenterVertically
         ) {
-            // Anchored Far Left: Clean Circular Brand Badge holding "P"
+            // Anchored Far Left: Expressive Scallop Brand Badge holding "P"
             Box(
                 modifier = GlanceModifier
                     .size(44.dp)
@@ -764,25 +789,26 @@ private fun Petal3Content() {
                     maxLines = 1,
                     style = TextStyle(
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.Normal,
+                        fontWeight = FontWeight.Medium,
                         color = GlanceTheme.colors.onSurfaceVariant
                     )
                 )
             }
 
-            // Right: Single AI Sparkle Shortcut Icon
+            // Right: Elevated AI Sparkle Shortcut Button
             Box(
                 modifier = GlanceModifier
                     .size(40.dp)
                     .cornerRadius(20.dp)
+                    .background(GlanceTheme.colors.primaryContainer)
                     .clickable(aiAction),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     provider = ImageProvider(R.drawable.ic_sparkle_clean),
                     contentDescription = stringResource(R.string.ui_ask_petal_ai),
-                    modifier = GlanceModifier.size(24.dp),
-                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
+                    modifier = GlanceModifier.size(22.dp),
+                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer)
                 )
             }
         }

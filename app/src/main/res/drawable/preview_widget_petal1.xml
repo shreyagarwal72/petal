@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Accurate Live Preview Vector for Petal #1 Search Widget -->
+<!-- Material 3 Expressive Live Preview Vector for Petal #1 Search Widget -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="280dp"
     android:height="56dp"
@@ -7,9 +7,8 @@
     android:viewportHeight="56">
 
     <!-- Search Bar Outer Pill Container (height 56, corner radius 28) -->
-    <!-- Uses surfaceVariant tone that adapts across themes -->
     <path
-        android:fillColor="@color/md_theme_surfaceVariant"
+        android:fillColor="@color/md_theme_surfaceContainerHigh"
         android:pathData="M28,0 L252,0 A28,28 0 0 1 280,28 A28,28 0 0 1 252,56 L28,56 A28,28 0 0 1 0,28 A28,28 0 0 1 28,0 Z" />
 
     <!-- Left Brand Badge Circle (center x=28, y=28, r=20) -->
@@ -18,30 +17,32 @@
         android:pathData="M28,8 A20,20 0 1 1 27.99,8 Z" />
 
     <!-- Left Brand Badge Letter "P" inside Circle -->
-    <!-- Scaled and centered: cx=28, cy=28 -->
     <path
         android:fillColor="@color/md_theme_onPrimary"
         android:pathData="M23,17 L30.5,17 C34.09,17 37,19.91 37,23.5 C37,27.09 34.09,30 30.5,30 L27,30 L27,39 L23,39 Z M27,26 L30.5,26 C31.88,26 33,24.88 33,23.5 C33,22.12 31.88,21 30.5,21 L27,21 Z" />
 
-    <!-- Right Icon 1: AI Search Sparkle (center ~x=186, y=28) -->
-    <!-- Magnifying glass search outline -->
+    <!-- Search text hint bar placeholder (start x=58, end x=135, y=27..29) -->
     <path
-        android:strokeColor="@color/md_theme_onSurfaceVariant"
+        android:fillColor="@color/md_theme_onSurfaceVariant"
+        android:pathData="M58,26 L120,26 A2,2 0 0 1 120,30 L58,30 A2,2 0 0 1 58,26 Z" />
+
+    <!-- Right Icon 1: AI Search Sparkle Circle Action (center x=186, y=28) -->
+    <path
+        android:strokeColor="@color/md_theme_primary"
         android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:pathData="M184,32 C181.35,32 179.2,29.85 179.2,27.2 C179.2,24.55 181.35,22.4 184,22.4 C186.65,22.4 188.8,24.55 188.8,27.2 C188.8,28.24 188.46,29.2 187.9,29.98 L191.76,33.84 C192.08,34.16 192.08,34.64 191.76,34.96 C191.44,35.28 190.96,35.28 190.64,34.96 L186.78,31.1 C186,31.66 185.04,32 184,32 Z" />
-    <!-- AI Sparkle star -->
     <path
-        android:fillColor="@color/md_theme_onSurfaceVariant"
+        android:fillColor="@color/md_theme_primary"
         android:pathData="M190.4,21.6 C190.4,23.36 191.84,24.8 193.6,24.8 C191.84,24.8 190.4,26.24 190.4,28 C190.4,26.24 188.96,24.8 187.2,24.8 C188.96,24.8 190.4,23.36 190.4,21.6 Z" />
 
-    <!-- Right Icon 2: Voice Mic (center ~x=222, y=28) -->
+    <!-- Right Icon 2: Voice Mic (center x=222, y=28) -->
     <path
         android:fillColor="@color/md_theme_onSurfaceVariant"
         android:pathData="M222,30 C223.66,30 225,28.66 225,27 L225,21 C225,19.34 223.66,18 222,18 C220.34,18 219,19.34 219,21 L219,27 C219,28.66 220.34,30 222,30 Z M227,27 C227,29.76 224.76,32 222,32 C219.24,32 217,29.76 217,27 L215,27 C215,30.53 217.61,33.43 221,33.92 L221,37 L223,37 L223,33.92 C226.39,33.43 229,30.53 229,27 Z" />
 
-    <!-- Right Icon 3: Google Lens Camera Scanner (center ~x=256, y=28) -->
+    <!-- Right Icon 3: Google Lens Camera Scanner (center x=256, y=28) -->
     <path
         android:strokeColor="@color/md_theme_onSurfaceVariant"
         android:strokeWidth="1.8"
