@@ -42,9 +42,9 @@ import coil.compose.AsyncImage
 import com.petal.browser.account.GoogleAccountManager
 import com.petal.browser.account.GoogleUserProfile
 import com.petal.browser.account.PetalAvatarCropSheet
-import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.profile.PetalProfile
+import com.petal.browser.profile.PetalProfileAvatar
 import com.petal.browser.profile.PetalProfileManager
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -68,6 +68,7 @@ fun PetalProfileSwitchSheet(
     // Custom profile picture state for the create form (Issue #23 avatar wiring).
     var pendingCropImageUri by remember { mutableStateOf<Uri?>(null) }
     var pendingCustomAvatarUri by remember { mutableStateOf<String?>(null) }
+    var pendingAvatarTargetProfileId by remember { mutableStateOf<String?>(null) }
 
     val avatarPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -163,28 +164,35 @@ fun PetalProfileSwitchSheet(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Profile color ring & indicator
-                                com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                    shape = RoundedCornerShape(12.dp),
-                                    containerColor = profileColor.copy(alpha = 0.22f),
-                                    contentColor = profileColor,
-                                    size = 42.dp,
-                                    iconSize = 22.dp
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clickable {
+                                            pendingAvatarTargetProfileId = profile.id
+                                            avatarPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        },
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    if (profile.customAvatarUri != null) {
-                                        AsyncImage(
-                                            model = profile.customAvatarUri,
-                                            contentDescription = null,
-                                            modifier = Modifier
-                                                .size(42.dp)
-                                                .clip(RoundedCornerShape(12.dp)),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    } else {
+                                    PetalProfileAvatar(
+                                        profile = profile,
+                                        size = 42.dp,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .size(18.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primary),
+                                        contentAlignment = Alignment.Center
+                                    ) {
                                         Icon(
-                                            imageVector = if (profile.isDefault) Icons.Rounded.Person else Icons.Rounded.FolderShared,
-                                            contentDescription = null,
-                                            tint = profileColor,
-                                            modifier = Modifier.size(22.dp)
+                                            Icons.Rounded.PhotoCamera,
+                                            contentDescription = stringResource(R.string.ui_change_profile_picture),
+                                            tint = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(11.dp)
                                         )
                                     }
                                 }
@@ -243,6 +251,7 @@ fun PetalProfileSwitchSheet(
                         newProfileName = "Profile ${profiles.size + 1}"
                         pendingCropImageUri = null
                         pendingCustomAvatarUri = null
+                        pendingAvatarTargetProfileId = null
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
@@ -414,7 +423,19 @@ fun PetalProfileSwitchSheet(
             onDismiss = { pendingCropImageUri = null },
             onAvatarCropped = { pendingCropImageUri = null },
             onSaveBitmap = { bitmap ->
-                pendingCustomAvatarUri = savePetalProfileAvatarBitmap(context, bitmap)
+                val targetProfileId = pendingAvatarTargetProfileId
+                if (targetProfileId == PetalProfile.DEFAULT_PROFILE.id) {
+                    GoogleAccountManager.saveCroppedAvatar(context, bitmap)
+                } else {
+                    val avatarUri = savePetalProfileAvatarBitmap(context, bitmap)
+                    if (targetProfileId != null) {
+                        val target = PetalProfileManager.profiles.firstOrNull { it.id == targetProfileId }
+                        if (target != null) PetalProfileManager.updateProfile(context, target.copy(customAvatarUri = avatarUri))
+                    } else {
+                        pendingCustomAvatarUri = avatarUri
+                    }
+                }
+                pendingAvatarTargetProfileId = null
             }
         )
     }
