@@ -1440,10 +1440,14 @@
     <string name="petal_setup_english">English</string>
     <string name="petal_setup_hinglish">Hinglish</string>
     <string name="petal_setup_language_live">Setup ki language turant badalti hai.</string>
+    <string name="title_theme">Theme aur Appearance</string>
     <string name="petal_setup_floating_tabs">Floating tab bar</string>
+    <string name="pref_summary_floating_tab_bar">Webpage ke upar bottom navigation bar ko float karein</string>
     <string name="petal_setup_address_bottom">Address bar neeche rakhein</string>
     <string name="petal_setup_dynamic_color">Device ke colors use karein</string>
+    <string name="pref_summary_dynamic_colors">Browser accents ko wallpaper se match karein</string>
     <string name="petal_setup_amoled">Pure black theme</string>
+    <string name="pref_summary_amoled">OLED screen ke liye deep pitch black background</string>
     <string name="petal_setup_palette">Petal color palette</string>
     <string name="petal_setup_palette_petal">Petal Pink</string>
     <string name="petal_setup_palette_indigo">Indigo</string>

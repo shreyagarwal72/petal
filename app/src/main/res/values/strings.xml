@@ -1442,10 +1442,14 @@
     <string name="petal_setup_english">English</string>
     <string name="petal_setup_hinglish">Hinglish</string>
     <string name="petal_setup_language_live">The setup changes language right away.</string>
+    <string name="title_theme">Theme &amp; Appearance</string>
     <string name="petal_setup_floating_tabs">Floating tab bar</string>
+    <string name="pref_summary_floating_tab_bar">Float the bottom navigation bar above webpage content</string>
     <string name="petal_setup_address_bottom">Place address bar at the bottom</string>
     <string name="petal_setup_dynamic_color">Use device colors</string>
+    <string name="pref_summary_dynamic_colors">Match browser accents to your Android system wallpaper</string>
     <string name="petal_setup_amoled">Pure black theme</string>
+    <string name="pref_summary_amoled">Deep pitch black background for OLED screens</string>
     <string name="petal_setup_palette">Petal color palette</string>
     <string name="petal_setup_palette_petal">Petal Pink</string>
     <string name="petal_setup_palette_indigo">Indigo</string>
