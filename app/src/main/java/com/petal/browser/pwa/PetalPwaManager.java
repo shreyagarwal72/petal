@@ -93,6 +93,7 @@ public class PetalPwaManager {
     private final com.petal.browser.browser.AlbumController albumController;
     private final WebView webView;
     private final PetalGeckoView geckoView;
+    private final com.petal.browser.browser.PetalTabViewController tabViewController;
     private PwaInstallPromptListener promptListener;
     private PwaManifest currentManifest;
 
@@ -101,6 +102,7 @@ public class PetalPwaManager {
         this.albumController = albumController;
         this.webView = (albumController instanceof WebView) ? (WebView) albumController : null;
         this.geckoView = (albumController instanceof PetalGeckoView) ? (PetalGeckoView) albumController : null;
+        this.tabViewController = (albumController instanceof com.petal.browser.browser.PetalTabViewController) ? (com.petal.browser.browser.PetalTabViewController) albumController : null;
         this.promptListener = listener;
 
         if (this.webView != null) {
@@ -219,6 +221,8 @@ public class PetalPwaManager {
             webView.evaluateJavascript(js, null);
         } else if (geckoView != null) {
             geckoView.evaluateJavascript(js, null);
+        } else if (tabViewController != null) {
+            tabViewController.evaluateJavascript(js, null);
         }
     }
 
@@ -522,6 +526,11 @@ public class PetalPwaManager {
         if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim())) {
             if (targetController instanceof com.petal.browser.view.PetalGeckoView) {
                 pageUrl = ((com.petal.browser.view.PetalGeckoView) targetController).getAlbumUrl();
+            }
+        }
+        if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim())) {
+            if (activity instanceof com.petal.browser.activity.BrowserActivity) {
+                pageUrl = ((com.petal.browser.activity.BrowserActivity) activity).resolveCurrentTabUrl();
             }
         }
 

@@ -640,6 +640,28 @@ class PetalTabViewController private constructor(
 
     fun getPredecessor(): AlbumController? = predecessor
 
+    private var pwaManager: com.petal.browser.pwa.PetalPwaManager? = null
+
+    fun getPwaManager(): com.petal.browser.pwa.PetalPwaManager? = pwaManager
+
+    fun setPwaManager(manager: com.petal.browser.pwa.PetalPwaManager?) {
+        this.pwaManager = manager
+    }
+
+    fun evaluateJavascript(script: String, callback: ((String?) -> Unit)? = null) {
+        try {
+            val session = observedSession
+            if (session != null) {
+                session.loadUrl("javascript:(function(){ try { return ($script); } catch(e) { return 'ERROR: ' + e; } })()")
+                callback?.invoke(null)
+            } else {
+                callback?.invoke(null)
+            }
+        } catch (t: Throwable) {
+            callback?.invoke("ERROR: ${t.message}")
+        }
+    }
+
     fun getFavicon(): Bitmap? = tab?.content?.icon
 
     fun currentState(): State? = tab?.let {

@@ -6731,10 +6731,47 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         });
     }
 
+    public String resolveCurrentTabUrl() {
+        String url = null;
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            com.petal.browser.browser.PetalTabViewController surface = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+            com.petal.browser.browser.PetalTabViewController.State state = surface.currentState();
+            if (state != null && state.getUrl() != null && !state.getUrl().trim().isEmpty()) {
+                url = state.getUrl().trim();
+            }
+        }
+        if ((url == null || url.isEmpty() || "about:blank".equalsIgnoreCase(url)) && currentAlbumController != null) {
+            url = currentAlbumController.getUrl();
+        }
+        if ((url == null || url.isEmpty() || "about:blank".equalsIgnoreCase(url)) && currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            url = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getAlbumUrl();
+        }
+        if ((url == null || url.isEmpty() || "about:blank".equalsIgnoreCase(url)) && ninjaWebView != null) {
+            url = ninjaWebView.getUrl();
+        }
+        if ((url == null || url.isEmpty() || "about:blank".equalsIgnoreCase(url))) {
+            try {
+                mozilla.components.browser.state.store.BrowserStore store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this);
+                if (store != null && store.getState() != null) {
+                    String selectedId = store.getState().getSelectedTabId();
+                    if (selectedId != null) {
+                        for (mozilla.components.browser.state.state.TabSessionState t : store.getState().getTabs()) {
+                            if (selectedId.equals(t.getId()) && t.getContent() != null && t.getContent().getUrl() != null) {
+                                url = t.getContent().getUrl();
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+        return url;
+    }
+
     public void installPwaShortcut() {
         try {
-            String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : null;
-            if (activeUrl == null || activeUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(activeUrl)) {
+            String activeUrl = resolveCurrentTabUrl();
+            if (activeUrl == null || activeUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(activeUrl) || activeUrl.startsWith("petal://")) {
                 PetalToast.show(this, "No active web page to install");
                 return;
             }
@@ -6743,6 +6780,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
                 manager = gv.getPwaManager();
                 if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, gv, null); gv.setPwaManager(manager); }
+            } else if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                com.petal.browser.browser.PetalTabViewController tv = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+                manager = tv.getPwaManager();
+                if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, tv, null); tv.setPwaManager(manager); }
             } else if (currentAlbumController != null) {
                 manager = new com.petal.browser.pwa.PetalPwaManager(this, currentAlbumController, null);
             }
