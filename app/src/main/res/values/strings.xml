@@ -1514,4 +1514,20 @@
     <string name="shortcut_add_to_homescreen">Add to Home screen</string>
     <string name="shortcut_add_button">Add</string>
     <string name="shortcut_title_hint">Shortcut name</string>
+    <!-- Firefox-Style Private Browsing Strings -->
+    <string name="private_browsing_title">Private Browsing</string>
+    <string name="private_browsing_subtitle">Petal clears your search and browsing history when you close all private tabs.</string>
+    <string name="private_browsing_tracking_protection">Enhanced Tracking Protection</string>
+    <string name="private_browsing_tracking_protection_desc">Known online trackers, fingerprinting scripts, and cryptominers are automatically blocked.</string>
+    <string name="private_browsing_protection_active">Protection Active</string>
+    <string name="private_browsing_privacy_guarantees">Privacy Guarantees</string>
+    <string name="private_browsing_not_saved">Petal won\'t save:</string>
+    <string name="private_browsing_not_saved_history">Searches or visited web pages</string>
+    <string name="private_browsing_not_saved_cookies">Cookies, site storage, and cache</string>
+    <string name="private_browsing_not_saved_forms">Form fills and autofill information</string>
+    <string name="private_browsing_visible_to">Still visible to:</string>
+    <string name="private_browsing_visible_network">Your internet service provider (ISP)</string>
+    <string name="private_browsing_visible_employer">Your school or employer network</string>
+    <string name="private_browsing_visible_sites">Websites you visit and sign into</string>
+    <string name="private_browsing_close_all">Close all private tabs</string>
 </resources>

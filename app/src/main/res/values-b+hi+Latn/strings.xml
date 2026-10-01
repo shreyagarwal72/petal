@@ -1509,4 +1509,20 @@
     <string name="petal_setup_restore_button">Backup se restore karein</string>
     <string name="petal_setup_restore_success">Data aur settings kamyabi se restore ho gaye!</string>
     <string name="petal_setup_skip_button">Setup skip karein</string>
+    <!-- Firefox-Style Private Browsing Strings -->
+    <string name="private_browsing_title">Private Browsing</string>
+    <string name="private_browsing_subtitle">Jab aap sabhi private tabs band karenge, Petal search aur browsing history clear kar dega.</string>
+    <string name="private_browsing_tracking_protection">Enhanced Tracking Protection</string>
+    <string name="private_browsing_tracking_protection_desc">Online trackers, fingerprinting scripts aur cryptominers apne aap block ho jaate hain.</string>
+    <string name="private_browsing_protection_active">Protection Active</string>
+    <string name="private_browsing_privacy_guarantees">Privacy Guarantees</string>
+    <string name="private_browsing_not_saved">Petal save nahi karega:</string>
+    <string name="private_browsing_not_saved_history">Searches ya visited web pages</string>
+    <string name="private_browsing_not_saved_cookies">Cookies, site storage aur cache</string>
+    <string name="private_browsing_not_saved_forms">Form fills aur autofill information</string>
+    <string name="private_browsing_visible_to">Fir bhi dikh sakta hai:</string>
+    <string name="private_browsing_visible_network">Aapke internet service provider (ISP) ko</string>
+    <string name="private_browsing_visible_employer">Aapke school ya employer network ko</string>
+    <string name="private_browsing_visible_sites">Visited websites jisme aap sign in karte hain</string>
+    <string name="private_browsing_close_all">Sabhi private tabs band karein</string>
 </resources>

@@ -2582,8 +2582,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (bottomNavCompose != null) {
                 String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
                 boolean isHome = isPetalHomeSurfaceShowing || isHomePage(currentUrl);
-                boolean isIncognito = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
-                        ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
+                boolean isIncognito = currentAlbumController != null
+                        ? currentAlbumController.isIncognito()
                         : (ninjaWebView != null && ninjaWebView.isIncognito());
                 int currentTabCount = isIncognito ? BrowserContainer.getIncognitoCount() : BrowserContainer.getNormalCount();
                 com.petal.browser.ui.components.PetalNavTab activeTab = isHome ? com.petal.browser.ui.components.PetalNavTab.HOME : com.petal.browser.ui.components.PetalNavTab.TABS;
@@ -2606,15 +2606,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             if (currentAlbumController != null) {
                                 showAlbum(currentAlbumController, "about:blank");
                             } else {
-                                addAlbum(getString(R.string.app_name), "about:blank", true);
+                                addAlbum(getString(R.string.app_name), "about:blank", true, isIncognito);
                             }
                         }
 
                         @Override
                         public void onNewTabClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                            boolean keepIncognito = currentAlbumController instanceof com.petal.browser.view.PetalGeckoView
-                                    ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
+                            boolean keepIncognito = currentAlbumController != null
+                                    ? currentAlbumController.isIncognito()
                                     : (ninjaWebView != null && ninjaWebView.isIncognito());
                             addAlbum(getString(R.string.app_name), "about:blank", true, keepIncognito);
                         }
@@ -3825,12 +3825,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (query != null && !query.trim().isEmpty()) {
             hideSearch();
             String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, query.trim());
-            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            if (currentAlbumController != null) {
                 showAlbum(currentAlbumController, targetUrl);
             } else if (ninjaWebView != null) {
                 showAlbum(currentAlbumController, targetUrl);
             } else {
-                addAlbum(null, targetUrl, true);
+                boolean isIncognito = currentAlbumController != null && currentAlbumController.isIncognito();
+                addAlbum(null, targetUrl, true, isIncognito);
             }
         } else {
             PetalToast.show(this, R.string.toast_input_empty);
@@ -4820,8 +4821,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else if (ninjaWebView != null) {
                 favicon = ninjaWebView.getFavicon();
             }
-            boolean isIncognitoTab = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
-                    ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
+            boolean isIncognitoTab = currentAlbumController != null
+                    ? currentAlbumController.isIncognito()
                     : (ninjaWebView != null && ninjaWebView.isIncognito());
 
             View omniboxView = com.petal.browser.ui.components.PetalOmniboxBridge.createOmniboxView(
@@ -4838,15 +4839,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 result -> {
                     if (result != null && !result.trim().isEmpty()) {
                         String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
-                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                            showAlbum(currentAlbumController, targetUrl);
-                        } else if (currentAlbumController != null && ninjaWebView != null) {
+                        if (currentAlbumController != null) {
                             showAlbum(currentAlbumController, targetUrl);
                         } else if (BrowserContainer.size() > 0) {
                             AlbumController controller = BrowserContainer.get(0);
                             showAlbum(controller, targetUrl);
                         } else {
-                            addAlbum(null, targetUrl, true);
+                            addAlbum(null, targetUrl, true, isIncognitoTab);
                         }
                     }
                     return kotlin.Unit.INSTANCE;
@@ -6383,10 +6382,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(this, result -> {
                         if (result != null && !result.trim().isEmpty()) {
                             String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
-                            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                            boolean isIncog = currentAlbumController != null && currentAlbumController.isIncognito();
+                            if (currentAlbumController != null) {
                                 showAlbum(currentAlbumController, targetUrl);
                             } else {
-                                addAlbum(null, targetUrl, true);
+                                addAlbum(null, targetUrl, true, isIncog);
                             }
                         }
                         return kotlin.Unit.INSTANCE;

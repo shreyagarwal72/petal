@@ -2,12 +2,9 @@ package com.petal.browser.compose.incognito
 
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,7 +16,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -31,11 +27,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -50,16 +46,12 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.lens.PetalLensBridge
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.components.PetalAiSearchBridge
 import com.petal.browser.ui.components.PetalVoiceSearchBridge
-import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
-import com.petal.browser.ui.containment.PetalFloatingToolbar
-import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.theme.PetalIncognitoTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
-import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,27 +82,10 @@ fun PetalIncognitoHomeScreen(
     var showLearnMoreDialog by remember { mutableStateOf(false) }
 
     PetalIncognitoTheme(useAmoled = isAmoled) {
-        val incognitoSubtitles = remember {
-            listOf(
-                "Off the grid. No traces, no history.",
-                "Stealth mode engaged. Browse like a shadow.",
-                "Your secret is safe with this tab.",
-                "Agent mode activated: look around, leave no footprints.",
-                "Going dark. What happens here, stays here.",
-                "Browse in absolute privacy.",
-                "A clean slate with zero history saved.",
-                "Zero cookies, zero tracks, 100% private.",
-                "Explore freely—your sessions vanish when you close the tab.",
-                "No history, no suggestions, just pure browsing."
-            )
-        }
-        val randomSubtitle = remember { incognitoSubtitles.random() }
-
-        // Subtle pulsing ambient animation for the hero avatar
-        val infiniteTransition = rememberInfiniteTransition(label = "IncognitoHeroPulse")
+        val infiniteTransition = rememberInfiniteTransition(label = "FirefoxMaskPulse")
         val avatarScale by infiniteTransition.animateFloat(
             initialValue = 0.985f,
-            targetValue = 1.015f,
+            targetValue = 1.018f,
             animationSpec = infiniteRepeatable(
                 animation = tween(3200, easing = EaseInOutCubic),
                 repeatMode = RepeatMode.Reverse
@@ -118,8 +93,8 @@ fun PetalIncognitoHomeScreen(
             label = "avatarScale"
         )
         val auraAlpha by infiniteTransition.animateFloat(
-            initialValue = 0.20f,
-            targetValue = 0.45f,
+            initialValue = 0.22f,
+            targetValue = 0.48f,
             animationSpec = infiniteRepeatable(
                 animation = tween(2600, easing = EaseInOutSine),
                 repeatMode = RepeatMode.Reverse
@@ -134,17 +109,15 @@ fun PetalIncognitoHomeScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Subtle ambient dynamic M3 expressive background blobs
             M3ExpressiveVariableBackground(
                 modifier = Modifier.fillMaxSize(),
-                pageSeed = "incognito_stealth_page"
+                pageSeed = "incognito_firefox_stealth"
             )
 
             Column(modifier = Modifier.fillMaxSize()) {
-                // Persistent header matching the home/browser system header
                 ExpressiveHeader(
-                    title = "Incognito",
-                    subtitle = randomSubtitle,
+                    title = stringResource(R.string.private_browsing_title),
+                    subtitle = stringResource(R.string.private_browsing_subtitle),
                     maxTitleLines = 1,
                     maxSubtitleLines = 2,
                     onBack = null,
@@ -158,7 +131,7 @@ fun PetalIncognitoHomeScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
-                                contentDescription = stringResource(R.string.ui_close_all_incognito_tabs),
+                                contentDescription = stringResource(R.string.private_browsing_close_all),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -171,50 +144,50 @@ fun PetalIncognitoHomeScreen(
                         .fillMaxWidth()
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp),
+                        .padding(horizontal = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Column(
-                        modifier = Modifier.widthIn(max = 600.dp),
+                        modifier = Modifier.widthIn(max = 640.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Spacer(Modifier.height(28.dp))
+                        Spacer(Modifier.height(20.dp))
 
-                        // ── 1. Chrome-Inspired Expressive Stealth Hero Avatar ──
+                        // ── 1. Firefox Private Browsing Mask Hero Badge ──
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
-                                .size(96.dp)
+                                .size(104.dp)
                                 .entrance(index = 0)
                         ) {
-                            // Pulsing ambient aura
+                            // Ambient radial glow behind mask
                             Box(
                                 modifier = Modifier
-                                    .size(92.dp)
+                                    .size(98.dp)
                                     .graphicsLayer {
-                                        scaleX = avatarScale * 1.08f
-                                        scaleY = avatarScale * 1.08f
+                                        scaleX = avatarScale * 1.1f
+                                        scaleY = avatarScale * 1.1f
                                         alpha = auraAlpha
                                     }
                                     .clip(cookieShape)
                                     .background(
                                         Brush.radialGradient(
                                             colors = listOf(
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.40f),
                                                 Color.Transparent
                                             )
                                         )
                                     )
                             )
 
-                            // Expressive circular avatar badge
+                            // Circular badge with Firefox Private Browsing Mask silhouette
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 tonalElevation = 6.dp,
                                 shadowElevation = 4.dp,
                                 modifier = Modifier
-                                    .size(80.dp)
+                                    .size(84.dp)
                                     .graphicsLayer {
                                         scaleX = avatarScale
                                         scaleY = avatarScale
@@ -225,48 +198,48 @@ fun PetalIncognitoHomeScreen(
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.icon_incognito),
-                                        contentDescription = stringResource(R.string.ui_incognito_fedora_and_glasses),
+                                        painter = painterResource(id = R.drawable.icon_firefox_mask),
+                                        contentDescription = stringResource(R.string.private_browsing_title),
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(44.dp)
+                                        modifier = Modifier.size(46.dp)
                                     )
                                 }
                             }
                         }
 
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(16.dp))
 
-                        // ── 2. Hero Headline ──
+                        // ── 2. Hero Headline & Subtitle ──
                         Text(
-                            text = stringResource(R.string.ui_you_ve_gone_incognito),
+                            text = stringResource(R.string.private_browsing_title),
                             style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = (-0.2).sp
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = (-0.3).sp
                             ),
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.entrance(index = 1)
                         )
 
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(8.dp))
 
-                        // ── 3. Chrome-Exact Primary Narrative ──
                         Text(
-                            text = stringResource(R.string.ui_now_you_can_browse_privately),
+                            text = stringResource(R.string.private_browsing_subtitle),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 lineHeight = 21.sp,
                                 letterSpacing = 0.1.sp
                             ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Start,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .padding(horizontal = 12.dp)
                                 .entrance(index = 2)
                         )
 
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(24.dp))
 
-                        // ── 4. Decoy Omnibox Search Bar ──
+                        // ── 3. Stealth Decoy Search Bar ──
                         IncognitoDecoySearchBar(
                             onSearch = onSearchClick,
                             activity = activity,
@@ -275,134 +248,165 @@ fun PetalIncognitoHomeScreen(
 
                         Spacer(Modifier.height(24.dp))
 
-                        // ── 5. Privacy Information Sections ──
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .entrance(index = 4),
-                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        // ── 4. Containment Status Section: Firefox Tracking Protection ──
+                        PetalStatusHeroCard(
+                            title = stringResource(R.string.private_browsing_tracking_protection),
+                            subtitle = stringResource(R.string.private_browsing_tracking_protection_desc),
+                            statusText = stringResource(R.string.private_browsing_protection_active),
+                            icon = Icons.Rounded.Shield,
+                            statusActive = true,
+                            actionLabel = stringResource(R.string.ui_learn_more),
+                            onActionClick = {
+                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                showLearnMoreDialog = true
+                            },
+                            modifier = Modifier.entrance(index = 4)
+                        )
+
+                        Spacer(Modifier.height(20.dp))
+
+                        // ── 5. Containment Settings Section: Cookie Isolation Toggle ──
+                        PetalSettingsSection(
+                            title = stringResource(R.string.ui_security_privacy),
+                            icon = Icons.Rounded.Cookie,
+                            modifier = Modifier.entrance(index = 5)
                         ) {
-                            // Section A: Petal won't save
-                            PrivacySectionGroup(
-                                header = "Petal won't save the following information:",
-                                items = listOf(
-                                    "Your browsing history",
-                                    "Cookies and site data",
-                                    "Information entered in forms"
-                                )
-                            )
-
-                            // Section B: Activity might still be visible
-                            PrivacySectionGroup(
-                                header = "Your activity might still be visible to:",
-                                items = listOf(
-                                    "Websites you visit",
-                                    "Your employer or school",
-                                    "Your internet service provider"
-                                )
-                            )
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-
-                        // "Learn more" action link
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .entrance(index = 5),
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            TextButton(
-                                onClick = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                    showLearnMoreDialog = true
-                                },
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.ui_learn_more),
-                                    style = MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(18.dp))
-
-                        // ── 6. Third-Party Cookies Expressive Control Card ──
-                        PetalHeroCard(
-                            shape = RoundedCornerShape(20.dp),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .entrance(index = 6)
-                                .clip(RoundedCornerShape(20.dp))
-                                .clickable {
-                                    val next = !blockThirdPartyCookies
-                                    blockThirdPartyCookies = next
-                                    sp.edit().putBoolean("sp_incognito_block_3p_cookies", next).apply()
+                            PetalGroupControlRow(
+                                title = stringResource(R.string.ui_block_third_party_cookies),
+                                subtitle = stringResource(R.string.ui_when_on_sites_can_t),
+                                checked = blockThirdPartyCookies,
+                                onCheckedChange = { checked ->
+                                    blockThirdPartyCookies = checked
+                                    sp.edit().putBoolean("sp_incognito_block_3p_cookies", checked).apply()
                                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
-                                }
+                                },
+                                position = PetalGroupPosition.SINGLE,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Cookie,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                },
+                                variant = PetalBadgeVariant.PRIMARY
+                            )
+                        }
+
+                        Spacer(Modifier.height(20.dp))
+
+                        // ── 6. Containment Section: Privacy Guarantees (Firefox Model) ──
+                        PetalSettingsSection(
+                            title = stringResource(R.string.private_browsing_privacy_guarantees),
+                            icon = Icons.Rounded.Lock,
+                            modifier = Modifier.entrance(index = 6)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp)
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                            // Row 1 (Top): What is never saved
+                            PetalGroupListRow(
+                                position = PetalGroupPosition.TOP,
+                                onClick = {},
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        icon = Icons.Rounded.CheckCircle,
+                                        variant = PetalBadgeVariant.PRIMARY
+                                    )
+                                },
+                                content = {
                                     Text(
-                                        text = stringResource(R.string.ui_block_third_party_cookies),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        text = stringResource(R.string.private_browsing_not_saved),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Text(
-                                        text = stringResource(R.string.ui_when_on_sites_can_t),
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            lineHeight = 17.sp,
-                                            letterSpacing = 0.1.sp
-                                        ),
+                                        text = "• " + stringResource(R.string.private_browsing_not_saved_history) +
+                                                "\n• " + stringResource(R.string.private_browsing_not_saved_cookies) +
+                                                "\n• " + stringResource(R.string.private_browsing_not_saved_forms),
+                                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                }
+                                },
+                                trailing = null
+                            )
 
-                                Spacer(Modifier.width(14.dp))
-
-                                Switch(
-                                    checked = blockThirdPartyCookies,
-                                    onCheckedChange = { checked ->
-                                        blockThirdPartyCookies = checked
-                                        sp.edit().putBoolean("sp_incognito_block_3p_cookies", checked).apply()
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
-                                    },
-                                    thumbContent = {
-                                        AnimatedContent(
-                                            targetState = blockThirdPartyCookies,
-                                            transitionSpec = { fadeIn(tween(120)) togetherWith fadeOut(tween(120)) },
-                                            label = "incognito_cookie_switch_thumb"
-                                        ) { isChecked ->
-                                            Icon(
-                                                imageVector = if (isChecked) Icons.Rounded.Check else Icons.Rounded.Close,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(SwitchDefaults.IconSize)
-                                            )
-                                        }
-                                    },
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                        checkedIconColor = MaterialTheme.colorScheme.primary,
-                                        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                            // Row 2 (Bottom): Visible to external parties
+                            PetalGroupListRow(
+                                position = PetalGroupPosition.BOTTOM,
+                                onClick = {},
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Visibility,
+                                        variant = PetalBadgeVariant.SURFACE_TONAL
                                     )
+                                },
+                                content = {
+                                    Text(
+                                        text = stringResource(R.string.private_browsing_visible_to),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = "• " + stringResource(R.string.private_browsing_visible_network) +
+                                                "\n• " + stringResource(R.string.private_browsing_visible_employer) +
+                                                "\n• " + stringResource(R.string.private_browsing_visible_sites),
+                                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailing = null
+                            )
+                        }
+
+                        Spacer(Modifier.height(20.dp))
+
+                        // ── 7. Close All Private Tabs Action Card ──
+                        PetalActionCard(
+                            onClick = {
+                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
+                                onCloseIncognito()
+                            },
+                            shape = petalGroupShape(PetalGroupPosition.SINGLE),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .entrance(index = 7)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 60.dp)
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                PetalGroupIconBadge(
+                                    icon = Icons.Rounded.DeleteSweep,
+                                    variant = PetalBadgeVariant.ERROR
+                                )
+                                Spacer(Modifier.width(14.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.private_browsing_close_all),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.error,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.ui_automatically_purge_cache_history_and),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -413,23 +417,23 @@ fun PetalIncognitoHomeScreen(
                 }
             }
 
-            // ── Learn More Expressive Dialog ──
+            // ── Learn More Expressive Containment Dialog ──
             if (showLearnMoreDialog) {
-                com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                PetalMaterialAlertDialog(
                     onDismissRequest = { showLearnMoreDialog = false },
                     shape = RoundedCornerShape(28.dp),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     icon = {
                         Icon(
-                            painter = painterResource(id = R.drawable.icon_incognito),
+                            painter = painterResource(id = R.drawable.icon_firefox_mask),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(40.dp)
                         )
                     },
                     title = {
                         Text(
-                            text = stringResource(R.string.ui_about_incognito_browsing),
+                            text = stringResource(R.string.private_browsing_title),
                             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                             textAlign = TextAlign.Center
                         )
@@ -450,9 +454,10 @@ fun PetalIncognitoHomeScreen(
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            BulletItem("Files you download and bookmarks you create will be kept.")
-                            BulletItem("Your IP address and traffic remain visible to visited servers and your network provider.")
-                            BulletItem("If you sign into websites while Incognito, those sites can recognize your session.")
+                            BulletItem("Firefox GeckoView private engine session isolates cookies and cache into an ephemeral jar.")
+                            BulletItem("Closing all private tabs immediately purges cookies, temporary cache files, and private thumbnails.")
+                            BulletItem("Downloads and bookmarks are retained across sessions for your convenience.")
+                            BulletItem("Visited sites, networks, and ISPs can still see your IP address and online requests.")
                         }
                     },
                     confirmButton = {
@@ -497,91 +502,62 @@ private fun IncognitoDecoySearchBar(
                 indication = androidx.compose.foundation.LocalIndication.current
             ) { onSearch() }
     ) {
-            Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = stringResource(R.string.ui_search),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(22.dp)
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(
-                text = stringResource(R.string.ui_search_or_type_web_address),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-
-            // Visual search shortcut
-            IconButton(
-                onClick = {
-                    if (activity != null) {
-                        PetalLensBridge.showLensBottomSheet(activity)
-                    } else {
-                        onSearch()
-                    }
-                },
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.CenterFocusWeak,
-                    contentDescription = stringResource(R.string.ui_visual_search),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(19.dp)
-                )
-            }
-
-            // Voice search shortcut
-            IconButton(
-                onClick = {
-                    if (activity != null) {
-                        PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { query ->
-                            if (query.isNotBlank()) {
-                                onSearch()
-                            }
-                        }
-                    } else {
-                        onSearch()
-                    }
-                },
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Mic,
-                    contentDescription = stringResource(R.string.ui_voice_search_2),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(19.dp)
-                )
-            }
-    }
-}
-
-@Composable
-private fun PrivacySectionGroup(
-    header: String,
-    items: List<String>,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Text(
-            text = header,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.Normal,
-                lineHeight = 20.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurface
+        Icon(
+            imageVector = Icons.Rounded.Search,
+            contentDescription = stringResource(R.string.ui_search),
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
         )
-        Column(
-            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = stringResource(R.string.ui_search_or_type_web_address),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+
+        // Visual search shortcut
+        IconButton(
+            onClick = {
+                if (activity != null) {
+                    PetalLensBridge.showLensBottomSheet(activity)
+                } else {
+                    onSearch()
+                }
+            },
+            modifier = Modifier.size(36.dp)
         ) {
-            items.forEach { item ->
-                BulletItem(text = item)
-            }
+            Icon(
+                imageVector = Icons.Rounded.CenterFocusWeak,
+                contentDescription = stringResource(R.string.ui_visual_search),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(19.dp)
+            )
+        }
+
+        // Voice search shortcut
+        IconButton(
+            onClick = {
+                if (activity != null) {
+                    PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { query ->
+                        if (query.isNotBlank()) {
+                            onSearch()
+                        }
+                    }
+                } else {
+                    onSearch()
+                }
+            },
+            modifier = Modifier.size(36.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Mic,
+                contentDescription = stringResource(R.string.ui_voice_search_2),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(19.dp)
+            )
         }
     }
 }
