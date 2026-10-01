@@ -711,7 +711,6 @@ private fun PowerStage(
                     "petal_builtin_dark_webpages" -> Icons.Rounded.DarkMode
                     "petal_builtin_clean_link" -> Icons.Rounded.LinkOff
                     "petal_builtin_universal_copy" -> Icons.Rounded.ContentCopy
-                    "petal_builtin_ai_blocker" -> Icons.Rounded.Block
                     "petal_builtin_translate" -> Icons.Rounded.Translate
                     "petal_builtin_google_search_fixer" -> Icons.Rounded.Build
                     "petal_builtin_media_grabber" -> Icons.Rounded.Download
@@ -934,7 +933,6 @@ private fun extensionTitle(prefKey: String): Int = when (prefKey) {
     "petal_builtin_dark_webpages" -> R.string.petal_setup_ext_dark
     "petal_builtin_clean_link" -> R.string.petal_setup_ext_clean
     "petal_builtin_universal_copy" -> R.string.petal_setup_ext_copy
-    "petal_builtin_ai_blocker" -> R.string.petal_setup_ext_ai_blocker
     "petal_builtin_translate" -> R.string.petal_setup_ext_translate
     "petal_builtin_google_search_fixer" -> R.string.petal_setup_ext_search_fixer
     "petal_builtin_media_grabber" -> R.string.petal_setup_ext_media
@@ -946,7 +944,6 @@ private fun extensionReason(prefKey: String): Int = when (prefKey) {
     "petal_builtin_dark_webpages" -> R.string.petal_setup_ext_dark_reason
     "petal_builtin_clean_link" -> R.string.petal_setup_ext_clean_reason
     "petal_builtin_universal_copy" -> R.string.petal_setup_ext_copy_reason
-    "petal_builtin_ai_blocker" -> R.string.petal_setup_ext_ai_blocker_reason
     "petal_builtin_translate" -> R.string.petal_setup_ext_translate_reason
     "petal_builtin_google_search_fixer" -> R.string.petal_setup_ext_search_fixer_reason
     "petal_builtin_media_grabber" -> R.string.petal_setup_ext_media_reason

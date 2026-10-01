@@ -440,7 +440,6 @@ private fun BuiltInExtensionsList(
                             "petal_builtin_dark_webpages" -> Icons.Filled.DarkMode
                             "petal_builtin_clean_link" -> Icons.Filled.LinkOff
                             "petal_builtin_universal_copy" -> Icons.Filled.ContentCopy
-                            "petal_builtin_ai_blocker" -> Icons.Filled.SmartToy
                             "petal_builtin_translate" -> Icons.Filled.Translate
                             "petal_builtin_google_search_fixer" -> Icons.Filled.Search
                             "petal_builtin_media_grabber" -> Icons.Filled.VideoLibrary

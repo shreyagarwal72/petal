@@ -467,20 +467,6 @@ object PetalSettingsSearchIndex {
             subtitle = "Perform lightweight HEAD check on sniffing URLs to filter out expired or non-playable links",
             category = SettingsCategory.MEDIA,
             keywords = listOf("validate media", "head request", "filter streams", "playable")
-        ),
-        SettingsSearchItem(
-            id = "media_ai_blocker",
-            title = "AI Blocker",
-            subtitle = "Automatically clean search results by stripping cluttered generative AI overviews",
-            category = SettingsCategory.MEDIA,
-            keywords = listOf("ai blocker", "strip ai", "remove ai overview", "google ai overview", "clean search")
-        ),
-        SettingsSearchItem(
-            id = "media_sync_ecosystem",
-            title = "Petal Sync (Experimental)",
-            subtitle = "Zero-cloud end-to-end encrypted (E2EE) sync across devices, powered by Firefox Accounts & Mozilla Sync",
-            category = SettingsCategory.MEDIA,
-            keywords = listOf("sync", "firefox sync", "mozilla account", "e2ee", "encrypted", "cloud", "ecosystem", "tabs sync")
         )
     )
 

@@ -62,13 +62,6 @@ object PetalBuiltInExtensionManager {
             prefKey     = "petal_builtin_universal_copy"
         ),
         BuiltInSpec(
-            assetPath   = "web_extensions/petal_ai_blocker/",
-            extensionId = "petal-ai-blocker@petalbrowser.app",
-            label       = "Petal AI Blocker",
-            description = "Hides AI overview cards and synthesized summaries in search engine results.",
-            prefKey     = "petal_builtin_ai_blocker"
-        ),
-        BuiltInSpec(
             assetPath   = "web_extensions/petal_translate/",
             extensionId = "petal-translate@petalbrowser.app",
             label       = "Petal Translate",
