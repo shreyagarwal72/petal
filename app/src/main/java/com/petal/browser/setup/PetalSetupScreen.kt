@@ -172,6 +172,8 @@ private fun PetalSetupContent(
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.fillMaxSize()) {
+            M3ExpressiveVariableBackground(pageSeed = "petal_setup")
+
             Column(
                 Modifier
                     .fillMaxSize()
@@ -240,8 +242,8 @@ private fun PetalSetupContent(
                 Surface(
                     Modifier.weight(1f).fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    tonalElevation = 2.dp
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 1.dp
                 ) {
                     Column(
                         Modifier
@@ -450,146 +452,102 @@ private fun HelloStage(
     setAmoled: (Boolean) -> Unit,
     onRestoreBackup: () -> Unit
 ) {
-    Text(
-        stringResource(R.string.petal_setup_hello_body),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-
-    // Language selection cards
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    PetalSettingsSection(
+        title = stringResource(R.string.petal_setup_hello_title),
+        icon = Icons.Rounded.Translate,
+        cardId = "setup_language"
     ) {
-        listOf("en" to R.string.petal_setup_english, "hi-Latn" to R.string.petal_setup_hinglish).forEach { (tag, label) ->
-            val isSelected = language == tag
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { setLanguage(tag) },
-                shape = RoundedCornerShape(20.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null
-            ) {
-                Column(
-                    Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            stringResource(label),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                        )
-                        if (isSelected) {
-                            Icon(Icons.Filled.Check, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                    Text(
-                        stringResource(R.string.petal_setup_language_live),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+        Text(
+            stringResource(R.string.petal_setup_hello_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        // Language selection connected button group
+        val languages = listOf("en" to R.string.petal_setup_english, "hi-Latn" to R.string.petal_setup_hinglish)
+        val selectedIndex = languages.indexOfFirst { it.first == language }.coerceAtLeast(0)
+        PetalConnectedButtonGroup(
+            items = languages.map { (_, labelRes) ->
+                PetalConnectedButtonItem(label = stringResource(labelRes))
+            },
+            selectedIndex = selectedIndex,
+            onSelect = { idx ->
+                languages.getOrNull(idx)?.let { setLanguage(it.first) }
+            }
+        )
+    }
+
+    // Appearance Toggles using PetalSettingsSection with M3 containment
+    PetalSettingsSection(
+        title = stringResource(R.string.title_theme),
+        icon = Icons.Rounded.Palette,
+        cardId = "setup_theme"
+    ) {
+        PetalGroup(rowCount = 4) { index, position ->
+            when (index) {
+                0 -> PetalSettingsToggleRow(
+                    title = stringResource(R.string.petal_setup_floating_tabs),
+                    subtitle = stringResource(R.string.pref_summary_floating_tab_bar),
+                    icon = Icons.Rounded.Tab,
+                    checked = floating,
+                    onCheckedChange = { value ->
+                        sp.edit().putBoolean("sp_floating_tab_bar", value).apply()
+                        setFloating(value)
+                    },
+                    position = position
+                )
+                1 -> PetalSettingsToggleRow(
+                    title = stringResource(R.string.petal_setup_address_bottom),
+                    subtitle = stringResource(R.string.petal_setup_address_bottom),
+                    icon = Icons.Rounded.VerticalAlignBottom,
+                    checked = bottom,
+                    onCheckedChange = { value ->
+                        sp.edit().putString("sp_address_bar_position", if (value) "BOTTOM" else "TOP").apply()
+                        setBottom(value)
+                    },
+                    position = position
+                )
+                2 -> PetalSettingsToggleRow(
+                    title = stringResource(R.string.petal_setup_dynamic_color),
+                    subtitle = stringResource(R.string.pref_summary_dynamic_colors),
+                    icon = Icons.Rounded.Palette,
+                    checked = dynamic,
+                    onCheckedChange = { value ->
+                        sp.edit().putBoolean("useDynamicColor", value).apply()
+                        setDynamic(value)
+                    },
+                    position = position
+                )
+                3 -> PetalSettingsToggleRow(
+                    title = stringResource(R.string.petal_setup_amoled),
+                    subtitle = stringResource(R.string.pref_summary_amoled),
+                    icon = Icons.Rounded.DarkMode,
+                    checked = amoled,
+                    onCheckedChange = { value ->
+                        sp.edit().putBoolean("sp_amoled", value).apply()
+                        setAmoled(value)
+                    },
+                    position = position
+                )
             }
         }
     }
 
-    // Appearance Toggles using PetalSettingsToggleRow with M3 containment
-    Text(
-        stringResource(R.string.title_theme),
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold
-    )
-
-    PetalGroup(rowCount = 4) { index, position ->
-        when (index) {
-            0 -> PetalSettingsToggleRow(
-                title = stringResource(R.string.petal_setup_floating_tabs),
-                subtitle = stringResource(R.string.pref_summary_floating_tab_bar),
-                icon = Icons.Rounded.Tab,
-                checked = floating,
-                onCheckedChange = { value ->
-                    sp.edit().putBoolean("sp_floating_tab_bar", value).apply()
-                    setFloating(value)
-                },
-                position = position
-            )
-            1 -> PetalSettingsToggleRow(
-                title = stringResource(R.string.petal_setup_address_bottom),
-                subtitle = stringResource(R.string.petal_setup_address_bottom),
-                icon = Icons.Rounded.VerticalAlignBottom,
-                checked = bottom,
-                onCheckedChange = { value ->
-                    sp.edit().putString("sp_address_bar_position", if (value) "BOTTOM" else "TOP").apply()
-                    setBottom(value)
-                },
-                position = position
-            )
-            2 -> PetalSettingsToggleRow(
-                title = stringResource(R.string.petal_setup_dynamic_color),
-                subtitle = stringResource(R.string.pref_summary_dynamic_colors),
-                icon = Icons.Rounded.Palette,
-                checked = dynamic,
-                onCheckedChange = { value ->
-                    sp.edit().putBoolean("useDynamicColor", value).apply()
-                    setDynamic(value)
-                },
-                position = position
-            )
-            3 -> PetalSettingsToggleRow(
-                title = stringResource(R.string.petal_setup_amoled),
-                subtitle = stringResource(R.string.pref_summary_amoled),
-                icon = Icons.Rounded.DarkMode,
-                checked = amoled,
-                onCheckedChange = { value ->
-                    sp.edit().putBoolean("sp_amoled", value).apply()
-                    setAmoled(value)
-                },
-                position = position
-            )
-        }
-    }
-
-    // Restore Backup card
-    Card(
-        onClick = onRestoreBackup,
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier.fillMaxWidth()
+    // Restore Backup section
+    PetalSettingsSection(
+        title = stringResource(R.string.petal_setup_restore_title),
+        icon = Icons.Rounded.Restore,
+        cardId = "setup_backup"
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            PetalGroupIconBadge(
-                icon = Icons.Rounded.Restore,
-                container = MaterialTheme.colorScheme.secondaryContainer,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.petal_setup_restore_title),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    stringResource(R.string.petal_setup_restore_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        PetalGroupRow(
+            icon = Icons.Rounded.Restore,
+            title = stringResource(R.string.petal_setup_restore_title),
+            subtitle = stringResource(R.string.petal_setup_restore_desc),
+            position = PetalGroupPosition.SINGLE,
+            onClick = onRestoreBackup,
+            iconContainer = MaterialTheme.colorScheme.secondaryContainer,
+            iconTint = MaterialTheme.colorScheme.onSecondaryContainer
+        )
     }
 }
 
@@ -604,100 +562,107 @@ private fun AccessStage(
     openSettings: () -> Unit
 ) {
     val context = LocalContext.current
-    Text(
-        stringResource(R.string.petal_setup_access_body),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
 
-    PetalGroup(rowCount = items.size) { index, position ->
-        val item = items[index]
-        val granted = remember(refresh, item.id) {
-            item.permissions.any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
-        }
-        val permanentlyDenied = pending?.id == item.id &&
-            sp.getBoolean("setup_permission_asked_${item.id}", false) &&
-            item.permissions.all { permission ->
-                ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED &&
-                    !activity.shouldShowRequestPermissionRationale(permission)
+    PetalSettingsSection(
+        title = stringResource(R.string.petal_setup_access_title),
+        icon = Icons.Rounded.Security,
+        cardId = "setup_permissions"
+    ) {
+        Text(
+            stringResource(R.string.petal_setup_access_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        PetalGroup(rowCount = items.size) { index, position ->
+            val item = items[index]
+            val granted = remember(refresh, item.id) {
+                item.permissions.any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
+            }
+            val permanentlyDenied = pending?.id == item.id &&
+                sp.getBoolean("setup_permission_asked_${item.id}", false) &&
+                item.permissions.all { permission ->
+                    ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED &&
+                        !activity.shouldShowRequestPermissionRationale(permission)
+                }
+
+            val permIcon = when (item.id) {
+                "notifications" -> Icons.Rounded.Notifications
+                "camera" -> Icons.Rounded.CameraAlt
+                "media" -> Icons.Rounded.PhotoLibrary
+                "microphone" -> Icons.Rounded.Mic
+                "location" -> Icons.Rounded.LocationOn
+                else -> Icons.Rounded.Security
             }
 
-        val permIcon = when (item.id) {
-            "notifications" -> Icons.Rounded.Notifications
-            "camera" -> Icons.Rounded.CameraAlt
-            "media" -> Icons.Rounded.PhotoLibrary
-            "microphone" -> Icons.Rounded.Mic
-            "location" -> Icons.Rounded.LocationOn
-            else -> Icons.Rounded.Security
-        }
-
-        Card(
-            onClick = {
-                if (permanentlyDenied) openSettings()
-                else if (!granted) request(item)
-            },
-            shape = petalGroupShape(position),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Card(
+                onClick = {
+                    if (permanentlyDenied) openSettings()
+                    else if (!granted) request(item)
+                },
+                shape = petalGroupShape(position),
+                colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                PetalGroupIconBadge(
-                    icon = permIcon,
-                    container = if (granted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-                    tint = if (granted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Column(Modifier.weight(1f)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(item.title), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
-                        if (item.optional) {
-                            Text(
-                                stringResource(R.string.petal_setup_optional),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    Text(
-                        stringResource(item.reason),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    PetalGroupIconBadge(
+                        icon = permIcon,
+                        container = if (granted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        tint = if (granted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-                if (granted) {
-                    FilledTonalButton(
-                        onClick = {},
-                        enabled = false,
-                        shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Icon(Icons.Filled.Check, null, Modifier.size(14.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.petal_setup_granted), style = MaterialTheme.typography.labelSmall)
+                    Column(Modifier.weight(1f)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(item.title), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                            if (item.optional) {
+                                Text(
+                                    stringResource(R.string.petal_setup_optional),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Text(
+                            stringResource(item.reason),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
-                } else if (permanentlyDenied) {
-                    OutlinedButton(
-                        onClick = openSettings,
-                        shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text(stringResource(R.string.petal_setup_open_settings), style = MaterialTheme.typography.labelSmall)
-                    }
-                } else {
-                    Button(
-                        onClick = { request(item) },
-                        shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text(stringResource(R.string.ui_grant_permission), style = MaterialTheme.typography.labelSmall)
+                    if (granted) {
+                        FilledTonalButton(
+                            onClick = {},
+                            enabled = false,
+                            shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Icon(Icons.Filled.Check, null, Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.petal_setup_granted), style = MaterialTheme.typography.labelSmall)
+                        }
+                    } else if (permanentlyDenied) {
+                        OutlinedButton(
+                            onClick = openSettings,
+                            shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(stringResource(R.string.petal_setup_open_settings), style = MaterialTheme.typography.labelSmall)
+                        }
+                    } else {
+                        Button(
+                            onClick = { request(item) },
+                            shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(stringResource(R.string.ui_grant_permission), style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
             }
@@ -714,50 +679,57 @@ private fun PowerStage(
     setDark: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
-    Text(
-        stringResource(R.string.petal_setup_power_body),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
 
-    val builtIns = PetalBuiltInExtensionManager.builtIns
-    val totalRows = 1 + builtIns.size
+    PetalSettingsSection(
+        title = stringResource(R.string.petal_setup_power_title),
+        icon = Icons.Rounded.Shield,
+        cardId = "setup_power_features"
+    ) {
+        Text(
+            stringResource(R.string.petal_setup_power_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
-    PetalGroup(rowCount = totalRows) { index, position ->
-        if (index == 0) {
-            PetalSettingsToggleRow(
-                title = stringResource(R.string.petal_setup_ad_block),
-                subtitle = stringResource(R.string.petal_setup_ad_block_reason),
-                icon = Icons.Rounded.Shield,
-                checked = adBlock,
-                onCheckedChange = setAdBlock,
-                position = position
-            )
-        } else {
-            val spec = builtIns[index - 1]
-            val enabled = remember(spec.prefKey) { mutableStateOf(sp.getBoolean(spec.prefKey, true)) }
-            val extIcon = when (spec.prefKey) {
-                "petal_builtin_dark_webpages" -> Icons.Rounded.DarkMode
-                "petal_builtin_clean_link" -> Icons.Rounded.LinkOff
-                "petal_builtin_universal_copy" -> Icons.Rounded.ContentCopy
-                "petal_builtin_ai_blocker" -> Icons.Rounded.Block
-                "petal_builtin_translate" -> Icons.Rounded.Translate
-                "petal_builtin_google_search_fixer" -> Icons.Rounded.Build
-                "petal_builtin_media_grabber" -> Icons.Rounded.Download
-                else -> Icons.Rounded.Extension
+        val builtIns = PetalBuiltInExtensionManager.builtIns
+        val totalRows = 1 + builtIns.size
+
+        PetalGroup(rowCount = totalRows) { index, position ->
+            if (index == 0) {
+                PetalSettingsToggleRow(
+                    title = stringResource(R.string.petal_setup_ad_block),
+                    subtitle = stringResource(R.string.petal_setup_ad_block_reason),
+                    icon = Icons.Rounded.Shield,
+                    checked = adBlock,
+                    onCheckedChange = setAdBlock,
+                    position = position
+                )
+            } else {
+                val spec = builtIns[index - 1]
+                val enabled = remember(spec.prefKey) { mutableStateOf(sp.getBoolean(spec.prefKey, true)) }
+                val extIcon = when (spec.prefKey) {
+                    "petal_builtin_dark_webpages" -> Icons.Rounded.DarkMode
+                    "petal_builtin_clean_link" -> Icons.Rounded.LinkOff
+                    "petal_builtin_universal_copy" -> Icons.Rounded.ContentCopy
+                    "petal_builtin_ai_blocker" -> Icons.Rounded.Block
+                    "petal_builtin_translate" -> Icons.Rounded.Translate
+                    "petal_builtin_google_search_fixer" -> Icons.Rounded.Build
+                    "petal_builtin_media_grabber" -> Icons.Rounded.Download
+                    else -> Icons.Rounded.Extension
+                }
+                PetalSettingsToggleRow(
+                    title = stringResource(extensionTitle(spec.prefKey)),
+                    subtitle = stringResource(extensionReason(spec.prefKey)),
+                    icon = extIcon,
+                    checked = enabled.value,
+                    onCheckedChange = { checked ->
+                        enabled.value = checked
+                        PetalBuiltInExtensionManager.setEnabled(context, spec.prefKey, checked)
+                        if (spec.prefKey == "petal_builtin_dark_webpages") setDark(checked)
+                    },
+                    position = position
+                )
             }
-            PetalSettingsToggleRow(
-                title = stringResource(extensionTitle(spec.prefKey)),
-                subtitle = stringResource(extensionReason(spec.prefKey)),
-                icon = extIcon,
-                checked = enabled.value,
-                onCheckedChange = { checked ->
-                    enabled.value = checked
-                    PetalBuiltInExtensionManager.setEnabled(context, spec.prefKey, checked)
-                    if (spec.prefKey == "petal_builtin_dark_webpages") setDark(checked)
-                },
-                position = position
-            )
         }
     }
 }
@@ -772,87 +744,85 @@ private fun MakePetalYoursStage(
     aiKey: String,
     setAiKey: (String) -> Unit
 ) {
-    Text(
-        stringResource(R.string.petal_setup_you_body),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
+    PetalSettingsSection(
+        title = stringResource(R.string.petal_setup_search),
+        icon = Icons.Rounded.Search,
+        cardId = "setup_search_engine"
+    ) {
+        Text(
+            stringResource(R.string.petal_setup_you_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
-    Text(
-        stringResource(R.string.petal_setup_search),
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold
-    )
-
-    PetalGroup(rowCount = engines.size) { index, position ->
-        val engine = engines[index]
-        val isSelected = selectedEngine == engine.index
-        Card(
-            onClick = { onSelectEngine(engine.index) },
-            shape = petalGroupShape(position),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-                else MaterialTheme.colorScheme.surfaceContainerHigh
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+        PetalGroup(rowCount = engines.size) { index, position ->
+            val engine = engines[index]
+            val isSelected = selectedEngine == engine.index
+            Card(
+                onClick = { onSelectEngine(engine.index) },
+                shape = petalGroupShape(position),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                    else petalGroupSurfaceColor()
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                PetalGroupIconBadge(
-                    icon = Icons.Rounded.Search,
-                    container = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Column(Modifier.weight(1f)) {
-                    Text(engine.name, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        engine.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    PetalGroupIconBadge(
+                        icon = Icons.Rounded.Search,
+                        container = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(engine.name, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            engine.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = { onSelectEngine(engine.index) }
                     )
                 }
-                RadioButton(
-                    selected = isSelected,
-                    onClick = { onSelectEngine(engine.index) }
-                )
             }
         }
     }
 
-    Spacer(Modifier.height(4.dp))
-
-    Text(
-        stringResource(R.string.ui_ai_assistant),
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold
-    )
-
-    PetalSettingsToggleRow(
-        title = stringResource(R.string.petal_setup_ai_optional),
-        subtitle = stringResource(R.string.petal_setup_ai_reason),
+    PetalSettingsSection(
+        title = stringResource(R.string.ui_ai_assistant),
         icon = Icons.Rounded.AutoAwesome,
-        checked = showAi,
-        onCheckedChange = setShowAi,
-        position = PetalGroupPosition.SINGLE
-    )
-
-    AnimatedVisibility(visible = showAi) {
-        OutlinedTextField(
-            value = aiKey,
-            onValueChange = setAiKey,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.petal_setup_ai_key)) },
-            shape = RoundedCornerShape(16.dp),
-            singleLine = true
+        cardId = "setup_ai_assistant"
+    ) {
+        PetalSettingsToggleRow(
+            title = stringResource(R.string.petal_setup_ai_optional),
+            subtitle = stringResource(R.string.petal_setup_ai_reason),
+            icon = Icons.Rounded.AutoAwesome,
+            checked = showAi,
+            onCheckedChange = setShowAi,
+            position = PetalGroupPosition.SINGLE
         )
+
+        AnimatedVisibility(visible = showAi) {
+            OutlinedTextField(
+                value = aiKey,
+                onValueChange = setAiKey,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.petal_setup_ai_key)) },
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true
+            )
+        }
     }
 }
 
