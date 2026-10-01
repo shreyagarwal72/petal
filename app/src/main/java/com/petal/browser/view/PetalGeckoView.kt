@@ -1765,7 +1765,7 @@ class PetalGeckoView @JvmOverloads constructor(
             return true
         }
         val safeGv = geckoView as? SafeGeckoView
-        if (safeGv != null && !safeGv.canOverscrollTop()) {
+        if (safeGv != null && safeGv.isTouchHandledByWebsite()) {
             return false
         }
         return currentScrollY <= PAGE_TOP_TOLERANCE_PX
@@ -2524,11 +2524,14 @@ class SafeGeckoView : GeckoView {
 
         when (action) {
             MotionEvent.ACTION_DOWN -> {
-                // A new gesture started. Disallow parent interception until APZ verifies
-                // that the page is at the top boundary and touch is not handled by webpage.
-                parent?.requestDisallowInterceptTouchEvent(true)
                 initialDownY = eventY
-                gestureCanReachParent = true
+                val isAtTop = (parent as? PetalGeckoView)?.isPageAtTop() ?: false
+                gestureCanReachParent = isAtTop
+                if (!isAtTop) {
+                    parent?.requestDisallowInterceptTouchEvent(true)
+                } else {
+                    parent?.requestDisallowInterceptTouchEvent(false)
+                }
                 updateInputResult(event)
                 val handled = super.onTouchEvent(event)
                 event.recycle()

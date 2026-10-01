@@ -2145,8 +2145,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         currentAlbumController = controller;
         if (contentFrame != null) {
-            contentFrame.setEnabled(!(controller instanceof com.petal.browser.browser.PetalTabViewController));
-            if (controller instanceof com.petal.browser.browser.PetalTabViewController) resetRefreshState();
+            contentFrame.setEnabled(true);
         }
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             String tabId = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).getTabId();
@@ -4516,7 +4515,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             boolean isScrolledToTop = false;
-            if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+            if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
+                isScrolledToTop = ((com.petal.browser.browser.PetalTabViewController) controller).isPageAtTop();
+            } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) controller).isPageAtTop();
             } else if (ninjaWebView != null) {
                 isScrolledToTop = ninjaWebView.getScrollY() <= 0;
@@ -4654,6 +4655,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showOverview() {
         try {
             captureBrowserMainPreview();
+            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).updatePreviewCache();
+            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).updatePreviewCache();
+            }
             isOverlayScreenShowing = true;
             clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);

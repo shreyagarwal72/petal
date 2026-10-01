@@ -307,7 +307,6 @@ object PetalTabSwitcherBridge {
                             (activity as? BrowserActivity)?.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.TABS)
                         },
                         onTabVisible = { tabItem ->
-                            val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
                             val expectedKey = tabItem.thumbnailKey
                             com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(
                                 arrayOf(expectedKey), tabItem.isIncognito,
@@ -319,20 +318,23 @@ object PetalTabSwitcherBridge {
                                     tabItems[index] = tabItems[index].copy(previewBitmap = cached)
                                 }
                             }
-                            if (targetAlbum is com.petal.browser.view.PetalGeckoView && tabItem.previewBitmap == null) {
-                                targetAlbum.capturePreviewBitmapAsync { bitmap ->
-                                    val index = tabItems.indexOfFirst { it.id == tabItem.id }
-                                    if (bitmap != null && index >= 0 && tabItems[index].thumbnailKey == expectedKey &&
-                                        tabItems[index].url == tabItem.url) {
-                                        tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
+                            val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
+                            if (tabItem.previewBitmap == null && targetAlbum != null && targetAlbum.albumView?.isShown == true) {
+                                if (targetAlbum is com.petal.browser.view.PetalGeckoView) {
+                                    targetAlbum.capturePreviewBitmapAsync { bitmap ->
+                                        val index = tabItems.indexOfFirst { it.id == tabItem.id }
+                                        if (bitmap != null && index >= 0 && tabItems[index].thumbnailKey == expectedKey &&
+                                            tabItems[index].url == tabItem.url) {
+                                            tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
+                                        }
                                     }
-                                }
-                            } else if (targetAlbum is com.petal.browser.browser.PetalTabViewController && tabItem.previewBitmap == null) {
-                                targetAlbum.capturePreviewBitmapAsync { bitmap ->
-                                    val index = tabItems.indexOfFirst { it.id == tabItem.id }
-                                    if (bitmap != null && index >= 0 && tabItems[index].thumbnailKey == expectedKey &&
-                                        tabItems[index].url == tabItem.url) {
-                                        tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
+                                } else if (targetAlbum is com.petal.browser.browser.PetalTabViewController) {
+                                    targetAlbum.capturePreviewBitmapAsync { bitmap ->
+                                        val index = tabItems.indexOfFirst { it.id == tabItem.id }
+                                        if (bitmap != null && index >= 0 && tabItems[index].thumbnailKey == expectedKey &&
+                                            tabItems[index].url == tabItem.url) {
+                                            tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
+                                        }
                                     }
                                 }
                             }

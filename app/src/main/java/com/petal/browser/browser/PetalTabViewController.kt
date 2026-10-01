@@ -636,6 +636,18 @@ class PetalTabViewController private constructor(
         State(it.id, pageUrl, pageTitle, progress, loading, backAvailable, forwardAvailable, isSecure, it.content.private)
     }
 
+    fun isPageAtTop(): Boolean {
+        if (pageUrl.isBlank() || pageUrl.equals("about:blank", ignoreCase = true) || com.petal.browser.unit.BrowserUnit.isHomePage(pageUrl)) {
+            return true
+        }
+        val view = engineView.asView()
+        return !view.canScrollVertically(-1)
+    }
+
+    override fun canChildScrollUp(): Boolean {
+        return !isPageAtTop()
+    }
+
     override fun getAlbumView(): View = this
 
     @MainThread
