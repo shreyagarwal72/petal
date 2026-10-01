@@ -49,6 +49,7 @@ class PetalTabViewController private constructor(
     private var previewRevision = 0L
     private var capturedPreviewRevision = -1L
     private var previewCaptureSequence = 0L
+    private var previewRetryCount = 0
     private var pageTitle = ""
     private var pageUrl = "about:blank"
     private var backAvailable = false
@@ -90,7 +91,10 @@ class PetalTabViewController private constructor(
 
     private val observer = object : EngineSession.Observer {
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
-            if (pageUrl != url) previewRevision++
+            if (pageUrl != url) {
+                previewRevision++
+                previewRetryCount = 0
+            }
             pageUrl = url
             applyPageSettings(url)
             tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, url)) }
@@ -110,7 +114,10 @@ class PetalTabViewController private constructor(
         }
 
         override fun onLoadingStateChange(loading: Boolean) {
-            if (this@PetalTabViewController.loading != loading && loading) previewRevision++
+            if (this@PetalTabViewController.loading != loading && loading) {
+                previewRevision++
+                previewRetryCount = 0
+            }
             this@PetalTabViewController.loading = loading
             tab?.let { browserStore.dispatch(ContentAction.UpdateLoadingStateAction(it.id, loading)) }
             if (!loading) updatePreviewCache()
@@ -593,6 +600,25 @@ class PetalTabViewController private constructor(
         capturePreviewBitmapAsync { }
     }
 
+    /**
+     * Same gate Firefox's BrowserThumbnails uses: a thumbnail is only requested once the engine
+     * has reported a first contentful paint for the tab (BrowserStore tracks this, and resets it
+     * when GeckoView releases its compositor resources).
+     */
+    private fun hasContentfulPaint(): Boolean {
+        val id = boundTabId ?: return false
+        return browserStore.state.tabs.firstOrNull { it.id == id }?.content?.firstContentfulPaint == true
+    }
+
+    /** Bounded retry used while the compositor has not painted yet or returned a blank frame. */
+    private fun schedulePreviewRetry() {
+        if (previewRetryCount >= 5) return
+        previewRetryCount++
+        postDelayed({
+            try { updatePreviewCache() } catch (_: Throwable) {}
+        }, 300L * previewRetryCount)
+    }
+
     fun capturePreviewBitmapAsync(callback: (Bitmap?) -> Unit) {
         val key = boundTabId ?: run { callback(null); return }
         val revision = previewRevision
@@ -604,14 +630,21 @@ class PetalTabViewController private constructor(
             callback(null)
             return
         }
+        if (!hasContentfulPaint()) {
+            schedulePreviewRetry()
+            callback(null)
+            return
+        }
         try {
             geckoView.capturePixels().then({ bitmap: Bitmap? ->
                 val current = key == boundTabId && revision == previewRevision && sequence == previewCaptureSequence
+                var stored = false
                 if (bitmap != null && current) {
-                    TabThumbnailCache.put(key, bitmap, privateTab)
-                    capturedPreviewRevision = revision
+                    // put() rejects blank frames so they can't replace a good thumbnail.
+                    stored = TabThumbnailCache.put(key, bitmap, privateTab)
+                    if (stored) capturedPreviewRevision = revision else schedulePreviewRetry()
                 }
-                callback(if (current) bitmap else null)
+                callback(if (current && stored) bitmap else null)
                 org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
             }, {
                 callback(null)

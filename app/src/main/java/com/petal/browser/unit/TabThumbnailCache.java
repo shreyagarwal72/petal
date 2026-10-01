@@ -117,23 +117,66 @@ public final class TabThumbnailCache {
         return diskCacheDir;
     }
 
-    /** Stores a detached, bounded snapshot. Private snapshots are memory-only. */
-    public static synchronized void put(@Nullable String tabId, @Nullable Bitmap bitmap, boolean isPrivate) {
-        if (isBlank(tabId) || bitmap == null || bitmap.isRecycled()) return;
+    /**
+     * Stores a detached, bounded snapshot. Private snapshots are memory-only.
+     *
+     * Like Firefox's thumbnail pipeline, an empty (single-colour) capture is never stored: a
+     * compositor that has not painted yet returns a blank frame, and persisting it would replace
+     * a good thumbnail with an empty card. Returns true only when the snapshot was stored.
+     */
+    public static synchronized boolean put(@Nullable String tabId, @Nullable Bitmap bitmap, boolean isPrivate) {
+        if (isBlank(tabId) || bitmap == null || bitmap.isRecycled()) return false;
+        if (isBlankBitmap(bitmap)) return false;
         Bitmap snapshot = makeSnapshot(bitmap);
-        if (snapshot == null || snapshot.isRecycled()) return;
+        if (snapshot == null || snapshot.isRecycled()) return false;
         LruCache<String, Bitmap> cache = isPrivate ? privateMemoryCache : regularMemoryCache;
         cache.put(tabId, snapshot);
-        if (isPrivate) return;
+        if (isPrivate) return true;
 
         long token = TOKENS.incrementAndGet();
         long generation = GENERATION.get();
         regularVersions.put(tabId, token);
         DISK.execute(() -> saveToDisk(tabId, snapshot, token, generation));
+        return true;
     }
 
     public static void put(@Nullable String tabId, @Nullable Bitmap bitmap) {
         put(tabId, bitmap, false);
+    }
+
+    /**
+     * Cheap blank-frame check: samples a coarse grid and reports true when every sampled pixel is
+     * identical (fully transparent, solid white, solid black...). Real pages always contain text,
+     * images or chrome that differ across a 48x48 sample grid.
+     */
+    public static boolean isBlankBitmap(@Nullable Bitmap bitmap) {
+        if (bitmap == null || bitmap.isRecycled()) return true;
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        if (width <= 0 || height <= 0) return true;
+        int stepsX = Math.min(width, 48);
+        int stepsY = Math.min(height, 48);
+        try {
+            int first = 0;
+            boolean initialized = false;
+            for (int yi = 0; yi < stepsY; yi++) {
+                int y = Math.min(height - 1, (int) ((yi + 0.5f) * height / stepsY));
+                for (int xi = 0; xi < stepsX; xi++) {
+                    int x = Math.min(width - 1, (int) ((xi + 0.5f) * width / stepsX));
+                    int pixel = bitmap.getPixel(x, y);
+                    if (!initialized) {
+                        first = pixel;
+                        initialized = true;
+                    } else if (pixel != first) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        } catch (Throwable ignored) {
+            // Hardware bitmaps cannot be sampled; treat them as real content.
+            return false;
+        }
     }
 
     /** Returns a regular-tab memory entry only; this method never blocks on disk. */

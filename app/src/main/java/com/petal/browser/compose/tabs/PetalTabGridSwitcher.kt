@@ -1889,6 +1889,9 @@ private fun PetalTabCard(
                         Image(
                             bitmap = preview.asImageBitmap(),
                             contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
+                            // Firefox anchors tab thumbnails to the top of the page, so the
+                            // visible part of the card is the above-the-fold content.
+                            alignment = Alignment.TopCenter,
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -2116,6 +2119,7 @@ private fun PetalTabListItem(
                             Image(
                                 bitmap = preview.asImageBitmap(),
                                 contentDescription = stringResource(R.string.ui_thumbnail),
+                                alignment = Alignment.TopCenter,
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
                             )

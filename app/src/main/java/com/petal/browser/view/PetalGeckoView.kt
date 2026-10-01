@@ -398,6 +398,10 @@ class PetalGeckoView @JvmOverloads constructor(
     private var previewRevision: Long = 0L
     private var capturedPreviewRevision: Long = -1L
     private var previewCaptureSequence: Long = 0L
+    // Mirrors Firefox's BrowserThumbnails gate: only thumbnail once the compositor has painted
+    // real content for the current document. Reset again when GeckoView drops its paint state.
+    private var hasContentfulPaint: Boolean = false
+    private var previewRetryCount: Int = 0
 
     private var tabId: String = "tab_${System.currentTimeMillis()}_${Math.abs(hashCode())}"
     private var tabGroupId: String? = null
@@ -478,6 +482,8 @@ class PetalGeckoView @JvmOverloads constructor(
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
             override fun onPageStart(session: GeckoSession, url: String) {
                 previewRevision++
+                hasContentfulPaint = false
+                previewRetryCount = 0
                 isStopped = false
                 currentScrollY = 0
                 currentScrollX = 0
@@ -517,7 +523,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 hideLoadingSkeleton()
                 isStopped = true
                 updateProgress(BrowserUnit.LOADING_STOPPED)
-                updatePreviewCache()
+                if (hasContentfulPaint) schedulePreviewCapture(150L)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, false)
                     com.petal.browser.engine.gecko.PetalEngineStore.updateProgress(context, tabId, 100)
@@ -856,6 +862,21 @@ class PetalGeckoView @JvmOverloads constructor(
 
         // Content Delegate
         session.contentDelegate = object : GeckoSession.ContentDelegate {
+            override fun onFirstContentfulPaint(session: GeckoSession) {
+                hasContentfulPaint = true
+                previewRetryCount = 0
+                // Firefox captures when "not loading && first contentful paint". The page may
+                // already have stopped loading by the time the first paint lands, so capture now,
+                // after a short delay that lets the compositor present the painted frame.
+                if (isStopped && isForegroundTab) schedulePreviewCapture(150L)
+            }
+
+            override fun onPaintStatusReset(session: GeckoSession) {
+                // The session was paused/backgrounded and compositor resources were released.
+                // Capturing now would yield a blank frame, so wait for the next first paint.
+                hasContentfulPaint = false
+            }
+
             override fun onTitleChange(session: GeckoSession, title: String?) {
                 title?.let {
                     currentTitle = it
@@ -1823,12 +1844,14 @@ class PetalGeckoView @JvmOverloads constructor(
 
     override fun deactivate() {
         clearFocus()
-        isForegroundTab = false
-        album.deactivate()
-        // Capture thumbnail preview while Gecko compositor surface is still active
+        // Capture thumbnail preview while Gecko compositor surface is still active. This must
+        // happen before isForegroundTab is cleared: capturePreviewBitmapAsync() refuses to
+        // capture background tabs, so the previous order made this capture a guaranteed no-op.
         try {
             updatePreviewCache()
         } catch (_: Throwable) {}
+        isForegroundTab = false
+        album.deactivate()
         try {
             session.setActive(false)
         } catch (_: Throwable) {}
@@ -1989,6 +2012,19 @@ class PetalGeckoView @JvmOverloads constructor(
         capturePreviewBitmapAsync { /* cache updated */ }
     }
 
+    private fun schedulePreviewCapture(delayMs: Long) {
+        postDelayed({
+            try { updatePreviewCache() } catch (_: Throwable) {}
+        }, delayMs)
+    }
+
+    /** Bounded retry for frames that came back blank because the compositor was not ready. */
+    private fun schedulePreviewRetry() {
+        if (previewRetryCount >= 3) return
+        previewRetryCount++
+        schedulePreviewCapture(350L * previewRetryCount)
+    }
+
     fun getCachedPreviewBitmap(): Bitmap? {
         return TabThumbnailCache.getMemoryOnly(getThumbnailKey(), isIncognito)
     }
@@ -2002,18 +2038,21 @@ class PetalGeckoView @JvmOverloads constructor(
         val cachingConsumer: (Bitmap?) -> Unit = { bmp ->
             val current = key == getThumbnailKey() && revision == previewRevision &&
                 captureSequence == previewCaptureSequence
+            var stored = false
             if (bmp != null && current) {
-                TabThumbnailCache.put(key, bmp, privateTab)
-                capturedPreviewRevision = revision
+                // put() rejects blank frames, so a not-yet-painted compositor can no longer
+                // overwrite a good thumbnail or mark this revision as captured.
+                stored = TabThumbnailCache.put(key, bmp, privateTab)
+                if (stored) capturedPreviewRevision = revision else schedulePreviewRetry()
             }
-            callback.accept(if (current) bmp else null)
+            callback.accept(if (current && stored) bmp else null)
         }
 
         try {
             // Tab surfaces stay attached while hidden (View.GONE) after a tab switch, so
             // "attached" no longer implies "on screen". Capturing a hidden GeckoView
             // yields a blank frame that would overwrite the good cached thumbnail.
-            if (!isAttachedToWindow || geckoView.parent == null || !geckoView.isAttachedToWindow ||
+            if (!hasContentfulPaint || !isAttachedToWindow || geckoView.parent == null || !geckoView.isAttachedToWindow ||
                 !isShown || !geckoView.isShown || !isForegroundTab || geckoView.width <= 0 || geckoView.height <= 0) {
                 cachingConsumer(null)
                 return
