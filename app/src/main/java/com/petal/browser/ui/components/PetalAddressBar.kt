@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
