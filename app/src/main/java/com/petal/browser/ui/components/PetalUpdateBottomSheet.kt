@@ -1,6 +1,5 @@
 package com.petal.browser.ui.components
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.view.View
@@ -62,11 +61,7 @@ object PetalUpdateSheetBridge {
 
     @JvmStatic
     fun checkForUpdates(activity: ComponentActivity, isLaunchCheck: Boolean) {
-        try {
-            com.petal.browser.update.PetalPlayUpdateManager.getInstance(activity).checkForUpdates(activity, isLaunchCheck)
-        } catch (e: Exception) {
-            android.util.Log.w("PetalUpdateSheetBridge", "Could not check for Play Store updates", e)
-        }
+        com.petal.browser.unit.UpdateUnit.checkForUpdates(activity, isLaunchCheck)
     }
 
     @JvmStatic
@@ -559,19 +554,28 @@ fun PetalUpdateSheetContent(
                             label = stringResource(R.string.ui_download_install_update),
                             onPrimaryClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                                try {
-                                    val act = context as? Activity
-                                    if (act != null) {
-                                        com.petal.browser.update.PetalPlayUpdateManager.getInstance(act).openPlayStore(act)
-                                    } else {
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        context.startActivity(intent)
+                                isDownloading = true
+                                coroutineScope.launch {
+                                    val success = com.petal.browser.unit.PetalUpdateInstallerReceiver.downloadAndInstallApk(
+                                        context = context,
+                                        apkUrl = updateInfo.downloadUrl,
+                                        version = updateInfo.versionName,
+                                        onProgressUpdate = { progress ->
+                                            downloadProgress = progress
+                                            if (progress >= 100) {
+                                                isDownloading = false
+                                            }
+                                        }
+                                    )
+                                    if (!success) {
+                                        isDownloading = false
+                                        isDownloadEnqueued = true
+                                        com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueuePetalUpdateDownload(
+                                            context = context,
+                                            downloadUrl = updateInfo.downloadUrl,
+                                            version = updateInfo.versionName
+                                        )
                                     }
-                                } catch (_: Exception) {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
-                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    context.startActivity(intent)
                                 }
                             },
                             onMenuClick = { updateSplitExpanded = !updateSplitExpanded },
@@ -595,12 +599,12 @@ fun PetalUpdateSheetContent(
                                 },
                                 onClick = {
                                     updateSplitExpanded = false
-                                    try {
-                                        val act = context as? Activity
-                                        if (act != null) {
-                                            com.petal.browser.update.PetalPlayUpdateManager.getInstance(act).checkForUpdates(act as ComponentActivity, false)
-                                        }
-                                    } catch (_: Exception) {}
+                                    isDownloadEnqueued = true
+                                    com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueuePetalUpdateDownload(
+                                        context = context,
+                                        downloadUrl = updateInfo.downloadUrl,
+                                        version = updateInfo.versionName
+                                    )
                                 }
                             )
                             if (updateInfo.releaseUrl.isNotBlank()) {
