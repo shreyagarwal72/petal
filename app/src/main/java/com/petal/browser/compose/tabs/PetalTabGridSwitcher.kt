@@ -45,6 +45,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -473,9 +474,9 @@ fun PetalTabGridSwitcher(
                         TabCategory.REGULAR -> "Tab Manager"
                     },
                     subtitle = if (selectionMode) "Choose an action for selected tabs" else when (selectedCategory) {
-                        TabCategory.INCOGNITO -> "$incognitoTabCount private tabs open"
+                        TabCategory.INCOGNITO -> if (incognitoTabCount == 1) "1 private tab open" else "$incognitoTabCount private tabs open"
                         TabCategory.GROUPS -> if (groupsCount == 1) "1 active group" else "$groupsCount active groups"
-                        TabCategory.REGULAR -> "$regularTabCount active tabs open"
+                        TabCategory.REGULAR -> if (regularTabCount == 1) "1 active tab open" else "$regularTabCount active tabs open"
                     },
                     enableLiquidGlass = true,
                     actions = {
@@ -720,50 +721,56 @@ fun PetalTabGridSwitcher(
                             )
                         )
                 ) {
-                    // ── Animated Material 3 Expressive Lock Reveal Indicator on Long Pull-Down ──
-                    if (animatedLockPullOffset > 15f) {
+                    // ── Pull-to-reveal Vault indicator ──
+                    // Drawn above the tabs (zIndex) and centred in the gap the tabs leave when pulled down,
+                    // so it can never be hidden behind a tab card.
+                    if (animatedLockPullOffset > 4f) {
+                        val density = androidx.compose.ui.platform.LocalDensity.current
+                        val indicatorHeightPx = with(density) { 48.dp.toPx() }
+                        val gapPx = animatedLockPullOffset * 0.95f
                         val lockProgress = (animatedLockPullOffset / maxRevealThreshold).coerceIn(0f, 1f)
                         val isThresholdReached = animatedLockPullOffset >= maxRevealThreshold
+                        // Fade in only once the gap can hold the pill, so it never overlaps a tab card.
+                        val fit = ((gapPx - indicatorHeightPx * 0.6f) / (indicatorHeightPx * 0.6f)).coerceIn(0f, 1f)
 
-                        Box(
+                        Surface(
+                            shape = CircleShape,
+                            color = if (isThresholdReached) accentColor else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = if (isThresholdReached) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                            border = BorderStroke(
+                                1.5.dp,
+                                if (isThresholdReached) accentColor else MaterialTheme.colorScheme.outlineVariant
+                            ),
+                            shadowElevation = (lockProgress * 8f).dp,
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = (animatedLockPullOffset * 0.28f).dp)
-                                .align(Alignment.TopCenter),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(24.dp),
-                                color = if (isThresholdReached) accentColor else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                border = BorderStroke(
-                                    1.5.dp,
-                                    if (isThresholdReached) accentColor else MaterialTheme.colorScheme.outlineVariant
-                                ),
-                                shadowElevation = (lockProgress * 8f).dp,
-                                modifier = Modifier
-                                    .graphicsLayer {
-                                        alpha = lockProgress
-                                        scaleX = 0.7f + (0.35f * lockProgress)
-                                        scaleY = 0.7f + (0.35f * lockProgress)
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isThresholdReached) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
-                                        contentDescription = stringResource(R.string.ui_closed_tabs_vault_lock),
-                                        tint = if (isThresholdReached) MaterialTheme.colorScheme.onPrimary else accentColor,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = if (isThresholdReached) "Release to open Vault" else "Pull to reveal Vault",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = if (isThresholdReached) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                                    )
+                                .align(Alignment.TopCenter)
+                                .zIndex(10f)
+                                .graphicsLayer {
+                                    translationY = ((gapPx - indicatorHeightPx) / 2f).coerceAtLeast(0f)
+                                    alpha = fit
+                                    val sc = 0.8f + 0.2f * fit
+                                    scaleX = sc
+                                    scaleY = sc
                                 }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .height(48.dp)
+                                    .padding(horizontal = 20.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isThresholdReached) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
+                                    contentDescription = stringResource(R.string.ui_closed_tabs_vault_lock),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = if (isThresholdReached) "Release to open Vault" else "Pull to reveal Vault",
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
                             }
                         }
                     }
@@ -1192,6 +1199,33 @@ fun PetalTabGridSwitcher(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 16.dp)
             )
+
+            // ── Closed Tabs Vault: a real full page hosted in this screen (not a Dialog window) ──
+            AnimatedVisibility(
+                visible = isVaultVisible,
+                enter = fadeIn(tween(220)) + slideInVertically(tween(320)) { it / 12 },
+                exit = fadeOut(tween(180)) + slideOutVertically(tween(240)) { it / 12 },
+                modifier = Modifier.fillMaxSize().zIndex(20f)
+            ) {
+                PetalRecentlyClosedVault(
+                    onDismiss = { isVaultVisible = false },
+                    onRestoreTab = { rec ->
+                        isVaultVisible = false
+                        onRestoreTab?.invoke(
+                            PetalTabItem(
+                                id = rec.id,
+                                title = rec.title,
+                                url = rec.url,
+                                isIncognito = rec.isIncognito,
+                                groupId = rec.groupId,
+                                groupTitle = rec.groupTitle,
+                                groupColorHex = rec.groupColorHex
+                            )
+                        )
+                    },
+                    accentColor = accentColor
+                )
+            }
         }
     }
     }
@@ -1438,32 +1472,6 @@ fun PetalTabGridSwitcher(
         )
     }
 
-    // Fullscreen / Modal Vault Sheet for Recently Closed Tabs
-    if (isVaultVisible) {
-        Dialog(
-            onDismissRequest = { isVaultVisible = false },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            PetalRecentlyClosedVault(
-                onDismiss = { isVaultVisible = false },
-                onRestoreTab = { rec ->
-                    isVaultVisible = false
-                    onRestoreTab?.invoke(
-                        PetalTabItem(
-                            id = rec.id,
-                            title = rec.title,
-                            url = rec.url,
-                            isIncognito = rec.isIncognito,
-                            groupId = rec.groupId,
-                            groupTitle = rec.groupTitle,
-                            groupColorHex = rec.groupColorHex
-                        )
-                    )
-                },
-                accentColor = accentColor
-            )
-        }
-    }
 }
 
 /** Top segmented pill switcher: Regular vs Groups vs Incognito, full-width. */
@@ -1889,9 +1897,6 @@ private fun PetalTabCard(
                         Image(
                             bitmap = preview.asImageBitmap(),
                             contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
-                            // Firefox anchors tab thumbnails to the top of the page, so the
-                            // visible part of the card is the above-the-fold content.
-                            alignment = Alignment.TopCenter,
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -2119,7 +2124,6 @@ private fun PetalTabListItem(
                             Image(
                                 bitmap = preview.asImageBitmap(),
                                 contentDescription = stringResource(R.string.ui_thumbnail),
-                                alignment = Alignment.TopCenter,
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
                             )
