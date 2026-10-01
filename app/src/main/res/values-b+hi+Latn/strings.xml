@@ -261,6 +261,8 @@
     <string name="pwa_install_prompt_title">%1$s install karein?</string>
     <string name="pwa_install_success">%1$s Home screen par add ho gaya</string>
     <string name="pwa_install_title">App ki Tarah Install Karein</string>
+    <string name="pwa_install_message">Quick 1-tap access aur full-screen anubhav ke liye is web app ko Home screen par jodein.</string>
+    <string name="shortcut_install_message">Quick 1-tap access ke liye is shortcut ko Home screen par jodein.</string>
 
     <!-- Search Widgets -->
     <string name="widget_search_petal1_desc">Gradient P emblem, AI sparkle, voice aur camera scanner ke saath Material 3 Expressive pill search bar. Resize karne par shortcuts ke saath expand hota hai.</string>

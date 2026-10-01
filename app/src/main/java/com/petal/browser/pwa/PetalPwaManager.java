@@ -663,7 +663,7 @@ public class PetalPwaManager {
                 headerLabel.setText(isStandalonePwa ? R.string.pwa_install_title : R.string.shortcut_add_to_homescreen);
             }
             if (descView != null) {
-                descView.setText(isStandalonePwa ? R.string.pwa_install_message : R.string.shortcut_add_to_homescreen);
+                descView.setText(isStandalonePwa ? R.string.pwa_install_message : R.string.shortcut_install_message);
             }
             if (installButton != null) {
                 installButton.setText(isStandalonePwa ? R.string.pwa_install_button : R.string.shortcut_add_button);

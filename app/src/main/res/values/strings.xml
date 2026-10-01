@@ -269,6 +269,8 @@
     <string name="pwa_install_success">Added %1$s to Home screen</string>
     <string name="pwa_install_failed">Failed to add to Home screen</string>
     <string name="pwa_install_empty_page">Cannot install an empty page</string>
+    <string name="pwa_install_message">Add this web app to your Home screen for quick 1-tap access and a full-screen experience.</string>
+    <string name="shortcut_install_message">Add this shortcut to your Home screen for quick 1-tap access.</string>
 
     <!-- ===== Auto-extracted UI strings (Compose screens) ===== -->
     <string name="ui_cancel_scanning">Cancel scanning</string>
