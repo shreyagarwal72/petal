@@ -131,6 +131,243 @@ class PetalGeckoView @JvmOverloads constructor(
         fun getDerivedDesktopUserAgent(context: Context): String {
             return "Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0"
         }
+
+        @JvmStatic
+        fun createPromptDelegate(
+            session: GeckoSession,
+            context: Context,
+            sp: SharedPreferences,
+            activityProvider: () -> Activity?
+        ): GeckoSession.PromptDelegate {
+            return object : GeckoSession.PromptDelegate {
+                override fun onAlertPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.AlertPrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val act = activityProvider() ?: return result
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showAlert(
+                            act,
+                            prompt.title ?: act.getString(R.string.app_name),
+                            prompt.message ?: ""
+                        ) {
+                            result.complete(prompt.dismiss())
+                        }
+                    }
+                    return result
+                }
+
+                override fun onButtonPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.ButtonPrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val act = activityProvider() ?: return result
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+                            act,
+                            prompt.title ?: act.getString(R.string.app_name),
+                            prompt.message ?: "",
+                            { result.complete(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE)) },
+                            { result.complete(prompt.dismiss()) }
+                        )
+                    }
+                    return result
+                }
+
+                override fun onAuthPrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.AuthPrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
+                    act.runOnUiThread {
+                        val isPasswordOnly = (prompt.authOptions.flags and GeckoSession.PromptDelegate.AuthPrompt.AuthOptions.Flags.ONLY_PASSWORD) != 0
+                        val dialogTitle = prompt.title ?: prompt.authOptions.uri ?: act.getString(R.string.app_name)
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showAuth(
+                            act,
+                            dialogTitle,
+                            prompt.message ?: "Sign In",
+                            isPasswordOnly,
+                            prompt.authOptions.username,
+                            { user, pass ->
+                                if (isPasswordOnly) {
+                                    result.complete(prompt.confirm(pass))
+                                } else {
+                                    result.complete(prompt.confirm(user, pass))
+                                }
+                            },
+                            { result.complete(prompt.dismiss()) }
+                        )
+                    }
+                    return result
+                }
+
+                override fun onTextPrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.TextPrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showPrompt(
+                            act,
+                            prompt.title ?: act.getString(R.string.app_name),
+                            prompt.message ?: "",
+                            prompt.defaultValue,
+                            { value -> result.complete(prompt.confirm(value)) },
+                            { result.complete(prompt.dismiss()) }
+                        )
+                    }
+                    return result
+                }
+
+                override fun onChoicePrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.ChoicePrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
+
+                override fun onPopupPrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.PopupPrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    val blockPopups = sp.getBoolean("sp_block_popups", sp.getBoolean("profileStandard_javascriptPopUp", true))
+                    return if (blockPopups) {
+                        GeckoResult.fromValue(prompt.confirm(AllowOrDeny.DENY))
+                    } else {
+                        GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+                    }
+                }
+
+                override fun onBeforeUnloadPrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.BeforeUnloadPrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+                }
+
+                override fun onRepostConfirmPrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.RepostConfirmPrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+                }
+
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSaveOption>
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(request.dismiss())
+                }
+
+                override fun onLoginSelect(
+                    session: GeckoSession,
+                    request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSelectOption>
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(request.dismiss())
+                }
+
+                override fun onFilePrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.FilePrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    val geckoResult = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val act = activityProvider()
+                    if (act !is com.petal.browser.activity.BrowserActivity) {
+                        return GeckoResult.fromValue(prompt.dismiss())
+                    }
+                    act.runOnUiThread {
+                        val isMultiple = prompt.type == GeckoSession.PromptDelegate.FilePrompt.Type.MULTIPLE
+                        val mimeTypes = prompt.mimeTypes?.filter { !it.isNullOrBlank() }?.toTypedArray() ?: emptyArray()
+
+                        act.showFileChooser(
+                            object : android.webkit.ValueCallback<Array<android.net.Uri>?> {
+                                override fun onReceiveValue(value: Array<android.net.Uri>?) {
+                                    if (value == null || value.isEmpty()) {
+                                        if (!prompt.isComplete) {
+                                            geckoResult.complete(prompt.dismiss())
+                                        }
+                                    } else if (isMultiple) {
+                                        if (!prompt.isComplete) {
+                                            geckoResult.complete(prompt.confirm(act, value))
+                                        }
+                                    } else {
+                                        if (!prompt.isComplete) {
+                                            geckoResult.complete(prompt.confirm(act, value[0]))
+                                        }
+                                    }
+                                }
+                            },
+                            object : android.webkit.WebChromeClient.FileChooserParams() {
+                                override fun getMode(): Int = if (isMultiple) MODE_OPEN_MULTIPLE else MODE_OPEN
+                                override fun getAcceptTypes(): Array<String> = mimeTypes
+                                override fun isCaptureEnabled(): Boolean = prompt.capture != GeckoSession.PromptDelegate.FilePrompt.Capture.NONE
+                                override fun getTitle(): CharSequence? = null
+                                override fun getFilenameHint(): String? = null
+                                override fun createIntent(): android.content.Intent {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
+                                        addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                                        if (isMultiple) putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                        type = if (mimeTypes.isNotEmpty() && mimeTypes[0].isNotBlank()) mimeTypes[0] else "*/*"
+                                        if (mimeTypes.size > 1) {
+                                            putExtra(android.content.Intent.EXTRA_MIME_TYPES, mimeTypes)
+                                        }
+                                    }
+                                    return intent
+                                }
+                            }
+                        )
+                    }
+                    return geckoResult
+                }
+
+                override fun onCreditCardSave(
+                    session: GeckoSession,
+                    request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSaveOption>
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(request.dismiss())
+                }
+
+                override fun onCreditCardSelect(
+                    session: GeckoSession,
+                    request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSelectOption>
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(request.dismiss())
+                }
+
+                override fun onAddressSave(
+                    session: GeckoSession,
+                    request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSaveOption>
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(request.dismiss())
+                }
+
+                override fun onAddressSelect(
+                    session: GeckoSession,
+                    request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSelectOption>
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(request.dismiss())
+                }
+
+                override fun onSelectIdentityCredentialProvider(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
+
+                override fun onSelectIdentityCredentialAccount(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
+
+                override fun onShowPrivacyPolicyIdentityCredential(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
+            }
+        }
     }
 
     interface OnScrollChangeListener {
@@ -814,241 +1051,9 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
-        // Material 3 Expressive Prompt Delegate (Alerts, Confirms, Prompts, Auth, Choice, Text, Popups)
-        session.promptDelegate = object : GeckoSession.PromptDelegate {
-            override fun onAlertPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.AlertPrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
-                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
-                val act = getHostActivity() ?: return result
-                act.runOnUiThread {
-                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showAlert(
-                        act,
-                        prompt.title ?: act.getString(R.string.app_name),
-                        prompt.message ?: ""
-                    ) {
-                        result.complete(prompt.dismiss())
-                    }
-                }
-                return result
-            }
-
-            override fun onButtonPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.ButtonPrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
-                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
-                val act = getHostActivity() ?: return result
-                act.runOnUiThread {
-                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
-                        act,
-                        prompt.title ?: act.getString(R.string.app_name),
-                        prompt.message ?: "",
-                        { result.complete(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE)) },
-                        { result.complete(prompt.dismiss()) }
-                    )
-                }
-                return result
-            }
-
-            override fun onAuthPrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.AuthPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
-                val act = getHostActivity() ?: return GeckoResult.fromValue(prompt.dismiss())
-                act.runOnUiThread {
-                    val isPasswordOnly = (prompt.authOptions.flags and GeckoSession.PromptDelegate.AuthPrompt.AuthOptions.Flags.ONLY_PASSWORD) != 0
-                    val dialogTitle = prompt.title ?: prompt.authOptions.uri ?: act.getString(R.string.app_name)
-                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showAuth(
-                        act,
-                        dialogTitle,
-                        prompt.message ?: "Sign In",
-                        isPasswordOnly,
-                        prompt.authOptions.username,
-                        { user, pass ->
-                            if (isPasswordOnly) {
-                                result.complete(prompt.confirm(pass))
-                            } else {
-                                result.complete(prompt.confirm(user, pass))
-                            }
-                        },
-                        { result.complete(prompt.dismiss()) }
-                    )
-                }
-                return result
-            }
-
-            override fun onTextPrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.TextPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
-                val act = getHostActivity() ?: return GeckoResult.fromValue(prompt.dismiss())
-                act.runOnUiThread {
-                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showPrompt(
-                        act,
-                        prompt.title ?: act.getString(R.string.app_name),
-                        prompt.message ?: "",
-                        prompt.defaultValue,
-                        { value -> result.complete(prompt.confirm(value)) },
-                        { result.complete(prompt.dismiss()) }
-                    )
-                }
-                return result
-            }
-
-            override fun onChoicePrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.ChoicePrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                // Safe dismissal avoids unhandled choice/menu prompt exceptions during form submissions
-                return GeckoResult.fromValue(prompt.dismiss())
-            }
-
-            override fun onPopupPrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.PopupPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                val blockPopups = sp.getBoolean("sp_block_popups", sp.getBoolean("profileStandard_javascriptPopUp", true))
-                return if (blockPopups) {
-                    GeckoResult.fromValue(prompt.confirm(AllowOrDeny.DENY))
-                } else {
-                    GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
-                }
-            }
-
-            override fun onBeforeUnloadPrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.BeforeUnloadPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                // Automatically allow unload during navigation/redirects
-                return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
-            }
-
-            override fun onRepostConfirmPrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.RepostConfirmPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
-            }
-
-            // Autofill is disabled at the runtime level (loginAutofillEnabled = false),
-            // but these are overridden defensively so Gecko never falls through to the
-            // default interface behavior if autofill is re-enabled later without this
-            // being revisited. Dismissing immediately is safe and crash-free.
-            override fun onLoginSave(
-                session: GeckoSession,
-                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSaveOption>
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(request.dismiss())
-            }
-
-            override fun onLoginSelect(
-                session: GeckoSession,
-                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSelectOption>
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(request.dismiss())
-            }
-
-            override fun onFilePrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.FilePrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                val geckoResult = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
-                val act = getHostActivity()
-                if (act !is com.petal.browser.activity.BrowserActivity) {
-                    return GeckoResult.fromValue(prompt.dismiss())
-                }
-                act.runOnUiThread {
-                    val isMultiple = prompt.type == GeckoSession.PromptDelegate.FilePrompt.Type.MULTIPLE
-                    val mimeTypes = prompt.mimeTypes?.filter { !it.isNullOrBlank() }?.toTypedArray() ?: emptyArray()
-
-                    act.showFileChooser(
-                        object : android.webkit.ValueCallback<Array<android.net.Uri>?> {
-                            override fun onReceiveValue(value: Array<android.net.Uri>?) {
-                                if (value == null || value.isEmpty()) {
-                                    if (!prompt.isComplete) {
-                                        geckoResult.complete(prompt.dismiss())
-                                    }
-                                } else if (isMultiple) {
-                                    if (!prompt.isComplete) {
-                                        geckoResult.complete(prompt.confirm(act, value))
-                                    }
-                                } else {
-                                    if (!prompt.isComplete) {
-                                        geckoResult.complete(prompt.confirm(act, value[0]))
-                                    }
-                                }
-                            }
-                        },
-                        object : android.webkit.WebChromeClient.FileChooserParams() {
-                            override fun getMode(): Int = if (isMultiple) MODE_OPEN_MULTIPLE else MODE_OPEN
-                            override fun getAcceptTypes(): Array<String> = mimeTypes
-                            override fun isCaptureEnabled(): Boolean = prompt.capture != GeckoSession.PromptDelegate.FilePrompt.Capture.NONE
-                            override fun getTitle(): CharSequence? = null
-                            override fun getFilenameHint(): String? = null
-                            override fun createIntent(): android.content.Intent {
-                                val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
-                                    addCategory(android.content.Intent.CATEGORY_OPENABLE)
-                                    if (isMultiple) putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, true)
-                                    type = if (mimeTypes.isNotEmpty() && mimeTypes[0].isNotBlank()) mimeTypes[0] else "*/*"
-                                    if (mimeTypes.size > 1) {
-                                        putExtra(android.content.Intent.EXTRA_MIME_TYPES, mimeTypes)
-                                    }
-                                }
-                                return intent
-                            }
-                        }
-                    )
-                }
-                return geckoResult
-            }
-
-            override fun onCreditCardSave(
-                session: GeckoSession,
-                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSaveOption>
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(request.dismiss())
-            }
-
-            override fun onCreditCardSelect(
-                session: GeckoSession,
-                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSelectOption>
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(request.dismiss())
-            }
-
-            override fun onAddressSave(
-                session: GeckoSession,
-                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSaveOption>
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(request.dismiss())
-            }
-
-            override fun onAddressSelect(
-                session: GeckoSession,
-                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSelectOption>
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(request.dismiss())
-            }
-
-            override fun onSelectIdentityCredentialProvider(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(prompt.dismiss())
-            }
-
-            override fun onSelectIdentityCredentialAccount(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(prompt.dismiss())
-            }
-
-            override fun onShowPrivacyPolicyIdentityCredential(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                return GeckoResult.fromValue(prompt.dismiss())
-            }
-        }
+        // Material 3 Expressive Prompt Delegate (Alerts, Confirms, Prompts, Auth, Choice, Text, Popups, File Chooser)
+        session.promptDelegate = createPromptDelegate(session, context, sp) { getHostActivity() }
+    }
 
         // Scroll Delegate for Tactile Haptics and Address Bar Collapsing
         session.scrollDelegate = object : GeckoSession.ScrollDelegate {

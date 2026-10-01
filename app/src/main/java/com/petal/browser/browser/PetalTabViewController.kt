@@ -312,7 +312,15 @@ class PetalTabViewController private constructor(
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
         engineView.render(session)
         session.register(observer)
-        com.petal.browser.extensions.PetalExtensionManager.attachSession(getGeckoSession())
+        val geckoSession = getGeckoSession()
+        com.petal.browser.extensions.PetalExtensionManager.attachSession(geckoSession)
+        geckoSession?.let { gs ->
+            gs.promptDelegate = com.petal.browser.view.PetalGeckoView.createPromptDelegate(
+                gs,
+                context,
+                preferences
+            ) { context as? android.app.Activity }
+        }
         val contextMenuUseCases = ContextMenuUseCases(browserStore)
         val tabsUseCases = TabsUseCases(browserStore)
         val contextCandidates = ContextMenuCandidate.defaultCandidates(
