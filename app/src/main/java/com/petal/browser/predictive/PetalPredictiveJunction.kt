@@ -166,7 +166,12 @@ fun PetalPredictiveBackSurface(
                         backState = backState.copy(isActive = true, progress = value)
                     }
                     backState = backState.copy(isActive = true, progress = 1f)
-                    onBack()
+                    try {
+                        onBack()
+                    } finally {
+                        progressAnim.snapTo(0f)
+                        backState = PredictiveBackState.Idle
+                    }
                 } catch (e: CancellationException) {
                     progressAnim.snapTo(backState.progress)
                     progressAnim.animateTo(
@@ -238,7 +243,7 @@ fun PetalScreenWrapper(
 
     val myEntry = lifecycleOwner as? NavBackStackEntry
     val previousEntryId = navController?.previousBackStackEntry?.id
-    val isBehindTopScreen = isBehind || (myEntry != null && previousEntryId == myEntry.id)
+    val isBehindTopScreen = isBehind || (navController != null && myEntry != null && previousEntryId == myEntry.id)
 
     val transition = animatedVisibilityScope?.transition
 
