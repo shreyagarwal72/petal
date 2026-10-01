@@ -74,7 +74,7 @@ enum class PetalGroupPosition { SINGLE, TOP, MIDDLE, BOTTOM }
 val LocalPetalSectionHighlighted = compositionLocalOf { false }
 
 @Composable
-private fun petalGroupSurfaceColor(): Color {
+fun petalGroupSurfaceColor(): Color {
     val target = if (LocalPetalSectionHighlighted.current) {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
     } else {
