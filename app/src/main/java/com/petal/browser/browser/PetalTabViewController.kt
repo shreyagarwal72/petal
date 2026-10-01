@@ -640,6 +640,8 @@ class PetalTabViewController private constructor(
 
     fun getPredecessor(): AlbumController? = predecessor
 
+    fun getFavicon(): Bitmap? = tab?.content?.icon
+
     fun currentState(): State? = tab?.let {
         State(it.id, pageUrl, pageTitle, progress, loading, backAvailable, forwardAvailable, isSecure, it.content.private)
     }

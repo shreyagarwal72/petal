@@ -6743,6 +6743,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
                 manager = gv.getPwaManager();
                 if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, gv, null); gv.setPwaManager(manager); }
+            } else if (currentAlbumController != null) {
+                manager = new com.petal.browser.pwa.PetalPwaManager(this, currentAlbumController, null);
             }
             
             if (manager != null) manager.installCurrentPwa(this);

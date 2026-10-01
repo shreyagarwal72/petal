@@ -25,6 +25,7 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -429,10 +430,23 @@ public class PetalPwaManager {
         if (rawIcon == null || rawIcon.isRecycled()) {
             Bitmap appIcon = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher);
             if (appIcon != null) {
-                return appIcon;
+                return appIcon.isRecycled() ? output : (appIcon.getConfig() != null ? appIcon.copy(appIcon.getConfig(), false) : appIcon);
             }
             return output;
         }
+
+        // Official Mozilla Bug 1990183 safeguard: create immutable copy of input bitmap
+        // in case internal caches or decode pools recycle rawIcon concurrently
+        Bitmap safeRawIcon = null;
+        try {
+            safeRawIcon = rawIcon.copy(rawIcon.getConfig() != null ? rawIcon.getConfig() : Bitmap.Config.ARGB_8888, false);
+        } catch (Throwable ignored) {
+            safeRawIcon = rawIcon;
+        }
+        if (safeRawIcon == null || safeRawIcon.isRecycled()) {
+            safeRawIcon = rawIcon;
+        }
+        rawIcon = safeRawIcon;
 
         int bgColor = Color.TRANSPARENT;
         if (themeColorHex != null && !themeColorHex.trim().isEmpty() && !themeColorHex.equalsIgnoreCase("#FFFFFF")) {
@@ -590,6 +604,8 @@ public class PetalPwaManager {
 
                 if (rawBitmap == null && finalController instanceof com.petal.browser.view.PetalGeckoView) {
                     rawBitmap = ((com.petal.browser.view.PetalGeckoView) finalController).getFavicon();
+                } else if (rawBitmap == null && finalController instanceof com.petal.browser.browser.PetalTabViewController) {
+                    rawBitmap = ((com.petal.browser.browser.PetalTabViewController) finalController).getFavicon();
                 }
                 if (rawBitmap == null) {
                     com.petal.browser.database.FaviconHelper helper = new com.petal.browser.database.FaviconHelper(activity);
@@ -625,16 +641,30 @@ public class PetalPwaManager {
             View dialogView = inflater.inflate(R.layout.dialog_pwa_install, null);
 
             ImageView iconView = dialogView.findViewById(R.id.dialog_pwa_icon);
-            TextView titleView = dialogView.findViewById(R.id.dialog_pwa_title);
+            TextView headerLabel = dialogView.findViewById(R.id.dialog_pwa_header_label);
+            EditText titleView = dialogView.findViewById(R.id.dialog_pwa_title);
             TextView urlView = dialogView.findViewById(R.id.dialog_pwa_url);
+            TextView descView = dialogView.findViewById(R.id.dialog_pwa_description);
             MaterialButton cancelButton = dialogView.findViewById(R.id.dialog_pwa_cancel);
             MaterialButton installButton = dialogView.findViewById(R.id.dialog_pwa_install);
 
-            if (iconView != null && adaptiveIcon != null) {
+            boolean isStandalonePwa = manifest != null && manifest.display != null && !manifest.display.equalsIgnoreCase("browser");
+
+            if (headerLabel != null) {
+                headerLabel.setText(isStandalonePwa ? R.string.pwa_install_title : R.string.shortcut_add_to_homescreen);
+            }
+            if (descView != null) {
+                descView.setText(isStandalonePwa ? R.string.pwa_install_message : R.string.shortcut_add_to_homescreen);
+            }
+            if (installButton != null) {
+                installButton.setText(isStandalonePwa ? R.string.pwa_install_button : R.string.shortcut_add_button);
+            }
+            if (iconView != null && adaptiveIcon != null && !adaptiveIcon.isRecycled()) {
                 iconView.setImageBitmap(adaptiveIcon);
             }
             if (titleView != null) {
                 titleView.setText(defaultTitle);
+                titleView.setSelection(titleView.getText().length());
             }
             if (urlView != null) {
                 String domainText = HelperUnit.domain(targetUrl);
@@ -652,8 +682,15 @@ public class PetalPwaManager {
 
             if (installButton != null) {
                 installButton.setOnClickListener(v -> {
+                    String chosenTitle = defaultTitle;
+                    if (titleView != null && titleView.getText() != null) {
+                        String input = titleView.getText().toString().trim();
+                        if (!input.isEmpty()) {
+                            chosenTitle = input;
+                        }
+                    }
                     dialog.dismiss();
-                    performShortcutPinning(activity, defaultTitle, targetUrl, adaptiveIcon, themeColorHex, manifest);
+                    performShortcutPinning(activity, chosenTitle, targetUrl, adaptiveIcon, themeColorHex, manifest);
                 });
             }
 
@@ -708,7 +745,27 @@ public class PetalPwaManager {
                 shortcutIntent.putExtra(PetalPwaActivity.EXTRA_OFFLINE_ARCHIVE, archiveFile.getAbsolutePath());
                 shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 
-                IconCompat iconCompat = IconCompat.createWithBitmap(adaptiveIcon);
+                // Official Mozilla Bug 1990183 / WebAppShortcutManager.kt implementation:
+                // Ensure bitmap is non-recycled and safe-copied before passing to IconCompat
+                Bitmap safeShortcutIcon = null;
+                if (adaptiveIcon != null && !adaptiveIcon.isRecycled()) {
+                    try {
+                        safeShortcutIcon = adaptiveIcon.copy(
+                            adaptiveIcon.getConfig() != null ? adaptiveIcon.getConfig() : Bitmap.Config.ARGB_8888,
+                            false
+                        );
+                    } catch (Throwable t) {
+                        safeShortcutIcon = adaptiveIcon;
+                    }
+                }
+                if (safeShortcutIcon == null || safeShortcutIcon.isRecycled()) {
+                    Bitmap defaultAppIcon = BitmapFactory.decodeResource(activity.getResources(), R.mipmap.ic_launcher);
+                    safeShortcutIcon = defaultAppIcon != null && !defaultAppIcon.isRecycled()
+                        ? defaultAppIcon.copy(Bitmap.Config.ARGB_8888, false)
+                        : Bitmap.createBitmap(192, 192, Bitmap.Config.ARGB_8888);
+                }
+
+                IconCompat iconCompat = IconCompat.createWithBitmap(safeShortcutIcon);
                 String shortcutId = "pwa_" + Math.abs(targetUrl.hashCode());
 
                 ShortcutInfoCompat pinShortcutInfo = new ShortcutInfoCompat.Builder(activity, shortcutId)

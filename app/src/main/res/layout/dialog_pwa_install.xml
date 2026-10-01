@@ -37,20 +37,35 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/dialog_pwa_title"
+                    android:id="@+id/dialog_pwa_header_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Install app"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="20sp"
+                    android:text="@string/shortcut_add_to_homescreen"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/dialog_pwa_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapSentences|textAutoCorrect"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:background="@android:color/transparent"
+                    android:hint="@string/shortcut_title_hint"
+                    android:textColorHint="?attr/colorOutline"
+                    android:layout_marginTop="2dp" />
 
                 <TextView
                     android:id="@+id/dialog_pwa_url"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
                     android:singleLine="true"
                     android:ellipsize="end"
                     android:layout_marginTop="2dp" />
@@ -61,7 +76,7 @@
             android:id="@+id/dialog_pwa_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Add this web app to your Home screen for quick access and a seamless standalone experience."
+            android:text="Add this shortcut to your Home screen for quick 1-tap access."
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             android:lineSpacingExtra="3dp"

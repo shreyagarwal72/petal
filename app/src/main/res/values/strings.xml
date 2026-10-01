@@ -1509,4 +1509,7 @@
     <string name="petal_setup_restore_button">Restore from backup</string>
     <string name="petal_setup_restore_success">Data and settings restored successfully!</string>
     <string name="petal_setup_skip_button">Skip setup</string>
+    <string name="shortcut_add_to_homescreen">Add to Home screen</string>
+    <string name="shortcut_add_button">Add</string>
+    <string name="shortcut_title_hint">Shortcut name</string>
 </resources>
