@@ -127,6 +127,8 @@
     <application
         android:name=".PetalApplication"
         android:allowBackup="true"
+        android:fullBackupContent="@xml/petal_backup_rules"
+        android:dataExtractionRules="@xml/petal_data_extraction_rules"
         android:hardwareAccelerated="true"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
@@ -206,6 +208,12 @@
                 android:name="android.autofill"
                 android:resource="@xml/petal_autofill_service_config" />
         </service>
+
+        <activity
+            android:name="com.petal.browser.passwords.PetalAutofillAuthActivity"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:exported="true"
+            android:excludeFromRecents="true" />
 
         <activity
             android:name="com.petal.browser.activity.BrowserActivity"

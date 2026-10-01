@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 6 to 11 cloud backup. The vault file is locked with a phone-only key,
+     so a copy on another phone can never be opened. Keep it out of backups. -->
+<full-backup-content>
+    <exclude domain="file" path="petal_vault.enc" />
+</full-backup-content>

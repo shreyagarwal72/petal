@@ -6179,6 +6179,28 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     try {
                         com.petal.browser.passwords.PetalCredentialVault.INSTANCE.init(this);
                         String backup = com.petal.browser.util.BrowserIntentHandler.readTextFromUri(this, dataUri);
+
+                        if (com.petal.browser.passwords.PetalCredentialVault.INSTANCE.isPasswordBackup(backup)) {
+                            // New password-protected backup: ask for the password first.
+                            runOnUiThread(() -> com.petal.browser.passwords.PetalBackupPasswordPrompt.askAsync(this, password -> {
+                                if (password == null) return kotlin.Unit.INSTANCE;
+                                new Thread(() -> {
+                                    try {
+                                        int imported = com.petal.browser.passwords.PetalCredentialVault.INSTANCE.importWithPasswordOrThrow(backup, password);
+                                        runOnUiThread(() -> PetalToast.show(this, imported > 0
+                                                ? "Imported " + imported + " passwords from Petal backup"
+                                                : "No new passwords imported; these entries may already be in your vault."));
+                                    } catch (Exception e) {
+                                        String message = e.getMessage() != null ? e.getMessage() : "Could not import the Petal backup.";
+                                        runOnUiThread(() -> PetalToast.show(this, message));
+                                    }
+                                }, "PetalBackupImportV2").start();
+                                return kotlin.Unit.INSTANCE;
+                            }));
+                            return;
+                        }
+
+                        // Old phone-tied backup (only works on the same install that made it).
                         int imported = com.petal.browser.passwords.PetalCredentialVault.INSTANCE.importEncryptedOrThrow(backup);
                         runOnUiThread(() -> PetalToast.show(this, imported > 0
                                 ? "Imported " + imported + " passwords from Petal backup"

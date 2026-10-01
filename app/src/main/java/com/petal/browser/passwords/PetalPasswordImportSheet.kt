@@ -74,7 +74,13 @@ fun PetalPasswordImportSheet(
                         count = PetalCredentialVault.importFromJson(content)
                     }
                     "PETAL_ENC" -> {
-                        count = PetalCredentialVault.importEncryptedOrThrow(content)
+                        count = if (PetalCredentialVault.isPasswordBackup(content)) {
+                            val pw = withContext(Dispatchers.Main) { PetalBackupPasswordPrompt.ask(activity) }
+                                ?: throw IllegalStateException("Import cancelled")
+                            PetalCredentialVault.importWithPasswordOrThrow(content, pw)
+                        } else {
+                            PetalCredentialVault.importEncryptedOrThrow(content)
+                        }
                     }
                     else -> {
                         val (_, creds) = PetalCredentialImporter.detectAndImport(file.name, content)
@@ -240,7 +246,7 @@ fun PetalPasswordImportSheet(
                         ImportSourceOption(
                             icon = Icons.Rounded.EnhancedEncryption,
                             title = "Encrypted Petal Vault",
-                            subtitle = "Hardware-encrypted Petal backup (*.petal)",
+                            subtitle = "Petal backup (*.petal), password asked if needed",
                             onClick = {
                                 PetalFilePickerBridge.showFilePicker(
                                     activity = activity,

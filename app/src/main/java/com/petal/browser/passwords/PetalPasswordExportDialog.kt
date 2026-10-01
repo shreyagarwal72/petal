@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.components.PetalExpressiveDialog
 import com.petal.browser.view.PetalToast
@@ -27,6 +28,8 @@ fun PetalPasswordExportDialog(
     onDismiss: () -> Unit
 ) {
     var exportEncrypted by remember { mutableStateOf(false) }
+    var backupPassword by remember { mutableStateOf("") }
+    var backupPasswordConfirm by remember { mutableStateOf("") }
 
     PetalExpressiveDialog(
         onDismissRequest = onDismiss
@@ -40,7 +43,7 @@ fun PetalPasswordExportDialog(
 
         Text(
             text = if (exportEncrypted) {
-                "Your password vault will be encrypted using Petal's hardware-backed AES-256 GCM key. It can ONLY be decrypted and restored by Petal on this device/installation."
+                "Your password vault will be encrypted with a password you choose. You can restore it in Petal on any phone or after reinstalling. If you forget this password, the backup cannot be opened by anyone."
             } else {
                 "Your password vault will be exported as a plaintext JSON file saved to your Downloads folder.\n\nKeep this file secure, as anyone with access can read the exported passwords."
             },
@@ -75,13 +78,13 @@ fun PetalPasswordExportDialog(
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "Petal Hardware Encryption",
+                            text = "Password-protected backup",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = if (exportEncrypted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = if (exportEncrypted) "Only accessible by Petal (*.petal)" else "Standard JSON format (*.json)",
+                            text = if (exportEncrypted) "Opens only with your password (*.petal)" else "Standard JSON format (*.json)",
                             style = MaterialTheme.typography.bodySmall,
                             color = if (exportEncrypted) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -92,6 +95,25 @@ fun PetalPasswordExportDialog(
                     onCheckedChange = { exportEncrypted = it }
                 )
             }
+        }
+
+        if (exportEncrypted) {
+            OutlinedTextField(
+                value = backupPassword,
+                onValueChange = { backupPassword = it },
+                label = { Text("Backup password (min 8 characters)") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = backupPasswordConfirm,
+                onValueChange = { backupPasswordConfirm = it },
+                label = { Text("Repeat password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         Row(
@@ -108,6 +130,16 @@ fun PetalPasswordExportDialog(
 
             Button(
                 onClick = {
+                    val validationError: String? = when {
+                        !exportEncrypted -> null
+                        backupPassword.length < PetalCredentialVault.MIN_BACKUP_PASSWORD_LENGTH ->
+                            "Password must be at least ${PetalCredentialVault.MIN_BACKUP_PASSWORD_LENGTH} characters"
+                        backupPassword != backupPasswordConfirm -> "Passwords do not match"
+                        else -> null
+                    }
+                    if (validationError != null) {
+                        PetalToast.show(activity, validationError)
+                    } else
                     try {
                         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
                         val fileName: String
@@ -115,7 +147,7 @@ fun PetalPasswordExportDialog(
 
                         if (exportEncrypted) {
                             fileName = "petal_passwords_encrypted_$timeStamp.petal"
-                            fileData = PetalCredentialVault.exportEncrypted()
+                            fileData = PetalCredentialVault.exportWithPassword(backupPassword)
                         } else {
                             fileName = "petal_passwords_backup_$timeStamp.json"
                             fileData = PetalCredentialVault.exportToJson()

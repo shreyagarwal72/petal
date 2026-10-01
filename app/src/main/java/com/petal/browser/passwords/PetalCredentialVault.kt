@@ -11,12 +11,16 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.security.KeyStore
+import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
+import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 
 /**
  * PetalCredentialVault
@@ -38,6 +42,9 @@ object PetalCredentialVault {
     private val credentials = mutableListOf<PetalCredential>()
     private var isInitialized = false
     private var vaultFile: File? = null
+    // True when the vault file exists but could not be read for a temporary reason.
+    // We then refuse to overwrite it, so a good file is never replaced by an empty one.
+    private var writeBlocked = false
 
     @Synchronized
     fun init(context: Context) {
@@ -85,6 +92,7 @@ object PetalCredentialVault {
     @Synchronized
     private fun loadVault() {
         val file = vaultFile ?: return
+        writeBlocked = false
         if (!file.exists() || file.length() == 0L) {
             credentials.clear()
             return
@@ -116,12 +124,43 @@ object PetalCredentialVault {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to decrypt and load credentials vault", e)
+            credentials.clear()
+            if (isKeyMismatch(e)) {
+                // File was made with a different key (for example restored onto a new phone).
+                // It can never be opened here. Move it aside instead of deleting or overwriting it.
+                try {
+                    val aside = File(file.parentFile, VAULT_FILE_NAME + ".unreadable")
+                    if (aside.exists()) aside.delete()
+                    file.renameTo(aside)
+                    Log.w(TAG, "Vault key mismatch. Old file moved to ${aside.name}; starting empty.")
+                } catch (io: Exception) {
+                    writeBlocked = true
+                }
+            } else {
+                // Temporary problem (Keystore busy etc). Do not write until next app start.
+                writeBlocked = true
+            }
         }
+    }
+
+    private fun isKeyMismatch(e: Throwable?): Boolean {
+        var t = e
+        var depth = 0
+        while (t != null && depth < 6) {
+            if (t is javax.crypto.AEADBadTagException || t is javax.crypto.BadPaddingException) return true
+            t = t.cause
+            depth++
+        }
+        return false
     }
 
     @Synchronized
     private fun persistVault() {
         val file = vaultFile ?: return
+        if (writeBlocked) {
+            Log.w(TAG, "Vault could not be read this session; refusing to overwrite it.")
+            return
+        }
         try {
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.ENCRYPT_MODE, getSecretKey())
@@ -200,12 +239,87 @@ object PetalCredentialVault {
     @Synchronized
     fun clear() {
         credentials.clear()
+        writeBlocked = false
         vaultFile?.delete()
     }
 
     @Synchronized
     fun exportToJson(): String {
         return gson.toJson(credentials)
+    }
+
+
+    // ---------------------------------------------------------------------------------
+    // PASSWORD-PROTECTED BACKUP (V2). Works on any phone / any install with the password.
+    // The old V1 backup used the phone's Keystore key, which cannot leave the phone and
+    // is deleted on uninstall. V2 does not depend on the Keystore at all.
+    // ---------------------------------------------------------------------------------
+
+    private const val PASSWORD_BACKUP_MAGIC = "PETAL_ENC_VAULT_V2:"
+    private const val PBKDF2_ITERATIONS = 210_000
+    private const val SALT_LENGTH = 16
+    const val MIN_BACKUP_PASSWORD_LENGTH = 8
+
+    fun isPasswordBackup(content: String): Boolean {
+        return content.trim().startsWith(PASSWORD_BACKUP_MAGIC)
+    }
+
+    private fun deriveBackupKey(password: String, salt: ByteArray): SecretKeySpec {
+        val spec = PBEKeySpec(password.toCharArray(), salt, PBKDF2_ITERATIONS, 256)
+        try {
+            val bytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+            return SecretKeySpec(bytes, "AES")
+        } finally {
+            spec.clearPassword()
+        }
+    }
+
+    /** Output: PETAL_ENC_VAULT_V2: + Base64(salt 16 bytes + iv 12 bytes + ciphertext). */
+    @Synchronized
+    fun exportWithPassword(password: String): String {
+        require(password.length >= MIN_BACKUP_PASSWORD_LENGTH) {
+            "Password must be at least $MIN_BACKUP_PASSWORD_LENGTH characters."
+        }
+        val random = SecureRandom()
+        val salt = ByteArray(SALT_LENGTH).also { random.nextBytes(it) }
+        val iv = ByteArray(GCM_IV_LENGTH).also { random.nextBytes(it) }
+
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, deriveBackupKey(password, salt), GCMParameterSpec(GCM_TAG_LENGTH, iv))
+        val ciphertext = cipher.doFinal(gson.toJson(credentials).toByteArray(Charsets.UTF_8))
+
+        val combined = ByteArray(salt.size + iv.size + ciphertext.size)
+        System.arraycopy(salt, 0, combined, 0, salt.size)
+        System.arraycopy(iv, 0, combined, salt.size, iv.size)
+        System.arraycopy(ciphertext, 0, combined, salt.size + iv.size, ciphertext.size)
+        return PASSWORD_BACKUP_MAGIC + Base64.encodeToString(combined, Base64.NO_WRAP)
+    }
+
+    /** Throws a readable error for wrong password, damaged file or wrong file type. */
+    @Synchronized
+    fun importWithPasswordOrThrow(content: String, password: String): Int {
+        val trimmed = content.trim()
+        require(trimmed.startsWith(PASSWORD_BACKUP_MAGIC)) { "This is not a password-protected Petal backup." }
+
+        val combined = try {
+            Base64.decode(trimmed.removePrefix(PASSWORD_BACKUP_MAGIC), Base64.DEFAULT)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("The Petal backup is damaged.", e)
+        }
+        require(combined.size > SALT_LENGTH + GCM_IV_LENGTH) { "The Petal backup is incomplete." }
+
+        val salt = combined.copyOfRange(0, SALT_LENGTH)
+        val iv = combined.copyOfRange(SALT_LENGTH, SALT_LENGTH + GCM_IV_LENGTH)
+        val ciphertext = combined.copyOfRange(SALT_LENGTH + GCM_IV_LENGTH, combined.size)
+
+        val decrypted = try {
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(Cipher.DECRYPT_MODE, deriveBackupKey(password, salt), GCMParameterSpec(GCM_TAG_LENGTH, iv))
+            cipher.doFinal(ciphertext)
+        } catch (e: Exception) {
+            throw IllegalStateException("Wrong password, or the backup is damaged.", e)
+        }
+        return importFromJson(String(decrypted, Charsets.UTF_8))
     }
 
     private const val ENCRYPTED_BACKUP_MAGIC = "PETAL_ENC_VAULT_V1:"
@@ -231,7 +345,7 @@ object PetalCredentialVault {
      * Checks if a content string is an encrypted Petal backup.
      */
     fun isEncryptedBackup(content: String): Boolean {
-        return content.trim().startsWith(ENCRYPTED_BACKUP_MAGIC)
+        return content.trim().startsWith(ENCRYPTED_BACKUP_MAGIC) || isPasswordBackup(content)
     }
 
     /**
@@ -251,6 +365,7 @@ object PetalCredentialVault {
     @Synchronized
     fun importEncryptedOrThrow(content: String): Int {
         val trimmed = content.trim()
+        require(!isPasswordBackup(trimmed)) { "This backup is password protected. Enter its password to open it." }
         require(trimmed.startsWith(ENCRYPTED_BACKUP_MAGIC)) {
             "This is not a valid encrypted Petal backup."
         }
@@ -270,7 +385,7 @@ object PetalCredentialVault {
             cipher.doFinal(ciphertext)
         } catch (e: Exception) {
             throw IllegalStateException(
-                "This .petal backup was encrypted by a different Petal installation or is damaged.",
+                "This old-style backup is tied to the phone and Petal install that made it, so it cannot be opened here. Export new backups with a password.",
                 e
             )
         }
