@@ -926,7 +926,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View addressBar = findViewById(R.id.compose_address_bar);
             if (addressBar != null) {
                 boolean bottomAddressBar = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
-                addressBar.setPadding(0, bottomAddressBar ? 0 : systemBars.top, 0, bottomAddressBar ? systemBars.bottom : 0);
+                addressBar.setPadding(0, bottomAddressBar ? 0 : systemBars.top, 0, 0);
                 addressBar.post(this::applyAddressBarPosition);
             }
 

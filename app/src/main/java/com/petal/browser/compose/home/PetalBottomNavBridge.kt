@@ -86,6 +86,8 @@ object PetalBottomNavBridge {
                 var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
                 var floatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
 
+                var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
+
                 DisposableEffect(sp) {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                         when (key) {
@@ -100,6 +102,7 @@ object PetalBottomNavBridge {
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
                             "sp_floating_tab_bar" -> floatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
+                            "sp_address_bar_position" -> addressBarPosition = sp.getString("sp_address_bar_position", "TOP") ?: "TOP"
                         }
                     }
                     sp.registerOnSharedPreferenceChangeListener(listener)
@@ -120,6 +123,8 @@ object PetalBottomNavBridge {
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
+
+                val isBottomAddressBar = "BOTTOM".equals(addressBarPosition, ignoreCase = true)
 
                 PetalExpressiveTheme(
                     darkTheme = darkTheme,
@@ -144,6 +149,7 @@ object PetalBottomNavBridge {
                             tabCount = currentCount,
                             isIncognito = currentIncognito,
                             isFloatingStyle = floatingTabBar,
+                            isBottomAddressBar = isBottomAddressBar,
                             onHomeClick = { currentHandler?.onHomeClick() },
                             onNewTabClick = { currentHandler?.onNewTabClick() },
                             onTabsClick = { currentHandler?.onTabsClick() },

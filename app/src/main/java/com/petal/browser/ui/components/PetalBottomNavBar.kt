@@ -118,6 +118,7 @@ fun PetalBottomNavBar(
     tabCount: Int,
     isIncognito: Boolean = false,
     isFloatingStyle: Boolean = true,
+    isBottomAddressBar: Boolean = false,
     onHomeClick: () -> Unit,
     onNewTabClick: () -> Unit,
     onTabsClick: () -> Unit,
@@ -148,7 +149,8 @@ fun PetalBottomNavBar(
     val tabsLabel = "Tabs ($tabCount)"
     val newTabLabel = "New"
 
-    if (isFloatingStyle) {
+    val effectiveFloating = isFloatingStyle && !isBottomAddressBar
+    if (effectiveFloating) {
         Box(
             modifier = modifier
                 .graphicsLayer {
@@ -343,11 +345,16 @@ fun PetalBottomNavBar(
                 .navigationBarsPadding(),
             contentAlignment = Alignment.BottomCenter
         ) {
+            val navBarShape = if (isBottomAddressBar) {
+                RoundedCornerShape(0.dp)
+            } else {
+                RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            }
             Surface(
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                shape = navBarShape,
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = 3.dp,
-                shadowElevation = 8.dp,
+                tonalElevation = if (isBottomAddressBar) 0.dp else 3.dp,
+                shadowElevation = if (isBottomAddressBar) 0.dp else 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
