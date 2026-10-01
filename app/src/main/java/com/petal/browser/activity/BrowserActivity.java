@@ -2797,19 +2797,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
             int resolvedStatusBarGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this);
-            // The floating nav bar is a HorizontalFloatingToolbar that overlays page content
-            // (it does not sit in its own docked lane), so page content should extend all the
-            // way to the bottom edge underneath it instead of reserving bottomNavHeight of
-            // padding that would otherwise leave a blank strip below the toolbar.
+            // For bottom address bar (Firefox style):
+            // When address bar is at the bottom, it docks flush right above the bottom nav (if visible) or parent bottom.
+            // Reserved bottom padding for mainContent ensures webpage content sits flush above the bottom toolbar.
             boolean isFloatingNavStyle = sp.getBoolean("sp_floating_tab_bar", true);
-            int reservedNavHeight = isFloatingNavStyle ? 0 : bottomNavHeight;
-            // Overlay pages (Settings, History, ...) get no reserved space because the bar is fully removed there.
-            // On home, address bar is hidden but bottom nav bar is visible and occupies bottomNavHeight.
-            // On websites, both address bar (top or bottom) and bottom nav bar reserve space.
+            int reservedNavHeight = (isFloatingNavStyle && !isBottom) ? 0 : bottomNavHeight;
             boolean reserveBarSpace = !isOverlayScreenShowing;
             int topInset = reserveBarSpace ? (!isHome ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0) : 0;
             int bottomInset = reserveBarSpace ? (isHome ? reservedNavHeight : (isBottom
-                    ? addressHeight + reservedNavHeight + gap
+                    ? addressHeight + bottomNavHeight
                     : reservedNavHeight)) : 0;
             mainContent.setPadding(0, topInset, 0, bottomInset);
 
@@ -2822,6 +2818,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 if (isBottom) {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    // Dock progress bar flush right along the top border of the bottom address bar
                     lp.bottomMargin = addressHeight + bottomNavHeight;
                     lp.topMargin = 0;
                 } else {
@@ -4142,6 +4139,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (targetNavView != null) {
                     springTranslateY(targetNavView, bottomTotalOffset, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
                 }
+                if (progressBarCompose != null) {
+                    springTranslateY(progressBarCompose, bottomTotalOffset, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                }
                 // Seamlessly animate padding down to 0 so website content fills the full bottom viewport
                 animateContentBottomPadding(0);
             } else {
@@ -4193,17 +4193,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             if (isBottom) {
-                // Restore bottom reserved padding seamlessly. The floating nav bar overlays
-                // page content rather than occupying its own docked lane, so it never
-                // reserves bottom padding — only its docked counterpart does.
+                if (progressBarCompose != null) {
+                    springTranslateY(progressBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                }
+                // Restore bottom reserved padding seamlessly matching docked Firefox style
                 float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
-                float navHeight = (targetNavView != null && targetNavView.getHeight() > 0)
+                float navHeight = (targetNavView != null && targetNavView.getVisibility() == VISIBLE && targetNavView.getHeight() > 0)
                         ? targetNavView.getHeight()
                         : HelperUnit.convertDpToPixel(64f, context);
-                boolean isFloatingNavStyle = sp.getBoolean("sp_floating_tab_bar", true);
-                float reservedNavHeight = isFloatingNavStyle ? 0f : navHeight;
-                int gap = (int) HelperUnit.convertDpToPixel(2f, context);
-                int restoredBottomInset = (int) (barHeight + reservedNavHeight + gap);
+                int restoredBottomInset = (int) (barHeight + navHeight);
                 animateContentBottomPadding(restoredBottomInset);
             } else {
                 if (contentFrame != null) {

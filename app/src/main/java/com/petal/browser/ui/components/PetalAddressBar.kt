@@ -72,6 +72,7 @@ fun PetalAddressBar(
     onSwipePrevTab: () -> Unit = {},
     onPasteAndGo: (String) -> Unit = {},
     onHardRefresh: () -> Unit = {},
+    isBottom: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val isBlankOrSearch = url.isEmpty() || url == "about:blank" || url.startsWith("file:///android_asset/")
@@ -153,14 +154,31 @@ fun PetalAddressBar(
 
     var dragAccumulator by remember { mutableFloatStateOf(0f) }
 
+    val resolvedIsBottom = isBottom || "BOTTOM".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true)
+
+    val containerShape = if (resolvedIsBottom) {
+        RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+    } else {
+        RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
+    }
+
+    val topBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+
     Surface(
-        shape = RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp),
+        shape = containerShape,
         color = containerColor,
-        tonalElevation = 4.dp,
-        shadowElevation = 4.dp,
+        tonalElevation = if (resolvedIsBottom) 2.dp else 4.dp,
+        shadowElevation = if (resolvedIsBottom) 4.dp else 4.dp,
+        border = if (resolvedIsBottom) BorderStroke(0.65.dp, topBorderColor) else null,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp)
+            .then(
+                if (resolvedIsBottom) {
+                    Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
+                } else {
+                    Modifier.padding(horizontal = 12.dp, vertical = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp)
+                }
+            )
             .pointerInput(isSwipeTabsEnabled) {
                 if (!isSwipeTabsEnabled) return@pointerInput
                 detectHorizontalDragGestures(
@@ -188,8 +206,8 @@ fun PetalAddressBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (addressBarHeight.equals("COMPACT", true)) 48.dp else 54.dp)
-                    .padding(horizontal = 4.dp),
+                    .height(if (addressBarHeight.equals("COMPACT", true)) 50.dp else 56.dp)
+                    .padding(horizontal = if (resolvedIsBottom) 6.dp else 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Far Left: Back Navigation / Stop Loading Icon Button (min 48dp tap target)
@@ -210,13 +228,21 @@ fun PetalAddressBar(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(2.dp))
+                Spacer(modifier = Modifier.width(if (resolvedIsBottom) 4.dp else 2.dp))
 
-                // Center: Flexible Width URL Text & Favicon / Security Chip
+                // Center: Flexible Width URL Text & Favicon / Security Chip (Firefox Android styled URL pill)
+                val urlBoxShape = RoundedCornerShape(20.dp)
+                val urlBoxBackground = if (resolvedIsBottom) {
+                    MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f)
+                } else {
+                    androidx.compose.ui.graphics.Color.Transparent
+                }
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(urlBoxShape)
+                        .background(urlBoxBackground)
                         .combinedClickable(
                             onClick = { onAddressClick() },
                             onLongClick = {
@@ -228,7 +254,7 @@ fun PetalAddressBar(
                                 }
                             }
                         )
-                        .padding(horizontal = 6.dp, vertical = 6.dp),
+                        .padding(horizontal = if (resolvedIsBottom) 8.dp else 6.dp, vertical = if (resolvedIsBottom) 6.dp else 6.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Row(

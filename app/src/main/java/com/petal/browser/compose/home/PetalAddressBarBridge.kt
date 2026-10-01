@@ -113,6 +113,7 @@ object PetalAddressBarBridge {
                 var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
                 var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
                 var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
+                var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
 
                 DisposableEffect(sp) {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -127,6 +128,7 @@ object PetalAddressBarBridge {
                             "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
+                            "sp_address_bar_position" -> addressBarPosition = sp.getString("sp_address_bar_position", "TOP") ?: "TOP"
                         }
                     }
                     sp.registerOnSharedPreferenceChangeListener(listener)
@@ -154,6 +156,7 @@ object PetalAddressBarBridge {
                 val swipePrevTab = _onSwipePrevTabState.value
                 val pasteAndGo = _onPasteAndGoState.value
                 val hardRefresh = _onHardRefreshState.value
+                val isBottomPosition = "BOTTOM".equals(addressBarPosition, ignoreCase = true)
 
                 PetalExpressiveTheme(
                     darkTheme = darkTheme,
@@ -185,7 +188,8 @@ object PetalAddressBarBridge {
                         onSwipeNextTab = { swipeNextTab?.run() },
                         onSwipePrevTab = { swipePrevTab?.run() },
                         onPasteAndGo = { pasteAndGo?.invoke(it) },
-                        onHardRefresh = { hardRefresh?.run() }
+                        onHardRefresh = { hardRefresh?.run() },
+                        isBottom = isBottomPosition
                     )
                 }
             }
