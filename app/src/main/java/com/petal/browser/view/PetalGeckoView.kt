@@ -1053,7 +1053,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
         // Material 3 Expressive Prompt Delegate (Alerts, Confirms, Prompts, Auth, Choice, Text, Popups, File Chooser)
         session.promptDelegate = createPromptDelegate(session, context, sp) { getHostActivity() }
-    }
+
 
         // Scroll Delegate for Tactile Haptics and Address Bar Collapsing
         session.scrollDelegate = object : GeckoSession.ScrollDelegate {
