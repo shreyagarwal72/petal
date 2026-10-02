@@ -473,4 +473,197 @@ object BrowserContextMenuManager {
             }
         )
     }
+
+    @JvmStatic
+    fun showImageLinkContextMenu(activity: BrowserActivity, linkUrl: String, imageUrl: String, linkText: String? = null) {
+        val parsed = Uri.parse(linkUrl)
+        val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
+            "${parsed.scheme}://${parsed.authority}/favicon.ico"
+        } else null
+
+        PetalLinkContextMenuBridge.show(
+            activity = activity,
+            linkTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(linkUrl),
+            linkUrl = linkUrl,
+            faviconUrl = faviconUrl,
+            imageUrl = imageUrl,
+            isImage = true,
+            isVideo = false,
+            isAudio = false,
+            selectedText = null,
+            handler = object : PetalLinkContextMenuHandler {
+                override fun onOpenInNewTab() {
+                    activity.addAlbum(HelperUnit.domain(linkUrl), linkUrl, false)
+                }
+
+                override fun onOpenInNewTabInGroup() {
+                    val currentAlbum = activity.currentAlbumController
+                    val currentGeckoView = currentAlbum as? com.petal.browser.view.PetalGeckoView
+                    val currentTabSurface = currentAlbum as? com.petal.browser.browser.PetalTabViewController
+                    val currentTabId = currentTabSurface?.getTabId()
+                        ?: currentGeckoView?.getTabId()
+                        ?: currentAlbum?.hashCode()?.toString()
+                    val existingGroup = if (currentTabId != null) {
+                        com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(activity, currentTabId)
+                    } else null
+
+                    if (existingGroup != null) {
+                        activity.addAlbumInGroup(HelperUnit.domain(linkUrl), linkUrl, false, existingGroup.id, existingGroup.title)
+                    } else {
+                        if (currentTabId != null) {
+                            val currentTab = com.petal.browser.compose.tabs.PetalTabItem(
+                                id = currentTabId,
+                                title = currentAlbum?.title ?: "Tab",
+                                url = currentAlbum?.url ?: "about:blank"
+                            )
+                            val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, currentTab)
+                            currentTabSurface?.setTabGroupId(newGroup.id)
+                            currentTabSurface?.setTabGroupTitle(newGroup.title)
+                            currentGeckoView?.setTabGroupId(newGroup.id)
+                            currentGeckoView?.setTabGroupTitle(newGroup.title)
+                            activity.addAlbumInGroup(HelperUnit.domain(linkUrl), linkUrl, false, newGroup.id, newGroup.title)
+                        } else {
+                            activity.addAlbum(HelperUnit.domain(linkUrl), linkUrl, false)
+                        }
+                    }
+                }
+
+                override fun onOpenInIncognitoTab() {
+                    activity.addAlbum(HelperUnit.domain(linkUrl), linkUrl, false, true)
+                }
+
+                override fun onPreviewPage() {
+                    PetalPagePreviewBridge.show(activity, linkUrl)
+                }
+
+                override fun onCopyLinkAddress() {
+                    HelperUnit.copy(activity, linkUrl)
+                    PetalToast.show(activity, "Link address copied")
+                }
+
+                override fun onDownloadLink() {
+                    try {
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, linkUrl) { fileName, mimeType ->
+                            BrowserUnit.download(activity, linkUrl, fileName, mimeType)
+                            PetalToast.show(activity, "Download started")
+                        }
+                    } catch (e: Exception) {
+                        PetalToast.show(activity, "Failed to start download")
+                    }
+                }
+
+                override fun onShareLink() {
+                    activity.shareLink(HelperUnit.domain(linkUrl), linkUrl)
+                }
+
+                override fun onViewInPetalViewer() {
+                    if (imageUrl.isNotBlank()) {
+                        activity.runOnUiThread {
+                            val view = com.petal.browser.compose.downloads.PetalImageViewerBridge.createWebViewerView(
+                                activity,
+                                imageUrl,
+                                HelperUnit.domain(imageUrl)
+                            ) {
+                                activity.runOnUiThread { activity.performBackNavigation() }
+                            }
+                            activity.presentComposeScreen(view)
+                        }
+                    }
+                }
+
+                override fun onOpenImageInNewTab() {
+                    activity.addAlbum(HelperUnit.domain(imageUrl), imageUrl, false)
+                }
+
+                override fun onCopyImage() {
+                    if (imageUrl.isNotBlank()) {
+                        ImageActionHelper.copyImage(activity, imageUrl)
+                    } else {
+                        PetalToast.show(activity, "No valid image URL found")
+                    }
+                }
+
+                override fun onCopyImageAddress() {
+                    HelperUnit.copy(activity, imageUrl)
+                    PetalToast.show(activity, "Image address copied")
+                }
+
+                override fun onDownloadImage() {
+                    if (imageUrl.isNotBlank()) {
+                        ImageActionHelper.downloadImage(activity, imageUrl)
+                    } else {
+                        PetalToast.show(activity, "No valid image URL found")
+                    }
+                }
+
+                override fun onShareImage() {
+                    if (imageUrl.isNotBlank()) {
+                        ImageActionHelper.shareImage(activity, imageUrl)
+                    } else {
+                        PetalToast.show(activity, "No valid image URL found")
+                    }
+                }
+
+                override fun onSearchWithGoogleLens() {
+                    if (imageUrl.isNotBlank()) {
+                        com.petal.browser.lens.PetalLensManager.searchImageWithGoogleLens(activity, imageUrl)
+                    } else {
+                        PetalToast.show(activity, "No valid image URL found")
+                    }
+                }
+
+                override fun onScanImage() {
+                    if (imageUrl.isNotBlank()) {
+                        PetalImageScannerBridge.show(activity, imageUrl)
+                    } else {
+                        PetalToast.show(activity, "No valid image URL found")
+                    }
+                }
+            }
+        )
+    }
+
+    /**
+     * Unified entry point for GeckoSession.ContentDelegate.onContextMenu.
+     * Dynamically determines whether the targeted element is an image, link, image-in-link,
+     * video, audio, or fallback.
+     */
+    @JvmStatic
+    fun handleContextMenu(
+        activity: BrowserActivity,
+        elemType: Int,
+        linkUri: String?,
+        srcUri: String?,
+        linkText: String? = null
+    ) {
+        val hasLink = !linkUri.isNullOrBlank()
+        val hasSrc = !srcUri.isNullOrBlank()
+
+        when {
+            // Combined Image inside a Link (<a href="..."><img src="..."></a>)
+            hasLink && (hasSrc || elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE) -> {
+                showImageLinkContextMenu(activity, linkUri!!, srcUri ?: linkUri, linkText)
+            }
+            // Explicit Image or non-empty image source
+            elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE || (hasSrc && elemType != org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO && elemType != org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO) -> {
+                showImageContextMenu(activity, srcUri ?: linkUri.orEmpty())
+            }
+            // Video element
+            elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO -> {
+                showVideoContextMenu(activity, srcUri ?: linkUri.orEmpty())
+            }
+            // Audio element
+            elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO -> {
+                showAudioContextMenu(activity, srcUri ?: linkUri.orEmpty())
+            }
+            // Plain Link
+            hasLink -> {
+                showLinkContextMenu(activity, linkUri!!, linkText)
+            }
+            // Fallback if srcUri is present
+            hasSrc -> {
+                showImageContextMenu(activity, srcUri!!)
+            }
+        }
+    }
 }

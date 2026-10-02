@@ -1039,28 +1039,18 @@ class PetalGeckoView @JvmOverloads constructor(
                 val linkUri = element.linkUri
                 val srcUri = element.srcUri
                 val elemType = element.type
+                val linkText = runCatching {
+                    element.javaClass.getField("textContent").get(element) as? String
+                }.getOrNull()
 
                 act.runOnUiThread {
-                    when {
-                        elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE && !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
-                        }
-                        elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO && !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showVideoContextMenu(act, srcUri)
-                        }
-                        elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO && !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showAudioContextMenu(act, srcUri)
-                        }
-                        !linkUri.isNullOrEmpty() -> {
-                            val linkText = runCatching {
-                                element.javaClass.getField("textContent").get(element) as? String
-                            }.getOrNull()
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(act, linkUri, linkText)
-                        }
-                        !srcUri.isNullOrEmpty() -> {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
-                        }
-                    }
+                    com.petal.browser.compose.menu.BrowserContextMenuManager.handleContextMenu(
+                        activity = act,
+                        elemType = elemType,
+                        linkUri = linkUri,
+                        srcUri = srcUri,
+                        linkText = linkText
+                    )
                 }
             }
         }

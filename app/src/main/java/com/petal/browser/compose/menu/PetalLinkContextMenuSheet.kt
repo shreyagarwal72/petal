@@ -92,6 +92,7 @@ interface PetalLinkContextMenuHandler {
 private enum class MenuKind(val label: String, val icon: ImageVector) {
     LINK("Link", Icons.Rounded.Language),
     IMAGE("Image", Icons.Rounded.Image),
+    IMAGE_LINK("Image & Link", Icons.Rounded.Image),
     VIDEO("Video", Icons.Rounded.Videocam),
     AUDIO("Audio", Icons.Rounded.Audiotrack),
     TEXT("Selected text", Icons.Rounded.FormatQuote),
@@ -120,11 +121,13 @@ private fun menuKindOf(
     isVideo: Boolean,
     isAudio: Boolean,
     selectedText: String?,
+    hasLinkAndImage: Boolean = false,
 ): MenuKind = when {
     selectedText != null -> MenuKind.TEXT
     linkUrl.startsWith("mailto:") -> MenuKind.EMAIL
     linkUrl.startsWith("tel:") -> MenuKind.PHONE
     linkUrl.startsWith("geo:") -> MenuKind.LOCATION
+    hasLinkAndImage -> MenuKind.IMAGE_LINK
     isAudio -> MenuKind.AUDIO
     isImage -> MenuKind.IMAGE
     isVideo -> MenuKind.VIDEO
@@ -137,6 +140,33 @@ private fun buildSections(
     selectedText: String?,
     handler: PetalLinkContextMenuHandler,
 ): List<MenuSection> = when (kind) {
+    MenuKind.IMAGE_LINK -> listOf(
+        MenuSection(
+            "Link actions",
+            listOf(
+                MenuAction("open_tab", "Open link in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenInNewTab() },
+                MenuAction("open_group", "Open in new tab group", Icons.Rounded.Layers, MenuTone.OPEN) { handler.onOpenInNewTabInGroup() },
+                MenuAction("open_incognito", "Open link in private tab", Icons.Rounded.VisibilityOff, MenuTone.OPEN) { handler.onOpenInIncognitoTab() },
+                MenuAction("preview", "Preview page", Icons.Rounded.FindInPage, MenuTone.OPEN) { handler.onPreviewPage() },
+                MenuAction("copy_link", "Copy link address", Icons.Rounded.Link, MenuTone.COPY) { handler.onCopyLinkAddress() },
+                MenuAction("download_link", "Download link target", Icons.Rounded.FileDownload, MenuTone.SAVE) { handler.onDownloadLink() },
+                MenuAction("share_link", "Share link", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareLink() },
+            ),
+        ),
+        MenuSection(
+            "Image actions",
+            listOf(
+                MenuAction("view_image", "View in Petal Viewer", Icons.Rounded.PhotoLibrary, MenuTone.OPEN) { handler.onViewInPetalViewer() },
+                MenuAction("open_image_tab", "Open image in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenImageInNewTab() },
+                MenuAction("copy_image", "Copy image", Icons.Rounded.Image, MenuTone.COPY) { handler.onCopyImage() },
+                MenuAction("copy_image_address", "Copy image address", Icons.Rounded.Link, MenuTone.COPY) { handler.onCopyImageAddress() },
+                MenuAction("save_image", "Save image", Icons.Rounded.SaveAlt, MenuTone.SAVE) { handler.onDownloadImage() },
+                MenuAction("share_image", "Share image", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareImage() },
+                MenuAction("lens", "Search with Google Lens", Icons.Rounded.TravelExplore, MenuTone.SEARCH) { handler.onSearchWithGoogleLens() },
+                MenuAction("scan_image", "Scan image for QR & text", Icons.Rounded.DocumentScanner, MenuTone.SEARCH) { handler.onScanImage() },
+            ),
+        ),
+    )
     MenuKind.TEXT -> {
         val text = selectedText.orEmpty()
         listOf(
@@ -312,6 +342,7 @@ fun PetalLinkContextMenuSheet(
     linkTitle: String?,
     linkUrl: String,
     faviconUrl: String? = null,
+    imageUrl: String? = null,
     isImage: Boolean = false,
     isVideo: Boolean = false,
     isAudio: Boolean = false,
@@ -323,8 +354,9 @@ fun PetalLinkContextMenuSheet(
     val scope = rememberCoroutineScope()
     var selectedId by remember { mutableStateOf<String?>(null) }
 
-    val kind = remember(linkUrl, isImage, isVideo, isAudio, selectedText) {
-        menuKindOf(linkUrl, isImage, isVideo, isAudio, selectedText)
+    val hasLinkAndImage = !imageUrl.isNullOrBlank() && linkUrl.isNotBlank() && isImage
+    val kind = remember(linkUrl, isImage, isVideo, isAudio, selectedText, hasLinkAndImage) {
+        menuKindOf(linkUrl, isImage, isVideo, isAudio, selectedText, hasLinkAndImage)
     }
     val sections = remember(kind, linkUrl, selectedText, handler) {
         buildSections(kind, linkUrl, selectedText, handler)
@@ -347,6 +379,7 @@ fun PetalLinkContextMenuSheet(
         MenuKind.EMAIL -> linkUrl.removePrefix("mailto:").substringBefore('?')
         MenuKind.PHONE -> linkUrl.removePrefix("tel:")
         MenuKind.LOCATION -> "Map location"
+        MenuKind.IMAGE_LINK -> linkTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(linkUrl) ?: linkUrl
         else -> linkTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(linkUrl) ?: linkUrl
     }
     val subtitle = when (kind) {
@@ -382,8 +415,8 @@ fun PetalLinkContextMenuSheet(
                 kind = kind,
                 title = title,
                 subtitle = subtitle,
-                imageUrl = if (kind == MenuKind.IMAGE) linkUrl else null,
-                faviconUrl = if (kind == MenuKind.LINK) faviconUrl else null,
+                imageUrl = if (kind == MenuKind.IMAGE || kind == MenuKind.IMAGE_LINK) (imageUrl ?: linkUrl) else null,
+                faviconUrl = if (kind == MenuKind.LINK || kind == MenuKind.IMAGE_LINK) faviconUrl else null,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .petalStaggerIn(0),
@@ -618,6 +651,7 @@ object PetalLinkContextMenuBridge {
             linkTitle = linkTitle,
             linkUrl = linkUrl,
             faviconUrl = faviconUrl,
+            imageUrl = null,
             isImage = isImage,
             isVideo = isVideo,
             isAudio = false,
@@ -627,11 +661,13 @@ object PetalLinkContextMenuBridge {
     }
 
     @JvmStatic
+    @JvmOverloads
     fun show(
         activity: ComponentActivity,
         linkTitle: String?,
         linkUrl: String,
         faviconUrl: String? = null,
+        imageUrl: String? = null,
         isImage: Boolean = false,
         isVideo: Boolean = false,
         isAudio: Boolean = false,
@@ -670,6 +706,7 @@ object PetalLinkContextMenuBridge {
                                 linkTitle = linkTitle,
                                 linkUrl = linkUrl,
                                 faviconUrl = faviconUrl,
+                                imageUrl = imageUrl,
                                 isImage = isImage,
                                 isVideo = isVideo,
                                 isAudio = isAudio,
