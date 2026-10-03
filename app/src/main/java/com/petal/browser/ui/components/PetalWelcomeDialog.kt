@@ -1001,20 +1001,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
             Text(stringResource(R.string.ui_display_language), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(8.dp))
 
-            val languages = listOf(
-                Pair("system", "System Default"),
-                Pair("en", "English"),
-                Pair("hi-Latn", "Hinglish (Hindi in English)"),
-                Pair("hi", "हिन्दी (Hindi)"),
-                Pair("es", "Español (Spanish)"),
-                Pair("fr", "Français (French)"),
-                Pair("de", "Deutsch (German)"),
-                Pair("zh", "中文 (Chinese)"),
-                Pair("ar", "العربية (Arabic)"),
-                Pair("pt", "Português (Portuguese)"),
-                Pair("ru", "Русский (Russian)"),
-                Pair("ja", "日本語 (Japanese)")
-            )
+            val languages = remember { com.petal.browser.unit.PetalLanguages.ALL_LANGUAGES }
 
             Row(
                 modifier = Modifier
@@ -1022,13 +1009,13 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                languages.forEach { (tag, label) ->
-                    val isSelected = appLanguage == tag
+                languages.forEach { lang ->
+                    val isSelected = appLanguage == lang.tag
                     Surface(
                         onClick = {
-                            if (appLanguage != tag) {
-                                appLanguage = tag
-                                HelperUnit.setAppLanguage(context, tag)
+                            if (appLanguage != lang.tag) {
+                                appLanguage = lang.tag
+                                HelperUnit.setAppLanguage(context, lang.tag)
                             }
                         },
                         shape = RoundedCornerShape(16.dp),
@@ -1044,7 +1031,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                                 Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
                             }
-                            Text(label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                            Text(lang.displayLabel, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }

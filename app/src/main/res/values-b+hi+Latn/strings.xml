@@ -1411,6 +1411,8 @@
     <string name="ui_incognito_mode">Incognito Mode</string>
     <string name="ui_petal_home">Petal Home</string>
     <string name="ui_ask_petal_ai">Petal AI se Puchein</string>
+    <string name="petal_autofill_service_name">Petal Autofill</string>
+    <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
     <string name="upload_chooser_title">Upload source chunein</string>
     <string name="upload_chooser_files_title">Files</string>
     <string name="upload_chooser_files_desc">Petal ke file picker se folders aur documents dekhein</string>
@@ -1514,6 +1516,9 @@
     <string name="petal_setup_restore_button">Backup se restore karein</string>
     <string name="petal_setup_restore_success">Data aur settings kamyabi se restore ho gaye!</string>
     <string name="petal_setup_skip_button">Setup skip karein</string>
+    <string name="shortcut_add_to_homescreen">Home screen par jodein</string>
+    <string name="shortcut_add_button">Jodein</string>
+    <string name="shortcut_title_hint">Shortcut ka naam</string>
     <!-- Firefox-Style Private Browsing Strings -->
     <string name="private_browsing_title">Private Browsing</string>
     <string name="private_browsing_subtitle">Jab aap sabhi private tabs band karenge, Petal search aur browsing history clear kar dega.</string>

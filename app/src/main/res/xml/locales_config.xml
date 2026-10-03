@@ -25,4 +25,8 @@
     <locale android:name="hu"/>
     <locale android:name="ro"/>
     <locale android:name="sv"/>
+    <locale android:name="sr"/>
+    <locale android:name="b+sr+Latn"/>
+    <locale android:name="uk"/>
+    <locale android:name="zh-rTW"/>
 </locale-config>

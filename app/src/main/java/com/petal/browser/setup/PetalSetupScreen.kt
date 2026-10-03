@@ -463,18 +463,135 @@ private fun HelloStage(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        // Language selection connected button group
-        val languages = listOf("en" to R.string.petal_setup_english, "hi-Latn" to R.string.petal_setup_hinglish)
-        val selectedIndex = languages.indexOfFirst { it.first == language }.coerceAtLeast(0)
-        PetalConnectedButtonGroup(
-            items = languages.map { (_, labelRes) ->
-                PetalConnectedButtonItem(label = stringResource(labelRes))
-            },
-            selectedIndex = selectedIndex,
-            onSelect = { idx ->
-                languages.getOrNull(idx)?.let { setLanguage(it.first) }
+        var showLanguageSheet by remember { mutableStateOf(false) }
+        var languageSearchQuery by remember { mutableStateOf("") }
+        val currentLanguage = remember(language) { com.petal.browser.unit.PetalLanguages.findLanguage(language) }
+
+        val quickLanguages = remember {
+            listOf(
+                com.petal.browser.unit.PetalLanguages.findLanguage("en"),
+                com.petal.browser.unit.PetalLanguages.findLanguage("hi-Latn"),
+                com.petal.browser.unit.PetalLanguages.findLanguage("hi"),
+                com.petal.browser.unit.PetalLanguages.findLanguage("es")
+            )
+        }
+
+        val scrollState = rememberScrollState()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .androidx.compose.foundation.horizontalScroll(scrollState),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            quickLanguages.forEach { lang ->
+                val isSelected = language == lang.tag
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { setLanguage(lang.tag) },
+                    label = { Text(lang.nativeName) },
+                    leadingIcon = if (isSelected) {
+                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    } else null
+                )
             }
-        )
+
+            FilledTonalButton(
+                onClick = {
+                    languageSearchQuery = ""
+                    showLanguageSheet = true
+                },
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Icon(Icons.Rounded.Translate, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    if (quickLanguages.none { it.tag == language }) currentLanguage.displayLabel else "All (${com.petal.browser.unit.PetalLanguages.ALL_LANGUAGES.size})",
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        if (showLanguageSheet) {
+            PetalSheet(
+                onDismissRequest = { showLanguageSheet = false }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.ui_app_language),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.ui_choose_your_preferred_display_language),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = languageSearchQuery,
+                        onValueChange = { languageSearchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Search language...") },
+                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (languageSearchQuery.isNotEmpty()) {
+                                IconButton(onClick = { languageSearchQuery = "" }) {
+                                    Icon(Icons.Rounded.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    val filteredLanguages = remember(languageSearchQuery) {
+                        if (languageSearchQuery.isBlank()) {
+                            com.petal.browser.unit.PetalLanguages.ALL_LANGUAGES
+                        } else {
+                            val q = languageSearchQuery.trim().lowercase()
+                            com.petal.browser.unit.PetalLanguages.ALL_LANGUAGES.filter {
+                                it.nativeName.lowercase().contains(q) ||
+                                it.englishName.lowercase().contains(q) ||
+                                it.tag.lowercase().contains(q)
+                            }
+                        }
+                    }
+
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 420.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredLanguages.size) { idx ->
+                            val lang = filteredLanguages[idx]
+                            val isSelected = language == lang.tag
+                            PetalSelectableOptionCard(
+                                title = lang.displayLabel,
+                                subtitle = if (lang.tag != "system") "BCP-47: ${lang.tag}" else null,
+                                selected = isSelected,
+                                onClick = {
+                                    setLanguage(lang.tag)
+                                    showLanguageSheet = false
+                                }
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+                }
+            }
+        }
     }
 
     // Appearance Toggles using PetalSettingsSection with M3 containment

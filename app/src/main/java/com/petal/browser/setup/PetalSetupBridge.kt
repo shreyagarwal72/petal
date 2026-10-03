@@ -130,7 +130,7 @@ object PetalSetupBridge {
     private fun finishSetup(activity: BrowserActivity) {
         val sp = PreferenceManager.getDefaultSharedPreferences(activity)
         val language = ViewModelProvider(activity)[PetalSetupState::class.java].language.value
-        com.petal.browser.unit.HelperUnit.setAppLanguage(activity, if (language == "hi-Latn") "hi-Latn" else "en")
+        com.petal.browser.unit.HelperUnit.setAppLanguage(activity, language)
         activity.pendingOverlayBackAction = null
         activity.isOverlayScreenShowing = false
         activity.showAlbum(activity.currentAlbumController)

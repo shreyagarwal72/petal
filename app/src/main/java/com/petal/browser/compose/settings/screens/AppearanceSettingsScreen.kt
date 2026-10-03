@@ -6,6 +6,8 @@ import android.app.Activity
 import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
+import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalLanguages
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
@@ -52,6 +54,7 @@ fun AppearanceSettingsScreen(
     viewModel: AppearanceSettingsViewModel = hiltViewModel()
 ) {
     val appFont by viewModel.appFont.collectAsStateWithLifecycle()
+    val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val fontWidth by viewModel.fontWidth.collectAsStateWithLifecycle()
     val fontWeight by viewModel.fontWeight.collectAsStateWithLifecycle()
     val fontRoundness by viewModel.fontRoundness.collectAsStateWithLifecycle()
@@ -71,6 +74,7 @@ fun AppearanceSettingsScreen(
 
     AppearanceSettingsScreenContent(
         appFont = appFont,
+        appLanguage = appLanguage,
         fontWidth = fontWidth,
         fontWeight = fontWeight,
         fontRoundness = fontRoundness,
@@ -88,6 +92,7 @@ fun AppearanceSettingsScreen(
         customFontName = customFontName,
         launchRippleEnabled = launchRippleEnabled,
         onAppFontChange = viewModel::setAppFont,
+        onAppLanguageChange = viewModel::setAppLanguage,
         onFontWidthChange = viewModel::setFontWidth,
         onFontWeightChange = viewModel::setFontWeight,
         onFontRoundnessChange = viewModel::setFontRoundness,
@@ -129,7 +134,9 @@ fun AppearanceSettingsScreenContent(
     highRefreshRate: Boolean,
     customFontName: String,
     launchRippleEnabled: Boolean = true,
+    appLanguage: String = "system",
     onAppFontChange: (AppFont) -> Unit,
+    onAppLanguageChange: (String) -> Unit = {},
     onFontWidthChange: (Float) -> Unit,
     onFontWeightChange: (Float) -> Unit,
     onFontRoundnessChange: (Float) -> Unit,
@@ -158,6 +165,8 @@ fun AppearanceSettingsScreenContent(
     }
 
     var showFontPicker by remember { mutableStateOf(false) }
+    var showLanguageSheet by remember { mutableStateOf(false) }
+    var languageSearchQuery by remember { mutableStateOf("") }
     // System picker kept as fallback for the Petal picker's "Browse system" button
     val systemFontPicker = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
@@ -191,6 +200,80 @@ fun AppearanceSettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Section 0: App Language
+                val currentLanguage = remember(appLanguage) { PetalLanguages.findLanguage(appLanguage) }
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_app_language),
+                    iconRes = com.petal.browser.R.drawable.translate,
+                    cardId = "appearance_language",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Text(
+                        stringResource(R.string.ui_choose_your_preferred_display_language),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Quick switcher for common languages
+                    val quickLanguages = remember {
+                        listOf(
+                            PetalLanguages.findLanguage("system"),
+                            PetalLanguages.findLanguage("en"),
+                            PetalLanguages.findLanguage("hi-Latn"),
+                            PetalLanguages.findLanguage("hi"),
+                            PetalLanguages.findLanguage("es")
+                        )
+                    }
+
+                    val quickLangScrollState = rememberScrollState()
+                    ScrollFadeRow(
+                        scrollState = quickLangScrollState,
+                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(quickLangScrollState),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            quickLanguages.forEach { lang ->
+                                val isSelected = appLanguage == lang.tag
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
+                                        if (appLanguage != lang.tag) {
+                                            onAppLanguageChange(lang.tag)
+                                            HelperUnit.setAppLanguage(context, lang.tag)
+                                        }
+                                    },
+                                    label = { Text(lang.nativeName) },
+                                    leadingIcon = if (isSelected) {
+                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                    } else null
+                                )
+                            }
+
+                            // "All Languages" button to open modal sheet
+                            FilledTonalButton(
+                                onClick = {
+                                    languageSearchQuery = ""
+                                    showLanguageSheet = true
+                                },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Rounded.Translate, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    if (quickLanguages.none { it.tag == appLanguage }) currentLanguage.displayLabel else "All (${PetalLanguages.ALL_LANGUAGES.size})",
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Section 1: App Theme & Dynamic Color Palette
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_theme_color_palette),
@@ -612,6 +695,89 @@ fun AppearanceSettingsScreenContent(
                     systemFontPicker.launch("*/*")
                 }
             )
+        }
+
+        if (showLanguageSheet) {
+            com.petal.browser.ui.containment.PetalSheet(
+                onDismissRequest = { showLanguageSheet = false }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.ui_app_language),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.ui_choose_your_preferred_display_language),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = languageSearchQuery,
+                        onValueChange = { languageSearchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Search language...") },
+                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (languageSearchQuery.isNotEmpty()) {
+                                IconButton(onClick = { languageSearchQuery = "" }) {
+                                    Icon(Icons.Rounded.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    val filteredLanguages = remember(languageSearchQuery) {
+                        if (languageSearchQuery.isBlank()) {
+                            PetalLanguages.ALL_LANGUAGES
+                        } else {
+                            val q = languageSearchQuery.trim().lowercase()
+                            PetalLanguages.ALL_LANGUAGES.filter {
+                                it.nativeName.lowercase().contains(q) ||
+                                it.englishName.lowercase().contains(q) ||
+                                it.tag.lowercase().contains(q)
+                            }
+                        }
+                    }
+
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 420.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredLanguages.size) { idx ->
+                            val lang = filteredLanguages[idx]
+                            val isSelected = appLanguage == lang.tag
+                            com.petal.browser.ui.containment.PetalSelectableOptionCard(
+                                title = lang.displayLabel,
+                                subtitle = if (lang.tag != "system") "BCP-47: ${lang.tag}" else null,
+                                selected = isSelected,
+                                onClick = {
+                                    if (appLanguage != lang.tag) {
+                                        onAppLanguageChange(lang.tag)
+                                        HelperUnit.setAppLanguage(context, lang.tag)
+                                    }
+                                    showLanguageSheet = false
+                                }
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+                }
+            }
         }
     }
 }

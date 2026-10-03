@@ -48,6 +48,9 @@ class AppearanceSettingsViewModel @Inject constructor(
     val amoledMode: StateFlow<Boolean> = settingsRepository.amoledMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val appLanguage: StateFlow<String> = settingsRepository.appLanguage
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "system")
+
     val themeConfig: StateFlow<ThemeConfig> = settingsRepository.themeConfig
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeConfig.FOLLOW_SYSTEM)
 
@@ -113,6 +116,10 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setThemeConfig(config: ThemeConfig) = viewModelScope.launch {
         settingsRepository.setThemeConfig(config)
+    }
+
+    fun setAppLanguage(language: String) = viewModelScope.launch {
+        settingsRepository.setAppLanguage(language)
     }
 
     fun setFloatingTabBar(enabled: Boolean) = viewModelScope.launch {
