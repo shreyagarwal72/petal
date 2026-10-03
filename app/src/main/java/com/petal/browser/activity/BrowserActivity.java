@@ -4429,15 +4429,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (addressBarForMargin != null) {
                 final android.widget.FrameLayout.LayoutParams finalParams = params;
                 final androidx.compose.ui.platform.ComposeView finalRefreshBar = refreshBarCompose;
-                android.view.View.OnLayoutChangeListener layoutListener = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                Runnable updateMargin = () -> {
                     boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
                     int targetTopMargin;
                     if (isBottom) {
                         targetTopMargin = 0;
                     } else {
-                        targetTopMargin = v.getBottom();
+                        int[] loc = new int[2];
+                        addressBarForMargin.getLocationInWindow(loc);
+                        int measuredH = addressBarForMargin.getHeight();
+                        targetTopMargin = loc[1] + measuredH;
                         if (targetTopMargin <= 0) {
-                            targetTopMargin = v.getHeight();
+                            targetTopMargin = addressBarForMargin.getBottom() > 0 ? addressBarForMargin.getBottom() : measuredH;
                         }
                     }
                     if (targetTopMargin > 0 && finalParams.topMargin != targetTopMargin) {
@@ -4445,15 +4448,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         finalRefreshBar.setLayoutParams(finalParams);
                     }
                 };
+                android.view.View.OnLayoutChangeListener layoutListener = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> updateMargin.run();
                 addressBarForMargin.addOnLayoutChangeListener(layoutListener);
-                addressBarForMargin.post(() -> {
-                    boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
-                    int h = isBottom ? 0 : (addressBarForMargin.getBottom() > 0 ? addressBarForMargin.getBottom() : addressBarForMargin.getHeight());
-                    if (h > 0) {
-                        finalParams.topMargin = h;
-                        finalRefreshBar.setLayoutParams(finalParams);
-                    }
-                });
+                addressBarForMargin.post(updateMargin);
             }
         }
 

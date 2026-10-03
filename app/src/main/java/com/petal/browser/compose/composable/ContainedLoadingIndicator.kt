@@ -128,11 +128,11 @@ fun RefreshBarLoadingIndicator(
             contentAlignment = Alignment.TopCenter
         ) {
             val targetOffsetY = if (isRefreshing) {
-                24.dp
+                32.dp
             } else if (!isVisible) {
                 0.dp
             } else {
-                ((pullProgress.coerceIn(0f, 1.25f) * 56.dp.value).coerceAtMost(72f)).dp
+                (12.dp.value + (pullProgress.coerceIn(0f, 1.25f) * 64.dp.value).coerceAtMost(80f)).dp
             }
 
             val animatedOffsetY by animateFloatAsState(
