@@ -41,6 +41,7 @@ import coil.compose.AsyncImage
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalMotion
 import com.petal.browser.ui.containment.PetalSectionLabel
@@ -602,17 +603,16 @@ private fun PetalMenuRow(
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(badgeRadius))
-                    .background(badgeContainer),
-                contentAlignment = Alignment.Center,
+            PetalGroupIconBadge(
+                shape = RoundedCornerShape(badgeRadius),
+                containerColor = badgeContainer,
+                contentColor = badgeContent,
+                size = 40.dp,
+                iconSize = 22.dp,
             ) {
                 Icon(
                     imageVector = action.icon,
                     contentDescription = null,
-                    tint = badgeContent,
                     modifier = Modifier.size(22.dp),
                 )
             }
@@ -635,30 +635,6 @@ private fun PetalMenuRow(
 // ---------------------------------------------------------------------------------------------
 
 object PetalLinkContextMenuBridge {
-    @JvmStatic
-    @JvmOverloads
-    fun show(
-        activity: ComponentActivity,
-        linkTitle: String?,
-        linkUrl: String,
-        faviconUrl: String? = null,
-        isImage: Boolean = false,
-        isVideo: Boolean = false,
-        handler: PetalLinkContextMenuHandler,
-    ) {
-        show(
-            activity = activity,
-            linkTitle = linkTitle,
-            linkUrl = linkUrl,
-            faviconUrl = faviconUrl,
-            imageUrl = null,
-            isImage = isImage,
-            isVideo = isVideo,
-            isAudio = false,
-            selectedText = null,
-            handler = handler,
-        )
-    }
 
     @JvmStatic
     @JvmOverloads
