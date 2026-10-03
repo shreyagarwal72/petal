@@ -445,8 +445,7 @@ private fun Petal1ExpressiveSearchRow(
 ) {
     val context = LocalContext.current
     Row(
-        modifier = modifier
-            .clickable(searchAction),
+        modifier = modifier,
         verticalAlignment = Alignment.Vertical.CenterVertically
     ) {
         // Left: Google-style Gradient "P" Brand Badge
@@ -487,7 +486,6 @@ private fun Petal1ExpressiveSearchRow(
         Box(
             modifier = GlanceModifier
                 .size(38.dp)
-                .cornerRadius(19.dp)
                 .clickable(aiAction),
             contentAlignment = Alignment.Center
         ) {
@@ -505,7 +503,6 @@ private fun Petal1ExpressiveSearchRow(
         Box(
             modifier = GlanceModifier
                 .size(38.dp)
-                .cornerRadius(19.dp)
                 .clickable(voiceAction),
             contentAlignment = Alignment.Center
         ) {
@@ -523,7 +520,6 @@ private fun Petal1ExpressiveSearchRow(
         Box(
             modifier = GlanceModifier
                 .size(38.dp)
-                .cornerRadius(19.dp)
                 .clickable(snapCameraAction),
             contentAlignment = Alignment.Center
         ) {
@@ -763,7 +759,6 @@ private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
             .fillMaxSize()
             .cornerRadius(28.dp)
             .background(surfaceContainerHighProvider(scheme))
-            .clickable(searchAction)
             .padding(start = 6.dp, end = 12.dp),
         contentAlignment = Alignment.Center
     ) {
