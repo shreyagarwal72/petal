@@ -616,7 +616,9 @@ class PetalTabViewController private constructor(
         val key = boundTabId ?: run { callback(null); return }
         val revision = previewRevision
         val privateTab = isIncognito()
-        val geckoView = engineView.asView() as? org.mozilla.geckoview.GeckoView
+        // GeckoEngineView (android-components) is a FrameLayout that CONTAINS the real
+        // GeckoView; asView() never returns the GeckoView itself, so a direct cast is always null.
+        val geckoView = findGeckoView(engineView.asView())
         if (geckoView == null || !isAttachedToWindow || geckoView.width <= 0 || geckoView.height <= 0) {
             callback(null)
             return
@@ -652,6 +654,16 @@ class PetalTabViewController private constructor(
         } catch (_: Throwable) {
             callback(null)
         }
+    }
+
+    private fun findGeckoView(root: View?): org.mozilla.geckoview.GeckoView? {
+        if (root is org.mozilla.geckoview.GeckoView) return root
+        if (root is android.view.ViewGroup) {
+            for (i in 0 until root.childCount) {
+                findGeckoView(root.getChildAt(i))?.let { return it }
+            }
+        }
+        return null
     }
 
     /** GeckoView-only integration point used for WebExtension delegates. */
