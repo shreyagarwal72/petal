@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.unit.BackupUnit
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
