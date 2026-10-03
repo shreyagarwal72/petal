@@ -1535,4 +1535,11 @@
     <string name="private_browsing_visible_employer">Your school or employer network</string>
     <string name="private_browsing_visible_sites">Websites you visit and sign into</string>
     <string name="private_browsing_close_all">Close all private tabs</string>
+    <string name="ui_website_language_title">Match Website Language</string>
+    <string name="ui_website_language_subtitle">Request web pages and search engines in your selected app language</string>
+    <string name="ui_current_language">Current Language</string>
+    <string name="ui_quick_languages">Quick Languages</string>
+    <string name="ui_all_languages">All Languages</string>
+    <string name="ui_switch_common_languages_instantly">Switch common languages instantly</string>
+    <string name="ui_follow_device_language">Follow device system language</string>
 </resources>

@@ -238,7 +238,7 @@ public class HelperUnit {
                                 String cookie = cookieManager.getCookie(url);
                                 java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
                                 extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-                                extraHeaders.put("Accept-Language", Locale.getDefault().toLanguageTag());
+                                extraHeaders.put("Accept-Language", getAcceptLanguage(activity));
                                 // No custom Accept-Encoding: HttpURLConnection (Fetch2's downloader)
                                 // only auto-decompresses gzip when this header is left unset. Setting
                                 // it ourselves caused compressed responses (e.g. server-gzipped zip
@@ -1026,6 +1026,37 @@ public class HelperUnit {
                     finalActivity.recreate();
                 } catch (Exception ignored) {}
             });
+        }
+    }
+
+    /**
+     * Resolves the Accept-Language header value based on user preference.
+     * When sp_match_website_language is enabled (default: true), formats the user's
+     * chosen app language (and fallbacks) to send to web servers.
+     */
+    public static String getAcceptLanguage(Context context) {
+        if (context == null) {
+            return Locale.getDefault().toLanguageTag();
+        }
+        try {
+            SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+            boolean matchWebsiteLanguage = sp.getBoolean("sp_match_website_language", true);
+            if (!matchWebsiteLanguage) {
+                return Locale.getDefault().toLanguageTag();
+            }
+            String appLang = sp.getString("sp_app_language", "system");
+            if (appLang == null || "system".equalsIgnoreCase(appLang)) {
+                return Locale.getDefault().toLanguageTag() + ",en;q=0.8";
+            }
+            if ("hi-Latn".equalsIgnoreCase(appLang) || "hinglish".equalsIgnoreCase(appLang)) {
+                return "hi-Latn,hi;q=0.9,en;q=0.8";
+            }
+            if ("zh-rTW".equalsIgnoreCase(appLang) || "zh-TW".equalsIgnoreCase(appLang)) {
+                return "zh-TW,zh;q=0.9,en;q=0.8";
+            }
+            return appLang + ",en;q=0.8";
+        } catch (Exception e) {
+            return Locale.getDefault().toLanguageTag();
         }
     }
 

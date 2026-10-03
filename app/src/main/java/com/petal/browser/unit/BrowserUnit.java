@@ -225,7 +225,7 @@ public class BrowserUnit {
 
                 java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
                 extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-                extraHeaders.put("Accept-Language", Locale.getDefault().toLanguageTag());
+                extraHeaders.put("Accept-Language", HelperUnit.getAcceptLanguage(context));
                 // Do NOT set a custom Accept-Encoding header here. HttpURLConnection (used by
                 // Fetch2's HttpUrlConnectionDownloader) only performs transparent gzip
                 // decompression when the app does not set this header itself. Setting it

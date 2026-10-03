@@ -1535,4 +1535,11 @@
     <string name="private_browsing_visible_employer">Aapke school ya employer network ko</string>
     <string name="private_browsing_visible_sites">Visited websites jisme aap sign in karte hain</string>
     <string name="private_browsing_close_all">Sabhi private tabs band karein</string>
+    <string name="ui_website_language_title">Websites ki bhasha match karein</string>
+    <string name="ui_website_language_subtitle">Web pages aur search engines ko apni chuni hui bhasha me request karein</string>
+    <string name="ui_current_language">Current bhasha</string>
+    <string name="ui_quick_languages">Quick bhashaayein</string>
+    <string name="ui_all_languages">Saari bhashaayein</string>
+    <string name="ui_switch_common_languages_instantly">Common bhashaayein turant badlein</string>
+    <string name="ui_follow_device_language">Device ki system bhasha follow karein</string>
 </resources>

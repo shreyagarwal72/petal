@@ -268,6 +268,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString("sp_app_language", "system") ?: "system"
     }
 
+    override val matchWebsiteLanguage: Flow<Boolean> = preferenceFlow("sp_match_website_language") {
+        sp.getBoolean("sp_match_website_language", true)
+    }
+
     override val addressBarPosition: Flow<String> = preferenceFlow("sp_address_bar_position") {
         sp.getString("sp_address_bar_position", "TOP") ?: "TOP"
     }
@@ -584,6 +588,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setAppLanguage(language: String) {
         sp.edit().putString("sp_app_language", language).apply()
+    }
+
+    override suspend fun setMatchWebsiteLanguage(enabled: Boolean) {
+        sp.edit().putBoolean("sp_match_website_language", enabled).apply()
     }
 
     override suspend fun setAddressBarPosition(position: String) {

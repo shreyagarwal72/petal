@@ -142,7 +142,7 @@ object ExternalDownloadManagerHelper {
                 try {
                     val headers = HashMap<String, String>()
                     headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-                    headers["Accept-Language"] = Locale.getDefault().toLanguageTag()
+                    headers["Accept-Language"] = com.petal.browser.unit.HelperUnit.getAcceptLanguage(activity)
                     headers["Referer"] = verifiedUrl
 
                     Util1DM.downloadFile(

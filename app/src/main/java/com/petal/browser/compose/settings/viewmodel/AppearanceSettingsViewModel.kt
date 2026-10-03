@@ -51,6 +51,9 @@ class AppearanceSettingsViewModel @Inject constructor(
     val appLanguage: StateFlow<String> = settingsRepository.appLanguage
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "system")
 
+    val matchWebsiteLanguage: StateFlow<Boolean> = settingsRepository.matchWebsiteLanguage
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val themeConfig: StateFlow<ThemeConfig> = settingsRepository.themeConfig
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeConfig.FOLLOW_SYSTEM)
 
@@ -120,6 +123,10 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setAppLanguage(language: String) = viewModelScope.launch {
         settingsRepository.setAppLanguage(language)
+    }
+
+    fun setMatchWebsiteLanguage(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setMatchWebsiteLanguage(enabled)
     }
 
     fun setFloatingTabBar(enabled: Boolean) = viewModelScope.launch {

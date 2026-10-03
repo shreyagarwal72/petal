@@ -74,6 +74,7 @@ interface SettingsRepository {
 
     // Experimental & Miscellaneous
     val appLanguage: Flow<String>
+    val matchWebsiteLanguage: Flow<Boolean>
     val addressBarPosition: Flow<String>
     val appLockEnabled: Flow<Boolean>
     val appLockPasscode: Flow<String>
@@ -156,6 +157,7 @@ interface SettingsRepository {
     suspend fun setAddressBarAction(action: String)
 
     suspend fun setAppLanguage(language: String)
+    suspend fun setMatchWebsiteLanguage(enabled: Boolean)
     suspend fun setAddressBarPosition(position: String)
     suspend fun setAppLockEnabled(enabled: Boolean)
     suspend fun setAppLockPasscode(passcode: String)

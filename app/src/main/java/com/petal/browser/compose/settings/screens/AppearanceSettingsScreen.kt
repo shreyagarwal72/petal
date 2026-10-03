@@ -5,6 +5,7 @@ import com.petal.browser.ui.containment.PetalSettingsSection
 import android.app.Activity
 import android.content.Context
 import android.os.Build
+import androidx.preference.PreferenceManager
 import androidx.appcompat.app.AppCompatDelegate
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.unit.PetalLanguages
@@ -55,6 +56,7 @@ fun AppearanceSettingsScreen(
 ) {
     val appFont by viewModel.appFont.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
+    val matchWebsiteLanguage by viewModel.matchWebsiteLanguage.collectAsStateWithLifecycle()
     val fontWidth by viewModel.fontWidth.collectAsStateWithLifecycle()
     val fontWeight by viewModel.fontWeight.collectAsStateWithLifecycle()
     val fontRoundness by viewModel.fontRoundness.collectAsStateWithLifecycle()
@@ -75,6 +77,7 @@ fun AppearanceSettingsScreen(
     AppearanceSettingsScreenContent(
         appFont = appFont,
         appLanguage = appLanguage,
+        matchWebsiteLanguage = matchWebsiteLanguage,
         fontWidth = fontWidth,
         fontWeight = fontWeight,
         fontRoundness = fontRoundness,
@@ -93,6 +96,7 @@ fun AppearanceSettingsScreen(
         launchRippleEnabled = launchRippleEnabled,
         onAppFontChange = viewModel::setAppFont,
         onAppLanguageChange = viewModel::setAppLanguage,
+        onMatchWebsiteLanguageChange = viewModel::setMatchWebsiteLanguage,
         onFontWidthChange = viewModel::setFontWidth,
         onFontWeightChange = viewModel::setFontWeight,
         onFontRoundnessChange = viewModel::setFontRoundness,
@@ -135,8 +139,10 @@ fun AppearanceSettingsScreenContent(
     customFontName: String,
     launchRippleEnabled: Boolean = true,
     appLanguage: String = "system",
+    matchWebsiteLanguage: Boolean = true,
     onAppFontChange: (AppFont) -> Unit,
     onAppLanguageChange: (String) -> Unit = {},
+    onMatchWebsiteLanguageChange: (Boolean) -> Unit = {},
     onFontWidthChange: (Float) -> Unit,
     onFontWeightChange: (Float) -> Unit,
     onFontRoundnessChange: (Float) -> Unit,
@@ -214,63 +220,137 @@ fun AppearanceSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    // Quick switcher for common languages
-                    val quickLanguages = remember {
-                        listOf(
-                            PetalLanguages.findLanguage("system"),
-                            PetalLanguages.findLanguage("en"),
-                            PetalLanguages.findLanguage("hi-Latn"),
-                            PetalLanguages.findLanguage("hi"),
-                            PetalLanguages.findLanguage("es")
-                        )
-                    }
+                    // Hero Card: Current Language Status
+                    com.petal.browser.ui.containment.PetalStatusHeroCard(
+                        title = currentLanguage.nativeName,
+                        subtitle = if (currentLanguage.tag == "system") stringResource(R.string.ui_follow_device_language) else currentLanguage.englishName,
+                        statusText = if (currentLanguage.tag == "system") "System" else currentLanguage.tag.uppercase(),
+                        icon = Icons.Rounded.Translate,
+                        statusActive = true,
+                        actionLabel = stringResource(R.string.ui_all_languages),
+                        onActionClick = {
+                            languageSearchQuery = ""
+                            showLanguageSheet = true
+                        }
+                    )
 
-                    val quickLangScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = quickLangScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    // Containment Group: Quick Languages & Website Language Setting
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(quickLangScrollState),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        // Top item: Quick languages horizontal row
+                        Card(
+                            shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.TOP),
+                            colors = CardDefaults.cardColors(containerColor = com.petal.browser.ui.containment.petalGroupSurfaceColor()),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            quickLanguages.forEach { lang ->
-                                val isSelected = appLanguage == lang.tag
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = {
-                                        if (appLanguage != lang.tag) {
-                                            onAppLanguageChange(lang.tag)
-                                            HelperUnit.setAppLanguage(context, lang.tag)
-                                        }
-                                    },
-                                    label = { Text(lang.nativeName) },
-                                    leadingIcon = if (isSelected) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
-                            }
-
-                            // "All Languages" button to open modal sheet
-                            FilledTonalButton(
-                                onClick = {
-                                    languageSearchQuery = ""
-                                    showLanguageSheet = true
-                                },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(Icons.Rounded.Translate, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    if (quickLanguages.none { it.tag == appLanguage }) currentLanguage.displayLabel else "All (${PetalLanguages.ALL_LANGUAGES.size})",
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Language,
+                                        container = MaterialTheme.colorScheme.secondaryContainer,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        size = 38.dp,
+                                        iconSize = 20.dp
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            stringResource(R.string.ui_quick_languages),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            stringResource(R.string.ui_switch_common_languages_instantly),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                val quickLanguages = remember {
+                                    listOf(
+                                        PetalLanguages.findLanguage("system"),
+                                        PetalLanguages.findLanguage("en"),
+                                        PetalLanguages.findLanguage("hi-Latn"),
+                                        PetalLanguages.findLanguage("hi"),
+                                        PetalLanguages.findLanguage("es")
+                                    )
+                                }
+
+                                val quickLangScrollState = rememberScrollState()
+                                ScrollFadeRow(
+                                    scrollState = quickLangScrollState,
+                                    edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(quickLangScrollState),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        quickLanguages.forEach { lang ->
+                                            val isSelected = appLanguage == lang.tag
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = {
+                                                    if (appLanguage != lang.tag) {
+                                                        onAppLanguageChange(lang.tag)
+                                                        HelperUnit.setAppLanguage(context, lang.tag)
+                                                    }
+                                                },
+                                                label = { Text(lang.nativeName) },
+                                                leadingIcon = if (isSelected) {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
+
+                        // Middle item: Action row to open All Languages modal sheet
+                        com.petal.browser.ui.containment.PetalGroupRow(
+                            icon = Icons.Rounded.TravelExplore,
+                            title = stringResource(R.string.ui_all_languages),
+                            subtitle = "${PetalLanguages.ALL_LANGUAGES.size} languages supported",
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
+                            iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            onClick = {
+                                languageSearchQuery = ""
+                                showLanguageSheet = true
+                            }
+                        )
+
+                        // Bottom item: Match Website Language toggle
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            title = stringResource(R.string.ui_website_language_title),
+                            subtitle = stringResource(R.string.ui_website_language_subtitle),
+                            icon = Icons.Rounded.Http,
+                            checked = matchWebsiteLanguage,
+                            onCheckedChange = { checked ->
+                                onMatchWebsiteLanguageChange(checked)
+                                PreferenceManager.getDefaultSharedPreferences(context)
+                                    .edit()
+                                    .putBoolean("sp_match_website_language", checked)
+                                    .apply()
+                            },
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM
+                        )
                     }
                 }
 
