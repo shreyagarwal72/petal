@@ -432,22 +432,23 @@ fun PetalAnimatedProfileContainer(
         contentAlignment = Alignment.Center
     ) {
         // Outer rotating orbital aura ring
+        val cookie12Shape = remember { com.petal.browser.ui.theme.PetalMaterialShapes.Cookie12Sided.toShape() }
         Box(
             modifier = Modifier
-                .size(size + 10.dp)
+                .size(size + 14.dp)
                 .graphicsLayer {
                     rotationZ = orbitRotation
                     scaleX = pulseScale
                     scaleY = pulseScale
                 }
-                .clip(RoundedCornerShape(32.dp))
+                .clip(cookie12Shape)
                 .background(
                     Brush.sweepGradient(
                         colors = listOf(
-                            primaryColor.copy(alpha = 0.6f),
-                            tertiaryColor.copy(alpha = 0.4f),
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
-                            primaryColor.copy(alpha = 0.6f)
+                            primaryColor.copy(alpha = 0.65f),
+                            tertiaryColor.copy(alpha = 0.45f),
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.55f),
+                            primaryColor.copy(alpha = 0.65f)
                         )
                     )
                 )
@@ -460,11 +461,11 @@ fun PetalAnimatedProfileContainer(
                 .graphicsLayer {
                     rotationZ = flipRotation
                 }
-                .clip(RoundedCornerShape(26.dp))
+                .clip(cookie12Shape)
                 .background(containerColor)
                 .border(
                     BorderStroke(2.5.dp, MaterialTheme.colorScheme.surface),
-                    RoundedCornerShape(26.dp)
+                    cookie12Shape
                 )
                 .combinedClickable(
                     onClick = {
@@ -613,20 +614,12 @@ fun DeveloperMissionCard() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.RocketLaunch,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
+                PetalGroupIconBadge(
+                    icon = Icons.Rounded.RocketLaunch,
+                    variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
+                    size = 40.dp,
+                    iconSize = 22.dp
+                )
 
                 Text(
                     text = stringResource(R.string.ui_the_petal_mission),
@@ -651,26 +644,50 @@ fun DeveloperMetricsGrid() {
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        MetricBadgeCard(
-            icon = Icons.Rounded.FolderCopy,
-            value = "15+ Repositories",
-            label = stringResource(R.string.ui_active_open_source_repositories_librar)
+        val metrics = remember {
+            listOf(
+                Triple(Icons.Rounded.FolderCopy, "15+ Repositories", R.string.ui_active_open_source_repositories_librar),
+                Triple(Icons.Rounded.Gavel, "GPL-3.0 License", R.string.ui_free_open_source_redistribute_and),
+                Triple(Icons.Rounded.Security, "Zero Telemetry", R.string.ui_100_private_no_trackers_telemetry),
+                Triple(Icons.Rounded.DesignServices, "100% Material 3", R.string.ui_material_3_expressive_design_system)
+            )
+        }
+        val variants = listOf(
+            com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
+            com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY,
+            com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY,
+            com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
         )
-        MetricBadgeCard(
-            icon = Icons.Rounded.Gavel,
-            value = "GPL-3.0 License",
-            label = stringResource(R.string.ui_free_open_source_redistribute_and)
-        )
-        MetricBadgeCard(
-            icon = Icons.Rounded.Security,
-            value = "Zero Telemetry",
-            label = stringResource(R.string.ui_100_private_no_trackers_telemetry)
-        )
-        MetricBadgeCard(
-            icon = Icons.Rounded.DesignServices,
-            value = "100% Material 3",
-            label = stringResource(R.string.ui_material_3_expressive_design_system)
-        )
+        PetalGroup(rowCount = metrics.size, modifier = Modifier.fillMaxWidth()) { index, position ->
+            val (icon, value, labelRes) = metrics[index]
+            val variant = variants[index % variants.size]
+            com.petal.browser.ui.containment.PetalGroupListRow(
+                position = position,
+                onClick = {},
+                leading = {
+                    PetalGroupIconBadge(
+                        icon = icon,
+                        variant = variant
+                    )
+                },
+                content = {
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = stringResource(labelRes),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            )
+        }
     }
 }
 
@@ -745,20 +762,12 @@ fun DeveloperTechStackCard() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.Layers,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
+                PetalGroupIconBadge(
+                    icon = Icons.Rounded.Layers,
+                    variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
+                    size = 40.dp,
+                    iconSize = 22.dp
+                )
 
                 Text(
                     text = stringResource(R.string.ui_core_tech_stack),
@@ -956,20 +965,12 @@ fun DeveloperEcosystemCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Rounded.Apps,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+                    PetalGroupIconBadge(
+                        icon = Icons.Rounded.Apps,
+                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY,
+                        size = 40.dp,
+                        iconSize = 22.dp
+                    )
                     Column {
                         Text(
                             text = stringResource(R.string.ui_developer_ecosystem),
@@ -998,7 +999,7 @@ fun DeveloperEcosystemCard(
                 exit = shrinkVertically() + fadeOut()
             ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     EcosystemItemRow(
@@ -1006,6 +1007,7 @@ fun DeveloperEcosystemCard(
                         description = "Ultra-fast private web browser with GeckoView Quantum & Material 3 Expressive UI",
                         badge = "Flagship",
                         icon = Icons.Rounded.Public,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         onClick = { onOpenUrl("https://github.com/shreyagarwal72/petal") }
                     )
                     EcosystemItemRow(
@@ -1013,6 +1015,7 @@ fun DeveloperEcosystemCard(
                         description = "Official Telegram community for announcements, builds, feedback & testing",
                         badge = "Community",
                         icon = Icons.Rounded.Send,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         onClick = { onOpenUrl("https://t.me/championworkspace") }
                     )
                     EcosystemItemRow(
@@ -1020,6 +1023,7 @@ fun DeveloperEcosystemCard(
                         description = "Explore all repositories, libraries, scripts, and open source projects",
                         badge = "15+ Repos",
                         icon = Icons.Rounded.Code,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onClick = { onOpenUrl("https://github.com/shreyagarwal72") }
                     )
                 }
@@ -1034,54 +1038,44 @@ private fun EcosystemItemRow(
     description: String,
     badge: String,
     icon: ImageVector,
+    position: com.petal.browser.ui.containment.PetalGroupPosition,
     onClick: () -> Unit
 ) {
-    Surface(
+    com.petal.browser.ui.containment.PetalGroupListRow(
+        position = position,
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(38.dp)
+        leading = {
+            PetalGroupIconBadge(
+                icon = icon,
+                variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
+                size = 40.dp,
+                iconSize = 20.dp
+            )
+        },
+        content = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
-                }
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Text(name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
-                    Text(name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.secondaryContainer
-                    ) {
-                        Text(
-                            text = badge,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp),
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
+                    Text(
+                        text = badge,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
                 }
-                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-
+            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        },
+        trailing = {
             Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         }
-    }
+    )
 }
 
 /**
@@ -1111,20 +1105,12 @@ fun PetalRepoDetailsCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Rounded.Source,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+                    PetalGroupIconBadge(
+                        icon = Icons.Rounded.Source,
+                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
+                        size = 40.dp,
+                        iconSize = 22.dp
+                    )
                     Column {
                         Text(
                             text = stringResource(R.string.ui_repository_overview),

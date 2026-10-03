@@ -52,25 +52,6 @@ fun AboutSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Section 0: App Status Hero Card
-                val appVersion = remember(context) {
-                    try {
-                        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
-                    } catch (_: Exception) { "1.0.0" }
-                }
-
-                com.petal.browser.ui.containment.PetalStatusHeroCard(
-                    title = "Petal Browser",
-                    subtitle = "${stringResource(R.string.ui_app_version)} v$appVersion",
-                    statusText = stringResource(R.string.ui_official_build),
-                    icon = Icons.Rounded.Info,
-                    statusActive = true,
-                    actionLabel = stringResource(R.string.ui_view_on_github),
-                    onActionClick = {
-                        BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal"))
-                    }
-                )
-
                 // Section 1: Developer Spotlight Hero Card with Animated Avatar Container
                 DeveloperHeroCard(
                     onCopyGithub = {

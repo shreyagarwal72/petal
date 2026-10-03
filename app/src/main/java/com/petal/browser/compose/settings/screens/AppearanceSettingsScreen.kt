@@ -220,20 +220,6 @@ fun AppearanceSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    // Hero Card: Current Language Status
-                    com.petal.browser.ui.containment.PetalStatusHeroCard(
-                        title = currentLanguage.nativeName,
-                        subtitle = if (currentLanguage.tag == "system") stringResource(R.string.ui_follow_device_language) else currentLanguage.englishName,
-                        statusText = if (currentLanguage.tag == "system") "System" else currentLanguage.tag.uppercase(),
-                        icon = Icons.Rounded.Translate,
-                        statusActive = true,
-                        actionLabel = stringResource(R.string.ui_all_languages),
-                        onActionClick = {
-                            languageSearchQuery = ""
-                            showLanguageSheet = true
-                        }
-                    )
-
                     // Containment Group: Quick Languages & Website Language Setting
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -834,15 +820,15 @@ fun AppearanceSettingsScreenContent(
                     androidx.compose.foundation.lazy.LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 420.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .heightIn(max = 440.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         items(filteredLanguages.size) { idx ->
                             val lang = filteredLanguages[idx]
                             val isSelected = appLanguage == lang.tag
-                            com.petal.browser.ui.containment.PetalSelectableOptionCard(
-                                title = lang.displayLabel,
-                                subtitle = if (lang.tag != "system") "BCP-47: ${lang.tag}" else null,
+                            val position = com.petal.browser.ui.containment.petalGroupPositionFor(idx, filteredLanguages.size)
+                            com.petal.browser.ui.containment.PetalGroupListRow(
+                                position = position,
                                 selected = isSelected,
                                 onClick = {
                                     if (appLanguage != lang.tag) {
@@ -850,6 +836,42 @@ fun AppearanceSettingsScreenContent(
                                         HelperUnit.setAppLanguage(context, lang.tag)
                                     }
                                     showLanguageSheet = false
+                                },
+                                leading = {
+                                    val badgeContainer = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest
+                                    val badgeTint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Translate,
+                                        container = badgeContainer,
+                                        tint = badgeTint
+                                    )
+                                },
+                                content = {
+                                    Text(
+                                        text = lang.displayLabel,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = if (lang.tag != "system") "BCP-47: ${lang.tag} • ${lang.nativeName}" else stringResource(R.string.ui_follow_device_language),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                },
+                                trailing = {
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.CheckCircle,
+                                            contentDescription = "Selected",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
                                 }
                             )
                         }
