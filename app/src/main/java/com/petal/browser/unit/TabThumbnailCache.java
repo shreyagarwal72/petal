@@ -125,8 +125,17 @@ public final class TabThumbnailCache {
      * a good thumbnail with an empty card. Returns true only when the snapshot was stored.
      */
     public static synchronized boolean put(@Nullable String tabId, @Nullable Bitmap bitmap, boolean isPrivate) {
+        return put(tabId, bitmap, isPrivate, false);
+    }
+
+    /**
+     * @param allowUniform when true (the page has reported a first contentful paint) a solid
+     *                     colour frame such as a dark or white page is a real thumbnail; only a
+     *                     fully transparent frame is rejected.
+     */
+    public static synchronized boolean put(@Nullable String tabId, @Nullable Bitmap bitmap, boolean isPrivate, boolean allowUniform) {
         if (isBlank(tabId) || bitmap == null || bitmap.isRecycled()) return false;
-        if (isBlankBitmap(bitmap)) return false;
+        if (allowUniform ? isTransparentBitmap(bitmap) : isBlankBitmap(bitmap)) return false;
         Bitmap snapshot = makeSnapshot(bitmap);
         if (snapshot == null || snapshot.isRecycled()) return false;
         LruCache<String, Bitmap> cache = isPrivate ? privateMemoryCache : regularMemoryCache;
@@ -138,6 +147,24 @@ public final class TabThumbnailCache {
         regularVersions.put(tabId, token);
         DISK.execute(() -> saveToDisk(tabId, snapshot, token, generation));
         return true;
+    }
+
+    private static boolean isTransparentBitmap(Bitmap bitmap) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        if (width <= 0 || height <= 0) return true;
+        try {
+            for (int yi = 0; yi < 24; yi++) {
+                int y = Math.min(height - 1, (int) ((yi + 0.5f) * height / 24));
+                for (int xi = 0; xi < 24; xi++) {
+                    int x = Math.min(width - 1, (int) ((xi + 0.5f) * width / 24));
+                    if ((bitmap.getPixel(x, y) >>> 24) != 0) return false;
+                }
+            }
+            return true;
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     public static void put(@Nullable String tabId, @Nullable Bitmap bitmap) {

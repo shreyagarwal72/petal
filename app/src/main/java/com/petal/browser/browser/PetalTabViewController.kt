@@ -607,7 +607,7 @@ class PetalTabViewController private constructor(
                     } catch (_: Throwable) {
                         bitmap
                     }
-                    stored = TabThumbnailCache.put(key, scaled, privateTab)
+                    stored = TabThumbnailCache.put(key, scaled, privateTab, hasContentfulPaint())
                     if (stored) { capturedPreviewRevision = revision; storedBitmap = scaled } else schedulePreviewRetry()
                 }
                 callback(if (current && stored) storedBitmap else null)

@@ -2030,7 +2030,7 @@ class PetalGeckoView @JvmOverloads constructor(
             val current = key == getThumbnailKey()
             var stored = false
             if (bmp != null && current) {
-                stored = TabThumbnailCache.put(key, bmp, privateTab)
+                stored = TabThumbnailCache.put(key, bmp, privateTab, hasContentfulPaint)
                 if (stored) capturedPreviewRevision = revision else schedulePreviewRetry()
             }
             callback.accept(if (current && stored) bmp else null)
