@@ -119,8 +119,8 @@ public class PullToRefreshFrameLayout extends FrameLayout {
      * We only fall back to child.canScrollVertically(-1) if canPull allows it.
      */
     private boolean canChildScrollUp() {
-        if (canPull != null && !canPull.canPull()) {
-            return true;
+        if (canPull != null) {
+            return !canPull.canPull();
         }
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
@@ -309,8 +309,12 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     break;
                 }
 
-                // Page position validation (Firefox model): Full touch area across viewport is valid when scrolled to top
-                if (startedAtTop && !canChildScrollUp() && (canPull == null || canPull.canPull())) {
+                // Page position validation: Full touch area across viewport is valid when scrolled to top.
+                // Also re-verify if not startedAtTop in case compositor settled at top just after initial DOWN.
+                boolean atTopNow = startedAtTop || (!canChildScrollUp() && (canPull == null || canPull.canPull()));
+                if (atTopNow) {
+                    startedAtTop = true;
+                    disallowIntercept = false;
                     initialMotionY = initialDownY + touchSlop;
                     isIntercepting = true;
                     isDragging = true;
@@ -380,11 +384,14 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 }
                 float curY = event.getY(pointerIndex);
 
-                if (!isDragging && !disallowIntercept) {
+                if (!isDragging) {
                     float curX = event.getX(pointerIndex);
                     float dx = curX - initialDownX;
                     float dy = curY - initialDownY;
-                    if (startedAtTop && dy > touchSlop && dy > Math.abs(dx) * VERTICAL_DOMINANCE && !canChildScrollUp() && (canPull == null || canPull.canPull())) {
+                    boolean atTopNow = startedAtTop || (!canChildScrollUp() && (canPull == null || canPull.canPull()));
+                    if (atTopNow && dy > touchSlop && dy > Math.abs(dx) * VERTICAL_DOMINANCE) {
+                        startedAtTop = true;
+                        disallowIntercept = false;
                         initialMotionY = initialDownY + touchSlop;
                         isDragging = true;
                         isIntercepting = true;

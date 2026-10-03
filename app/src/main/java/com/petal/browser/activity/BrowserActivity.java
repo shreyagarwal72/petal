@@ -4500,7 +4500,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             AlbumController controller = currentAlbumController;
             String currentUrl = controller != null ? controller.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : null);
-            if (currentUrl == null || (!currentUrl.startsWith("http://") && !currentUrl.startsWith("https://"))) {
+            if (currentUrl == null) {
+                return false;
+            }
+            String trimmedUrl = currentUrl.trim().toLowerCase(java.util.Locale.ROOT);
+            if (!trimmedUrl.startsWith("http://") && !trimmedUrl.startsWith("https://")) {
                 return false;
             }
 

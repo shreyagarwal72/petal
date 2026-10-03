@@ -2564,6 +2564,13 @@ class SafeGeckoView : GeckoView {
 
             MotionEvent.ACTION_MOVE -> {
                 val hasDragGestureStarted = eventY != initialDownY
+                if (!gestureCanReachParent && eventY > initialDownY) {
+                    val isAtTop = (parent as? PetalGeckoView)?.isPageAtTop() ?: false
+                    if (isAtTop) {
+                        gestureCanReachParent = true
+                        parent?.requestDisallowInterceptTouchEvent(false)
+                    }
+                }
                 if (gestureCanReachParent && hasDragGestureStarted) {
                     updateInputResult(event)
                 }
