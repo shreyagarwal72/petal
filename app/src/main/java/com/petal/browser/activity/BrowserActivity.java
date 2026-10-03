@@ -2651,16 +2651,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 );
                 bottomNavCompose.bringToFront();
             }
-
-            androidx.compose.ui.platform.ComposeView mediaCompose = findViewById(R.id.floating_media_compose);
-            if (mediaCompose != null) {
-                com.petal.browser.ui.components.PetalFloatingMediaBridge.bindMediaIsland(
-                    mediaCompose,
-                    this,
-                    () -> getActiveMediaBridge()
-                );
-                mediaCompose.bringToFront();
-            }
         } catch (Exception ignored) {}
         applyAddressBarPosition();
     }
@@ -2678,13 +2668,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
         boolean pwa = getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false);
-
-        // Petal Floating Media Island surface gating:
-        // Only allow floating island on Home surface or Website content, and never during overlays, PiP, or PWA.
-        boolean isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
-        boolean isWebsiteContent = !isPetalHomeSurfaceShowing && !isOverlayScreenShowing;
-        boolean allowedSurface = (isHome || isWebsiteContent) && !isOverlayScreenShowing && !inPip && !pwa;
-        com.petal.browser.ui.components.PetalFloatingMediaBridge.setSurfaceAllowed(allowedSurface);
 
         if (container == null) return;
 

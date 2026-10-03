@@ -171,7 +171,6 @@ class PetalTabViewController private constructor(
             tab?.let { PetalEngineStore.updateMediaController(appContext, it.id, null) }
             (context as? com.petal.browser.activity.BrowserActivity)?.runOnUiThread {
                 mediaBridge?.listener?.onMediaPlayingStateChanged(false)
-                com.petal.browser.ui.components.PetalFloatingMediaBridge.hide()
             }
         }
 
@@ -193,21 +192,8 @@ class PetalTabViewController private constructor(
             tab?.let { PetalEngineStore.updateMediaPlaybackState(appContext, it.id, playbackState) }
             if (playing) {
                 mediaBridge?.listener?.onMediaPlay(mediaTitle, positionMs, durationMs)
-                com.petal.browser.ui.components.PetalFloatingMediaBridge.updateState(
-                    isPlaying = true,
-                    title = mediaTitle,
-                    positionMs = positionMs,
-                    durationMs = durationMs,
-                    isMuted = mediaBridge?.isMuted ?: false,
-                    sourceUrl = pageUrl,
-                    mimeType = null
-                )
             } else {
                 mediaBridge?.listener?.onMediaPause(positionMs, durationMs)
-                com.petal.browser.ui.components.PetalFloatingMediaBridge.setPlaying(false)
-                if (playbackState == mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState.STOPPED) {
-                    com.petal.browser.ui.components.PetalFloatingMediaBridge.hide()
-                }
             }
             mediaBridge?.listener?.onMediaPlayingStateChanged(playing)
         }
@@ -221,7 +207,6 @@ class PetalTabViewController private constructor(
             val positionMs = (positionState.position * 1000).toLong()
             val durationMs = (positionState.duration * 1000).toLong()
             mediaBridge?.listener?.onMediaProgress(positionMs, durationMs)
-            com.petal.browser.ui.components.PetalFloatingMediaBridge.updateProgress(positionMs, durationMs)
         }
 
         override fun onMediaFullscreenChanged(
