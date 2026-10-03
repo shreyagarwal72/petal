@@ -4019,7 +4019,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         isAiResearchExtracting = true;
         PetalToast.show(BrowserActivity.this, "Analyzing page\u2026");
 
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+        if (currentAlbumController != null) {
             isAiResearchExtracting = false;
             com.petal.browser.ui.components.PetalAiResearchBridge.showAiFeature(
                 BrowserActivity.this,

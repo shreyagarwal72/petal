@@ -656,6 +656,30 @@ fun PetalAddressBar(
                     }
                 }
 
+                // Action 6: Petal AI Research & Page Assist
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showQuickActionsMenu = false
+                            onAiResearchClick()
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Petal AI Assist", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text("Summarize page, deep analysis, or ask questions with AI", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
