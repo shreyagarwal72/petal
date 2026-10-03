@@ -198,7 +198,9 @@ class PetalTabViewController private constructor(
                     title = mediaTitle,
                     positionMs = positionMs,
                     durationMs = durationMs,
-                    isMuted = mediaBridge?.isMuted ?: false
+                    isMuted = mediaBridge?.isMuted ?: false,
+                    sourceUrl = tab?.url ?: currentUrl,
+                    mimeType = null
                 )
             } else {
                 mediaBridge?.listener?.onMediaPause(positionMs, durationMs)

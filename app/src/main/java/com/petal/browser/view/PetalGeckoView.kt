@@ -1152,7 +1152,9 @@ class PetalGeckoView @JvmOverloads constructor(
                         title = currentTitle,
                         positionMs = 0L,
                         durationMs = 0L,
-                        isMuted = mediaBridge?.isMuted ?: false
+                        isMuted = mediaBridge?.isMuted ?: false,
+                        sourceUrl = currentUrl,
+                        mimeType = null
                     )
                 }
             }

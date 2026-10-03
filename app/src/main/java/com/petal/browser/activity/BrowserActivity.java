@@ -2675,10 +2675,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private void applyBottomBarVisibilityForSurface() {
         View container = findViewById(R.id.bottom_nav_container);
         View compose = findViewById(R.id.bottom_nav_compose);
-        if (container == null) return;
 
         boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
         boolean pwa = getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false);
+
+        // Petal Floating Media Island surface gating:
+        // Only allow floating island on Home surface or Website content, and never during overlays, PiP, or PWA.
+        boolean isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
+        boolean isWebsiteContent = !isPetalHomeSurfaceShowing && !isOverlayScreenShowing;
+        boolean allowedSurface = (isHome || isWebsiteContent) && !isOverlayScreenShowing && !inPip && !pwa;
+        com.petal.browser.ui.components.PetalFloatingMediaBridge.setSurfaceAllowed(allowedSurface);
+
+        if (container == null) return;
+
         if (inPip || pwa || isOverlayScreenShowing) {
             container.setVisibility(GONE);
             if (compose != null) compose.setVisibility(GONE);

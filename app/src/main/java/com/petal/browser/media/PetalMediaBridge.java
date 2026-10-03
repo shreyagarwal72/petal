@@ -231,15 +231,16 @@ public class PetalMediaBridge {
     }
 
     public void changeSpeed(float speed) {
+        String js = "(function() {" +
+                "   var vids = document.querySelectorAll('video, audio');" +
+                "   for (var i = 0; i < vids.length; i++) {" +
+                "       try { vids[i].playbackRate = " + speed + "; } catch(e) {}" +
+                "   }" +
+                "})();";
         if (webView != null) {
-            webView.evaluateJavascript(
-                    "(function() {" +
-                    "   var vids = document.querySelectorAll('video, audio');" +
-                    "   for (var i = 0; i < vids.length; i++) {" +
-                    "       try { vids[i].playbackRate = " + speed + "; } catch(e) {}" +
-                    "   }" +
-                    "})();", null
-            );
+            webView.evaluateJavascript(js, null);
+        } else if (geckoView != null) {
+            geckoView.evaluateJavascript(js, null);
         }
     }
 
@@ -347,23 +348,24 @@ public class PetalMediaBridge {
                 return;
             } catch (Exception ignored) {}
         }
+        String skipJs = "(function() {" +
+                "   var vids = document.querySelectorAll('video');" +
+                "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
+                "   var target = null;" +
+                "   for (var i = 0; i < vids.length; i++) {" +
+                "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
+                "   }" +
+                "   if (!target && vids.length > 0) target = vids[0];" +
+                "   if (target) {" +
+                "       try {" +
+                "           target.currentTime = Math.max(0, Math.min(target.duration || 1e9, target.currentTime + (" + deltaSeconds + ")));" +
+                "       } catch(e) {}" +
+                "   }" +
+                "})();";
         if (webView != null) {
-            webView.evaluateJavascript(
-                    "(function() {" +
-                    "   var vids = document.querySelectorAll('video');" +
-                    "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
-                    "   var target = null;" +
-                    "   for (var i = 0; i < vids.length; i++) {" +
-                    "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
-                    "   }" +
-                    "   if (!target && vids.length > 0) target = vids[0];" +
-                    "   if (target) {" +
-                    "       try {" +
-                    "           target.currentTime = Math.max(0, Math.min(target.duration || 1e9, target.currentTime + (" + deltaSeconds + ")));" +
-                    "       } catch(e) {}" +
-                    "   }" +
-                    "})();", null
-            );
+            webView.evaluateJavascript(skipJs, null);
+        } else if (geckoView != null) {
+            geckoView.evaluateJavascript(skipJs, null);
         }
     }
 
@@ -384,24 +386,25 @@ public class PetalMediaBridge {
                 return;
             } catch (Exception ignored) {}
         }
+        double seconds = positionMs / 1000.0;
+        String seekJs = "(function() {" +
+                "   var vids = document.querySelectorAll('video');" +
+                "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
+                "   var target = null;" +
+                "   for (var i = 0; i < vids.length; i++) {" +
+                "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
+                "   }" +
+                "   if (!target && vids.length > 0) target = vids[0];" +
+                "   if (target) {" +
+                "       try {" +
+                "           target.currentTime = " + seconds + ";" +
+                "       } catch(e) {}" +
+                "   }" +
+                "})();";
         if (webView != null) {
-            double seconds = positionMs / 1000.0;
-            webView.evaluateJavascript(
-                    "(function() {" +
-                    "   var vids = document.querySelectorAll('video');" +
-                    "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
-                    "   var target = null;" +
-                    "   for (var i = 0; i < vids.length; i++) {" +
-                    "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
-                    "   }" +
-                    "   if (!target && vids.length > 0) target = vids[0];" +
-                    "   if (target) {" +
-                    "       try {" +
-                    "           target.currentTime = " + seconds + ";" +
-                    "       } catch(e) {}" +
-                    "   }" +
-                    "})();", null
-            );
+            webView.evaluateJavascript(seekJs, null);
+        } else if (geckoView != null) {
+            geckoView.evaluateJavascript(seekJs, null);
         }
     }
 
