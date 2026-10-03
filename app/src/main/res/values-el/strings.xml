@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Εξερευνήστε περισσότερες εφαρμογές και εργαλεία ανοιχτού κώδικα</string>
     <string name="ui_repository_overview">Επισκόπηση αποθετηρίου</string>
     <string name="ui_repository_subtitle">Εξερευνήστε πηγή, δεσμεύστε δραστηριότητα και ζητήματα</string>
-    <string name="ui_view_on_github">Προβολή στο GitHub</string>
     <string name="ui_copied_to_clipboard">Αντιγράφηκε %s στο πρόχειρο</string>
 </resources>

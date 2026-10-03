@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Khám phá thêm các ứng dụng và công cụ nguồn mở</string>
     <string name="ui_repository_overview">Tổng quan về kho lưu trữ</string>
     <string name="ui_repository_subtitle">Khám phá nguồn, cam kết hoạt động và vấn đề</string>
-    <string name="ui_view_on_github">Xem trên GitHub</string>
     <string name="ui_copied_to_clipboard">Đã sao chép %s vào bảng nhớ tạm</string>
 </resources>

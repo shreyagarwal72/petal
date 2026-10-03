@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Истражите више апликација и алата отвореног кода</string>
     <string name="ui_repository_overview">Преглед спремишта</string>
     <string name="ui_repository_subtitle">Истражите извор, извршите активности и проблеме</string>
-    <string name="ui_view_on_github">Погледајте на ГитХуб-у</string>
     <string name="ui_copied_to_clipboard">Копирано __Т0__ у међуспремник</string>
 </resources>

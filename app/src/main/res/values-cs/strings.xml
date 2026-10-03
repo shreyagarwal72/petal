@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Prozkoumejte více aplikací a nástrojů s otevřeným zdrojovým kódem</string>
     <string name="ui_repository_overview">Přehled úložiště</string>
     <string name="ui_repository_subtitle">Prozkoumejte zdroj, potvrďte aktivitu a problémy</string>
-    <string name="ui_view_on_github">Zobrazit na GitHubu</string>
     <string name="ui_copied_to_clipboard">%s zkopírováno do schránky</string>
 </resources>

@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Ontdek meer open-sourceapplicaties en -tools</string>
     <string name="ui_repository_overview">Overzicht van opslagplaatsen</string>
     <string name="ui_repository_subtitle">Verken de bron, leg activiteiten en problemen vast</string>
-    <string name="ui_view_on_github">Bekijk op GitHub</string>
     <string name="ui_copied_to_clipboard">%s naar klembord gekopieerd</string>
 </resources>

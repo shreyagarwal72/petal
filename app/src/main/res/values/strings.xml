@@ -1550,6 +1550,5 @@
     <string name="ui_developer_ecosystem_subtitle">Explore more open-source applications and tools</string>
     <string name="ui_repository_overview">Repository Overview</string>
     <string name="ui_repository_subtitle">Explore source, commit activity &amp; issues</string>
-    <string name="ui_view_on_github">View on GitHub</string>
     <string name="ui_copied_to_clipboard">Copied %s to clipboard</string>
 </resources>

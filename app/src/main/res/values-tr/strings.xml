@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Daha fazla açık kaynaklı uygulama ve aracı keşfedin</string>
     <string name="ui_repository_overview">Depoya Genel Bakış</string>
     <string name="ui_repository_subtitle">Kaynağı, taahhüt etkinliğini ve sorunları keşfedin</string>
-    <string name="ui_view_on_github">GitHub\'da görüntüle</string>
     <string name="ui_copied_to_clipboard">%s panoya kopyalandı</string>
 </resources>

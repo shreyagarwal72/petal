@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">برنامه ها و ابزارهای منبع باز بیشتری را کاوش کنید</string>
     <string name="ui_repository_overview">بررسی اجمالی مخزن</string>
     <string name="ui_repository_subtitle">منبع را کاوش کنید، فعالیت و مسائل را متعهد کنید</string>
-    <string name="ui_view_on_github">در GitHub مشاهده کنید</string>
     <string name="ui_copied_to_clipboard">%s در کلیپ بورد کپی شد</string>
 </resources>

@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">अधिक ओपन-सोर्स एप्लिकेशन और टूल खोजें</string>
     <string name="ui_repository_overview">भंडार अवलोकन</string>
     <string name="ui_repository_subtitle">स्रोत का अन्वेषण करें, गतिविधि और मुद्दे प्रतिबद्ध करें</string>
-    <string name="ui_view_on_github">GitHub पर देखें</string>
     <string name="ui_copied_to_clipboard">%s को क्लिपबोर्ड पर कॉपी किया गया</string>
 </resources>

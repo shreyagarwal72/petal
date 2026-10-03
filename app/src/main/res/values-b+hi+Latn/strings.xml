@@ -1550,6 +1550,5 @@
     <string name="ui_developer_ecosystem_subtitle">Aur open-source apps aur tools dekhein</string>
     <string name="ui_repository_overview">Repository Overview</string>
     <string name="ui_repository_subtitle">Source, commit activity aur issues dekhein</string>
-    <string name="ui_view_on_github">GitHub par dekhein</string>
     <string name="ui_copied_to_clipboard">%s clipboard me copy ho gaya</string>
 </resources>

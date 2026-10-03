@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Avastage rohkem avatud lähtekoodiga rakendusi ja tööriistu</string>
     <string name="ui_repository_overview">Hoidla ülevaade</string>
     <string name="ui_repository_subtitle">Uurige allikat, tehke tegevusi ja probleeme</string>
-    <string name="ui_view_on_github">Vaadake GitHubis</string>
     <string name="ui_copied_to_clipboard">%s kopeeriti lõikelauale</string>
 </resources>

@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Ознайомтеся з іншими програмами та інструментами з відкритим кодом</string>
     <string name="ui_repository_overview">Огляд сховища</string>
     <string name="ui_repository_subtitle">Дослідіть джерело, зафіксуйте дії та проблеми</string>
-    <string name="ui_view_on_github">Переглянути на GitHub</string>
     <string name="ui_copied_to_clipboard">Скопійовано %s в буфер обміну</string>
 </resources>

@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">חקור עוד יישומים וכלים בקוד פתוח</string>
     <string name="ui_repository_overview">סקירת מאגר</string>
     <string name="ui_repository_subtitle">חקור מקור, בצע פעילות ובעיות</string>
-    <string name="ui_view_on_github">הצג ב-GitHub</string>
     <string name="ui_copied_to_clipboard">הועתק %s ללוח</string>
 </resources>

@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">اكتشف المزيد من التطبيقات والأدوات مفتوحة المصدر</string>
     <string name="ui_repository_overview">نظرة عامة على المستودع</string>
     <string name="ui_repository_subtitle">استكشاف المصدر، وارتكاب النشاط والقضايا</string>
-    <string name="ui_view_on_github">عرض على جيثب</string>
     <string name="ui_copied_to_clipboard">تم نسخ %s إلى الحافظة</string>
 </resources>

@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">探索更多开源应用程序和工具</string>
     <string name="ui_repository_overview">存储库概述</string>
     <string name="ui_repository_subtitle">探索来源、提交活动和问题</string>
-    <string name="ui_view_on_github">在 GitHub 上查看</string>
     <string name="ui_copied_to_clipboard">已将 %s 复制到剪贴板</string>
 </resources>

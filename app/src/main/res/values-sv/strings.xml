@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Utforska fler applikationer och verktyg med öppen källkod</string>
     <string name="ui_repository_overview">Förvarsöversikt</string>
     <string name="ui_repository_subtitle">Utforska källa, begå aktivitet och problem</string>
-    <string name="ui_view_on_github">Visa på GitHub</string>
     <string name="ui_copied_to_clipboard">Kopierade %s till urklipp</string>
 </resources>

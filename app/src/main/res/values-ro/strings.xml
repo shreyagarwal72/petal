@@ -1529,6 +1529,5 @@
     <string name="ui_developer_ecosystem_subtitle">Explorați mai multe aplicații și instrumente open-source</string>
     <string name="ui_repository_overview">Prezentare generală a depozitului</string>
     <string name="ui_repository_subtitle">Explorați sursa, comite activități și probleme</string>
-    <string name="ui_view_on_github">Vizualizați pe GitHub</string>
     <string name="ui_copied_to_clipboard">%s a fost copiat în clipboard</string>
 </resources>
