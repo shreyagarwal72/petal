@@ -182,6 +182,9 @@ fun PetalExtensionsScreen(
 ) {
     val context = LocalContext.current
     val extensions by PetalExtensionManager.extensions.collectAsState()
+    val firefoxExtensions = remember(extensions) {
+        extensions.filter { !PetalBuiltInExtensionManager.isBuiltIn(it.id) }
+    }
     val pendingPrompt by PetalExtensionManager.pendingPrompt.collectAsState()
     val pendingPopup by PetalExtensionManager.pendingPopup.collectAsState()
     val busy by PetalExtensionManager.busy.collectAsState()
@@ -235,7 +238,7 @@ fun PetalExtensionsScreen(
                     Column(modifier = Modifier.fillMaxSize()) {
                         ExpressiveHeader(
                             title = "Extensions",
-                            subtitle = if (selectedTabIndex == 0) "Petal built-in privacy and web utilities" else "${extensions.size} Firefox add-on${if (extensions.size == 1) "" else "s"} installed",
+                            subtitle = if (selectedTabIndex == 0) "Petal built-in privacy and web utilities" else "${firefoxExtensions.size} Firefox add-on${if (firefoxExtensions.size == 1) "" else "s"} installed",
                             onBack = onDismiss
                         )
 
@@ -270,7 +273,7 @@ fun PetalExtensionsScreen(
                         } else {
                             FirefoxAddonsList(
                                 innerPadding = innerPadding,
-                                extensions = extensions,
+                                extensions = firefoxExtensions,
                                 onToggleEnabled = { ext, enabled ->
                                     PetalExtensionManager.setEnabled(ext.raw, enabled)
                                 },

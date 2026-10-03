@@ -92,6 +92,14 @@ object PetalBuiltInExtensionManager {
     )
 
 
+    /** Check if an extension ID belongs to a Petal built-in extension */
+    @JvmStatic
+    fun isBuiltIn(extensionId: String?): Boolean {
+        if (extensionId.isNullOrBlank()) return false
+        val clean = extensionId.trim()
+        return builtIns.any { it.extensionId.equals(clean, ignoreCase = true) }
+    }
+
     /** Install and sync all built-in extensions. Called from BrowserActivity. */
     @JvmStatic
     fun installAll(context: Context) {

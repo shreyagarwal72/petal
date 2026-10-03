@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.ui.res.stringResource
@@ -575,7 +576,9 @@ fun PetalOverflowMenuSheet(
 
                 // Section 2.5: Extensions
                 val extensions by PetalExtensionManager.extensions.collectAsState()
-                val enabledExtensions = remember(extensions) { extensions.filter { it.enabled } }
+                val enabledExtensions = remember(extensions) {
+                    extensions.filter { it.enabled && !PetalBuiltInExtensionManager.isBuiltIn(it.id) }
+                }
                 // Keep the Extensions section collapsed every time the overflow menu opens.
                 // This also prevents the submenu from being left visually expanded when the
                 // overflow dialog is dismissed and opened again.
