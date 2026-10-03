@@ -11,7 +11,9 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
+import androidx.preference.PreferenceManager
 import com.petal.browser.browser.AlbumController
+import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.view.PetalGeckoView
 
 /**
@@ -29,6 +31,8 @@ class PetalVideoPlayerOverlayBridge(
 
     private val mediaBridge: PetalMediaBridge?
         get() = (controller as? PetalGeckoView)?.getMediaBridge()
+            ?: (controller as? PetalTabViewController)?.getMediaBridge()
+            ?: (activity as? com.petal.browser.activity.BrowserActivity)?.activeMediaBridge
 
     private var composeView: ComposeView? = null
     private var previousListener: PetalMediaBridge.MediaStateListener? = null
@@ -60,6 +64,14 @@ class PetalVideoPlayerOverlayBridge(
 
     fun attachOverlay(container: ViewGroup, targetView: View?): View? {
         detachOverlay()
+
+        // Respect Native Video Player setting (sp_native_video_player).
+        // If disabled, user prefers the website's own player/controls seamlessly.
+        val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+        val nativePlayerEnabled = sp.getBoolean("sp_native_video_player", false)
+        if (!nativePlayerEnabled) {
+            return null
+        }
 
         // If the video is on YouTube or is an embedded YouTube video, bypass overlay
         if (isYouTubeVideo(controller, targetView)) {
@@ -118,7 +130,45 @@ class PetalVideoPlayerOverlayBridge(
                     },
                     videoUrl = controller?.url,
                     onCastClick = {
-                        PetalCastManager.castMedia(activity, controller?.url, title)
+                        val act = activity as? com.petal.browser.activity.BrowserActivity
+                        val currentTab = controller ?: act?.currentAlbumController
+                        val pageUrl = currentTab?.url ?: ""
+                        // 1. Try to find sniffed media stream for current page (HLS, MP4, WebM)
+                        val sniffedMedia = com.petal.browser.media.sniffer.PetalMediaSniffer.interceptor.playableMedia.value
+                            .firstOrNull { it.type != com.petal.browser.media.sniffer.MediaInterceptor.MediaType.AUDIO }
+                            ?: com.petal.browser.media.sniffer.PetalMediaSniffer.interceptor.detectedMedia.value
+                                .lastOrNull { it.type != com.petal.browser.media.sniffer.MediaInterceptor.MediaType.AUDIO }
+
+                        val streamCandidate = sniffedMedia?.url
+
+                        // 2. Query DOM for HTML5 <video> src or currentSrc
+                        val queryScript = "(function() { var v = document.querySelector('video'); return v ? (v.currentSrc || v.src || '') : ''; })()"
+                        when (currentTab) {
+                            is PetalGeckoView -> {
+                                currentTab.evaluateJavascript(queryScript) { domSrc ->
+                                    val finalUrl = when {
+                                        !domSrc.isNullOrBlank() && !domSrc.startsWith("blob:") && !domSrc.startsWith("ERROR:") -> domSrc
+                                        !streamCandidate.isNullOrBlank() -> streamCandidate
+                                        else -> pageUrl
+                                    }
+                                    PetalCastManager.castMedia(activity, finalUrl, title)
+                                }
+                            }
+                            is PetalTabViewController -> {
+                                currentTab.evaluateJavascript(queryScript) { domSrc ->
+                                    val finalUrl = when {
+                                        !domSrc.isNullOrBlank() && !domSrc.startsWith("blob:") && !domSrc.startsWith("ERROR:") -> domSrc
+                                        !streamCandidate.isNullOrBlank() -> streamCandidate
+                                        else -> pageUrl
+                                    }
+                                    PetalCastManager.castMedia(activity, finalUrl, title)
+                                }
+                            }
+                            else -> {
+                                val finalUrl = streamCandidate ?: pageUrl
+                                PetalCastManager.castMedia(activity, finalUrl, title)
+                            }
+                        }
                     },
                 )
             }

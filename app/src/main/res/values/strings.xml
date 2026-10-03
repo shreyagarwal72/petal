@@ -1551,4 +1551,9 @@
     <string name="ui_repository_overview">Repository Overview</string>
     <string name="ui_repository_subtitle">Explore source, commit activity &amp; issues</string>
     <string name="ui_copied_to_clipboard">Copied %s to clipboard</string>
+    <string name="ui_cast_to_device">Cast to Device</string>
+    <string name="ui_searching_for_devices">Scanning local Wi-Fi for Smart TVs &amp; Cast devices…</string>
+    <string name="ui_no_cast_devices_found">No Smart TVs or Cast devices found on your Wi-Fi network</string>
+    <string name="ui_open_with_other_apps">Open with external app</string>
+    <string name="ui_casting_to_device">Casting to %s…</string>
 </resources>

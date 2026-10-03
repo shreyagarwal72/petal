@@ -1340,6 +1340,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             onHideCustomView();
             return;
         }
+        if (videoOverlayBridge != null) {
+            try {
+                videoOverlayBridge.detachOverlay();
+            } catch (Exception ignored) {}
+            videoOverlayBridge = null;
+            setCustomFullscreen(false);
+            return;
+        }
 
         // ── Tier 2: Dialogs, Search-on-site & Modal Overlays ──
         if (dialogOverview != null && dialogOverview.isShowing()) {
@@ -3349,9 +3357,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         // Attach Petal native video player overlay on top of customView (auto-skipped on YouTube & YT embeds)
         try {
+            com.petal.browser.browser.AlbumController activeController = currentAlbumController != null ? currentAlbumController : ninjaWebView;
             videoOverlayBridge = new com.petal.browser.media.PetalVideoPlayerOverlayBridge(
                     this,
-                    ninjaWebView,
+                    activeController,
                     () -> {
                         runOnUiThread(this::onHideCustomView);
                         return kotlin.Unit.INSTANCE;
@@ -5799,15 +5808,45 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     insetsController.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
                 }
             }
-            else getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN); }
-        else {
+            else getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+            // Attach Petal native video player overlay on fullscreen video if enabled in settings
+            try {
+                boolean nativePlayerEnabled = sp.getBoolean("sp_native_video_player", false);
+                boolean isYouTube = com.petal.browser.media.PetalVideoPlayerOverlayBridge.Companion.isYouTubeVideo(currentAlbumController, null);
+                if (nativePlayerEnabled && !isYouTube && videoOverlayBridge == null) {
+                    FrameLayout decorView = (FrameLayout) getWindow().getDecorView();
+                    com.petal.browser.browser.AlbumController activeController = currentAlbumController != null ? currentAlbumController : ninjaWebView;
+                    videoOverlayBridge = new com.petal.browser.media.PetalVideoPlayerOverlayBridge(
+                            this,
+                            activeController,
+                            () -> {
+                                runOnUiThread(() -> setCustomFullscreen(false));
+                                return kotlin.Unit.INSTANCE;
+                            }
+                    );
+                    videoOverlayBridge.attachOverlay(decorView, null);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to attach video overlay in setCustomFullscreen: " + e.getMessage());
+            }
+        } else {
             if (SDK_INT >= Build.VERSION_CODES.R) {
                 final WindowInsetsController insetsController = getWindow().getInsetsController();
                 if (insetsController != null) {
                     insetsController.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
                     insetsController.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE); }
             }
-            else getWindow().setFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN, WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN); }
+            else getWindow().setFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN, WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+
+            // Detach Petal native video player overlay when exiting fullscreen
+            if (videoOverlayBridge != null && customView == null && fullscreenHolder == null) {
+                try {
+                    videoOverlayBridge.detachOverlay();
+                } catch (Exception ignored) {}
+                videoOverlayBridge = null;
+            }
+        }
     }
     public void copyLink(String url) {
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
