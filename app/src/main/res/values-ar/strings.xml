@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">جميع اللغات</string>
     <string name="ui_switch_common_languages_instantly">تبديل اللغات الشائعة على الفور</string>
     <string name="ui_follow_device_language">اتبع لغة نظام الجهاز</string>
+    <string name="ui_app_version">إصدار التطبيق</string>
+    <string name="ui_official_build">الإصدار الرسمي</string>
+    <string name="ui_developer_spotlight">المطور</string>
+    <string name="ui_developer_bio">مطور Android وأنظمة رائد يقوم بصياغة متصفح وأدوات نظام حديثة مفتوحة المصدر.</string>
+    <string name="ui_developer_ecosystem">النظام البيئي والمشاريع</string>
+    <string name="ui_developer_ecosystem_subtitle">اكتشف المزيد من التطبيقات والأدوات مفتوحة المصدر</string>
+    <string name="ui_repository_overview">نظرة عامة على المستودع</string>
+    <string name="ui_repository_subtitle">استكشاف المصدر، وارتكاب النشاط والقضايا</string>
+    <string name="ui_view_on_github">عرض على جيثب</string>
+    <string name="ui_copied_to_clipboard">تم نسخ %s إلى الحافظة</string>
 </resources>

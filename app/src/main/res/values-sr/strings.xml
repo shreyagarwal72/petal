@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Сви језици</string>
     <string name="ui_switch_common_languages_instantly">Одмах промените уобичајене језике</string>
     <string name="ui_follow_device_language">Пратите системски језик уређаја</string>
+    <string name="ui_app_version">Верзија апликације</string>
+    <string name="ui_official_build">Службено издање</string>
+    <string name="ui_developer_spotlight">Девелопер</string>
+    <string name="ui_developer_bio">Водећи програмер за Андроид и системе који прави модерне претраживаче и системске алате отвореног кода.</string>
+    <string name="ui_developer_ecosystem">Екосистем и пројекти</string>
+    <string name="ui_developer_ecosystem_subtitle">Истражите више апликација и алата отвореног кода</string>
+    <string name="ui_repository_overview">Преглед спремишта</string>
+    <string name="ui_repository_subtitle">Истражите извор, извршите активности и проблеме</string>
+    <string name="ui_view_on_github">Погледајте на ГитХуб-у</string>
+    <string name="ui_copied_to_clipboard">Копирано __Т0__ у међуспремник</string>
 </resources>

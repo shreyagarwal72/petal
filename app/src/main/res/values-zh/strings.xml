@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">所有语言</string>
     <string name="ui_switch_common_languages_instantly">即时切换常用语言</string>
     <string name="ui_follow_device_language">遵循设备系统语言</string>
+    <string name="ui_app_version">应用程序版本</string>
+    <string name="ui_official_build">正式发布</string>
+    <string name="ui_developer_spotlight">开发商</string>
+    <string name="ui_developer_bio">首席 Android 和系统开发人员，打造现代开源浏览器和系统工具。</string>
+    <string name="ui_developer_ecosystem">生态系统和项目</string>
+    <string name="ui_developer_ecosystem_subtitle">探索更多开源应用程序和工具</string>
+    <string name="ui_repository_overview">存储库概述</string>
+    <string name="ui_repository_subtitle">探索来源、提交活动和问题</string>
+    <string name="ui_view_on_github">在 GitHub 上查看</string>
+    <string name="ui_copied_to_clipboard">已将 %s 复制到剪贴板</string>
 </resources>

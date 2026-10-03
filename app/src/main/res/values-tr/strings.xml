@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Tüm Diller</string>
     <string name="ui_switch_common_languages_instantly">Ortak dilleri anında değiştirin</string>
     <string name="ui_follow_device_language">Cihaz sistem dilini takip edin</string>
+    <string name="ui_app_version">Uygulama Sürümü</string>
+    <string name="ui_official_build">Resmi Yayın</string>
+    <string name="ui_developer_spotlight">Geliştirici</string>
+    <string name="ui_developer_bio">Modern açık kaynaklı tarayıcı ve sistem araçları üreten Android ve Sistem Geliştiricisine liderlik edin.</string>
+    <string name="ui_developer_ecosystem">Ekosistem ve Projeler</string>
+    <string name="ui_developer_ecosystem_subtitle">Daha fazla açık kaynaklı uygulama ve aracı keşfedin</string>
+    <string name="ui_repository_overview">Depoya Genel Bakış</string>
+    <string name="ui_repository_subtitle">Kaynağı, taahhüt etkinliğini ve sorunları keşfedin</string>
+    <string name="ui_view_on_github">GitHub\'da görüntüle</string>
+    <string name="ui_copied_to_clipboard">%s panoya kopyalandı</string>
 </resources>

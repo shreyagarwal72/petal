@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">すべての言語</string>
     <string name="ui_switch_common_languages_instantly">共通言語を即座に切り替える</string>
     <string name="ui_follow_device_language">デバイスのシステム言語に従う</string>
+    <string name="ui_app_version">アプリのバージョン</string>
+    <string name="ui_official_build">正式リリース</string>
+    <string name="ui_developer_spotlight">開発者</string>
+    <string name="ui_developer_bio">最新のオープンソース ブラウザーとシステム ツールを開発する Android およびシステム開発者をリードします。</string>
+    <string name="ui_developer_ecosystem">エコシステムとプロジェクト</string>
+    <string name="ui_developer_ecosystem_subtitle">さらに多くのオープンソース アプリケーションとツールを探索する</string>
+    <string name="ui_repository_overview">リポジトリの概要</string>
+    <string name="ui_repository_subtitle">ソースを調査し、アクティビティと問題をコミットする</string>
+    <string name="ui_view_on_github">GitHub で見る</string>
+    <string name="ui_copied_to_clipboard">%s をクリップボードにコピーしました</string>
 </resources>

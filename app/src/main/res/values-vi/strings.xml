@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Tất cả ngôn ngữ</string>
     <string name="ui_switch_common_languages_instantly">Chuyển đổi ngôn ngữ phổ biến ngay lập tức</string>
     <string name="ui_follow_device_language">Theo dõi ngôn ngữ hệ thống của thiết bị</string>
+    <string name="ui_app_version">Phiên bản ứng dụng</string>
+    <string name="ui_official_build">Phát hành chính thức</string>
+    <string name="ui_developer_spotlight">Nhà phát triển</string>
+    <string name="ui_developer_bio">Dẫn dắt Nhà phát triển hệ thống và Android chế tạo các công cụ hệ thống và trình duyệt nguồn mở hiện đại.</string>
+    <string name="ui_developer_ecosystem">Hệ sinh thái &amp; Dự án</string>
+    <string name="ui_developer_ecosystem_subtitle">Khám phá thêm các ứng dụng và công cụ nguồn mở</string>
+    <string name="ui_repository_overview">Tổng quan về kho lưu trữ</string>
+    <string name="ui_repository_subtitle">Khám phá nguồn, cam kết hoạt động và vấn đề</string>
+    <string name="ui_view_on_github">Xem trên GitHub</string>
+    <string name="ui_copied_to_clipboard">Đã sao chép %s vào bảng nhớ tạm</string>
 </resources>

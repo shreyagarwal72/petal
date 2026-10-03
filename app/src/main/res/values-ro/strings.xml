@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Toate Limbile</string>
     <string name="ui_switch_common_languages_instantly">Schimbați instantaneu limbile comune</string>
     <string name="ui_follow_device_language">Urmați limba sistemului dispozitivului</string>
+    <string name="ui_app_version">Versiunea aplicației</string>
+    <string name="ui_official_build">Lansare oficială</string>
+    <string name="ui_developer_spotlight">Dezvoltator</string>
+    <string name="ui_developer_bio">Dezvoltator lider Android și sisteme care creează instrumente moderne de browser și sistem open-source.</string>
+    <string name="ui_developer_ecosystem">Ecosistem și proiecte</string>
+    <string name="ui_developer_ecosystem_subtitle">Explorați mai multe aplicații și instrumente open-source</string>
+    <string name="ui_repository_overview">Prezentare generală a depozitului</string>
+    <string name="ui_repository_subtitle">Explorați sursa, comite activități și probleme</string>
+    <string name="ui_view_on_github">Vizualizați pe GitHub</string>
+    <string name="ui_copied_to_clipboard">%s a fost copiat în clipboard</string>
 </resources>

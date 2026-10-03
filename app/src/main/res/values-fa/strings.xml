@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">همه زبان ها</string>
     <string name="ui_switch_common_languages_instantly">فوراً زبان های رایج را تغییر دهید</string>
     <string name="ui_follow_device_language">زبان سیستم دستگاه را دنبال کنید</string>
+    <string name="ui_app_version">نسخه برنامه</string>
+    <string name="ui_official_build">انتشار رسمی</string>
+    <string name="ui_developer_spotlight">توسعه دهنده</string>
+    <string name="ui_developer_bio">برنامه نویس پیشرو Android &amp; Systems که ابزارهای سیستمی و مرورگر متن باز مدرن را ایجاد می کند.</string>
+    <string name="ui_developer_ecosystem">اکوسیستم و پروژه ها</string>
+    <string name="ui_developer_ecosystem_subtitle">برنامه ها و ابزارهای منبع باز بیشتری را کاوش کنید</string>
+    <string name="ui_repository_overview">بررسی اجمالی مخزن</string>
+    <string name="ui_repository_subtitle">منبع را کاوش کنید، فعالیت و مسائل را متعهد کنید</string>
+    <string name="ui_view_on_github">در GitHub مشاهده کنید</string>
+    <string name="ui_copied_to_clipboard">%s در کلیپ بورد کپی شد</string>
 </resources>

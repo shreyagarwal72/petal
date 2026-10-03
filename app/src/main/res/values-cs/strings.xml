@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Všechny jazyky</string>
     <string name="ui_switch_common_languages_instantly">Okamžitě přepínejte běžné jazyky</string>
     <string name="ui_follow_device_language">Řiďte se jazykem systému zařízení</string>
+    <string name="ui_app_version">Verze aplikace</string>
+    <string name="ui_official_build">Oficiální vydání</string>
+    <string name="ui_developer_spotlight">Vývojář</string>
+    <string name="ui_developer_bio">Vedoucí Android &amp; Systems Developer, který vytváří moderní open-source prohlížeč a systémové nástroje.</string>
+    <string name="ui_developer_ecosystem">Ekosystém a projekty</string>
+    <string name="ui_developer_ecosystem_subtitle">Prozkoumejte více aplikací a nástrojů s otevřeným zdrojovým kódem</string>
+    <string name="ui_repository_overview">Přehled úložiště</string>
+    <string name="ui_repository_subtitle">Prozkoumejte zdroj, potvrďte aktivitu a problémy</string>
+    <string name="ui_view_on_github">Zobrazit na GitHubu</string>
+    <string name="ui_copied_to_clipboard">%s zkopírováno do schránky</string>
 </resources>

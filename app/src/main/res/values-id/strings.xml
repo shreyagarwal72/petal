@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Semua Bahasa</string>
     <string name="ui_switch_common_languages_instantly">Ganti bahasa umum secara instan</string>
     <string name="ui_follow_device_language">Ikuti bahasa sistem perangkat</string>
+    <string name="ui_app_version">Versi Aplikasi</string>
+    <string name="ui_official_build">Rilis Resmi</string>
+    <string name="ui_developer_spotlight">Pengembang</string>
+    <string name="ui_developer_bio">Pengembang Android &amp; Sistem Pimpin yang membuat browser dan alat sistem sumber terbuka modern.</string>
+    <string name="ui_developer_ecosystem">Ekosistem &amp; Proyek</string>
+    <string name="ui_developer_ecosystem_subtitle">Jelajahi lebih banyak aplikasi dan alat sumber terbuka</string>
+    <string name="ui_repository_overview">Ikhtisar Repositori</string>
+    <string name="ui_repository_subtitle">Jelajahi sumber, lakukan aktivitas &amp; masalah</string>
+    <string name="ui_view_on_github">Lihat di GitHub</string>
+    <string name="ui_copied_to_clipboard">Menyalin %s ke papan klip</string>
 </resources>

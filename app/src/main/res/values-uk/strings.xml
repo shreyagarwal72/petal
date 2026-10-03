@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Усі мови</string>
     <string name="ui_switch_common_languages_instantly">Миттєво перемикайте загальні мови</string>
     <string name="ui_follow_device_language">Слідкуйте за системною мовою пристрою</string>
+    <string name="ui_app_version">Версія програми</string>
+    <string name="ui_official_build">Офіційний реліз</string>
+    <string name="ui_developer_spotlight">Розробник</string>
+    <string name="ui_developer_bio">Провідний розробник Android і систем, який створює сучасні браузери та системні інструменти з відкритим кодом.</string>
+    <string name="ui_developer_ecosystem">Екосистема та проекти</string>
+    <string name="ui_developer_ecosystem_subtitle">Ознайомтеся з іншими програмами та інструментами з відкритим кодом</string>
+    <string name="ui_repository_overview">Огляд сховища</string>
+    <string name="ui_repository_subtitle">Дослідіть джерело, зафіксуйте дії та проблеми</string>
+    <string name="ui_view_on_github">Переглянути на GitHub</string>
+    <string name="ui_copied_to_clipboard">Скопійовано %s в буфер обміну</string>
 </resources>

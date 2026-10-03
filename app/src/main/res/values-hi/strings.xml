@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">सभी भाषाएँ</string>
     <string name="ui_switch_common_languages_instantly">सामान्य भाषाएँ तुरंत बदलें</string>
     <string name="ui_follow_device_language">डिवाइस सिस्टम भाषा का पालन करें</string>
+    <string name="ui_app_version">एप्लिकेशन वेरीज़न</string>
+    <string name="ui_official_build">आधिकारिक विज्ञप्ति</string>
+    <string name="ui_developer_spotlight">डेवलपर</string>
+    <string name="ui_developer_bio">अग्रणी एंड्रॉइड और सिस्टम डेवलपर आधुनिक ओपन-सोर्स ब्राउज़र और सिस्टम टूल तैयार कर रहे हैं।</string>
+    <string name="ui_developer_ecosystem">पारिस्थितिकी तंत्र और परियोजनाएँ</string>
+    <string name="ui_developer_ecosystem_subtitle">अधिक ओपन-सोर्स एप्लिकेशन और टूल खोजें</string>
+    <string name="ui_repository_overview">भंडार अवलोकन</string>
+    <string name="ui_repository_subtitle">स्रोत का अन्वेषण करें, गतिविधि और मुद्दे प्रतिबद्ध करें</string>
+    <string name="ui_view_on_github">GitHub पर देखें</string>
+    <string name="ui_copied_to_clipboard">%s को क्लिपबोर्ड पर कॉपी किया गया</string>
 </resources>

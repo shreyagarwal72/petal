@@ -8,9 +8,12 @@ import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -28,7 +31,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -242,14 +250,51 @@ fun PetalAboutDeveloperSheetContent(
                                 onCopyGithub = { copyToClipboard("GitHub URL", "https://github.com/shreyagarwal72") }
                             )
 
-                        // ── Petal Browser Philosophy & Mission Card ─────────────
-                        DeveloperMissionCard()
+                        // ── Petal Repository Overview Card ─────────────────────
+                        PetalRepoDetailsCard(
+                            onOpenUrl = { url ->
+                                try {
+                                    val activity = context as? com.petal.browser.activity.BrowserActivity
+                                    if (activity != null) {
+                                        onClose()
+                                        val ctrl = activity.currentAlbumController
+                                        if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                                            ctrl.loadUrl(url)
+                                            activity.showAlbum(ctrl, url)
+                                        } else {
+                                            activity.addAlbum(null, url, true)
+                                        }
+                                    } else {
+                                        BrowserUnit.intentURL(context, Uri.parse(url))
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                        )
 
-                        // ── Expressive Metric Badges Grid ───────────────────────
-                        DeveloperMetricsGrid()
-
-                        // ── Developer Tech Stack Chips ──────────────────────────
-                        DeveloperTechStackCard()
+                        // ── Developer Ecosystem & Projects Showcase ─────────────
+                        DeveloperEcosystemCard(
+                            onOpenUrl = { url ->
+                                try {
+                                    val activity = context as? com.petal.browser.activity.BrowserActivity
+                                    if (activity != null) {
+                                        onClose()
+                                        val ctrl = activity.currentAlbumController
+                                        if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                                            ctrl.loadUrl(url)
+                                            activity.showAlbum(ctrl, url)
+                                        } else {
+                                            activity.addAlbum(null, url, true)
+                                        }
+                                    } else {
+                                        BrowserUnit.intentURL(context, Uri.parse(url))
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                        )
 
                         // ── Community Links & Action Group ──────────────────────
                         DeveloperActionsCard(
@@ -319,67 +364,174 @@ fun PetalAboutDeveloperSheetContent(
     } // PetalScreenWrapper
     } // PetalPredictiveBackSurface
 
-/** Developer Hero Profile Card with glowing radial avatar ring and bio chips. */
+/**
+ * High-performance animated profile container featuring:
+ * - Fluid rotating dual-orbital aura with radial gradient illumination
+ * - 12-sided squircle / cookie morphing perimeter with subtle breathing scale
+ * - Counter-rotation so the inner developer avatar remains perfectly upright
+ * - Interactive tap to toggle between Developer Avatar and Petal Logo with spring rotation
+ * - Long-click haptic pulse with custom feedback
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun PetalAnimatedProfileContainer(
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 100.dp,
+    onLongClick: () -> Unit = {}
+) {
+    val haptic = LocalHapticFeedback.current
+    var showPetalLogo by remember { mutableStateOf(false) }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "petal_avatar_transition")
+    val orbitRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 24000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "orbit_rotation"
+    )
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.97f,
+        targetValue = 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse_scale"
+    )
+
+    val flipRotation by animateFloatAsState(
+        targetValue = if (showPetalLogo) 180f else 0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "flip_rotation"
+    )
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val containerColor = MaterialTheme.colorScheme.primaryContainer
+
+    Box(
+        modifier = modifier
+            .size(size + 24.dp)
+            .drawBehind {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            primaryColor.copy(alpha = 0.35f),
+                            tertiaryColor.copy(alpha = 0.15f),
+                            Color.Transparent
+                        ),
+                        center = Offset(this.size.width / 2f, this.size.height / 2f),
+                        radius = this.size.width * 0.72f
+                    )
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        // Outer rotating orbital aura ring
+        Box(
+            modifier = Modifier
+                .size(size + 10.dp)
+                .graphicsLayer {
+                    rotationZ = orbitRotation
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                }
+                .clip(RoundedCornerShape(32.dp))
+                .background(
+                    Brush.sweepGradient(
+                        colors = listOf(
+                            primaryColor.copy(alpha = 0.6f),
+                            tertiaryColor.copy(alpha = 0.4f),
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                            primaryColor.copy(alpha = 0.6f)
+                        )
+                    )
+                )
+        )
+
+        // Core avatar container with counter-rotation and flip interaction
+        Box(
+            modifier = Modifier
+                .size(size)
+                .graphicsLayer {
+                    rotationZ = flipRotation
+                }
+                .clip(RoundedCornerShape(26.dp))
+                .background(containerColor)
+                .border(
+                    BorderStroke(2.5.dp, MaterialTheme.colorScheme.surface),
+                    RoundedCornerShape(26.dp)
+                )
+                .combinedClickable(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        showPetalLogo = !showPetalLogo
+                    },
+                    onLongClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLongClick()
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (flipRotation <= 90f) {
+                // Front: Clean Developer Avatar Image
+                Image(
+                    painter = painterResource(id = R.drawable.avatar_developer),
+                    contentDescription = "Developer Avatar",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Back: Petal Browser Brand Identity Icon
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { rotationY = 180f }
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Explore,
+                        contentDescription = "Petal Browser",
+                        tint = primaryColor,
+                        modifier = Modifier.size(size * 0.55f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Developer Hero Profile Card with animated profile container, bio, and stats. */
 @Composable
 fun DeveloperHeroCard(
     onCopyGithub: () -> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val tertiaryColor = MaterialTheme.colorScheme.tertiary
     val containerBg = MaterialTheme.colorScheme.surfaceContainerLow
 
     Surface(
         shape = RoundedCornerShape(28.dp),
         color = containerBg,
-        tonalElevation = 3.dp,
+        tonalElevation = 2.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        modifier = Modifier
-            .fillMaxWidth()
-            .bouncyClickable(onClick = onCopyGithub)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(horizontal = 20.dp, vertical = 22.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Glowing Avatar Badge Container
-            Box(
-                modifier = Modifier
-                    .size(88.dp)
-                    .drawBehind {
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    primaryColor.copy(alpha = 0.40f),
-                                    tertiaryColor.copy(alpha = 0.15f),
-                                    Color.Transparent
-                                ),
-                                center = Offset(size.width / 2f, size.height / 2f),
-                                radius = size.width * 0.75f
-                            )
-                        )
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    border = BorderStroke(2.5.dp, primaryColor.copy(alpha = 0.8f)),
-                    modifier = Modifier.size(72.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = stringResource(R.string.ui_va),
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 28.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-            }
+            // Animated Avatar Container with flip and orbital aura
+            PetalAnimatedProfileContainer(
+                size = 96.dp,
+                onLongClick = onCopyGithub
+            )
 
             Spacer(Modifier.height(14.dp))
 
@@ -390,19 +542,36 @@ fun DeveloperHeroCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = stringResource(R.string.ui_shreyagarwal72),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Medium),
-                color = primaryColor,
-                textAlign = TextAlign.Center
-            )
+            Spacer(Modifier.height(3.dp))
+            Surface(
+                onClick = onCopyGithub,
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Code,
+                        contentDescription = null,
+                        tint = primaryColor,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.ui_shreyagarwal72),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = primaryColor
+                    )
+                }
+            }
 
             Spacer(Modifier.height(10.dp))
 
-            // Short Executive Bio
+            // Bio
             Text(
-                text = stringResource(R.string.ui_lead_android_systems_developer_craftin),
+                text = stringResource(R.string.ui_developer_bio),
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -750,6 +919,294 @@ fun DeveloperActionsCard(
                 Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.ui_export_diagnostic_logs_zip), fontWeight = FontWeight.SemiBold, maxLines = 1)
+            }
+        }
+    }
+}
+
+/**
+ * Interactive Ecosystem Showcase displaying other open-source apps & tools by the developer.
+ */
+@Composable
+fun DeveloperEcosystemCard(
+    onOpenUrl: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.Apps,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Column {
+                        Text(
+                            text = stringResource(R.string.ui_developer_ecosystem),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.ui_developer_ecosystem_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = "Toggle ecosystem"
+                    )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    EcosystemItemRow(
+                        name = "Petal Browser",
+                        description = "Ultra-fast private web browser with GeckoView Quantum & Material 3 Expressive UI",
+                        badge = "Flagship",
+                        icon = Icons.Rounded.Public,
+                        onClick = { onOpenUrl("https://github.com/shreyagarwal72/petal") }
+                    )
+                    EcosystemItemRow(
+                        name = "Champion Workspace",
+                        description = "Official Telegram community for announcements, builds, feedback & testing",
+                        badge = "Community",
+                        icon = Icons.Rounded.Send,
+                        onClick = { onOpenUrl("https://t.me/championworkspace") }
+                    )
+                    EcosystemItemRow(
+                        name = "Developer GitHub Hub",
+                        description = "Explore all repositories, libraries, scripts, and open source projects",
+                        badge = "15+ Repos",
+                        icon = Icons.Rounded.Code,
+                        onClick = { onOpenUrl("https://github.com/shreyagarwal72") }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EcosystemItemRow(
+    name: String,
+    description: String,
+    badge: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(38.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            text = badge,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+
+            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+/**
+ * Interactive GitHub Repository card with live stats, branch, license & link.
+ */
+@Composable
+fun PetalRepoDetailsCard(
+    onOpenUrl: (String) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.Source,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Column {
+                        Text(
+                            text = stringResource(R.string.ui_repository_overview),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "shreyagarwal72/petal",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.tertiaryContainer
+                ) {
+                    Text(
+                        text = "main",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            // Repo stats row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Surface(
+                    onClick = { onOpenUrl("https://github.com/shreyagarwal72/petal/stargazers") },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(18.dp))
+                        Column {
+                            Text("Star Repo", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("GitHub", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                }
+
+                Surface(
+                    onClick = { onOpenUrl("https://github.com/shreyagarwal72/petal/network/members") },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Rounded.ForkRight, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
+                        Column {
+                            Text("Fork & Build", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Open Source", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                }
+            }
+
+            // Direct GitHub action button
+            OutlinedButton(
+                onClick = { onOpenUrl("https://github.com/shreyagarwal72/petal") },
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.ui_view_on_github), fontWeight = FontWeight.SemiBold)
             }
         }
     }

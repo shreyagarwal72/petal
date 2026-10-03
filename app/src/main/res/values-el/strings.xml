@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Όλες οι Γλώσσες</string>
     <string name="ui_switch_common_languages_instantly">Αλλαγή κοινών γλωσσών άμεσα</string>
     <string name="ui_follow_device_language">Ακολουθήστε τη γλώσσα συστήματος της συσκευής</string>
+    <string name="ui_app_version">Έκδοση εφαρμογής</string>
+    <string name="ui_official_build">Επίσημη Έκδοση</string>
+    <string name="ui_developer_spotlight">Προγραμματιστής</string>
+    <string name="ui_developer_bio">Κορυφαίος προγραμματιστής Android &amp; Systems που δημιουργεί σύγχρονα εργαλεία προγράμματος περιήγησης και συστήματος ανοιχτού κώδικα.</string>
+    <string name="ui_developer_ecosystem">Οικοσύστημα &amp; Έργα</string>
+    <string name="ui_developer_ecosystem_subtitle">Εξερευνήστε περισσότερες εφαρμογές και εργαλεία ανοιχτού κώδικα</string>
+    <string name="ui_repository_overview">Επισκόπηση αποθετηρίου</string>
+    <string name="ui_repository_subtitle">Εξερευνήστε πηγή, δεσμεύστε δραστηριότητα και ζητήματα</string>
+    <string name="ui_view_on_github">Προβολή στο GitHub</string>
+    <string name="ui_copied_to_clipboard">Αντιγράφηκε %s στο πρόχειρο</string>
 </resources>

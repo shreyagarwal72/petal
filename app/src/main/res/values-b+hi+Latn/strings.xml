@@ -1542,4 +1542,14 @@
     <string name="ui_all_languages">Saari bhashaayein</string>
     <string name="ui_switch_common_languages_instantly">Common bhashaayein turant badlein</string>
     <string name="ui_follow_device_language">Device ki system bhasha follow karein</string>
+    <string name="ui_app_version">App Version</string>
+    <string name="ui_official_build">Official Release</string>
+    <string name="ui_developer_spotlight">Developer</string>
+    <string name="ui_developer_bio">Lead Android &amp; Systems Developer jo open-source browser aur tools banate hain.</string>
+    <string name="ui_developer_ecosystem">Ecosystem aur Projects</string>
+    <string name="ui_developer_ecosystem_subtitle">Aur open-source apps aur tools dekhein</string>
+    <string name="ui_repository_overview">Repository Overview</string>
+    <string name="ui_repository_subtitle">Source, commit activity aur issues dekhein</string>
+    <string name="ui_view_on_github">GitHub par dekhein</string>
+    <string name="ui_copied_to_clipboard">%s clipboard me copy ho gaya</string>
 </resources>

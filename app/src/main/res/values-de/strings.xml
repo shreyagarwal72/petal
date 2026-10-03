@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Alle Sprachen</string>
     <string name="ui_switch_common_languages_instantly">Wechseln Sie sofort zwischen gängigen Sprachen</string>
     <string name="ui_follow_device_language">Befolgen Sie die Systemsprache des Geräts</string>
+    <string name="ui_app_version">App-Version</string>
+    <string name="ui_official_build">Offizielle Veröffentlichung</string>
+    <string name="ui_developer_spotlight">Entwickler</string>
+    <string name="ui_developer_bio">Leitender Android- und Systementwickler, der moderne Open-Source-Browser- und Systemtools erstellt.</string>
+    <string name="ui_developer_ecosystem">Ökosystem &amp; Projekte</string>
+    <string name="ui_developer_ecosystem_subtitle">Entdecken Sie weitere Open-Source-Anwendungen und -Tools</string>
+    <string name="ui_repository_overview">Repository-Übersicht</string>
+    <string name="ui_repository_subtitle">Erkunden Sie die Quelle, begehen Sie Aktivitäten und Probleme</string>
+    <string name="ui_view_on_github">Auf GitHub ansehen</string>
+    <string name="ui_copied_to_clipboard">%s in die Zwischenablage kopiert</string>
 </resources>

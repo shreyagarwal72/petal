@@ -49,6 +49,26 @@ fun AboutSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Section 0: App Status Hero Card
+                val appVersion = remember(context) {
+                    try {
+                        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                    } catch (_: Exception) { "1.0.0" }
+                }
+
+                com.petal.browser.ui.containment.PetalStatusHeroCard(
+                    title = "Petal Browser",
+                    subtitle = "${stringResource(R.string.ui_app_version)} v$appVersion",
+                    statusText = stringResource(R.string.ui_official_build),
+                    icon = androidx.compose.material.icons.Icons.Rounded.Explore,
+                    statusActive = true,
+                    actionLabel = stringResource(R.string.ui_view_on_github),
+                    onActionClick = {
+                        BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal"))
+                    }
+                )
+
+                // Section 1: Developer Spotlight Hero Card with Animated Avatar Container
                 DeveloperHeroCard(
                     onCopyGithub = {
                         try {
@@ -62,10 +82,26 @@ fun AboutSettingsScreen(
                     }
                 )
 
+                // Section 2: Repository Overview Card
+                PetalRepoDetailsCard(
+                    onOpenUrl = { url -> BrowserUnit.intentURL(context, Uri.parse(url)) }
+                )
+
+                // Section 3: Developer Ecosystem Card (Collapsible)
+                DeveloperEcosystemCard(
+                    onOpenUrl = { url -> BrowserUnit.intentURL(context, Uri.parse(url)) }
+                )
+
+                // Section 4: Mission & Architectural Philosophy
                 DeveloperMissionCard()
+
+                // Section 5: Metrics & Benchmarks
                 DeveloperMetricsGrid()
+
+                // Section 6: Core Technologies
                 DeveloperTechStackCard()
 
+                // Section 7: Community & Diagnostic Tools
                 DeveloperActionsCard(
                     onOpenUrl = { url ->
                         try {

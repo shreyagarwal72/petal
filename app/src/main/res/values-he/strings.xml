@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">כל השפות</string>
     <string name="ui_switch_common_languages_instantly">החלף שפות נפוצות באופן מיידי</string>
     <string name="ui_follow_device_language">עקוב אחר שפת המערכת של המכשיר</string>
+    <string name="ui_app_version">גרסת האפליקציה</string>
+    <string name="ui_official_build">שחרור רשמי</string>
+    <string name="ui_developer_spotlight">מפתח</string>
+    <string name="ui_developer_bio">מפתח אנדרואיד ומערכות מוביל ביצירת דפדפן וכלי מערכת מודרניים בקוד פתוח.</string>
+    <string name="ui_developer_ecosystem">מערכת אקולוגית ופרויקטים</string>
+    <string name="ui_developer_ecosystem_subtitle">חקור עוד יישומים וכלים בקוד פתוח</string>
+    <string name="ui_repository_overview">סקירת מאגר</string>
+    <string name="ui_repository_subtitle">חקור מקור, בצע פעילות ובעיות</string>
+    <string name="ui_view_on_github">הצג ב-GitHub</string>
+    <string name="ui_copied_to_clipboard">הועתק %s ללוח</string>
 </resources>

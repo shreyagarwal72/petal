@@ -1521,4 +1521,14 @@
     <string name="ui_all_languages">Minden nyelv</string>
     <string name="ui_switch_common_languages_instantly">Azonnal váltson gyakori nyelveket</string>
     <string name="ui_follow_device_language">Kövesse az eszköz rendszernyelvét</string>
+    <string name="ui_app_version">Alkalmazás verziója</string>
+    <string name="ui_official_build">Hivatalos kiadás</string>
+    <string name="ui_developer_spotlight">Fejlesztő</string>
+    <string name="ui_developer_bio">Vezető Android- és rendszerfejlesztő, aki modern, nyílt forráskódú böngésző- és rendszereszközöket készít.</string>
+    <string name="ui_developer_ecosystem">Ökoszisztéma és projektek</string>
+    <string name="ui_developer_ecosystem_subtitle">Fedezzen fel több nyílt forráskódú alkalmazást és eszközt</string>
+    <string name="ui_repository_overview">Adattár áttekintése</string>
+    <string name="ui_repository_subtitle">Fedezze fel a forrást, végezze el a tevékenységeket és a problémákat</string>
+    <string name="ui_view_on_github">Megtekintés a GitHubon</string>
+    <string name="ui_copied_to_clipboard">%s a vágólapra másolva</string>
 </resources>
