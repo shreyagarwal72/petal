@@ -406,6 +406,7 @@ fun DisplaySettingsScreenContent(
                     iconRes = com.petal.browser.R.drawable.mobile_vibrate_filled,
                     cardId = "display",
                     targetHighlightId = targetHighlightItemId
+                ) {
                     com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
                         when (index) {
                             0 -> {
