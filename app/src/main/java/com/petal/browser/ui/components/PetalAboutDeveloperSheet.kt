@@ -245,6 +245,7 @@ fun PetalAboutDeveloperSheetContent(
                                 .verticalScroll(rememberScrollState())
                                 .padding(horizontal = 20.dp, vertical = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
                             // ── Developer Spotlight Hero Profile Card ─────────────
                             PetalSettingsSection(
                                 title = "Developer Spotlight",
