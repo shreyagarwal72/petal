@@ -2010,7 +2010,12 @@ class PetalGeckoView @JvmOverloads constructor(
         return TabThumbnailCache.getMemoryOnly(getThumbnailKey(), isIncognito)
     }
 
-    fun capturePreviewBitmapAsync(callback: Consumer<Bitmap?>) {
+    fun capturePreviewBitmapAsync(callback: Consumer<Bitmap?>) = capturePreview(false, callback)
+
+    /** Explicit capture right before the tab manager opens; see PetalTabViewController. */
+    fun captureForSwitcher(callback: Consumer<Bitmap?>) = capturePreview(true, callback)
+
+    private fun capturePreview(forceAccept: Boolean, callback: Consumer<Bitmap?>) {
         val key = getThumbnailKey()
         val revision = previewRevision
         val captureSequence = ++previewCaptureSequence
@@ -2020,7 +2025,7 @@ class PetalGeckoView @JvmOverloads constructor(
             val current = key == getThumbnailKey()
             var stored = false
             if (bmp != null && current) {
-                stored = TabThumbnailCache.put(key, bmp, privateTab, hasContentfulPaint)
+                stored = TabThumbnailCache.put(key, bmp, privateTab, forceAccept || hasContentfulPaint)
                 if (stored) capturedPreviewRevision = revision else schedulePreviewRetry()
             }
             callback.accept(if (current && stored) bmp else null)

@@ -4647,8 +4647,44 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     private void showOverviewNow() {
+        // Chromium (CacheTab) and Firefox (BrowserThumbnails) both snapshot while the tab's
+        // compositor is still alive. Once the tab surface is hidden the frame is blank, so
+        // capture first and only then swap in the tab manager.
+        captureCurrentTabThen(this::showOverviewAfterCapture);
+    }
+
+    /** Captures the visible tab into TabThumbnailCache, then runs {@code next} exactly once. */
+    private void captureCurrentTabThen(final Runnable next) {
+        final java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean(false);
+        final Runnable finish = () -> {
+            if (done.compareAndSet(false, true)) next.run();
+        };
         try {
-            captureBrowserMainPreview();
+            final AlbumController current = currentAlbumController;
+            final View surface = current == null ? null : current.getAlbumView();
+            final boolean capturable = surface != null && surface.isShown() && surface.getWidth() > 0 && surface.getHeight() > 0;
+            if (!capturable) {
+                finish.run();
+                return;
+            }
+            // Never let a slow compositor block opening the tab manager.
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(finish, 450L);
+            java.util.function.Consumer<android.graphics.Bitmap> onCaptured = bitmap -> finish.run();
+            if (current instanceof com.petal.browser.view.PetalGeckoView) {
+                ((com.petal.browser.view.PetalGeckoView) current).captureForSwitcher(onCaptured);
+            } else if (current instanceof com.petal.browser.browser.PetalTabViewController) {
+                ((com.petal.browser.browser.PetalTabViewController) current).captureForSwitcher(onCaptured);
+            } else {
+                finish.run();
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Tab capture before overview failed", t);
+            finish.run();
+        }
+    }
+
+    private void showOverviewAfterCapture() {
+        try {
             isOverlayScreenShowing = true;
             clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
