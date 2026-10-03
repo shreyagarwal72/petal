@@ -132,7 +132,7 @@ object PetalCacheManager {
         context: Context,
         flags: Long = Flags.ALL_CACHES,
         activeWebView: WebView? = null,
-        onCompleted: (() -> Unit)? = null
+        onCompleted: Runnable? = null
     ) {
         val appContext = context.applicationContext
 
