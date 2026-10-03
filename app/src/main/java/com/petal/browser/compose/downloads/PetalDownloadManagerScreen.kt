@@ -667,12 +667,13 @@ fun PetalDownloadManagerScreen(
             }
         }
     }
+    } // closes Box (inner)
+    } // closes innerPadding lambda
+    } // closes Scaffold
     } // closes PetalScreenWrapper (Downloads list background layer)
+
     if (isSettingsOpen) {
-        CompositionLocalProvider(
-            com.petal.browser.predictive.LocalIsUnderlayPreview provides false,
-            com.petal.browser.predictive.LocalPredictiveBackState provides com.petal.browser.predictive.PredictiveBackState.Idle
-        ) {
+        com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
             AnimatedContent(
                 targetState = isSettingsOpen,
                 transitionSpec = {
@@ -694,11 +695,8 @@ fun PetalDownloadManagerScreen(
             }
         }
     }
-    } // closes Box
-}
-}
-}
-}
+    } // closes Box (outer)
+} // closes PetalPredictiveBackSurface
 
 
 @OptIn(ExperimentalFoundationApi::class)
