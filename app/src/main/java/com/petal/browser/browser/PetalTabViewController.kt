@@ -199,7 +199,7 @@ class PetalTabViewController private constructor(
                     positionMs = positionMs,
                     durationMs = durationMs,
                     isMuted = mediaBridge?.isMuted ?: false,
-                    sourceUrl = tab?.url ?: currentUrl,
+                    sourceUrl = pageUrl,
                     mimeType = null
                 )
             } else {
