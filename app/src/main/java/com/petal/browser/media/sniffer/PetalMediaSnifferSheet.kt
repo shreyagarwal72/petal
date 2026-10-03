@@ -40,8 +40,12 @@ import androidx.compose.material3.DropdownMenuItem
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.TextButton
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.view.PetalToast
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -208,36 +212,41 @@ private fun PetalMediaSheet(
 
     var socialState    by remember { mutableStateOf<SocialState>(SocialState.Idle) }
     var formatMenuOpen by remember { mutableStateOf(false) }
+    var isUpdatingExtractor by remember { mutableStateOf(false) }
 
     com.petal.browser.ui.containment.PetalSheet(onDismissRequest = onDismiss) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp)
+                .padding(bottom = 32.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // ── Section 1: Passive sniffer streams ────────────────────────
-            // Direct streams are displayed whenever detected (including on social platforms),
-            // giving the user immediate direct stream downloads without waiting for external extractors.
             if (media.isNotEmpty()) {
                 item {
+                    val directItems = remember(media) {
+                        media.filter { it.type != MediaInterceptor.MediaType.HLS && it.type != MediaInterceptor.MediaType.DASH }
+                    }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.ui_media_sources),
-                                style    = MaterialTheme.typography.headlineSmall
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
+                            Spacer(Modifier.height(2.dp))
                             Text(
                                 stringResource(R.string.ui_detected_without_interrupting_playback),
-                                style    = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        }
-                        val directItems = remember(media) {
-                            media.filter { it.type != MediaInterceptor.MediaType.HLS && it.type != MediaInterceptor.MediaType.DASH }
                         }
                         if (directItems.size > 1) {
                             FilledTonalButton(
@@ -247,144 +256,228 @@ private fun PetalMediaSheet(
                                     }
                                     PetalToast.show(context, "Queued ${directItems.size} downloads")
                                     onDismiss()
-                                }
+                                },
+                                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Pill,
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                             ) {
                                 Icon(Icons.Rounded.Download, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.ui_all, directItems.size))
+                                Text(
+                                    stringResource(R.string.ui_all, directItems.size),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                                )
                             }
                         }
                     }
                 }
 
-                items(media, key = { it.url }) { item ->
-                Surface(
-                    shape         = MaterialTheme.shapes.large,
-                    tonalElevation = 2.dp,
-                    modifier      = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                ) {
+                item {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                item.quality ?: item.type.name,
-                                style    = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.weight(1f)
-                            )
+                        media.forEachIndexed { index, item ->
+                            val position = com.petal.browser.ui.containment.petalGroupPositionFor(index, media.size)
+                            val isAudio = item.type == MediaInterceptor.MediaType.AUDIO
+                            val isStream = item.type == MediaInterceptor.MediaType.HLS || item.type == MediaInterceptor.MediaType.DASH
                             val sizeStr = formatMediaSize(item.sizeBytes)
-                            FilterChip(
-                                selected = false, onClick = {},
-                                label    = { Text(item.type.name + (if (sizeStr != null) " • $sizeStr" else "")) }
-                            )
-                        }
-                        Text(
-                            item.title ?: item.url
-                                .substringAfterLast('/').substringBefore('?')
-                                .ifBlank { "Media source" },
-                            maxLines = 2,
-                            style    = MaterialTheme.typography.bodyMedium
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Button(onClick = { onPlay(item.toPlaybackRequest()); onDismiss() }) {
-                                Icon(Icons.Rounded.PlayArrow, null)
-                                Text(stringResource(R.string.ui_play), modifier = Modifier.padding(start = 6.dp))
-                            }
-                            if (item.type != MediaInterceptor.MediaType.HLS &&
-                                item.type != MediaInterceptor.MediaType.DASH) {
-                                AssistChip(
-                                    onClick = {
-                                        PetalMediaSniffer.download(context, item,
-                                            onEnqueued = { onDismiss() })
-                                    },
-                                    label = {
-                                        Icon(Icons.Rounded.Download, null)
-                                        Text(stringResource(R.string.ui_download), modifier = Modifier.padding(start = 5.dp))
+
+                            Surface(
+                                shape = com.petal.browser.ui.containment.petalGroupShape(position),
+                                color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
+                                tonalElevation = 0.dp,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                            icon = if (isAudio) Icons.Rounded.Audiotrack else Icons.Rounded.VideoLibrary,
+                                            container = if (isAudio) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer,
+                                            tint = if (isAudio) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                                            size = 42.dp,
+                                            iconSize = 22.dp
+                                        )
+
+                                        Column(Modifier.weight(1f)) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Text(
+                                                    item.quality ?: item.type.name,
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                            Text(
+                                                item.title ?: item.url
+                                                    .substringAfterLast('/').substringBefore('?')
+                                                    .ifBlank { "Media stream" },
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+
+                                        Surface(
+                                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.Pill,
+                                            color = MaterialTheme.colorScheme.surfaceContainerHighest
+                                        ) {
+                                            Text(
+                                                text = item.type.name + (if (sizeStr != null) " • $sizeStr" else ""),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                            )
+                                        }
                                     }
-                                )
-                            }
-                            AssistChip(
-                                onClick = {
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                                    val clip = ClipData.newPlainText("Media URL", item.url)
-                                    clipboard?.setPrimaryClip(clip)
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
-                                    PetalToast.show(context, "Media link copied")
-                                },
-                                label = {
-                                    Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(stringResource(R.string.ui_copy))
+
+                                    // Action bar with responsive buttons and dedicated copy icon button
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Button(
+                                            onClick = { onPlay(item.toPlaybackRequest()); onDismiss() },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(14.dp),
+                                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                        ) {
+                                            Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text(stringResource(R.string.ui_play), maxLines = 1)
+                                        }
+
+                                        if (!isStream) {
+                                            FilledTonalButton(
+                                                onClick = {
+                                                    PetalMediaSniffer.download(context, item, onEnqueued = { onDismiss() })
+                                                },
+                                                modifier = Modifier.weight(1f),
+                                                shape = RoundedCornerShape(14.dp),
+                                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(stringResource(R.string.ui_download), maxLines = 1)
+                                            }
+                                        }
+
+                                        FilledTonalIconButton(
+                                            onClick = {
+                                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                                val clip = ClipData.newPlainText("Media URL", item.url)
+                                                clipboard?.setPrimaryClip(clip)
+                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                                PetalToast.show(context, "Media link copied")
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            ),
+                                            modifier = Modifier.size(40.dp)
+                                        ) {
+                                            Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy), modifier = Modifier.size(18.dp))
+                                        }
+                                    }
                                 }
-                            )
+                            }
                         }
                     }
                 }
-            }
             }
 
             // ── Section 2: Social Downloader (yt-dlp) ────────────────────
             if (platform != null && currentPageUrl.isNotBlank()) {
                 item {
-                    Spacer(Modifier.height(8.dp))
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
-                    Spacer(Modifier.height(12.dp))
+                    com.petal.browser.ui.containment.PetalSectionLabel(
+                        stringResource(R.string.ui_social_download) + " • " + platform.displayName
+                    )
 
-                    Row(
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(40.dp),
-                            shape = MaterialTheme.shapes.medium,
-                            color = MaterialTheme.colorScheme.secondaryContainer
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Public,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            }
-                        }
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                stringResource(R.string.ui_social_download),
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                            Text(
-                                platform.displayName,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        tonalElevation = 1.dp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    com.petal.browser.ui.containment.PetalHeroCard(
+                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                        containerColor = com.petal.browser.ui.containment.petalGroupSurfaceColor()
                     ) {
                         Column(
                             modifier = Modifier.padding(18.dp),
                             verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            when (val state = socialState) {
-                                SocialState.Idle -> {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                    icon = Icons.Rounded.Public,
+                                    container = MaterialTheme.colorScheme.secondaryContainer,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    size = 44.dp,
+                                    iconSize = 22.dp
+                                )
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        platform.displayName,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                    )
                                     Text(
                                         stringResource(R.string.ui_fetch_the_available_media_formats),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2
                                     )
+                                }
+                                TextButton(
+                                    onClick = {
+                                        if (!isUpdatingExtractor) {
+                                            isUpdatingExtractor = true
+                                            scope.launch {
+                                                PetalToast.show(context, context.getString(R.string.ui_updating_extractor))
+                                                val res = PetalYtDlpEngine.updateEngine(context)
+                                                isUpdatingExtractor = false
+                                                if (res.isSuccess) {
+                                                    PetalToast.show(context, context.getString(R.string.ui_extractor_updated))
+                                                } else {
+                                                    PetalToast.show(context, context.getString(R.string.ui_extractor_update_failed))
+                                                }
+                                            }
+                                        }
+                                    },
+                                    enabled = !isUpdatingExtractor
+                                ) {
+                                    if (isUpdatingExtractor) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            strokeWidth = 2.dp,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    }
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        stringResource(R.string.ui_update_extractor),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                                    )
+                                }
+                            }
+
+                            when (val state = socialState) {
+                                SocialState.Idle -> {
                                     Button(
                                         onClick = {
                                             socialState = SocialState.Loading
@@ -415,7 +508,8 @@ private fun PetalMediaSheet(
                                                 }
                                             }
                                         },
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp)
                                     ) {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
@@ -424,12 +518,18 @@ private fun PetalMediaSheet(
                                 }
 
                                 SocialState.Loading -> {
-                                    Box(
+                                    Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 12.dp),
-                                        contentAlignment = Alignment.Center
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                        Spacer(Modifier.width(12.dp))
                                         Text(
                                             stringResource(R.string.ui_fetching_media_information),
                                             style = MaterialTheme.typography.bodyMedium,
@@ -555,7 +655,6 @@ private fun PetalMediaSheet(
                                     }
                                 }
 
-
                                 is SocialState.Failed -> {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -577,7 +676,8 @@ private fun PetalMediaSheet(
 
                                     OutlinedButton(
                                         onClick = { socialState = SocialState.Idle },
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp)
                                     ) {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))

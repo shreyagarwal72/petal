@@ -1337,6 +1337,11 @@
     <string name="ui_download_2">Download %1$s</string>
     <string name="ui_try_again">Try again</string>
     <string name="ui_download_started_check_petal_s">Download started. Check Petal\'s notifications.</string>
+    <string name="ui_update_extractor">Update Extractor</string>
+    <string name="ui_updating_extractor">Updating extractor…</string>
+    <string name="ui_extractor_up_to_date">Extractor is up to date</string>
+    <string name="ui_extractor_updated">Extractor updated to latest version</string>
+    <string name="ui_extractor_update_failed">Extractor update failed</string>
     <string name="ui_petal_passwords_autofill">Petal Passwords &amp; Autofill</string>
     <string name="ui_secure_hardware_backed_completely_loca">Secure, hardware-backed, completely local</string>
     <string name="ui_100_local_encrypted" formatted="false">100% Local &amp; Encrypted</string>
