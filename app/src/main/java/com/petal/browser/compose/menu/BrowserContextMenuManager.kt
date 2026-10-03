@@ -52,13 +52,14 @@ object BrowserContextMenuManager {
     @JvmStatic
     fun showImageContextMenu(activity: BrowserActivity, imageURL: String) {
         PetalLinkContextMenuBridge.show(
-            activity,
-            HelperUnit.domain(imageURL),
-            imageURL,
-            imageURL,
-            true,  // isImage
-            false, // isVideo
-            object : PetalLinkContextMenuHandler {
+            activity = activity,
+            linkTitle = HelperUnit.domain(imageURL),
+            linkUrl = imageURL,
+            faviconUrl = imageURL,
+            imageUrl = imageURL,
+            isImage = true,
+            isVideo = false,
+            handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
                     activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false)
                 }
@@ -192,13 +193,14 @@ object BrowserContextMenuManager {
             "${parsed.scheme}://${parsed.authority}/favicon.ico"
         } else null
         PetalLinkContextMenuBridge.show(
-            activity,
-            linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(urlResult),
-            urlResult,
-            faviconUrl,
-            false, // isImage
-            false, // isVideo
-            object : PetalLinkContextMenuHandler {
+            activity = activity,
+            linkTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(urlResult),
+            linkUrl = urlResult,
+            faviconUrl = faviconUrl,
+            imageUrl = null,
+            isImage = false,
+            isVideo = false,
+            handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
                     activity.addAlbum(HelperUnit.domain(urlResult), urlResult, false)
                 }
@@ -360,13 +362,14 @@ object BrowserContextMenuManager {
     @JvmStatic
     fun showVideoContextMenu(activity: BrowserActivity, cleanVideoUrl: String) {
         PetalLinkContextMenuBridge.show(
-            activity,
-            HelperUnit.domain(cleanVideoUrl),
-            cleanVideoUrl,
-            null,
-            false, // isImage
-            true,  // isVideo
-            object : PetalLinkContextMenuHandler {
+            activity = activity,
+            linkTitle = HelperUnit.domain(cleanVideoUrl),
+            linkUrl = cleanVideoUrl,
+            faviconUrl = null,
+            imageUrl = null,
+            isImage = false,
+            isVideo = true,
+            handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
                     activity.addAlbum(HelperUnit.domain(cleanVideoUrl), cleanVideoUrl, false)
                 }

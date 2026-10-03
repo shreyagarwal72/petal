@@ -636,6 +636,34 @@ private fun PetalMenuRow(
 
 object PetalLinkContextMenuBridge {
 
+    /**
+     * Legacy 7-parameter entry point without `@JvmOverloads` so it does not collide
+     * with the full master overload.
+     */
+    @JvmStatic
+    fun show(
+        activity: ComponentActivity,
+        linkTitle: String?,
+        linkUrl: String,
+        faviconUrl: String?,
+        isImage: Boolean,
+        isVideo: Boolean,
+        handler: PetalLinkContextMenuHandler,
+    ) {
+        show(
+            activity = activity,
+            linkTitle = linkTitle,
+            linkUrl = linkUrl,
+            faviconUrl = faviconUrl,
+            imageUrl = null,
+            isImage = isImage,
+            isVideo = isVideo,
+            isAudio = false,
+            selectedText = null,
+            handler = handler,
+        )
+    }
+
     @JvmStatic
     @JvmOverloads
     fun show(
