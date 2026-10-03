@@ -7,8 +7,11 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -60,7 +63,7 @@ fun AboutSettingsScreen(
                     title = "Petal Browser",
                     subtitle = "${stringResource(R.string.ui_app_version)} v$appVersion",
                     statusText = stringResource(R.string.ui_official_build),
-                    icon = androidx.compose.material.icons.Icons.Rounded.Explore,
+                    icon = Icons.Rounded.Info,
                     statusActive = true,
                     actionLabel = stringResource(R.string.ui_view_on_github),
                     onActionClick = {
