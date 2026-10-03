@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -278,7 +279,7 @@ fun DataBackupSettingsScreen(
                             }
                             1 -> {
                                 com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Rounded.SettingsBackupRestore,
+                                    icon = Icons.Rounded.Restore,
                                     title = stringResource(R.string.ui_restore_json),
                                     subtitle = "Restore browser profile from local JSON file",
                                     position = position,
