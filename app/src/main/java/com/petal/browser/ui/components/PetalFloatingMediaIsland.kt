@@ -306,7 +306,7 @@ object PetalFloatingMediaBridge {
 
                             val rawUrl = state.sourceUrl.ifBlank {
                                 if (activity is com.petal.browser.activity.BrowserActivity) {
-                                    activity.currentUrl ?: ""
+                                    activity.currentAlbumController?.url ?: ""
                                 } else ""
                             }
                             if (rawUrl.isNotBlank()) {
