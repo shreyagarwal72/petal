@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Magnifying Glass Search Path -->
+    <path
+        android:strokeColor="@android:color/white"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M10,16 C6.686,16 4,13.314 4,10 C4,6.686 6.686,4 10,4 C13.314,4 16,6.686 16,10 C16,11.3 15.58,12.5 14.88,13.48 L19.7,18.3 C20.1,18.7 20.1,19.3 19.7,19.7 C19.3,20.1 18.7,20.1 18.3,19.7 L13.48,14.88 C12.5,15.58 11.3,16 10,16 Z" />
+    <!-- AI Sparkle 4-pointed Star at Top-Right of Lens -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M19,2 C19,4.2 20.8,6 23,6 C20.8,6 19,7.8 19,10 C19,7.8 17.2,6 15,6 C17.2,6 19,4.2 19,2 Z" />
+</vector>

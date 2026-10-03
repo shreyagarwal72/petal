@@ -490,7 +490,7 @@ private fun Petal1ExpressiveSearchRow(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                provider = ImageProvider(R.drawable.ic_search_sparkle),
+                provider = ImageProvider(R.drawable.widget_ic_search_sparkle),
                 contentDescription = context.getString(R.string.ui_petal_ai_search),
                 modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
@@ -507,7 +507,7 @@ private fun Petal1ExpressiveSearchRow(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                provider = ImageProvider(R.drawable.ic_mic),
+                provider = ImageProvider(R.drawable.widget_ic_mic),
                 contentDescription = context.getString(R.string.ui_voice_search_2),
                 modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
@@ -524,7 +524,7 @@ private fun Petal1ExpressiveSearchRow(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                provider = ImageProvider(R.drawable.ic_lens_camera_google),
+                provider = ImageProvider(R.drawable.widget_ic_lens_camera),
                 contentDescription = context.getString(R.string.ui_visual_camera_scanner),
                 modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
@@ -653,7 +653,7 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
 
             // AI Action Squircle Button - primaryContainer
             SquircleGlanceActionButton(
-                iconRes = R.drawable.ic_auto_awesome,
+                iconRes = R.drawable.widget_ic_auto_awesome,
                 contentDescription = context.getString(R.string.ui_ai_assistant),
                 containerColor = GlanceTheme.colors.primaryContainer,
                 contentColor = GlanceTheme.colors.onPrimaryContainer,
@@ -675,7 +675,7 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
 
             // Camera / Lens Action Squircle Button - tertiaryContainer
             SquircleGlanceActionButton(
-                iconRes = R.drawable.ic_lens_camera_google,
+                iconRes = R.drawable.widget_ic_lens_camera,
                 contentDescription = context.getString(R.string.ui_visual_camera_scanner),
                 containerColor = GlanceTheme.colors.tertiaryContainer,
                 contentColor = GlanceTheme.colors.onTertiaryContainer,
@@ -806,11 +806,11 @@ private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
                     .size(40.dp)
                     .cornerRadius(20.dp)
                     .background(GlanceTheme.colors.primaryContainer)
-                    .clickable(aiAction),
+                .clickable(aiAction),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    provider = ImageProvider(R.drawable.ic_sparkle_clean),
+                    provider = ImageProvider(R.drawable.widget_ic_sparkle),
                     contentDescription = context.getString(R.string.ui_ask_petal_ai),
                     modifier = GlanceModifier.size(22.dp),
                     colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer)
