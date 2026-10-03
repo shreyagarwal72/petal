@@ -485,12 +485,13 @@ fun AppearanceSettingsScreenContent(
                         }
                     }
 
+                    // Color Style Description Card (Containment Surface)
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.SINGLE),
+                        color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                             Text(
                                 text = colorStyle.label,
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
@@ -511,6 +512,7 @@ fun AppearanceSettingsScreenContent(
                         subtitle = stringResource(R.string.ui_adapt_accent_colors_from_your),
                         icon = Icons.Rounded.ColorLens,
                         checked = dynamicColor,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         onCheckedChange = { newValue ->
                             onDynamicColorChange(newValue)
                             PetalSearchWidgetProvider.updateAllWidgets(context)
@@ -523,6 +525,7 @@ fun AppearanceSettingsScreenContent(
                         icon = Icons.Rounded.DarkMode,
                         checked = amoledMode && isDarkTheme,
                         enabled = isDarkTheme,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onCheckedChange = { newValue ->
                             onAmoledModeChange(newValue)
                             PetalSearchWidgetProvider.updateAllWidgets(context)
@@ -533,7 +536,7 @@ fun AppearanceSettingsScreenContent(
                 // Section 2: Custom Fonts & Typography
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_typography_fonts),
-                    iconRes = com.petal.browser.R.drawable.database_filled,
+                    icon = Icons.Rounded.FontDownload,
                     cardId = "appearance_font",
                     targetHighlightId = targetHighlightItemId
                 ) {
@@ -580,28 +583,27 @@ fun AppearanceSettingsScreenContent(
                         }
                     }
 
-                    // Custom Font File Picker UI
+                    // Custom Font File Picker UI (Containment Surface & Icon Badge)
                     AnimatedVisibility(visible = appFont == AppFont.CUSTOM) {
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.SINGLE),
+                            color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
-                                modifier = Modifier.padding(14.dp),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.FontDownload,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(28.dp)
+                                com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                    icon = Icons.Rounded.FontDownload,
+                                    container = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
-                                Spacer(Modifier.width(12.dp))
+                                Spacer(Modifier.width(14.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = stringResource(R.string.ui_custom_font_file),
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
@@ -636,6 +638,7 @@ fun AppearanceSettingsScreenContent(
                         subtitle = stringResource(R.string.ui_show_the_bottom_bar_as),
                         icon = Icons.Rounded.SpaceBar,
                         checked = floatingTabBar,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         onCheckedChange = onFloatingTabBarChange
                     )
                     // Material 3 Expressive Background Morphing Shapes Toggle
@@ -644,6 +647,7 @@ fun AppearanceSettingsScreenContent(
                         subtitle = stringResource(R.string.ui_display_ambient_morphing_background_sh),
                         icon = Icons.Rounded.BubbleChart,
                         checked = expressiveBgShapes,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onCheckedChange = onExpressiveBgShapesChange
                     )
 
@@ -722,6 +726,7 @@ fun AppearanceSettingsScreenContent(
                         subtitle = stringResource(R.string.ui_force_120hz_144hz_peak_display, maxDetectedRefreshRate.toInt()),
                         icon = Icons.Rounded.Speed,
                         checked = highRefreshRate,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         onCheckedChange = { newValue ->
                             onHighRefreshRateChange(newValue)
                             (context as? Activity)?.let { act ->
@@ -739,6 +744,7 @@ fun AppearanceSettingsScreenContent(
                         subtitle = stringResource(R.string.ui_display_fluid_liquid_displacement_ripp),
                         icon = Icons.Rounded.WaterDrop,
                         checked = launchRippleEnabled,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onCheckedChange = onLaunchRippleEnabledChange
                     )
                 }
