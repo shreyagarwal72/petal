@@ -152,65 +152,34 @@ fun SearchHomeSettingsScreenContent(
                         allSearchEngines(context).find { it.index == idx }?.name ?: "Google"
                     }
 
-                    Surface(
-                        onClick = { showEngineSheet = true },
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.ui_default_search_provider),
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = currentEngineName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.Search,
+                                    title = stringResource(R.string.ui_default_search_provider),
+                                    subtitle = currentEngineName,
+                                    position = position,
+                                    onClick = { showEngineSheet = true },
+                                    trailing = {
+                                        Icon(
+                                            Icons.Rounded.ChevronRight,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 )
                             }
-                            Icon(
-                                Icons.Rounded.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                                Text(
-                                    text = stringResource(R.string.ui_engine_selector_in_search_box),
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = stringResource(R.string.ui_show_search_engine_icon_on),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_engine_selector_in_search_box),
+                                    subtitle = stringResource(R.string.ui_show_search_engine_icon_on),
+                                    icon = Icons.Rounded.ManageSearch,
+                                    checked = showSearchEngineSelectorInOmnibox,
+                                    position = position,
+                                    onCheckedChange = onShowSearchEngineSelectorInOmniboxChange
                                 )
                             }
-                            Switch(
-                                checked = showSearchEngineSelectorInOmnibox,
-                                onCheckedChange = onShowSearchEngineSelectorInOmniboxChange
-                            )
                         }
                     }
                 }
@@ -251,23 +220,32 @@ fun SearchHomeSettingsScreenContent(
                             shape = RoundedCornerShape(14.dp)
                         )
                     }
-                    // Background Audio & Video Playback
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_background_audio_video_playback),
-                        subtitle = stringResource(R.string.ui_keep_youtube_web_media_playing),
-                        icon = Icons.Rounded.PlayCircle,
-                        checked = backgroundPlay,
-                        onCheckedChange = onBackgroundPlayChange
-                    )
-                    // Auto Picture-in-Picture
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = if (isPipSupported) "Auto Picture-in-Picture (PiP)" else "Auto Picture-in-Picture (Not Supported)",
-                        subtitle = if (isPipSupported) "Automatically enter floating PiP window when leaving app during video playback" else "Picture-in-Picture mode is not supported on this device",
-                        icon = Icons.Rounded.PictureInPicture,
-                        checked = autoPip && isPipSupported,
-                        enabled = isPipSupported,
-                        onCheckedChange = onAutoPipChange
-                    )
+                    // Background Media Playback Group
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_background_audio_video_playback),
+                                    subtitle = stringResource(R.string.ui_keep_youtube_web_media_playing),
+                                    icon = Icons.Rounded.PlayCircle,
+                                    checked = backgroundPlay,
+                                    position = position,
+                                    onCheckedChange = onBackgroundPlayChange
+                                )
+                            }
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = if (isPipSupported) "Auto Picture-in-Picture (PiP)" else "Auto Picture-in-Picture (Not Supported)",
+                                    subtitle = if (isPipSupported) "Automatically enter floating PiP window when leaving app during video playback" else "Picture-in-Picture mode is not supported on this device",
+                                    icon = Icons.Rounded.PictureInPicture,
+                                    checked = autoPip && isPipSupported,
+                                    enabled = isPipSupported,
+                                    position = position,
+                                    onCheckedChange = onAutoPipChange
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(32.dp))

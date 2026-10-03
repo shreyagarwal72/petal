@@ -97,87 +97,73 @@ fun TabsSettingsScreen(
                     Text(
                         text = stringResource(R.string.ui_configure_inactive_tab_archiving_and),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )
 
-                    // Inactive Tabs Row
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                showInactiveSettings = true
-                                onNavigateToInactiveSettings()
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.ui_inactive),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = thresholdSummary,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.Schedule,
+                                    title = stringResource(R.string.ui_inactive),
+                                    subtitle = thresholdSummary,
+                                    position = position,
+                                    onClick = {
+                                        showInactiveSettings = true
+                                        onNavigateToInactiveSettings()
+                                    },
+                                    trailing = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.ChevronRight,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 )
                             }
-
-                            Icon(
-                                imageVector = Icons.Rounded.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_restore_tabs_on_startup),
+                                    subtitle = stringResource(R.string.ui_reopen_your_open_tabs_when),
+                                    icon = Icons.Rounded.Restore,
+                                    checked = restoreTabsOnStart,
+                                    position = position,
+                                    onCheckedChange = {
+                                        restoreTabsOnStart = it
+                                        sp.edit().putBoolean(PetalTabSessionManager.PREF_RESTORE_TABS, it).apply()
+                                    }
+                                )
+                            }
+                            2 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_automatically_open_tab_groups_from),
+                                    subtitle = stringResource(R.string.ui_sync_tab_sessions_seamlessly_across),
+                                    icon = Icons.Rounded.Devices,
+                                    checked = autoOpenFromOtherDevices,
+                                    position = position,
+                                    onCheckedChange = {
+                                        autoOpenFromOtherDevices = it
+                                        sp.edit().putBoolean("sp_auto_open_tab_groups_other_devices", it).apply()
+                                    }
+                                )
+                            }
+                            3 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_confirm_before_closing_tab),
+                                    subtitle = stringResource(R.string.ui_prompt_for_confirmation_before_closing),
+                                    icon = Icons.Rounded.Close,
+                                    checked = confirmTabClose,
+                                    position = position,
+                                    onCheckedChange = {
+                                        confirmTabClose = it
+                                        sp.edit().putBoolean("sp_close_tab_confirm", it).apply()
+                                    }
+                                )
+                            }
                         }
                     }
-
-                    // Restore Tabs on Startup Switch
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_restore_tabs_on_startup),
-                        subtitle = stringResource(R.string.ui_reopen_your_open_tabs_when),
-                        icon = Icons.Rounded.Restore,
-                        checked = restoreTabsOnStart,
-                        onCheckedChange = {
-                            restoreTabsOnStart = it
-                            sp.edit().putBoolean(PetalTabSessionManager.PREF_RESTORE_TABS, it).apply()
-                        }
-                    )
-
-                    // Cross-device Tab Groups Switch
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_automatically_open_tab_groups_from),
-                        subtitle = stringResource(R.string.ui_sync_tab_sessions_seamlessly_across),
-                        icon = Icons.Rounded.Devices,
-                        checked = autoOpenFromOtherDevices,
-                        onCheckedChange = {
-                            autoOpenFromOtherDevices = it
-                            sp.edit().putBoolean("sp_auto_open_tab_groups_other_devices", it).apply()
-                        }
-                    )
-
-                    // Confirm Tab Close Switch
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_confirm_before_closing_tab),
-                        subtitle = stringResource(R.string.ui_prompt_for_confirmation_before_closing),
-                        icon = Icons.Rounded.Close,
-                        checked = confirmTabClose,
-                        onCheckedChange = {
-                            confirmTabClose = it
-                            sp.edit().putBoolean("sp_close_tab_confirm", it).apply()
-                        }
-                    )
                 }
             }
         }

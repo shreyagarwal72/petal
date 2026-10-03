@@ -406,49 +406,61 @@ fun DisplaySettingsScreenContent(
                     iconRes = com.petal.browser.R.drawable.mobile_vibrate_filled,
                     cardId = "display",
                     targetHighlightId = targetHighlightItemId
-                ) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_predictive_back_animations),
-                        subtitle = stringResource(R.string.ui_enable_fluid_predictive_back_gesture),
-                        icon = Icons.Rounded.Animation,
-                        checked = predictiveBack,
-                        onCheckedChange = onPredictiveBackChange
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_depth_blur_effects),
-                        subtitle = stringResource(R.string.ui_show_24_dp_depth_blur),
-                        icon = Icons.Rounded.BlurOn,
-                        checked = depthBlur,
-                        onCheckedChange = onDepthBlurChange
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_touch_haptics_engine),
-                        subtitle = stringResource(R.string.ui_tactile_feedback_on_button_presses),
-                        icon = Icons.Rounded.Vibration,
-                        checked = touchHaptics,
-                        onCheckedChange = { newValue ->
-                            onTouchHapticsChange(newValue)
-                            if (newValue) {
-                                PetalHapticEngine.getInstance(context).playClick(context)
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_predictive_back_animations),
+                                    subtitle = stringResource(R.string.ui_enable_fluid_predictive_back_gesture),
+                                    icon = Icons.Rounded.Animation,
+                                    checked = predictiveBack,
+                                    position = position,
+                                    onCheckedChange = onPredictiveBackChange
+                                )
+                            }
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_depth_blur_effects),
+                                    subtitle = stringResource(R.string.ui_show_24_dp_depth_blur),
+                                    icon = Icons.Rounded.BlurOn,
+                                    checked = depthBlur,
+                                    position = position,
+                                    onCheckedChange = onDepthBlurChange
+                                )
+                            }
+                            2 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_touch_haptics_engine),
+                                    subtitle = stringResource(R.string.ui_tactile_feedback_on_button_presses),
+                                    icon = Icons.Rounded.Vibration,
+                                    checked = touchHaptics,
+                                    position = position,
+                                    onCheckedChange = { newValue ->
+                                        onTouchHapticsChange(newValue)
+                                        if (newValue) {
+                                            PetalHapticEngine.getInstance(context).playClick(context)
+                                        }
+                                    }
+                                )
+                            }
+                            3 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_scroll_haptics),
+                                    subtitle = stringResource(R.string.ui_subtle_tactile_feedback_while_scrollin),
+                                    icon = Icons.Rounded.TouchApp,
+                                    checked = scrollHaptics,
+                                    enabled = touchHaptics,
+                                    position = position,
+                                    onCheckedChange = { newValue ->
+                                        onScrollHapticsChange(newValue)
+                                        if (newValue && touchHaptics) {
+                                            PetalHapticEngine.getInstance(context).playClick(context)
+                                        }
+                                    }
+                                )
                             }
                         }
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_scroll_haptics),
-                        subtitle = stringResource(R.string.ui_subtle_tactile_feedback_while_scrollin),
-                        icon = Icons.Rounded.TouchApp,
-                        checked = scrollHaptics,
-                        enabled = touchHaptics,
-                        onCheckedChange = { newValue ->
-                            onScrollHapticsChange(newValue)
-                            if (newValue && touchHaptics) {
-                                PetalHapticEngine.getInstance(context).playClick(context)
-                            }
-                        }
-                    )
+                    }
                     // Text Font Scale Slider & Live Box
                     com.petal.browser.ui.containment.PetalHeroCard {
                         Column(
@@ -574,88 +586,68 @@ fun DisplaySettingsScreenContent(
                             }
                         }
                     }
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_force_enable_zoom_override_viewport),
-                        subtitle = stringResource(R.string.ui_override_website_viewport_locks_user),
-                        icon = Icons.Rounded.ZoomIn,
-                        checked = forceZoom,
-                        onCheckedChange = onForceZoomChange
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_simplified_view_for_webpages),
-                        subtitle = stringResource(R.string.ui_detect_article_content_and_enable),
-                        icon = Icons.Rounded.Article,
-                        checked = readerModeDetection,
-                        onCheckedChange = onReaderModeDetectionChange
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_caret_browsing_f7_shortcut),
-                        subtitle = stringResource(R.string.ui_navigate_and_select_text_within),
-                        icon = Icons.Rounded.TextFormat,
-                        checked = caretBrowsing,
-                        onCheckedChange = { newValue ->
-                            onCaretBrowsingChange(newValue)
-                            PetalAccessibilityEngine.setCaretBrowsing(context, null, newValue)
-                        }
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_touchpad_two_finger_navigation),
-                        subtitle = stringResource(R.string.ui_swipe_horizontally_with_two_fingers),
-                        icon = Icons.Rounded.Swipe,
-                        checked = touchpadSwipeNav,
-                        onCheckedChange = onTouchpadSwipeNavChange
-                    )
-
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clickable {
-                                PetalAccessibilityEngine.launchCaptionSettings(context)
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.ClosedCaption,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.ui_system_captions_preferences),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = stringResource(R.string.ui_configure_system_level_closed_captioni),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 5) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_force_enable_zoom_override_viewport),
+                                    subtitle = stringResource(R.string.ui_override_website_viewport_locks_user),
+                                    icon = Icons.Rounded.ZoomIn,
+                                    checked = forceZoom,
+                                    position = position,
+                                    onCheckedChange = onForceZoomChange
                                 )
                             }
-                            Icon(
-                                imageVector = Icons.Rounded.OpenInNew,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_simplified_view_for_webpages),
+                                    subtitle = stringResource(R.string.ui_detect_article_content_and_enable),
+                                    icon = Icons.Rounded.Article,
+                                    checked = readerModeDetection,
+                                    position = position,
+                                    onCheckedChange = onReaderModeDetectionChange
+                                )
+                            }
+                            2 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_caret_browsing_f7_shortcut),
+                                    subtitle = stringResource(R.string.ui_navigate_and_select_text_within),
+                                    icon = Icons.Rounded.TextFormat,
+                                    checked = caretBrowsing,
+                                    position = position,
+                                    onCheckedChange = { newValue ->
+                                        onCaretBrowsingChange(newValue)
+                                        PetalAccessibilityEngine.setCaretBrowsing(context, null, newValue)
+                                    }
+                                )
+                            }
+                            3 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_touchpad_two_finger_navigation),
+                                    subtitle = stringResource(R.string.ui_swipe_horizontally_with_two_fingers),
+                                    icon = Icons.Rounded.Swipe,
+                                    checked = touchpadSwipeNav,
+                                    position = position,
+                                    onCheckedChange = onTouchpadSwipeNavChange
+                                )
+                            }
+                            4 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.ClosedCaption,
+                                    title = stringResource(R.string.ui_system_captions_preferences),
+                                    subtitle = stringResource(R.string.ui_configure_system_level_closed_captioni),
+                                    position = position,
+                                    onClick = { PetalAccessibilityEngine.launchCaptionSettings(context) },
+                                    trailing = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.OpenInNew,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }

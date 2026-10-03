@@ -244,63 +244,56 @@ fun DataBackupSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                PetalHeroCard {
-                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(
-                                Modifier.size(44.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                androidx.compose.foundation.Image(
-                                    painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.backup_filled),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(22.dp),
-                                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer)
-                                )
-                            }
-                            Text(stringResource(R.string.ui_backup_restore_json), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        }
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_backup_restore_json),
+                    iconRes = com.petal.browser.R.drawable.backup_filled
+                ) {
                     Text(
                         stringResource(R.string.ui_export_backups_directly_to_downloads),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Button(
-                            onClick = { showBackupDialog = true },
-                            shape = RoundedCornerShape(14.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Filled.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.ui_backup_json), maxLines = 1)
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Filled.CloudUpload,
+                                    title = stringResource(R.string.ui_backup_json),
+                                    subtitle = "Export bookmarks, history, settings and vault",
+                                    position = position,
+                                    onClick = { showBackupDialog = true },
+                                    trailing = {
+                                        Button(
+                                            onClick = { showBackupDialog = true },
+                                            shape = RoundedCornerShape(12.dp),
+                                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                                        ) {
+                                            Text(stringResource(R.string.ui_backup_json))
+                                        }
+                                    }
+                                )
+                            }
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.SettingsBackupRestore,
+                                    title = stringResource(R.string.ui_restore_json),
+                                    subtitle = "Restore browser profile from local JSON file",
+                                    position = position,
+                                    onClick = { showRestoreDialog = true },
+                                    trailing = {
+                                        OutlinedButton(
+                                            onClick = { showRestoreDialog = true },
+                                            shape = RoundedCornerShape(12.dp),
+                                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                                        ) {
+                                            Text(stringResource(R.string.ui_restore_json))
+                                        }
+                                    }
+                                )
                             }
                         }
-
-                        Button(
-                            onClick = { showRestoreDialog = true },
-                            shape = RoundedCornerShape(14.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text(stringResource(R.string.ui_restore_json), maxLines = 1)
-                            }
-                        }
-                    }
                     }
                 }
 

@@ -653,14 +653,16 @@ private fun FilePickerBrowserContent(
                         }
                     }
 
-                    items(displayedFiles, key = { it.absolutePath }) { file ->
+                    itemsIndexed(displayedFiles, key = { _, file -> file.absolutePath }) { index, file ->
                         val isDir = file.isDirectory
                         val isSelected = selectedFiles.contains(file)
+                        val position = petalGroupPositionFor(index, displayedFiles.size)
 
                         FilePickerRowItem(
                             file = file,
                             isSelected = isSelected,
                             allowMultiple = allowMultiple,
+                            position = position,
                             onClick = {
                                 haptics.playClick(context)
                                 if (isDir) {
@@ -751,6 +753,7 @@ private fun FilePickerRowItem(
     file: File,
     isSelected: Boolean,
     allowMultiple: Boolean,
+    position: PetalGroupPosition,
     onClick: () -> Unit,
     onPreview: () -> Unit
 ) {
@@ -807,13 +810,16 @@ private fun FilePickerRowItem(
     }
 
     PetalGroupListRow(
-        position = PetalGroupPosition.SINGLE,
+        position = position,
         onClick = onClick,
         modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.5.dp),
         selected = isSelected,
         leading = {
             when {
-                isDir -> PetalGroupIconBadge(Icons.Filled.Folder, container = MaterialTheme.colorScheme.secondaryContainer, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                isDir -> PetalGroupIconBadge(
+                    Icons.Filled.Folder,
+                    variant = PetalBadgeVariant.SECONDARY
+                )
                 thumbnail != null -> Image(
                     bitmap = thumbnail!!,
                     contentDescription = null,
@@ -821,19 +827,18 @@ private fun FilePickerRowItem(
                     modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)),
                 )
                 packageInfo != null -> {
-                    val appIcon = remember(packageInfo) {
-                        runCatching { packageInfo!!.applicationInfo?.loadIcon(context.packageManager) }.getOrNull()
-                    }
                     PetalGroupIconBadge(
                         Icons.Filled.Android,
-                        container = if (appIcon != null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                        tint = MaterialTheme.colorScheme.primary,
+                        variant = PetalBadgeVariant.PRIMARY
                     )
                 }
+                ext in AUDIO_EXTENSIONS || ext in VIDEO_EXTENSIONS || ext in IMAGE_EXTENSIONS -> PetalGroupIconBadge(
+                    getFileIcon(ext),
+                    variant = PetalBadgeVariant.TERTIARY
+                )
                 else -> PetalGroupIconBadge(
                     getFileIcon(ext),
-                    container = MaterialTheme.colorScheme.surfaceContainerLow,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    variant = PetalBadgeVariant.SURFACE_TONAL
                 )
             }
         },

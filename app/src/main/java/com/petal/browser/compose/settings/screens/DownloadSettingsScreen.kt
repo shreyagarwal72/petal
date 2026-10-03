@@ -103,26 +103,36 @@ fun DownloadSettingsScreenContent(
                     cardId = "misc_download_delete",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_confirm_file_deletion),
-                        subtitle = stringResource(R.string.ui_ask_before_removing_a_download),
-                        icon = Icons.Rounded.HelpOutline,
-                        checked = confirmFileDelete,
-                        onCheckedChange = {
-                            confirmFileDelete = it
-                            preferences.edit().putBoolean("sp_confirm_download_delete", it).apply()
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_confirm_file_deletion),
+                                    subtitle = stringResource(R.string.ui_ask_before_removing_a_download),
+                                    icon = Icons.Rounded.HelpOutline,
+                                    checked = confirmFileDelete,
+                                    position = position,
+                                    onCheckedChange = {
+                                        confirmFileDelete = it
+                                        preferences.edit().putBoolean("sp_confirm_download_delete", it).apply()
+                                    }
+                                )
+                            }
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_delete_file_from_storage),
+                                    subtitle = stringResource(R.string.ui_use_this_as_the_default),
+                                    icon = Icons.Rounded.DeleteForever,
+                                    checked = deleteFromStorage,
+                                    position = position,
+                                    onCheckedChange = {
+                                        deleteFromStorage = it
+                                        preferences.edit().putBoolean("sp_delete_download_file", it).apply()
+                                    }
+                                )
+                            }
                         }
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_delete_file_from_storage),
-                        subtitle = stringResource(R.string.ui_use_this_as_the_default),
-                        icon = Icons.Rounded.DeleteForever,
-                        checked = deleteFromStorage,
-                        onCheckedChange = {
-                            deleteFromStorage = it
-                            preferences.edit().putBoolean("sp_delete_download_file", it).apply()
-                        }
-                    )
+                    }
                 }
 
                 // Default Download Manager Card
@@ -260,161 +270,106 @@ fun DownloadSettingsScreenContent(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // Option 1: In-App Downloader (Default)
-                    val isInApp = downloadManagerMode == ExternalDownloadManagerHelper.MODE_IN_APP
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isInApp) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onDownloadManagerModeChange(ExternalDownloadManagerHelper.MODE_IN_APP) }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Surface(
-                                shape = androidx.compose.foundation.shape.CircleShape,
-                                color = if (isInApp) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Speed,
-                                        contentDescription = null,
-                                        tint = if (isInApp) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.ui_in_app_downloader_fast_multi),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = if (isInApp) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = stringResource(R.string.ui_native_petal_accelerated_downloader_wi),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            RadioButton(
-                                selected = isInApp,
-                                onClick = { onDownloadManagerModeChange(ExternalDownloadManagerHelper.MODE_IN_APP) }
-                            )
-                        }
-                    }
-
-                    // Option 2: Detected installed download managers
-                    installedDownloaders.forEach { downloader ->
-                        val isSelected = downloadManagerMode.equals(downloader.key, ignoreCase = true)
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onDownloadManagerModeChange(downloader.key) }
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Surface(
-                                    shape = androidx.compose.foundation.shape.CircleShape,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.OpenInNew,
-                                            contentDescription = null,
-                                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
+                    val totalOptions = 2 + installedDownloaders.size
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = totalOptions) { index, position ->
+                        when {
+                            index == 0 -> {
+                                val isInApp = downloadManagerMode == ExternalDownloadManagerHelper.MODE_IN_APP
+                                com.petal.browser.ui.containment.PetalGroupListRow(
+                                    position = position,
+                                    selected = isInApp,
+                                    onClick = { onDownloadManagerModeChange(ExternalDownloadManagerHelper.MODE_IN_APP) },
+                                    leading = {
+                                        com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                            icon = Icons.Rounded.Speed,
+                                            variant = if (isInApp) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                        )
+                                    },
+                                    content = {
+                                        Text(
+                                            text = stringResource(R.string.ui_in_app_downloader_fast_multi),
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.ui_native_petal_accelerated_downloader_wi),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    trailing = {
+                                        RadioButton(
+                                            selected = isInApp,
+                                            onClick = { onDownloadManagerModeChange(ExternalDownloadManagerHelper.MODE_IN_APP) }
                                         )
                                     }
-                                }
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = downloader.displayName,
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = stringResource(R.string.ui_installed_external_download_manager_wi),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                RadioButton(
+                                )
+                            }
+                            index <= installedDownloaders.size -> {
+                                val downloader = installedDownloaders[index - 1]
+                                val isSelected = downloadManagerMode.equals(downloader.key, ignoreCase = true)
+                                com.petal.browser.ui.containment.PetalGroupListRow(
+                                    position = position,
                                     selected = isSelected,
-                                    onClick = { onDownloadManagerModeChange(downloader.key) }
+                                    onClick = { onDownloadManagerModeChange(downloader.key) },
+                                    leading = {
+                                        com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                            icon = Icons.Rounded.OpenInNew,
+                                            variant = if (isSelected) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                        )
+                                    },
+                                    content = {
+                                        Text(
+                                            text = downloader.displayName,
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.ui_installed_external_download_manager_wi),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    trailing = {
+                                        RadioButton(
+                                            selected = isSelected,
+                                            onClick = { onDownloadManagerModeChange(downloader.key) }
+                                        )
+                                    }
                                 )
                             }
-                        }
-                    }
-
-                    // Option 3: External App (Chooser)
-                    val isExternalAuto = downloadManagerMode == ExternalDownloadManagerHelper.MODE_EXTERNAL_AUTO
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isExternalAuto) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onDownloadManagerModeChange(ExternalDownloadManagerHelper.MODE_EXTERNAL_AUTO) }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Surface(
-                                shape = androidx.compose.foundation.shape.CircleShape,
-                                color = if (isExternalAuto) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.OpenInNew,
-                                        contentDescription = null,
-                                        tint = if (isExternalAuto) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.ui_external_app_auto_chooser),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = stringResource(R.string.ui_prompt_system_chooser_or_dispatch),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            else -> {
+                                val isExternalAuto = downloadManagerMode == ExternalDownloadManagerHelper.MODE_EXTERNAL_AUTO
+                                com.petal.browser.ui.containment.PetalGroupListRow(
+                                    position = position,
+                                    selected = isExternalAuto,
+                                    onClick = { onDownloadManagerModeChange(ExternalDownloadManagerHelper.MODE_EXTERNAL_AUTO) },
+                                    leading = {
+                                        com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                            icon = Icons.Rounded.OpenInNew,
+                                            variant = if (isExternalAuto) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                        )
+                                    },
+                                    content = {
+                                        Text(
+                                            text = stringResource(R.string.ui_external_app_auto_chooser),
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.ui_prompt_system_chooser_or_dispatch),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    trailing = {
+                                        RadioButton(
+                                            selected = isExternalAuto,
+                                            onClick = { onDownloadManagerModeChange(ExternalDownloadManagerHelper.MODE_EXTERNAL_AUTO) }
+                                        )
+                                    }
                                 )
                             }
-
-                            RadioButton(
-                                selected = isExternalAuto,
-                                onClick = { onDownloadManagerModeChange(ExternalDownloadManagerHelper.MODE_EXTERNAL_AUTO) }
-                            )
                         }
                     }
                 }

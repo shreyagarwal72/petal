@@ -191,93 +191,38 @@ fun InactiveSettingsScreen(
                     title = stringResource(R.string.ui_auto_archive),
                     icon = Icons.Filled.Archive,
                 ) {
-                    // Archive duplicate tabs
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 18.dp, vertical = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(end = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(3.dp)
-                            ) {
-                                Text(
-                                    stringResource(R.string.ui_archive_duplicate_tabs),
-                                    style = MaterialTheme.typography.titleSmall.copy(
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    stringResource(R.string.ui_keeps_only_the_most_recently),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_archive_duplicate_tabs),
+                                    subtitle = stringResource(R.string.ui_keeps_only_the_most_recently),
+                                    icon = Icons.Rounded.ContentCopy,
+                                    checked = archiveDuplicates,
+                                    position = position,
+                                    onCheckedChange = {
+                                        archiveDuplicates = it
+                                        sp.edit().putBoolean(
+                                            PetalInactiveTabManager.PREF_ARCHIVE_DUPLICATES, it
+                                        ).apply()
+                                    }
                                 )
                             }
-                            IconSwitch(
-                                checked = archiveDuplicates,
-                                icon = Icons.Rounded.ContentCopy,
-                                onCheckedChange = {
-                                    archiveDuplicates = it
-                                    sp.edit().putBoolean(
-                                        PetalInactiveTabManager.PREF_ARCHIVE_DUPLICATES, it
-                                    ).apply()
-                                }
-                            )
-                        }
-                    }
-
-                    // Auto-close after 3 months
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 18.dp, vertical = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(end = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(3.dp)
-                            ) {
-                                Text(
-                                    stringResource(R.string.ui_auto_close_after_3_months),
-                                    style = MaterialTheme.typography.titleSmall.copy(
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    stringResource(R.string.ui_inactive_tabs_older_than_90),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_auto_close_after_3_months),
+                                    subtitle = stringResource(R.string.ui_inactive_tabs_older_than_90),
+                                    icon = Icons.Rounded.DeleteSweep,
+                                    checked = autoClose3Months,
+                                    position = position,
+                                    onCheckedChange = {
+                                        autoClose3Months = it
+                                        sp.edit().putBoolean(
+                                            PetalInactiveTabManager.PREF_AUTO_CLOSE_INACTIVE_3_MONTHS, it
+                                        ).apply()
+                                    }
                                 )
                             }
-                            IconSwitch(
-                                checked = autoClose3Months,
-                                icon = Icons.Rounded.DeleteSweep,
-                                onCheckedChange = {
-                                    autoClose3Months = it
-                                    sp.edit().putBoolean(
-                                        PetalInactiveTabManager.PREF_AUTO_CLOSE_INACTIVE_3_MONTHS, it
-                                    ).apply()
-                                }
-                            )
                         }
                     }
                 }
