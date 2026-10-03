@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.containment.PetalSettingsSection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -52,64 +53,99 @@ fun AboutSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Section 1: Developer Spotlight Hero Card with Animated Avatar Container
-                DeveloperHeroCard(
-                    onCopyGithub = {
-                        try {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = android.content.ClipData.newPlainText("GitHub URL", "https://github.com/shreyagarwal72")
-                            clipboard.setPrimaryClip(clip)
-                            PetalToast.show(context, "Copied GitHub URL to clipboard")
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+                // Section 1: Developer Spotlight
+                PetalSettingsSection(
+                    title = "Developer Spotlight",
+                    icon = Icons.Rounded.Person,
+                    cardId = "about_developer_spotlight"
+                ) {
+                    DeveloperHeroCard(
+                        onCopyGithub = {
+                            try {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = android.content.ClipData.newPlainText("GitHub URL", "https://github.com/shreyagarwal72")
+                                clipboard.setPrimaryClip(clip)
+                                PetalToast.show(context, "Copied GitHub URL to clipboard")
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         }
-                    }
-                )
+                    )
+                }
 
-                // Section 2: Repository Overview Card
-                PetalRepoDetailsCard(
-                    onOpenUrl = { url -> BrowserUnit.intentURL(context, Uri.parse(url)) }
-                )
+                // Section 2: Project & Repository
+                PetalSettingsSection(
+                    title = "Project & Source",
+                    icon = Icons.Rounded.Code,
+                    cardId = "about_repo"
+                ) {
+                    PetalRepoDetailsCard(
+                        onOpenUrl = { url -> BrowserUnit.intentURL(context, Uri.parse(url)) }
+                    )
+                }
 
-                // Section 3: Developer Ecosystem Card (Collapsible)
-                DeveloperEcosystemCard(
-                    onOpenUrl = { url -> BrowserUnit.intentURL(context, Uri.parse(url)) }
-                )
+                // Section 3: Ecosystem & Projects
+                PetalSettingsSection(
+                    title = "Ecosystem & Apps",
+                    icon = Icons.Rounded.Apps,
+                    cardId = "about_ecosystem"
+                ) {
+                    DeveloperEcosystemCard(
+                        onOpenUrl = { url -> BrowserUnit.intentURL(context, Uri.parse(url)) }
+                    )
+                }
 
-                // Section 4: Mission & Architectural Philosophy
-                DeveloperMissionCard()
+                // Section 4: Architecture & Mission
+                PetalSettingsSection(
+                    title = "Mission & Philosophy",
+                    icon = Icons.Rounded.RocketLaunch,
+                    cardId = "about_mission"
+                ) {
+                    DeveloperMissionCard()
+                    Spacer(Modifier.height(4.dp))
+                    DeveloperMetricsGrid()
+                }
 
-                // Section 5: Metrics & Benchmarks
-                DeveloperMetricsGrid()
+                // Section 5: Technologies & Stack
+                PetalSettingsSection(
+                    title = "Technologies & Frameworks",
+                    icon = Icons.Rounded.Layers,
+                    cardId = "about_tech"
+                ) {
+                    DeveloperTechStackCard()
+                }
 
-                // Section 6: Core Technologies
-                DeveloperTechStackCard()
-
-                // Section 7: Community & Diagnostic Tools
-                DeveloperActionsCard(
-                    onOpenUrl = { url ->
-                        try {
-                            if (url == "petal://credits") {
-                                (context as? ComponentActivity)?.let { act ->
-                                    val browserActivity = act as? BrowserActivity
-                                    if (browserActivity != null) {
-                                        browserActivity.showCreditsScreen {
-                                            browserActivity.openSettingsScreen(SettingsCategory.ABOUT)
-                                        }
-                                    } else {
-                                        PetalCreditsBridge.show(act) {
-                                            onNavigateBack()
+                // Section 6: Community & Diagnostics
+                PetalSettingsSection(
+                    title = "Community & Support",
+                    icon = Icons.Rounded.Favorite,
+                    cardId = "about_actions"
+                ) {
+                    DeveloperActionsCard(
+                        onOpenUrl = { url ->
+                            try {
+                                if (url == "petal://credits") {
+                                    (context as? ComponentActivity)?.let { act ->
+                                        val browserActivity = act as? BrowserActivity
+                                        if (browserActivity != null) {
+                                            browserActivity.showCreditsScreen {
+                                                browserActivity.openSettingsScreen(SettingsCategory.ABOUT)
+                                            }
+                                        } else {
+                                            PetalCreditsBridge.show(act) {
+                                                onNavigateBack()
+                                            }
                                         }
                                     }
+                                } else {
+                                    BrowserUnit.intentURL(context, Uri.parse(url))
                                 }
-                            } else {
-                                BrowserUnit.intentURL(context, Uri.parse(url))
+                            } catch (e: Exception) {
+                                e.printStackTrace()
                             }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
                         }
-                    }
-                )
+                    )
+                }
 
                 // Footer Copyright
                 Column(

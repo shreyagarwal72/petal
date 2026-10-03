@@ -90,20 +90,26 @@ fun AddressBarSettingsScreen(
                 }
 
                 PetalSettingsSection("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_address_bar_horizontal_swipe_to),
-                        subtitle = stringResource(R.string.ui_swipe_left_or_right_across),
-                        icon = Icons.Rounded.Swipe,
-                        checked = swipeTabs,
-                        onCheckedChange = viewModel::setSwipeTabs
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_address_bar_long_press_quick),
-                        subtitle = stringResource(R.string.ui_long_press_the_address_bar),
-                        icon = Icons.Rounded.TouchApp,
-                        checked = quickActions,
-                        onCheckedChange = viewModel::setQuickActions
-                    )
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                        when (index) {
+                            0 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = stringResource(R.string.ui_address_bar_horizontal_swipe_to),
+                                subtitle = stringResource(R.string.ui_swipe_left_or_right_across),
+                                icon = Icons.Rounded.Swipe,
+                                checked = swipeTabs,
+                                position = position,
+                                onCheckedChange = viewModel::setSwipeTabs
+                            )
+                            1 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = stringResource(R.string.ui_address_bar_long_press_quick),
+                                subtitle = stringResource(R.string.ui_long_press_the_address_bar),
+                                icon = Icons.Rounded.TouchApp,
+                                checked = quickActions,
+                                position = position,
+                                onCheckedChange = viewModel::setQuickActions
+                            )
+                        }
+                    }
                 }
                 Spacer(Modifier.height(24.dp))
             }

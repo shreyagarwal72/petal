@@ -238,165 +238,161 @@ fun DisplaySettingsScreenContent(
                         )
 
                         if (!appleDuoUseSensor || !appleDuoHasSensor) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                            com.petal.browser.ui.containment.PetalHeroCard {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(
-                                        text = stringResource(R.string.ui_manual_tilt_angle),
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.ui_1f_hinge_s).format(appleDuoManualTilt, if (appleDuoManualTilt >= 0f) "Right" else "Left"),
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.ui_manual_tilt_angle),
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.ui_1f_hinge_s).format(appleDuoManualTilt, if (appleDuoManualTilt >= 0f) "Right" else "Left"),
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    PetalSlider(
+                                        value = appleDuoManualTilt,
+                                        onValueChange = onAppleDuoManualTiltChange,
+                                        valueRange = -45f..45f,
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 }
-                                PetalSlider(
-                                    value = appleDuoManualTilt,
-                                    onValueChange = onAppleDuoManualTiltChange,
-                                    valueRange = -45f..45f,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
                             }
                         } else {
-                            Text(
-                                text = stringResource(R.string.ui_live_tilt_1f_hinge_s).format(appleDuoCurrentTilt, if (appleDuoCurrentHinge >= 0f) "Right" else "Left"),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
                             com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                 title = stringResource(R.string.ui_auto_recenter_washout),
-                                subtitle = stringResource(R.string.ui_continuously_absorb_gyro_drift_and),
+                                subtitle = stringResource(R.string.ui_live_tilt_1f_hinge_s).format(appleDuoCurrentTilt, if (appleDuoCurrentHinge >= 0f) "Right" else "Left"),
                                 icon = Icons.Rounded.Autorenew,
                                 checked = appleDuoAutoRecenter,
                                 onCheckedChange = onAppleDuoAutoRecenterChange
                             )
 
-                            Button(
-                                onClick = onAppleDuoRecalibrate,
+                            com.petal.browser.ui.containment.PetalHeroCard {
+                                Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                                    Button(
+                                        onClick = onAppleDuoRecalibrate,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.FilterCenterFocus, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(stringResource(R.string.ui_recalibrate_zero_pose))
+                                    }
+                                }
+                            }
+                        }
+
+                        com.petal.browser.ui.containment.PetalHeroCard {
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                shape = RoundedCornerShape(14.dp)
-                            ) {
-                                Icon(Icons.Rounded.FilterCenterFocus, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.ui_recalibrate_zero_pose))
-                            }
-                        }
-
-                        Divider(
-                            modifier = Modifier.padding(vertical = 6.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                        )
-
-                        Text(
-                            text = stringResource(R.string.ui_physics_shader_tuning),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        // Eye Distance Slider
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
                                 Text(
-                                    text = stringResource(R.string.ui_eye_distance),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = stringResource(R.string.ui_0f_mm).format(appleDuoEyeDistance),
+                                    text = stringResource(R.string.ui_physics_shader_tuning),
                                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
-                            }
-                            PetalSlider(
-                                value = appleDuoEyeDistance,
-                                onValueChange = onAppleDuoEyeDistanceChange,
-                                valueRange = 200f..800f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
 
-                        // Blur Spread Slider
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.ui_blur_spread_radius),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "%.3f".format(appleDuoBlurSpread),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            PetalSlider(
-                                value = appleDuoBlurSpread,
-                                onValueChange = onAppleDuoBlurSpreadChange,
-                                valueRange = 0.02f..0.30f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                                // Eye Distance Slider
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.ui_eye_distance),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.ui_0f_mm).format(appleDuoEyeDistance),
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    PetalSlider(
+                                        value = appleDuoEyeDistance,
+                                        onValueChange = onAppleDuoEyeDistanceChange,
+                                        valueRange = 200f..800f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
 
-                        // Darkening Slider
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.ui_glass_frost_darkening),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "%.3f".format(appleDuoDarkening),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                // Blur Spread Slider
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.ui_blur_spread_radius),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "%.3f".format(appleDuoBlurSpread),
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    PetalSlider(
+                                        value = appleDuoBlurSpread,
+                                        onValueChange = onAppleDuoBlurSpreadChange,
+                                        valueRange = 0.02f..0.30f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                // Darkening Slider
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.ui_glass_frost_darkening),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "%.3f".format(appleDuoDarkening),
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    PetalSlider(
+                                        value = appleDuoDarkening,
+                                        onValueChange = onAppleDuoDarkeningChange,
+                                        valueRange = 0.001f..0.05f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
-                            PetalSlider(
-                                value = appleDuoDarkening,
-                                onValueChange = onAppleDuoDarkeningChange,
-                                valueRange = 0.001f..0.05f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
                         }
                     }
                 }

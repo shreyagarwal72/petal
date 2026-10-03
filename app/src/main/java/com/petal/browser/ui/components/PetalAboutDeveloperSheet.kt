@@ -245,89 +245,132 @@ fun PetalAboutDeveloperSheetContent(
                                 .verticalScroll(rememberScrollState())
                                 .padding(horizontal = 20.dp, vertical = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // ── Developer Hero Profile Card ─────────────────────────
-                            DeveloperHeroCard(
-                                onCopyGithub = { copyToClipboard("GitHub URL", "https://github.com/shreyagarwal72") }
-                            )
-
-                        // ── Petal Repository Overview Card ─────────────────────
-                        PetalRepoDetailsCard(
-                            onOpenUrl = { url ->
-                                try {
-                                    val activity = context as? com.petal.browser.activity.BrowserActivity
-                                    if (activity != null) {
-                                        onClose()
-                                        val ctrl = activity.currentAlbumController
-                                        if (ctrl is com.petal.browser.view.PetalGeckoView) {
-                                            ctrl.loadUrl(url)
-                                            activity.showAlbum(ctrl, url)
-                                        } else {
-                                            activity.addAlbum(null, url, true)
-                                        }
-                                    } else {
-                                        BrowserUnit.intentURL(context, Uri.parse(url))
-                                    }
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
+                            // ── Developer Spotlight Hero Profile Card ─────────────
+                            PetalSettingsSection(
+                                title = "Developer Spotlight",
+                                icon = Icons.Rounded.Person,
+                                cardId = "about_developer_spotlight"
+                            ) {
+                                DeveloperHeroCard(
+                                    onCopyGithub = { copyToClipboard("GitHub URL", "https://github.com/shreyagarwal72") }
+                                )
                             }
-                        )
 
-                        // ── Developer Ecosystem & Projects Showcase ─────────────
-                        DeveloperEcosystemCard(
-                            onOpenUrl = { url ->
-                                try {
-                                    val activity = context as? com.petal.browser.activity.BrowserActivity
-                                    if (activity != null) {
-                                        onClose()
-                                        val ctrl = activity.currentAlbumController
-                                        if (ctrl is com.petal.browser.view.PetalGeckoView) {
-                                            ctrl.loadUrl(url)
-                                            activity.showAlbum(ctrl, url)
-                                        } else {
-                                            activity.addAlbum(null, url, true)
-                                        }
-                                    } else {
-                                        BrowserUnit.intentURL(context, Uri.parse(url))
-                                    }
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
-                            }
-                        )
-
-                        // ── Community Links & Action Group ──────────────────────
-                        DeveloperActionsCard(
-                            onOpenUrl = { url ->
-                                try {
-                                    if (url == "petal://credits") {
-                                        (context as? ComponentActivity)?.let { act ->
-                                            onClose()
-                                            PetalCreditsBridge.show(act) {
-                                                PetalAboutDeveloperBridge.show(act)
-                                            }
-                                        }
-                                    } else {
-                                        val activity = context as? com.petal.browser.activity.BrowserActivity
-                                        if (activity != null) {
-                                            onClose()
-                                            val ctrl = activity.currentAlbumController
-                                            if (ctrl is com.petal.browser.view.PetalGeckoView) {
-                                                ctrl.loadUrl(url)
-                                                activity.showAlbum(ctrl, url)
+                            // ── Petal Repository Overview Card ─────────────────────
+                            PetalSettingsSection(
+                                title = "Project & Source",
+                                icon = Icons.Rounded.Code,
+                                cardId = "about_repo"
+                            ) {
+                                PetalRepoDetailsCard(
+                                    onOpenUrl = { url ->
+                                        try {
+                                            val activity = context as? com.petal.browser.activity.BrowserActivity
+                                            if (activity != null) {
+                                                onClose()
+                                                val ctrl = activity.currentAlbumController
+                                                if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                                                    ctrl.loadUrl(url)
+                                                    activity.showAlbum(ctrl, url)
+                                                } else {
+                                                    activity.addAlbum(null, url, true)
+                                                }
                                             } else {
-                                                activity.addAlbum(null, url, true)
+                                                BrowserUnit.intentURL(context, Uri.parse(url))
                                             }
-                                        } else {
-                                            BrowserUnit.intentURL(context, Uri.parse(url))
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
                                         }
                                     }
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
+                                )
                             }
-                        )
+
+                            // ── Developer Ecosystem & Projects Showcase ─────────────
+                            PetalSettingsSection(
+                                title = "Ecosystem & Apps",
+                                icon = Icons.Rounded.Apps,
+                                cardId = "about_ecosystem"
+                            ) {
+                                DeveloperEcosystemCard(
+                                    onOpenUrl = { url ->
+                                        try {
+                                            val activity = context as? com.petal.browser.activity.BrowserActivity
+                                            if (activity != null) {
+                                                onClose()
+                                                val ctrl = activity.currentAlbumController
+                                                if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                                                    ctrl.loadUrl(url)
+                                                    activity.showAlbum(ctrl, url)
+                                                } else {
+                                                    activity.addAlbum(null, url, true)
+                                                }
+                                            } else {
+                                                BrowserUnit.intentURL(context, Uri.parse(url))
+                                            }
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                )
+                            }
+
+                            // ── Architectural Mission & Metrics ──────────────────────
+                            PetalSettingsSection(
+                                title = "Mission & Philosophy",
+                                icon = Icons.Rounded.RocketLaunch,
+                                cardId = "about_mission"
+                            ) {
+                                DeveloperMissionCard()
+                                Spacer(Modifier.height(4.dp))
+                                DeveloperMetricsGrid()
+                            }
+
+                            // ── Technologies & Frameworks ───────────────────────────
+                            PetalSettingsSection(
+                                title = "Technologies & Frameworks",
+                                icon = Icons.Rounded.Layers,
+                                cardId = "about_tech"
+                            ) {
+                                DeveloperTechStackCard()
+                            }
+
+                            // ── Community Links & Action Group ──────────────────────
+                            PetalSettingsSection(
+                                title = "Community & Support",
+                                icon = Icons.Rounded.Favorite,
+                                cardId = "about_actions"
+                            ) {
+                                DeveloperActionsCard(
+                                    onOpenUrl = { url ->
+                                        try {
+                                            if (url == "petal://credits") {
+                                                (context as? ComponentActivity)?.let { act ->
+                                                    onClose()
+                                                    PetalCreditsBridge.show(act) {
+                                                        PetalAboutDeveloperBridge.show(act)
+                                                    }
+                                                }
+                                            } else {
+                                                val activity = context as? com.petal.browser.activity.BrowserActivity
+                                                if (activity != null) {
+                                                    onClose()
+                                                    val ctrl = activity.currentAlbumController
+                                                    if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                                                        ctrl.loadUrl(url)
+                                                        activity.showAlbum(ctrl, url)
+                                                    } else {
+                                                        activity.addAlbum(null, url, true)
+                                                    }
+                                                } else {
+                                                    BrowserUnit.intentURL(context, Uri.parse(url))
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                )
+                            }
 
                         // ── Footer Copyright & Build Hash ────────────────────────
                         Column(

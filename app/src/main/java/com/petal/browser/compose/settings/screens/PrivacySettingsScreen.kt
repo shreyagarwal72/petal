@@ -1,6 +1,12 @@
 package com.petal.browser.compose.settings.screens
 
 import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupNavigationRow
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.PetalBadgeVariant
 
 import android.content.Context
 import android.content.Intent
@@ -238,21 +244,14 @@ fun PrivacySettingsScreenContent(
                     )
 
                     if (adBlockEnabled) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.ui_whitelisted_domains, whitelistedDomainsState.size),
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.onSurface
+                        PetalGroup(rowCount = 1) { _, position ->
+                            PetalGroupNavigationRow(
+                                title = stringResource(R.string.ui_whitelisted_domains, whitelistedDomainsState.size),
+                                subtitle = stringResource(R.string.ui_manage_whitelist),
+                                position = position,
+                                onClick = { showWhitelistDialog = true },
+                                leadingIcon = { Icon(Icons.Rounded.FilterList, contentDescription = null) }
                             )
-                            TextButton(onClick = { showWhitelistDialog = true }) {
-                                Text(stringResource(R.string.ui_manage_whitelist))
-                            }
                         }
                     }
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -377,73 +376,88 @@ fun PrivacySettingsScreenContent(
                         Triple("CUSTOM", "Custom DNS-over-HTTPS (DoH)", "Enter your preferred DoH resolver endpoint URL")
                     )
 
-                    dnsOptions.forEach { (mode, name, desc) ->
-                        Surface(
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = dnsOptions.size) { index, position ->
+                        val (mode, name, desc) = dnsOptions[index]
+                        val isSelected = privateDnsMode == mode
+                        com.petal.browser.ui.containment.PetalGroupListRow(
+                            position = position,
+                            selected = isSelected,
                             onClick = { onPrivateDnsModeChange(mode) },
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (privateDnsMode == mode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = name,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = if (privateDnsMode == mode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = desc,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = if (privateDnsMode == mode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                            leading = {
+                                com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                    icon = if (mode == "CUSTOM") Icons.Rounded.Dns else Icons.Rounded.Security,
+                                    variant = if (isSelected) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                )
+                            },
+                            content = {
+                                Text(
+                                    text = name,
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = desc,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            trailing = {
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Rounded.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
-                                if (privateDnsMode == mode) {
-                                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                }
+                            }
+                        )
+                    }
+
+                    if (privateDnsMode == "CUSTOM") {
+                        com.petal.browser.ui.containment.PetalHeroCard {
+                            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                OutlinedTextField(
+                                    value = customDohUrl,
+                                    onValueChange = onCustomDohUrlChange,
+                                    label = { Text(stringResource(R.string.ui_custom_doh_endpoint_url)) },
+                                    placeholder = { Text("https://dns.adguard-dns.com/dns-query") },
+                                    leadingIcon = { Icon(Icons.Rounded.Dns, contentDescription = null) },
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(14.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
                     }
 
-                    if (privateDnsMode == "CUSTOM") {
-                        OutlinedTextField(
-                            value = customDohUrl,
-                            onValueChange = onCustomDohUrlChange,
-                            label = { Text(stringResource(R.string.ui_custom_doh_endpoint_url)) },
-                            placeholder = { Text("https://dns.adguard-dns.com/dns-query") },
-                            leadingIcon = { Icon(Icons.Rounded.Dns, contentDescription = null) },
-                            singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            val intents = listOf(
-                                Intent("android.settings.PRIVATE_DNS_SETTINGS"),
-                                Intent(Settings.ACTION_WIRELESS_SETTINGS),
-                                Intent(Settings.ACTION_SETTINGS)
-                            )
-                            for (intent in intents) {
-                                try {
-                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    context.startActivity(intent)
-                                    break
-                                } catch (e: Exception) {
-                                    // continue to next fallback
-                                }
+                    com.petal.browser.ui.containment.PetalHeroCard {
+                        Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                            OutlinedButton(
+                                onClick = {
+                                    val intents = listOf(
+                                        Intent("android.settings.PRIVATE_DNS_SETTINGS"),
+                                        Intent(Settings.ACTION_WIRELESS_SETTINGS),
+                                        Intent(Settings.ACTION_SETTINGS)
+                                    )
+                                    for (intent in intents) {
+                                        try {
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            context.startActivity(intent)
+                                            break
+                                        } catch (e: Exception) {
+                                            // continue to next fallback
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.ui_configure_android_system_private_dns))
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_configure_android_system_private_dns))
+                        }
                     }
                 }
             }
