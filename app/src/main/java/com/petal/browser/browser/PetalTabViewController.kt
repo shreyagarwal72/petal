@@ -116,7 +116,6 @@ class PetalTabViewController private constructor(
             }
             this@PetalTabViewController.loading = loading
             tab?.let { browserStore.dispatch(ContentAction.UpdateLoadingStateAction(it.id, loading)) }
-            if (!loading) updatePreviewCache()
             publishState()
         }
 
@@ -688,11 +687,43 @@ class PetalTabViewController private constructor(
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(null, getGeckoSession())
         refreshFeature?.start()
         fullScreenFeature?.start()
+        startThumbnails()
+    }
+
+    /**
+     * Port of Firefox's BrowserThumbnails: observe the store and, whenever the SELECTED tab is
+     * not loading and has reported a first contentful paint, capture a thumbnail.
+     */
+    private var thumbnailSubscription: mozilla.components.lib.state.Store.Subscription<
+        mozilla.components.browser.state.state.BrowserState,
+        mozilla.components.browser.state.action.BrowserAction>? = null
+    private var lastThumbnailSignal: String? = null
+
+    private fun startThumbnails() {
+        if (thumbnailSubscription != null) return
+        lastThumbnailSignal = null
+        thumbnailSubscription = browserStore.observeManually { state ->
+            val id = boundTabId ?: return@observeManually
+            if (state.selectedTabId != id) return@observeManually
+            val content = state.tabs.firstOrNull { it.id == id }?.content ?: return@observeManually
+            val signal = "${content.loading}|${content.firstContentfulPaint}|${content.url}"
+            if (signal == lastThumbnailSignal) return@observeManually
+            lastThumbnailSignal = signal
+            if (!content.loading && content.firstContentfulPaint) {
+                post { try { capturePreviewBitmapAsync { } } catch (_: Throwable) {} }
+            }
+        }.also { it.resume() }
+    }
+
+    private fun stopThumbnails() {
+        thumbnailSubscription?.unsubscribe()
+        thumbnailSubscription = null
     }
 
     @MainThread
     override fun deactivate() {
         updatePreviewCache()
+        stopThumbnails()
         active = false
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
         refreshFeature?.stop()
@@ -707,6 +738,7 @@ class PetalTabViewController private constructor(
     override fun isIncognito(): Boolean = tab?.content?.private ?: false
 
     override fun destroy() {
+        stopThumbnails()
         val removedTabId = tab?.id
         active = false
         if (isIncognito()) {

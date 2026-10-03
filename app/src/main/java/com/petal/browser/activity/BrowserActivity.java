@@ -4654,27 +4654,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void showOverview() {
-        // Firefox-style: snapshot the visible tab BEFORE its surface is hidden, otherwise
-        // capturePixels() returns a blank frame (rejected by the cache) and no thumbnail shows.
-        final java.util.concurrent.atomic.AtomicBoolean presented = new java.util.concurrent.atomic.AtomicBoolean(false);
-        final Runnable present = () -> {
-            if (presented.compareAndSet(false, true)) showOverviewNow();
-        };
-        try {
-            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
-                ((com.petal.browser.browser.PetalTabViewController) currentAlbumController)
-                        .capturePreviewBitmapAsync(bmp -> { runOnUiThread(present); return kotlin.Unit.INSTANCE; });
-            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                ((com.petal.browser.view.PetalGeckoView) currentAlbumController)
-                        .capturePreviewBitmapAsync(bmp -> runOnUiThread(present));
-            } else {
-                present.run();
-                return;
-            }
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(present, 350L);
-        } catch (Throwable t) {
-            present.run();
-        }
+        showOverviewNow();
     }
 
     private void showOverviewNow() {
