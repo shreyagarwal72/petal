@@ -66,6 +66,8 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     private boolean isQuickScaleInProgress;
     private boolean disallowIntercept;
     private boolean hasTriggeredHaptic;
+    /** True only if the page was already at the top when the finger touched down (Chrome behaviour). */
+    private boolean startedAtTop;
 
     private MotionEvent firstDownEvent;
     private MotionEvent upEvent;
@@ -265,6 +267,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 initialDownX = ev.getX();
                 initialDownY = ev.getY();
                 initialMotionY = initialDownY;
+                startedAtTop = !canChildScrollUp() && (canPull == null || canPull.canPull());
                 isDragging = false;
                 isIntercepting = false;
                 hasMultiTouch = false;
@@ -307,7 +310,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 }
 
                 // Page position validation (Firefox model): Full touch area across viewport is valid when scrolled to top
-                if (!canChildScrollUp() && (canPull == null || canPull.canPull())) {
+                if (startedAtTop && !canChildScrollUp() && (canPull == null || canPull.canPull())) {
                     initialMotionY = initialDownY + touchSlop;
                     isIntercepting = true;
                     isDragging = true;
@@ -381,7 +384,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     float curX = event.getX(pointerIndex);
                     float dx = curX - initialDownX;
                     float dy = curY - initialDownY;
-                    if (dy > touchSlop && dy > Math.abs(dx) * VERTICAL_DOMINANCE && !canChildScrollUp() && (canPull == null || canPull.canPull())) {
+                    if (startedAtTop && dy > touchSlop && dy > Math.abs(dx) * VERTICAL_DOMINANCE && !canChildScrollUp() && (canPull == null || canPull.canPull())) {
                         initialMotionY = initialDownY + touchSlop;
                         isDragging = true;
                         isIntercepting = true;

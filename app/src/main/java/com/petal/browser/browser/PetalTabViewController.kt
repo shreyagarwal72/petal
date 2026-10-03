@@ -240,6 +240,11 @@ class PetalTabViewController private constructor(
 
     init {
         isNestedScrollingEnabled = true
+        // Petal's own PullToRefreshFrameLayout owns the pull gesture inside BrowserActivity;
+        // disable the Mozilla SwipeRefreshLayout so it never intercepts or draws its spinner.
+        if (isHostedByBrowserActivity()) {
+            isEnabled = false
+        }
         mediaBridge = com.petal.browser.media.PetalMediaBridge(
             context,
             object : com.petal.browser.media.PetalMediaBridge.MediaStateListener {
@@ -374,7 +379,7 @@ class PetalTabViewController private constructor(
                 override fun onHideAction(session: org.mozilla.geckoview.GeckoSession, reason: Int) {}
             }
         }
-        refreshFeature = SwipeRefreshFeature(
+        refreshFeature = if (isHostedByBrowserActivity()) null else SwipeRefreshFeature(
             store = browserStore,
             reloadUrlUseCase = SessionUseCases(browserStore).reload,
             swipeRefreshLayout = this,
@@ -386,6 +391,15 @@ class PetalTabViewController private constructor(
             fullScreenFeature?.start()
         }
         publishState()
+    }
+
+    private fun isHostedByBrowserActivity(): Boolean {
+        var ctx: android.content.Context? = context
+        while (ctx is android.content.ContextWrapper) {
+            if (ctx is com.petal.browser.activity.BrowserActivity) return true
+            ctx = ctx.baseContext
+        }
+        return false
     }
 
     fun loadUrl(url: String) {
