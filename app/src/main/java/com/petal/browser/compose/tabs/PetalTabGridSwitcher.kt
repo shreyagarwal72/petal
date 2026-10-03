@@ -1713,8 +1713,8 @@ private fun PetalTabCard(
     LaunchedEffect(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito) {
         cachedPreview = tab.previewBitmap?.takeUnless { it.isRecycled }
         if (cachedPreview == null) {
-            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey), tab.isIncognito) { bitmap ->
-                if (bitmap != null && !bitmap.isRecycled && tab.thumbnailKey.isNotBlank()) cachedPreview = bitmap
+            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey, tab.id), tab.isIncognito) { bitmap ->
+                if (bitmap != null && !bitmap.isRecycled) cachedPreview = bitmap
             }
         }
     }
@@ -2095,8 +2095,8 @@ private fun PetalTabListItem(
     LaunchedEffect(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito) {
         cachedPreview = tab.previewBitmap?.takeUnless { it.isRecycled }
         if (cachedPreview == null) {
-            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey), tab.isIncognito) { bitmap ->
-                if (bitmap != null && !bitmap.isRecycled && tab.thumbnailKey.isNotBlank()) cachedPreview = bitmap
+            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey, tab.id), tab.isIncognito) { bitmap ->
+                if (bitmap != null && !bitmap.isRecycled) cachedPreview = bitmap
             }
         }
     }

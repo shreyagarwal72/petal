@@ -4657,9 +4657,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
-                ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).updatePreviewCache();
+                ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).updatePreviewCache(true);
             } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).updatePreviewCache();
+                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).updatePreviewCache(true);
             }
             isOverlayScreenShowing = true;
             clearContentFrameKeepingTabs();
@@ -6954,8 +6954,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView activeGecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                activeGecko.updatePreviewCache();
+                activeGecko.updatePreviewCache(true);
                 activeGecko.onPause();
+            } else if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                com.petal.browser.browser.PetalTabViewController activeController = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+                activeController.updatePreviewCache(true);
             }
             saveOpenedTabs();
         } catch (Exception e) {

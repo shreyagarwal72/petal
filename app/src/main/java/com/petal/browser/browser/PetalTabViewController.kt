@@ -554,8 +554,9 @@ class PetalTabViewController private constructor(
 
     fun getCachedPreviewBitmap(): Bitmap? = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
 
-    fun updatePreviewCache() {
-        if (capturedPreviewRevision == previewRevision) return
+    @JvmOverloads
+    fun updatePreviewCache(force: Boolean = false) {
+        if (!force && capturedPreviewRevision == previewRevision) return
         capturePreviewBitmapAsync { }
     }
 
@@ -581,26 +582,31 @@ class PetalTabViewController private constructor(
     fun capturePreviewBitmapAsync(callback: (Bitmap?) -> Unit) {
         val key = boundTabId ?: run { callback(null); return }
         val revision = previewRevision
-        val sequence = ++previewCaptureSequence
         val privateTab = isIncognito()
         val geckoView = engineView.asView() as? org.mozilla.geckoview.GeckoView
-        if (!active || geckoView == null || !isAttachedToWindow || !isShown || !geckoView.isShown ||
-            geckoView.width <= 0 || geckoView.height <= 0) {
-            callback(null)
-            return
-        }
-        if (!hasContentfulPaint()) {
-            schedulePreviewRetry()
+        if (geckoView == null || !isAttachedToWindow || geckoView.width <= 0 || geckoView.height <= 0) {
             callback(null)
             return
         }
         try {
             geckoView.capturePixels().then({ bitmap: Bitmap? ->
-                val current = key == boundTabId && revision == previewRevision && sequence == previewCaptureSequence
+                val current = key == boundTabId
                 var stored = false
                 if (bitmap != null && current) {
-                    // put() rejects blank frames so they can't replace a good thumbnail.
-                    stored = TabThumbnailCache.put(key, bitmap, privateTab)
+                    val w = bitmap.width
+                    val h = bitmap.height
+                    val targetWidth = Math.min(w, 480)
+                    val targetHeight = Math.max(1, (h.toFloat() * targetWidth / w).toInt())
+                    val scaled = try {
+                        val s = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                        if (s !== bitmap && !bitmap.isRecycled) {
+                            bitmap.recycle()
+                        }
+                        s
+                    } catch (_: Throwable) {
+                        bitmap
+                    }
+                    stored = TabThumbnailCache.put(key, scaled, privateTab)
                     if (stored) capturedPreviewRevision = revision else schedulePreviewRetry()
                 }
                 callback(if (current && stored) bitmap else null)

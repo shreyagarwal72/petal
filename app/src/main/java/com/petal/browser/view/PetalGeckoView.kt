@@ -1997,8 +1997,9 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun getThumbnailKey(): String = getTabId()
 
-    fun updatePreviewCache() {
-        if (capturedPreviewRevision == previewRevision) return
+    @JvmOverloads
+    fun updatePreviewCache(force: Boolean = false) {
+        if (!force && capturedPreviewRevision == previewRevision) return
         capturePreviewBitmapAsync { /* cache updated */ }
     }
 
@@ -2026,12 +2027,9 @@ class PetalGeckoView @JvmOverloads constructor(
         val privateTab = isIncognito
 
         val cachingConsumer: (Bitmap?) -> Unit = { bmp ->
-            val current = key == getThumbnailKey() && revision == previewRevision &&
-                captureSequence == previewCaptureSequence
+            val current = key == getThumbnailKey()
             var stored = false
             if (bmp != null && current) {
-                // put() rejects blank frames, so a not-yet-painted compositor can no longer
-                // overwrite a good thumbnail or mark this revision as captured.
                 stored = TabThumbnailCache.put(key, bmp, privateTab)
                 if (stored) capturedPreviewRevision = revision else schedulePreviewRetry()
             }
@@ -2039,11 +2037,8 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         try {
-            // Tab surfaces stay attached while hidden (View.GONE) after a tab switch, so
-            // "attached" no longer implies "on screen". Capturing a hidden GeckoView
-            // yields a blank frame that would overwrite the good cached thumbnail.
-            if (!hasContentfulPaint || !isAttachedToWindow || geckoView.parent == null || !geckoView.isAttachedToWindow ||
-                !isShown || !geckoView.isShown || !isForegroundTab || geckoView.width <= 0 || geckoView.height <= 0) {
+            // Guard against unattached or 0-dimension views
+            if (!isAttachedToWindow || geckoView.width <= 0 || geckoView.height <= 0) {
                 cachingConsumer(null)
                 return
             }

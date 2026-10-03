@@ -116,17 +116,8 @@ public class BrowsingDataManager {
     }
 
     public static void clearCache(final Context context, final WebView webView) {
-        if (webView != null) {
-            runOnMainThreadBlocking(() -> webView.clearCache(true));
-        }
-        trimWebViewMemory(context);
-        clearHttpResponseCache();
-        if (context != null) {
-            try {
-                deleteDirContents(context.getCacheDir());
-                deleteDirContents(context.getExternalCacheDir());
-            } catch (Exception ignored) {}
-        }
+        if (context == null) return;
+        PetalCacheManager.clearCache(context, PetalCacheManager.Flags.ALL_CACHES, webView, null);
     }
 
     public static void clearCookies() {
@@ -248,43 +239,27 @@ public class BrowsingDataManager {
         final boolean permissions,
         final Runnable onCompleted
     ) {
+        if (context == null) {
+            if (onCompleted != null) onCompleted.run();
+            return;
+        }
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
-            if (cache) clearCache(context, webView);
-            if (cookies) clearCookies();
-            if (webStorage) clearWebStorage();
+            long flags = 0L;
+            if (cache) flags |= PetalCacheManager.Flags.ALL_CACHES;
+            if (cookies) flags |= PetalCacheManager.Flags.COOKIES;
+            if (webStorage) flags |= PetalCacheManager.Flags.DOM_WEB_STORAGE;
             if (autofill) clearAutofillData(context);
             if (permissions) clearPermissions();
 
-            if (onCompleted != null) {
-                new android.os.Handler(android.os.Looper.getMainLooper()).post(onCompleted);
-            }
+            PetalCacheManager.clearCache(context, flags, webView, onCompleted);
         });
     }
 
     public static void deleteDirContents(File dir) {
-        if (dir != null && dir.isDirectory()) {
-            File[] children = dir.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    deleteDir(child);
-                }
-            }
-        }
+        PetalCacheManager.deleteDirContents(dir);
     }
 
     private static boolean deleteDir(File dir) {
-        if (dir != null && dir.isDirectory()) {
-            File[] children = dir.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    deleteDir(child);
-                }
-            }
-            return dir.delete();
-        } else if (dir != null && dir.isFile()) {
-            return dir.delete();
-        } else {
-            return false;
-        }
+        return PetalCacheManager.deleteDir(dir);
     }
 }

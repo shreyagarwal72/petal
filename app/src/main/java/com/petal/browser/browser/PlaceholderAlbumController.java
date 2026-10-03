@@ -56,4 +56,9 @@ public final class PlaceholderAlbumController implements AlbumController {
     public void setTabId(String tabId) { this.tabId = tabId; }
     public void setTabGroupId(String tabGroupId) { this.tabGroupId = tabGroupId; }
     public void setTabGroupTitle(String tabGroupTitle) { this.tabGroupTitle = tabGroupTitle; }
+
+    public Bitmap getCachedPreviewBitmap() {
+        if (tabId == null || tabId.isEmpty()) return null;
+        return com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tabId, incognito);
+    }
 }

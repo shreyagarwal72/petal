@@ -145,7 +145,7 @@ object PetalTabSwitcherBridge {
                                         }
                                         is com.petal.browser.browser.PetalTabViewController -> album.getCachedPreviewBitmap()
                                         is PlaceholderAlbumController -> {
-                                            null
+                                            album.getCachedPreviewBitmap()
                                         }
                                         else -> null
                                     }
