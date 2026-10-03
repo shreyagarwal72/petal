@@ -375,7 +375,7 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
                 ) {
                     WidgetShortcutTile(
                         label = context.getString(R.string.ui_new_tab),
-                        iconRes = R.drawable.icon_tab_plus,
+                        iconRes = R.drawable.widget_ic_tab_plus,
                         bgColor = GlanceTheme.colors.primaryContainer,
                         iconTint = GlanceTheme.colors.onPrimaryContainer,
                         action = newTabAction,
@@ -386,7 +386,7 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
 
                     WidgetShortcutTile(
                         label = context.getString(R.string.ui_bookmarks),
-                        iconRes = R.drawable.icon_bookmark,
+                        iconRes = R.drawable.widget_ic_bookmark,
                         bgColor = GlanceTheme.colors.secondaryContainer,
                         iconTint = GlanceTheme.colors.onSecondaryContainer,
                         action = bookmarksAction,
@@ -408,7 +408,7 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
 
                     WidgetShortcutTile(
                         label = context.getString(R.string.ui_private),
-                        iconRes = R.drawable.icon_incognito,
+                        iconRes = R.drawable.widget_ic_incognito,
                         bgColor = surfaceContainerHighestProvider(scheme),
                         iconTint = GlanceTheme.colors.onSurface,
                         action = incognitoAction,
@@ -631,7 +631,7 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
             ) {
                 Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
                     Image(
-                        provider = ImageProvider(R.drawable.icon_search),
+                        provider = ImageProvider(R.drawable.widget_ic_search),
                         contentDescription = context.getString(R.string.ui_search),
                         modifier = GlanceModifier.size(20.dp),
                         colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
@@ -664,7 +664,7 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
 
             // Incognito Action Squircle Button - secondaryContainer
             SquircleGlanceActionButton(
-                iconRes = R.drawable.icon_incognito,
+                iconRes = R.drawable.widget_ic_incognito,
                 contentDescription = context.getString(R.string.ui_incognito_mode),
                 containerColor = GlanceTheme.colors.secondaryContainer,
                 contentColor = GlanceTheme.colors.onSecondaryContainer,
