@@ -233,6 +233,7 @@ fun PrivacySettingsScreenContent(
                     targetHighlightId = targetHighlightItemId
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         title = stringResource(R.string.ui_ad_tracker_shield),
                         subtitle = stringResource(R.string.ui_ublock_origin_adguard_grade_trie),
                         icon = Icons.Rounded.Shield,
@@ -244,17 +245,16 @@ fun PrivacySettingsScreenContent(
                     )
 
                     if (adBlockEnabled) {
-                        PetalGroup(rowCount = 1) { _, position ->
-                            PetalGroupNavigationRow(
-                                title = stringResource(R.string.ui_whitelisted_domains, whitelistedDomainsState.size),
-                                subtitle = stringResource(R.string.ui_manage_whitelist),
-                                position = position,
-                                onClick = { showWhitelistDialog = true },
-                                leadingIcon = { Icon(Icons.Rounded.FilterList, contentDescription = null) }
-                            )
-                        }
+                        PetalGroupNavigationRow(
+                            title = stringResource(R.string.ui_whitelisted_domains, whitelistedDomainsState.size),
+                            subtitle = stringResource(R.string.ui_manage_whitelist),
+                            position = PetalGroupPosition.MIDDLE,
+                            onClick = { showWhitelistDialog = true },
+                            leadingIcon = { Icon(Icons.Rounded.FilterList, contentDescription = null) }
+                        )
                     }
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_block_third_party_tracking_cookies),
                         subtitle = stringResource(R.string.ui_isolate_and_block_cross_site),
                         icon = Icons.Rounded.Cookie,
@@ -262,6 +262,7 @@ fun PrivacySettingsScreenContent(
                         onCheckedChange = onBlockThirdPartyCookiesChange
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_canvas_audio_font_fingerprint_shield),
                         subtitle = stringResource(R.string.ui_randomize_canvas_webgl_audiocontext_an),
                         icon = Icons.Rounded.Fingerprint,
@@ -269,6 +270,7 @@ fun PrivacySettingsScreenContent(
                         onCheckedChange = onFingerprintProtectionChange
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_webrtc_ip_leak_shield),
                         subtitle = stringResource(R.string.ui_prevent_local_public_ip_address),
                         icon = Icons.Rounded.WifiProtectedSetup,
@@ -276,6 +278,7 @@ fun PrivacySettingsScreenContent(
                         onCheckedChange = onWebrtcProtectionChange
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_do_not_track_global_privacy),
                         subtitle = stringResource(R.string.ui_broadcast_dnt_1_and_sec),
                         icon = Icons.Rounded.Security,
@@ -283,6 +286,7 @@ fun PrivacySettingsScreenContent(
                         onCheckedChange = onDntGpcChange
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         title = stringResource(R.string.ui_strict_referrer_trimming),
                         subtitle = stringResource(R.string.ui_strip_cross_origin_url_paths),
                         icon = Icons.Rounded.LinkOff,
@@ -301,14 +305,13 @@ fun PrivacySettingsScreenContent(
                     com.petal.browser.ui.containment.PetalGroupNavigationRow(
                         title = stringResource(R.string.ui_password_manager_autofill),
                         subtitle = stringResource(R.string.ui_encrypted_local_vault_breach_checks),
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         onClick = { showPasswordsScreen = true },
                         leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null) },
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
-
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_https_security_enforcer),
                         subtitle = stringResource(R.string.ui_automatically_upgrade_connections_to_h),
                         icon = Icons.Rounded.Lock,
@@ -316,6 +319,7 @@ fun PrivacySettingsScreenContent(
                         onCheckedChange = onHttpsOnlyChange
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         title = stringResource(R.string.ui_webauthn_passkey_support),
                         subtitle = stringResource(R.string.ui_allow_websites_to_authenticate_passwor),
                         icon = Icons.Rounded.Key,
@@ -332,6 +336,7 @@ fun PrivacySettingsScreenContent(
                     targetHighlightId = targetHighlightItemId
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         title = stringResource(R.string.ui_enable_javascript),
                         subtitle = stringResource(R.string.ui_required_for_modern_web_features),
                         icon = Icons.Rounded.Code,
@@ -339,6 +344,7 @@ fun PrivacySettingsScreenContent(
                         onCheckedChange = onJavaScriptEnabledChange
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_block_popup_windows),
                         subtitle = stringResource(R.string.ui_prevent_unwanted_popups_and_redirect),
                         icon = Icons.Rounded.OpenInNew,
@@ -346,6 +352,7 @@ fun PrivacySettingsScreenContent(
                         onCheckedChange = onBlockPopupsChange
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         title = stringResource(R.string.ui_open_redirect_links_in_background),
                         subtitle = stringResource(R.string.ui_detect_external_redirect_links_and),
                         icon = Icons.Rounded.TabUnselected,

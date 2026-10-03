@@ -162,6 +162,7 @@ fun MiscSettingsScreenContent(
                     targetHighlightId = targetHighlightItemId
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         title = stringResource(R.string.ui_petal_custom_tabs),
                         subtitle = stringResource(R.string.ui_open_links_from_external_apps),
                         icon = Icons.Rounded.OpenInBrowser,
@@ -170,6 +171,7 @@ fun MiscSettingsScreenContent(
                     )
 
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_enhanced_tracking_protection),
                         subtitle = stringResource(R.string.ui_isolate_cross_site_trackers_and),
                         icon = Icons.Rounded.Security,
@@ -178,6 +180,7 @@ fun MiscSettingsScreenContent(
                     )
 
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         title = stringResource(R.string.ui_auto_open_external_apps),
                         subtitle = stringResource(R.string.ui_allow_youtube_maps_play_store),
                         icon = Icons.Rounded.Launch,

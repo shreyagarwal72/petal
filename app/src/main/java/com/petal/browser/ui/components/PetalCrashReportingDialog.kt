@@ -340,8 +340,8 @@ fun PetalCrashReportingPicker(
     val labels = listOf("Auto (Default)", "Off")
 
     Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+        shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.TOP),
+        color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(

@@ -84,6 +84,7 @@ fun MediaSettingsScreen(
                 ) {
                     // Native Video Player Toggle
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         title = stringResource(R.string.ui_native_video_player),
                         subtitle = stringResource(R.string.ui_bypass_web_player_and_launch),
                         icon = Icons.Rounded.PlayCircle,
@@ -97,6 +98,7 @@ fun MediaSettingsScreen(
 
                     // Media Sniffer / Fetcher
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_detect_media_in_background),
                         subtitle = stringResource(R.string.ui_continuously_sniff_video_audio_streams),
                         icon = Icons.Rounded.Sensors,
@@ -110,6 +112,7 @@ fun MediaSettingsScreen(
 
                     // Show Media Button in address bar
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_show_media_button),
                         subtitle = stringResource(R.string.ui_display_quick_access_media_sniffer),
                         icon = Icons.Rounded.SmartDisplay,
@@ -123,6 +126,7 @@ fun MediaSettingsScreen(
 
                     // Automatically open media panel
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_automatically_open_media_panel),
                         subtitle = stringResource(R.string.ui_pop_up_the_media_fetcher),
                         icon = Icons.Rounded.OpenInNew,
@@ -136,6 +140,7 @@ fun MediaSettingsScreen(
 
                     // Validate media before showing
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         title = stringResource(R.string.ui_validate_media_before_showing),
                         subtitle = stringResource(R.string.ui_perform_lightweight_head_check_on),
                         icon = Icons.Rounded.Verified,

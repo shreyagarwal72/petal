@@ -121,6 +121,7 @@ fun UpdaterSettingsScreenContent(
                     iconRes = com.petal.browser.R.drawable.update_rounded
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         title = stringResource(R.string.ui_check_for_updates_on_launch),
                         subtitle = stringResource(R.string.ui_automatically_check_for_new_browser),
                         icon = Icons.Rounded.SystemUpdate,
@@ -129,8 +130,8 @@ fun UpdaterSettingsScreenContent(
                     )
                     // Channel & Version Hero Card
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+                        shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM),
+                        color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -265,18 +266,15 @@ fun UpdaterSettingsScreenContent(
                         }
                     )
                     // Diagnostic Actions: Export ZIP Logs
-                    OutlinedButton(
+                    com.petal.browser.ui.containment.PetalGroupRow(
+                        icon = Icons.Rounded.FolderZip,
+                        title = stringResource(R.string.ui_export_logs_zip),
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onClick = {
                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                             PetalAppLogger.shareLogsZip(context)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Rounded.FolderZip, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.ui_export_logs_zip))
-                    }
+                        }
+                    )
                 }
 
                 Spacer(Modifier.height(32.dp))
