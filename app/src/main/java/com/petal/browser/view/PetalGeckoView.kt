@@ -128,6 +128,94 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         @JvmStatic
+        fun handleExternalResponse(activity: Activity, response: WebResponse) {
+            val responseUrl = response.uri
+            if (responseUrl.isNullOrBlank()) return
+            val parsed = try { android.net.Uri.parse(responseUrl) } catch (_: Exception) { null }
+            val isXpiUrl = parsed?.path?.endsWith(".xpi", ignoreCase = true) == true ||
+                response.headers["content-type"]?.contains("application/x-xpinstall", ignoreCase = true) == true ||
+                (parsed?.host?.contains("addons.mozilla.org", ignoreCase = true) == true && responseUrl.contains(".xpi", ignoreCase = true))
+            if (isXpiUrl) {
+                activity.runOnUiThread {
+                    com.petal.browser.extensions.PetalExtensionManager.install(responseUrl) { success, message ->
+                        com.petal.browser.view.PetalToast.show(activity, message ?: if (success) "Extension installed" else "Extension installation failed")
+                    }
+                }
+                return
+            }
+            val headers = response.headers
+            val contentDisposition = headers?.entries?.firstOrNull {
+                it.key.equals("Content-Disposition", ignoreCase = true)
+            }?.value
+            val mimeType = headers?.entries?.firstOrNull {
+                it.key.equals("Content-Type", ignoreCase = true)
+            }?.value
+            val fileName = HelperUnit.resolveFileName(responseUrl, contentDisposition, mimeType)
+            val contentLength = headers?.entries?.firstOrNull {
+                it.key.equals("Content-Length", ignoreCase = true)
+            }?.value?.toLongOrNull() ?: 0L
+            activity.runOnUiThread {
+                com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
+                    activity, responseUrl, contentDisposition, mimeType, contentLength
+                ) { confirmedName ->
+                    com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueGeckoDownload(
+                        context = activity,
+                        url = responseUrl,
+                        fileName = confirmedName.ifBlank { fileName },
+                        mimeType = mimeType,
+                        responseHeaders = headers
+                    )
+                }
+            }
+        }
+
+        @JvmStatic
+        fun handleExternalScheme(activity: Activity, url: String?): Boolean {
+            if (url.isNullOrBlank()) return false
+            val lower = url.lowercase()
+            if (lower.startsWith("http://") || lower.startsWith("https://") ||
+                lower.startsWith("about:") || lower.startsWith("blob:") ||
+                lower.startsWith("data:") || lower.startsWith("javascript:") ||
+                lower.startsWith("petal:") || lower.startsWith("moz-extension:") ||
+                lower.startsWith("resource:") || lower.startsWith("chrome:")
+            ) {
+                return false
+            }
+            if (lower.startsWith("intent://")) {
+                try {
+                    val intent = android.content.Intent.parseUri(url, android.content.Intent.URI_INTENT_SCHEME)
+                    if (intent != null) {
+                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        val pm = activity.packageManager
+                        if (pm != null && intent.resolveActivity(pm) != null) {
+                            activity.startActivity(intent)
+                            return true
+                        }
+                        val fallbackUrl = intent.getStringExtra("browser_fallback_url")
+                        if (!fallbackUrl.isNullOrBlank() && activity is com.petal.browser.activity.BrowserActivity) {
+                            activity.runOnUiThread { activity.addAlbum(null, fallbackUrl, false, false) }
+                            return true
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.w(TAG, "Error handling intent scheme: $url", e)
+                }
+                return true
+            }
+            try {
+                val parsedUri = android.net.Uri.parse(url)
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, parsedUri)
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                val pm = activity.packageManager
+                if (pm != null && intent.resolveActivity(pm) != null) {
+                    activity.startActivity(intent)
+                    return true
+                }
+            } catch (_: Exception) {}
+            return true
+        }
+
+        @JvmStatic
         fun getDerivedDesktopUserAgent(context: Context): String {
             return "Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0"
         }
@@ -965,56 +1053,8 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
-                val responseUrl = response.uri
-                if (responseUrl.isNullOrBlank()) return
                 val act = getHostActivity() ?: return
-                val parsed = try { android.net.Uri.parse(responseUrl) } catch (_: Exception) { null }
-                val isXpiUrl = parsed?.path?.endsWith(".xpi", ignoreCase = true) == true ||
-                    response.headers["content-type"]?.contains("application/x-xpinstall", ignoreCase = true) == true ||
-                    (parsed?.host?.contains("addons.mozilla.org", ignoreCase = true) == true && responseUrl.contains(".xpi", ignoreCase = true))
-                if (isXpiUrl) {
-                    act.runOnUiThread {
-                        com.petal.browser.extensions.PetalExtensionManager.install(responseUrl) { success, message ->
-                            com.petal.browser.view.PetalToast.show(act, message ?: if (success) "Extension installed" else "Extension installation failed")
-                        }
-                    }
-                    return
-                }
-                // GeckoView's WebResponse carries the server's real Content-Disposition and
-                // Content-Type headers - previously these were discarded (passed as null),
-                // so every download fell back to guessing a name purely from the URL path.
-                // For signed CDN links, dynamic endpoints, or any URL without a clean
-                // "name.ext" tail, that guess had nothing to go on and produced a wrong
-                // name and/or wrong extension. Reading the real headers here fixes that
-                // for every download that goes through the GeckoView engine.
-                val headers = response.headers
-                val contentDisposition = headers?.entries?.firstOrNull {
-                    it.key.equals("Content-Disposition", ignoreCase = true)
-                }?.value
-                val mimeType = headers?.entries?.firstOrNull {
-                    it.key.equals("Content-Type", ignoreCase = true)
-                }?.value
-                val fileName = HelperUnit.resolveFileName(responseUrl, contentDisposition, mimeType)
-                val contentLength = headers?.entries?.firstOrNull {
-                    it.key.equals("Content-Length", ignoreCase = true)
-                }?.value?.toLongOrNull() ?: 0L
-                act.runOnUiThread {
-                    com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
-                        act, responseUrl, contentDisposition, mimeType, contentLength
-                    ) { confirmedName ->
-                        // GeckoEngine is the owner of web downloads. Do not hand this event to
-                        // BrowserUnit's legacy WebView/raw-download path: doing so loses Gecko's
-                        // response metadata and creates a second, differently-configured path.
-                        // Keep the Gecko response headers and feed the unified Fetch2 backend.
-                        com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueGeckoDownload(
-                            context = act,
-                            url = responseUrl,
-                            fileName = confirmedName.ifBlank { fileName },
-                            mimeType = mimeType,
-                            responseHeaders = headers
-                        )
-                    }
-                }
+                handleExternalResponse(act, response)
             }
             override fun onKill(session: GeckoSession) {
                 // The OS/Gecko killed the content process (almost always a routine low-memory

@@ -345,6 +345,28 @@ class PetalTabViewController private constructor(
                 }
             }
 
+            gs.navigationDelegate = object : org.mozilla.geckoview.GeckoSession.NavigationDelegate {
+                override fun onExternalResponse(session: org.mozilla.geckoview.GeckoSession, response: org.mozilla.geckoview.WebResponse) {
+                    val act = (context as? com.petal.browser.activity.BrowserActivity)
+                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                        ?: return
+                    com.petal.browser.view.PetalGeckoView.handleExternalResponse(act, response)
+                }
+
+                override fun onLoadRequest(
+                    session: org.mozilla.geckoview.GeckoSession,
+                    request: org.mozilla.geckoview.GeckoSession.NavigationDelegate.LoadRequest
+                ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
+                    val uri = request.uri
+                    val act = (context as? com.petal.browser.activity.BrowserActivity)
+                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                    if (act != null && com.petal.browser.view.PetalGeckoView.handleExternalScheme(act, uri)) {
+                        return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+                    }
+                    return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.ALLOW)
+                }
+            }
+
             gs.selectionActionDelegate = object : org.mozilla.geckoview.GeckoSession.SelectionActionDelegate {
                 override fun onShowActionRequest(
                     session: org.mozilla.geckoview.GeckoSession,
