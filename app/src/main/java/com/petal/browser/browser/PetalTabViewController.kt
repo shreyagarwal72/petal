@@ -592,6 +592,7 @@ class PetalTabViewController private constructor(
             geckoView.capturePixels().then({ bitmap: Bitmap? ->
                 val current = key == boundTabId
                 var stored = false
+                var storedBitmap: Bitmap? = null
                 if (bitmap != null && current) {
                     val w = bitmap.width
                     val h = bitmap.height
@@ -607,9 +608,9 @@ class PetalTabViewController private constructor(
                         bitmap
                     }
                     stored = TabThumbnailCache.put(key, scaled, privateTab)
-                    if (stored) capturedPreviewRevision = revision else schedulePreviewRetry()
+                    if (stored) { capturedPreviewRevision = revision; storedBitmap = scaled } else schedulePreviewRetry()
                 }
-                callback(if (current && stored) bitmap else null)
+                callback(if (current && stored) storedBitmap else null)
                 org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
             }, {
                 callback(null)
