@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,6 +41,7 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.petalGroupPositionFor
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -283,11 +285,12 @@ fun PetalInactiveTabsSheet(
                                 .fillMaxWidth()
                                 .weight(1f),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            items(filteredTabs, key = { it.id }) { tab ->
+                            itemsIndexed(filteredTabs, key = { _, tab -> tab.id }) { index, tab ->
                                 InactiveTabListItem(
                                     tab = tab,
+                                    position = petalGroupPositionFor(index, filteredTabs.size),
                                     onRestore = { onRestoreTab(tab) },
                                     onClose = { onCloseTab(tab) },
                                     modifier = Modifier.animateItem()
@@ -526,6 +529,7 @@ private fun InactiveTabPreviewCard(
 @Composable
 private fun InactiveTabListItem(
     tab: PetalInactiveTab,
+    position: PetalGroupPosition = PetalGroupPosition.SINGLE,
     onRestore: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier
@@ -544,7 +548,7 @@ private fun InactiveTabListItem(
     }
 
     PetalGroupListRow(
-        position = PetalGroupPosition.SINGLE,
+        position = position,
         onClick = onRestore,
         modifier = modifier
             .fillMaxWidth()

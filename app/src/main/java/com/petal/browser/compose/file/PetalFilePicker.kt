@@ -79,9 +79,11 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.PetalPopupMenu
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
