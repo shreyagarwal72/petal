@@ -5239,10 +5239,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             android.graphics.Bitmap fallback = null;
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 fallback = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getCachedPreviewBitmap();
-            } else if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
-                fallback = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).getCachedPreviewBitmap();
             } else if (currentAlbumController != null) {
-                fallback = com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(currentAlbumController.getTitle(), currentAlbumController.isIncognito());
+                fallback = com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(currentAlbumController.getAlbumTitle(), false);
             }
             com.petal.browser.predictive.PetalContentSnapshot.capture(targetView, fallback);
         } catch (Throwable t) {
