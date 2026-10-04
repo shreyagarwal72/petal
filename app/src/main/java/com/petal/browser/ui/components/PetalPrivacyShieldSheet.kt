@@ -303,7 +303,7 @@ object PetalPrivacyShieldSheet {
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Refresh,
-                                contentDescription = stringResource(R.string.opt_reload),
+                                contentDescription = stringResource(R.string.ui_reload),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
