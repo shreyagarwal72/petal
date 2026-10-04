@@ -329,7 +329,7 @@ class PetalGeckoView @JvmOverloads constructor(
                                     act.getString(com.petal.browser.R.string.ui_block_popup_windows) + ": $domain",
                                     com.petal.browser.view.PetalToast.LENGTH_LONG,
                                     act.getString(com.petal.browser.R.string.app_ok),
-                                    { act.addAlbum(target, false) }
+                                    { act.addAlbum(null, target, false, isIncognito) }
                                 )
                             }
                         }
