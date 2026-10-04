@@ -421,13 +421,13 @@ fun PetalOverflowMenuSheet(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
-                // Top Header Circular Icon Action Buttons Row (evenly spaced)
+                // Top Header Circular Icon Action Buttons Row (Chrome-style navigation bar)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
                         .entrance(index = 0),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CircularIconButton(
@@ -446,57 +446,27 @@ fun PetalOverflowMenuSheet(
                         icon = if (isBookmarked && !isHomePage) Icons.Rounded.Star else Icons.Rounded.StarBorder,
                         contentDescription = stringResource(R.string.ui_toggle_bookmark),
                         enabled = !isHomePage,
-                        tint = if (isBookmarked && !isHomePage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        tint = if (isBookmarked && !isHomePage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         onClick = onToggleBookmark
                     )
                     CircularIconButton(
-                        icon = Icons.Rounded.OfflinePin,
-                        contentDescription = stringResource(R.string.ui_install_site_offline),
-                        enabled = !isHomePage,
-                        onClick = onSavePage
+                        icon = Icons.Rounded.ArrowDownward,
+                        contentDescription = stringResource(R.string.ui_downloads),
+                        enabled = true,
+                        onClick = onOpenDownloadsShortcut
                     )
                     CircularIconButton(
                         icon = Icons.Rounded.Refresh,
                         contentDescription = stringResource(R.string.ui_reload),
+                        enabled = true,
                         onClick = onReload
                     )
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
-
-                // 4-Column Quick Action Matrix
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = listOf(
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Desktop", Icons.Filled.DesktopWindows, isDesktopSite),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("AdBlock", Icons.Filled.Shield, isAdBlockEnabled),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Share", Icons.Filled.Share),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem(if (isHomePage) "History" else "Find", if (isHomePage) Icons.Filled.History else Icons.Filled.FindInPage),
-                        ),
-                        selectedIndex = -1,
-                        onSelect = { index ->
-                            when (index) {
-                                0 -> onToggleDesktopSite(!isDesktopSite)
-                                1 -> onToggleAdBlock(!isAdBlockEnabled)
-                                2 -> onShareLink()
-                                3 -> if (isHomePage) onOpenHistory() else onSearchOnSite()
-                            }
-                        },
-                    )
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                 )
 
                 // Section 1: Tab actions
@@ -666,6 +636,13 @@ fun PetalOverflowMenuSheet(
                     title = stringResource(R.string.ui_bookmarks),
                     onClick = onOpenBookmarks
                 )
+                if (!isHomePage) {
+                    MenuRowItem(
+                        icon = Icons.Rounded.Share,
+                        title = stringResource(R.string.ui_share_link),
+                        onClick = onShareLink
+                    )
+                }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -777,28 +754,28 @@ private fun CircularIconButton(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-    Surface(
-        shape = CircleShape,
-        color = if (enabled) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
-        contentColor = if (enabled) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+    IconButton(
+        onClick = {
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+            onClick()
+        },
+        enabled = enabled,
         modifier = Modifier
-            .size(42.dp)
+            .size(44.dp)
             .clip(CircleShape)
-            .clickable(
-                enabled = enabled,
-                onClick = {
-                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                        .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
-                    onClick()
-                }
-            ),
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(20.dp))
+        val iconTint = if (enabled) {
+            tint
+        } else {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         }
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = iconTint,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 
