@@ -112,7 +112,8 @@ object PetalBuiltInExtensionManager {
         val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         val controller = runtime.webExtensionController
         for (spec in builtIns) {
-            val enabled = sp.getBoolean(spec.prefKey, true)
+            val defaultEnabled = spec.prefKey != "petal_builtin_google_search_fixer"
+            val enabled = sp.getBoolean(spec.prefKey, defaultEnabled)
             installAndSync(controller, spec, enabled)
         }
     }

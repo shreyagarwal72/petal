@@ -822,7 +822,8 @@ private fun PowerStage(
                 )
             } else {
                 val spec = builtIns[index - 1]
-                val enabled = remember(spec.prefKey) { mutableStateOf(sp.getBoolean(spec.prefKey, true)) }
+                val defaultVal = spec.prefKey != "petal_builtin_google_search_fixer"
+                val enabled = remember(spec.prefKey) { mutableStateOf(sp.getBoolean(spec.prefKey, defaultVal)) }
                 val extIcon = when (spec.prefKey) {
                     "petal_builtin_dark_webpages" -> Icons.Rounded.DarkMode
                     "petal_builtin_clean_link" -> Icons.Rounded.LinkOff

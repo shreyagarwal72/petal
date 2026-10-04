@@ -1,46 +1,31 @@
 // background.js for Google Search Fixer
-// Serves modern interactive search widgets while preserving genuine Chrome Client Hints
-// to prevent automated bot detection and first-search Captchas.
+// Based on official Mozilla Firefox google-search-fixer (Thomas Wisniewski)
+// Avoids injecting fake Chromium Client Hints (Sec-CH-UA) from Gecko engine
+// which causes Google's anti-bot system to flag requests and require CAPTCHAs.
 
-const CHROME_VERSION = "131";
-const CHROME_MOBILE_UA = "Mozilla/5.0 (Linux; Android 14; Mobile; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
+const CHROME_MOBILE_UA = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36";
 
 browser.webRequest.onBeforeSendHeaders.addListener(
     function(details) {
-        let headers = details.requestHeaders;
-        let hasUa = false;
-        let hasSecChUa = false;
-        let hasSecChUaMobile = false;
-        let hasSecChUaPlatform = false;
+        // If query originates from official Firefox client search, preserve genuine Firefox headers
+        if (details.url && (details.url.includes("client=firefox") || details.url.includes("client=firefox-b-m"))) {
+            return;
+        }
 
+        let headers = details.requestHeaders || [];
+        // Strip any spoofed or inconsistent Sec-CH-UA client hints that trigger bot detection
+        headers = headers.filter(h => !h.name.toLowerCase().startsWith("sec-ch-ua"));
+
+        let hasUa = false;
         for (let i = 0; i < headers.length; i++) {
-            const name = headers[i].name.toLowerCase();
-            if (name === "user-agent") {
+            if (headers[i].name.toLowerCase() === "user-agent") {
                 headers[i].value = CHROME_MOBILE_UA;
                 hasUa = true;
-            } else if (name === "sec-ch-ua") {
-                headers[i].value = `"Chromium";v="${CHROME_VERSION}", "Not_A Brand";v="24", "Google Chrome";v="${CHROME_VERSION}"`;
-                hasSecChUa = true;
-            } else if (name === "sec-ch-ua-mobile") {
-                headers[i].value = "?1";
-                hasSecChUaMobile = true;
-            } else if (name === "sec-ch-ua-platform") {
-                headers[i].value = '"Android"';
-                hasSecChUaPlatform = true;
+                break;
             }
         }
-
         if (!hasUa) {
             headers.push({ name: "User-Agent", value: CHROME_MOBILE_UA });
-        }
-        if (!hasSecChUa) {
-            headers.push({ name: "Sec-CH-UA", value: `"Chromium";v="${CHROME_VERSION}", "Not_A Brand";v="24", "Google Chrome";v="${CHROME_VERSION}"` });
-        }
-        if (!hasSecChUaMobile) {
-            headers.push({ name: "Sec-CH-UA-Mobile", value: "?1" });
-        }
-        if (!hasSecChUaPlatform) {
-            headers.push({ name: "Sec-CH-UA-Platform", value: '"Android"' });
         }
 
         return { requestHeaders: headers };
@@ -60,4 +45,20 @@ browser.webRequest.onBeforeSendHeaders.addListener(
         types: ["main_frame", "sub_frame"]
     },
     ["blocking", "requestHeaders"]
+);
+
+// Block Google service worker which can conflict with GeckoView session caching
+browser.webRequest.onBeforeRequest.addListener(
+    function(details) {
+        return { cancel: true };
+    },
+    {
+        urls: [
+            "*://*.google.com/serviceworker*",
+            "*://*.google.co.*/serviceworker*",
+            "*://*.google.*/serviceworker*"
+        ],
+        types: ["script"]
+    },
+    ["blocking"]
 );

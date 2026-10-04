@@ -181,7 +181,7 @@ public class BrowserUnit {
                 }
 
                 switch (i) {
-                    case 0: return "https://www.google.com/search?q=" + encodedQuery;
+                    case 0: return "https://www.google.com/search?client=firefox-b-m&q=" + encodedQuery;
                     case 1: return "https://duckduckgo.com/?q=" + encodedQuery;
                     case 2: return "https://www.startpage.com/sp/search?query=" + encodedQuery;
                     case 3: return "https://search.brave.com/search?q=" + encodedQuery;
@@ -189,7 +189,7 @@ public class BrowserUnit {
                     case 5: return "https://searx.space/search?q=" + encodedQuery;
                     case 6: return "https://www.qwant.com/?q=" + encodedQuery;
                     case 7: return "https://www.ecosia.org/search?q=" + encodedQuery;
-                    default: return "https://www.google.com/search?q=" + encodedQuery;
+                    default: return "https://www.google.com/search?client=firefox-b-m&q=" + encodedQuery;
                 }
             }
         }

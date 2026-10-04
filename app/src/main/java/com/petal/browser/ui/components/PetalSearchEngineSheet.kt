@@ -40,7 +40,7 @@ data class SearchEngineItem(
 )
 
 val availableSearchEngines = listOf(
-    SearchEngineItem(0, "Google", "Fast and comprehensive global search", "https://www.google.com/search?q=%s"),
+    SearchEngineItem(0, "Google", "Fast and comprehensive global search", "https://www.google.com/search?client=firefox-b-m&q=%s"),
     SearchEngineItem(1, "DuckDuckGo", "Privacy search without tracking", "https://duckduckgo.com/?q=%s"),
     SearchEngineItem(2, "Startpage", "Privacy-focused Google results", "https://www.startpage.com/sp/search?query=%s"),
     SearchEngineItem(3, "Brave Search", "Independent privacy-focused search index", "https://search.brave.com/search?q=%s"),
