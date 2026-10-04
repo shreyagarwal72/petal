@@ -1020,7 +1020,7 @@ private class PetalContentDelegateWrapper(
         element: org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement
     ) {
         val act = resolveActivity()
-        if (act != null) {
+        if (act is com.petal.browser.activity.BrowserActivity) {
             val linkUri = element.linkUri
             val srcUri = element.srcUri
             val elemType = element.type
@@ -1091,22 +1091,6 @@ private class ExternalSchemeNavigationDelegate(
         context = newContext
         currentUrlSupplier = newUrlSupplier
         isIncognitoSupplier = newIncognitoSupplier
-    }
-
-    override fun onLocationChange(
-        session: org.mozilla.geckoview.GeckoSession,
-        url: String?,
-        perms: MutableList<org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission>
-    ) {
-        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChange (3-arg): url=$url")
-        if (!url.isNullOrBlank()) {
-            onLocationChanged(url)
-        }
-        try {
-            engine.onLocationChange(session, url, perms)
-        } catch (t: Throwable) {
-            android.util.Log.w("PetalTabNav", "Error forwarding onLocationChange(3-arg): ${t.message}")
-        }
     }
 
     override fun onLocationChange(
