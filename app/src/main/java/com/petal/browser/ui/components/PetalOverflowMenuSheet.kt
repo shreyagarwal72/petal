@@ -425,7 +425,7 @@ fun PetalOverflowMenuSheet(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
                         .entrance(index = 0),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
@@ -435,6 +435,12 @@ fun PetalOverflowMenuSheet(
                         contentDescription = stringResource(R.string.ui_back),
                         enabled = canGoBack,
                         onClick = onGoBack
+                    )
+                    CircularIconButton(
+                        icon = Icons.Rounded.ArrowForward,
+                        contentDescription = stringResource(R.string.ui_forward),
+                        enabled = canGoForward,
+                        onClick = onGoForward
                     )
                     CircularIconButton(
                         icon = if (isBookmarked && !isHomePage) Icons.Rounded.Star else Icons.Rounded.StarBorder,
@@ -463,23 +469,29 @@ fun PetalOverflowMenuSheet(
                 )
 
                 // 4-Column Quick Action Matrix
-                com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                    items = listOf(
-                        com.petal.browser.ui.containment.PetalConnectedButtonItem("Desktop", Icons.Filled.DesktopWindows, isDesktopSite),
-                        com.petal.browser.ui.containment.PetalConnectedButtonItem("AdBlock", Icons.Filled.Shield, isAdBlockEnabled),
-                        com.petal.browser.ui.containment.PetalConnectedButtonItem("Share", Icons.Filled.Share),
-                        com.petal.browser.ui.containment.PetalConnectedButtonItem(if (isHomePage) "History" else "Find", if (isHomePage) Icons.Filled.History else Icons.Filled.FindInPage),
-                    ),
-                    selectedIndex = -1,
-                    onSelect = { index ->
-                        when (index) {
-                            0 -> onToggleDesktopSite(!isDesktopSite)
-                            1 -> onToggleAdBlock(!isAdBlockEnabled)
-                            2 -> onShareLink()
-                            3 -> if (isHomePage) onOpenHistory() else onSearchOnSite()
-                        }
-                    },
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
+                        items = listOf(
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Desktop", Icons.Filled.DesktopWindows, isDesktopSite),
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem("AdBlock", Icons.Filled.Shield, isAdBlockEnabled),
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Share", Icons.Filled.Share),
+                            com.petal.browser.ui.containment.PetalConnectedButtonItem(if (isHomePage) "History" else "Find", if (isHomePage) Icons.Filled.History else Icons.Filled.FindInPage),
+                        ),
+                        selectedIndex = -1,
+                        onSelect = { index ->
+                            when (index) {
+                                0 -> onToggleDesktopSite(!isDesktopSite)
+                                1 -> onToggleAdBlock(!isAdBlockEnabled)
+                                2 -> onShareLink()
+                                3 -> if (isHomePage) onOpenHistory() else onSearchOnSite()
+                            }
+                        },
+                    )
+                }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -764,11 +776,22 @@ private fun CircularIconButton(
     tint: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Surface(
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = if (enabled) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-        modifier = Modifier.size(44.dp).clickable(enabled = enabled, onClick = onClick),
+        color = if (enabled) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+        contentColor = if (enabled) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+        modifier = Modifier
+            .size(42.dp)
+            .clip(CircleShape)
+            .clickable(
+                enabled = enabled,
+                onClick = {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                        .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                    onClick()
+                }
+            ),
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
