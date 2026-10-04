@@ -48,7 +48,6 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.petal.browser.BuildConfig
 import com.petal.browser.R
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -262,13 +261,24 @@ fun PetalAboutDeveloperSheetContent(
                             }
 
                             // Section 2: Application Details & Environment
+                            val pInfo = remember {
+                                try {
+                                    context.packageManager.getPackageInfo(context.packageName, 0)
+                                } catch (_: Throwable) {
+                                    null
+                                }
+                            }
+                            val verName = pInfo?.versionName ?: "3.9"
+                            val verCode = @Suppress("DEPRECATION") (pInfo?.versionCode ?: 390)
                             PetalSettingsSection(
                                 title = "Application & Engine",
                                 icon = Icons.Rounded.Info,
                                 cardId = "about_app_info"
                             ) {
                                 AppInfoGroup(
-                                    onCopyVersion = { copyToClipboard("Version", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})") }
+                                    versionName = verName,
+                                    versionCode = verCode,
+                                    onCopyVersion = { copyToClipboard("Version", "$verName ($verCode)") }
                                 )
                             }
 
@@ -472,6 +482,8 @@ fun DeveloperProfileGroup(
  */
 @Composable
 fun AppInfoGroup(
+    versionName: String = "3.9",
+    versionCode: Int = 390,
     onCopyVersion: () -> Unit
 ) {
     PetalGroup(rowCount = 3, modifier = Modifier.fillMaxWidth()) { index, position ->
@@ -493,7 +505,7 @@ fun AppInfoGroup(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Version ${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
+                            text = "Version $versionName (Build $versionCode)",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

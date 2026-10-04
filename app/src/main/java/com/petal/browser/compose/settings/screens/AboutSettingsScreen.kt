@@ -18,7 +18,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.petal.browser.BuildConfig
 import com.petal.browser.R
 import com.petal.browser.ui.components.*
 import com.petal.browser.ui.containment.PetalSettingsSection
@@ -83,13 +82,24 @@ fun AboutSettingsScreen(
                 }
 
                 // Section 2: Application Details & Environment
+                val pInfo = remember {
+                    try {
+                        context.packageManager.getPackageInfo(context.packageName, 0)
+                    } catch (_: Throwable) {
+                        null
+                    }
+                }
+                val verName = pInfo?.versionName ?: "3.9"
+                val verCode = @Suppress("DEPRECATION") (pInfo?.versionCode ?: 390)
                 PetalSettingsSection(
                     title = "Application & Engine",
                     icon = Icons.Rounded.Info,
                     cardId = "about_app_info"
                 ) {
                     AppInfoGroup(
-                        onCopyVersion = { copyToClipboard("Version", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})") }
+                        versionName = verName,
+                        versionCode = verCode,
+                        onCopyVersion = { copyToClipboard("Version", "$verName ($verCode)") }
                     )
                 }
 
