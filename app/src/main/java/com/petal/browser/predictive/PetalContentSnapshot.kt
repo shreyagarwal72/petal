@@ -64,8 +64,7 @@ object PetalContentSnapshot {
         }
 
     @JvmStatic
-    @JvmOverloads
-    fun capture(rootView: View, fallbackBitmap: Bitmap? = null): Bitmap {
+    fun capture(rootView: View): Bitmap {
         val width = rootView.width.coerceAtLeast(1)
         val height = rootView.height.coerceAtLeast(1)
 
@@ -88,10 +87,10 @@ object PetalContentSnapshot {
                         latch.countDown()
                     }, handler)
 
-                    val success = latch.await(250, TimeUnit.MILLISECONDS)
+                    val success = latch.await(200, TimeUnit.MILLISECONDS)
                     thread.quitSafely()
 
-                    if (success && copyResult == PixelCopy.SUCCESS && !com.petal.browser.unit.TabThumbnailCache.isBlankBitmap(bitmap)) {
+                    if (success && copyResult == PixelCopy.SUCCESS) {
                         captured = bitmap
                     } else {
                         bitmap.recycle()
@@ -104,34 +103,21 @@ object PetalContentSnapshot {
 
         if (captured == null) {
             captured = try {
-                val b = rootView.drawToBitmap(Bitmap.Config.ARGB_8888)
-                if (com.petal.browser.unit.TabThumbnailCache.isBlankBitmap(b)) {
-                    null
-                } else {
-                    b
-                }
+                rootView.drawToBitmap(Bitmap.Config.ARGB_8888)
             } catch (e: Throwable) {
-                null
+                try {
+                    val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(bmp)
+                    rootView.draw(canvas)
+                    bmp
+                } catch (e2: Throwable) {
+                    Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+                }
             }
-        }
-
-        if (captured == null && fallbackBitmap != null && !fallbackBitmap.isRecycled && !com.petal.browser.unit.TabThumbnailCache.isBlankBitmap(fallbackBitmap)) {
-            captured = fallbackBitmap
-        }
-
-        if (captured == null) {
-            captured = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         }
 
         _current = captured
         return captured
-    }
-
-    @JvmStatic
-    fun setSnapshot(bitmap: Bitmap?) {
-        if (bitmap != null && !bitmap.isRecycled) {
-            _current = bitmap
-        }
     }
 
     @JvmStatic

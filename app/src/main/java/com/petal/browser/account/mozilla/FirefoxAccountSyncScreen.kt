@@ -969,16 +969,24 @@ fun FirefoxAccountSyncScreen(
                 }
             }
 
-            if (showAppLockConfigPage) {
-                com.petal.browser.predictive.PetalScreenWrapper(
-                    isBehind = false,
-                    backgroundSnapshot = null
-                ) {
-                    com.petal.browser.compose.security.PetalAppLockConfigScreen(
-                        onBack = { showAppLockConfigPage = false },
-                        wrapPredictive = false
-                    )
-                }
+            AnimatedVisibility(
+                visible = showAppLockConfigPage,
+                enter = slideInHorizontally(
+                    initialOffsetX = { it / 3 },
+                    animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                ) + fadeIn(animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))),
+                exit = slideOutHorizontally(
+                    targetOffsetX = { it },
+                    animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                ) + scaleOut(
+                    targetScale = 0.85f,
+                    animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                )
+            ) {
+                com.petal.browser.compose.security.PetalAppLockConfigScreen(
+                    onBack = { showAppLockConfigPage = false },
+                    wrapPredictive = false
+                )
             }
         }
     }
