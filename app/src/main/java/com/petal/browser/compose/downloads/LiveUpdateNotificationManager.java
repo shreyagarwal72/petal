@@ -182,7 +182,7 @@ public class LiveUpdateNotificationManager {
         int dollFrameRes = isPaused ? R.drawable.ic_doll_run_1 : getRunningDollFrameResource(progressPercent);
         int clampedProgress = Math.max(0, Math.min(100, progressPercent));
 
-        if (canPostPromotedNotifications(context)) {
+        if (liveUpdatesPref && canPostPromotedNotifications(context)) {
             Notification nativeNotif = buildAndroid16ProgressStyleNotification(
                     context, title, contentText, clampedProgress, isIndeterminate, isPaused, chipText,
                     contentPendingIntent, cancelPendingIntent, togglePendingIntent, liveUpdatesPref,
@@ -252,13 +252,15 @@ public class LiveUpdateNotificationManager {
             Log.d(TAG, "Custom RemoteViews creation ignored: " + t.getMessage());
         }
 
-        Bundle extras = new Bundle();
-        extras.putString("android.liveAlertText", chipText);
-        extras.putBoolean("android.isLiveAlert", true);
-        extras.putBoolean("android.promotedOngoing", !isPaused && liveUpdatesPref);
-        extras.putString("android.shortCriticalText", chipText);
-        extras.putInt("android.accentColor", themeAccentColor);
-        builder.setExtras(extras);
+        if (liveUpdatesPref) {
+            Bundle extras = new Bundle();
+            extras.putString("android.liveAlertText", chipText);
+            extras.putBoolean("android.isLiveAlert", true);
+            extras.putBoolean("android.promotedOngoing", !isPaused);
+            extras.putString("android.shortCriticalText", chipText);
+            extras.putInt("android.accentColor", themeAccentColor);
+            builder.setExtras(extras);
+        }
 
         try {
             Method setShortCriticalText = builder.getClass().getMethod("setShortCriticalText", CharSequence.class);

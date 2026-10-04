@@ -1560,4 +1560,5 @@
     <string name="ui_deselect_all">Deselect All</string>
     <string name="ui_data_to_include">Data to include</string>
     <string name="ui_data_to_restore">Data to restore</string>
+    <string name="ui_download_behavior">Download behavior</string>
 </resources>

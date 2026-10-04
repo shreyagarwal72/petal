@@ -1,25 +1,28 @@
 package com.petal.browser.passwords
 
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.petal.browser.compose.file.PetalFilePickerBridge
+import com.petal.browser.ui.containment.PetalBadgeVariant
+import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupNavigationRow
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalSectionLabel
+import com.petal.browser.ui.containment.PetalSheet
+import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -107,216 +110,127 @@ fun PetalPasswordImportSheet(
         }
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    ) {
+    fun pickFile(sourceType: String, mimeTypes: Array<String>) {
+        PetalFilePickerBridge.showFilePicker(
+            activity = activity,
+            mimeTypes = mimeTypes,
+            asModalDialog = true,
+            onFileSelected = { file -> processFile(file, sourceType) },
+            onDismiss = {}
+        )
+    }
+
+    val csvMimes = arrayOf("text/csv", "text/plain", "application/csv")
+    val jsonMimes = arrayOf("application/json", "text/plain")
+    val anyMimes = arrayOf("*/*", "application/octet-stream", "text/plain")
+
+    val otherSources = listOf(
+        ImportSource(Icons.Rounded.Key, "Google Chrome / Chromium", "CSV export (*.csv)", PetalBadgeVariant.PRIMARY, "CHROME", csvMimes),
+        ImportSource(Icons.Rounded.Public, "Mozilla Firefox", "CSV export (*.csv)", PetalBadgeVariant.SECONDARY, "FIREFOX", csvMimes),
+        ImportSource(Icons.Rounded.Shield, "Bitwarden", "JSON export (*.json)", PetalBadgeVariant.TERTIARY, "BITWARDEN", jsonMimes),
+        ImportSource(Icons.Rounded.Lock, "1Password", "CSV export (*.csv)", PetalBadgeVariant.PRIMARY, "ONE_PASSWORD", csvMimes),
+        ImportSource(Icons.Rounded.VpnKey, "Dashlane", "CSV export (*.csv)", PetalBadgeVariant.SECONDARY, "DASHLANE", csvMimes),
+    )
+    val petalSources = listOf(
+        ImportSource(Icons.Rounded.Backup, "Petal Vault Backup", "Petal backup JSON (*.json)", PetalBadgeVariant.PRIMARY, "PETAL_JSON", jsonMimes),
+        ImportSource(Icons.Rounded.EnhancedEncryption, "Encrypted Petal Vault", "Petal backup (*.petal), password asked if needed", PetalBadgeVariant.TERTIARY, "PETAL_ENC", anyMimes),
+    )
+
+    PetalSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Import Passwords",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Select source format to browse files using Petal File Picker",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PetalGroupIconBadge(
+                    icon = Icons.Rounded.FileDownload,
+                    variant = PetalBadgeVariant.PRIMARY,
+                    size = 48.dp,
+                    iconSize = 24.dp
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Import Passwords",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Pick a source format, then choose the file with Petal File Picker",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             if (isImporting) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    shape = petalGroupShape(PetalGroupPosition.SINGLE),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    CircularProgressIndicator()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text(
+                            text = "Importing passwords...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    item {
-                        ImportSourceOption(
-                            icon = Icons.Rounded.Key,
-                            title = "Google Chrome / Chromium",
-                            subtitle = "CSV export (*.csv)",
-                            onClick = {
-                                PetalFilePickerBridge.showFilePicker(
-                                    activity = activity,
-                                    mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
-                                    asModalDialog = true,
-                                    onFileSelected = { file -> processFile(file, "CHROME") },
-                                    onDismiss = {}
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        ImportSourceOption(
-                            icon = Icons.Rounded.Public,
-                            title = "Mozilla Firefox",
-                            subtitle = "CSV export (*.csv)",
-                            onClick = {
-                                PetalFilePickerBridge.showFilePicker(
-                                    activity = activity,
-                                    mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
-                                    asModalDialog = true,
-                                    onFileSelected = { file -> processFile(file, "FIREFOX") },
-                                    onDismiss = {}
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        ImportSourceOption(
-                            icon = Icons.Rounded.Shield,
-                            title = "Bitwarden",
-                            subtitle = "JSON export (*.json)",
-                            onClick = {
-                                PetalFilePickerBridge.showFilePicker(
-                                    activity = activity,
-                                    mimeTypes = arrayOf("application/json", "text/plain"),
-                                    asModalDialog = true,
-                                    onFileSelected = { file -> processFile(file, "BITWARDEN") },
-                                    onDismiss = {}
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        ImportSourceOption(
-                            icon = Icons.Rounded.Lock,
-                            title = "1Password",
-                            subtitle = "1Password CSV export (*.csv)",
-                            onClick = {
-                                PetalFilePickerBridge.showFilePicker(
-                                    activity = activity,
-                                    mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
-                                    asModalDialog = true,
-                                    onFileSelected = { file -> processFile(file, "ONE_PASSWORD") },
-                                    onDismiss = {}
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        ImportSourceOption(
-                            icon = Icons.Rounded.VpnKey,
-                            title = "Dashlane",
-                            subtitle = "Dashlane CSV export (*.csv)",
-                            onClick = {
-                                PetalFilePickerBridge.showFilePicker(
-                                    activity = activity,
-                                    mimeTypes = arrayOf("text/csv", "text/plain", "application/csv"),
-                                    asModalDialog = true,
-                                    onFileSelected = { file -> processFile(file, "DASHLANE") },
-                                    onDismiss = {}
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        ImportSourceOption(
-                            icon = Icons.Rounded.Backup,
-                            title = "Petal Vault Backup",
-                            subtitle = "Petal backup JSON (*.json)",
-                            onClick = {
-                                PetalFilePickerBridge.showFilePicker(
-                                    activity = activity,
-                                    mimeTypes = arrayOf("application/json", "text/plain"),
-                                    asModalDialog = true,
-                                    onFileSelected = { file -> processFile(file, "PETAL_JSON") },
-                                    onDismiss = {}
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        ImportSourceOption(
-                            icon = Icons.Rounded.EnhancedEncryption,
-                            title = "Encrypted Petal Vault",
-                            subtitle = "Petal backup (*.petal), password asked if needed",
-                            onClick = {
-                                PetalFilePickerBridge.showFilePicker(
-                                    activity = activity,
-                                    mimeTypes = arrayOf("*/*", "application/octet-stream", "text/plain"),
-                                    asModalDialog = true,
-                                    onFileSelected = { file -> processFile(file, "PETAL_ENC") },
-                                    onDismiss = {}
-                                )
-                            }
-                        )
-                    }
+                Column {
+                    PetalSectionLabel("Browsers & password managers")
+                    ImportSourceGroup(otherSources, ::pickFile)
+                }
+                Column {
+                    PetalSectionLabel("Petal backups")
+                    ImportSourceGroup(petalSources, ::pickFile)
                 }
             }
         }
     }
 }
 
+private data class ImportSource(
+    val icon: ImageVector,
+    val title: String,
+    val subtitle: String,
+    val variant: PetalBadgeVariant,
+    val type: String,
+    val mimeTypes: Array<String>
+)
+
 @Composable
-private fun ImportSourceOption(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
+private fun ImportSourceGroup(
+    sources: List<ImportSource>,
+    onPick: (String, Array<String>) -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Icon(
-                Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp)
-            )
-        }
+    PetalGroup(rowCount = sources.size) { index, position ->
+        val source = sources[index]
+        PetalGroupNavigationRow(
+            title = source.title,
+            subtitle = source.subtitle,
+            position = position,
+            variant = source.variant,
+            leadingIcon = {
+                Icon(source.icon, contentDescription = null, modifier = Modifier.size(22.dp))
+            },
+            onClick = { onPick(source.type, source.mimeTypes) }
+        )
     }
 }

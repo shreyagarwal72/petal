@@ -135,26 +135,13 @@ fun DownloadSettingsScreenContent(
                     }
                 }
 
-                // Default Download Manager Card
+                // Download behavior (preview + live updates)
                 PetalSettingsSection(
-                    title = stringResource(R.string.ui_default_download_manager),
-                    icon = Icons.Rounded.Download,
-                    cardId = "misc_download",
+                    title = stringResource(R.string.ui_download_behavior),
+                    icon = Icons.Rounded.Tune,
+                    cardId = "misc_download_behavior",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    Text(
-                        text = stringResource(R.string.ui_choose_whether_downloads_are_handled),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_auto_preview_downloaded_images),
-                        subtitle = stringResource(R.string.ui_show_downloaded_photos_in_the),
-                        icon = Icons.Rounded.Image,
-                        checked = autoPreviewDownloadedImages,
-                        onCheckedChange = onAutoPreviewDownloadedImagesChange
-                    )
 
                     var showPermissionDialog by remember { mutableStateOf(false) }
                     var showPromotedSettingsDialog by remember { mutableStateOf(false) }
@@ -172,11 +159,26 @@ fun DownloadSettingsScreenContent(
                         }
                     }
 
+                    val notificationsAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { rowIndex, rowPosition ->
+                    if (rowIndex == 0) {
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_auto_preview_downloaded_images),
+                        subtitle = stringResource(R.string.ui_show_downloaded_photos_in_the),
+                        icon = Icons.Rounded.Image,
+                        checked = autoPreviewDownloadedImages,
+                        position = rowPosition,
+                        onCheckedChange = onAutoPreviewDownloadedImagesChange
+                    )
+                    } else {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = stringResource(R.string.ui_live_updates_alerts),
                         subtitle = stringResource(R.string.ui_show_live_progress_chip_in),
                         icon = Icons.Rounded.NotificationsActive,
-                        checked = liveUpdates,
+                        checked = liveUpdates && notificationsAllowed,
+                        position = rowPosition,
                         onCheckedChange = { enabled ->
                             if (enabled) {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -200,6 +202,8 @@ fun DownloadSettingsScreenContent(
                             }
                         }
                     )
+                    }
+                    }
 
                     if (showPermissionDialog) {
                         com.petal.browser.ui.containment.PetalMaterialAlertDialog(
@@ -267,6 +271,21 @@ fun DownloadSettingsScreenContent(
                             }
                         )
                     }
+
+                }
+
+                // Default Download Manager Card
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_default_download_manager),
+                    icon = Icons.Rounded.Download,
+                    cardId = "misc_download",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Text(
+                        text = stringResource(R.string.ui_choose_whether_downloads_are_handled),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
@@ -339,7 +358,8 @@ fun DownloadSettingsScreenContent(
                                 )
                             }
                             else -> {
-                                val isExternalAuto = downloadManagerMode == ExternalDownloadManagerHelper.MODE_EXTERNAL_AUTO
+                                val isExternalAuto = downloadManagerMode != ExternalDownloadManagerHelper.MODE_IN_APP &&
+                                    installedDownloaders.none { it.key.equals(downloadManagerMode, ignoreCase = true) }
                                 com.petal.browser.ui.containment.PetalGroupListRow(
                                     position = position,
                                     selected = isExternalAuto,

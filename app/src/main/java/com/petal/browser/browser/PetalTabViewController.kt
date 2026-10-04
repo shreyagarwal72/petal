@@ -352,18 +352,18 @@ class PetalTabViewController private constructor(
                 }
             }
 
-            gs.navigationDelegate = object : org.mozilla.geckoview.GeckoSession.NavigationDelegate {
-                override fun onLoadRequest(
-                    session: org.mozilla.geckoview.GeckoSession,
-                    request: org.mozilla.geckoview.GeckoSession.NavigationDelegate.LoadRequest
-                ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
-                    val uri = request.uri
+            // Do NOT replace GeckoView's navigation delegate. Mozilla's GeckoEngineSession installs its
+            // own delegate that reports onLocationChange / onCanGoBack / onLoadError to the observers
+            // (this class's `observer`) and tracks the load request used by reload(). Replacing it left
+            // pageUrl stuck on the first URL (the Google results page) and made pull-to-refresh reload
+            // that stale request. Wrap the engine's delegate and forward everything to it instead.
+            val engineNavigation = gs.navigationDelegate
+            if (engineNavigation !is ExternalSchemeNavigationDelegate) {
+                val inner = engineNavigation ?: object : org.mozilla.geckoview.GeckoSession.NavigationDelegate {}
+                gs.navigationDelegate = ExternalSchemeNavigationDelegate(inner) { uri ->
                     val act = (context as? com.petal.browser.activity.BrowserActivity)
                         ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
-                    if (act != null && com.petal.browser.view.PetalGeckoView.handleExternalScheme(act, uri)) {
-                        return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
-                    }
-                    return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.ALLOW)
+                    act != null && com.petal.browser.view.PetalGeckoView.handleExternalScheme(act, uri)
                 }
             }
 
@@ -457,6 +457,16 @@ class PetalTabViewController private constructor(
 
     fun reload() {
         applyPageSettings(pageUrl)
+        // Reload the live GeckoSession so we always refresh the page currently shown, not the
+        // engine session's original (initial) load request.
+        val live = getGeckoSession()
+        if (live != null) {
+            try {
+                live.reload(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_NONE)
+                return
+            } catch (_: Throwable) {
+            }
+        }
         observedSession?.reload()
     }
 
@@ -823,5 +833,26 @@ class PetalTabViewController private constructor(
                 isPrivate = current.content.private
             )
         )
+    }
+}
+
+/**
+ * Forwards every navigation callback to the engine's own delegate and only adds external-app
+ * scheme handling (intent://, tel:, market:// ...) on top of onLoadRequest.
+ */
+private class ExternalSchemeNavigationDelegate(
+    private val engine: org.mozilla.geckoview.GeckoSession.NavigationDelegate,
+    private val handleExternal: (String) -> Boolean
+) : org.mozilla.geckoview.GeckoSession.NavigationDelegate by engine {
+
+    override fun onLoadRequest(
+        session: org.mozilla.geckoview.GeckoSession,
+        request: org.mozilla.geckoview.GeckoSession.NavigationDelegate.LoadRequest
+    ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
+        if (handleExternal(request.uri)) {
+            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+        }
+        return engine.onLoadRequest(session, request)
+            ?: org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.ALLOW)
     }
 }

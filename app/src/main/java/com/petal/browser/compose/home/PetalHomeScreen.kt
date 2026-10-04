@@ -1124,45 +1124,59 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                 indication = androidx.compose.foundation.LocalIndication.current
             ) { onSearch("") }
     ) {
-            Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = stringResource(R.string.ui_search),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(
-                text = stringResource(R.string.ui_search_or_type_url_2),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-
-            IconButton(onClick = {
-                if (activity != null) {
-                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, "")
-                }
-            }) {
+            // One inner row owns all spacing. PetalFloatingToolbar adds 12dp between its direct
+            // children and IconButtons default to 48dp, which made every gap in this bar too wide.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
-                    Icons.Rounded.AutoAwesome,
-                    contentDescription = stringResource(R.string.ui_petal_ai),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = stringResource(R.string.ui_search),
+                    tint = MaterialTheme.colorScheme.primary,
                 )
-            }
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stringResource(R.string.ui_search_or_type_url_2),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(2.dp))
 
-            IconButton(onClick = {
-                if (activity != null) {
-                    com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
-                        if (result.isNotBlank()) onSearch(result)
-                    }
+                IconButton(
+                    onClick = {
+                        if (activity != null) {
+                            com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, "")
+                        }
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.AutoAwesome,
+                        contentDescription = stringResource(R.string.ui_petal_ai),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-            }) {
-                Icon(
-                    Icons.Rounded.Mic,
-                    contentDescription = stringResource(R.string.ui_voice_search_2),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+
+                IconButton(
+                    onClick = {
+                        if (activity != null) {
+                            com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
+                                if (result.isNotBlank()) onSearch(result)
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.Mic,
+                        contentDescription = stringResource(R.string.ui_voice_search_2),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
     }
 }

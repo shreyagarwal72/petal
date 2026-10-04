@@ -171,16 +171,21 @@ fun PetalInactiveTabsSheet(
 
                     // ── Bulk Actions ──
                     if (inactiveTabs.isNotEmpty()) {
+                        // Equal-weight buttons: long translations (e.g. Hinglish) wrap inside
+                        // their own half instead of squeezing the other button's text vertical.
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .height(IntrinsicSize.Min)
                                 .padding(horizontal = 16.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             FilledTonalButton(
                                 onClick = onRestoreAllTabs,
-                                shape = RoundedCornerShape(14.dp)
+                                shape = RoundedCornerShape(14.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.weight(1f).fillMaxHeight()
                             ) {
                                 Icon(
                                     Icons.Filled.Unarchive,
@@ -188,7 +193,13 @@ fun PetalInactiveTabsSheet(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.ui_restore_all, inactiveTabs.size))
+                                Text(
+                                    text = stringResource(R.string.ui_restore_all, inactiveTabs.size),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
                             }
 
                             OutlinedButton(
@@ -200,7 +211,9 @@ fun PetalInactiveTabsSheet(
                                     1.dp,
                                     MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
                                 ),
-                                shape = RoundedCornerShape(14.dp)
+                                shape = RoundedCornerShape(14.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.weight(1f).fillMaxHeight()
                             ) {
                                 Icon(
                                     Icons.Filled.DeleteSweep,
@@ -208,7 +221,13 @@ fun PetalInactiveTabsSheet(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.ui_close_all))
+                                Text(
+                                    text = stringResource(R.string.ui_close_all),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
                             }
                         }
                     }

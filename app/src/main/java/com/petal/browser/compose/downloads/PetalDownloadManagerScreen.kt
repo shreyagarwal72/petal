@@ -504,8 +504,13 @@ fun PetalDownloadManagerScreen(
                             contentDescription = stringResource(R.string.ui_delete_selected),
                             onClick = {
                                 val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
-                                deleteSelectedFiles = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)
-                                pendingDeleteItems = itemsToDelete
+                                val deletePrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                                deleteSelectedFiles = deletePrefs.getBoolean("sp_delete_download_file", false)
+                                if (deletePrefs.getBoolean("sp_confirm_download_delete", true)) {
+                                    pendingDeleteItems = itemsToDelete
+                                } else {
+                                    performStagedDelete(itemsToDelete)
+                                }
                                 selectedIds = emptySet()
                             }
                         )
@@ -1051,7 +1056,11 @@ private fun DownloadRowItem(
                             leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 menuExpanded = false
-                                showDeleteDialog = true
+                                if (androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_confirm_download_delete", true)) {
+                                    showDeleteDialog = true
+                                } else {
+                                    onDeleteItem()
+                                }
                             }
                         )
                     }

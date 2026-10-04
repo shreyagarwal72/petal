@@ -123,9 +123,13 @@ object ExternalDownloadManagerHelper {
     ): Boolean {
         val activity = resolveActivity(context)
         val mode = getDownloadManagerMode(context)
-        val targetDownloader = preferredDownloader
-            ?: ExternalDownloader.fromKey(mode)
-            ?: getInstalledDownloaders(context).firstOrNull()
+        // "External App (Auto / Chooser)" must always show the system chooser instead of silently
+        // picking the first installed manager. A specific manager only applies when it is installed.
+        val isAutoChooser = preferredDownloader == null && mode == MODE_EXTERNAL_AUTO
+        val targetDownloader = if (isAutoChooser) null else (
+            preferredDownloader
+                ?: ExternalDownloader.fromKey(mode)?.takeIf { d -> getInstalledDownloaders(context).contains(d) }
+        )
 
         val verifiedUrl = if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) {
             "https://$url"
@@ -137,7 +141,7 @@ object ExternalDownloadManagerHelper {
         val cookie = try { CookieManager.getInstance().getCookie(verifiedUrl) } catch (e: Exception) { null }
 
         // 1. If target is 1DM (or installed and activity available)
-        if (targetDownloader == ExternalDownloader.ENGINE_1DM || (targetDownloader == null && Util1DM.is1DMInstalled(context))) {
+        if (targetDownloader == ExternalDownloader.ENGINE_1DM) {
             if (activity != null) {
                 try {
                     val headers = HashMap<String, String>()

@@ -127,7 +127,9 @@ fun DataBackupSettingsScreen(
             },
             text = {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
@@ -356,7 +358,9 @@ fun DataBackupSettingsScreen(
             },
             text = {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
@@ -467,7 +471,7 @@ fun DataBackupSettingsScreen(
                         showRestorePicker = true
                     },
                     shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.height(44.dp)
+                    modifier = Modifier.heightIn(min = 44.dp)
                 ) {
                     Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
