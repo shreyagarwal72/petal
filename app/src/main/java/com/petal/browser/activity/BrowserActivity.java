@@ -1558,13 +1558,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean isWebPageNotHome = !isPetalHomeSurfaceShowing && !isHomePage(curUrl) && curUrl != null && !curUrl.isEmpty() && !curUrl.equalsIgnoreCase("about:blank");
         boolean hasMultipleTabs = BrowserContainer.size() > 1;
 
-        boolean requireConfirmExit = sp != null && sp.getBoolean("sp_double_back_exit", false);
+        boolean requireConfirmExit = sp != null && sp.getBoolean("sp_close_browser_confirm", true);
 
-        // Always keep browserBackCallback enabled while the activity has content.
-        // Android's predictive gesture navigation drops the back gesture if this is false,
-        // prematurely exiting the app. performBackNavigation() handles overlays, fullscreen,
-        // text selection, website history, home fallback, multi-tab closure, and exit dialog.
-        browserBackCallback.setEnabled(true);
+        // When the user is on the root home screen on the last tab with no overlays or open dialogs,
+        // and exit confirmation is disabled, disable browserBackCallback so the Android OS
+        // can natively run the official Android 14/15/16 Predictive Back-to-Home animation
+        // (scaling smoothly down to the launcher icon).
+        boolean canPerformSystemExitAnimation = !hasOverlay && !isDecorOverlayShowing && !hasDialog && !hasWebBack && !isWebPageNotHome && !hasMultipleTabs && !requireConfirmExit;
+
+        browserBackCallback.setEnabled(!canPerformSystemExitAnimation);
     }
 
     public void resetPredictiveBackVisuals() {
@@ -5277,7 +5279,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void captureBrowserMainPreview() {
-        // No-op preview snapshot placeholder for screen transition previews
+        try {
+            View targetView = null;
+            if (currentAlbumController != null) {
+                targetView = currentAlbumController.getAlbumView();
+            }
+            if (targetView == null || !targetView.isShown() || targetView.getWidth() <= 0 || targetView.getHeight() <= 0) {
+                targetView = contentFrame != null ? contentFrame : (findViewById(android.R.id.content) != null ? findViewById(android.R.id.content) : getWindow().getDecorView());
+            }
+            android.graphics.Bitmap fallback = null;
+            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                fallback = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getCachedPreviewBitmap();
+            } else if (currentAlbumController != null) {
+                fallback = com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(currentAlbumController.getAlbumTitle(), false);
+            }
+            com.petal.browser.predictive.PetalContentSnapshot.capture(targetView, fallback);
+        } catch (Throwable t) {
+            Log.d(TAG, "captureBrowserMainPreview: " + t.getMessage());
+        }
     }
 
     public void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final AdapterRecord adapterRecord, List<Record> recordList, int location) {

@@ -56,6 +56,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -300,7 +301,8 @@ fun PetalScreenWrapper(
             modifier = modifier.fillMaxSize()
         ) {
             // Layer 0: Background snapshot underlay (rendered when gesture is active or behind top screen)
-            if (backgroundSnapshot != null && (isActive || isBehindTopScreen)) {
+            val effectiveSnapshot = backgroundSnapshot ?: (if (isActive || isBehindTopScreen) PetalContentSnapshot.current?.asImageBitmap() else null)
+            if (effectiveSnapshot != null && (isActive || isBehindTopScreen)) {
                 val snapshotBlurRadius = if (blurEnabled) (24f * (1f - scaleEased)).dp else 0.dp
                 val snapshotDimAlpha = if (!blurEnabled) 0.75f * (1f - scaleEased) else 0.40f * (1f - scaleEased)
                 val snapshotScale = 0.94f + 0.06f * scaleEased
@@ -321,7 +323,7 @@ fun PetalScreenWrapper(
                         }
                 ) {
                     Image(
-                        bitmap = backgroundSnapshot,
+                        bitmap = effectiveSnapshot,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
