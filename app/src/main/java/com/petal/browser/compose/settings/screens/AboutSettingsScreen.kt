@@ -1,31 +1,29 @@
 package com.petal.browser.compose.settings.screens
 
+import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import com.petal.browser.ui.containment.PetalSettingsSection
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.compose.settings.SettingsCategory
+import com.petal.browser.BuildConfig
+import com.petal.browser.R
 import com.petal.browser.ui.components.*
+import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.view.PetalToast
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
 
 @Composable
 fun AboutSettingsScreen(
@@ -34,12 +32,31 @@ fun AboutSettingsScreen(
 ) {
     val context = LocalContext.current
 
+    fun copyToClipboard(label: String, text: String) {
+        try {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText(label, text)
+            clipboard.setPrimaryClip(clip)
+            PetalToast.show(context, "Copied $label to clipboard")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun openUrl(url: String) {
+        try {
+            BrowserUnit.intentURL(context, Uri.parse(url))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "about_settings")
 
         Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
-                title = "About & Developer",
+                title = stringResource(R.string.title_about),
                 subtitle = "App version, licenses, GitHub & developer",
                 onBack = onNavigateBack
             )
@@ -53,98 +70,67 @@ fun AboutSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Section 1: Developer Spotlight
+                // Section 1: Developer Profile & Identification
                 PetalSettingsSection(
-                    title = "Developer Spotlight",
+                    title = "Developer",
                     icon = Icons.Rounded.Person,
                     cardId = "about_developer_spotlight"
                 ) {
-                    DeveloperHeroCard(
-                        onCopyGithub = {
-                            try {
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clip = android.content.ClipData.newPlainText("GitHub URL", "https://github.com/shreyagarwal72")
-                                clipboard.setPrimaryClip(clip)
-                                PetalToast.show(context, "Copied GitHub URL to clipboard")
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
+                    DeveloperProfileGroup(
+                        onCopyGithub = { copyToClipboard("GitHub URL", "https://github.com/shreyagarwal72") },
+                        onOpenUrl = { openUrl(it) }
                     )
                 }
 
-                // Section 2: Project & Repository
+                // Section 2: Application Details & Environment
+                PetalSettingsSection(
+                    title = "Application & Engine",
+                    icon = Icons.Rounded.Info,
+                    cardId = "about_app_info"
+                ) {
+                    AppInfoGroup(
+                        onCopyVersion = { copyToClipboard("Version", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})") }
+                    )
+                }
+
+                // Section 3: Project & Source Code
                 PetalSettingsSection(
                     title = "Project & Source",
                     icon = Icons.Rounded.Code,
                     cardId = "about_repo"
                 ) {
-                    PetalRepoDetailsCard(
-                        onOpenUrl = { url -> BrowserUnit.intentURL(context, Uri.parse(url)) }
+                    ProjectSourceGroup(
+                        onOpenUrl = { openUrl(it) }
                     )
                 }
 
-                // Section 3: Ecosystem & Projects
+                // Section 4: Ecosystem & Community
                 PetalSettingsSection(
-                    title = "Ecosystem & Apps",
-                    icon = Icons.Rounded.Apps,
-                    cardId = "about_ecosystem"
+                    title = "Ecosystem & Community",
+                    icon = Icons.Rounded.Favorite,
+                    cardId = "about_community"
                 ) {
-                    DeveloperEcosystemCard(
-                        onOpenUrl = { url -> BrowserUnit.intentURL(context, Uri.parse(url)) }
+                    CommunityEcosystemGroup(
+                        onOpenUrl = { openUrl(it) }
                     )
                 }
 
-                // Section 4: Architecture & Mission
-                PetalSettingsSection(
-                    title = "Mission & Philosophy",
-                    icon = Icons.Rounded.RocketLaunch,
-                    cardId = "about_mission"
-                ) {
-                    DeveloperMissionCard()
-                    Spacer(Modifier.height(4.dp))
-                    DeveloperMetricsGrid()
-                }
-
-                // Section 5: Technologies & Stack
+                // Section 5: Technologies & Frameworks
                 PetalSettingsSection(
                     title = "Technologies & Frameworks",
                     icon = Icons.Rounded.Layers,
                     cardId = "about_tech"
                 ) {
-                    DeveloperTechStackCard()
+                    CoreTechStackGroup()
                 }
 
-                // Section 6: Community & Diagnostics
+                // Section 6: Mission & Philosophy
                 PetalSettingsSection(
-                    title = "Community & Support",
-                    icon = Icons.Rounded.Favorite,
-                    cardId = "about_actions"
+                    title = "Mission & Philosophy",
+                    icon = Icons.Rounded.RocketLaunch,
+                    cardId = "about_mission"
                 ) {
-                    DeveloperActionsCard(
-                        onOpenUrl = { url ->
-                            try {
-                                if (url == "petal://credits") {
-                                    (context as? ComponentActivity)?.let { act ->
-                                        val browserActivity = act as? BrowserActivity
-                                        if (browserActivity != null) {
-                                            browserActivity.showCreditsScreen {
-                                                browserActivity.openSettingsScreen(SettingsCategory.ABOUT)
-                                            }
-                                        } else {
-                                            PetalCreditsBridge.show(act) {
-                                                onNavigateBack()
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    BrowserUnit.intentURL(context, Uri.parse(url))
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-                    )
+                    MissionMetricsGroup()
                 }
 
                 // Footer Copyright

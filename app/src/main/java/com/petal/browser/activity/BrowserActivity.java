@@ -210,8 +210,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public boolean isDecorOverlayShowing = false;
     /**
      * Optional action to run instead of showAlbum() when performBackNavigation exits an overlay
-     * screen. Used by showCreditsScreen() so that "back from credits" can re-open the About
-     * Developer sheet instead of going all the way to the browser home.
+     * screen. Used when child overlays need to return to their parent overlay screen.
      * Must be set BEFORE presentComposeScreen() and cleared by performBackNavigation().
      */
     public Runnable pendingOverlayBackAction = null;
@@ -2250,10 +2249,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 public void onOpenUrl(String u) {
                     if (u != null && u.contains("category=api_integrations")) {
                         openApiIntegrationsHub();
-                        return;
-                    }
-                    if (u != null && (u.equals("petal://credits") || u.startsWith("petal://credits"))) {
-                        showCreditsScreen();
                         return;
                     }
                     String targetUrl = u;
@@ -5090,52 +5085,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void showSafeLocker() {
         showSafeLockerScreen();
-    }
-
-    public void showCreditsScreen() {
-        showCreditsScreen(null);
-    }
-
-    public void showCreditsScreen(final Runnable onBackAction) {
-        try {
-            captureBrowserMainPreview();
-            isOverlayScreenShowing = true;
-            pendingOverlayBackAction = onBackAction;
-            clearContentFrameKeepingTabs();
-            if (appBar != null) appBar.setVisibility(GONE);
-            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
-            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
-            View bottomNav = findViewById(R.id.bottom_nav_compose);
-            if (bottomNav != null) bottomNav.setVisibility(GONE);
-            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
-            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
-            View fab_bubble_credits = findViewById(R.id.fab_bubble);
-            if (fab_bubble_credits != null) fab_bubble_credits.setVisibility(GONE);
-            hideRefreshAndProgressOverlays();
-            View creditsView = com.petal.browser.ui.components.PetalCreditsBridge.createCreditsView(
-                BrowserActivity.this,
-                () -> {
-                    // Compose's PredictiveBackHandler has already animated the exit.
-                    // Clean up contentFrame and overlay state, then run the pending
-                    // action (re-open About Developer) or fall back to showing home.
-                    isOverlayScreenShowing = false;
-                    removeOverlayViews();
-                    Runnable action = pendingOverlayBackAction;
-                    pendingOverlayBackAction = null;
-                    if (action != null) {
-                        action.run();
-                    } else {
-                        showAlbum(currentAlbumController);
-                    }
-                    updatePersistentBottomNav();
-                    updateOmniBox();
-                    return kotlin.Unit.INSTANCE;
-                }
-            );
-            presentComposeScreen(creditsView, true);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public void savePageOffline() {
