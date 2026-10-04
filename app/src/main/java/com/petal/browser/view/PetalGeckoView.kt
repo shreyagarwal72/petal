@@ -1019,20 +1019,6 @@ class PetalGeckoView @JvmOverloads constructor(
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
                         act.setCustomFullscreen(fullScreen)
-                        try {
-                            val bnc = act.findViewById<View>(R.id.bottom_nav_container)
-                            val bnv = act.findViewById<View>(R.id.bottom_nav_compose)
-                            val addressBar = act.findViewById<View>(R.id.compose_address_bar)
-                            if (fullScreen) {
-                                bnc?.visibility = View.GONE
-                                bnv?.visibility = View.GONE
-                                addressBar?.visibility = View.GONE
-                            } else {
-                                // Restore via the activity so overlay/surface rules are respected.
-                                act.updatePersistentBottomNav()
-                                act.applyAddressBarPosition()
-                            }
-                        } catch (ignored: Exception) {}
                     }
                 }
             }

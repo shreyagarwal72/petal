@@ -198,6 +198,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public LinearProgressIndicator progressBar;
     public com.petal.browser.ui.components.PullToRefreshFrameLayout contentFrame;
     public boolean isOverlayScreenShowing = false;
+    public boolean isCustomFullscreenState = false;
     /**
      * True while a Compose overlay that is attached directly to the window decor view (e.g.
      * App Lock, via PetalAppLockBridge) owns the current back gesture. Unlike
@@ -1344,6 +1345,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 videoOverlayBridge.detachOverlay();
             } catch (Exception ignored) {}
             videoOverlayBridge = null;
+            setCustomFullscreen(false);
+            return;
+        }
+        if (isCustomFullscreenState) {
             setCustomFullscreen(false);
             return;
         }
@@ -2565,7 +2570,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (bnv != null) bnv.setVisibility(GONE);
                 return;
             }
-            if (isOverlayScreenShowing) {
+            if (isOverlayScreenShowing || isCustomFullscreenState) {
                 View bnc = findViewById(R.id.bottom_nav_container);
                 View bnv = findViewById(R.id.bottom_nav_compose);
                 if (bnc != null) bnc.setVisibility(GONE);
@@ -2674,7 +2679,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (container == null) return;
 
-        if (inPip || pwa || isOverlayScreenShowing) {
+        if (inPip || pwa || isOverlayScreenShowing || isCustomFullscreenState) {
             container.setVisibility(GONE);
             if (compose != null) compose.setVisibility(GONE);
             return;
@@ -2725,7 +2730,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             if (addressBar == null) return;
             boolean isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
-            if (isHome || isOverlayScreenShowing) {
+            if (isHome || isOverlayScreenShowing || isCustomFullscreenState) {
                 addressBar.setVisibility(GONE);
             } else {
                 addressBar.setVisibility(VISIBLE);
@@ -2796,7 +2801,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Reserved bottom padding for mainContent ensures webpage content sits flush above the bottom toolbar.
             boolean isFloatingNavStyle = sp.getBoolean("sp_floating_tab_bar", true);
             int reservedNavHeight = (isFloatingNavStyle && !isBottom) ? 0 : bottomNavHeight;
-            boolean reserveBarSpace = !isOverlayScreenShowing;
+            boolean reserveBarSpace = !isOverlayScreenShowing && !isCustomFullscreenState;
             int topInset = reserveBarSpace ? (!isHome ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0) : 0;
             int bottomInset = reserveBarSpace ? (isHome ? reservedNavHeight : (isBottom
                     ? addressHeight + bottomNavHeight
@@ -5763,11 +5768,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
     public void setCustomFullscreen(boolean fullscreen) {
+        isCustomFullscreenState = fullscreen;
+        applyAddressBarPosition();
+        updatePersistentBottomNav();
+
         if (fullscreen) {
             if (SDK_INT >= Build.VERSION_CODES.R) {
                 final WindowInsetsController insetsController = getWindow().getInsetsController();
                 if (insetsController != null) {
-                    insetsController.hide(WindowInsets.Type.statusBars());
+                    insetsController.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
                     insetsController.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
                 }
             }

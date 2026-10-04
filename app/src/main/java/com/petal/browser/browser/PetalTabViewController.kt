@@ -980,6 +980,12 @@ private class PetalContentDelegateWrapper(
     }
 
     override fun onFullScreen(session: org.mozilla.geckoview.GeckoSession, fullScreen: Boolean) {
+        val act = resolveActivity()
+        if (act is com.petal.browser.activity.BrowserActivity) {
+            act.runOnUiThread {
+                act.setCustomFullscreen(fullScreen)
+            }
+        }
         engine?.onFullScreen(session, fullScreen)
     }
 
