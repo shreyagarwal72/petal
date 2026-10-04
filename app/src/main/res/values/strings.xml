@@ -1557,7 +1557,6 @@
     <string name="ui_open_with_other_apps">Open with external app</string>
     <string name="ui_casting_to_device">Casting to %s…</string>
     <string name="ui_save_to_file">Save to File</string>
-    <string name="ui_select_all">Select All</string>
     <string name="ui_deselect_all">Deselect All</string>
     <string name="ui_data_to_include">Data to include</string>
     <string name="ui_data_to_restore">Data to restore</string>
