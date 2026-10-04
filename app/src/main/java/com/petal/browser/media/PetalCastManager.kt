@@ -137,7 +137,7 @@ object PetalCastManager {
             activeLifecycleOwner?.let { it.registry.currentState = Lifecycle.State.DESTROYED }
             activeLifecycleOwner = null
 
-            val dialog = BottomSheetDialog(activity, R.style.PetalBottomSheetDialogTheme)
+            val dialog = BottomSheetDialog(activity)
             activeDialog = dialog
 
             val dialogLifecycleOwner = CastDialogLifecycleOwner()
