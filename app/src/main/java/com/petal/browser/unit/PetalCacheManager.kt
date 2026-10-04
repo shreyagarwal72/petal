@@ -42,7 +42,7 @@ object PetalCacheManager {
         const val THUMBNAILS_CACHE = 1L shl 4
         const val CODE_CACHE = 1L shl 5
         const val COOKIES = 1L shl 6
-        const val ALL_CACHES = NETWORK_CACHE or IMAGE_MEDIA_CACHE or APP_TEMP_CACHE or THUMBNAILS_CACHE or CODE_CACHE
+        const val ALL_CACHES = NETWORK_CACHE or IMAGE_MEDIA_CACHE or APP_TEMP_CACHE or CODE_CACHE
         const val ALL_WEBSITE_DATA = ALL_CACHES or DOM_WEB_STORAGE or COOKIES
     }
 
@@ -161,8 +161,8 @@ object PetalCacheManager {
             Log.w(TAG, "Error clearing GeckoView storage", e)
         }
 
-        // 2. Tab Thumbnail Cache (memory and disk)
-        if ((flags and Flags.THUMBNAILS_CACHE) != 0L || (flags and Flags.IMAGE_MEDIA_CACHE) != 0L) {
+        // 2. Tab Thumbnail Cache (memory and disk) - only when THUMBNAILS_CACHE explicitly requested
+        if ((flags and Flags.THUMBNAILS_CACHE) != 0L) {
             try {
                 TabThumbnailCache.clearMemory()
                 TabThumbnailCache.clear()

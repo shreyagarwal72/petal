@@ -146,7 +146,7 @@ fun PetalBottomNavBar(
         )
     }
 
-    val tabsLabel = "Tabs ($tabCount)"
+    val tabsLabel = "Tabs"
     val newTabLabel = "New"
 
     val effectiveFloating = isFloatingStyle && !isBottomAddressBar
