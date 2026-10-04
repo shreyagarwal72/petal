@@ -4423,13 +4423,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             params.topMargin = (int) HelperUnit.convertDpToPixel(56f, this);
             addContentView(refreshBarCompose, params);
             com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
+            refreshBarCompose.setClipChildren(false);
+            refreshBarCompose.setClipToPadding(false);
+            android.view.ViewParent parentView = refreshBarCompose.getParent();
+            if (parentView instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) parentView).setClipChildren(false);
+                ((android.view.ViewGroup) parentView).setClipToPadding(false);
+            }
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                    refreshBarCompose.setElevation(200f);
-                refreshBarCompose.setTranslationZ(200f);
+                float elevationPx = HelperUnit.convertDpToPixel(999f, this);
+                refreshBarCompose.setElevation(elevationPx);
+                refreshBarCompose.setTranslationZ(elevationPx);
             }
             // Keep the host view GONE while idle. Compose's AnimatedVisibility only
             // hides its content; the ComposeView itself would otherwise remain as a
-            // transparent 72dp touch surface above the WebView and steal the next
+            // transparent touch surface above the WebView and steal the next
             // pull gesture. It is made visible only after PullToRefreshFrameLayout
             // has already captured a real pull gesture.
             refreshBarCompose.setVisibility(GONE);
@@ -4442,17 +4450,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
                     int targetTopMargin;
                     if (isBottom) {
-                        targetTopMargin = 0;
+                        int resolvedStatusBarGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(BrowserActivity.this);
+                        targetTopMargin = resolvedStatusBarGap;
                     } else {
                         int[] loc = new int[2];
                         addressBarForMargin.getLocationInWindow(loc);
+                        int[] parentLoc = new int[2];
+                        android.view.ViewParent currentParent = finalRefreshBar.getParent();
+                        if (currentParent instanceof android.view.View) {
+                            ((android.view.View) currentParent).getLocationInWindow(parentLoc);
+                        }
                         int measuredH = addressBarForMargin.getHeight();
-                        targetTopMargin = loc[1] + measuredH;
+                        targetTopMargin = (loc[1] - parentLoc[1]) + measuredH;
                         if (targetTopMargin <= 0) {
                             targetTopMargin = addressBarForMargin.getBottom() > 0 ? addressBarForMargin.getBottom() : measuredH;
                         }
                     }
-                    if (targetTopMargin > 0 && finalParams.topMargin != targetTopMargin) {
+                    if (targetTopMargin >= 0 && finalParams.topMargin != targetTopMargin) {
                         finalParams.topMargin = targetTopMargin;
                         finalRefreshBar.setLayoutParams(finalParams);
                     }

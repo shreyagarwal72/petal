@@ -18,9 +18,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.Composable
@@ -115,24 +119,24 @@ fun RefreshBarLoadingIndicator(
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + expandVertically(expandFrom = Alignment.Top),
-        exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + shrinkVertically(shrinkTowards = Alignment.Top),
+        enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
+        exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
         modifier = modifier
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(110.dp)
+                .wrapContentHeight()
                 .zIndex(500f)
-                .padding(top = 8.dp),
+                .padding(top = 8.dp, bottom = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
             val targetOffsetY = if (isRefreshing) {
-                32.dp
+                24.dp
             } else if (!isVisible) {
                 0.dp
             } else {
-                (12.dp.value + (pullProgress.coerceIn(0f, 1.25f) * 64.dp.value).coerceAtMost(80f)).dp
+                (4.dp.value + (pullProgress.coerceIn(0f, 1f) * 36.dp.value)).dp
             }
 
             val animatedOffsetY by animateFloatAsState(
@@ -152,7 +156,7 @@ fun RefreshBarLoadingIndicator(
                 label = "RefreshBarIndicatorOpacity"
             )
 
-            val targetScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.45f + (pullProgress.coerceIn(0f, 1f) * 0.55f)).coerceIn(0.45f, 1.05f)
+            val targetScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.5f + (pullProgress.coerceIn(0f, 1f) * 0.5f)).coerceIn(0.5f, 1.05f)
             // Bouncy settle once the indicator commits to refreshing (target snaps to 1.0),
             // and smooth fluid scaling during pull.
             val currentScale by animateFloatAsState(
@@ -165,7 +169,10 @@ fun RefreshBarLoadingIndicator(
                 label = "RefreshBarIndicatorScale"
             )
 
-            ZenithContainedLoadingIndicator(
+            Surface(
+                shape = CircleShape,
+                color = Color.Transparent,
+                shadowElevation = 4.dp,
                 modifier = Modifier
                     .requiredSize(40.dp)
                     .graphicsLayer {
@@ -174,7 +181,11 @@ fun RefreshBarLoadingIndicator(
                         scaleX = currentScale
                         scaleY = currentScale
                     }
-            )
+            ) {
+                ZenithContainedLoadingIndicator(
+                    modifier = Modifier.requiredSize(40.dp)
+                )
+            }
         }
     }
 }
