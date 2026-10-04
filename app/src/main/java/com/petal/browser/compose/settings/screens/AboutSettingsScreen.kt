@@ -90,8 +90,8 @@ fun AboutSettingsScreen(
                         null
                     }
                 }
-                val verName = pInfo?.versionName ?: "3.95"
-                val verCode = @Suppress("DEPRECATION") (pInfo?.versionCode ?: 395)
+                val verName = pInfo?.versionName ?: "3.9.7"
+                val verCode = @Suppress("DEPRECATION") (pInfo?.versionCode ?: 397)
                 PetalSettingsSection(
                     title = "Application & Engine",
                     icon = Icons.Rounded.Info,
