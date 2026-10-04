@@ -324,9 +324,9 @@ class PetalTabViewController private constructor(
 
             gs.contentDelegate = object : org.mozilla.geckoview.GeckoSession.ContentDelegate {
                 override fun onExternalResponse(session: org.mozilla.geckoview.GeckoSession, response: org.mozilla.geckoview.WebResponse) {
-                    val act = (context as? com.petal.browser.activity.BrowserActivity)
-                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
-                        ?: return
+                    // Resolve any Activity from context – this works inside BrowserActivity AND
+                    // PetalCustomTabActivity (which is a ComponentActivity, not a BrowserActivity).
+                    val act = resolveActivity(context) ?: return
                     com.petal.browser.view.PetalGeckoView.handleExternalResponse(act, response)
                 }
 
@@ -336,9 +336,7 @@ class PetalTabViewController private constructor(
                     screenY: Int,
                     element: org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement
                 ) {
-                    val act = (context as? com.petal.browser.activity.BrowserActivity)
-                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
-                        ?: return
+                    val act = resolveActivity(context) ?: return
 
                     val linkUri = element.linkUri
                     val srcUri = element.srcUri
@@ -373,8 +371,7 @@ class PetalTabViewController private constructor(
                     currentUrlSupplier = { pageUrl },
                     isIncognitoSupplier = { isIncognito() }
                 ) { uri ->
-                    val act = (context as? com.petal.browser.activity.BrowserActivity)
-                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                    val act = resolveActivity(context)
                     act != null && com.petal.browser.view.PetalGeckoView.handleExternalScheme(act, uri)
                 }
             }
@@ -429,6 +426,15 @@ class PetalTabViewController private constructor(
             ctx = ctx.baseContext
         }
         return false
+    }
+
+    private fun resolveActivity(c: android.content.Context): android.app.Activity? {
+        var ctx: android.content.Context? = c
+        while (ctx is android.content.ContextWrapper) {
+            if (ctx is android.app.Activity) return ctx
+            ctx = ctx.baseContext
+        }
+        return ctx as? android.app.Activity
     }
 
     fun loadUrl(url: String) {
