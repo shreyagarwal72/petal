@@ -380,6 +380,8 @@ fun PrivacySettingsScreenContent(
                         Triple("GOOGLE", "Google Public DNS", "8.8.8.8 high performance resolution"),
                         Triple("CLEANBROWSING", "CleanBrowsing Family Filter", "Blocks adult & malicious sites"),
                         Triple("OPENDNS", "OpenDNS Home", "Cisco OpenDNS security protection"),
+                        Triple("NEXTDNS", "NextDNS", "Encrypted DNS with ad & tracker blocking"),
+                        Triple("QUAD9", "Quad9", "Malware blocking and privacy-preserving DNS"),
                         Triple("CUSTOM", "Custom DNS-over-HTTPS (DoH)", "Enter your preferred DoH resolver endpoint URL")
                     )
 

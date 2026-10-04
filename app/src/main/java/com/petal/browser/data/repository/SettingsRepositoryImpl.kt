@@ -524,10 +524,12 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setPrivateDnsMode(mode: String) {
         sp.edit().putString("sp_private_dns_mode", mode).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setCustomDohUrl(url: String) {
         sp.edit().putString("sp_custom_doh_url", url).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setTouchHaptics(enabled: Boolean) {

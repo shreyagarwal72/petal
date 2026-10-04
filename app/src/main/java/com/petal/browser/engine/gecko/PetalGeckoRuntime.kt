@@ -88,23 +88,41 @@ object PetalGeckoRuntime {
 
         val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
         val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", false))
-        val defaultCookieBehavior = if (totalCookieProtection || blockThirdPartyCookies) {
+        val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
+        val defaultCookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || adBlockEnabled) {
             ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
         } else {
             ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
         }
 
+        var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
+        if (adBlockEnabled) {
+            antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or ContentBlocking.AntiTracking.STP
+        }
+        val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
+
+        val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PrivateDnsUnit.DNS_OFF)
+        val dohUri = com.petal.browser.unit.PrivateDnsUnit.getDnsEndpointUrl(sp)
+        val trrMode = if (!dohUri.isNullOrBlank() && privateDnsMode != com.petal.browser.unit.PrivateDnsUnit.DNS_OFF) {
+            GeckoRuntimeSettings.TRR_MODE_FIRST
+        } else {
+            GeckoRuntimeSettings.TRR_MODE_OFF
+        }
+
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(true)
+            .trustedRecursiveResolverMode(trrMode)
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
-                    .antiTracking(ContentBlocking.AntiTracking.DEFAULT)
-                    // Accept non-trackers so search engine session tokens (Google NID, CONSENT) persist across queries without triggering bot Captchas
+                    .antiTracking(antiTrackingFlags)
                     .cookieBehavior(defaultCookieBehavior)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
-                    .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.DEFAULT)
+                    .enhancedTrackingProtectionLevel(etpLevel)
                     .build()
             )
+        if (!dohUri.isNullOrBlank() && trrMode != GeckoRuntimeSettings.TRR_MODE_OFF) {
+            settingsBuilder.trustedRecursiveResolverUri(dohUri)
+        }
             .javaScriptEnabled(sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true)))
             .consoleOutput(isDebug)
             .remoteDebuggingEnabled(isDebug)
@@ -188,23 +206,23 @@ object PetalGeckoRuntime {
                 // 1. JavaScript
                 rt.settings.javaScriptEnabled = sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
 
-                // 2. Enhanced Tracking Protection & AdBlock (use DEFAULT matching Firefox to preserve legitimate search engine tokens)
+                // 2. Enhanced Tracking Protection & AdBlock
                 val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-                val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.DEFAULT else ContentBlocking.EtpLevel.NONE
+                val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
                 rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)
-                rt.settings.contentBlocking.setStrictSocialTrackingProtection(false)
+                rt.settings.contentBlocking.setStrictSocialTrackingProtection(adBlockEnabled)
 
                 // 3. Block Third-Party / Tracking Cookies (Firefox ETP Cookie Isolation)
                 val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
                 val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", false))
-                val cookieBehavior = if (totalCookieProtection || blockThirdPartyCookies) {
+                val cookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || adBlockEnabled) {
                     ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
                 } else {
                     ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
                 }
                 rt.settings.contentBlocking.setCookieBehavior(cookieBehavior)
 
-                // 4. Anti-Tracking Flags (STP, Cryptominers, WebRTC, Social)
+                // 4. Anti-Tracking Flags (STP, Social, Cryptominers, Ads)
                 var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
                 if (adBlockEnabled) {
                     antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or ContentBlocking.AntiTracking.STP
@@ -217,6 +235,19 @@ object PetalGeckoRuntime {
                 // 6. WebAuthn & Passkeys Autofill
                 val webauthnEnabled = sp.getBoolean("sp_webauthn_enabled", true)
                 rt.settings.loginAutofillEnabled = webauthnEnabled
+
+                // 7. Private DNS / Trusted Recursive Resolver (TRR / DoH)
+                val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PrivateDnsUnit.DNS_OFF)
+                val dohUri = com.petal.browser.unit.PrivateDnsUnit.getDnsEndpointUrl(sp)
+                val trrMode = if (!dohUri.isNullOrBlank() && privateDnsMode != com.petal.browser.unit.PrivateDnsUnit.DNS_OFF) {
+                    GeckoRuntimeSettings.TRR_MODE_FIRST
+                } else {
+                    GeckoRuntimeSettings.TRR_MODE_OFF
+                }
+                rt.settings.setTrustedRecursiveResolverMode(trrMode)
+                if (!dohUri.isNullOrBlank() && trrMode != GeckoRuntimeSettings.TRR_MODE_OFF) {
+                    rt.settings.setTrustedRecursiveResolverUri(dohUri)
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "Error synchronizing GeckoRuntime preferences: ${e.message}")
             }

@@ -317,7 +317,22 @@ class PetalGeckoView @JvmOverloads constructor(
                     prompt: GeckoSession.PromptDelegate.PopupPrompt
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
                     val blockPopups = sp.getBoolean("sp_block_popups", sp.getBoolean("profileStandard_javascriptPopUp", true))
+                    val target = prompt.targetUri
                     return if (blockPopups) {
+                        if (!target.isNullOrBlank()) {
+                            val act = (context as? com.petal.browser.activity.BrowserActivity)
+                                ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                            act?.runOnUiThread {
+                                val domain = try { android.net.Uri.parse(target).host ?: target } catch (_: Throwable) { target }
+                                com.petal.browser.view.PetalToast.show(
+                                    act,
+                                    act.getString(com.petal.browser.R.string.ui_block_popup_windows) + ": $domain",
+                                    com.petal.browser.view.PetalToast.LENGTH_LONG,
+                                    act.getString(com.petal.browser.R.string.app_ok),
+                                    { act.addAlbum(target, false) }
+                                )
+                            }
+                        }
                         GeckoResult.fromValue(prompt.confirm(AllowOrDeny.DENY))
                     } else {
                         GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))

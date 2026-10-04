@@ -6677,9 +6677,41 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         String tabId = null;
         boolean tabRegistered = false;
         try {
-            engineSession = request.prepare();
+            android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+            boolean blockPopups = sp.getBoolean("sp_block_popups", sp.getBoolean("profileStandard_javascriptPopUp", true));
             String url = request.getUrl();
             if (url == null || url.trim().isEmpty()) url = "about:blank";
+
+            // If popup blocking is active, block unsolicited popups and ads
+            if (blockPopups && !url.equals("about:blank")) {
+                String sourceUrl = source != null ? source.getUrl() : null;
+                boolean shouldBlock = com.petal.browser.browser.PetalAdBlockEngine.shouldBlockUrl(this, url, sourceUrl);
+                if (shouldBlock) {
+                    android.util.Log.i("BrowserActivity", "Blocked popup window request to: " + url);
+                    try {
+                        engineSession = request.prepare();
+                        if (engineSession != null) engineSession.close();
+                    } catch (Throwable ignored) {}
+                    final String blockedUrl = url;
+                    runOnUiThread(() -> {
+                        String domain = blockedUrl;
+                        try {
+                            android.net.Uri u = android.net.Uri.parse(blockedUrl);
+                            if (u != null && u.getHost() != null) domain = u.getHost();
+                        } catch (Throwable ignored) {}
+                        com.petal.browser.view.PetalToast.show(
+                                BrowserActivity.this,
+                                getString(R.string.ui_block_popup_windows) + ": " + domain,
+                                com.petal.browser.view.PetalToast.LENGTH_LONG,
+                                getString(R.string.app_ok),
+                                () -> addAlbum(blockedUrl, false)
+                        );
+                    });
+                    return;
+                }
+            }
+
+            engineSession = request.prepare();
             boolean isIncognito = source.isIncognito();
             tabId = "tab_" + System.currentTimeMillis() + "_" +
                     Math.abs(java.util.UUID.randomUUID().hashCode());

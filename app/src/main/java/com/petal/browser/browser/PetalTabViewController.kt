@@ -107,6 +107,9 @@ class PetalTabViewController private constructor(
             this@PetalTabViewController.progress = progress
             tab?.let { browserStore.dispatch(ContentAction.UpdateProgressAction(it.id, progress)) }
             publishState()
+            if (progress in 85..100) {
+                injectCosmeticAdBlockRules()
+            }
         }
 
         override fun onLoadingStateChange(loading: Boolean) {
@@ -117,6 +120,9 @@ class PetalTabViewController private constructor(
             this@PetalTabViewController.loading = loading
             tab?.let { browserStore.dispatch(ContentAction.UpdateLoadingStateAction(it.id, loading)) }
             publishState()
+            if (!loading) {
+                injectCosmeticAdBlockRules()
+            }
         }
 
         override fun onNavigationStateChange(canGoBack: Boolean?, canGoForward: Boolean?) {
@@ -384,6 +390,16 @@ class PetalTabViewController private constructor(
                 }
 
                 override fun onHideAction(session: org.mozilla.geckoview.GeckoSession, reason: Int) {}
+            }
+
+            // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)
+            gs.contentBlockingDelegate = object : org.mozilla.geckoview.ContentBlocking.Delegate {
+                override fun onContentBlocked(
+                    session: org.mozilla.geckoview.GeckoSession,
+                    event: org.mozilla.geckoview.ContentBlocking.BlockEvent
+                ) {
+                    com.petal.browser.browser.PetalAdBlockEngine.recordBlock(pageUrl)
+                }
             }
         }
         refreshFeature = if (isHostedByBrowserActivity()) null else SwipeRefreshFeature(
@@ -816,6 +832,21 @@ class PetalTabViewController private constructor(
         attachedLifecycle = null
         engineView.release()
         if (removedTabId != null) PetalEngineStore.removeTab(appContext, removedTabId)
+    }
+
+    private fun injectCosmeticAdBlockRules() {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
+        val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
+        if (!adBlockEnabled || pageUrl.isBlank() || pageUrl.startsWith("about:")) return
+        try {
+            val script = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(pageUrl)
+            if (script.isNotBlank()) {
+                val gs = getGeckoSession()
+                gs?.loadUri(script)
+            }
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "Failed to inject cosmetic adblock rules: ${t.message}")
+        }
     }
 
     private fun publishState() {
