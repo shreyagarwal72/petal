@@ -729,6 +729,8 @@ object PetalLinkContextMenuBridge {
                         android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
                     )
                     window.setGravity(android.view.Gravity.CENTER)
+                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                    window.setDimAmount(0.55f)
                 }
                 dialog.setCanceledOnTouchOutside(true)
                 dialog.show()
