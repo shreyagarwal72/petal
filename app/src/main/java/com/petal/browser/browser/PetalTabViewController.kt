@@ -108,7 +108,7 @@ class PetalTabViewController private constructor(
             tab?.let { browserStore.dispatch(ContentAction.UpdateProgressAction(it.id, progress)) }
             publishState()
             if (progress in 85..100) {
-                injectCosmeticAdBlockRules()
+                injectPagePrivacyAndAdBlock()
             }
         }
 
@@ -121,7 +121,7 @@ class PetalTabViewController private constructor(
             tab?.let { browserStore.dispatch(ContentAction.UpdateLoadingStateAction(it.id, loading)) }
             publishState()
             if (!loading) {
-                injectCosmeticAdBlockRules()
+                injectPagePrivacyAndAdBlock()
             }
         }
 
@@ -366,7 +366,12 @@ class PetalTabViewController private constructor(
             val engineNavigation = gs.navigationDelegate
             if (engineNavigation !is ExternalSchemeNavigationDelegate) {
                 val inner = engineNavigation ?: object : org.mozilla.geckoview.GeckoSession.NavigationDelegate {}
-                gs.navigationDelegate = ExternalSchemeNavigationDelegate(inner) { uri ->
+                gs.navigationDelegate = ExternalSchemeNavigationDelegate(
+                    engine = inner,
+                    context = context,
+                    currentUrlSupplier = { pageUrl },
+                    isIncognitoSupplier = { isIncognito() }
+                ) { uri ->
                     val act = (context as? com.petal.browser.activity.BrowserActivity)
                         ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
                     act != null && com.petal.browser.view.PetalGeckoView.handleExternalScheme(act, uri)
@@ -834,18 +839,100 @@ class PetalTabViewController private constructor(
         if (removedTabId != null) PetalEngineStore.removeTab(appContext, removedTabId)
     }
 
-    private fun injectCosmeticAdBlockRules() {
+    private fun injectPagePrivacyAndAdBlock() {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
         val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-        if (!adBlockEnabled || pageUrl.isBlank() || pageUrl.startsWith("about:")) return
+        val dntGpc = sp.getBoolean("sp_dnt_gpc", sp.getBoolean("profileStandard_dnt", true))
+        val webrtcProtection = sp.getBoolean("sp_webrtc_protection", sp.getBoolean("profileStandard_webrtcProtection", true))
+        val trimReferrers = sp.getBoolean("sp_trim_referrers", true)
+        val fingerprintProtection = sp.getBoolean("sp_fingerprint_protection", sp.getBoolean("profileStandard_fingerPrintProtection", true))
+
+        if (pageUrl.isBlank() || pageUrl.startsWith("about:") || pageUrl.startsWith("chrome:") || pageUrl.startsWith("moz-extension:")) return
+        val gs = getGeckoSession() ?: return
+
         try {
-            val script = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(pageUrl)
-            if (script.isNotBlank()) {
-                val gs = getGeckoSession()
-                gs?.loadUri(script)
+            // 1. Inject uBlock cosmetic filtering and scriptlets
+            if (adBlockEnabled) {
+                val cosmeticScript = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(pageUrl)
+                if (cosmeticScript.isNotBlank()) {
+                    gs.loadUri(cosmeticScript)
+                }
+            }
+
+            // 2. Client-side privacy scripts: DNT/GPC, WebRTC IP masking, Referrer trimming, Canvas anti-fingerprinting
+            val host = try { android.net.Uri.parse(pageUrl).host?.lowercase() ?: "" } catch (_: Throwable) { "" }
+            val isSearchOrCaptchaDomain = host.contains("google.") || host.contains("gstatic.") ||
+                host.contains("recaptcha") || host.contains("hcaptcha") || host.contains("cloudflare") ||
+                host.contains("bing.com") || host.contains("duckduckgo.com")
+
+            val sb = java.lang.StringBuilder("(function() {\n")
+            if (dntGpc) {
+                sb.append("""
+                    try {
+                        Object.defineProperty(navigator, 'doNotTrack', { get: () => '1', configurable: true });
+                        Object.defineProperty(navigator, 'globalPrivacyControl', { get: () => true, configurable: true });
+                        Object.defineProperty(window, 'doNotTrack', { get: () => '1', configurable: true });
+                    } catch(e) {}
+                """.trimIndent()).append("\n")
+            }
+            if (webrtcProtection) {
+                sb.append("""
+                    try {
+                        if (window.RTCPeerConnection) {
+                            const OrigRTCPeerConnection = window.RTCPeerConnection;
+                            window.RTCPeerConnection = function(config, constraints) {
+                                if (config && config.iceServers) {
+                                    config.iceCandidatePoolSize = 0;
+                                }
+                                const pc = new OrigRTCPeerConnection(config, constraints);
+                                const origCreateOffer = pc.createOffer.bind(pc);
+                                pc.createOffer = function(options) {
+                                    return origCreateOffer(options).then(offer => {
+                                        offer.sdp = offer.sdp.replace(/c=IN IP4 .+\r\n/g, 'c=IN IP4 0.0.0.0\r\n');
+                                        return offer;
+                                    });
+                                };
+                                return pc;
+                            };
+                            window.RTCPeerConnection.prototype = OrigRTCPeerConnection.prototype;
+                        }
+                    } catch(e) {}
+                """.trimIndent()).append("\n")
+            }
+            if (trimReferrers) {
+                sb.append("""
+                    try {
+                        if (!document.querySelector('meta[name="referrer"]')) {
+                            const meta = document.createElement('meta');
+                            meta.name = 'referrer';
+                            meta.content = 'strict-origin-when-cross-origin';
+                            (document.head || document.documentElement).appendChild(meta);
+                        }
+                    } catch(e) {}
+                """.trimIndent()).append("\n")
+            }
+            if (fingerprintProtection && !isSearchOrCaptchaDomain) {
+                sb.append("""
+                    try {
+                        const shift = Math.floor(Math.random() * 2) - 1;
+                        const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+                        CanvasRenderingContext2D.prototype.getImageData = function(...args) {
+                            const imgData = origGetImageData.apply(this, args);
+                            if (imgData.data.length > 4) {
+                                imgData.data[0] = (imgData.data[0] + shift) & 255;
+                            }
+                            return imgData;
+                        };
+                    } catch(e) {}
+                """.trimIndent()).append("\n")
+            }
+            sb.append("})();")
+            val js = sb.toString()
+            if (js.length > "(function() {\n})();".length) {
+                gs.loadUri("javascript:$js")
             }
         } catch (t: Throwable) {
-            android.util.Log.w("PetalTabViewController", "Failed to inject cosmetic adblock rules: ${t.message}")
+            android.util.Log.w("PetalTabViewController", "Failed to inject privacy/adblock protections: ${t.message}")
         }
     }
 
@@ -868,11 +955,16 @@ class PetalTabViewController private constructor(
 }
 
 /**
- * Forwards every navigation callback to the engine's own delegate and only adds external-app
- * scheme handling (intent://, tel:, market:// ...) on top of onLoadRequest.
+ * Forwards navigation callbacks to the engine's delegate, adding:
+ * 1. External-app scheme handling (intent://, tel:, market:// ...)
+ * 2. HTTPS-Only upgrade interceptor (GeckoView official pattern)
+ * 3. Open Redirect Links in Background handling
  */
 private class ExternalSchemeNavigationDelegate(
     private val engine: org.mozilla.geckoview.GeckoSession.NavigationDelegate,
+    private val context: android.content.Context,
+    private val currentUrlSupplier: () -> String,
+    private val isIncognitoSupplier: () -> Boolean,
     private val handleExternal: (String) -> Boolean
 ) : org.mozilla.geckoview.GeckoSession.NavigationDelegate by engine {
 
@@ -880,9 +972,44 @@ private class ExternalSchemeNavigationDelegate(
         session: org.mozilla.geckoview.GeckoSession,
         request: org.mozilla.geckoview.GeckoSession.NavigationDelegate.LoadRequest
     ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
-        if (handleExternal(request.uri)) {
+        val uri = request.uri
+        if (handleExternal(uri)) {
             return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
+
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+
+        // 1. HTTPS-Only Mode Upgrade
+        val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
+        if (httpsOnly && uri.startsWith("http://", ignoreCase = true) &&
+            !uri.startsWith("http://localhost", ignoreCase = true) &&
+            !uri.startsWith("http://127.0.0.1", ignoreCase = true) &&
+            !uri.startsWith("http://10.", ignoreCase = true) &&
+            !uri.startsWith("http://192.168.", ignoreCase = true)
+        ) {
+            val upgraded = "https://" + uri.substring(7)
+            session.loadUri(upgraded)
+            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+        }
+
+        // 2. Open Redirect Links in Background
+        val openRedirectsInBackground = sp.getBoolean("sp_open_redirects_in_background", false)
+        if (openRedirectsInBackground && request.target != org.mozilla.geckoview.GeckoSession.NavigationDelegate.TARGET_WINDOW_CURRENT) {
+            val currentUrl = currentUrlSupplier()
+            val currentHost = try { android.net.Uri.parse(currentUrl).host?.lowercase() } catch (_: Throwable) { null }
+            val reqHost = try { android.net.Uri.parse(uri).host?.lowercase() } catch (_: Throwable) { null }
+            if (!currentHost.isNullOrBlank() && !reqHost.isNullOrBlank() && currentHost != reqHost) {
+                val act = (context as? com.petal.browser.activity.BrowserActivity)
+                    ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                if (act != null) {
+                    act.runOnUiThread {
+                        act.addAlbum(null, uri, false, isIncognitoSupplier())
+                    }
+                    return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+                }
+            }
+        }
+
         return engine.onLoadRequest(session, request)
             ?: org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.ALLOW)
     }

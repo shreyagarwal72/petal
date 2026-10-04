@@ -120,9 +120,6 @@ object PetalGeckoRuntime {
                     .enhancedTrackingProtectionLevel(etpLevel)
                     .build()
             )
-        if (!dohUri.isNullOrBlank() && trrMode != GeckoRuntimeSettings.TRR_MODE_OFF) {
-            settingsBuilder.trustedRecursiveResolverUri(dohUri)
-        }
             .javaScriptEnabled(sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true)))
             .consoleOutput(isDebug)
             .remoteDebuggingEnabled(isDebug)
@@ -132,7 +129,11 @@ object PetalGeckoRuntime {
             // Enable login autofill API so password manager extensions (Bitwarden, etc.) can
             // intercept login forms via the WebExtension loginAutofill API. Without this,
             // extensions receive the form events but cannot fill credentials.
-            .loginAutofillEnabled(true)
+            .loginAutofillEnabled(sp.getBoolean("sp_webauthn_enabled", true))
+
+        if (!dohUri.isNullOrBlank() && trrMode != GeckoRuntimeSettings.TRR_MODE_OFF) {
+            settingsBuilder.trustedRecursiveResolverUri(dohUri)
+        }
 
         // Firefox official memory and performance optimizations
         try {

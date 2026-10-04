@@ -520,6 +520,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setOpenRedirectsInBackground(enabled: Boolean) {
         sp.edit().putBoolean("sp_open_redirects_in_background", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setPrivateDnsMode(mode: String) {
