@@ -359,6 +359,15 @@ class PetalGeckoView @JvmOverloads constructor(
                     session: GeckoSession,
                     request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSaveOption>
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    // Save / update the credential in Petal's vault, then dismiss the prompt
+                    // (we don't surface Gecko's own save UI – the system autofill Save dialog does that).
+                    try {
+                        val option = request.options.firstOrNull() ?: return GeckoResult.fromValue(request.dismiss())
+                        val delegate = com.petal.browser.passwords.PetalAutofillGeckoDelegate(context)
+                        delegate.onLoginSave(option.value)
+                    } catch (t: Throwable) {
+                        android.util.Log.w("PetalGeckoView", "onLoginSave error: ${t.message}")
+                    }
                     return GeckoResult.fromValue(request.dismiss())
                 }
 
@@ -366,7 +375,10 @@ class PetalGeckoView @JvmOverloads constructor(
                     session: GeckoSession,
                     request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSelectOption>
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                    return GeckoResult.fromValue(request.dismiss())
+                    // GeckoView asks which saved login to fill. Select the first match.
+                    val option = request.options.firstOrNull()
+                        ?: return GeckoResult.fromValue(request.dismiss())
+                    return GeckoResult.fromValue(request.confirm(option))
                 }
 
                 override fun onFilePrompt(

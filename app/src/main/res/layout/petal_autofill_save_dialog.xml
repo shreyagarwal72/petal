@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material 3 Expressive – Save password dialog content (RemoteViews-compatible) -->
+<!--
+  This view appears inside the system's save-autofill bottom sheet.
+  RemoteViews restrictions apply: no ConstraintLayout, no ?attr/ colors.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="16dp">
+
+    <!-- Icon pill -->
+    <LinearLayout
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:gravity="center"
+        android:background="@drawable/petal_autofill_chip_bg">
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/icon_secure"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter" />
+    </LinearLayout>
+
+    <!-- Save title -->
+    <TextView
+        android:id="@+id/petal_save_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Save to Petal Vault?"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:textColor="#CC000000"
+        android:gravity="center" />
+
+    <!-- Credential being saved -->
+    <TextView
+        android:id="@+id/petal_save_username"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="13sp"
+        android:textColor="#88000000"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="middle" />
+
+    <!-- Domain -->
+    <TextView
+        android:id="@+id/petal_save_domain"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="#66000000"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <!-- Encrypted badge -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="AES-256 · Encrypted on device"
+        android:textSize="11sp"
+        android:textColor="#55000000"
+        android:gravity="center" />
+
+</LinearLayout>

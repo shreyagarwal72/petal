@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material 3 Expressive – Autofill suggestion chip (RemoteViews-compatible) -->
+<!--
+  NOTE: RemoteViews does NOT support:
+  - ?attr/color… attributes (theme attributes don't resolve in RemoteViews)
+  - ConstraintLayout
+  Use only hardcoded colors, LinearLayout/FrameLayout, and standard text/image views.
+  Colors use #AARRGGBB semi-transparent overlays so they look reasonable in both themes.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:background="@drawable/petal_autofill_chip_bg">
+
+    <!-- Lock / Key icon -->
+    <ImageView
+        android:id="@+id/petal_autofill_icon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="4dp"
+        android:src="@drawable/icon_secure"
+        android:contentDescription="@null"
+        android:scaleType="fitCenter" />
+
+    <!-- Text column -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp">
+
+        <TextView
+            android:id="@+id/petal_autofill_username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textStyle="bold"
+            android:textColor="#CC000000" />
+
+        <TextView
+            android:id="@+id/petal_autofill_domain"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="#88000000" />
+
+    </LinearLayout>
+
+    <!-- Petal brand label -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Petal"
+        android:textSize="11sp"
+        android:textColor="#665B5E"
+        android:layout_marginStart="8dp" />
+
+</LinearLayout>
