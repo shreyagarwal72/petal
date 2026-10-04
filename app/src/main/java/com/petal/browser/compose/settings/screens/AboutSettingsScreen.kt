@@ -55,7 +55,7 @@ fun AboutSettingsScreen(
 
         Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
-                title = stringResource(R.string.title_about),
+                title = "About & Developer",
                 subtitle = "App version, licenses, GitHub & developer",
                 onBack = onNavigateBack
             )
