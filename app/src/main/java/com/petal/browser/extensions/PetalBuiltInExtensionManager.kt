@@ -4,7 +4,13 @@ import android.content.Context
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
+import org.json.JSONObject
+import org.mozilla.geckoview.GeckoResult
+import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.WebExtension
 import org.mozilla.geckoview.WebExtensionController
+import com.petal.browser.media.sniffer.PetalMediaSniffer
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * PetalBuiltInExtensionManager
@@ -20,6 +26,53 @@ import org.mozilla.geckoview.WebExtensionController
 object PetalBuiltInExtensionManager {
 
     private const val TAG = "PetalBuiltInExt"
+    private const val MEDIA_GRABBER_ID = "petal-media-grabber@petalbrowser.app"
+    private const val NATIVE_APP = "petalApp"
+
+    private val installedExtensions = ConcurrentHashMap<String, WebExtension>()
+
+    private val mediaMessageDelegate = object : WebExtension.MessageDelegate {
+        override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any>? {
+            if (nativeApp != NATIVE_APP) return null
+            val json = runCatching { if (message is JSONObject) message else JSONObject(message.toString()) }.getOrNull()
+                ?: return null
+            val msgType = json.optString("type")
+
+            if (msgType == "GET_NATIVE_PLAYER_STATE") {
+                val resp = JSONObject().apply {
+                    put("enabled", true)
+                    put("youtubeEnabled", true)
+                }
+                return GeckoResult.fromValue(resp)
+            }
+
+            val pageUrl = json.optString("pageUrl").takeIf { it.startsWith("http") }
+            val cookies = json.optString("cookies").takeIf { it.isNotBlank() }
+            if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(pageUrl)) {
+                return null
+            }
+            if (pageUrl != null && cookies != null) {
+                PetalMediaSniffer.recordCookiesForUrl(pageUrl, cookies)
+            }
+
+            when (msgType) {
+                "MEDIA_GRABBED" -> {
+                    val url = json.optString("url").takeIf { it.startsWith("http") } ?: return null
+                    if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url)) return null
+                    val mime = json.optString("mimeType", "video/mp4")
+                    val size = json.optLong("sizeBytes", -1L).takeIf { it > 0 }
+                    PetalMediaSniffer.onAggressiveMedia(url, mime, cookies, size)
+                }
+                "REQUEST_DOWNLOAD", "SITE_DOWNLOAD_REQUEST" -> {
+                    val url = json.optString("url").takeIf { it.startsWith("http") } ?: return null
+                    if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url)) return null
+                    val mime = json.optString("mimeType", "video/mp4")
+                    PetalMediaSniffer.onAggressiveMedia(url, mime, cookies, null)
+                }
+            }
+            return null
+        }
+    }
 
     data class BuiltInSpec(
         val assetPath: String,
@@ -100,6 +153,20 @@ object PetalBuiltInExtensionManager {
         return builtIns.any { it.extensionId.equals(clean, ignoreCase = true) }
     }
 
+    /** Attach built-in extension delegates to a specific GeckoSession (e.g. content script messaging) */
+    @JvmStatic
+    fun attachSession(session: GeckoSession?) {
+        if (session == null) return
+        val mediaGrabber = installedExtensions[MEDIA_GRABBER_ID]
+        if (mediaGrabber != null) {
+            try {
+                session.webExtensionController.setMessageDelegate(mediaGrabber, mediaMessageDelegate, NATIVE_APP)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to attach media grabber delegate to session", t)
+            }
+        }
+    }
+
     /** Install and sync all built-in extensions. Called from BrowserActivity. */
     @JvmStatic
     fun installAll(context: Context) {
@@ -123,10 +190,23 @@ object PetalBuiltInExtensionManager {
         spec: BuiltInSpec,
         enabled: Boolean
     ) {
+        // Special case for Mozilla WebCompat: it does not exist as an APK asset; ignore ensureBuiltIn error
+        if (spec.extensionId == "webcompat@mozilla.org") {
+            return
+        }
+
         val uri = "resource://android/assets/${spec.assetPath}"
         controller.ensureBuiltIn(uri, spec.extensionId).accept(
             { ext ->
                 if (ext == null) return@accept
+                installedExtensions[spec.extensionId] = ext
+                if (spec.extensionId == MEDIA_GRABBER_ID) {
+                    try {
+                        ext.setMessageDelegate(mediaMessageDelegate, NATIVE_APP)
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to set global message delegate for media grabber", t)
+                    }
+                }
                 controller.setAllowedInPrivateBrowsing(ext, true)
                 val action = if (enabled)
                     controller.enable(ext, WebExtensionController.EnableSource.APP)

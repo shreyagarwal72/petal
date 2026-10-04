@@ -563,6 +563,7 @@ class PetalGeckoView @JvmOverloads constructor(
         session.setActive(isForegroundTab)
         applySettings()
         com.petal.browser.extensions.PetalExtensionManager.attachSession(session)
+        com.petal.browser.extensions.PetalBuiltInExtensionManager.attachSession(session)
         // Do not mutate GeckoView's compositor child hierarchy during session attachment.
         // Edge-gesture handling is performed lazily from dispatchTouchEvent().
 

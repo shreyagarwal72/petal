@@ -8,6 +8,9 @@
       "id": "petal-translate@petalbrowser.app"
     }
   },
+  "permissions": [
+    "<all_urls>"
+  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

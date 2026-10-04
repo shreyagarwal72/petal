@@ -26,15 +26,18 @@
     }
 
     document.addEventListener('click', function(e) {
-        let target = e.target;
-        while (target && target.tagName !== 'A') {
-            target = target.parentElement;
-        }
-        if (target && target.href) {
-            const cleaned = cleanUrl(target.href);
-            if (cleaned !== target.href) {
-                target.href = cleaned;
+        try {
+            const anchor = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+            if (!anchor) return;
+            const originalHref = anchor.getAttribute('href');
+            if (!originalHref || originalHref.startsWith('#') || originalHref.startsWith('javascript:')) return;
+            const fullUrl = anchor.href;
+            if (typeof fullUrl === 'string' && (fullUrl.startsWith('http://') || fullUrl.startsWith('https://'))) {
+                const cleaned = cleanUrl(fullUrl);
+                if (cleaned !== fullUrl) {
+                    anchor.href = cleaned;
+                }
             }
-        }
+        } catch (_) {}
     }, true);
 })();
