@@ -318,7 +318,8 @@ class PetalTabViewController private constructor(
             gs.promptDelegate = com.petal.browser.view.PetalGeckoView.createPromptDelegate(
                 gs,
                 context,
-                preferences
+                preferences,
+                { isIncognito() }
             ) { context as? android.app.Activity }
 
             gs.contentDelegate = object : org.mozilla.geckoview.GeckoSession.ContentDelegate {

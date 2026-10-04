@@ -221,10 +221,12 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         @JvmStatic
+        @JvmOverloads
         fun createPromptDelegate(
             session: GeckoSession,
             context: Context,
             sp: SharedPreferences,
+            incognitoProvider: () -> Boolean = { false },
             activityProvider: () -> Activity?
         ): GeckoSession.PromptDelegate {
             return object : GeckoSession.PromptDelegate {
@@ -329,7 +331,7 @@ class PetalGeckoView @JvmOverloads constructor(
                                     act.getString(com.petal.browser.R.string.ui_block_popup_windows) + ": $domain",
                                     com.petal.browser.view.PetalToast.LENGTH_LONG,
                                     act.getString(com.petal.browser.R.string.app_ok),
-                                    { act.addAlbum(null, target, false, isIncognito) }
+                                    { act.addAlbum(null, target, false, incognitoProvider()) }
                                 )
                             }
                         }
@@ -1119,7 +1121,7 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         // Material 3 Expressive Prompt Delegate (Alerts, Confirms, Prompts, Auth, Choice, Text, Popups, File Chooser)
-        session.promptDelegate = createPromptDelegate(session, context, sp) { getHostActivity() }
+        session.promptDelegate = createPromptDelegate(session, context, sp, { isIncognito }) { getHostActivity() }
 
 
         // Scroll Delegate for Tactile Haptics and Address Bar Collapsing
