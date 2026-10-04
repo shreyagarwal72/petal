@@ -164,7 +164,6 @@ private fun buildSections(
                 MenuAction("save_image", "Save image", Icons.Rounded.SaveAlt, MenuTone.SAVE) { handler.onDownloadImage() },
                 MenuAction("share_image", "Share image", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareImage() },
                 MenuAction("lens", "Search with Google Lens", Icons.Rounded.TravelExplore, MenuTone.SEARCH) { handler.onSearchWithGoogleLens() },
-                MenuAction("scan_image", "Scan image for QR & text", Icons.Rounded.DocumentScanner, MenuTone.SEARCH) { handler.onScanImage() },
             ),
         ),
     )
@@ -273,10 +272,9 @@ private fun buildSections(
             ),
         ),
         MenuSection(
-            "Search & scan",
+            "Search",
             listOf(
                 MenuAction("lens", "Search with Google Lens", Icons.Rounded.TravelExplore, MenuTone.SEARCH) { handler.onSearchWithGoogleLens() },
-                MenuAction("scan_image", "Scan image for QR & text", Icons.Rounded.DocumentScanner, MenuTone.SEARCH) { handler.onScanImage() },
             ),
         ),
     )
@@ -391,26 +389,21 @@ fun PetalLinkContextMenuSheet(
     }
 
     Surface(
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        shape = RoundedCornerShape(32.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth(),
+        tonalElevation = 2.dp,
+        shadowElevation = 12.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+        modifier = Modifier
+            .fillMaxWidth(0.92f)
+            .heightIn(max = 560.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
-                .padding(bottom = 16.dp),
+                .padding(vertical = 16.dp),
         ) {
-            // Drag handle
-            Box(
-                modifier = Modifier
-                    .padding(top = 10.dp, bottom = 12.dp)
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
-                    .align(Alignment.CenterHorizontally),
-            )
 
             PetalMenuHeader(
                 kind = kind,
@@ -680,7 +673,7 @@ object PetalLinkContextMenuBridge {
     ) {
         activity.runOnUiThread {
             try {
-                val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(activity)
+                val dialog = android.app.Dialog(activity, com.petal.browser.R.style.PetalContextMenuDialogTheme)
                 val composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
@@ -706,31 +699,38 @@ object PetalLinkContextMenuBridge {
                             colorStyle = colorStyle,
                             paletteId = paletteId,
                         ) {
-                            PetalLinkContextMenuSheet(
-                                linkTitle = linkTitle,
-                                linkUrl = linkUrl,
-                                faviconUrl = faviconUrl,
-                                imageUrl = imageUrl,
-                                isImage = isImage,
-                                isVideo = isVideo,
-                                isAudio = isAudio,
-                                selectedText = selectedText,
-                                onDismiss = { dialog.dismiss() },
-                                handler = handler,
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                PetalLinkContextMenuSheet(
+                                    linkTitle = linkTitle,
+                                    linkUrl = linkUrl,
+                                    faviconUrl = faviconUrl,
+                                    imageUrl = imageUrl,
+                                    isImage = isImage,
+                                    isVideo = isVideo,
+                                    isAudio = isAudio,
+                                    selectedText = selectedText,
+                                    onDismiss = { dialog.dismiss() },
+                                    handler = handler,
+                                )
+                            }
                         }
                     }
                 }
                 dialog.setContentView(composeView)
-                // Always open fully expanded (no half-height peek) so the whole menu is visible at once,
-                // and let our own rounded Surface be the sheet's visible container.
-                dialog.behavior.skipCollapsed = true
-                dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-                dialog.setOnShowListener {
-                    dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                        ?.setBackgroundColor(AndroidColor.TRANSPARENT)
-                    dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                dialog.window?.let { window ->
+                    window.setBackgroundDrawableResource(android.R.color.transparent)
+                    window.setLayout(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    )
+                    window.setGravity(android.view.Gravity.CENTER)
                 }
+                dialog.setCanceledOnTouchOutside(true)
                 dialog.show()
             } catch (e: Exception) {
                 e.printStackTrace()
