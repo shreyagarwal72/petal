@@ -87,6 +87,7 @@ class PetalTabViewController private constructor(
 
     private val observer = object : EngineSession.Observer {
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
+            android.util.Log.d("PetalTabNav", "observer.onLocationChange: url=$url gesture=$hasUserGesture oldPageUrl=$pageUrl")
             if (pageUrl != url) {
                 previewRevision++
                 previewRetryCount = 0
@@ -322,46 +323,22 @@ class PetalTabViewController private constructor(
                 { isIncognito() }
             ) { context as? android.app.Activity }
 
-            gs.contentDelegate = object : org.mozilla.geckoview.GeckoSession.ContentDelegate {
-                override fun onExternalResponse(session: org.mozilla.geckoview.GeckoSession, response: org.mozilla.geckoview.WebResponse) {
-                    // Resolve any Activity from context – this works inside BrowserActivity AND
-                    // PetalCustomTabActivity (which is a ComponentActivity, not a BrowserActivity).
-                    val act = resolveActivity(context) ?: return
-                    com.petal.browser.view.PetalGeckoView.handleExternalResponse(act, response)
-                }
+            android.util.Log.d("PetalTabNav", "bindTab: gs.navigationDelegate=${gs.navigationDelegate?.javaClass?.name}, gs.contentDelegate=${gs.contentDelegate?.javaClass?.name}")
 
-                override fun onContextMenu(
-                    session: org.mozilla.geckoview.GeckoSession,
-                    screenX: Int,
-                    screenY: Int,
-                    element: org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement
-                ) {
-                    val act = resolveActivity(context) ?: return
-
-                    val linkUri = element.linkUri
-                    val srcUri = element.srcUri
-                    val elemType = element.type
-                    val linkText = runCatching {
-                        element.javaClass.getField("textContent").get(element) as? String
-                    }.getOrNull()
-
-                    act.runOnUiThread {
-                        com.petal.browser.compose.menu.BrowserContextMenuManager.handleContextMenu(
-                            activity = act,
-                            elemType = elemType,
-                            linkUri = linkUri,
-                            srcUri = srcUri,
-                            linkText = linkText
-                        )
-                    }
-                }
+            // Content Delegate: preserve Mozilla's engine contentDelegate so title, crash,
+            // and fullscreen callbacks are NOT dropped, while handling onExternalResponse and onContextMenu.
+            val engineContent = gs.contentDelegate
+            if (engineContent !is PetalContentDelegateWrapper) {
+                gs.contentDelegate = PetalContentDelegateWrapper(
+                    engine = engineContent,
+                    contextProvider = { context }
+                )
             }
 
             // Do NOT replace GeckoView's navigation delegate. Mozilla's GeckoEngineSession installs its
             // own delegate that reports onLocationChange / onCanGoBack / onLoadError to the observers
-            // (this class's `observer`) and tracks the load request used by reload(). Replacing it left
-            // pageUrl stuck on the first URL (the Google results page) and made pull-to-refresh reload
-            // that stale request. Wrap the engine's delegate and forward everything to it instead.
+            // (this class's `observer`) and tracks the load request used by reload().
+            // We explicitly forward all methods because Kotlin's `by` delegation drops Java default methods.
             val engineNavigation = gs.navigationDelegate
             if (engineNavigation !is ExternalSchemeNavigationDelegate) {
                 val inner = engineNavigation ?: object : org.mozilla.geckoview.GeckoSession.NavigationDelegate {}
@@ -369,11 +346,24 @@ class PetalTabViewController private constructor(
                     engine = inner,
                     context = context,
                     currentUrlSupplier = { pageUrl },
-                    isIncognitoSupplier = { isIncognito() }
+                    isIncognitoSupplier = { isIncognito() },
+                    onLocationChanged = { newUrl ->
+                        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChanged -> $newUrl (current pageUrl=$pageUrl)")
+                        if (newUrl.isNotBlank() && !newUrl.equals(pageUrl, ignoreCase = true)) {
+                            previewRevision++
+                            previewRetryCount = 0
+                            pageUrl = newUrl
+                            applyPageSettings(newUrl)
+                            tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, newUrl)) }
+                            publishState()
+                        }
+                    }
                 ) { uri ->
                     val act = resolveActivity(context)
                     act != null && com.petal.browser.view.PetalGeckoView.handleExternalScheme(act, uri)
                 }
+            } else {
+                engineNavigation.updateDependencies(context, { pageUrl }, { isIncognito() })
             }
 
             gs.selectionActionDelegate = object : org.mozilla.geckoview.GeckoSession.SelectionActionDelegate {
@@ -967,19 +957,232 @@ class PetalTabViewController private constructor(
  * 2. HTTPS-Only upgrade interceptor (GeckoView official pattern)
  * 3. Open Redirect Links in Background handling
  */
+/**
+ * Preserves Mozilla engine's own ContentDelegate (for title, fullScreen, crash,
+ * and firstContentfulPaint callbacks) while handling Petal's onExternalResponse and onContextMenu.
+ */
+private class PetalContentDelegateWrapper(
+    val engine: org.mozilla.geckoview.GeckoSession.ContentDelegate?,
+    private val contextProvider: () -> android.content.Context
+) : org.mozilla.geckoview.GeckoSession.ContentDelegate {
+
+    private fun resolveActivity(): android.app.Activity? {
+        var ctx: android.content.Context? = contextProvider()
+        while (ctx is android.content.ContextWrapper) {
+            if (ctx is android.app.Activity) return ctx
+            ctx = ctx.baseContext
+        }
+        return ctx as? android.app.Activity
+    }
+
+    override fun onTitleChange(session: org.mozilla.geckoview.GeckoSession, title: String?) {
+        engine?.onTitleChange(session, title)
+    }
+
+    override fun onFullScreen(session: org.mozilla.geckoview.GeckoSession, fullScreen: Boolean) {
+        engine?.onFullScreen(session, fullScreen)
+    }
+
+    override fun onCloseRequest(session: org.mozilla.geckoview.GeckoSession) {
+        engine?.onCloseRequest(session)
+    }
+
+    override fun onFocusRequest(session: org.mozilla.geckoview.GeckoSession) {
+        engine?.onFocusRequest(session)
+    }
+
+    override fun onCrash(session: org.mozilla.geckoview.GeckoSession) {
+        engine?.onCrash(session)
+    }
+
+    override fun onKill(session: org.mozilla.geckoview.GeckoSession) {
+        engine?.onKill(session)
+    }
+
+    override fun onFirstContentfulPaint(session: org.mozilla.geckoview.GeckoSession) {
+        engine?.onFirstContentfulPaint(session)
+    }
+
+    override fun onPaintStatusReset(session: org.mozilla.geckoview.GeckoSession) {
+        engine?.onPaintStatusReset(session)
+    }
+
+    override fun onContextMenu(
+        session: org.mozilla.geckoview.GeckoSession,
+        screenX: Int,
+        screenY: Int,
+        element: org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement
+    ) {
+        val act = resolveActivity()
+        if (act != null) {
+            val linkUri = element.linkUri
+            val srcUri = element.srcUri
+            val elemType = element.type
+            val linkText = runCatching {
+                element.javaClass.getField("textContent").get(element) as? String
+            }.getOrNull()
+
+            act.runOnUiThread {
+                com.petal.browser.compose.menu.BrowserContextMenuManager.handleContextMenu(
+                    activity = act,
+                    elemType = elemType,
+                    linkUri = linkUri,
+                    srcUri = srcUri,
+                    linkText = linkText
+                )
+            }
+        }
+        engine?.onContextMenu(session, screenX, screenY, element)
+    }
+
+    override fun onExternalResponse(
+        session: org.mozilla.geckoview.GeckoSession,
+        response: org.mozilla.geckoview.WebResponse
+    ) {
+        val act = resolveActivity()
+        if (act != null) {
+            com.petal.browser.view.PetalGeckoView.handleExternalResponse(act, response)
+        }
+        engine?.onExternalResponse(session, response)
+    }
+
+    override fun onShowDynamicToolbar(session: org.mozilla.geckoview.GeckoSession) {
+        engine?.onShowDynamicToolbar(session)
+    }
+
+    override fun onWebAppManifest(session: org.mozilla.geckoview.GeckoSession, manifest: org.json.JSONObject) {
+        engine?.onWebAppManifest(session, manifest)
+    }
+
+    override fun onMetaViewportFitChange(session: org.mozilla.geckoview.GeckoSession, viewportFit: String) {
+        engine?.onMetaViewportFitChange(session, viewportFit)
+    }
+}
+
+/**
+ * Forwards every NavigationDelegate callback explicitly to Mozilla GeckoEngine's own delegate
+ * without using Kotlin `by` interface delegation (which drops Java default methods per KT-18324).
+ * Adds:
+ * 1. External-app scheme handling (intent://, tel:, market:// ...)
+ * 2. HTTPS-Only upgrade interceptor (GeckoView official pattern)
+ * 3. Open Redirect Links in Background handling
+ * 4. Immediate update of pageUrl and UI state on onLocationChange.
+ */
 private class ExternalSchemeNavigationDelegate(
-    private val engine: org.mozilla.geckoview.GeckoSession.NavigationDelegate,
-    private val context: android.content.Context,
-    private val currentUrlSupplier: () -> String,
-    private val isIncognitoSupplier: () -> Boolean,
+    val engine: org.mozilla.geckoview.GeckoSession.NavigationDelegate,
+    private var context: android.content.Context,
+    private var currentUrlSupplier: () -> String,
+    private var isIncognitoSupplier: () -> Boolean,
+    private val onLocationChanged: (String) -> Unit,
     private val handleExternal: (String) -> Boolean
-) : org.mozilla.geckoview.GeckoSession.NavigationDelegate by engine {
+) : org.mozilla.geckoview.GeckoSession.NavigationDelegate {
+
+    fun updateDependencies(
+        newContext: android.content.Context,
+        newUrlSupplier: () -> String,
+        newIncognitoSupplier: () -> Boolean
+    ) {
+        context = newContext
+        currentUrlSupplier = newUrlSupplier
+        isIncognitoSupplier = newIncognitoSupplier
+    }
+
+    override fun onLocationChange(
+        session: org.mozilla.geckoview.GeckoSession,
+        url: String?,
+        perms: MutableList<org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission>
+    ) {
+        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChange (3-arg): url=$url")
+        if (!url.isNullOrBlank()) {
+            onLocationChanged(url)
+        }
+        try {
+            engine.onLocationChange(session, url, perms)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onLocationChange(3-arg): ${t.message}")
+        }
+    }
+
+    override fun onLocationChange(
+        session: org.mozilla.geckoview.GeckoSession,
+        url: String?,
+        perms: MutableList<org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission>,
+        hasUserGesture: Boolean
+    ) {
+        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChange (4-arg): url=$url gesture=$hasUserGesture")
+        if (!url.isNullOrBlank()) {
+            onLocationChanged(url)
+        }
+        try {
+            engine.onLocationChange(session, url, perms, hasUserGesture)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onLocationChange(4-arg): ${t.message}")
+        }
+    }
+
+    override fun onCanGoBack(session: org.mozilla.geckoview.GeckoSession, canGoBack: Boolean) {
+        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onCanGoBack=$canGoBack")
+        try {
+            engine.onCanGoBack(session, canGoBack)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onCanGoBack: ${t.message}")
+        }
+    }
+
+    override fun onCanGoForward(session: org.mozilla.geckoview.GeckoSession, canGoForward: Boolean) {
+        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onCanGoForward=$canGoForward")
+        try {
+            engine.onCanGoForward(session, canGoForward)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onCanGoForward: ${t.message}")
+        }
+    }
+
+    override fun onLoadError(
+        session: org.mozilla.geckoview.GeckoSession,
+        uri: String?,
+        error: org.mozilla.geckoview.WebRequestError
+    ): org.mozilla.geckoview.GeckoResult<String>? {
+        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLoadError uri=$uri error=${error.code}")
+        return try {
+            engine.onLoadError(session, uri, error)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onLoadError: ${t.message}")
+            null
+        }
+    }
+
+    override fun onSubframeLoadRequest(
+        session: org.mozilla.geckoview.GeckoSession,
+        request: org.mozilla.geckoview.GeckoSession.NavigationDelegate.LoadRequest
+    ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
+        return try {
+            engine.onSubframeLoadRequest(session, request)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onSubframeLoadRequest: ${t.message}")
+            null
+        }
+    }
+
+    override fun onNewSession(
+        session: org.mozilla.geckoview.GeckoSession,
+        uri: String
+    ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.GeckoSession>? {
+        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onNewSession uri=$uri")
+        return try {
+            engine.onNewSession(session, uri)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onNewSession: ${t.message}")
+            null
+        }
+    }
 
     override fun onLoadRequest(
         session: org.mozilla.geckoview.GeckoSession,
         request: org.mozilla.geckoview.GeckoSession.NavigationDelegate.LoadRequest
     ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
         val uri = request.uri
+        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLoadRequest uri=$uri target=${request.target}")
         if (handleExternal(uri)) {
             return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
@@ -1006,8 +1209,12 @@ private class ExternalSchemeNavigationDelegate(
             val currentHost = try { android.net.Uri.parse(currentUrl).host?.lowercase() } catch (_: Throwable) { null }
             val reqHost = try { android.net.Uri.parse(uri).host?.lowercase() } catch (_: Throwable) { null }
             if (!currentHost.isNullOrBlank() && !reqHost.isNullOrBlank() && currentHost != reqHost) {
-                val act = (context as? com.petal.browser.activity.BrowserActivity)
-                    ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                var ctx: android.content.Context? = context
+                while (ctx is android.content.ContextWrapper) {
+                    if (ctx is com.petal.browser.activity.BrowserActivity) break
+                    ctx = ctx.baseContext
+                }
+                val act = ctx as? com.petal.browser.activity.BrowserActivity
                 if (act != null) {
                     act.runOnUiThread {
                         act.addAlbum(null, uri, false, isIncognitoSupplier())
@@ -1017,7 +1224,12 @@ private class ExternalSchemeNavigationDelegate(
             }
         }
 
-        return engine.onLoadRequest(session, request)
-            ?: org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.ALLOW)
+        return try {
+            engine.onLoadRequest(session, request)
+                ?: org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.ALLOW)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onLoadRequest: ${t.message}")
+            org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.ALLOW)
+        }
     }
 }
