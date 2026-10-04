@@ -6704,7 +6704,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 getString(R.string.ui_block_popup_windows) + ": " + domain,
                                 com.petal.browser.view.PetalToast.LENGTH_LONG,
                                 getString(R.string.app_ok),
-                                () -> addAlbum(blockedUrl, false)
+                                () -> addAlbum(null, blockedUrl, false, source != null && source.isIncognito())
                         );
                     });
                     return;
