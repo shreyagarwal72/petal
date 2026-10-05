@@ -272,7 +272,9 @@ class PetalTabViewController private constructor(
                     (context as? com.petal.browser.activity.BrowserActivity)?.updateVideoDimensions(width, height)
                 }
             }
-        )
+        ).apply {
+            attachTabViewController(this@PetalTabViewController)
+        }
         addView(
             engineView.asView(),
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)

@@ -151,6 +151,32 @@ public class PetalMediaBridge {
         this.geckoView = geckoView;
     }
 
+    private com.petal.browser.browser.PetalTabViewController tabViewController;
+
+    public void attachTabViewController(com.petal.browser.browser.PetalTabViewController tabViewController) {
+        this.tabViewController = tabViewController;
+    }
+
+    public void evaluateJavascriptOnTab(String js) {
+        if (webView != null) {
+            webView.evaluateJavascript(js, null);
+        } else if (geckoView != null) {
+            geckoView.evaluateJavascript(js, null);
+        } else if (tabViewController != null) {
+            tabViewController.evaluateJavascript(js, null);
+        } else if (context instanceof Activity) {
+            Activity act = (Activity) context;
+            if (act instanceof com.petal.browser.activity.BrowserActivity) {
+                com.petal.browser.browser.AlbumController controller = ((com.petal.browser.activity.BrowserActivity) act).getCurrentAlbumController();
+                if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
+                    ((com.petal.browser.browser.PetalTabViewController) controller).evaluateJavascript(js, null);
+                } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                    ((com.petal.browser.view.PetalGeckoView) controller).evaluateJavascript(js, null);
+                }
+            }
+        }
+    }
+
     public void setActiveGeckoMediaSession(org.mozilla.geckoview.MediaSession session) {
         this.activeGeckoMediaSession = session;
     }
@@ -165,9 +191,7 @@ public class PetalMediaBridge {
     }
 
     public void injectMediaHooks() {
-        if (webView != null) {
-            webView.evaluateJavascript(MEDIA_JS_INJECTION, null);
-        }
+        evaluateJavascriptOnTab(MEDIA_JS_INJECTION);
     }
 
     private double lastKnownPositionSec = 0.0;
@@ -192,17 +216,15 @@ public class PetalMediaBridge {
                 return;
             } catch (Exception ignored) {}
         }
-        if (webView != null) {
-            webView.evaluateJavascript(
-                    "(function() {" +
-                    "   var vids = document.querySelectorAll('video');" +
-                    "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
-                    "   for (var i = 0; i < vids.length; i++) {" +
-                    "       try { vids[i].play(); } catch(e) {}" +
-                    "   }" +
-                    "})();", null
-            );
-        }
+        evaluateJavascriptOnTab(
+                "(function() {" +
+                "   var vids = document.querySelectorAll('video');" +
+                "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
+                "   for (var i = 0; i < vids.length; i++) {" +
+                "       try { vids[i].play(); } catch(e) {}" +
+                "   }" +
+                "})();"
+        );
     }
 
     public void pauseMedia() {
@@ -218,16 +240,14 @@ public class PetalMediaBridge {
                 return;
             } catch (Exception ignored) {}
         }
-        if (webView != null) {
-            webView.evaluateJavascript(
-                    "(function() {" +
-                    "   var vids = document.querySelectorAll('video, audio');" +
-                    "   for (var i = 0; i < vids.length; i++) {" +
-                    "       try { vids[i].pause(); } catch(e) {}" +
-                    "   }" +
-                    "})();", null
-            );
-        }
+        evaluateJavascriptOnTab(
+                "(function() {" +
+                "   var vids = document.querySelectorAll('video, audio');" +
+                "   for (var i = 0; i < vids.length; i++) {" +
+                "       try { vids[i].pause(); } catch(e) {}" +
+                "   }" +
+                "})();"
+        );
     }
 
     public void changeSpeed(float speed) {
@@ -237,11 +257,7 @@ public class PetalMediaBridge {
                 "       try { vids[i].playbackRate = " + speed + "; } catch(e) {}" +
                 "   }" +
                 "})();";
-        if (webView != null) {
-            webView.evaluateJavascript(js, null);
-        } else if (geckoView != null) {
-            geckoView.evaluateJavascript(js, null);
-        }
+        evaluateJavascriptOnTab(js);
     }
 
     public void setVideoAspectRatio(String mode) {
@@ -285,11 +301,7 @@ public class PetalMediaBridge {
                 "       } catch(e) {}" +
                 "   }" +
                 "})();";
-        if (webView != null) {
-            webView.evaluateJavascript(js, null);
-        } else if (geckoView != null) {
-            geckoView.evaluateJavascript(js, null);
-        }
+        evaluateJavascriptOnTab(js);
     }
 
     public boolean isMuted() {
@@ -315,16 +327,14 @@ public class PetalMediaBridge {
                 return;
             } catch (Exception ignored) {}
         }
-        if (webView != null) {
-            webView.evaluateJavascript(
-                    "(function() {" +
-                    "   var vids = document.querySelectorAll('video, audio');" +
-                    "   for (var i = 0; i < vids.length; i++) {" +
-                    "       try { vids[i].muted = !vids[i].muted; } catch(e) {}" +
-                    "   }" +
-                    "})();", null
-            );
-        }
+        evaluateJavascriptOnTab(
+                "(function() {" +
+                "   var vids = document.querySelectorAll('video, audio');" +
+                "   for (var i = 0; i < vids.length; i++) {" +
+                "       try { vids[i].muted = !vids[i].muted; } catch(e) {}" +
+                "   }" +
+                "})();"
+        );
     }
 
     public void skip(int deltaSeconds) {
@@ -362,11 +372,7 @@ public class PetalMediaBridge {
                 "       } catch(e) {}" +
                 "   }" +
                 "})();";
-        if (webView != null) {
-            webView.evaluateJavascript(skipJs, null);
-        } else if (geckoView != null) {
-            geckoView.evaluateJavascript(skipJs, null);
-        }
+        evaluateJavascriptOnTab(skipJs);
     }
 
     public void seekMediaTo(long positionMs) {
@@ -401,11 +407,7 @@ public class PetalMediaBridge {
                 "       } catch(e) {}" +
                 "   }" +
                 "})();";
-        if (webView != null) {
-            webView.evaluateJavascript(seekJs, null);
-        } else if (geckoView != null) {
-            geckoView.evaluateJavascript(seekJs, null);
-        }
+        evaluateJavascriptOnTab(seekJs);
     }
 
     /**

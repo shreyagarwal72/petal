@@ -480,7 +480,7 @@ fun PetalVideoPlayerOverlay(
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = Color.Black.copy(alpha = 0.85f),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
                                 shadowElevation = 6.dp,
                             ) {
                                 Row(
@@ -510,7 +510,7 @@ fun PetalVideoPlayerOverlay(
                                         ) {
                                             Text(
                                                 text = speedText,
-                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.White,
+                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
@@ -538,12 +538,12 @@ fun PetalVideoPlayerOverlay(
                         modifier = Modifier
                             .size(52.dp)
                             .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.45f)),
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f)),
                     ) {
                         Icon(
                             imageVector = Icons.Default.FastRewind,
                             contentDescription = stringResource(R.string.ui_rewind_10s),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(28.dp),
                         )
                     }
@@ -574,12 +574,12 @@ fun PetalVideoPlayerOverlay(
                         modifier = Modifier
                             .size(52.dp)
                             .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.45f)),
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f)),
                     ) {
                         Icon(
                             imageVector = Icons.Default.FastForward,
                             contentDescription = stringResource(R.string.ui_forward_10s),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(28.dp),
                         )
                     }

@@ -14,6 +14,11 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.preference.PreferenceManager
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.PetalTabViewController
+import com.petal.browser.ui.theme.AppFont
+import com.petal.browser.ui.theme.ColorStyle
+import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.defaultPaletteId
+import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.view.PetalGeckoView
 
 /**
@@ -87,90 +92,111 @@ class PetalVideoPlayerOverlayBridge(
 
         val cv = ComposeView(activity).apply {
             setContent {
-                PetalVideoPlayerOverlay(
-                    title = title,
-                    isPlaying = isPlaying,
-                    positionMs = positionMs,
-                    durationMs = durationMs,
-                    playbackSpeed = playbackSpeed,
-                    onPlayPauseToggle = {
-                        val mb = mediaBridge
-                        if (isPlaying) {
-                            mb?.pauseMedia()
-                            isPlaying = false
-                        } else {
-                            mb?.playMedia()
-                            isPlaying = true
-                        }
-                    },
-                    onSeek = { targetMs ->
-                        positionMs = targetMs
-                        mediaBridge?.seekMediaTo(targetMs)
-                    },
-                    onFastForward = {
-                        mediaBridge?.skip(10)
-                        positionMs = (positionMs + 10000L).coerceAtMost(if (durationMs > 0) durationMs else Long.MAX_VALUE)
-                    },
-                    onRewind = {
-                        mediaBridge?.skip(-10)
-                        positionMs = (positionMs - 10000L).coerceAtLeast(0L)
-                    },
-                    onSpeedChange = { speed ->
-                        playbackSpeed = speed
-                        mediaBridge?.changeSpeed(speed)
-                    },
-                    onAspectRatioToggle = { mode ->
-                        mediaBridge?.setVideoAspectRatio(mode)
-                    },
-                    onPipClick = {
-                        BrowserMediaDelegate.triggerSystemPipMode(activity as com.petal.browser.activity.BrowserActivity)
-                    },
-                    onCloseFullscreen = {
-                        onClose()
-                    },
-                    videoUrl = controller?.url,
-                    onCastClick = {
-                        val act = activity as? com.petal.browser.activity.BrowserActivity
-                        val currentTab = controller ?: act?.currentAlbumController
-                        val pageUrl = currentTab?.url ?: ""
-                        // 1. Try to find sniffed media stream for current page (HLS, MP4, WebM)
-                        val sniffedMedia = com.petal.browser.media.sniffer.PetalMediaSniffer.interceptor.playableMedia.value
-                            .firstOrNull { it.type != com.petal.browser.media.sniffer.MediaInterceptor.MediaType.AUDIO }
-                            ?: com.petal.browser.media.sniffer.PetalMediaSniffer.interceptor.detectedMedia.value
-                                .lastOrNull { it.type != com.petal.browser.media.sniffer.MediaInterceptor.MediaType.AUDIO }
+                val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                val isAmoled = sp.getBoolean("sp_amoled", false)
+                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-                        val streamCandidate = sniffedMedia?.url
+                val appFont = androidx.compose.runtime.remember(fontName) {
+                    AppFont.fromName(fontName)
+                }
+                val colorStyle = androidx.compose.runtime.remember(styleName) {
+                    try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
+                }
 
-                        // 2. Query DOM for HTML5 <video> src or currentSrc
-                        val queryScript = "(function() { var v = document.querySelector('video'); return v ? (v.currentSrc || v.src || '') : ''; })()"
-                        when (currentTab) {
-                            is PetalGeckoView -> {
-                                currentTab.evaluateJavascript(queryScript) { domSrc ->
-                                    val finalUrl = when {
-                                        !domSrc.isNullOrBlank() && !domSrc.startsWith("blob:") && !domSrc.startsWith("ERROR:") -> domSrc
-                                        !streamCandidate.isNullOrBlank() -> streamCandidate
-                                        else -> pageUrl
+                PetalExpressiveTheme(
+                    dynamicColor = dynamicColor,
+                    useAmoled = isAmoled,
+                    appFont = appFont,
+                    colorStyle = colorStyle,
+                    paletteId = paletteId,
+                ) {
+                    PetalVideoPlayerOverlay(
+                        title = title,
+                        isPlaying = isPlaying,
+                        positionMs = positionMs,
+                        durationMs = durationMs,
+                        playbackSpeed = playbackSpeed,
+                        onPlayPauseToggle = {
+                            val mb = mediaBridge
+                            if (isPlaying) {
+                                mb?.pauseMedia()
+                                isPlaying = false
+                            } else {
+                                mb?.playMedia()
+                                isPlaying = true
+                            }
+                        },
+                        onSeek = { targetMs ->
+                            positionMs = targetMs
+                            mediaBridge?.seekMediaTo(targetMs)
+                        },
+                        onFastForward = {
+                            mediaBridge?.skip(10)
+                            positionMs = (positionMs + 10000L).coerceAtMost(if (durationMs > 0) durationMs else Long.MAX_VALUE)
+                        },
+                        onRewind = {
+                            mediaBridge?.skip(-10)
+                            positionMs = (positionMs - 10000L).coerceAtLeast(0L)
+                        },
+                        onSpeedChange = { speed ->
+                            playbackSpeed = speed
+                            mediaBridge?.changeSpeed(speed)
+                        },
+                        onAspectRatioToggle = { mode ->
+                            mediaBridge?.setVideoAspectRatio(mode)
+                        },
+                        onPipClick = {
+                            BrowserMediaDelegate.triggerSystemPipMode(activity as com.petal.browser.activity.BrowserActivity)
+                        },
+                        onCloseFullscreen = {
+                            onClose()
+                        },
+                        videoUrl = controller?.url,
+                        onCastClick = {
+                            val act = activity as? com.petal.browser.activity.BrowserActivity
+                            val currentTab = controller ?: act?.currentAlbumController
+                            val pageUrl = currentTab?.url ?: ""
+                            // 1. Try to find sniffed media stream for current page (HLS, MP4, WebM)
+                            val sniffedMedia = com.petal.browser.media.sniffer.PetalMediaSniffer.interceptor.playableMedia.value
+                                .firstOrNull { it.type != com.petal.browser.media.sniffer.MediaInterceptor.MediaType.AUDIO }
+                                ?: com.petal.browser.media.sniffer.PetalMediaSniffer.interceptor.detectedMedia.value
+                                    .lastOrNull { it.type != com.petal.browser.media.sniffer.MediaInterceptor.MediaType.AUDIO }
+
+                            val streamCandidate = sniffedMedia?.url
+
+                            // 2. Query DOM for HTML5 <video> src or currentSrc
+                            val queryScript = "(function() { var v = document.querySelector('video'); return v ? (v.currentSrc || v.src || '') : ''; })()"
+                            when (currentTab) {
+                                is PetalGeckoView -> {
+                                    currentTab.evaluateJavascript(queryScript) { domSrc ->
+                                        val finalUrl = when {
+                                            !domSrc.isNullOrBlank() && !domSrc.startsWith("blob:") && !domSrc.startsWith("ERROR:") -> domSrc
+                                            !streamCandidate.isNullOrBlank() -> streamCandidate
+                                            else -> pageUrl
+                                        }
+                                        PetalCastManager.castMedia(activity, finalUrl, title)
                                     }
+                                }
+                                is PetalTabViewController -> {
+                                    currentTab.evaluateJavascript(queryScript) { domSrc ->
+                                        val finalUrl = when {
+                                            !domSrc.isNullOrBlank() && !domSrc.startsWith("blob:") && !domSrc.startsWith("ERROR:") -> domSrc
+                                            !streamCandidate.isNullOrBlank() -> streamCandidate
+                                            else -> pageUrl
+                                        }
+                                        PetalCastManager.castMedia(activity, finalUrl, title)
+                                    }
+                                }
+                                else -> {
+                                    val finalUrl = streamCandidate ?: pageUrl
                                     PetalCastManager.castMedia(activity, finalUrl, title)
                                 }
                             }
-                            is PetalTabViewController -> {
-                                currentTab.evaluateJavascript(queryScript) { domSrc ->
-                                    val finalUrl = when {
-                                        !domSrc.isNullOrBlank() && !domSrc.startsWith("blob:") && !domSrc.startsWith("ERROR:") -> domSrc
-                                        !streamCandidate.isNullOrBlank() -> streamCandidate
-                                        else -> pageUrl
-                                    }
-                                    PetalCastManager.castMedia(activity, finalUrl, title)
-                                }
-                            }
-                            else -> {
-                                val finalUrl = streamCandidate ?: pageUrl
-                                PetalCastManager.castMedia(activity, finalUrl, title)
-                            }
-                        }
-                    },
-                )
+                        },
+                    )
+                }
             }
         }
         val lp = FrameLayout.LayoutParams(
