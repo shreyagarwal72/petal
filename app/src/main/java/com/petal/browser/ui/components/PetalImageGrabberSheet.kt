@@ -34,7 +34,6 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalImageGrabberSheet(
     images: List<String>,
@@ -42,17 +41,17 @@ fun PetalImageGrabberSheet(
     onDownloadAll: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    com.petal.browser.ui.containment.PetalSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = sheetState,
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 6.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 32.dp)
+                .padding(top = 16.dp, bottom = 32.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

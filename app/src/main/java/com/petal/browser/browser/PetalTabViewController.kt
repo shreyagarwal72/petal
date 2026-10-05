@@ -65,6 +65,7 @@ class PetalTabViewController private constructor(
     private var fullScreenFeature: FullScreenFeature? = null
     private var attachedLifecycle: Lifecycle? = null
     private val engineLifecycleObserver = mozilla.components.concept.engine.LifecycleObserver(this)
+    private var lastRecordedHistoryUrl: String? = null
 
     /** Receives browser-relevant session updates without coupling the activity to GeckoView. */
     var onBrowserStateChanged: ((State) -> Unit)? = null
@@ -102,6 +103,9 @@ class PetalTabViewController private constructor(
             pageTitle = title
             tab?.let { browserStore.dispatch(ContentAction.UpdateTitleAction(it.id, title)) }
             publishState()
+            if (!loading && title.isNotBlank() && pageUrl == lastRecordedHistoryUrl) {
+                recordHistoryVisit(pageUrl, title, force = true)
+            }
         }
 
         override fun onProgress(progress: Int) {
@@ -123,6 +127,7 @@ class PetalTabViewController private constructor(
             publishState()
             if (!loading) {
                 injectPagePrivacyAndAdBlock()
+                recordHistoryVisit(pageUrl, pageTitle)
             }
         }
 
@@ -396,6 +401,51 @@ class PetalTabViewController private constructor(
                     com.petal.browser.browser.PetalAdBlockEngine.recordBlock(pageUrl)
                 }
             }
+
+            // GeckoSession HistoryDelegate to record top-level page visits into Petal history
+            gs.historyDelegate = object : org.mozilla.geckoview.GeckoSession.HistoryDelegate {
+                override fun onHistoryStateChange(
+                    session: org.mozilla.geckoview.GeckoSession,
+                    historyList: org.mozilla.geckoview.GeckoSession.HistoryDelegate.HistoryList
+                ) {
+                    val currentIndex = historyList.currentIndex
+                    val size = historyList.size
+                    backAvailable = currentIndex > 0
+                    forwardAvailable = currentIndex < size - 1
+                    tab?.let {
+                        PetalEngineStore.updateNavigationState(
+                            appContext,
+                            it.id,
+                            backAvailable,
+                            forwardAvailable
+                        )
+                    }
+                    val act = resolveActivity(context)
+                    if (act is com.petal.browser.activity.BrowserActivity) {
+                        act.runOnUiThread {
+                            act.updateBackCallbackState()
+                            act.updateOmniBox()
+                        }
+                    }
+                }
+
+                override fun onVisited(
+                    session: org.mozilla.geckoview.GeckoSession,
+                    url: String,
+                    lastVisitedURL: String?,
+                    flags: Int
+                ): org.mozilla.geckoview.GeckoResult<Boolean> {
+                    val isTopLevel = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_TOP_LEVEL) != 0
+                    val isError = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_UNRECOVERABLE_ERROR) != 0
+                    val isRedirect = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE) != 0 ||
+                                     (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT) != 0
+
+                    if (isTopLevel && !isError && !isRedirect) {
+                        recordHistoryVisit(url, pageTitle)
+                    }
+                    return org.mozilla.geckoview.GeckoResult.fromValue(true)
+                }
+            }
         }
         refreshFeature = if (isHostedByBrowserActivity()) null else SwipeRefreshFeature(
             store = browserStore,
@@ -437,15 +487,6 @@ class PetalTabViewController private constructor(
             pageTitle = "Petal Home"
             observedSession?.loadUrl("about:blank")
             publishState()
-            return
-        }
-        if (rawUrl.equals("petal://config", ignoreCase = true) ||
-            rawUrl.equals("petal:config", ignoreCase = true) ||
-            rawUrl.equals("about:config", ignoreCase = true)
-        ) {
-            (context as? com.petal.browser.activity.BrowserActivity)?.let { activity ->
-                activity.runOnUiThread { com.petal.browser.ui.components.PetalConfigSheet.show(activity) }
-            }
             return
         }
         val redirected = com.petal.browser.unit.BrowserUnit.redirectURL(preferences, rawUrl)
@@ -736,6 +777,45 @@ class PetalTabViewController private constructor(
         }
     }
 
+    fun captureFullPageBitmap(callback: (Bitmap?) -> Unit) {
+        val geckoView = findGeckoView(engineView.asView())
+        if (geckoView == null || !isAttachedToWindow || geckoView.width <= 0 || geckoView.height <= 0) {
+            callback(null)
+            return
+        }
+        try {
+            geckoView.capturePixels().then({ bitmap ->
+                callback(bitmap)
+                org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
+            }, {
+                callback(null)
+                org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
+            })
+        } catch (_: Throwable) {
+            callback(null)
+        }
+    }
+
+    fun setUserAgent(customUserAgent: String?) {
+        try {
+            val gs = getGeckoSession() ?: return
+            if (!customUserAgent.isNullOrBlank()) {
+                gs.settings.userAgentMode = org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+                gs.settings.userAgentOverride = customUserAgent
+            } else {
+                gs.settings.userAgentOverride = null
+                val desktopEnabled = preferences.getBoolean("sp_desktop", false)
+                gs.settings.userAgentMode = if (desktopEnabled) {
+                    org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+                } else {
+                    org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("PetalTabViewController", "Failed to setUserAgent: ${e.message}")
+        }
+    }
+
     fun getFavicon(): Bitmap? = tab?.content?.icon
 
     fun currentState(): State? = tab?.let {
@@ -933,6 +1013,39 @@ class PetalTabViewController private constructor(
         } catch (t: Throwable) {
             android.util.Log.w("PetalTabViewController", "Failed to inject privacy/adblock protections: ${t.message}")
         }
+    }
+
+    private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null, force: Boolean = false) {
+        if (isIncognito() || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) ||
+            targetUrl.startsWith("about:", ignoreCase = true) || com.petal.browser.unit.BrowserUnit.isHomePage(targetUrl)) {
+            return
+        }
+        if (!force && targetUrl == lastRecordedHistoryUrl) {
+            return
+        }
+        val rawTitle = titleToRecord ?: pageTitle
+        val effectiveTitle = if (rawTitle.isBlank() || rawTitle == "Petal Start" || rawTitle == "Petal Home") {
+            try {
+                val host = android.net.Uri.parse(targetUrl).host
+                if (!host.isNullOrBlank()) host else targetUrl
+            } catch (_: Exception) {
+                targetUrl
+            }
+        } else {
+            rawTitle
+        }
+
+        try {
+            val action = com.petal.browser.database.RecordAction(appContext)
+            action.open(true)
+            if (action.checkUrl(targetUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)) {
+                action.deleteURL(targetUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
+            }
+            action.addHistory(com.petal.browser.database.Record(effectiveTitle, targetUrl, System.currentTimeMillis(), 0))
+            action.close()
+            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
+            lastRecordedHistoryUrl = targetUrl
+        } catch (_: Exception) {}
     }
 
     private fun publishState() {

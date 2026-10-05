@@ -69,24 +69,23 @@ enum class SiteStylePreset(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalSiteStyleSheet(
     activePreset: SiteStylePreset,
     onSelectPreset: (SiteStylePreset) -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    com.petal.browser.ui.containment.PetalSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = sheetState,
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 6.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 32.dp)
+                .padding(top = 16.dp, bottom = 32.dp)
         ) {
             Text(
                 text = stringResource(R.string.ui_site_style),

@@ -6,6 +6,7 @@
  *
  * Uses com.google.android.material.bottomsheet.BottomSheetDialog to guarantee
  * clean window management, prevent decorView pollution, and eliminate activity freezes.
+ * Universally supports both PetalTabViewController and PetalGeckoView tabs.
  *
  * Copyright (c) 2026 Petal Browser
  */
@@ -14,6 +15,7 @@ package com.petal.browser.ui.components
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.Box
@@ -32,6 +34,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.browser.AlbumController
+import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.lens.PetalLensBridge
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
@@ -42,12 +46,61 @@ import java.net.URLEncoder
 
 object PetalQuickToolsBridge {
 
+    private fun evaluateJavascript(
+        controller: AlbumController?,
+        script: String,
+        callback: ((String?) -> Unit)? = null
+    ) {
+        when (controller) {
+            is PetalTabViewController -> controller.evaluateJavascript(script, callback)
+            is PetalGeckoView -> controller.evaluateJavascript(script, callback)
+            else -> callback?.invoke(null)
+        }
+    }
+
+    private fun captureFullPageBitmap(
+        controller: AlbumController?,
+        callback: (Bitmap?) -> Unit
+    ) {
+        when (controller) {
+            is PetalTabViewController -> controller.captureFullPageBitmap(callback)
+            is PetalGeckoView -> controller.captureFullPageBitmap(callback)
+            else -> callback(null)
+        }
+    }
+
+    private fun setUserAgent(
+        controller: AlbumController?,
+        userAgent: String?
+    ) {
+        when (controller) {
+            is PetalTabViewController -> controller.setUserAgent(userAgent)
+            is PetalGeckoView -> controller.setUserAgent(userAgent)
+            else -> {}
+        }
+    }
+
+    private fun reloadTab(controller: AlbumController?) {
+        when (controller) {
+            is PetalTabViewController -> controller.reload()
+            is PetalGeckoView -> controller.reload()
+            else -> {}
+        }
+    }
+
+    private fun loadUrlInTab(controller: AlbumController?, url: String) {
+        when (controller) {
+            is PetalTabViewController -> controller.loadUrl(url)
+            is PetalGeckoView -> controller.loadUrl(url)
+            else -> {}
+        }
+    }
+
     @JvmStatic
     fun showQuickTools(activity: BrowserActivity) {
         val currentController = activity.currentAlbumController
-        val geckoView = currentController as? PetalGeckoView
-        val currentUrl = geckoView?.url ?: currentController?.url ?: ""
-        val currentTitle = geckoView?.title ?: currentController?.title ?: ""
+        val currentUrl = currentController?.url ?: ""
+        val currentTitle = currentController?.title ?: ""
 
         try {
             val dialog = BottomSheetDialog(activity)
@@ -90,7 +143,7 @@ object PetalQuickToolsBridge {
                             currentPageTitle = currentTitle,
                             onToolClicked = { tool ->
                                 try { dialog.dismiss() } catch (_: Exception) {}
-                                handleToolClick(activity, geckoView, currentUrl, currentTitle, tool)
+                                handleToolClick(activity, currentController, currentUrl, currentTitle, tool)
                             },
                             onDismissRequest = {
                                 try { dialog.dismiss() } catch (_: Exception) {}
@@ -109,7 +162,7 @@ object PetalQuickToolsBridge {
 
     private fun handleToolClick(
         activity: BrowserActivity,
-        geckoView: PetalGeckoView?,
+        controller: AlbumController?,
         currentUrl: String,
         currentTitle: String,
         tool: QuickToolId
@@ -125,10 +178,10 @@ object PetalQuickToolsBridge {
 
             QuickToolId.TRANSLATOR -> {
                 if (currentUrl.isNotEmpty() && !currentUrl.startsWith("about:")) {
-                    geckoView?.evaluateJavascript("document.dispatchEvent(new CustomEvent('petal-translate-start'));") {
+                    evaluateJavascript(controller, "document.dispatchEvent(new CustomEvent('petal-translate-start'));") {
                         try {
                             val translateUrl = "https://translate.google.com/translate?sl=auto&tl=en&u=${URLEncoder.encode(currentUrl, "UTF-8")}"
-                            geckoView.loadUrl(translateUrl)
+                            loadUrlInTab(controller, translateUrl)
                         } catch (_: Exception) {}
                     }
                 } else {
@@ -137,7 +190,7 @@ object PetalQuickToolsBridge {
             }
 
             QuickToolId.EDIT_PAGE -> {
-                geckoView?.evaluateJavascript("""
+                evaluateJavascript(controller, """
                     (function() {
                         if (document.designMode === 'on') {
                             document.designMode = 'off';
@@ -160,11 +213,11 @@ object PetalQuickToolsBridge {
             }
 
             QuickToolId.AUTO_SCROLL -> {
-                showAutoScroll(activity, geckoView)
+                showAutoScroll(activity, controller)
             }
 
             QuickToolId.QR_SCAN_PAGE -> {
-                geckoView?.evaluateJavascript("""
+                evaluateJavascript(controller, """
                     (function() {
                         var links = [];
                         document.querySelectorAll('img').forEach(function(img) {
@@ -173,7 +226,14 @@ object PetalQuickToolsBridge {
                         return JSON.stringify(links);
                     })()
                 """.trimIndent()) { result ->
-                    PetalToast.show(activity, "Searching webpage for QR codes...")
+                    val type = object : TypeToken<List<String>>() {}.type
+                    val qrUrls: List<String> = try { Gson().fromJson(result, type) } catch (_: Exception) { emptyList() }
+                    if (qrUrls.isNotEmpty()) {
+                        val firstQr = qrUrls.first()
+                        com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(activity, firstQr)
+                    } else {
+                        PetalToast.show(activity, "Searching webpage for QR codes...")
+                    }
                 }
             }
 
@@ -187,15 +247,15 @@ object PetalQuickToolsBridge {
             }
 
             QuickToolId.SITE_STYLE -> {
-                showSiteStyle(activity, geckoView)
+                showSiteStyle(activity, controller)
             }
 
             QuickToolId.IMAGE_GRABBER -> {
-                showImageGrabber(activity, geckoView)
+                showImageGrabber(activity, controller)
             }
 
             QuickToolId.INSPECTOR -> {
-                geckoView?.evaluateJavascript("""
+                evaluateJavascript(controller, """
                     (function() {
                         if (window.__petal_inspector_active) {
                             window.__petal_inspector_active = false;
@@ -232,7 +292,7 @@ object PetalQuickToolsBridge {
             }
 
             QuickToolId.BLOCK_AREA -> {
-                geckoView?.evaluateJavascript("""
+                evaluateJavascript(controller, """
                     (function() {
                         var hud = document.createElement('div');
                         hud.style.cssText = 'position:fixed;top:16px;left:16px;right:16px;background:#d32f2f;color:#fff;padding:12px 16px;border-radius:16px;font-family:sans-serif;font-size:13px;z-index:2147483647;text-align:center;font-weight:bold;box-shadow:0 8px 25px rgba(0,0,0,0.5);';
@@ -256,11 +316,11 @@ object PetalQuickToolsBridge {
             }
 
             QuickToolId.SPOOF_IDENTITY -> {
-                showSpoofIdentity(activity, geckoView)
+                showSpoofIdentity(activity, controller)
             }
 
             QuickToolId.FORCE_ZOOM -> {
-                geckoView?.evaluateJavascript("""
+                evaluateJavascript(controller, """
                     (function() {
                         var metas = document.querySelectorAll('meta[name="viewport"]');
                         metas.forEach(function(m) {
@@ -278,7 +338,7 @@ object PetalQuickToolsBridge {
             }
 
             QuickToolId.SCREENSHOT -> {
-                geckoView?.captureFullPageBitmap { bitmap ->
+                captureFullPageBitmap(controller) { bitmap ->
                     if (bitmap != null) {
                         try {
                             val picturesDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_PICTURES)
@@ -300,7 +360,7 @@ object PetalQuickToolsBridge {
             }
 
             QuickToolId.TORRENT_MAGNET -> {
-                geckoView?.evaluateJavascript("""
+                evaluateJavascript(controller, """
                     (function() {
                         var magnets = [];
                         document.querySelectorAll('a[href^="magnet:"]').forEach(function(a) { magnets.push(a.href); });
@@ -320,10 +380,6 @@ object PetalQuickToolsBridge {
                         PetalToast.show(activity, "No magnet links found")
                     }
                 }
-            }
-
-            QuickToolId.PETAL_CONFIG -> {
-                showPetalConfig(activity)
             }
         }
     }
@@ -348,7 +404,7 @@ object PetalQuickToolsBridge {
         decor.addView(view)
     }
 
-    private fun showSiteStyle(activity: BrowserActivity, geckoView: PetalGeckoView?) {
+    private fun showSiteStyle(activity: BrowserActivity, controller: AlbumController?) {
         try {
             val dialog = BottomSheetDialog(activity)
             dialog.behavior.skipCollapsed = true
@@ -389,7 +445,7 @@ object PetalQuickToolsBridge {
                             onSelectPreset = { preset ->
                                 activePreset = preset
                                 if (preset.css.isNotEmpty()) {
-                                    geckoView?.evaluateJavascript("""
+                                    evaluateJavascript(controller, """
                                         (function() {
                                             var style = document.getElementById('__petal_site_style');
                                             if (!style) {
@@ -401,7 +457,7 @@ object PetalQuickToolsBridge {
                                         })()
                                     """.trimIndent())
                                 } else {
-                                    geckoView?.evaluateJavascript("var s = document.getElementById('__petal_site_style'); if (s) s.remove();")
+                                    evaluateJavascript(controller, "var s = document.getElementById('__petal_site_style'); if (s) s.remove();")
                                 }
                             },
                             onDismissRequest = {
@@ -469,7 +525,7 @@ object PetalQuickToolsBridge {
         }
     }
 
-    private fun showAutoScroll(activity: BrowserActivity, geckoView: PetalGeckoView?) {
+    private fun showAutoScroll(activity: BrowserActivity, controller: AlbumController?) {
         val decor = activity.window.decorView as? ViewGroup ?: return
         var view: ComposeView? = null
         view = ComposeView(activity).apply {
@@ -478,10 +534,10 @@ object PetalQuickToolsBridge {
             setViewTreeSavedStateRegistryOwner(activity)
             setContent {
                 PetalExpressiveTheme {
-                    Box(modifier = androidx.compose.ui.Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                         PetalAutoScrollOverlay(
                             onScrollStep = { step ->
-                                geckoView?.evaluateJavascript("window.scrollBy({ top: $step, behavior: 'smooth' });")
+                                evaluateJavascript(controller, "window.scrollBy({ top: $step, behavior: 'smooth' });")
                             },
                             onClose = { decor.removeView(view) }
                         )
@@ -492,8 +548,8 @@ object PetalQuickToolsBridge {
         decor.addView(view)
     }
 
-    private fun showImageGrabber(activity: BrowserActivity, geckoView: PetalGeckoView?) {
-        geckoView?.evaluateJavascript("""
+    private fun showImageGrabber(activity: BrowserActivity, controller: AlbumController?) {
+        evaluateJavascript(controller, """
             (function() {
                 var urls = new Set();
                 document.querySelectorAll('img[src]').forEach(function(i) {
@@ -593,7 +649,7 @@ object PetalQuickToolsBridge {
         decor.addView(view)
     }
 
-    private fun showSpoofIdentity(activity: BrowserActivity, geckoView: PetalGeckoView?) {
+    private fun showSpoofIdentity(activity: BrowserActivity, controller: AlbumController?) {
         val decor = activity.window.decorView as? ViewGroup ?: return
         var view: ComposeView? = null
         view = ComposeView(activity).apply {
@@ -606,13 +662,13 @@ object PetalQuickToolsBridge {
                         currentUa = null,
                         onSelectIdentity = { preset ->
                             if (preset.userAgent != null) {
-                                geckoView?.setUserAgent(preset.userAgent)
+                                setUserAgent(controller, preset.userAgent)
                                 PetalToast.show(activity, "User-Agent switched to ${preset.title}")
                             } else {
-                                geckoView?.setUserAgent(null)
+                                setUserAgent(controller, null)
                                 PetalToast.show(activity, "Restored default User-Agent")
                             }
-                            geckoView?.reload()
+                            reloadTab(controller)
                         },
                         onDismissRequest = { decor.removeView(view) }
                     )
@@ -620,10 +676,6 @@ object PetalQuickToolsBridge {
             }
         }
         decor.addView(view)
-    }
-
-    private fun showPetalConfig(activity: BrowserActivity) {
-        PetalConfigSheet.show(activity)
     }
 
 }

@@ -4,7 +4,7 @@
  * Material 3 Expressive Quick Tools Bottom Sheet matching Omni Browser
  * architecture and Firefox GeckoView engine capabilities.
  *
- * Provides a 4-column reorderable grid of 16 quick web tools. Tools that
+ * Provides a 4-column reorderable grid of 15 quick web tools. Tools that
  * duplicate an item already in the overflow menu (Safe Locker, Save/Print
  * PDF, Pin Web App, Console Log/Developer Console) were removed from here
  * on 2026-09-27 — those actions now live only in the overflow menu.
@@ -23,7 +23,6 @@
  * 13. Spoof Identity (Switch Desktop/Mobile/iOS/macOS User-Agent)
  * 14. Force Zoom (Bypass viewport pinch-to-zoom restrictions)
  * 15. Torrent & Magnet (Magnet link & torrent catcher)
- * 16. petal:config (Internal Gecko preferences & flags)
  *
  * Enhanced with:
  * - Material 3 Expressive shapes & dynamic tonal container coloring
@@ -97,8 +96,7 @@ enum class QuickToolId(
     SPOOF_IDENTITY("spoof_identity", "Spoof Identity", Icons.Rounded.Devices, "Change User-Agent", 16),
     FORCE_ZOOM("force_zoom", "Force Zoom", Icons.Rounded.ZoomIn, "Bypass zoom locks", 0),
     SCREENSHOT("screenshot", "Screenshot", Icons.Rounded.Screenshot, "Capture page screenshot", 1),
-    TORRENT_MAGNET("torrent_magnet", "Torrents", Icons.Rounded.Download, "Magnet & torrent links", 2),
-    PETAL_CONFIG("petal_config", "petal:config", Icons.Rounded.Tune, "Advanced engine flags", 3)
+    TORRENT_MAGNET("torrent_magnet", "Torrents", Icons.Rounded.Download, "Magnet & torrent links", 2)
 }
 
 interface PetalQuickToolsActionHandler {
