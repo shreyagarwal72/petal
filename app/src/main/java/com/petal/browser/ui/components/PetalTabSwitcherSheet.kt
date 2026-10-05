@@ -135,7 +135,7 @@ object PetalTabSwitcherBridge {
                                     val isIncognitoTab = album.isIncognito()
                                     val faviconBitmap = when (album) {
                                         is com.petal.browser.view.PetalGeckoView -> album.getFavicon()
-                                        
+                                        is com.petal.browser.browser.PetalTabViewController -> album.getFavicon()
                                         is PlaceholderAlbumController -> album.getFavicon()
                                         else -> null
                                     }
@@ -173,6 +173,12 @@ object PetalTabSwitcherBridge {
                                     }
                                     val effectiveGroupColor = group?.colorHex
 
+                                    val isMutedState = when (album) {
+                                        is com.petal.browser.view.PetalGeckoView -> album.getMediaBridge()?.isMuted() ?: false
+                                        is com.petal.browser.browser.PetalTabViewController -> album.getMediaBridge()?.isMuted() ?: false
+                                        else -> false
+                                    }
+
                                     com.petal.browser.compose.tabs.PetalTabItem(
                                         id = album.hashCode().toString(),
                                         thumbnailKey = when (album) {
@@ -187,6 +193,7 @@ object PetalTabSwitcherBridge {
                                         previewBitmap = previewBitmap,
                                         isIncognito = isIncognitoTab,
                                         isSelected = (album == currentAlbum),
+                                        isMuted = isMutedState,
                                         groupId = effectiveGroupId,
                                         groupTitle = effectiveGroupTitle,
                                         groupColorHex = effectiveGroupColor
@@ -256,7 +263,8 @@ object PetalTabSwitcherBridge {
                             val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
                             when (targetAlbum) {
                                 is com.petal.browser.view.PetalGeckoView -> targetAlbum.getMediaBridge()?.setMuted(muted)
-                                
+                                is com.petal.browser.browser.PetalTabViewController -> targetAlbum.getMediaBridge()?.setMuted(muted)
+                                else -> {}
                             }
                         },
                         onCreateGroup = { tabItem ->

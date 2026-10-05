@@ -131,6 +131,7 @@ data class PetalTabItem(
     val isIncognito: Boolean = false,
     val isSelected: Boolean = false,
     val isPinned: Boolean = false,
+    val isMuted: Boolean = false,
     val groupId: String? = null,
     val groupTitle: String? = null,
     val groupColorHex: String? = null
@@ -1721,7 +1722,7 @@ private fun PetalTabCard(
     val textColor = MaterialTheme.colorScheme.onSurface
 
     var isSelecting by remember { mutableStateOf(false) }
-    var isMuted by remember { mutableStateOf(false) }
+    var isMuted by remember(tab.id) { mutableStateOf(tab.isMuted) }
     val scaleAnim by animateFloatAsState(
         targetValue = when {
             isDragging -> 1.08f
@@ -2083,7 +2084,7 @@ private fun PetalTabListItem(
             }
         }
     }
-    var isMuted by remember(tab.id) { mutableStateOf(false) }
+    var isMuted by remember(tab.id) { mutableStateOf(tab.isMuted) }
 
     val groupColor = tab.groupColorHex?.let {
         try { Color(android.graphics.Color.parseColor(it)) } catch (_: Exception) { null }
