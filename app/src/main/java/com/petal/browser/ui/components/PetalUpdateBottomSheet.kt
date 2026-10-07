@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.view.View
@@ -11,6 +12,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +33,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -36,7 +47,14 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.PetalContainmentShapes
+import com.petal.browser.ui.containment.rememberPetalGroupPressScale
+import com.petal.browser.ui.containment.petalGroupPositionFor
+import com.petal.browser.ui.containment.petalGroupShape
+import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.haptics.PetalHapticEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -61,7 +79,11 @@ object PetalUpdateSheetBridge {
 
     @JvmStatic
     fun checkForUpdates(activity: ComponentActivity, isLaunchCheck: Boolean) {
-        com.petal.browser.unit.UpdateUnit.checkForUpdates(activity, isLaunchCheck)
+        try {
+            com.petal.browser.update.PetalPlayUpdateManager.getInstance(activity).checkForUpdates(activity, isLaunchCheck)
+        } catch (e: Exception) {
+            android.util.Log.w("PetalUpdateSheetBridge", "Could not check for Play Store updates", e)
+        }
     }
 
     @JvmStatic
@@ -554,28 +576,19 @@ fun PetalUpdateSheetContent(
                             label = stringResource(R.string.ui_download_install_update),
                             onPrimaryClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                                isDownloading = true
-                                coroutineScope.launch {
-                                    val success = com.petal.browser.unit.PetalUpdateInstallerReceiver.downloadAndInstallApk(
-                                        context = context,
-                                        apkUrl = updateInfo.downloadUrl,
-                                        version = updateInfo.versionName,
-                                        onProgressUpdate = { progress ->
-                                            downloadProgress = progress
-                                            if (progress >= 100) {
-                                                isDownloading = false
-                                            }
-                                        }
-                                    )
-                                    if (!success) {
-                                        isDownloading = false
-                                        isDownloadEnqueued = true
-                                        com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueuePetalUpdateDownload(
-                                            context = context,
-                                            downloadUrl = updateInfo.downloadUrl,
-                                            version = updateInfo.versionName
-                                        )
+                                try {
+                                    val act = context as? Activity
+                                    if (act != null) {
+                                        com.petal.browser.update.PetalPlayUpdateManager.getInstance(act).openPlayStore(act)
+                                    } else {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        context.startActivity(intent)
                                     }
+                                } catch (_: Exception) {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(intent)
                                 }
                             },
                             onMenuClick = { updateSplitExpanded = !updateSplitExpanded },
@@ -599,12 +612,12 @@ fun PetalUpdateSheetContent(
                                 },
                                 onClick = {
                                     updateSplitExpanded = false
-                                    isDownloadEnqueued = true
-                                    com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueuePetalUpdateDownload(
-                                        context = context,
-                                        downloadUrl = updateInfo.downloadUrl,
-                                        version = updateInfo.versionName
-                                    )
+                                    try {
+                                        val act = context as? Activity
+                                        if (act != null) {
+                                            com.petal.browser.update.PetalPlayUpdateManager.getInstance(act).checkForUpdates(act as ComponentActivity, false)
+                                        }
+                                    } catch (_: Exception) {}
                                 }
                             )
                             if (updateInfo.releaseUrl.isNotBlank()) {
@@ -697,8 +710,9 @@ fun PetalChangelogHistorySheetContent(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = Modifier.fillMaxWidth()
@@ -706,111 +720,171 @@ fun PetalChangelogHistorySheetContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(64.dp)
+            // Header Expressive Badge (M3 Expressive Flower Shape)
+            Box(
+                modifier = Modifier
+                    .size(68.dp)
+                    .clip(PetalMaterialShapes.Flower.toShape())
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Rounded.History,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Rounded.History,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(34.dp)
+                )
             }
-            Spacer(modifier = Modifier.height(10.dp))
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             Text(
                 text = stringResource(R.string.ui_changelog_history),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
             Text(
                 text = stringResource(R.string.ui_previous_browser_releases_release_note),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(14.dp))
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             if (releases.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(32.dp),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.ui_no_changelog_releases_found),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.ui_no_changelog_releases_found),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 520.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                        .heightIn(max = 540.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 20.dp)
                 ) {
-                    items(releases) { rel ->
-                        com.petal.browser.ui.containment.PetalHeroCard(
-                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.fillMaxWidth()
+                    items(releases.size) { index ->
+                        val rel = releases[index]
+                        val position = petalGroupPositionFor(index, releases.size)
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val pressScale = rememberPetalGroupPressScale(interactionSource)
+
+                        Card(
+                            shape = petalGroupShape(position),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .scale(pressScale)
+                                .animateContentSize()
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
+                                    // Expressive Version Pill Badge
                                     Surface(
-                                        color = MaterialTheme.colorScheme.tertiary,
-                                        shape = CircleShape
-                                    ) {
-                                        Text(
-                                            text = rel.versionName,
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onTertiary
+                                        shape = RoundedCornerShape(50),
+                                        color = if (index == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                                        border = BorderStroke(
+                                            1.dp,
+                                            if (index == 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                                         )
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        if (index == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                                                    )
+                                            )
+                                            Text(
+                                                text = rel.versionName,
+                                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                color = if (index == 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                        }
                                     }
+
+                                    // Action to Open GitHub Release Link
                                     if (rel.releaseUrl.isNotBlank()) {
-                                        IconButton(
+                                        FilledTonalIconButton(
                                             onClick = {
                                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                                 try {
                                                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(rel.releaseUrl))
+                                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                                     context.startActivity(intent)
                                                 } catch (e: Exception) {
                                                     e.printStackTrace()
                                                 }
                                             },
-                                            modifier = Modifier.size(32.dp)
+                                            modifier = Modifier.size(36.dp),
+                                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         ) {
                                             Icon(
                                                 Icons.Rounded.OpenInNew,
                                                 contentDescription = stringResource(R.string.ui_view_on_github),
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.size(18.dp)
                                             )
                                         }
                                     }
                                 }
+
                                 if (rel.releaseNotes.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Spacer(modifier = Modifier.height(12.dp))
                                     Surface(
-                                        shape = RoundedCornerShape(14.dp),
-                                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        shape = RoundedCornerShape(18.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
                                         contentColor = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         PetalMarkdownText(
                                             markdown = rel.releaseNotes,
-                                            modifier = Modifier.padding(12.dp)
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(14.dp)
                                         )
                                     }
                                 }
