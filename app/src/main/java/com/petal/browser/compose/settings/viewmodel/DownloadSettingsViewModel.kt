@@ -17,6 +17,8 @@ class DownloadSettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     val downloadManagerMode: StateFlow<String> = settingsRepository.downloadManagerMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ExternalDownloadManagerHelper.MODE_IN_APP)
+
     val confirmDownloadDelete: StateFlow<Boolean> = settingsRepository.confirmDownloadDelete
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
