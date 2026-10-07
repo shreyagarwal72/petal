@@ -210,6 +210,16 @@ fun PetalExtensionsScreen(
         }
     }
 
+    var showStoreScreen by remember { mutableStateOf(false) }
+
+    if (showStoreScreen) {
+        com.petal.browser.compose.store.PetalBrowserStoreScreen(
+            onDismiss = { showStoreScreen = false },
+            backgroundSnapshot = backgroundSnapshot
+        )
+        return
+    }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(enabled = true, onBack = onDismiss) {
         com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
             Scaffold(
@@ -239,7 +249,18 @@ fun PetalExtensionsScreen(
                         ExpressiveHeader(
                             title = "Extensions",
                             subtitle = if (selectedTabIndex == 0) "Petal built-in privacy and web utilities" else "${firefoxExtensions.size} Firefox add-on${if (firefoxExtensions.size == 1) "" else "s"} installed",
-                            onBack = onDismiss
+                            onBack = onDismiss,
+                            actions = {
+                                FilledTonalIconButton(
+                                    onClick = { showStoreScreen = true },
+                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                ) {
+                                    Icon(Icons.Rounded.Storefront, contentDescription = stringResource(R.string.ui_browser_store_title))
+                                }
+                            }
                         )
 
                         PrimaryTabRow(
@@ -333,6 +354,10 @@ fun PetalExtensionsScreen(
             onRequestFileImport = {
                 showAddSheet = false
                 showXpiPicker = true
+            },
+            onOpenStore = {
+                showAddSheet = false
+                showStoreScreen = true
             }
         )
     }
@@ -867,7 +892,8 @@ private fun AddExtensionSheet(
     onDismiss: () -> Unit,
     onInstall: (String) -> Unit,
     onInstallFile: (android.net.Uri) -> Unit,
-    onRequestFileImport: () -> Unit = {}
+    onRequestFileImport: () -> Unit = {},
+    onOpenStore: () -> Unit = {}
 ) {
     var manualUrl by remember { mutableStateOf("") }
     var showMozillaCatalogPrompt by remember { mutableStateOf(false) }
@@ -896,6 +922,17 @@ private fun AddExtensionSheet(
             )
             Spacer(Modifier.height(16.dp))
 
+            Button(
+                onClick = onOpenStore,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Rounded.Storefront, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.ui_browser_store_title), fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {
                     onDismiss()

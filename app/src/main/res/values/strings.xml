@@ -1561,4 +1561,21 @@
     <string name="ui_data_to_include">Data to include</string>
     <string name="ui_data_to_restore">Data to restore</string>
     <string name="ui_download_behavior">Download behavior</string>
+
+    <!-- Petal Browser Store & Hub -->
+    <string name="ui_browser_store_title">Browser Store</string>
+    <string name="ui_browser_store_subtitle">Explore verified extensions, user scripts, search engines &amp; filter lists</string>
+    <string name="ui_store_tab_extensions">Add-ons</string>
+    <string name="ui_store_tab_scripts">Scripts</string>
+    <string name="ui_store_tab_search">Search Engines</string>
+    <string name="ui_store_tab_filters">Filter Lists</string>
+    <string name="ui_store_search_hint">Search store catalog…</string>
+    <string name="ui_store_all_categories">All Categories</string>
+    <string name="ui_store_install">Get</string>
+    <string name="ui_store_installing">Installing…</string>
+    <string name="ui_store_installed">Added</string>
+    <string name="ui_store_verified_by_petal">Verified by Petal</string>
+    <string name="ui_store_scripts_catalog_desc">Lightweight client enhancements and userscripts with SHA-256 integrity verification.</string>
+    <string name="ui_store_filter_catalog_desc">Subscribe to curated AdBlock and tracker-prevention lists for Petal Shield.</string>
+    <string name="ui_store_search_catalog_desc">Install independent, privacy-respecting search engines with one tap.</string>
 </resources>

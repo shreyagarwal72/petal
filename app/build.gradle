@@ -25,8 +25,8 @@ android {
         applicationId "com.petal.browser"
         minSdkVersion 26
         targetSdkVersion 36
-        versionCode 401
-        versionName "4.0.1"
+        versionCode 420
+        versionName "4.2"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         resConfigs "ar", "b+hi+Latn", "b+sr+Latn", "cs", "de", "el", "es", "et", "fa", "fr", "he", "hi", "hu", "id", "it", "ja", "nl", "pl", "pt", "ro", "ru", "sr", "sv", "tr", "uk", "vi", "zh", "zh-rTW"
@@ -219,14 +219,16 @@ dependencies {
     // see https://github.com/android/identity-samples/issues/90) that some devices hit
     // even with fully correct OAuth configuration.
 
+    // Google Mobile Ads (GMS Ads) & Google Play In-App Updates
+    implementation 'com.google.android.gms:play-services-ads:24.0.0'
+    implementation 'com.google.android.play:app-update:2.1.0'
+    implementation 'com.google.android.play:app-update-ktx:2.1.0'
+
     // AndroidX Biometric for hardware biometric & device credential lock
     implementation 'androidx.biometric:biometric:1.2.0-alpha05'
     implementation 'androidx.autofill:autofill:1.1.0'
 
     // Google ML Kit On-Device Recognition APIs
-
-    // Hidden API bypass for non-SDK interface access (e.g. GeckoThread on Android 15/16)
-    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
 
     // yt-dlp (via youtubedl-android) — powers Petal Social Downloader for YouTube,
     // Instagram, TikTok, Twitter/X, Facebook, Reddit, and 1800+ more platforms.
