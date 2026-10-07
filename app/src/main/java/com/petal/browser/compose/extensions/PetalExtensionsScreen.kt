@@ -466,16 +466,11 @@ private fun BuiltInExtensionsList(
                         )
                 },
                 trailing = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { onOpenSettings(spec) }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.ui_settings), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        IconSwitch(checked = isEnabled, icon = Icons.Rounded.Check, onCheckedChange = { checked ->
-                            isEnabled = checked
-                            sp.edit().putBoolean(spec.prefKey, checked).apply()
-                            PetalBuiltInExtensionManager.setEnabled(context, spec.prefKey, checked)
-                        })
-                    }
+                    IconSwitch(checked = isEnabled, icon = Icons.Rounded.Check, onCheckedChange = { checked ->
+                        isEnabled = checked
+                        sp.edit().putBoolean(spec.prefKey, checked).apply()
+                        PetalBuiltInExtensionManager.setEnabled(context, spec.prefKey, checked)
+                    })
                 }
             )
         }
