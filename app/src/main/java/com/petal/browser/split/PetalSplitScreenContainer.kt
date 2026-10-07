@@ -68,6 +68,8 @@ fun PetalSplitScreenContainer(
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val totalWidth = maxWidth
         val totalHeight = maxHeight
+        val totalHeightPx = this.constraints.maxHeight.toFloat()
+        val totalWidthPx = this.constraints.maxWidth.toFloat()
 
         if (orientation == SplitOrientation.VERTICAL) {
             // Top / Bottom layout
@@ -102,9 +104,8 @@ fun PetalSplitScreenContainer(
                 SplitDividerHandle(
                     orientation = SplitOrientation.VERTICAL,
                     onDragDelta = { deltaPx ->
-                        val totalPx = constraints.maxHeight.toFloat()
-                        if (totalPx > 0f) {
-                            splitRatio = (splitRatio + deltaPx / totalPx).coerceIn(0.25f, 0.75f)
+                        if (totalHeightPx > 0f) {
+                            splitRatio = (splitRatio + deltaPx / totalHeightPx).coerceIn(0.25f, 0.75f)
                         }
                     },
                     onReset = {
@@ -166,9 +167,8 @@ fun PetalSplitScreenContainer(
                 SplitDividerHandle(
                     orientation = SplitOrientation.HORIZONTAL,
                     onDragDelta = { deltaPx ->
-                        val totalPx = constraints.maxWidth.toFloat()
-                        if (totalPx > 0f) {
-                            splitRatio = (splitRatio + deltaPx / totalPx).coerceIn(0.25f, 0.75f)
+                        if (totalWidthPx > 0f) {
+                            splitRatio = (splitRatio + deltaPx / totalWidthPx).coerceIn(0.25f, 0.75f)
                         }
                     },
                     onReset = {
