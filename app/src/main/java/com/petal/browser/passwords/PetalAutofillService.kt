@@ -65,6 +65,45 @@ class PetalAutofillService : AutofillService() {
         }
 
         /**
+         * Converts an Android package name or raw app URI (e.g. "app://com.example")
+         * to a user-friendly application display name if possible.
+         */
+        fun cleanDisplayLabel(context: Context, rawTarget: String): String {
+            if (!rawTarget.startsWith("app://") && !rawTarget.contains('.')) return rawTarget
+            val pkg = rawTarget.removePrefix("app://").trim()
+            return try {
+                val pm = context.packageManager
+                val appInfo = pm.getApplicationInfo(pkg, 0)
+                pm.getApplicationLabel(appInfo).toString()
+            } catch (_: Exception) {
+                if (pkg == context.packageName) "Petal Browser" else pkg
+            }
+        }
+
+        /**
+         * Checks whether a package or activity structure corresponds to App Lock
+         * or internal Petal security overlays, which must NEVER be offered autofill
+         * or have passcodes saved.
+         */
+        fun isAppLockOrInternalSecurity(context: Context, pkg: String?, domain: String?, activityName: String? = null): Boolean {
+            val ownPkg = context.packageName
+            // Internal Petal activities that are NOT web browsing content
+            if (pkg == ownPkg && domain.isNullOrBlank()) {
+                return true
+            }
+            val act = activityName.orEmpty().lowercase()
+            if (act.contains("lock") || act.contains("security") || act.contains("passcode") || act.contains("vaultauth")) {
+                return true
+            }
+            val p = pkg.orEmpty().lowercase()
+            // Well-known 3rd-party app lock packages
+            if (p.contains("applock") || p.contains("app.lock") || p.contains("vault.lock") || p.contains("smartapplock")) {
+                return true
+            }
+            return false
+        }
+
+        /**
          * Material 3 Expressive save-password dialog content for SaveInfo.CustomDescription.
          * The system wraps this inside its own bottom-sheet chrome (buttons etc.).
          */
@@ -72,18 +111,20 @@ class PetalAutofillService : AutofillService() {
         fun buildSaveCustomDescription(
             packageName: String,
             username: String,
-            domain: String
+            domain: String,
+            context: Context? = null
         ): CustomDescription {
+            val displayDomain = if (context != null) cleanDisplayLabel(context, domain) else domain
             val views = try {
                 RemoteViews(packageName, R.layout.petal_autofill_save_dialog).apply {
                     val usernameLabel = if (username.isNotBlank()) username else "New login"
                     setTextViewText(R.id.petal_save_username, usernameLabel)
-                    setTextViewText(R.id.petal_save_domain, domain)
+                    setTextViewText(R.id.petal_save_domain, displayDomain)
                 }
             } catch (_: Throwable) {
                 RemoteViews(packageName, android.R.layout.simple_list_item_2).apply {
                     setTextViewText(android.R.id.text1, "Save to Petal Vault?")
-                    setTextViewText(android.R.id.text2, domain)
+                    setTextViewText(android.R.id.text2, displayDomain)
                 }
             }
             return CustomDescription.Builder(views).build()
@@ -122,15 +163,23 @@ class PetalAutofillService : AutofillService() {
         }
 
         val pkg = structure.activityComponent?.packageName
+        val activityClass = structure.activityComponent?.className
         val domain = parsed.domain
         Log.d(TAG, "Fill request: domain=${domain ?: "none"} pkg=$pkg user=${usernameId != null} pass=${passwordId != null}")
+
+        // Never offer autofill or prompt to save for App Lock or internal security screens
+        if (isAppLockOrInternalSecurity(applicationContext, pkg, domain, activityClass)) {
+            Log.d(TAG, "Fill request ignored: App Lock or internal security screen detected")
+            callback.onSuccess(null)
+            return
+        }
 
         val matches = credentialsFor(domain, pkg)
         val response = FillResponse.Builder()
 
         matches.forEachIndexed { index, cred ->
             val title = cred.username.ifBlank { cred.domain }
-            val subtitle = "Petal • ${cred.domain}"
+            val subtitle = "Petal • ${cleanDisplayLabel(applicationContext, cred.domain)}"
 
             val authIntent = Intent(this, PetalAutofillAuthActivity::class.java).apply {
                 putExtra(PetalAutofillAuthActivity.EXTRA_CREDENTIAL_ID, cred.id)
@@ -175,7 +224,7 @@ class PetalAutofillService : AutofillService() {
             // Attach the Material 3 Expressive custom description to the save dialog
             try {
                 val domainLabel = if (!domain.isNullOrBlank()) domain else pkg.orEmpty()
-                val customDesc = buildSaveCustomDescription(packageName, parsed.usernameValue.orEmpty(), domainLabel)
+                val customDesc = buildSaveCustomDescription(packageName, parsed.usernameValue.orEmpty(), domainLabel, applicationContext)
                 saveInfoBuilder.setCustomDescription(customDesc)
             } catch (_: Throwable) {
                 // setCustomDescription is O+; guard silently
@@ -286,7 +335,16 @@ class PetalAutofillService : AutofillService() {
         // Use the first context to resolve domain/package if needed
         val firstStructure = request.fillContexts.lastOrNull()?.structure
         val pkg = firstStructure?.activityComponent?.packageName
+        val activityClass = firstStructure?.activityComponent?.className
         val rawDomain = parsedSave.domain
+
+        // Never save credentials entered on an App Lock or internal security screen
+        if (isAppLockOrInternalSecurity(applicationContext, pkg, rawDomain, activityClass)) {
+            Log.d(TAG, "onSaveRequest: App Lock or internal security screen detected – skip saving")
+            callback.onSuccess()
+            return
+        }
+
         val saveDomain = if (!rawDomain.isNullOrBlank()) {
             normalizeDomain(rawDomain)
         } else if (!pkg.isNullOrBlank()) {

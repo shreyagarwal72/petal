@@ -60,5 +60,14 @@
     <color name="teal">#40009688</color>
     <color name="yellow">#40FFC107</color>
 
+    <!-- Material 3 Expressive Autofill Colors (Night) -->
+    <color name="petal_autofill_dialog_bg">#1E1A1B</color>
+    <color name="petal_autofill_chip_bg">#30FFB1C8</color>
+    <color name="petal_autofill_badge_bg">#35FFB1C8</color>
+    <color name="petal_autofill_title">#EFE0E3</color>
+    <color name="petal_autofill_subtitle">#D5C2C6</color>
+    <color name="petal_autofill_caption">#9E8C90</color>
+    <color name="petal_autofill_accent">#FFB1C8</color>
+    <color name="petal_autofill_pill_bg">#25FFFFFF</color>
 
 </resources>

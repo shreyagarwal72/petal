@@ -62,4 +62,14 @@
 
     <color name="live_update_accent">#B81D63</color>
 
+    <!-- Material 3 Expressive Autofill Colors (Light) -->
+    <color name="petal_autofill_dialog_bg">#FFF8F9</color>
+    <color name="petal_autofill_chip_bg">#18B81D63</color>
+    <color name="petal_autofill_badge_bg">#20B81D63</color>
+    <color name="petal_autofill_title">#1E1A1B</color>
+    <color name="petal_autofill_subtitle">#49454E</color>
+    <color name="petal_autofill_caption">#79747E</color>
+    <color name="petal_autofill_accent">#B81D63</color>
+    <color name="petal_autofill_pill_bg">#0F000000</color>
+
 </resources>

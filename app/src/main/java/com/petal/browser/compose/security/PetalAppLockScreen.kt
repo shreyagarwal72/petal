@@ -218,7 +218,9 @@ fun PetalAppLockScreen(
                         isError = errorMessage != null,
                         accentColor = MaterialTheme.colorScheme.primary,
                         onUnlock = { verifyPasscode() },
-                        unlockButtonText = "Unlock"
+                        unlockButtonText = "Unlock",
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword,
+                        disableAutofill = true
                     )
 
                     AnimatedVisibility(

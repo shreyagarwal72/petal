@@ -91,7 +91,9 @@ fun PetalShapedPasswordInput(
     shapeSize: Dp = 22.dp,
     shapeSpacing: Dp = 8.dp,
     onUnlock: (() -> Unit)? = null,
-    unlockButtonText: String = "Unlock"
+    unlockButtonText: String = "Unlock",
+    keyboardType: KeyboardType = KeyboardType.Password,
+    disableAutofill: Boolean = false
 ) {
     var isPasswordVisible by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -200,6 +202,12 @@ fun PetalShapedPasswordInput(
                 }
 
                 // Underlying Real BasicTextField (Invisible/zero-alpha when obscured for typing & keyboard)
+                val effectiveKeyboardType = if (isPasswordVisible) {
+                    if (keyboardType == KeyboardType.NumberPassword) KeyboardType.Number else KeyboardType.Text
+                } else {
+                    keyboardType
+                }
+
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
@@ -207,8 +215,9 @@ fun PetalShapedPasswordInput(
                     singleLine = true,
                     visualTransformation = if (isPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = if (isPasswordVisible) KeyboardType.Text else KeyboardType.Password,
-                        imeAction = if (onUnlock != null) ImeAction.Done else ImeAction.Default
+                        keyboardType = effectiveKeyboardType,
+                        imeAction = if (onUnlock != null) ImeAction.Done else ImeAction.Default,
+                        autoCorrectEnabled = false
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {

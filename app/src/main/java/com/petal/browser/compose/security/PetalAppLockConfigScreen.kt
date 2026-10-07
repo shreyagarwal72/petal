@@ -334,6 +334,8 @@ fun PetalAppLockConfigScreen(
                             accentColor = MaterialTheme.colorScheme.primary,
                             onUnlock = null,
                             unlockButtonText = "",
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword,
+                            disableAutofill = true
                         )
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             TextButton(onClick = { showPasscodeConfigDialog = false }) { Text(stringResource(R.string.ui_cancel)) }

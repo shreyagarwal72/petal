@@ -45,6 +45,9 @@ object PetalAppLockBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewTreeOnBackPressedDispatcherOwner(activity)
             }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+            }
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
                 val snapshotBitmap = remember { PetalContentSnapshot.current?.asImageBitmap() }
