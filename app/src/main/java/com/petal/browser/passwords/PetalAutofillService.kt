@@ -2,6 +2,7 @@ package com.petal.browser.passwords
 
 import android.app.PendingIntent
 import android.app.assist.AssistStructure
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.CancellationSignal
