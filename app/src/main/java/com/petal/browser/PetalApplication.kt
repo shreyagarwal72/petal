@@ -59,13 +59,6 @@ class PetalApplication : Application() {
             com.petal.browser.logger.PetalAppLogger.init(base)
         } catch (_: Throwable) {}
         super.attachBaseContext(com.petal.browser.unit.HelperUnit.applyLanguage(base))
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            try {
-                org.lsposed.hiddenapibypass.HiddenApiBypass.addHiddenApiExemptions("")
-            } catch (t: Throwable) {
-                Log.w("PetalApplication", "Failed to add HiddenApi exemptions", t)
-            }
-        }
     }
 
     override fun onCreate() {
