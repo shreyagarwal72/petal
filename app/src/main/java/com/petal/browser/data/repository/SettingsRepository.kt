@@ -85,6 +85,8 @@ interface SettingsRepository {
     val checkUpdateOnLaunch: Flow<Boolean>
     val torrentEngineMode: Flow<String>
     val downloadManagerMode: Flow<String>
+    val confirmDownloadDelete: Flow<Boolean>
+    val deleteDownloadFile: Flow<Boolean>
     val autoPreviewDownloadedImages: Flow<Boolean>
     val liveUpdates: Flow<Boolean>
 
@@ -168,6 +170,8 @@ interface SettingsRepository {
     suspend fun setCheckUpdateOnLaunch(enabled: Boolean)
     suspend fun setTorrentEngineMode(mode: String)
     suspend fun setDownloadManagerMode(mode: String)
+    suspend fun setConfirmDownloadDelete(enabled: Boolean)
+    suspend fun setDeleteDownloadFile(enabled: Boolean)
     suspend fun setAutoPreviewDownloadedImages(enabled: Boolean)
     suspend fun setLiveUpdates(enabled: Boolean)
 

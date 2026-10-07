@@ -41,14 +41,20 @@ fun DownloadSettingsScreen(
     viewModel: DownloadSettingsViewModel = hiltViewModel()
 ) {
     val downloadManagerMode by viewModel.downloadManagerMode.collectAsStateWithLifecycle()
+    val confirmDownloadDelete by viewModel.confirmDownloadDelete.collectAsStateWithLifecycle()
+    val deleteDownloadFile by viewModel.deleteDownloadFile.collectAsStateWithLifecycle()
     val autoPreviewDownloadedImages by viewModel.autoPreviewDownloadedImages.collectAsStateWithLifecycle()
     val liveUpdates by viewModel.liveUpdates.collectAsStateWithLifecycle()
 
     DownloadSettingsScreenContent(
         downloadManagerMode = downloadManagerMode,
+        confirmFileDelete = confirmDownloadDelete,
+        deleteFromStorage = deleteDownloadFile,
         autoPreviewDownloadedImages = autoPreviewDownloadedImages,
         liveUpdates = liveUpdates,
         onDownloadManagerModeChange = viewModel::setDownloadManagerMode,
+        onConfirmFileDeleteChange = viewModel::setConfirmDownloadDelete,
+        onDeleteFromStorageChange = viewModel::setDeleteDownloadFile,
         onAutoPreviewDownloadedImagesChange = viewModel::setAutoPreviewDownloadedImages,
         onLiveUpdatesChange = viewModel::setLiveUpdates,
         onNavigateBack = onNavigateBack,
@@ -60,9 +66,13 @@ fun DownloadSettingsScreen(
 @Composable
 fun DownloadSettingsScreenContent(
     downloadManagerMode: String,
+    confirmFileDelete: Boolean,
+    deleteFromStorage: Boolean,
     autoPreviewDownloadedImages: Boolean,
     liveUpdates: Boolean,
     onDownloadManagerModeChange: (String) -> Unit,
+    onConfirmFileDeleteChange: (Boolean) -> Unit,
+    onDeleteFromStorageChange: (Boolean) -> Unit,
     onAutoPreviewDownloadedImagesChange: (Boolean) -> Unit,
     onLiveUpdatesChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
@@ -70,9 +80,6 @@ fun DownloadSettingsScreenContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val preferences = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    var confirmFileDelete by remember { mutableStateOf(preferences.getBoolean("sp_confirm_download_delete", true)) }
-    var deleteFromStorage by remember { mutableStateOf(preferences.getBoolean("sp_delete_download_file", false)) }
     val installedDownloaders = remember(context) {
         ExternalDownloadManagerHelper.getInstalledDownloaders(context)
     }
@@ -112,10 +119,7 @@ fun DownloadSettingsScreenContent(
                                     icon = Icons.Rounded.HelpOutline,
                                     checked = confirmFileDelete,
                                     position = position,
-                                    onCheckedChange = {
-                                        confirmFileDelete = it
-                                        preferences.edit().putBoolean("sp_confirm_download_delete", it).apply()
-                                    }
+                                    onCheckedChange = onConfirmFileDeleteChange
                                 )
                             }
                             1 -> {
@@ -125,10 +129,7 @@ fun DownloadSettingsScreenContent(
                                     icon = Icons.Rounded.DeleteForever,
                                     checked = deleteFromStorage,
                                     position = position,
-                                    onCheckedChange = {
-                                        deleteFromStorage = it
-                                        preferences.edit().putBoolean("sp_delete_download_file", it).apply()
-                                    }
+                                    onCheckedChange = onDeleteFromStorageChange
                                 )
                             }
                         }

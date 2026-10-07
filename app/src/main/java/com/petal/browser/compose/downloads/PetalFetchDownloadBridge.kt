@@ -489,8 +489,12 @@ object PetalFetchDownloadBridge {
     }
 
     @JvmStatic
-    fun deleteDownloads(context: Context, items: List<DownloadItem>) {
-        items.forEach { deleteDownload(context, it) }
+    fun deleteDownloads(
+        context: Context,
+        items: List<DownloadItem>,
+        deleteFile: Boolean = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)
+    ) {
+        items.forEach { deleteDownload(context, it, deleteFile) }
     }
 
     private fun upsert(download: Download) {

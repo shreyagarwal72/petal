@@ -279,8 +279,21 @@ fun PetalDownloadManagerScreen(
     onBackPress: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val autoPreviewDownloadedImages = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-        .getBoolean("sp_auto_preview_downloaded_images", true)
+    val sharedPreferences = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    var autoPreviewDownloadedImages by remember {
+        mutableStateOf(sharedPreferences.getBoolean("sp_auto_preview_downloaded_images", true))
+    }
+    DisposableEffect(sharedPreferences) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sp_auto_preview_downloaded_images") {
+                autoPreviewDownloadedImages = sharedPreferences.getBoolean("sp_auto_preview_downloaded_images", true)
+            }
+        }
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
 
 
     val hostActivity = context as? Activity
@@ -356,13 +369,16 @@ fun PetalDownloadManagerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    fun performStagedDelete(items: List<DownloadItem>) {
+    fun performStagedDelete(
+        items: List<DownloadItem>,
+        deleteFile: Boolean = sharedPreferences.getBoolean("sp_delete_download_file", false)
+    ) {
         if (items.isEmpty()) return
         val targetIds = items.map { it.id }.toSet()
         pendingDeletedIds = pendingDeletedIds + targetIds
 
         // Immediately delete from engine, notifications, and storage
-        PetalFetchDownloadBridge.deleteDownloads(context, items)
+        PetalFetchDownloadBridge.deleteDownloads(context, items, deleteFile)
 
         val message = if (items.size == 1) {
             "Deleted ${items.first().fileName}"
@@ -389,7 +405,7 @@ fun PetalDownloadManagerScreen(
             title = { Text(stringResource(R.string.ui_delete_downloads), fontWeight = FontWeight.Bold) },
             text = { Column { Text(stringResource(R.string.ui_remove_downloads_from_the_list, pendingDeleteItems.size)); Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = deleteSelectedFiles, onCheckedChange = { deleteSelectedFiles = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() }); Text(stringResource(R.string.ui_also_delete_files_from_device)) } } },
             dismissButton = { TextButton(onClick = { pendingDeleteItems = emptyList() }) { Text(stringResource(R.string.ui_cancel)) } },
-            confirmButton = { Button(onClick = { val items = pendingDeleteItems; pendingDeleteItems = emptyList(); performStagedDelete(items) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.ui_delete)) } }
+            confirmButton = { Button(onClick = { val items = pendingDeleteItems; pendingDeleteItems = emptyList(); performStagedDelete(items, deleteSelectedFiles) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.ui_delete)) } }
         )
     }
 
@@ -588,7 +604,23 @@ fun PetalDownloadManagerScreen(
                     contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {
                     if (autoPreviewDownloadedImages) {
-                        item { DownloadedImagePreviewStrip(downloadList) }
+                        item {
+                            DownloadedImagePreviewStrip(
+                                downloads = downloadList,
+                                onDeleteItem = { itemToDelete ->
+                                    val deletePrefs = sharedPreferences
+                                    if (deletePrefs.getBoolean("sp_confirm_download_delete", true)) {
+                                        deleteSelectedFiles = deletePrefs.getBoolean("sp_delete_download_file", false)
+                                        pendingDeleteItems = listOf(itemToDelete)
+                                    } else {
+                                        performStagedDelete(
+                                            listOf(itemToDelete),
+                                            deletePrefs.getBoolean("sp_delete_download_file", false)
+                                        )
+                                    }
+                                }
+                            )
+                        }
                     }
                     groupedDownloads.forEach { (dateHeader, items) ->
                         stickyHeader(key = dateHeader) {
@@ -628,7 +660,7 @@ fun PetalDownloadManagerScreen(
                                         toggleSelection(item.id)
                                     }
                                 },
-                                onDeleteItem = { performStagedDelete(listOf(item)) },
+                                onDeleteItem = { deleteFile -> performStagedDelete(listOf(item), deleteFile) },
                                 onOpenFile = {
                                     val activity = context as? com.petal.browser.activity.BrowserActivity
                                     if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName)) {
@@ -706,7 +738,10 @@ fun PetalDownloadManagerScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
+private fun DownloadedImagePreviewStrip(
+    downloads: List<DownloadItem>,
+    onDeleteItem: (DownloadItem) -> Unit
+) {
     val context = LocalContext.current
     var menuItem by remember { mutableStateOf<DownloadItem?>(null) }
     val images = downloads.filter { it.status == DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }.take(6)
@@ -761,8 +796,15 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                         })
                         com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_open_in_app)) }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) }, onClick = { menuItem = null; openDownloadedFile(context, item) })
                         com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_share)) }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { menuItem = null; shareDownloadedFile(context, item) })
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_copy_link_2)) }, leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { menuItem = null; copyDownloadLink(context, item.fileUrl) })
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_delete), color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) }, onClick = { menuItem = null; deleteDownloadedFile(context, item) })
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
+                            text = { Text(stringResource(R.string.ui_delete), color = MaterialTheme.colorScheme.error) },
+                            leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                val targetItem = item
+                                menuItem = null
+                                onDeleteItem(targetItem)
+                            }
+                        )
                     }
                 }
             }
@@ -793,7 +835,7 @@ private fun DownloadRowItem(
     modifier: Modifier = Modifier,
     onToggleSelect: () -> Unit,
     onLongClick: () -> Unit,
-    onDeleteItem: () -> Unit,
+    onDeleteItem: (deleteFile: Boolean) -> Unit,
     onOpenFile: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -820,7 +862,7 @@ private fun DownloadRowItem(
                 }
             },
             dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.ui_cancel)) } },
-            confirmButton = { Button(onClick = { showDeleteDialog = false; onDeleteItem() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.ui_delete)) } }
+            confirmButton = { Button(onClick = { showDeleteDialog = false; onDeleteItem(deleteFile) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.ui_delete)) } }
         )
     }
 
@@ -1059,7 +1101,7 @@ private fun DownloadRowItem(
                                 if (androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_confirm_download_delete", true)) {
                                     showDeleteDialog = true
                                 } else {
-                                    onDeleteItem()
+                                    onDeleteItem(deleteFile)
                                 }
                             }
                         )

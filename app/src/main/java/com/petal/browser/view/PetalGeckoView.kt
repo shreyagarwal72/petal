@@ -154,6 +154,18 @@ class PetalGeckoView @JvmOverloads constructor(
             val contentLength = headers?.entries?.firstOrNull {
                 it.key.equals("Content-Length", ignoreCase = true)
             }?.value?.toLongOrNull() ?: 0L
+
+            if (com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, responseUrl, fileName, mimeType)) {
+                return
+            }
+
+            // If external download manager is preferred (1DM, ADM, AB Download Manager, Navi, or Auto),
+            // skip the in-app confirmation popup and launch directly into the chosen manager.
+            if (com.petal.browser.unit.ExternalDownloadManagerHelper.isExternalPreferred(activity)) {
+                com.petal.browser.unit.BrowserUnit.download(activity, responseUrl, fileName, mimeType)
+                return
+            }
+
             activity.runOnUiThread {
                 com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
                     activity, responseUrl, contentDisposition, mimeType, contentLength

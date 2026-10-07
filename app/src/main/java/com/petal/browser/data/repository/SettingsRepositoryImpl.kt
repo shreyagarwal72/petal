@@ -312,6 +312,14 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE, com.petal.browser.unit.ExternalDownloadManagerHelper.MODE_IN_APP) ?: com.petal.browser.unit.ExternalDownloadManagerHelper.MODE_IN_APP
     }
 
+    override val confirmDownloadDelete: Flow<Boolean> = preferenceFlow("sp_confirm_download_delete") {
+        sp.getBoolean("sp_confirm_download_delete", true)
+    }
+
+    override val deleteDownloadFile: Flow<Boolean> = preferenceFlow("sp_delete_download_file") {
+        sp.getBoolean("sp_delete_download_file", false)
+    }
+
     override val autoPreviewDownloadedImages: Flow<Boolean> = preferenceFlow("sp_auto_preview_downloaded_images") {
         sp.getBoolean("sp_auto_preview_downloaded_images", true)
     }
@@ -635,6 +643,14 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setDownloadManagerMode(mode: String) {
         sp.edit().putString(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE, mode).apply()
+    }
+
+    override suspend fun setConfirmDownloadDelete(enabled: Boolean) {
+        sp.edit().putBoolean("sp_confirm_download_delete", enabled).apply()
+    }
+
+    override suspend fun setDeleteDownloadFile(enabled: Boolean) {
+        sp.edit().putBoolean("sp_delete_download_file", enabled).apply()
     }
 
     override suspend fun setAutoPreviewDownloadedImages(enabled: Boolean) {

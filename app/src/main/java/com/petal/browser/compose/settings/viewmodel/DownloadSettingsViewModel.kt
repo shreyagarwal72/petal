@@ -17,7 +17,11 @@ class DownloadSettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     val downloadManagerMode: StateFlow<String> = settingsRepository.downloadManagerMode
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ExternalDownloadManagerHelper.MODE_IN_APP)
+    val confirmDownloadDelete: StateFlow<Boolean> = settingsRepository.confirmDownloadDelete
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val deleteDownloadFile: StateFlow<Boolean> = settingsRepository.deleteDownloadFile
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val autoPreviewDownloadedImages: StateFlow<Boolean> = settingsRepository.autoPreviewDownloadedImages
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -27,6 +31,14 @@ class DownloadSettingsViewModel @Inject constructor(
 
     fun setDownloadManagerMode(mode: String) = viewModelScope.launch {
         settingsRepository.setDownloadManagerMode(mode)
+    }
+
+    fun setConfirmDownloadDelete(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setConfirmDownloadDelete(enabled)
+    }
+
+    fun setDeleteDownloadFile(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setDeleteDownloadFile(enabled)
     }
 
     fun setAutoPreviewDownloadedImages(enabled: Boolean) = viewModelScope.launch {

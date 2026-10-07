@@ -6127,12 +6127,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
         String url = intent.getStringExtra(Intent.EXTRA_TEXT);
-        Uri dataUri = intent.getData();
-        if (dataUri == null && url != null && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("petal://"))) {
+        Uri rawDataUri = intent.getData();
+        if (rawDataUri == null && url != null && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("petal://"))) {
             try {
-                dataUri = Uri.parse(url);
+                rawDataUri = Uri.parse(url);
             } catch (Exception ignored) {}
         }
+        final Uri dataUri = rawDataUri;
         String mimeType = intent.getType();
         if ("".equals(action)) {
             Log.i(TAG, "resumed Petal Browser");

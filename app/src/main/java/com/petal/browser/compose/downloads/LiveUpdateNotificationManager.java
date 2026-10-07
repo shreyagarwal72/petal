@@ -260,12 +260,12 @@ public class LiveUpdateNotificationManager {
             extras.putString("android.shortCriticalText", chipText);
             extras.putInt("android.accentColor", themeAccentColor);
             builder.setExtras(extras);
-        }
 
-        try {
-            Method setShortCriticalText = builder.getClass().getMethod("setShortCriticalText", CharSequence.class);
-            setShortCriticalText.invoke(builder, chipText);
-        } catch (Exception ignored) {}
+            try {
+                Method setShortCriticalText = builder.getClass().getMethod("setShortCriticalText", CharSequence.class);
+                setShortCriticalText.invoke(builder, chipText);
+            } catch (Exception ignored) {}
+        }
 
         return builder.build();
     }
