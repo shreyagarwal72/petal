@@ -2,21 +2,18 @@ package com.petal.browser.compose.store
 
 import android.content.Context
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -48,6 +45,7 @@ import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -200,7 +198,7 @@ fun PetalBrowserStoreScreen(
                             trailingIcon = {
                                 if (searchQuery.isNotEmpty()) {
                                     IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Rounded.Clear, null)
+                                        Icon(Icons.Rounded.Close, null)
                                     }
                                 }
                             },
@@ -214,68 +212,82 @@ fun PetalBrowserStoreScreen(
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 6.dp)
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
                         )
 
-                        // Content Pages
-                        when (selectedTabIndex) {
-                            0 -> StoreExtensionsPage(
-                                searchQuery = searchQuery,
-                                selectedCategory = selectedCategory,
-                                onSelectCategory = { selectedCategory = it },
-                                installedExtensions = installedExtensions,
-                                isBusy = isExtensionBusy,
-                                onInstall = { addon ->
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
-                                    PetalExtensionManager.install(addon.downloadUrl) { success, _ ->
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                if (success) "Added ${addon.name} to Petal" else "Failed to install ${addon.name}"
-                                            )
+                        // Content Pages Area with weight(1f) to ensure full layout reach
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            AnimatedContent(
+                                targetState = selectedTabIndex,
+                                transitionSpec = {
+                                    fadeIn() togetherWith fadeOut()
+                                },
+                                label = "StoreTabContentTransition"
+                            ) { tabIndex ->
+                                when (tabIndex) {
+                                    0 -> StoreExtensionsPage(
+                                        searchQuery = searchQuery,
+                                        selectedCategory = selectedCategory,
+                                        onSelectCategory = { selectedCategory = it },
+                                        installedExtensions = installedExtensions,
+                                        isBusy = isExtensionBusy,
+                                        onInstall = { addon ->
+                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
+                                            PetalExtensionManager.install(addon.downloadUrl) { success, _ ->
+                                                coroutineScope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        if (success) "Added ${addon.name} to Petal" else "Failed to install ${addon.name}"
+                                                    )
+                                                }
+                                            }
                                         }
-                                    }
+                                    )
+                                    1 -> StoreScriptsPage(
+                                        searchQuery = searchQuery,
+                                        installedScriptIds = installedScriptIds,
+                                        onToggleScript = { script, install ->
+                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                            PetalStoreCatalog.setScriptInstalled(context, script.id, install)
+                                            installedScriptIds = PetalStoreCatalog.getInstalledScriptIds(context)
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    if (install) "Enabled \"${script.name}\"" else "Disabled \"${script.name}\""
+                                                )
+                                            }
+                                        }
+                                    )
+                                    2 -> StoreSearchEnginesPage(
+                                        searchQuery = searchQuery,
+                                        defaultEngineIndex = currentDefaultEngineIndex,
+                                        onSetDefaultEngine = { engine ->
+                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                            sp.edit().putString("sp_search_engine", engine.id.toString()).apply()
+                                            currentDefaultEngineIndex = engine.id
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("Set default search engine to ${engine.name}")
+                                            }
+                                        }
+                                    )
+                                    3 -> StoreFilterListsPage(
+                                        searchQuery = searchQuery,
+                                        subscribedFilterIds = subscribedFilterIds,
+                                        onToggleFilterList = { filter, subscribe ->
+                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                            PetalStoreCatalog.setFilterListSubscribed(context, filter.id, subscribe)
+                                            subscribedFilterIds = PetalStoreCatalog.getSubscribedFilterListIds(context)
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    if (subscribe) "Subscribed to ${filter.name}" else "Unsubscribed from ${filter.name}"
+                                                )
+                                            }
+                                        }
+                                    )
                                 }
-                            )
-                            1 -> StoreScriptsPage(
-                                searchQuery = searchQuery,
-                                installedScriptIds = installedScriptIds,
-                                onToggleScript = { script, install ->
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                    PetalStoreCatalog.setScriptInstalled(context, script.id, install)
-                                    installedScriptIds = PetalStoreCatalog.getInstalledScriptIds(context)
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            if (install) "Enabled \"${script.name}\"" else "Disabled \"${script.name}\""
-                                        )
-                                    }
-                                }
-                            )
-                            2 -> StoreSearchEnginesPage(
-                                searchQuery = searchQuery,
-                                defaultEngineIndex = currentDefaultEngineIndex,
-                                onSetDefaultEngine = { engine ->
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
-                                    sp.edit().putString("sp_search_engine", engine.id.toString()).apply()
-                                    currentDefaultEngineIndex = engine.id
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Set default search engine to ${engine.name}")
-                                    }
-                                }
-                            )
-                            3 -> StoreFilterListsPage(
-                                searchQuery = searchQuery,
-                                subscribedFilterIds = subscribedFilterIds,
-                                onToggleFilterList = { filter, subscribe ->
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                    PetalStoreCatalog.setFilterListSubscribed(context, filter.id, subscribe)
-                                    subscribedFilterIds = PetalStoreCatalog.getSubscribedFilterListIds(context)
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            if (subscribe) "Subscribed to ${filter.name}" else "Unsubscribed from ${filter.name}"
-                                        )
-                                    }
-                                }
-                            )
+                            }
                         }
                     }
                 }
@@ -348,7 +360,12 @@ private fun StoreExtensionsPage(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 8.dp,
+                bottom = 32.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Hero Intro Card when browsing all categories without search
@@ -425,24 +442,10 @@ private fun StoreExtensionsPage(
                         icon = if (isSearching) Icons.Rounded.Search else Icons.Rounded.Extension
                     ) {
                         if (filteredAddons.isEmpty()) {
-                            Card(
-                                shape = petalGroupShape(PetalGroupPosition.SINGLE),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(24.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "No matching add-ons found",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
+                            StoreEmptyStateCard(
+                                message = "No matching add-ons found",
+                                icon = Icons.Rounded.ExtensionOff
+                            )
                         } else {
                             filteredAddons.forEachIndexed { index, addon ->
                                 val isInstalled = installedExtensions.any {
@@ -509,12 +512,16 @@ private fun StoreAddonRow(
             }
         },
         content = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
                     text = addon.name,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
                 Surface(
                     shape = RoundedCornerShape(50),
@@ -544,18 +551,20 @@ private fun StoreAddonRow(
                     onClick = {},
                     enabled = false,
                     shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                    modifier = Modifier.height(36.dp)
                 ) {
                     Icon(Icons.Rounded.Check, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.ui_store_installed))
+                    Text(stringResource(R.string.ui_store_installed), fontWeight = FontWeight.SemiBold)
                 }
             } else {
                 Button(
                     onClick = { onInstall(addon) },
                     enabled = !isBusy,
                     shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.height(36.dp)
                 ) {
                     Text(stringResource(R.string.ui_store_install), fontWeight = FontWeight.Bold)
                 }
@@ -583,7 +592,12 @@ private fun StoreScriptsPage(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 8.dp,
+            bottom = 32.dp
+        ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -628,24 +642,10 @@ private fun StoreScriptsPage(
                 icon = Icons.Rounded.Code
             ) {
                 if (filteredScripts.isEmpty()) {
-                    Card(
-                        shape = petalGroupShape(PetalGroupPosition.SINGLE),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No matching scripts found",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    StoreEmptyStateCard(
+                        message = "No matching scripts found",
+                        icon = Icons.Rounded.CodeOff
+                    )
                 } else {
                     filteredScripts.forEachIndexed { index, script ->
                         val isInstalled = installedScriptIds.contains(script.id)
@@ -672,19 +672,44 @@ private fun StoreScriptsPage(
                                 }
                             },
                             content = {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(script.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = script.name,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    )
                                     if (isVerified) {
-                                        Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primaryContainer) {
-                                            Text("SHA-256", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(50),
+                                            color = MaterialTheme.colorScheme.primaryContainer
+                                        ) {
+                                            Text(
+                                                text = "SHA-256",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
                                         }
                                     }
                                 }
-                                Text(script.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    text = script.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             },
                             trailing = {
-                                Switch(
+                                IconSwitch(
                                     checked = isInstalled,
+                                    icon = Icons.Rounded.Code,
                                     onCheckedChange = { onToggleScript(script, it) }
                                 )
                             }
@@ -715,7 +740,12 @@ private fun StoreSearchEnginesPage(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 8.dp,
+            bottom = 32.dp
+        ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -760,24 +790,10 @@ private fun StoreSearchEnginesPage(
                 icon = Icons.Rounded.TravelExplore
             ) {
                 if (filteredEngines.isEmpty()) {
-                    Card(
-                        shape = petalGroupShape(PetalGroupPosition.SINGLE),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No matching search engines found",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    StoreEmptyStateCard(
+                        message = "No matching search engines found",
+                        icon = Icons.Rounded.SearchOff
+                    )
                 } else {
                     filteredEngines.forEachIndexed { index, engine ->
                         val isDefault = defaultEngineIndex == engine.id
@@ -804,13 +820,37 @@ private fun StoreSearchEnginesPage(
                                 }
                             },
                             content = {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(engine.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.secondaryContainer) {
-                                        Text("Privacy: ${engine.privacyScore}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = engine.name,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(50),
+                                        color = MaterialTheme.colorScheme.secondaryContainer
+                                    ) {
+                                        Text(
+                                            text = "Privacy: ${engine.privacyScore}",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
                                     }
                                 }
-                                Text(engine.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    text = engine.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             },
                             trailing = {
                                 RadioButton(
@@ -845,7 +885,12 @@ private fun StoreFilterListsPage(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 8.dp,
+            bottom = 32.dp
+        ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -890,24 +935,10 @@ private fun StoreFilterListsPage(
                 icon = Icons.Rounded.FilterList
             ) {
                 if (filteredLists.isEmpty()) {
-                    Card(
-                        shape = petalGroupShape(PetalGroupPosition.SINGLE),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No matching filter lists found",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    StoreEmptyStateCard(
+                        message = "No matching filter lists found",
+                        icon = Icons.Rounded.FilterListOff
+                    )
                 } else {
                     filteredLists.forEachIndexed { index, filter ->
                         val isSubscribed = subscribedFilterIds.contains(filter.id)
@@ -933,17 +964,42 @@ private fun StoreFilterListsPage(
                                 }
                             },
                             content = {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(filter.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceContainerLowest) {
-                                        Text(filter.ruleCount, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = filter.name,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(50),
+                                        color = MaterialTheme.colorScheme.surfaceContainerLowest
+                                    ) {
+                                        Text(
+                                            text = filter.ruleCount,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
                                     }
                                 }
-                                Text(filter.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    text = filter.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             },
                             trailing = {
-                                Switch(
+                                IconSwitch(
                                     checked = isSubscribed,
+                                    icon = Icons.Rounded.Shield,
                                     onCheckedChange = { onToggleFilterList(filter, it) }
                                 )
                             }
@@ -951,6 +1007,52 @@ private fun StoreFilterListsPage(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Clean Material 3 Expressive empty state card for store pages
+ */
+@Composable
+private fun StoreEmptyStateCard(
+    message: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = petalGroupShape(PetalGroupPosition.SINGLE),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 32.dp, horizontal = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
