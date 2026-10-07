@@ -49,6 +49,18 @@ class PetalTabViewController private constructor(
     private var previewRetryCount = 0
     private var pageTitle = ""
     private var pageUrl = "about:blank"
+    // URL of a real (non-home) page we just asked the engine to load. A brand-new engine session
+    // first reports its own initial "about:blank" document; without this guard that report
+    // overwrites pageUrl, the activity thinks the tab is Home, shows the Home screen and calls
+    // stopLoading() - which kills the link that was opened from another app.
+    private var pendingNavUrl: String? = null
+    private var pendingNavSince = 0L
+
+    private fun isStaleInitialBlank(newUrl: String): Boolean {
+        if (!newUrl.equals("about:blank", ignoreCase = true)) return false
+        if (pendingNavUrl == null) return false
+        return android.os.SystemClock.uptimeMillis() - pendingNavSince < 8000L
+    }
     private var backAvailable = false
     private var forwardAvailable = false
     private var loading = false
@@ -90,6 +102,11 @@ class PetalTabViewController private constructor(
     private val observer = object : EngineSession.Observer {
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
             android.util.Log.d("PetalTabNav", "observer.onLocationChange: url=$url gesture=$hasUserGesture oldPageUrl=$pageUrl")
+            if (isStaleInitialBlank(url)) {
+                android.util.Log.d("PetalTabNav", "ignoring initial about:blank while loading $pendingNavUrl")
+                return
+            }
+            if (!url.equals("about:blank", ignoreCase = true)) pendingNavUrl = null
             if (pageUrl != url) {
                 previewRevision++
                 previewRetryCount = 0
@@ -357,7 +374,9 @@ class PetalTabViewController private constructor(
                     isIncognitoSupplier = { isIncognito() },
                     onLocationChanged = { newUrl ->
                         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChanged -> $newUrl (current pageUrl=$pageUrl)")
-                        if (newUrl.isNotBlank() && !newUrl.equals(pageUrl, ignoreCase = true)) {
+                        val staleBlank = isStaleInitialBlank(newUrl)
+                        if (!staleBlank && !newUrl.equals("about:blank", ignoreCase = true)) pendingNavUrl = null
+                        if (!staleBlank && newUrl.isNotBlank() && !newUrl.equals(pageUrl, ignoreCase = true)) {
                             previewRevision++
                             previewRetryCount = 0
                             pageUrl = newUrl
@@ -503,11 +522,14 @@ class PetalTabViewController private constructor(
             com.petal.browser.unit.BrowserUnit.isHomePage(rawUrl) ||
             targetUrl.equals("about:blank", ignoreCase = true)
         ) {
+            pendingNavUrl = null
             pageUrl = "about:blank"
             pageTitle = "Petal Home"
             observedSession?.loadUrl("about:blank")
         } else {
             applyPageSettings(targetUrl)
+            pendingNavUrl = targetUrl
+            pendingNavSince = android.os.SystemClock.uptimeMillis()
             pageUrl = targetUrl
             tab?.let {
                 browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, targetUrl))
