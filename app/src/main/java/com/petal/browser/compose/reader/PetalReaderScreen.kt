@@ -11,6 +11,11 @@
 
 package com.petal.browser.compose.reader
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -98,6 +103,17 @@ fun PetalReaderScreen(
     }
 
     var showAppearanceSheet by remember { mutableStateOf(false) }
+    var isTtsActive by remember { mutableStateOf(false) }
+
+    val ttsEngine = remember {
+        PetalTtsReaderEngine(context)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            ttsEngine.shutdown()
+        }
+    }
 
     val containerBg = when (selectedTheme) {
         ReaderTheme.SYSTEM -> MaterialTheme.colorScheme.background
@@ -138,6 +154,19 @@ fun PetalReaderScreen(
                             subtitle = "${(article.wordCount / 200).coerceAtLeast(1)} min read • ${article.domain}",
                             onBack = onBack,
                             actions = {
+                                HeaderActionIcon(
+                                    icon = if (isTtsActive && ttsEngine.isSpeaking) Icons.Rounded.VolumeUp else Icons.Rounded.Headphones,
+                                    contentDescription = "Listen Aloud",
+                                    onClick = {
+                                        if (!isTtsActive) {
+                                            ttsEngine.loadText("${article.title}. ${article.contentText}")
+                                            isTtsActive = true
+                                            ttsEngine.play()
+                                        } else {
+                                            if (ttsEngine.isSpeaking) ttsEngine.pause() else ttsEngine.play()
+                                        }
+                                    }
+                                )
                                 HeaderActionIcon(
                                     icon = Icons.Rounded.FormatSize,
                                     contentDescription = "Format Appearance",
@@ -344,6 +373,19 @@ fun PetalReaderScreen(
                                 }
                             }
                         }
+                    }
+
+                    // Floating Listen / Read Aloud Player Bar
+                    AnimatedVisibility(
+                        visible = isTtsActive,
+                        enter = fadeIn() + slideInVertically { it },
+                        exit = fadeOut() + slideOutVertically { it },
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    ) {
+                        PetalFloatingTtsPlayerBar(
+                            engine = ttsEngine,
+                            onClose = { isTtsActive = false }
+                        )
                     }
                 }
             }
