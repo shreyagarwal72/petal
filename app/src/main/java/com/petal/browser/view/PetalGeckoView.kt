@@ -527,6 +527,7 @@ class PetalGeckoView @JvmOverloads constructor(
     private val album: AdapterTabs = AdapterTabs(context, this, globalBrowserController)
 
     private var currentUrl: String = "about:blank"
+    var isAdoptedPopup: Boolean = false
     /**
      * The last real (non-blank, non-home) URL that was explicitly requested via [loadUrl].
      * Unlike [currentUrl], this is never reset to "about:blank" — it preserves the original
@@ -1933,6 +1934,7 @@ class PetalGeckoView @JvmOverloads constructor(
      * makes showAlbum() treat it as a website and leaves Gecko's load untouched.
      */
     fun markAdoptedNavigation(url: String?) {
+        isAdoptedPopup = true
         val target = url?.trim().orEmpty()
         if (target.isEmpty() || BrowserUnit.isHomePage(target)) return
         currentUrl = target

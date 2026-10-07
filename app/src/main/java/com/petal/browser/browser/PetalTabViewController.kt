@@ -57,6 +57,7 @@ class PetalTabViewController private constructor(
     private var tabGroupId: String? = null
     private var tabGroupTitle: String? = null
     private var predecessor: AlbumController? = null
+    var isAdoptedPopup: Boolean = false
     private var mediaTitle = ""
     private var mediaPosition: mozilla.components.concept.engine.mediasession.MediaSession.PositionState? = null
     private var mediaBridge: com.petal.browser.media.PetalMediaBridge? = null
@@ -644,6 +645,15 @@ class PetalTabViewController private constructor(
     fun canGoForward(): Boolean = forwardAvailable
 
     fun getTabId(): String? = boundTabId
+
+    fun markAdoptedNavigation(url: String?) {
+        isAdoptedPopup = true
+        val target = url?.trim().orEmpty()
+        if (target.isNotEmpty() && !com.petal.browser.unit.BrowserUnit.isHomePage(target)) {
+            pageUrl = target
+            tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, target)) }
+        }
+    }
 
     fun getCachedPreviewBitmap(): Bitmap? = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
 

@@ -1131,6 +1131,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        suppressResumeDispatch = true;
         dispatchIntent(intent);
     }
 
@@ -2187,9 +2188,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (bottomNavCompose != null) bottomNavCompose.setTranslationY(0f);
 
         String url = overrideUrl != null ? overrideUrl : (currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : ""));
+        boolean isAdoptedPopupTab = false;
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            isAdoptedPopupTab = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).isAdoptedPopup();
+        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            isAdoptedPopupTab = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isAdoptedPopup();
+        }
         // Home is a native Compose surface backed by an about:blank Gecko/WebView
         // document, so the controller URL alone cannot reliably describe what is visible.
-        isPetalHomeSurfaceShowing = isHomePage(url);
+        // If this tab was adopted as a popup window/session, never treat it as the home page.
+        isPetalHomeSurfaceShowing = !isAdoptedPopupTab && isHomePage(url);
         // Now that we know whether this is home or a website, set the bar accordingly.
         applyBottomBarVisibilityForSurface();
         boolean isIncognitoTab = currentAlbumController != null
@@ -2202,7 +2210,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(this);
 
-        if (isIncognitoTab && (isHomePage(url) || "petal://incognito".equalsIgnoreCase(url))) {
+        if (isIncognitoTab && !isAdoptedPopupTab && (isHomePage(url) || "petal://incognito".equalsIgnoreCase(url))) {
             View incognitoHome = com.petal.browser.compose.incognito.PetalIncognitoBridge.createIncognitoHomeView(
                 this,
                 () -> {
@@ -2222,7 +2230,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
             updatePersistentBottomNav();
-        } else if (isHomePage(url)) {
+        } else if (!isAdoptedPopupTab && isHomePage(url)) {
             if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).stopLoading();
             } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
@@ -6120,6 +6128,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         String url = intent.getStringExtra(Intent.EXTRA_TEXT);
         Uri dataUri = intent.getData();
+        if (dataUri == null && url != null && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("petal://"))) {
+            try {
+                dataUri = Uri.parse(url);
+            } catch (Exception ignored) {}
+        }
         String mimeType = intent.getType();
         if ("".equals(action)) {
             Log.i(TAG, "resumed Petal Browser");
@@ -6128,7 +6141,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getIntent().setAction("");
         } else if (Intent.ACTION_VIEW.equals(action) && dataUri != null) {
             String scheme = dataUri.getScheme();
-            if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme) || "about".equalsIgnoreCase(scheme)) {
+            if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme) || "about".equalsIgnoreCase(scheme) || "petal".equalsIgnoreCase(scheme)) {
                 // If Custom Tabs is enabled and this intent was dispatched as a CustomTabsIntent
                 // from an external caller, route directly to PetalCustomTabActivity (Firefox Fenix contract).
                 boolean customTabsPref = sp.getBoolean("sp_custom_tabs_enabled", true);
@@ -6163,8 +6176,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     View bottomNav = findViewById(R.id.bottom_nav_compose);
                     if (composeAddr != null) composeAddr.setVisibility(GONE);
                     if (bottomNav != null) bottomNav.setVisibility(GONE);
-                } else if (currentAlbumController != null) {
-                    showAlbum(currentAlbumController, targetLoadUrl);
                 }
                 return;
             }
@@ -6685,13 +6696,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             tabSurface.attachLifecycle(this);
             observePetalTabSurface(tabSurface);
             tabSurface.setPredecessor(source);
+            tabSurface.markAdoptedNavigation(url);
             int sourceIndex = BrowserContainer.indexOf(source);
             BrowserContainer.add(tabSurface, sourceIndex >= 0 ? sourceIndex + 1 : BrowserContainer.size());
             hideOverview();
             tabSurface.activate();
             if (dialogOverview != null) dialogOverview.cancel();
-            showAlbum(tabSurface);
             request.start();
+            showAlbum(tabSurface);
             updateOmniBox();
             updatePersistentBottomNav();
             updateBackCallbackState();

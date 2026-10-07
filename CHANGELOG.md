@@ -1,3 +1,13 @@
+### v4.0.1 — 🚀 Hotfix: Link Navigation & External App Intent Handling
+
+> *"Hotfix release restoring seamless link opening from external apps and fixing blank page issues on website link taps."*
+
+#### 🐛 Bug Fixes & Improvements
+- **External App Link Opening**: Fixed links opened from other apps and browsers (via `ACTION_VIEW`) failing to load in Petal. Added robust fallback URL extraction from `EXTRA_TEXT`, added `petal://` scheme intent support, and prevented duplicate lifecycle dispatch collisions in `onNewIntent`.
+- **Website Link Navigation & Blank Pages**: Fixed tapping on links in websites (e.g. `target="_blank"`, popups, and JavaScript windows) opening blank pages instead of the target website. Correctly preserved adopted popup window requests and prevented the browser from misclassifying new window sessions as the home page and calling `stopLoading()`.
+
+---
+
 ### v3.9 — 🌸 Material 3 Expressive Extensions & Find in Page Milestone
 
 > *"Material 3 Expressive Extensions Manager with dedicated Built-in & Firefox Add-on tabs, real AMO icons, Petal Dark Webpages with whitelist, and website-exclusive floating Find in Page."*
