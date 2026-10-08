@@ -69,15 +69,18 @@ fun PetalSeekbarWithTimers(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(positionSeconds, isUserInteracting) {
-        if (!isUserInteracting && positionSeconds != animatedPosition.value) {
-            scope.launch {
-                animatedPosition.animateTo(
-                    targetValue = positionSeconds,
-                    animationSpec = tween(
-                        durationMillis = 200,
-                        easing = LinearEasing,
-                    ),
-                )
+        if (!isUserInteracting) {
+            userPositionSeconds = positionSeconds
+            if (kotlin.math.abs(positionSeconds - animatedPosition.value) > 0.05f) {
+                scope.launch {
+                    animatedPosition.animateTo(
+                        targetValue = positionSeconds,
+                        animationSpec = tween(
+                            durationMillis = 200,
+                            easing = LinearEasing,
+                        ),
+                    )
+                }
             }
         }
     }
@@ -110,12 +113,13 @@ fun PetalSeekbarWithTimers(
                             onTap = { offset ->
                                 if (durationSeconds > 0f) {
                                     val newPos = (offset.x / size.width) * durationSeconds
-                                    userPositionSeconds = newPos.coerceIn(0f, durationSeconds)
-                                    onSeek((userPositionSeconds * 1000f).toLong())
+                                    val clamped = newPos.coerceIn(0f, durationSeconds)
+                                    userPositionSeconds = clamped
+                                    isUserInteracting = false
                                     scope.launch {
-                                        animatedPosition.snapTo(userPositionSeconds)
-                                        isUserInteracting = false
+                                        animatedPosition.snapTo(clamped)
                                     }
+                                    onSeek((clamped * 1000f).toLong())
                                 }
                             },
                         )

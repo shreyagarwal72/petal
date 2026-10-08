@@ -5,6 +5,7 @@ import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -20,6 +21,8 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.view.PetalGeckoView
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 /**
  * PetalVideoPlayerOverlayBridge
@@ -112,6 +115,22 @@ class PetalVideoPlayerOverlayBridge(
                     colorStyle = colorStyle,
                     paletteId = paletteId,
                 ) {
+                    // Continuous position ticker loop while playing so timeline & timers never freeze
+                    LaunchedEffect(isPlaying, playbackSpeed) {
+                        var lastTick = android.os.SystemClock.elapsedRealtime()
+                        while (isActive && isPlaying) {
+                            delay(200)
+                            val now = android.os.SystemClock.elapsedRealtime()
+                            val deltaMs = ((now - lastTick) * playbackSpeed).toLong()
+                            lastTick = now
+                            if (durationMs > 0L) {
+                                positionMs = (positionMs + deltaMs).coerceIn(0L, durationMs)
+                            } else {
+                                positionMs += deltaMs
+                            }
+                        }
+                    }
+
                     PetalVideoPlayerOverlay(
                         title = title,
                         isPlaying = isPlaying,
