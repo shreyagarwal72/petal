@@ -79,7 +79,7 @@ fun PetalMediaGrabberPopupDialog(
     var lastUpdateTime by remember { mutableStateOf(PetalYtDlpEngine.getLastUpdateTime(context)) }
     var isUpdatingExtractor by remember { mutableStateOf(false) }
 
-    var socialState by remember { mutableStateOf<SocialState>(SocialState.Idle) }
+    var socialState by remember { mutableStateOf<GrabberSocialState>(GrabberSocialState.Idle) }
     var formatMenuOpen by remember { mutableStateOf(false) }
 
     Dialog(
@@ -383,10 +383,10 @@ fun PetalMediaGrabberPopupDialog(
                                 }
 
                                 when (val state = socialState) {
-                                    SocialState.Idle -> {
+                                    GrabberSocialState.Idle -> {
                                         Button(
                                             onClick = {
-                                                socialState = SocialState.Loading
+                                                socialState = GrabberSocialState.Loading
                                                 scope.launch {
                                                     val cookies = PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
                                                         ?: try {
@@ -402,9 +402,9 @@ fun PetalMediaGrabberPopupDialog(
                                                     )
 
                                                     socialState = if (info != null && info.formats.isNotEmpty()) {
-                                                        SocialState.Ready(info, info.formats.first())
+                                                        GrabberSocialState.Ready(info, info.formats.first())
                                                     } else {
-                                                        SocialState.Failed(
+                                                        GrabberSocialState.Failed(
                                                             "Couldn't fetch media information. Check URL or try updating the extractor below."
                                                         )
                                                     }
@@ -419,7 +419,7 @@ fun PetalMediaGrabberPopupDialog(
                                         }
                                     }
 
-                                    SocialState.Loading -> {
+                                    GrabberSocialState.Loading -> {
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -437,7 +437,7 @@ fun PetalMediaGrabberPopupDialog(
                                         }
                                     }
 
-                                    is SocialState.Ready -> {
+                                    is GrabberSocialState.Ready -> {
                                         val info = state.info
                                         val selFmt = state.selected
 
@@ -514,7 +514,7 @@ fun PetalMediaGrabberPopupDialog(
                                                             userAgent = android.webkit.WebSettings.getDefaultUserAgent(context),
                                                             cookie = cookies,
                                                             headers = mapOf("Referer" to currentPageUrl),
-                                                            onFailed = { socialState = SocialState.Failed("Download failed to queue.") }
+                                                            onFailed = { socialState = GrabberSocialState.Failed("Download failed to queue.") }
                                                         )
                                                     } else {
                                                         PetalSocialDownloadService.enqueue(
@@ -525,7 +525,7 @@ fun PetalMediaGrabberPopupDialog(
                                                             title = info.title
                                                         )
                                                     }
-                                                    socialState = SocialState.Done
+                                                    socialState = GrabberSocialState.Done
                                                     onDismiss()
                                                 },
                                                 shape = RoundedCornerShape(12.dp)
@@ -544,7 +544,7 @@ fun PetalMediaGrabberPopupDialog(
                                                 PetalPopupMenuItem(
                                                     text = { Text(fmt.label) },
                                                     onClick = {
-                                                        socialState = SocialState.Ready(info, fmt)
+                                                        socialState = GrabberSocialState.Ready(info, fmt)
                                                         formatMenuOpen = false
                                                     },
                                                     leadingIcon = {
@@ -559,14 +559,14 @@ fun PetalMediaGrabberPopupDialog(
                                         }
                                     }
 
-                                    is SocialState.Failed -> {
+                                    is GrabberSocialState.Failed -> {
                                         Text(
                                             text = state.message,
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.error
                                         )
                                         OutlinedButton(
-                                            onClick = { socialState = SocialState.Idle },
+                                            onClick = { socialState = GrabberSocialState.Idle },
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(12.dp)
                                         ) {
@@ -576,7 +576,7 @@ fun PetalMediaGrabberPopupDialog(
                                         }
                                     }
 
-                                    SocialState.Done -> {
+                                    GrabberSocialState.Done -> {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
@@ -720,12 +720,12 @@ fun PetalMediaGrabberPopupDialog(
     }
 }
 
-private sealed class SocialState {
-    object Idle : SocialState()
-    object Loading : SocialState()
-    data class Ready(val info: YtDlpMediaInfo, val selected: YtDlpFormat) : SocialState()
-    data class Failed(val message: String) : SocialState()
-    object Done : SocialState()
+private sealed class GrabberSocialState {
+    object Idle : GrabberSocialState()
+    object Loading : GrabberSocialState()
+    data class Ready(val info: YtDlpMediaInfo, val selected: YtDlpFormat) : GrabberSocialState()
+    data class Failed(val message: String) : GrabberSocialState()
+    object Done : GrabberSocialState()
 }
 
 private fun formatMediaSize(bytes: Long?): String? {
