@@ -356,8 +356,16 @@ class PetalGeckoView @JvmOverloads constructor(
                             rows,
                             multiple,
                             { ids ->
-                                if (multiple) result.complete(prompt.confirm(ids.toTypedArray()))
-                                else result.complete(prompt.confirm(ids.first()))
+                                if (multiple) {
+                                    result.complete(prompt.confirm(ids.toTypedArray()))
+                                } else {
+                                    val firstId = ids.firstOrNull()
+                                    if (firstId != null) {
+                                        result.complete(prompt.confirm(firstId))
+                                    } else {
+                                        result.complete(prompt.dismiss())
+                                    }
+                                }
                             },
                             { result.complete(prompt.dismiss()) }
                         )

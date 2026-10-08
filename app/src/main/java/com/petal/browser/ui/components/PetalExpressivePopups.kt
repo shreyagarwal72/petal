@@ -245,8 +245,8 @@ data class PetalChoiceOption(
 
 /**
  * Material 3 Expressive choice popup for web <select> dropdowns (single / multiple).
- * Uses the same containment look as the context menu: tonal surface, 28dp shape,
- * 56dp rows, rounded selected row, outline border.
+ * Redesigned with Material 3 Expressive containment matching the context menu and settings:
+ * tonal surfaceContainerHigh, rounded containment corners, connected rows, and responsive selection.
  */
 @Composable
 fun PetalExpressiveChoiceDialog(
@@ -264,99 +264,196 @@ fun PetalExpressiveChoiceDialog(
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     androidx.compose.runtime.LaunchedEffect(Unit) {
         val first = options.indexOfFirst { it.selected }
-        if (first > 2) listState.scrollToItem(first - 1)
+        if (first > 1) listState.scrollToItem(first - 1)
     }
 
-    com.petal.browser.ui.containment.PetalDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
+    com.petal.browser.ui.containment.PetalHeroCard(
+        shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.widthIn(max = 420.dp)
+        modifier = Modifier
+            .fillMaxWidth(0.92f)
+            .widthIn(max = 380.dp)
+            .padding(16.dp)
     ) {
-        if (!title.isNullOrBlank()) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        androidx.compose.foundation.lazy.LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(options.size) { index ->
-                val opt = options[index]
-                when {
-                    opt.isSeparator -> HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 6.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+            // Header Section
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(22.dp)
                     )
-                    opt.isHeader -> Text(
-                        text = opt.label,
-                        style = MaterialTheme.typography.labelLarge,
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (!title.isNullOrBlank()) title else if (multiple) "Select Options" else "Choose Option",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
-                    else -> {
-                        val isSel = opt.id in selected
-                        val bg = if (isSel) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
-                        val fg = if (isSel) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 56.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(bg)
-                                .clickable(enabled = !opt.disabled) {
+                    Text(
+                        text = if (multiple) "Select one or more items" else "Tap an option to select",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            )
+
+            // Selectable Rows List
+            androidx.compose.foundation.lazy.LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 340.dp)
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(options.size) { index ->
+                    val opt = options[index]
+                    when {
+                        opt.isSeparator -> HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
+                        opt.isHeader -> Text(
+                            text = opt.label,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                        else -> {
+                            val isSel = opt.id in selected
+                            val bg = if (isSel) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f)
+                                     else MaterialTheme.colorScheme.surfaceContainerLow
+                            val fg = if (isSel) MaterialTheme.colorScheme.onSecondaryContainer
+                                     else MaterialTheme.colorScheme.onSurface
+                            val context = androidx.compose.ui.platform.LocalContext.current
+
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = bg,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable(enabled = !opt.disabled) {
+                                        try {
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                        } catch (_: Exception) {}
+                                        if (multiple) {
+                                            if (isSel) selected.remove(opt.id) else selected.add(opt.id)
+                                        } else {
+                                            onConfirm(listOf(opt.id))
+                                        }
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 52.dp)
+                                        .padding(
+                                            start = if (opt.indented) 28.dp else 16.dp,
+                                            end = 16.dp,
+                                            top = 8.dp,
+                                            bottom = 8.dp
+                                        ),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        text = opt.label,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (opt.disabled) fg.copy(alpha = 0.38f) else fg,
+                                        modifier = Modifier.weight(1f)
+                                    )
                                     if (multiple) {
-                                        if (isSel) selected.remove(opt.id) else selected.add(opt.id)
-                                    } else {
-                                        onConfirm(listOf(opt.id))
+                                        Checkbox(
+                                            checked = isSel,
+                                            onCheckedChange = null,
+                                            enabled = !opt.disabled
+                                        )
+                                    } else if (isSel) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(MaterialTheme.colorScheme.primary),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = androidx.compose.material.icons.Icons.Rounded.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onPrimary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
                                 }
-                                .padding(start = if (opt.indented) 28.dp else 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = opt.label,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
-                                color = if (opt.disabled) fg.copy(alpha = 0.38f) else fg,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (multiple) {
-                                Checkbox(checked = isSel, onCheckedChange = null, enabled = !opt.disabled)
-                            } else if (isSel) {
-                                Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
                             }
                         }
                     }
                 }
             }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text(stringResource(R.string.ui_cancel))
-            }
-            if (multiple) {
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = { onConfirm(selected.toList()) },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    shape = RoundedCornerShape(16.dp)
+
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            )
+
+            // Bottom action buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.heightIn(min = 44.dp)
                 ) {
-                    Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                }
+                if (multiple) {
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = { onConfirm(selected.toList()) },
+                        modifier = Modifier.heightIn(min = 44.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
