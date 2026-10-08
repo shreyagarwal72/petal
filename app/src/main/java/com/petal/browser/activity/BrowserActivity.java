@@ -2631,7 +2631,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             String effectiveHome = BrowserUnit.getEffectiveHomepageUrl(BrowserActivity.this);
                             if (effectiveHome != null && !effectiveHome.equalsIgnoreCase("about:blank") && !BrowserUnit.isHomePage(effectiveHome)) {
                                 if (currentAlbumController != null) {
-                                    currentAlbumController.loadUrl(effectiveHome);
+                                    if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                                        ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadUrl(effectiveHome);
+                                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(effectiveHome);
+                                    } else if (ninjaWebView != null) {
+                                        ninjaWebView.loadUrl(effectiveHome);
+                                    }
                                     showAlbum(currentAlbumController, effectiveHome);
                                 } else {
                                     addAlbum(getString(R.string.app_name), effectiveHome, true, isIncognito);
