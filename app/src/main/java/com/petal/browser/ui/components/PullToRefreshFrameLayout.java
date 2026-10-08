@@ -236,10 +236,6 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             hasTriggeredHaptic = false;
         }
 
-        if (disallowIntercept) {
-            return false;
-        }
-
         // Multi-touch / pinch-to-zoom protection: Firefox rejects pull if multiple fingers land
         if (ev.getPointerCount() > 1 || hasMultiTouch) {
             hasMultiTouch = true;
@@ -247,6 +243,32 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 cancelDrag();
             }
             return false;
+        }
+
+        if (disallowIntercept) {
+            // If child requested disallowIntercept, check if this is an explicit downward drag
+            // at the top of the page. If so, pull-to-refresh takes precedence over child disallow.
+            if (action == MotionEvent.ACTION_MOVE && activePointerId != INVALID_POINTER_ID) {
+                int pIdx = ev.findPointerIndex(activePointerId);
+                if (pIdx >= 0) {
+                    float dy = ev.getY(pIdx) - initialDownY;
+                    float dx = ev.getX(pIdx) - initialDownX;
+                    if (dy > touchSlop && dy > Math.abs(dx) * VERTICAL_DOMINANCE) {
+                        boolean atTop = startedAtTop || (!canChildScrollUp() && (canPull == null || canPull.canPull()));
+                        if (atTop) {
+                            disallowIntercept = false;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
         }
 
         if (action == MotionEvent.ACTION_CANCEL || (action == MotionEvent.ACTION_UP && isQuickScaleInProgress)) {

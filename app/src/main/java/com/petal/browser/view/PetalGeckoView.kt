@@ -66,7 +66,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     companion object {
         /** Max device-pixel scroll offset still considered "at top". */
-        const val PAGE_TOP_TOLERANCE_PX = 3
+        const val PAGE_TOP_TOLERANCE_PX = 36
 
         private const val TAG = "PetalGeckoView"
 
@@ -1952,10 +1952,6 @@ class PetalGeckoView @JvmOverloads constructor(
         if (currentUrl.isBlank() || currentUrl.equals("about:blank", ignoreCase = true) || com.petal.browser.unit.BrowserUnit.isHomePage(currentUrl)) {
             return true
         }
-        val safeGv = geckoView as? SafeGeckoView
-        if (safeGv != null && safeGv.isTouchHandledByWebsite()) {
-            return false
-        }
         return currentScrollY <= PAGE_TOP_TOLERANCE_PX
     }
 
@@ -2816,13 +2812,10 @@ class SafeGeckoView : GeckoView {
 
                     MotionEvent.ACTION_MOVE -> {
                         if (initialDownY < eventY) {
-                            // Downward pull: permit pull-to-refresh only if webpage touch listeners
-                            // haven't consumed the gesture (e.g. not canvas / inner slider / e.preventDefault).
-                            if (!isTouchHandledByWebsite()) {
-                                parent?.requestDisallowInterceptTouchEvent(false)
-                            }
+                            // Downward pull: permit pull-to-refresh when at top
+                            parent?.requestDisallowInterceptTouchEvent(false)
                         } else if (initialDownY > eventY) {
-                            // Upward scroll into webpage content: permanently lock parent for this gesture
+                            // Upward scroll into webpage content: lock parent for this gesture
                             // so pull-to-refresh can never intersect or hijack mid-scroll / fling.
                             parent?.requestDisallowInterceptTouchEvent(true)
                             gestureCanReachParent = false
