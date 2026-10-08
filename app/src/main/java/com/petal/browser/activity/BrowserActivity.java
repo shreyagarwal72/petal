@@ -3030,33 +3030,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     boolean isIncog = false;
                     String tabGrpId = null;
                     String tabGrpTitle = null;
-                    String tabGrpColor = null;
                     if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
                         com.petal.browser.browser.PetalTabViewController surface = (com.petal.browser.browser.PetalTabViewController) controller;
                         isIncog = surface.isIncognito();
                         tabGrpId = surface.getTabGroupId();
                         tabGrpTitle = surface.getTabGroupTitle();
-                        tabGrpColor = surface.getTabGroupColorHex();
-                        if (tabUrl == null || tabUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(tabUrl.trim())) {
-                            String albumUrl = surface.getAlbumUrl();
-                            if (albumUrl != null && !albumUrl.trim().isEmpty()) tabUrl = albumUrl;
-                        }
                     } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                        com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) controller;
-                        isIncog = gv.isIncognito();
-                        tabGrpId = gv.getTabGroupId();
-                        tabGrpTitle = gv.getTabGroupTitle();
-                        tabGrpColor = gv.getTabGroupColorHex();
-                        if (tabUrl == null || tabUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(tabUrl.trim())) {
-                            String albumUrl = gv.getAlbumUrl();
-                            if (albumUrl != null && !albumUrl.trim().isEmpty()) tabUrl = albumUrl;
-                        }
+                        isIncog = ((com.petal.browser.view.PetalGeckoView) controller).isIncognito();
+                        tabGrpId = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupId();
+                        tabGrpTitle = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupTitle();
                     } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
-                        com.petal.browser.browser.PlaceholderAlbumController ph = (com.petal.browser.browser.PlaceholderAlbumController) controller;
-                        isIncog = ph.isIncognito();
-                        tabGrpId = ph.getTabGroupId();
-                        tabGrpTitle = ph.getTabGroupTitle();
-                        tabGrpColor = ph.getTabGroupColorHex();
+                        isIncog = ((com.petal.browser.browser.PlaceholderAlbumController) controller).isIncognito();
+                        tabGrpId = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupId();
+                        tabGrpTitle = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupTitle();
                     }
                     com.petal.browser.unit.PetalRecentlyClosedManager.pushClosedTab(
                         String.valueOf(controller.hashCode()),
@@ -3066,7 +3052,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         isIncog,
                         tabGrpId,
                         tabGrpTitle,
-                        tabGrpColor
+                        null
                     );
                 } catch (Exception ignored) {}
 
@@ -3114,34 +3100,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 boolean isIncog = false;
                 String tabGrpId = null;
                 String tabGrpTitle = null;
-                String tabGrpColor = null;
                 int closeIndex = BrowserContainer.indexOf(controller);
                 if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
                     com.petal.browser.browser.PetalTabViewController surface = (com.petal.browser.browser.PetalTabViewController) controller;
                     isIncog = surface.isIncognito();
                     tabGrpId = surface.getTabGroupId();
                     tabGrpTitle = surface.getTabGroupTitle();
-                    tabGrpColor = surface.getTabGroupColorHex();
-                    if (tabUrl == null || tabUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(tabUrl.trim())) {
-                        String albumUrl = surface.getAlbumUrl();
-                        if (albumUrl != null && !albumUrl.trim().isEmpty()) tabUrl = albumUrl;
-                    }
                 } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                    com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) controller;
-                    isIncog = gv.isIncognito();
-                    tabGrpId = gv.getTabGroupId();
-                    tabGrpTitle = gv.getTabGroupTitle();
-                    tabGrpColor = gv.getTabGroupColorHex();
-                    if (tabUrl == null || tabUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(tabUrl.trim())) {
-                        String albumUrl = gv.getAlbumUrl();
-                        if (albumUrl != null && !albumUrl.trim().isEmpty()) tabUrl = albumUrl;
-                    }
+                    isIncog = ((com.petal.browser.view.PetalGeckoView) controller).isIncognito();
+                    tabGrpId = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupId();
+                    tabGrpTitle = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupTitle();
                 } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
-                    com.petal.browser.browser.PlaceholderAlbumController ph = (com.petal.browser.browser.PlaceholderAlbumController) controller;
-                    isIncog = ph.isIncognito();
-                    tabGrpId = ph.getTabGroupId();
-                    tabGrpTitle = ph.getTabGroupTitle();
-                    tabGrpColor = ph.getTabGroupColorHex();
+                    isIncog = ((com.petal.browser.browser.PlaceholderAlbumController) controller).isIncognito();
+                    tabGrpId = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupId();
+                    tabGrpTitle = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupTitle();
                 }
                 com.petal.browser.unit.PetalRecentlyClosedManager.pushClosedTab(
                     String.valueOf(controller.hashCode()),
@@ -3151,7 +3123,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     isIncog,
                     tabGrpId,
                     tabGrpTitle,
-                    tabGrpColor
+                    null
                 );
             } catch (Exception ignored) {}
 
