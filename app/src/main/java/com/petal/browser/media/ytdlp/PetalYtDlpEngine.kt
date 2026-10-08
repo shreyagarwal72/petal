@@ -509,8 +509,33 @@ object PetalYtDlpEngine {
 
     fun version(context: Context): String = try {
         ensureInitialized(context)
-        YoutubeDL.getInstance().version(context.applicationContext) ?: "unknown"
+        val v = YoutubeDL.getInstance().version(context.applicationContext)
+        if (!v.isNullOrBlank()) {
+            val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            sp.edit().putString(KEY_VERSION, v).apply()
+            v
+        } else {
+            val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            sp.getString(KEY_VERSION, "2025.10.x") ?: "2025.10.x"
+        }
     } catch (_: Exception) {
-        "unknown"
+        val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        sp.getString(KEY_VERSION, "2025.10.x") ?: "2025.10.x"
+    }
+
+    fun getLastUpdateTime(context: Context): Long {
+        val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return sp.getLong(KEY_LAST_UPDATE, 0L)
+    }
+
+    fun getUpdateChannel(context: Context): YoutubeDL.UpdateChannel {
+        val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val ch = sp.getString("ytdlp_update_channel", "STABLE")
+        return if (ch == "NIGHTLY") YoutubeDL.UpdateChannel.NIGHTLY else YoutubeDL.UpdateChannel.STABLE
+    }
+
+    fun setUpdateChannel(context: Context, channel: YoutubeDL.UpdateChannel) {
+        val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        sp.edit().putString("ytdlp_update_channel", channel.name).apply()
     }
 }

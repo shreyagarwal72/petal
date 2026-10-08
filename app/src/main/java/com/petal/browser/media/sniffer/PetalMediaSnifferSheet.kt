@@ -175,12 +175,10 @@ fun PetalMediaSnifferOverlay(
     }
 
     if (sheetOpen) {
-        PetalMediaSheet(
-            media = media,
+        PetalMediaGrabberPopupDialog(
             currentPageUrl = currentPageUrl,
-            context = context,
-            onPlay = onPlay,
-            onDismiss = { sheetOpen = false }
+            onDismiss = { sheetOpen = false },
+            onPlayMedia = onPlay
         )
     }
 }

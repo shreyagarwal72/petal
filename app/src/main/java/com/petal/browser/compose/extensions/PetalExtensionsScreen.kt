@@ -864,6 +864,12 @@ private fun BuiltInExtensionSettingsDialog(
                 }
             )
         }
+        "petal_builtin_media_grabber" -> {
+            com.petal.browser.media.sniffer.PetalMediaGrabberPopupDialog(
+                currentPageUrl = com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.currentPageUrl.value,
+                onDismiss = onDismiss
+            )
+        }
         else -> {
             com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                 onDismissRequest = onDismiss,
