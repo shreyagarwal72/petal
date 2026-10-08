@@ -2,6 +2,11 @@ package com.petal.browser.ui.components
 
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -221,6 +226,389 @@ fun PetalExpressiveTextPromptDialog(
                 ) {
                     Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
                 }
+            }
+        }
+    }
+}
+
+
+/** One row of a web page <select> / menu list, flattened for the expressive picker. */
+data class PetalChoiceOption(
+    val id: String,
+    val label: String,
+    val selected: Boolean = false,
+    val disabled: Boolean = false,
+    val isHeader: Boolean = false,
+    val isSeparator: Boolean = false,
+    val indented: Boolean = false
+)
+
+/**
+ * Material 3 Expressive choice popup for web <select> dropdowns (single / multiple).
+ * Uses the same containment look as the context menu: tonal surface, 28dp shape,
+ * 56dp rows, rounded selected row, outline border.
+ */
+@Composable
+fun PetalExpressiveChoiceDialog(
+    title: String?,
+    options: List<PetalChoiceOption>,
+    multiple: Boolean,
+    onConfirm: (List<String>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val selected = remember {
+        androidx.compose.runtime.mutableStateListOf<String>().apply {
+            addAll(options.filter { it.selected && !it.isHeader && !it.isSeparator }.map { it.id })
+        }
+    }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val first = options.indexOfFirst { it.selected }
+        if (first > 2) listState.scrollToItem(first - 1)
+    }
+
+    com.petal.browser.ui.containment.PetalDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.widthIn(max = 420.dp)
+    ) {
+        if (!title.isNullOrBlank()) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        androidx.compose.foundation.lazy.LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            items(options.size) { index ->
+                val opt = options[index]
+                when {
+                    opt.isSeparator -> HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 6.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+                    )
+                    opt.isHeader -> Text(
+                        text = opt.label,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                    )
+                    else -> {
+                        val isSel = opt.id in selected
+                        val bg = if (isSel) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+                        val fg = if (isSel) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 56.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(bg)
+                                .clickable(enabled = !opt.disabled) {
+                                    if (multiple) {
+                                        if (isSel) selected.remove(opt.id) else selected.add(opt.id)
+                                    } else {
+                                        onConfirm(listOf(opt.id))
+                                    }
+                                }
+                                .padding(start = if (opt.indented) 28.dp else 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = opt.label,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                color = if (opt.disabled) fg.copy(alpha = 0.38f) else fg,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (multiple) {
+                                Checkbox(checked = isSel, onCheckedChange = null, enabled = !opt.disabled)
+                            } else if (isSel) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.ui_cancel))
+            }
+            if (multiple) {
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = { onConfirm(selected.toList()) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+
+private fun petalParseHex(hex: String?): Int {
+    return try {
+        val c = android.graphics.Color.parseColor(if (hex.isNullOrBlank()) "#000000" else hex)
+        android.graphics.Color.rgb(android.graphics.Color.red(c), android.graphics.Color.green(c), android.graphics.Color.blue(c))
+    } catch (_: Throwable) {
+        android.graphics.Color.BLACK
+    }
+}
+
+private fun petalToHex(argb: Int): String = String.format(
+    java.util.Locale.ROOT, "#%02x%02x%02x",
+    android.graphics.Color.red(argb), android.graphics.Color.green(argb), android.graphics.Color.blue(argb)
+)
+
+private val PetalColorPresets = listOf(
+    0xFFE53935.toInt(), 0xFFD81B60.toInt(), 0xFF8E24AA.toInt(), 0xFF5E35B1.toInt(),
+    0xFF3949AB.toInt(), 0xFF1E88E5.toInt(), 0xFF00ACC1.toInt(), 0xFF00897B.toInt(),
+    0xFF43A047.toInt(), 0xFFFDD835.toInt(), 0xFFFB8C00.toInt(), 0xFF6D4C41.toInt(),
+    0xFF757575.toInt(), 0xFF000000.toInt(), 0xFFFFFFFF.toInt()
+)
+
+/** Material 3 Expressive colour picker for <input type="color">. */
+@Composable
+fun PetalExpressiveColorDialog(
+    title: String?,
+    initialHex: String?,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val start = remember { petalParseHex(initialHex) }
+    var r by remember { mutableStateOf(android.graphics.Color.red(start).toFloat()) }
+    var g by remember { mutableStateOf(android.graphics.Color.green(start).toFloat()) }
+    var b by remember { mutableStateOf(android.graphics.Color.blue(start).toFloat()) }
+    var hexText by remember { mutableStateOf(petalToHex(start)) }
+    val current = android.graphics.Color.rgb(r.toInt(), g.toInt(), b.toInt())
+
+    fun apply(argb: Int) {
+        r = android.graphics.Color.red(argb).toFloat()
+        g = android.graphics.Color.green(argb).toFloat()
+        b = android.graphics.Color.blue(argb).toFloat()
+        hexText = petalToHex(argb)
+    }
+
+    PetalExpressiveDialog(onDismissRequest = onDismiss) {
+        Text(
+            text = if (title.isNullOrBlank()) "Pick a colour" else title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color(current))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), RoundedCornerShape(24.dp))
+        )
+        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(PetalColorPresets.size) { i ->
+                val c = PetalColorPresets[i]
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(Color(c))
+                        .border(
+                            if (c == current) 3.dp else 1.dp,
+                            if (c == current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            androidx.compose.foundation.shape.CircleShape
+                        )
+                        .clickable { apply(c) }
+                )
+            }
+        }
+        listOf(Triple("R", r, 0), Triple("G", g, 1), Triple("B", b, 2)).forEach { (label, value, idx) ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.width(24.dp))
+                Slider(
+                    value = value,
+                    onValueChange = {
+                        when (idx) { 0 -> r = it; 1 -> g = it; else -> b = it }
+                        hexText = petalToHex(android.graphics.Color.rgb(r.toInt(), g.toInt(), b.toInt()))
+                    },
+                    valueRange = 0f..255f,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(value.toInt().toString(), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(36.dp))
+            }
+        }
+        OutlinedTextField(
+            value = hexText,
+            onValueChange = { v ->
+                hexText = v
+                if (Regex("^#[0-9a-fA-F]{6}$").matches(v)) {
+                    val c = petalParseHex(v)
+                    r = android.graphics.Color.red(c).toFloat()
+                    g = android.graphics.Color.green(c).toFloat()
+                    b = android.graphics.Color.blue(c).toFloat()
+                }
+            },
+            label = { Text("Hex") },
+            singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ui_cancel)) }
+            Spacer(Modifier.width(8.dp))
+            Button(
+                onClick = { onConfirm(petalToHex(current)) },
+                modifier = Modifier.heightIn(min = 48.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) { Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold) }
+        }
+    }
+}
+
+private fun petalParseDate(mode: String, v: String?): java.time.LocalDate? {
+    if (v.isNullOrBlank() || mode == "time") return null
+    return try {
+        when (mode) {
+            "month" -> java.time.YearMonth.parse(v.take(7)).atDay(1)
+            "week" -> {
+                val m = Regex("(\\d{4})-W(\\d{2})").find(v)
+                if (m == null) null else java.time.LocalDate.of(m.groupValues[1].toInt(), 1, 4)
+                    .with(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR, m.groupValues[2].toLong())
+            }
+            else -> java.time.LocalDate.parse(v.take(10))
+        }
+    } catch (_: Throwable) { null }
+}
+
+private fun petalParseTime(mode: String, v: String?): java.time.LocalTime? {
+    if (v.isNullOrBlank()) return null
+    return try {
+        when (mode) {
+            "time" -> java.time.LocalTime.parse(v.take(5))
+            "datetime-local" -> java.time.LocalTime.parse(v.substringAfter('T', "").take(5))
+            else -> null
+        }
+    } catch (_: Throwable) { null }
+}
+
+/**
+ * Material 3 Expressive date / time / month / week / datetime-local picker.
+ * mode: "date", "month", "week", "time", "datetime-local".
+ */
+@Composable
+fun PetalExpressiveDateTimeDialog(
+    title: String?,
+    mode: String,
+    defaultValue: String?,
+    minValue: String?,
+    maxValue: String?,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val utc = java.time.ZoneOffset.UTC
+    val hasDate = mode != "time"
+    val hasTime = mode == "time" || mode == "datetime-local"
+    val initDate = remember { petalParseDate(mode, defaultValue) ?: java.time.LocalDate.now() }
+    val initTime = remember { petalParseTime(mode, defaultValue) ?: java.time.LocalTime.now().withSecond(0).withNano(0) }
+    val minDate = remember { petalParseDate(mode, minValue) }
+    val maxDate = remember { petalParseDate(mode, maxValue) }
+    val selectable = remember {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val d = java.time.Instant.ofEpochMilli(utcTimeMillis).atZone(utc).toLocalDate()
+                return (minDate == null || !d.isBefore(minDate)) && (maxDate == null || !d.isAfter(maxDate))
+            }
+            override fun isSelectableYear(year: Int): Boolean =
+                (minDate == null || year >= minDate.year) && (maxDate == null || year <= maxDate.year)
+        }
+    }
+    val dateState = rememberDatePickerState(
+        initialSelectedDateMillis = initDate.atStartOfDay(utc).toInstant().toEpochMilli(),
+        selectableDates = selectable
+    )
+    val timeState = rememberTimePickerState(
+        initialHour = initTime.hour,
+        initialMinute = initTime.minute,
+        is24Hour = android.text.format.DateFormat.is24HourFormat(ctx)
+    )
+    var step by remember { mutableStateOf(if (hasDate) 0 else 1) }
+
+    fun result(): String {
+        val date = java.time.Instant.ofEpochMilli(dateState.selectedDateMillis ?: initDate.atStartOfDay(utc).toInstant().toEpochMilli())
+            .atZone(utc).toLocalDate()
+        val t = String.format(java.util.Locale.ROOT, "%02d:%02d", timeState.hour, timeState.minute)
+        return when (mode) {
+            "month" -> String.format(java.util.Locale.ROOT, "%04d-%02d", date.year, date.monthValue)
+            "week" -> String.format(
+                java.util.Locale.ROOT, "%04d-W%02d",
+                date.get(java.time.temporal.IsoFields.WEEK_BASED_YEAR),
+                date.get(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR)
+            )
+            "time" -> t
+            "datetime-local" -> date.toString() + "T" + t
+            else -> date.toString()
+        }
+    }
+
+    if (step == 0) {
+        val goesToTime = hasTime
+        DatePickerDialog(
+            onDismissRequest = onDismiss,
+            shape = RoundedCornerShape(28.dp),
+            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            confirmButton = {
+                Button(
+                    onClick = { if (goesToTime) step = 1 else onConfirm(result()) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) { Text(if (goesToTime) "Next" else stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ui_cancel)) }
+            }
+        ) {
+            DatePicker(state = dateState, showModeToggle = false)
+        }
+    } else {
+        PetalExpressiveDialog(onDismissRequest = onDismiss) {
+            Text(
+                text = if (title.isNullOrBlank()) "Select time" else title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                TimePicker(state = timeState)
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                if (hasDate) {
+                    TextButton(onClick = { step = 0 }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Back") }
+                }
+                TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ui_cancel)) }
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = { onConfirm(result()) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) { Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold) }
             }
         }
     }
@@ -485,6 +873,126 @@ object PetalExpressivePromptBridge {
         dialog = builder.create().apply {
             window?.setBackgroundDrawableResource(android.R.color.transparent)
             show()
+        }
+    }
+
+
+    @JvmStatic
+    fun showChoice(
+        context: android.content.Context,
+        title: String?,
+        options: List<PetalChoiceOption>,
+        multiple: Boolean,
+        onConfirm: java.util.function.Consumer<List<String>>,
+        onCancel: Runnable
+    ) {
+        val activity = findActivity(context) ?: run { onCancel.run(); return }
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+        var finished = false
+        val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                com.petal.browser.ui.theme.PetalExpressiveTheme {
+                    PetalExpressiveChoiceDialog(
+                        title = title,
+                        options = options,
+                        multiple = multiple,
+                        onConfirm = { ids ->
+                            if (!finished) { finished = true; try { dialog?.dismiss() } catch (_: Exception) {}; onConfirm.accept(ids) }
+                        },
+                        onDismiss = {
+                            if (!finished) { finished = true; try { dialog?.dismiss() } catch (_: Exception) {}; onCancel.run() }
+                        }
+                    )
+                }
+            }
+        }
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+            .setView(composeView)
+            .setCancelable(true)
+            .setOnCancelListener { if (!finished) { finished = true; onCancel.run() } }
+        dialog = builder.create().apply {
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            show()
+        }
+    }
+
+
+    private fun hostCompose(
+        activity: androidx.activity.ComponentActivity,
+        onCancel: Runnable,
+        content: @Composable (complete: (() -> Unit) -> Unit) -> Unit
+    ) {
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+        var finished = false
+        val complete: (() -> Unit) -> Unit = { action ->
+            if (!finished) {
+                finished = true
+                try { dialog?.dismiss() } catch (_: Exception) {}
+                action()
+            }
+        }
+        val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent { com.petal.browser.ui.theme.PetalExpressiveTheme { content(complete) } }
+        }
+        dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+            .setView(composeView)
+            .setCancelable(true)
+            .setOnCancelListener { complete { onCancel.run() } }
+            .create().apply {
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                show()
+            }
+    }
+
+    @JvmStatic
+    fun showColor(
+        context: android.content.Context,
+        title: String?,
+        initialHex: String?,
+        onConfirm: java.util.function.Consumer<String>,
+        onCancel: Runnable
+    ) {
+        val activity = findActivity(context) ?: run { onCancel.run(); return }
+        hostCompose(activity, onCancel) { complete ->
+            PetalExpressiveColorDialog(
+                title = title,
+                initialHex = initialHex,
+                onConfirm = { hex -> complete { onConfirm.accept(hex) } },
+                onDismiss = { complete { onCancel.run() } }
+            )
+        }
+    }
+
+    @JvmStatic
+    fun showDateTime(
+        context: android.content.Context,
+        title: String?,
+        mode: String,
+        defaultValue: String?,
+        minValue: String?,
+        maxValue: String?,
+        onConfirm: java.util.function.Consumer<String>,
+        onCancel: Runnable
+    ) {
+        val activity = findActivity(context) ?: run { onCancel.run(); return }
+        hostCompose(activity, onCancel) { complete ->
+            PetalExpressiveDateTimeDialog(
+                title = title,
+                mode = mode,
+                defaultValue = defaultValue,
+                minValue = minValue,
+                maxValue = maxValue,
+                onConfirm = { v -> complete { onConfirm.accept(v) } },
+                onDismiss = { complete { onCancel.run() } }
+            )
         }
     }
 
