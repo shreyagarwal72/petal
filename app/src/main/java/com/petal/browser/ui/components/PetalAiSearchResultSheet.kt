@@ -61,6 +61,10 @@ object PetalAiSearchBridge {
     ) {
         activity.runOnUiThread {
             val dialog = BottomSheetDialog(activity)
+            dialog.behavior.apply {
+                state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                skipCollapsed = true
+            }
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
@@ -671,11 +675,23 @@ fun PetalAiSearchResultSheet(
                     }
 
                     else -> {
+                        data class SamplePrompt(
+                            val prompt: String,
+                            val executeQuery: String,
+                            val shapeType: PetalMaterialShapes,
+                            val isDev: Boolean = false
+                        )
+
                         val samplePrompts = listOf(
-                            "What are the latest tech news headlines today?" to PetalMaterialShapes.Sunny,
-                            "Explain quantum computing in simple terms" to PetalMaterialShapes.Cookie4Sided,
-                            "Summarize current global weather trends" to PetalMaterialShapes.SoftBoom,
-                            "How to optimize Android app performance?" to PetalMaterialShapes.Burst
+                            SamplePrompt("What are the latest tech news headlines today?", "What are the latest tech news headlines today?", PetalMaterialShapes.Sunny),
+                            SamplePrompt("Explain quantum computing in simple terms", "Explain quantum computing in simple terms", PetalMaterialShapes.Cookie4Sided),
+                            SamplePrompt("Summarize current global weather trends", "Summarize current global weather trends", PetalMaterialShapes.SoftBoom),
+                            SamplePrompt(
+                                "What is Nextup Resources?",
+                                "What is Nextup Resources? Summarize the platform and resources at https://nextup-resource.vercel.app",
+                                PetalMaterialShapes.Burst,
+                                isDev = true
+                            )
                         )
 
                         PetalSettingsSection(
@@ -683,33 +699,49 @@ fun PetalAiSearchResultSheet(
                             icon = Icons.Rounded.Lightbulb
                         ) {
                             PetalGroup(rowCount = samplePrompts.size) { index, position ->
-                                val (prompt, shapeType) = samplePrompts[index]
+                                val item = samplePrompts[index]
                                 PetalGroupListRow(
                                     position = position,
                                     onClick = {
-                                        searchQuery = prompt
-                                        executeSearch(prompt)
+                                        searchQuery = item.prompt
+                                        executeSearch(item.executeQuery)
                                     },
                                     leading = {
                                         PetalGroupIconBadge(
-                                            shape = shapeType.toShape(),
-                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            shape = item.shapeType.toShape(),
+                                            containerColor = if (item.isDev) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                                            contentColor = if (item.isDev) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
                                             size = 44.dp,
                                             iconSize = 22.dp
                                         ) {
-                                            Icon(Icons.Rounded.AutoAwesome, contentDescription = null)
+                                            Icon(if (item.isDev) Icons.Rounded.Code else Icons.Rounded.AutoAwesome, contentDescription = null)
                                         }
                                     },
                                     content = {
-                                        Text(
-                                            text = prompt,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Medium,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                            if (item.isDev) {
+                                                Surface(
+                                                    shape = RoundedCornerShape(6.dp),
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                                    modifier = Modifier.padding(bottom = 2.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "DEV",
+                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                            Text(
+                                                text = item.prompt,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
                                     },
                                     trailing = {
                                         Icon(

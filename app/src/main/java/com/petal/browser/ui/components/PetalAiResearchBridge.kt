@@ -25,40 +25,12 @@ object PetalAiResearchBridge {
         pageContent: String
     ) {
         activity.runOnUiThread {
-            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-            val defaultAction = sp.getString("sp_ai_default_action", "") ?: ""
-
-            when (defaultAction) {
-                "SUMMARIZE" -> {
-                    showSummaryBoxDialog(
-                        activity = activity,
-                        pageTitle = pageTitle,
-                        pageUrl = pageUrl,
-                        pageContent = pageContent
-                    )
-                }
-                "AI_SEARCH" -> {
-                    PetalAiSearchBridge.showAiSearchResult(activity, "")
-                }
-                "ASK_QUESTION" -> {
-                    showAiResearchSheet(
-                        activity = activity,
-                        pageTitle = pageTitle,
-                        pageUrl = pageUrl,
-                        pageContent = pageContent,
-                        initialMode = ResearchMode.CUSTOM,
-                        autoStart = false
-                    )
-                }
-                else -> {
-                    showActionSelectionDialog(
-                        activity = activity,
-                        pageTitle = pageTitle,
-                        pageUrl = pageUrl,
-                        pageContent = pageContent
-                    )
-                }
-            }
+            showSummaryBoxDialog(
+                activity = activity,
+                pageTitle = pageTitle,
+                pageUrl = pageUrl,
+                pageContent = pageContent
+            )
         }
     }
 
