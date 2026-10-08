@@ -171,64 +171,30 @@ fun PetalInactiveTabsSheet(
 
                     // ── Bulk Actions ──
                     if (inactiveTabs.isNotEmpty()) {
-                        // Equal-weight buttons: long translations (e.g. Hinglish) wrap inside
-                        // their own half instead of squeezing the other button's text vertical.
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(IntrinsicSize.Min)
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            FilledTonalButton(
+                            InactiveActionButton(
+                                label = stringResource(R.string.ui_restore_all, inactiveTabs.size),
+                                icon = Icons.Rounded.Unarchive,
+                                container = MaterialTheme.colorScheme.primaryContainer,
+                                content = MaterialTheme.colorScheme.onPrimaryContainer,
+                                shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = 6.dp, bottomEnd = 6.dp),
                                 onClick = onRestoreAllTabs,
-                                shape = RoundedCornerShape(14.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                                modifier = Modifier.weight(1f).fillMaxHeight()
-                            ) {
-                                Icon(
-                                    Icons.Filled.Unarchive,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = stringResource(R.string.ui_restore_all, inactiveTabs.size),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                            }
-
-                            OutlinedButton(
+                                modifier = Modifier.weight(1f)
+                            )
+                            InactiveActionButton(
+                                label = stringResource(R.string.ui_close_all),
+                                icon = Icons.Rounded.DeleteSweep,
+                                container = MaterialTheme.colorScheme.errorContainer,
+                                content = MaterialTheme.colorScheme.onErrorContainer,
+                                shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 24.dp, bottomEnd = 24.dp),
                                 onClick = onCloseAllInactive,
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
-                                ),
-                                border = BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                                ),
-                                shape = RoundedCornerShape(14.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                                modifier = Modifier.weight(1f).fillMaxHeight()
-                            ) {
-                                Icon(
-                                    Icons.Filled.DeleteSweep,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = stringResource(R.string.ui_close_all),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                            }
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                     }
 
@@ -638,3 +604,39 @@ private fun InactiveTabListItem(
         },
     )
 }
+
+@Composable
+private fun InactiveActionButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    container: Color,
+    content: Color,
+    shape: androidx.compose.ui.graphics.Shape,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = shape,
+        color = container,
+        contentColor = content,
+        modifier = modifier.heightIn(min = 52.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+

@@ -38,6 +38,7 @@ object PetalInactiveTabManager {
     private val gson = Gson()
     private val inactiveTabsList = mutableListOf<PetalInactiveTab>()
     private val tabAccessMap = mutableMapOf<String, Long>()
+    private val recentlyRestoredIds = mutableSetOf<String>()
     private var isInitialized = false
 
     @Synchronized
@@ -182,7 +183,8 @@ object PetalInactiveTabManager {
                     // Keep index 0, archive index 1..n
                     for (i in 1 until sorted.size) {
                         val duplicateTab = sorted[i]
-                        if (duplicateTab !in tabsToArchive && !duplicateTab.isSelected) {
+                        // Never archive a selected tab or a tab that was just restored
+                        if (duplicateTab !in tabsToArchive && !duplicateTab.isSelected && !recentlyRestoredIds.contains(duplicateTab.id)) {
                             tabsToArchive.add(duplicateTab)
                             val inactive = PetalInactiveTab(
                                 id = duplicateTab.id,
@@ -211,7 +213,7 @@ object PetalInactiveTabManager {
         if (thresholdDays > 0) {
             val thresholdMs = TimeUnit.DAYS.toMillis(thresholdDays.toLong())
             for (tab in openTabs) {
-                if (tab.isSelected || tab.isIncognito || tab in tabsToArchive) continue
+                if (tab.isSelected || tab.isIncognito || tab in tabsToArchive || recentlyRestoredIds.contains(tab.id)) continue
                 val lastAccess = getTabLastAccess(context, tab.id)
                 if (now - lastAccess >= thresholdMs) {
                     tabsToArchive.add(tab)
@@ -241,10 +243,17 @@ object PetalInactiveTabManager {
     }
 
     @Synchronized
+    fun markTabRestored(tabId: String) {
+        recentlyRestoredIds.add(tabId)
+    }
+
+    @Synchronized
     fun restoreInactiveTab(context: Context, inactiveTab: PetalInactiveTab) {
         init(context)
         inactiveTabsList.removeAll { it.id == inactiveTab.id }
-        tabAccessMap[inactiveTab.id] = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
+        tabAccessMap[inactiveTab.id] = now
+        recentlyRestoredIds.add(inactiveTab.id)
         persist(context)
     }
 
@@ -254,7 +263,10 @@ object PetalInactiveTabManager {
         val all = inactiveTabsList.toList()
         inactiveTabsList.clear()
         val now = System.currentTimeMillis()
-        all.forEach { tabAccessMap[it.id] = now }
+        all.forEach {
+            tabAccessMap[it.id] = now
+            recentlyRestoredIds.add(it.id)
+        }
         persist(context)
         return all
     }

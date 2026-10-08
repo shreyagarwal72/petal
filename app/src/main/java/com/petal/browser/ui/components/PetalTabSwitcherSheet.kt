@@ -292,8 +292,11 @@ object PetalTabSwitcherBridge {
                                     restoredTab.groupColorHex,
                                     true
                                 )
+                                val newId = newAlbum.hashCode().toString()
+                                com.petal.browser.compose.tabs.PetalInactiveTabManager.markTabRestored(newId)
+                                com.petal.browser.compose.tabs.PetalInactiveTabManager.recordTabAccess(context, newId)
                                 val newItem = restoredTab.copy(
-                                    id = newAlbum.hashCode().toString(),
+                                    id = newId,
                                     isSelected = false
                                 )
                                 if (tabItems.none { it.id == newItem.id }) {

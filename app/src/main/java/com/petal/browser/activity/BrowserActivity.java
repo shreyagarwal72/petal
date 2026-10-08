@@ -2557,6 +2557,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.appleduo.AppleDuoManager.INSTANCE.attachTargetView(rootLayout, isWebsiteContent);
             com.petal.browser.ui.components.PetalNetworkStatusBridge.INSTANCE.setWebsiteActive(isWebsiteContent);
         } catch (Exception ignored) {}
+
+        // Inactive Tabs: Record active tab access whenever a tab is brought forward or navigated
+        try {
+            if (currentAlbumController != null) {
+                String currentTabId = String.valueOf(currentAlbumController.hashCode());
+                if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                    String boundId = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).getTabId();
+                    if (boundId != null && !boundId.isEmpty()) currentTabId = boundId;
+                } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                    String boundId = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getTabId();
+                    if (boundId != null && !boundId.isEmpty()) currentTabId = boundId;
+                }
+                com.petal.browser.compose.tabs.PetalInactiveTabManager.INSTANCE.recordTabAccess(this, currentTabId);
+                com.petal.browser.compose.tabs.PetalInactiveTabManager.INSTANCE.recordTabAccess(this, String.valueOf(currentAlbumController.hashCode()));
+            }
+        } catch (Exception ignored) {}
     }
 
     public void updatePersistentBottomNav() {
@@ -3002,31 +3018,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } else {
                     predecessor = currentAlbumController;
                 }
-                //if not the current TAB is being closed return to current TAB
-                tab_container.removeView(controller.getAlbumView());
-                // Retained surface: unmount it from contentFrame before the tab is destroyed.
-                detachTabSurface(controller);
                 int index = BrowserContainer.indexOf(controller);
-
                 try {
                     String tabTitle = controller.getTitle();
                     String tabUrl = controller.getUrl();
                     boolean isIncog = false;
                     String tabGrpId = null;
                     String tabGrpTitle = null;
+                    String tabGrpColor = null;
                     if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
                         com.petal.browser.browser.PetalTabViewController surface = (com.petal.browser.browser.PetalTabViewController) controller;
                         isIncog = surface.isIncognito();
                         tabGrpId = surface.getTabGroupId();
                         tabGrpTitle = surface.getTabGroupTitle();
+                        tabGrpColor = surface.getTabGroupColorHex();
+                        if (tabUrl == null || tabUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(tabUrl.trim())) {
+                            String albumUrl = surface.getAlbumUrl();
+                            if (albumUrl != null && !albumUrl.trim().isEmpty()) tabUrl = albumUrl;
+                        }
                     } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                        isIncog = ((com.petal.browser.view.PetalGeckoView) controller).isIncognito();
-                        tabGrpId = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupId();
-                        tabGrpTitle = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupTitle();
+                        com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) controller;
+                        isIncog = gv.isIncognito();
+                        tabGrpId = gv.getTabGroupId();
+                        tabGrpTitle = gv.getTabGroupTitle();
+                        tabGrpColor = gv.getTabGroupColorHex();
+                        if (tabUrl == null || tabUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(tabUrl.trim())) {
+                            String albumUrl = gv.getAlbumUrl();
+                            if (albumUrl != null && !albumUrl.trim().isEmpty()) tabUrl = albumUrl;
+                        }
                     } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
-                        isIncog = ((com.petal.browser.browser.PlaceholderAlbumController) controller).isIncognito();
-                        tabGrpId = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupId();
-                        tabGrpTitle = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupTitle();
+                        com.petal.browser.browser.PlaceholderAlbumController ph = (com.petal.browser.browser.PlaceholderAlbumController) controller;
+                        isIncog = ph.isIncognito();
+                        tabGrpId = ph.getTabGroupId();
+                        tabGrpTitle = ph.getTabGroupTitle();
+                        tabGrpColor = ph.getTabGroupColorHex();
                     }
                     com.petal.browser.unit.PetalRecentlyClosedManager.pushClosedTab(
                         String.valueOf(controller.hashCode()),
@@ -3036,9 +3061,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         isIncog,
                         tabGrpId,
                         tabGrpTitle,
-                        null
+                        tabGrpColor
                     );
                 } catch (Exception ignored) {}
+
+                tab_container.removeView(controller.getAlbumView());
+                // Retained surface: unmount it from contentFrame before the tab is destroyed.
+                detachTabSurface(controller);
 
                 BrowserContainer.remove(controller);
                 String tabIdToRemove = null;
@@ -3071,33 +3100,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public synchronized void removeAlbumSilently(final AlbumController controller) {
         if (controller == null) return;
-        try {
-            if (tab_container != null && controller.getAlbumView() != null) {
-                tab_container.removeView(controller.getAlbumView());
-            }
-            // Retained surface: unmount it from contentFrame before the tab is destroyed.
-            detachTabSurface(controller);
-            boolean isClosingCurrent = (controller == currentAlbumController);
+            int closeIndex = BrowserContainer.indexOf(controller);
             try {
                 String tabTitle = controller.getTitle();
                 String tabUrl = controller.getUrl();
                 boolean isIncog = false;
                 String tabGrpId = null;
                 String tabGrpTitle = null;
-                int closeIndex = BrowserContainer.indexOf(controller);
+                String tabGrpColor = null;
                 if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
                     com.petal.browser.browser.PetalTabViewController surface = (com.petal.browser.browser.PetalTabViewController) controller;
                     isIncog = surface.isIncognito();
                     tabGrpId = surface.getTabGroupId();
                     tabGrpTitle = surface.getTabGroupTitle();
+                    tabGrpColor = surface.getTabGroupColorHex();
+                    if (tabUrl == null || tabUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(tabUrl.trim())) {
+                        String albumUrl = surface.getAlbumUrl();
+                        if (albumUrl != null && !albumUrl.trim().isEmpty()) tabUrl = albumUrl;
+                    }
                 } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                    isIncog = ((com.petal.browser.view.PetalGeckoView) controller).isIncognito();
-                    tabGrpId = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupId();
-                    tabGrpTitle = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupTitle();
+                    com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) controller;
+                    isIncog = gv.isIncognito();
+                    tabGrpId = gv.getTabGroupId();
+                    tabGrpTitle = gv.getTabGroupTitle();
+                    tabGrpColor = gv.getTabGroupColorHex();
+                    if (tabUrl == null || tabUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(tabUrl.trim())) {
+                        String albumUrl = gv.getAlbumUrl();
+                        if (albumUrl != null && !albumUrl.trim().isEmpty()) tabUrl = albumUrl;
+                    }
                 } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
-                    isIncog = ((com.petal.browser.browser.PlaceholderAlbumController) controller).isIncognito();
-                    tabGrpId = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupId();
-                    tabGrpTitle = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupTitle();
+                    com.petal.browser.browser.PlaceholderAlbumController ph = (com.petal.browser.browser.PlaceholderAlbumController) controller;
+                    isIncog = ph.isIncognito();
+                    tabGrpId = ph.getTabGroupId();
+                    tabGrpTitle = ph.getTabGroupTitle();
+                    tabGrpColor = ph.getTabGroupColorHex();
                 }
                 com.petal.browser.unit.PetalRecentlyClosedManager.pushClosedTab(
                     String.valueOf(controller.hashCode()),
@@ -3107,9 +3143,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     isIncog,
                     tabGrpId,
                     tabGrpTitle,
-                    null
+                    tabGrpColor
                 );
             } catch (Exception ignored) {}
+
+            if (tab_container != null && controller.getAlbumView() != null) {
+                tab_container.removeView(controller.getAlbumView());
+            }
+            // Retained surface: unmount it from contentFrame before the tab is destroyed.
+            detachTabSurface(controller);
 
             BrowserContainer.remove(controller);
             String tabIdToRemove = null;
