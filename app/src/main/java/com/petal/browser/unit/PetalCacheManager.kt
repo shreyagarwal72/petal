@@ -234,22 +234,67 @@ object PetalCacheManager {
      */
     @JvmStatic
     fun clearSiteCache(context: Context, host: String) {
+        clearSiteData(context, host, includeCookies = false, includePermissions = false)
+    }
+
+    /**
+     * Official Firefox (GeckoView StorageController) per-site data clearing.
+     * Clears caches, DOM storages, IndexedDB, cookies, and optionally permissions.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun clearSiteData(
+        context: Context,
+        host: String,
+        includeCookies: Boolean = true,
+        includePermissions: Boolean = false
+    ) {
         if (host.isBlank()) return
         val appContext = context.applicationContext
         try {
-            if (PetalGeckoRuntime.isGeckoAvailable(appContext)) {
-                var cleanHost = host.trim().lowercase()
-                if (cleanHost.startsWith("http://")) cleanHost = cleanHost.substring(7)
-                if (cleanHost.startsWith("https://")) cleanHost = cleanHost.substring(8)
-                val slash = cleanHost.indexOf('/')
-                if (slash != -1) cleanHost = cleanHost.substring(0, slash)
+            var cleanHost = host.trim().lowercase()
+            if (cleanHost.startsWith("http://")) cleanHost = cleanHost.substring(7)
+            if (cleanHost.startsWith("https://")) cleanHost = cleanHost.substring(8)
+            val slash = cleanHost.indexOf('/')
+            if (slash != -1) cleanHost = cleanHost.substring(0, slash)
+            val colon = cleanHost.indexOf(':')
+            if (colon != -1) cleanHost = cleanHost.substring(0, colon)
 
-                PetalGeckoRuntime.getOrCreate(appContext)
-                    .storageController
-                    .clearDataFromHost(cleanHost, StorageController.ClearFlags.ALL_CACHES or StorageController.ClearFlags.DOM_STORAGES)
+            if (PetalGeckoRuntime.isGeckoAvailable(appContext)) {
+                var flags = StorageController.ClearFlags.ALL_CACHES or
+                        StorageController.ClearFlags.DOM_STORAGES or
+                        StorageController.ClearFlags.AUTH_SESSIONS
+                if (includeCookies) {
+                    flags = flags or StorageController.ClearFlags.COOKIES
+                }
+                if (includePermissions) {
+                    flags = flags or StorageController.ClearFlags.PERMISSIONS
+                }
+
+                val storageController = PetalGeckoRuntime.getOrCreate(appContext).storageController
+                storageController.clearDataFromHost(cleanHost, flags)
+
+                // Also clear base domain if host is a subdomain (e.g., www.example.com -> example.com)
+                val parts = cleanHost.split(".")
+                if (parts.size > 2) {
+                    val baseDomain = parts.takeLast(2).joinToString(".")
+                    storageController.clearDataFromHost(baseDomain, flags)
+                }
+            }
+
+            // Chromium WebStorage & CookieManager fallback
+            try {
+                android.webkit.WebStorage.getInstance().deleteOrigin("https://$cleanHost")
+                android.webkit.WebStorage.getInstance().deleteOrigin("http://$cleanHost")
+            } catch (_: Exception) {}
+
+            if (includePermissions) {
+                try {
+                    android.webkit.GeolocationPermissions.getInstance().clear(cleanHost)
+                } catch (_: Exception) {}
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Error clearing site cache for host: $host", e)
+            Log.w(TAG, "Error clearing site data for host: $host", e)
         }
     }
 

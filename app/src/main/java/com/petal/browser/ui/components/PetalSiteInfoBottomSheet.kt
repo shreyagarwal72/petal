@@ -413,6 +413,7 @@ fun PetalSiteInfoBottomSheet(
                             label = stringResource(R.string.ui_reset),
                             onPrimaryClick = {
                                 try {
+                                    com.petal.browser.unit.PetalCacheManager.clearSiteData(context, domain, includeCookies = true, includePermissions = false)
                                     CookieManager.getInstance().removeAllCookies(null)
                                     CookieManager.getInstance().flush()
                                     WebStorage.getInstance().deleteAllData()
@@ -443,6 +444,7 @@ fun PetalSiteInfoBottomSheet(
                                 onClick = {
                                     siteResetExpanded = false
                                     try {
+                                        com.petal.browser.unit.PetalCacheManager.clearSiteData(context, domain, includeCookies = true, includePermissions = false)
                                         CookieManager.getInstance().removeAllCookies(null)
                                         CookieManager.getInstance().flush()
                                         cookieCount = 0
@@ -457,6 +459,7 @@ fun PetalSiteInfoBottomSheet(
                                 onClick = {
                                     siteResetExpanded = false
                                     try {
+                                        com.petal.browser.unit.PetalCacheManager.clearSiteData(context, domain, includeCookies = false, includePermissions = true)
                                         GeolocationPermissions.getInstance().clear(domain)
                                         sp.edit()
                                             .remove(profile + "_camera")
@@ -479,6 +482,7 @@ fun PetalSiteInfoBottomSheet(
                                 onClick = {
                                     siteResetExpanded = false
                                     try {
+                                        com.petal.browser.unit.PetalCacheManager.clearSiteCache(context, domain)
                                         WebStorage.getInstance().deleteAllData()
                                         onResetSiteData()
                                     } catch (_: Exception) {}

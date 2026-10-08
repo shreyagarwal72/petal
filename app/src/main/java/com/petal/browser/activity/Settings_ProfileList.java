@@ -84,6 +84,11 @@ public class Settings_ProfileList extends AppCompatActivity {
                                 listStandard.removeDomain(domain);
                                 list.remove(position);
                                 notifyDataSetChanged();
+
+                                // Official Firefox StorageController site data clearing:
+                                // Remove all cookies, DOM storages, IndexedDB, caches, and permissions for this website
+                                com.petal.browser.unit.PetalCacheManager.clearSiteData(Settings_ProfileList.this, domain, true, true);
+
                                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(Settings_ProfileList.this);
                                 sp.edit()
                                         .remove(domain + "_saveData")

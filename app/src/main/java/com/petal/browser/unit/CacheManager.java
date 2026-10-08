@@ -60,6 +60,23 @@ public class CacheManager {
     }
 
     /**
+     * Clears all storage data (cookies, cache, DOM storage, indexedDB) for a specific website host.
+     *
+     * @param context Application context.
+     * @param host Domain or host name (e.g., "example.com").
+     */
+    public static void clearSiteData(@NonNull Context context, @NonNull String host) {
+        PetalCacheManager.clearSiteData(context, host, true, false);
+    }
+
+    /**
+     * Clears all storage data and permissions for a specific website host.
+     */
+    public static void clearSiteDataAndPermissions(@NonNull Context context, @NonNull String host) {
+        PetalCacheManager.clearSiteData(context, host, true, true);
+    }
+
+    /**
      * Recursively deletes a directory or file.
      */
     public static boolean deleteDir(File dir) {
