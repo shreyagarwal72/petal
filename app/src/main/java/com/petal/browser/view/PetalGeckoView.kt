@@ -411,6 +411,33 @@ class PetalGeckoView @JvmOverloads constructor(
                     return result
                 }
 
+                override fun onSharePrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.SharePrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    val act = activityProvider()
+                        ?: return GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.ABORT))
+                    val body = listOf(prompt.text, prompt.uri).filter { !it.isNullOrBlank() }.joinToString("\n")
+                    if (body.isBlank()) {
+                        return GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.ABORT))
+                    }
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    act.runOnUiThread {
+                        try {
+                            val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_TEXT, body)
+                                if (!prompt.title.isNullOrBlank()) putExtra(android.content.Intent.EXTRA_SUBJECT, prompt.title)
+                            }
+                            act.startActivity(android.content.Intent.createChooser(send, null))
+                            result.complete(prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.SUCCESS))
+                        } catch (_: Throwable) {
+                            result.complete(prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.FAILURE))
+                        }
+                    }
+                    return result
+                }
+
                 override fun onPopupPrompt(
                     session: GeckoSession,
                     prompt: GeckoSession.PromptDelegate.PopupPrompt
