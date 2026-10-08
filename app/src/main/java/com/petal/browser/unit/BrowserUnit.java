@@ -593,6 +593,24 @@ public class BrowserUnit {
     }
 
     /**
+     * Resolves the effective homepage URL based on user settings (Petal Start Page vs Custom URL).
+     */
+    public static String getEffectiveHomepageUrl(Context context) {
+        if (context == null) return "about:blank";
+        try {
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+            String homeType = sp.getString("sp_home_type", "0");
+            if ("1".equals(homeType)) {
+                String customUrl = sp.getString("sp_custom_homepage_url", "https://google.com");
+                if (customUrl != null && !customUrl.trim().isEmpty()) {
+                    return customUrl.trim();
+                }
+            }
+        } catch (Exception ignored) {}
+        return "about:blank";
+    }
+
+    /**
      * Cleans tracking, referral, analytics, and telemetry parameters from a web URL
      * (e.g., utm_*, fbclid, gclid, yclid, igshid, msclkid, ref, etc.).
      */

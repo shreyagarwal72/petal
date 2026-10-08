@@ -1037,6 +1037,27 @@ class PetalTabViewController private constructor(
                     } catch(e) {}
                 """.trimIndent()).append("\n")
             }
+
+            // Firefox / Mozilla Video Background Play Fix:
+            // Prevents media players (YouTube, Vimeo, web video) from pausing when tabs are switched or app minimized
+            val backgroundPlay = sp.getBoolean("sp_background_play", false)
+            if (backgroundPlay) {
+                sb.append("""
+                    try {
+                        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+                        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+                        Object.defineProperty(document, 'webkitHidden', { get: () => false, configurable: true });
+                        Object.defineProperty(document, 'webkitVisibilityState', { get: () => 'visible', configurable: true });
+                        const stopVisProp = (e) => {
+                            if (e && e.type === 'visibilitychange') {
+                                e.stopImmediatePropagation();
+                            }
+                        };
+                        window.addEventListener('visibilitychange', stopVisProp, true);
+                        document.addEventListener('visibilitychange', stopVisProp, true);
+                    } catch(e) {}
+                """.trimIndent()).append("\n")
+            }
             sb.append("})();")
             val js = sb.toString()
             if (js.length > "(function() {\n})();".length) {

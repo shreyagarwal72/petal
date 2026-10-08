@@ -1429,7 +1429,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // ── Tier 4: Intra-Tab Home Fallback ──
         // If on a web document with no history, navigate back to this tab's start surface
         if (!isPetalHomeSurfaceShowing && !isHomePage(currentUrl) && currentUrl != null && !currentUrl.isEmpty() && !currentUrl.equalsIgnoreCase("about:blank")) {
-            String homeUrl = sp != null ? sp.getString("favoriteURL", "about:blank") : "about:blank";
+            String homeUrl = BrowserUnit.getEffectiveHomepageUrl(this);
             if (homeUrl == null || homeUrl.trim().isEmpty()) homeUrl = "about:blank";
             if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).stopLoading();
@@ -2628,15 +2628,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void onHomeClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                            // Fix (Bug 1): do NOT call geckoView.loadUrl("about:blank") before showAlbum().
-                            // That redundant load triggers GeckoView's page-started callback which
-                            // re-invokes showAlbum() mid-Compose-render, causing a blank flash.
-                            // showAlbum("about:blank") correctly shows the native Compose home surface
-                            // without requiring any web engine load.
-                            if (currentAlbumController != null) {
-                                showAlbum(currentAlbumController, "about:blank");
+                            String effectiveHome = BrowserUnit.getEffectiveHomepageUrl(BrowserActivity.this);
+                            if (effectiveHome != null && !effectiveHome.equalsIgnoreCase("about:blank") && !BrowserUnit.isHomePage(effectiveHome)) {
+                                if (currentAlbumController != null) {
+                                    currentAlbumController.loadUrl(effectiveHome);
+                                    showAlbum(currentAlbumController, effectiveHome);
+                                } else {
+                                    addAlbum(getString(R.string.app_name), effectiveHome, true, isIncognito);
+                                }
                             } else {
-                                addAlbum(getString(R.string.app_name), "about:blank", true, isIncognito);
+                                if (currentAlbumController != null) {
+                                    showAlbum(currentAlbumController, "about:blank");
+                                } else {
+                                    addAlbum(getString(R.string.app_name), "about:blank", true, isIncognito);
+                                }
                             }
                         }
 
@@ -6609,7 +6614,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (!isPopup) {
             if (url == null || url.trim().isEmpty() || isHomePage(url)) {
-                tabSurface.loadUrl("about:blank");
+                String effectiveHome = BrowserUnit.getEffectiveHomepageUrl(this);
+                if (effectiveHome != null && !effectiveHome.equalsIgnoreCase("about:blank") && !isHomePage(effectiveHome)) {
+                    tabSurface.loadUrl(effectiveHome);
+                } else {
+                    tabSurface.loadUrl("about:blank");
+                }
             } else {
                 tabSurface.loadUrl(url);
             }
