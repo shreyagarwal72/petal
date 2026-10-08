@@ -678,7 +678,7 @@ fun PetalAiSearchResultSheet(
                         data class SamplePrompt(
                             val prompt: String,
                             val executeQuery: String,
-                            val shapeType: PetalMaterialShapes,
+                            val shapeType: com.petal.browser.ui.theme.ExpressiveShapeHolder,
                             val isDev: Boolean = false
                         )
 
