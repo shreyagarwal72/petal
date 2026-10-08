@@ -323,7 +323,92 @@ class PetalGeckoView @JvmOverloads constructor(
                     session: GeckoSession,
                     prompt: GeckoSession.PromptDelegate.ChoicePrompt
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                    return GeckoResult.fromValue(prompt.dismiss())
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val rows = ArrayList<com.petal.browser.ui.components.PetalChoiceOption>()
+                    fun flatten(list: Array<GeckoSession.PromptDelegate.ChoicePrompt.Choice>?, nested: Boolean) {
+                        list?.forEach { c ->
+                            val kids = c.items
+                            when {
+                                c.separator -> rows.add(com.petal.browser.ui.components.PetalChoiceOption(id = c.id, label = "", isSeparator = true))
+                                kids != null -> {
+                                    rows.add(com.petal.browser.ui.components.PetalChoiceOption(id = c.id, label = c.label ?: "", isHeader = true))
+                                    flatten(kids, true)
+                                }
+                                else -> rows.add(
+                                    com.petal.browser.ui.components.PetalChoiceOption(
+                                        id = c.id,
+                                        label = c.label ?: "",
+                                        selected = c.selected,
+                                        disabled = c.disabled,
+                                        indented = nested
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    flatten(prompt.choices, false)
+                    val multiple = prompt.type == GeckoSession.PromptDelegate.ChoicePrompt.Type.MULTIPLE
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showChoice(
+                            act,
+                            prompt.title,
+                            rows,
+                            multiple,
+                            { ids ->
+                                if (multiple) result.complete(prompt.confirm(ids.toTypedArray()))
+                                else result.complete(prompt.confirm(ids.first()))
+                            },
+                            { result.complete(prompt.dismiss()) }
+                        )
+                    }
+                    return result
+                }
+
+                override fun onColorPrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.ColorPrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showColor(
+                            act,
+                            prompt.title,
+                            prompt.defaultValue,
+                            { hex -> result.complete(prompt.confirm(hex)) },
+                            { result.complete(prompt.dismiss()) }
+                        )
+                    }
+                    return result
+                }
+
+                override fun onDateTimePrompt(
+                    session: GeckoSession,
+                    prompt: GeckoSession.PromptDelegate.DateTimePrompt
+                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val mode = when (prompt.type) {
+                        GeckoSession.PromptDelegate.DateTimePrompt.Type.MONTH -> "month"
+                        GeckoSession.PromptDelegate.DateTimePrompt.Type.WEEK -> "week"
+                        GeckoSession.PromptDelegate.DateTimePrompt.Type.TIME -> "time"
+                        GeckoSession.PromptDelegate.DateTimePrompt.Type.DATETIME_LOCAL -> "datetime-local"
+                        else -> "date"
+                    }
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showDateTime(
+                            act,
+                            prompt.title,
+                            mode,
+                            prompt.defaultValue,
+                            prompt.minValue,
+                            prompt.maxValue,
+                            { value -> result.complete(prompt.confirm(value)) },
+                            { result.complete(prompt.dismiss()) }
+                        )
+                    }
+                    return result
                 }
 
                 override fun onPopupPrompt(
