@@ -1728,6 +1728,14 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun reload() {
+        reloadInternal(GeckoSession.LOAD_FLAGS_NONE)
+    }
+
+    fun reloadBypassCache() {
+        reloadInternal(GeckoSession.LOAD_FLAGS_BYPASS_CACHE)
+    }
+
+    private fun reloadInternal(flags: Int) {
         isStopped = false
         applySettings()
         val target = if (currentUrl.isNotBlank() && !BrowserUnit.isHomePage(currentUrl) && !currentUrl.equals("about:blank", ignoreCase = true)) {
@@ -1744,7 +1752,7 @@ class PetalGeckoView @JvmOverloads constructor(
         // to YouTube) reloads the active page instead of re-triggering Mozilla GeckoEngineSession's
         // stale initialLoadRequest.
         try {
-            session.reload(GeckoSession.LOAD_FLAGS_NONE)
+            session.reload(flags)
         } catch (_: Throwable) {
             if (target != null) {
                 session.loadUri(target)

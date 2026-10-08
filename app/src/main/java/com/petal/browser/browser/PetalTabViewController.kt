@@ -540,13 +540,21 @@ class PetalTabViewController private constructor(
     }
 
     fun reload() {
+        reloadInternal(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_NONE)
+    }
+
+    fun reloadBypassCache() {
+        reloadInternal(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_BYPASS_CACHE)
+    }
+
+    private fun reloadInternal(flags: Int) {
         applyPageSettings(pageUrl)
         // Reload the live GeckoSession so we always refresh the page currently shown, not the
         // engine session's original (initial) load request.
         val live = getGeckoSession()
         if (live != null) {
             try {
-                live.reload(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_NONE)
+                live.reload(flags)
                 return
             } catch (_: Throwable) {
             }

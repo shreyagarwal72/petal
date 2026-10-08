@@ -424,126 +424,76 @@ fun PetalAddressBar(
         }
     }
 
-    // Long-Press Quick Actions Bottom Sheet
+    // Long-Press Quick Actions Bottom Sheet (Material 3 Expressive Containment)
     if (showQuickActionsMenu) {
+        val haptics = com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+
         ModalBottomSheet(
             onDismissRequest = { showQuickActionsMenu = false },
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 6.dp
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header site info
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (favicon != null && !isIncognito) {
-                                Image(
-                                    bitmap = favicon.asImageBitmap(),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp).clip(CircleShape)
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Rounded.Language,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        }
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (title.isNotBlank()) title else "Address Bar Quick Actions",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = url,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                // Action 1: Copy Clean URL (strips tracking query params)
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            showQuickActionsMenu = false
-                            val cleanUrl = sanitizeTrackingParameters(url)
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText("Clean URL", cleanUrl))
-                            PetalToast.show(context, "Clean URL copied to clipboard")
-                        }
+                // Header site card
+                com.petal.browser.ui.containment.PetalHeroCard(
+                    shape = RoundedCornerShape(22.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Icon(Icons.Rounded.ContentCopy, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Copy Clean URL", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text("Copies link with tracking parameters removed", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-
-                // Action 2: Paste & Go (if clipboard has content)
-                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clipText = clipboard.primaryClip?.let {
-                    if (it.itemCount > 0) it.getItemAt(0)?.text?.toString()?.trim() else null
-                }
-                if (!clipText.isNullOrEmpty()) {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                showQuickActionsMenu = false
-                                onPasteAndGo(clipText)
-                            }
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(44.dp)
                         ) {
-                            Icon(Icons.Rounded.ContentPasteGo, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Paste & Go", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text(clipText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Box(contentAlignment = Alignment.Center) {
+                                if (favicon != null && !isIncognito) {
+                                    Image(
+                                        bitmap = favicon.asImageBitmap(),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(26.dp).clip(CircleShape)
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Language,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (title.isNotBlank()) title else "Address Bar Quick Actions",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = url.ifBlank { "about:blank" },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }
 
-                // Action 3: Quick Bookmark Toggle
+                // Check bookmark state
                 var isBookmarked by remember {
                     mutableStateOf(
                         try {
@@ -556,12 +506,67 @@ fun PetalAddressBar(
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
+                // Clipboard for Paste & Go
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clipText = clipboard.primaryClip?.let {
+                    if (it.itemCount > 0) it.getItemAt(0)?.text?.toString()?.trim() else null
+                }
+
+                // Build list of actions for containment grouping
+                data class QuickActionItem(
+                    val icon: ImageVector,
+                    val title: String,
+                    val subtitle: String,
+                    val iconContainerColor: Color,
+                    val iconTint: Color,
+                    val onClick: () -> Unit
+                )
+
+                val actions = mutableListOf<QuickActionItem>()
+
+                // 1. Copy Clean URL
+                actions.add(
+                    QuickActionItem(
+                        icon = Icons.Rounded.ContentCopy,
+                        title = "Copy Clean URL",
+                        subtitle = "Copies link with tracking parameters removed",
+                        iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = {
+                            showQuickActionsMenu = false
+                            val cleanUrl = sanitizeTrackingParameters(url)
+                            clipboard.setPrimaryClip(ClipData.newPlainText("Clean URL", cleanUrl))
+                            PetalToast.show(context, "Clean URL copied to clipboard")
+                        }
+                    )
+                )
+
+                // 2. Paste & Go (if available)
+                if (!clipText.isNullOrEmpty()) {
+                    actions.add(
+                        QuickActionItem(
+                            icon = Icons.Rounded.ContentPasteGo,
+                            title = "Paste & Go",
+                            subtitle = clipText,
+                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            onClick = {
+                                showQuickActionsMenu = false
+                                onPasteAndGo(clipText)
+                            }
+                        )
+                    )
+                }
+
+                // 3. Bookmark Toggle
+                actions.add(
+                    QuickActionItem(
+                        icon = if (isBookmarked) Icons.Rounded.BookmarkRemove else Icons.Rounded.BookmarkAdd,
+                        title = if (isBookmarked) "Remove from Bookmarks" else "Bookmark This Page",
+                        subtitle = if (isBookmarked) "Tap to unbookmark this page" else "Save this page for quick access later",
+                        iconContainerColor = if (isBookmarked) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.tertiaryContainer,
+                        iconTint = if (isBookmarked) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer,
+                        onClick = {
                             try {
                                 val action = RecordAction(context)
                                 action.open(true)
@@ -580,107 +585,120 @@ fun PetalAddressBar(
                                 e.printStackTrace()
                             }
                         }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isBookmarked) Icons.Rounded.BookmarkRemove else Icons.Rounded.BookmarkAdd,
-                            contentDescription = null,
-                            tint = if (isBookmarked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (isBookmarked) "Remove from Bookmarks" else "Bookmark This Page",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                            )
-                            Text(
-                                text = if (isBookmarked) "Tap to unbookmark this page" else "Save this page for quick access later",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
+                    )
+                )
 
-                // Action 4: Hard Refresh
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
+                // 4. Hard Refresh (Bypasses Cache)
+                actions.add(
+                    QuickActionItem(
+                        icon = Icons.Rounded.Refresh,
+                        title = "Hard Refresh",
+                        subtitle = "Reload page completely bypassing cached resources",
+                        iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = {
                             showQuickActionsMenu = false
                             onHardRefresh()
                         }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Hard Refresh", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text("Reload page clearing cached resources", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
+                    )
+                )
 
-                // Action 5: Privacy & Tracker Shield HUD
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
+                // 5. Shield HUD
+                actions.add(
+                    QuickActionItem(
+                        icon = Icons.Rounded.Shield,
+                        title = "Shield HUD & Whitelist",
+                        subtitle = "Inspect blocked trackers, ads, and connection certificate",
+                        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        onClick = {
                             showQuickActionsMenu = false
                             val act = context as? androidx.activity.ComponentActivity
                             if (act != null) {
                                 PetalPrivacyShieldSheet.show(act, url) {}
                             }
                         }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Icon(Icons.Rounded.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Shield HUD & Whitelist", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text("Inspect blocked trackers, ads, and connection certificate", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
+                    )
+                )
 
-                // Action 6: Petal AI Research & Page Assist
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
+                // 6. Petal AI Assist
+                actions.add(
+                    QuickActionItem(
+                        icon = Icons.Rounded.AutoAwesome,
+                        title = "Petal AI Assist",
+                        subtitle = "Summarize page, deep analysis, or ask questions with AI",
+                        iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        onClick = {
                             showQuickActionsMenu = false
                             onAiResearchClick()
                         }
+                    )
+                )
+
+                // Grouped Containment List
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Petal AI Assist", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text("Summarize page, deep analysis, or ask questions with AI", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    actions.forEachIndexed { index, item ->
+                        val position = com.petal.browser.ui.containment.petalGroupPositionFor(index, actions.size)
+                        val shape = com.petal.browser.ui.containment.petalGroupShape(position)
+
+                        Surface(
+                            shape = shape,
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(shape)
+                                .clickable {
+                                    try {
+                                        haptics.playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                                    } catch (_: Exception) {}
+                                    item.onClick()
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(RoundedCornerShape(13.dp))
+                                        .background(item.iconContainerColor),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = null,
+                                        tint = item.iconTint,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = item.title,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = item.subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

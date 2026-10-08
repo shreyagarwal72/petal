@@ -4005,8 +4005,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 },
                 () -> {
-                    // Hard Refresh
-                    if (ninjaWebView != null) {
+                    // Hard Refresh (bypass cache)
+                    if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                        ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).reloadBypassCache();
+                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).reloadBypassCache();
+                    } else if (ninjaWebView != null) {
                         ninjaWebView.reload();
                     }
                 }
