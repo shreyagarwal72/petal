@@ -2558,7 +2558,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.ui.components.PetalNetworkStatusBridge.INSTANCE.setWebsiteActive(isWebsiteContent);
         } catch (Exception ignored) {}
 
-        // Inactive Tabs: Record active tab access whenever a tab is brought forward or navigated
+        // Inactive Tabs: Record active tab access
         try {
             if (currentAlbumController != null) {
                 String currentTabId = String.valueOf(currentAlbumController.hashCode());
@@ -3018,7 +3018,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } else {
                     predecessor = currentAlbumController;
                 }
+                //if not the current TAB is being closed return to current TAB
+                tab_container.removeView(controller.getAlbumView());
+                // Retained surface: unmount it from contentFrame before the tab is destroyed.
+                detachTabSurface(controller);
                 int index = BrowserContainer.indexOf(controller);
+
                 try {
                     String tabTitle = controller.getTitle();
                     String tabUrl = controller.getUrl();
@@ -3065,10 +3070,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     );
                 } catch (Exception ignored) {}
 
-                tab_container.removeView(controller.getAlbumView());
-                // Retained surface: unmount it from contentFrame before the tab is destroyed.
-                detachTabSurface(controller);
-
                 BrowserContainer.remove(controller);
                 String tabIdToRemove = null;
                 if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
@@ -3100,7 +3101,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public synchronized void removeAlbumSilently(final AlbumController controller) {
         if (controller == null) return;
-            int closeIndex = BrowserContainer.indexOf(controller);
+        try {
+            if (tab_container != null && controller.getAlbumView() != null) {
+                tab_container.removeView(controller.getAlbumView());
+            }
+            // Retained surface: unmount it from contentFrame before the tab is destroyed.
+            detachTabSurface(controller);
+            boolean isClosingCurrent = (controller == currentAlbumController);
             try {
                 String tabTitle = controller.getTitle();
                 String tabUrl = controller.getUrl();
@@ -3108,6 +3115,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 String tabGrpId = null;
                 String tabGrpTitle = null;
                 String tabGrpColor = null;
+                int closeIndex = BrowserContainer.indexOf(controller);
                 if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
                     com.petal.browser.browser.PetalTabViewController surface = (com.petal.browser.browser.PetalTabViewController) controller;
                     isIncog = surface.isIncognito();
@@ -3146,12 +3154,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     tabGrpColor
                 );
             } catch (Exception ignored) {}
-
-            if (tab_container != null && controller.getAlbumView() != null) {
-                tab_container.removeView(controller.getAlbumView());
-            }
-            // Retained surface: unmount it from contentFrame before the tab is destroyed.
-            detachTabSurface(controller);
 
             BrowserContainer.remove(controller);
             String tabIdToRemove = null;
