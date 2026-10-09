@@ -4335,13 +4335,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean isNonWebSurface = !isWebPage || isHomePage(url) || isOverlayScreenShowing || hasNonTabTopContent()
                 || isCustomFullscreenState || videoOverlayBridge != null || customView != null;
         boolean isSearchOrInternal = com.petal.browser.media.sniffer.PetalMediaSniffer.isSearchEngineOrInternalUrl(url);
-        if (isNonWebSurface || isSearchOrInternal) {
+        if (mediaSnifferBanner != null) {
+            mediaSnifferBanner.setVisibility((isNonWebSurface || isSearchOrInternal) ? GONE : VISIBLE);
+        }
+
+        if (isNonWebSurface) {
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
-            if (mediaSnifferBanner != null) mediaSnifferBanner.setVisibility(GONE);
             isAddressBarCollapsed = false;
         } else {
             if (composeAddressBar != null) {
@@ -4350,7 +4353,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
-            if (mediaSnifferBanner != null) mediaSnifferBanner.setVisibility(VISIBLE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             isAddressBarCollapsed = false;
