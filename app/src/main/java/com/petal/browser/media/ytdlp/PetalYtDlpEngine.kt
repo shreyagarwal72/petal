@@ -536,6 +536,7 @@ object PetalYtDlpEngine {
 
     fun setUpdateChannel(context: Context, channel: YoutubeDL.UpdateChannel) {
         val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        sp.edit().putString("ytdlp_update_channel", channel.name).apply()
+        val channelStr = if (channel == YoutubeDL.UpdateChannel.NIGHTLY) "NIGHTLY" else "STABLE"
+        sp.edit().putString("ytdlp_update_channel", channelStr).apply()
     }
 }
