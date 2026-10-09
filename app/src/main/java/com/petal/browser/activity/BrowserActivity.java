@@ -4334,6 +4334,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean isWebPage = isActualWebPage(url);
         boolean isNonWebSurface = !isWebPage || isHomePage(url) || isOverlayScreenShowing || hasNonTabTopContent()
                 || isCustomFullscreenState || videoOverlayBridge != null || customView != null;
+        boolean isSearchOrInternal = com.petal.browser.media.sniffer.PetalMediaSniffer.isSearchEngineOrInternalUrl(url);
         if (isNonWebSurface || isSearchOrInternal) {
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble = findViewById(R.id.fab_bubble);
