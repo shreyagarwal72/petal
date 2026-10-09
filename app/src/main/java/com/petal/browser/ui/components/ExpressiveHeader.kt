@@ -72,44 +72,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 /** Only the bottom corners are rounded (24dp) for a clean Material 3 Expressive header look */
 private val HeaderShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
 
-/**
- * Specular dressing that makes a translucent surface read as glass:
- * a soft top sheen plus a 1dp diagonal hairline border.
- */
-fun Modifier.liquidGlassChrome(shape: Shape, enabled: Boolean = true): Modifier =
-    if (!enabled) this else drawWithContent {
-        drawContent()
-        val outline = shape.createOutline(size, layoutDirection, this)
-        val path = when (outline) {
-            is Outline.Rounded -> Path().apply { addRoundRect(outline.roundRect) }
-            is Outline.Generic -> outline.path
-            is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
-        }
-
-        clipPath(path) {
-            drawRect(
-                brush = Brush.verticalGradient(
-                    0f to Color.White.copy(alpha = 0.10f),
-                    0.55f to Color.White.copy(alpha = 0.02f),
-                    1f to Color.Transparent,
-                    startY = 0f,
-                    endY = size.height,
-                ),
-            )
-        }
-
-        drawPath(
-            path = path,
-            brush = Brush.linearGradient(
-                0f to Color.White.copy(alpha = 0.34f),
-                0.45f to Color.White.copy(alpha = 0.07f),
-                1f to Color.White.copy(alpha = 0.16f),
-                start = Offset.Zero,
-                end = Offset(size.width, size.height),
-            ),
-            style = Stroke(width = 1.dp.toPx()),
-        )
-    }
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 /**
  * Material 3 Expressive Header component ported from LastWave-native (duxtami).

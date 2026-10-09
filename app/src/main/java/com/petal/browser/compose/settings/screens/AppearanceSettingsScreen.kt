@@ -1,6 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
 import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 import android.app.Activity
 import android.content.Context
