@@ -82,6 +82,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -90,6 +91,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import kotlinx.coroutines.delay
 
@@ -162,6 +164,7 @@ fun PetalBottomNavBar(
                 .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
+            val context = LocalContext.current
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
             val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
             val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
@@ -203,7 +206,7 @@ fun PetalBottomNavBar(
                     .clip(CircleShape)
                     .then(
                         if (isLiquidGlass) {
-                            Modifier.com.petal.browser.ui.containment.liquidGlassChrome(CircleShape, true, glassSheen)
+                            Modifier.liquidGlassChrome(CircleShape, true, glassSheen)
                         } else Modifier
                     )
                     .pointerInput(Unit) {
@@ -360,6 +363,7 @@ fun PetalBottomNavBar(
             } else {
                 RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
             }
+            val context = LocalContext.current
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
             val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
             val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
@@ -375,7 +379,7 @@ fun PetalBottomNavBar(
                     .height(64.dp)
                     .then(
                         if (isLiquidGlass) {
-                            Modifier.com.petal.browser.ui.containment.liquidGlassChrome(navBarShape, true, glassSheen)
+                            Modifier.liquidGlassChrome(navBarShape, true, glassSheen)
                         } else Modifier
                     )
             ) {

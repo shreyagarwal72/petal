@@ -50,9 +50,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,7 +94,7 @@ fun isLiquidGlassEnabled(): Boolean {
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var enabled by remember {
-        mutableStateOf(sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false))
+        mutableStateOf<Boolean>(sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false))
     }
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
