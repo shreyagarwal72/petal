@@ -70,16 +70,93 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.tween
 
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.preference.PreferenceManager
+
 enum class PetalGroupPosition { SINGLE, TOP, MIDDLE, BOTTOM }
 
 val LocalPetalSectionHighlighted = compositionLocalOf { false }
 
+/**
+ * Checks whether Liquid Glass UI is enabled system-wide.
+ */
+@Composable
+fun isLiquidGlassEnabled(): Boolean {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    var enabled by remember {
+        mutableStateOf(sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false))
+    }
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sp_liquid_glass_unlocked" || key == "sp_liquid_glass_enabled") {
+                enabled = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+    return enabled
+}
+
+/**
+ * Specular highlight and hairline reflection border for Liquid Glass containments.
+ */
+fun Modifier.liquidGlassChrome(
+    shape: Shape,
+    enabled: Boolean = true,
+    sheenIntensity: Float = 0.60f
+): Modifier = if (!enabled) this else drawWithContent {
+    drawContent()
+    val outline = shape.createOutline(size, layoutDirection, this)
+    val path = when (outline) {
+        is Outline.Rounded -> Path().apply { addRoundRect(outline.roundRect) }
+        is Outline.Generic -> outline.path
+        is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
+    }
+
+    clipPath(path) {
+        drawRect(
+            brush = Brush.verticalGradient(
+                0f to Color.White.copy(alpha = 0.12f * sheenIntensity),
+                0.50f to Color.White.copy(alpha = 0.02f * sheenIntensity),
+                1f to Color.Transparent,
+                startY = 0f,
+                endY = size.height,
+            ),
+        )
+    }
+
+    drawPath(
+        path = path,
+        brush = Brush.linearGradient(
+            0f to Color.White.copy(alpha = 0.38f * sheenIntensity),
+            0.45f to Color.White.copy(alpha = 0.08f * sheenIntensity),
+            1f to Color.White.copy(alpha = 0.18f * sheenIntensity),
+            start = Offset.Zero,
+            end = Offset(size.width, size.height),
+        ),
+        style = Stroke(width = 1.dp.toPx()),
+    )
+}
+
 @Composable
 fun petalGroupSurfaceColor(): Color {
-    val target = if (LocalPetalSectionHighlighted.current) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val isGlass = isLiquidGlassEnabled()
+    val glassAlpha = if (isGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
+
+    val target = when {
+        LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+        isGlass -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha)
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
     val color by animateColorAsState(target, label = "petalGroupSurface")
     return color
@@ -242,14 +319,19 @@ fun PetalGroupRow(
 ) {
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
+    val isGlass = isLiquidGlassEnabled()
+    val shape = petalGroupShape(position)
     Card(
         onClick = onClick,
         enabled = enabled,
-        shape = petalGroupShape(position),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
-        modifier = modifier.fillMaxWidth().scale(scale),
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .liquidGlassChrome(shape = shape, enabled = isGlass),
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             PetalGroupIconBadge(icon, iconContainer, iconTint)
@@ -477,9 +559,18 @@ fun PetalGroupListRow(
     val scale = rememberPetalGroupPressScale(source)
     val haptics = LocalHapticFeedback.current
     val selectedColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-    Card(shape = petalGroupShape(position), colors = CardDefaults.cardColors(containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else if (selected) selectedColor else petalGroupSurfaceColor()),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), modifier = modifier.fillMaxWidth().scale(scale)
-            .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })) {
+    val isGlass = isLiquidGlassEnabled()
+    val shape = petalGroupShape(position)
+    Card(
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else if (selected) selectedColor else petalGroupSurfaceColor()),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .liquidGlassChrome(shape = shape, enabled = isGlass)
+            .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })
+    ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             leading(); Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f), content = content); trailing?.invoke()
         }

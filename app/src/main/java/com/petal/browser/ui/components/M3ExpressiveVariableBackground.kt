@@ -187,11 +187,49 @@ fun M3ExpressiveVariableBackground(
     val context = LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
+    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+    val liquidGlassBgMode = sp.getString("sp_liquid_glass_bg_mode", "MORPHING") ?: "MORPHING"
+    val liquidGlassImageUri = sp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
+
     val isSettingsPage = remember(pageSeed) {
         pageSeed.endsWith("_settings") || pageSeed.endsWith("_hub") || pageSeed == "delete_page"
     }
-    if (isSettingsPage && !showInSettings) {
-        // RvSystem-Monitor containment style: clean, un-muddled high-contrast Material 3 background for all settings surfaces
+
+    // When Liquid Glass is enabled with custom image or morphing shapes, apply across all pages including settings
+    if (isSettingsPage && !showInSettings && !isLiquidGlass) {
+        // Clean un-muddled high-contrast Material 3 background for all settings surfaces when Liquid Glass is off
+        return
+    }
+
+    if (isLiquidGlass && liquidGlassBgMode == "IMAGE" && liquidGlassImageUri.isNotEmpty()) {
+        val dim = sp.getFloat("sp_liquid_glass_bg_dim", 0.35f).coerceIn(0f, 0.9f)
+        val blur = sp.getFloat("sp_liquid_glass_bg_blur", 16f).coerceIn(0f, 40f)
+
+        androidx.compose.foundation.layout.Box(modifier = modifier.fillMaxSize()) {
+            coil.compose.AsyncImage(
+                model = liquidGlassImageUri,
+                contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (blur > 0.5f && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                            Modifier.graphicsLayer {
+                                renderEffect = android.graphics.RenderEffect
+                                    .createBlurEffect(blur, blur, android.graphics.Shader.TileMode.CLAMP)
+                                    .asComposeRenderEffect()
+                            }
+                        } else Modifier
+                    )
+            )
+            if (dim > 0f) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = dim))
+                )
+            }
+        }
         return
     }
 
@@ -219,7 +257,7 @@ fun M3ExpressiveVariableBackground(
         }
     }
 
-    if (!isShapesEnabled) return
+    if (!isShapesEnabled && !isLiquidGlass) return
 
     // Static seed epoch for PERIODIC mode so shapes remain stable until timer ticks
     var periodicSeedEpoch by rememberSaveable { mutableLongStateOf(sp.getLong("sp_periodic_seed_epoch", 1000L)) }

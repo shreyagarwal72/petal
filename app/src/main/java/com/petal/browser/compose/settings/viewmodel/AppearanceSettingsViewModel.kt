@@ -81,6 +81,30 @@ class AppearanceSettingsViewModel @Inject constructor(
     val launchRippleEnabled: StateFlow<Boolean> = settingsRepository.launchRippleEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val liquidGlassUnlocked: StateFlow<Boolean> = settingsRepository.liquidGlassUnlocked
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val liquidGlassEnabled: StateFlow<Boolean> = settingsRepository.liquidGlassEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val liquidGlassAlpha: StateFlow<Float> = settingsRepository.liquidGlassAlpha
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.70f)
+
+    val liquidGlassSheen: StateFlow<Float> = settingsRepository.liquidGlassSheen
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.60f)
+
+    val liquidGlassBgMode: StateFlow<String> = settingsRepository.liquidGlassBgMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "MORPHING")
+
+    val liquidGlassBgImageUri: StateFlow<String> = settingsRepository.liquidGlassBgImageUri
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val liquidGlassBgDim: StateFlow<Float> = settingsRepository.liquidGlassBgDim
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.35f)
+
+    val liquidGlassBgBlur: StateFlow<Float> = settingsRepository.liquidGlassBgBlur
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 16f)
+
     fun setAppFont(font: AppFont) = viewModelScope.launch {
         settingsRepository.setAppFont(font)
     }
@@ -159,5 +183,37 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setLaunchRippleEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setLaunchRippleEnabled(enabled)
+    }
+
+    fun setLiquidGlassUnlocked(unlocked: Boolean) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassUnlocked(unlocked)
+    }
+
+    fun setLiquidGlassEnabled(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassEnabled(enabled)
+    }
+
+    fun setLiquidGlassAlpha(alpha: Float) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassAlpha(alpha)
+    }
+
+    fun setLiquidGlassSheen(sheen: Float) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassSheen(sheen)
+    }
+
+    fun setLiquidGlassBgMode(mode: String) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassBgMode(mode)
+    }
+
+    fun setLiquidGlassBgImageUri(uri: String) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassBgImageUri(uri)
+    }
+
+    fun setLiquidGlassBgDim(dim: Float) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassBgDim(dim)
+    }
+
+    fun setLiquidGlassBgBlur(blur: Float) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassBgBlur(blur)
     }
 }

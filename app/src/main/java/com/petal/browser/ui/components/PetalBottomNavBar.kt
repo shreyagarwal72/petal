@@ -162,9 +162,14 @@ fun PetalBottomNavBar(
                 .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
+            val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+            val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
+            val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
             // Material 3 Expressive Floating Toolbar with styled surfaceContainer for proper theme presentation
             val toolbarColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
-                toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                toolbarContainerColor = if (isLiquidGlass) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = glassAlpha) else MaterialTheme.colorScheme.surfaceContainer,
                 toolbarContentColor = MaterialTheme.colorScheme.onSurface
             )
 
@@ -189,13 +194,18 @@ fun PetalBottomNavBar(
                         0.75.dp,
                         androidx.compose.ui.graphics.Brush.verticalGradient(
                             listOf(
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isLiquidGlass) 0.75f * glassSheen else 0.55f),
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isLiquidGlass) 0.30f * glassSheen else 0.15f)
                             )
                         ),
                         CircleShape
                     )
                     .clip(CircleShape)
+                    .then(
+                        if (isLiquidGlass) {
+                            Modifier.com.petal.browser.ui.containment.liquidGlassChrome(CircleShape, true, glassSheen)
+                        } else Modifier
+                    )
                     .pointerInput(Unit) {
                         detectHorizontalDragGestures(
                             onDragStart = { isDragging = true },
@@ -350,14 +360,24 @@ fun PetalBottomNavBar(
             } else {
                 RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
             }
+            val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+            val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
+            val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
             Surface(
                 shape = navBarShape,
-                color = MaterialTheme.colorScheme.surfaceContainer,
+                color = if (isLiquidGlass) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = glassAlpha) else MaterialTheme.colorScheme.surfaceContainer,
                 tonalElevation = if (isBottomAddressBar) 0.dp else 3.dp,
                 shadowElevation = if (isBottomAddressBar) 0.dp else 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
+                    .then(
+                        if (isLiquidGlass) {
+                            Modifier.com.petal.browser.ui.containment.liquidGlassChrome(navBarShape, true, glassSheen)
+                        } else Modifier
+                    )
             ) {
                 Row(
                     modifier = Modifier

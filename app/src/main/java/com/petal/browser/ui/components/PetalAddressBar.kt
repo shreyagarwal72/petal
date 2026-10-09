@@ -163,14 +163,22 @@ fun PetalAddressBar(
         RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
     }
 
-    val topBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+    val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
+    val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
+    val effectiveContainerColor = when {
+        isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
+        isLiquidGlass -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha)
+        else -> containerColor
+    }
 
     Surface(
         shape = containerShape,
-        color = containerColor,
+        color = effectiveContainerColor,
         tonalElevation = if (resolvedIsBottom) 2.dp else 4.dp,
         shadowElevation = if (resolvedIsBottom) 4.dp else 4.dp,
-        border = if (resolvedIsBottom) BorderStroke(0.65.dp, topBorderColor) else null,
+        border = if (resolvedIsBottom && !isLiquidGlass) BorderStroke(0.65.dp, topBorderColor) else null,
         modifier = modifier
             .fillMaxWidth()
             .then(
@@ -179,6 +187,11 @@ fun PetalAddressBar(
                 } else {
                     Modifier.padding(horizontal = 12.dp, vertical = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp)
                 }
+            )
+            .then(
+                if (isLiquidGlass) {
+                    Modifier.com.petal.browser.ui.containment.liquidGlassChrome(containerShape, true, glassSheen)
+                } else Modifier
             )
             .pointerInput(isSwipeTabsEnabled) {
                 if (!isSwipeTabsEnabled) return@pointerInput

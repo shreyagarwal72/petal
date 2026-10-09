@@ -120,6 +120,38 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_launch_ripple_enabled", true)
     }
 
+    override val liquidGlassUnlocked: Flow<Boolean> = preferenceFlow("sp_liquid_glass_unlocked") {
+        sp.getBoolean("sp_liquid_glass_unlocked", false)
+    }
+
+    override val liquidGlassEnabled: Flow<Boolean> = preferenceFlow("sp_liquid_glass_enabled") {
+        sp.getBoolean("sp_liquid_glass_enabled", false)
+    }
+
+    override val liquidGlassAlpha: Flow<Float> = preferenceFlow("sp_liquid_glass_alpha") {
+        sp.getFloat("sp_liquid_glass_alpha", 0.70f)
+    }
+
+    override val liquidGlassSheen: Flow<Float> = preferenceFlow("sp_liquid_glass_sheen") {
+        sp.getFloat("sp_liquid_glass_sheen", 0.60f)
+    }
+
+    override val liquidGlassBgMode: Flow<String> = preferenceFlow("sp_liquid_glass_bg_mode") {
+        sp.getString("sp_liquid_glass_bg_mode", "MORPHING") ?: "MORPHING"
+    }
+
+    override val liquidGlassBgImageUri: Flow<String> = preferenceFlow("sp_liquid_glass_bg_image_uri") {
+        sp.getString("sp_liquid_glass_bg_image_uri", "") ?: ""
+    }
+
+    override val liquidGlassBgDim: Flow<Float> = preferenceFlow("sp_liquid_glass_bg_dim") {
+        sp.getFloat("sp_liquid_glass_bg_dim", 0.35f)
+    }
+
+    override val liquidGlassBgBlur: Flow<Float> = preferenceFlow("sp_liquid_glass_bg_blur") {
+        sp.getFloat("sp_liquid_glass_bg_blur", 16f)
+    }
+
     // ── Search & Homepage ─────────────────────────────────────────────────────
     override val searchEngineIndex: Flow<String> = preferenceFlow("sp_search_engine") {
         sp.getString("sp_search_engine", "0") ?: "0"
@@ -432,6 +464,38 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLaunchRippleEnabled(enabled: Boolean) {
         sp.edit().putBoolean("sp_launch_ripple_enabled", enabled).apply()
+    }
+
+    override suspend fun setLiquidGlassUnlocked(unlocked: Boolean) {
+        sp.edit().putBoolean("sp_liquid_glass_unlocked", unlocked).apply()
+    }
+
+    override suspend fun setLiquidGlassEnabled(enabled: Boolean) {
+        sp.edit().putBoolean("sp_liquid_glass_enabled", enabled).apply()
+    }
+
+    override suspend fun setLiquidGlassAlpha(alpha: Float) {
+        sp.edit().putFloat("sp_liquid_glass_alpha", alpha).apply()
+    }
+
+    override suspend fun setLiquidGlassSheen(sheen: Float) {
+        sp.edit().putFloat("sp_liquid_glass_sheen", sheen).apply()
+    }
+
+    override suspend fun setLiquidGlassBgMode(mode: String) {
+        sp.edit().putString("sp_liquid_glass_bg_mode", mode).apply()
+    }
+
+    override suspend fun setLiquidGlassBgImageUri(uri: String) {
+        sp.edit().putString("sp_liquid_glass_bg_image_uri", uri).apply()
+    }
+
+    override suspend fun setLiquidGlassBgDim(dim: Float) {
+        sp.edit().putFloat("sp_liquid_glass_bg_dim", dim).apply()
+    }
+
+    override suspend fun setLiquidGlassBgBlur(blur: Float) {
+        sp.edit().putFloat("sp_liquid_glass_bg_blur", blur).apply()
     }
 
     override suspend fun setSearchEngineIndex(index: String) {
