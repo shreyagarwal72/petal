@@ -1769,14 +1769,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     );
                 }
             } else {
-                if (composeAddressBar != null) composeAddressBar.setVisibility(VISIBLE);
+                applyAddressBarPosition();
                 applyBottomBarVisibilityForSurface();
                 if (refreshBarCompose != null) refreshBarCompose.setVisibility(VISIBLE);
                 if (mainProgressBar != null) mainProgressBar.setVisibility(VISIBLE);
-                String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
-                if (appBar != null && currentAlbumController != null && !isHomePage(activeUrl)) {
-                    appBar.setVisibility(VISIBLE);
-                }
 
                 // Restore video player overlay if returning from PiP
                 if (videoOverlayBridge != null) {
@@ -2762,8 +2758,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
 
             if (addressBar == null) return;
+            String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : null);
+            boolean isWebPage = isActualWebPage(curUrl);
             boolean isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
-            if (isHome || isOverlayScreenShowing || isCustomFullscreenState || videoOverlayBridge != null || customView != null) {
+            boolean isNonWebSurface = !isWebPage || isHome || isOverlayScreenShowing || hasNonTabTopContent()
+                    || isCustomFullscreenState || videoOverlayBridge != null || customView != null;
+
+            if (isNonWebSurface) {
                 addressBar.setVisibility(GONE);
             } else {
                 addressBar.setVisibility(VISIBLE);
@@ -2827,18 +2828,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addressBar.setLayoutParams(addrParams);
             }
 
-            isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
             int resolvedStatusBarGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this);
             // For bottom address bar (Firefox style):
             // When address bar is at the bottom, it docks flush right above the bottom nav (if visible) or parent bottom.
             // Reserved bottom padding for mainContent ensures webpage content sits flush above the bottom toolbar.
             boolean isFloatingNavStyle = sp.getBoolean("sp_floating_tab_bar", true);
             int reservedNavHeight = (isFloatingNavStyle && !isBottom) ? 0 : bottomNavHeight;
-            boolean reserveBarSpace = !isOverlayScreenShowing && !isCustomFullscreenState && videoOverlayBridge == null && customView == null;
-            int topInset = reserveBarSpace ? (!isHome ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0) : 0;
-            int bottomInset = reserveBarSpace ? (isHome ? reservedNavHeight : (isBottom
-                    ? addressHeight + bottomNavHeight
-                    : reservedNavHeight)) : 0;
+            boolean reserveBarSpace = !isNonWebSurface;
+            int topInset = reserveBarSpace ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0;
+            int bottomInset = reserveBarSpace ? (isBottom ? addressHeight + bottomNavHeight : reservedNavHeight)
+                    : (isHome ? reservedNavHeight : 0);
             mainContent.setPadding(0, topInset, 0, bottomInset);
 
 
@@ -3881,6 +3880,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return clean.startsWith("file:///android_asset/");
     }
 
+    public boolean isActualWebPage(String url) {
+        if (url == null) return false;
+        String clean = url.trim();
+        if (clean.isEmpty() || isHomePage(clean)) return false;
+        String lower = clean.toLowerCase(java.util.Locale.ROOT);
+        return lower.startsWith("http://") || lower.startsWith("https://");
+    }
+
     public boolean isCurrentTabHomeOrBlank() {
         String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
         if (url == null || url.trim().isEmpty()) return true;
@@ -3937,7 +3944,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             currentProgressFraction = ninjaWebView.getProgress() / 100f;
         }
 
-        if (isPetalHomeSurfaceShowing || isHomePage(currentUrl) || isOverlayScreenShowing || isCustomFullscreenState || videoOverlayBridge != null || customView != null) {
+        boolean isNonWebSurface = !isActualWebPage(currentUrl) || isPetalHomeSurfaceShowing || isHomePage(currentUrl)
+                || isOverlayScreenShowing || hasNonTabTopContent()
+                || isCustomFullscreenState || videoOverlayBridge != null || customView != null;
+        if (isNonWebSurface) {
             composeAddressBar.setVisibility(GONE);
             return;
         } else {
@@ -4143,7 +4153,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        if (isHomePage(currentUrl) || isCustomFullscreenState || videoOverlayBridge != null || customView != null) {
+        boolean isNonWeb = !isActualWebPage(currentUrl) || isHomePage(currentUrl)
+                || isOverlayScreenShowing || hasNonTabTopContent()
+                || isCustomFullscreenState || videoOverlayBridge != null || customView != null;
+        if (isNonWeb) {
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             if (contentFrame != null) contentFrame.setTranslationY(0f);
@@ -4318,9 +4331,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
         View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
         View mediaSnifferBanner = findViewById(R.id.media_sniffer_compose);
-        boolean isSearchOrInternal = com.petal.browser.media.sniffer.PetalMediaSniffer.isSearchEngineOrInternalUrl(url);
-        if (isHomePage(url) || isSearchOrInternal) {
-            if (composeAddressBar != null && isHomePage(url)) composeAddressBar.setVisibility(GONE);
+        boolean isWebPage = isActualWebPage(url);
+        boolean isNonWebSurface = !isWebPage || isHomePage(url) || isOverlayScreenShowing || hasNonTabTopContent()
+                || isCustomFullscreenState || videoOverlayBridge != null || customView != null;
+        if (isNonWebSurface || isSearchOrInternal) {
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             if (contentFrame != null) contentFrame.setTranslationY(0f);
@@ -4329,16 +4344,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             isAddressBarCollapsed = false;
         } else {
             if (composeAddressBar != null) {
-                if (isCustomFullscreenState || videoOverlayBridge != null || customView != null) {
-                    composeAddressBar.setVisibility(GONE);
-                } else {
-                    composeAddressBar.setVisibility(VISIBLE);
-                    composeAddressBar.setTranslationY(0f);
-                }
+                composeAddressBar.setVisibility(VISIBLE);
+                composeAddressBar.setTranslationY(0f);
             }
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
-            if (mediaSnifferBanner != null) mediaSnifferBanner.setVisibility(isCustomFullscreenState || videoOverlayBridge != null || customView != null ? GONE : VISIBLE);
+            if (mediaSnifferBanner != null) mediaSnifferBanner.setVisibility(VISIBLE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             isAddressBarCollapsed = false;
