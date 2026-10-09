@@ -136,6 +136,22 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getFloat("sp_liquid_glass_sheen", 0.60f)
     }
 
+    override val liquidGlassTint: Flow<String> = preferenceFlow("sp_liquid_glass_tint") {
+        sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED"
+    }
+
+    override val liquidGlassContainments: Flow<Boolean> = preferenceFlow("sp_liquid_glass_containments") {
+        sp.getBoolean("sp_liquid_glass_containments", true)
+    }
+
+    override val liquidGlassBottomNav: Flow<Boolean> = preferenceFlow("sp_liquid_glass_bottom_nav") {
+        sp.getBoolean("sp_liquid_glass_bottom_nav", true)
+    }
+
+    override val liquidGlassAddressBar: Flow<Boolean> = preferenceFlow("sp_liquid_glass_address_bar") {
+        sp.getBoolean("sp_liquid_glass_address_bar", true)
+    }
+
     override val liquidGlassBgMode: Flow<String> = preferenceFlow("sp_liquid_glass_bg_mode") {
         sp.getString("sp_liquid_glass_bg_mode", "MORPHING") ?: "MORPHING"
     }
@@ -480,6 +496,22 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLiquidGlassSheen(sheen: Float) {
         sp.edit().putFloat("sp_liquid_glass_sheen", sheen).apply()
+    }
+
+    override suspend fun setLiquidGlassTint(tint: String) {
+        sp.edit().putString("sp_liquid_glass_tint", tint).apply()
+    }
+
+    override suspend fun setLiquidGlassContainments(enabled: Boolean) {
+        sp.edit().putBoolean("sp_liquid_glass_containments", enabled).apply()
+    }
+
+    override suspend fun setLiquidGlassBottomNav(enabled: Boolean) {
+        sp.edit().putBoolean("sp_liquid_glass_bottom_nav", enabled).apply()
+    }
+
+    override suspend fun setLiquidGlassAddressBar(enabled: Boolean) {
+        sp.edit().putBoolean("sp_liquid_glass_address_bar", enabled).apply()
     }
 
     override suspend fun setLiquidGlassBgMode(mode: String) {

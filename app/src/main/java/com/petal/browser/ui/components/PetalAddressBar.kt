@@ -164,13 +164,22 @@ fun PetalAddressBar(
         RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
     }
 
-    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) &&
+        sp.getBoolean("sp_liquid_glass_enabled", false) &&
+        sp.getBoolean("sp_liquid_glass_address_bar", true)
     val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
     val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
+
+    val baseGlassColor = when (glassTint) {
+        "ACCENT" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = glassAlpha * 0.85f)
+        "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = glassAlpha)
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha)
+    }
 
     val effectiveContainerColor = when {
         isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
-        isLiquidGlass -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha)
+        isLiquidGlass -> baseGlassColor
         else -> containerColor
     }
 

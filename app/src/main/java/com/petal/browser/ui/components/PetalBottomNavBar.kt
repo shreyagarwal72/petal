@@ -166,13 +166,22 @@ fun PetalBottomNavBar(
         ) {
             val context = LocalContext.current
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) &&
+                sp.getBoolean("sp_liquid_glass_enabled", false) &&
+                sp.getBoolean("sp_liquid_glass_bottom_nav", true)
             val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
             val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+            val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
+
+            val baseContainer = when (glassTint) {
+                "ACCENT" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = glassAlpha * 0.85f)
+                "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = glassAlpha)
+                else -> MaterialTheme.colorScheme.surfaceContainer.copy(alpha = glassAlpha)
+            }
 
             // Material 3 Expressive Floating Toolbar with styled surfaceContainer for proper theme presentation
             val toolbarColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
-                toolbarContainerColor = if (isLiquidGlass) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = glassAlpha) else MaterialTheme.colorScheme.surfaceContainer,
+                toolbarContainerColor = if (isLiquidGlass) baseContainer else MaterialTheme.colorScheme.surfaceContainer,
                 toolbarContentColor = MaterialTheme.colorScheme.onSurface
             )
 
@@ -365,13 +374,22 @@ fun PetalBottomNavBar(
             }
             val context = LocalContext.current
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) &&
+                sp.getBoolean("sp_liquid_glass_enabled", false) &&
+                sp.getBoolean("sp_liquid_glass_bottom_nav", true)
             val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
             val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+            val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
+
+            val baseContainer = when (glassTint) {
+                "ACCENT" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = glassAlpha * 0.85f)
+                "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = glassAlpha)
+                else -> MaterialTheme.colorScheme.surfaceContainer.copy(alpha = glassAlpha)
+            }
 
             Surface(
                 shape = navBarShape,
-                color = if (isLiquidGlass) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = glassAlpha) else MaterialTheme.colorScheme.surfaceContainer,
+                color = if (isLiquidGlass) baseContainer else MaterialTheme.colorScheme.surfaceContainer,
                 tonalElevation = if (isBottomAddressBar) 0.dp else 3.dp,
                 shadowElevation = if (isBottomAddressBar) 0.dp else 8.dp,
                 modifier = Modifier

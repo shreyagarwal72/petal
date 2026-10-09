@@ -93,6 +93,18 @@ class AppearanceSettingsViewModel @Inject constructor(
     val liquidGlassSheen: StateFlow<Float> = settingsRepository.liquidGlassSheen
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.60f)
 
+    val liquidGlassTint: StateFlow<String> = settingsRepository.liquidGlassTint
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "FROSTED")
+
+    val liquidGlassContainments: StateFlow<Boolean> = settingsRepository.liquidGlassContainments
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val liquidGlassBottomNav: StateFlow<Boolean> = settingsRepository.liquidGlassBottomNav
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val liquidGlassAddressBar: StateFlow<Boolean> = settingsRepository.liquidGlassAddressBar
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val liquidGlassBgMode: StateFlow<String> = settingsRepository.liquidGlassBgMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "MORPHING")
 
@@ -199,6 +211,22 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setLiquidGlassSheen(sheen: Float) = viewModelScope.launch {
         settingsRepository.setLiquidGlassSheen(sheen)
+    }
+
+    fun setLiquidGlassTint(tint: String) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassTint(tint)
+    }
+
+    fun setLiquidGlassContainments(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassContainments(enabled)
+    }
+
+    fun setLiquidGlassBottomNav(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassBottomNav(enabled)
+    }
+
+    fun setLiquidGlassAddressBar(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassAddressBar(enabled)
     }
 
     fun setLiquidGlassBgMode(mode: String) = viewModelScope.launch {

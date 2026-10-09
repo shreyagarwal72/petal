@@ -77,6 +77,10 @@ fun AppearanceSettingsScreen(
     val liquidGlassEnabled by viewModel.liquidGlassEnabled.collectAsStateWithLifecycle()
     val liquidGlassAlpha by viewModel.liquidGlassAlpha.collectAsStateWithLifecycle()
     val liquidGlassSheen by viewModel.liquidGlassSheen.collectAsStateWithLifecycle()
+    val liquidGlassTint by viewModel.liquidGlassTint.collectAsStateWithLifecycle()
+    val liquidGlassContainments by viewModel.liquidGlassContainments.collectAsStateWithLifecycle()
+    val liquidGlassBottomNav by viewModel.liquidGlassBottomNav.collectAsStateWithLifecycle()
+    val liquidGlassAddressBar by viewModel.liquidGlassAddressBar.collectAsStateWithLifecycle()
     val liquidGlassBgMode by viewModel.liquidGlassBgMode.collectAsStateWithLifecycle()
     val liquidGlassBgImageUri by viewModel.liquidGlassBgImageUri.collectAsStateWithLifecycle()
     val liquidGlassBgDim by viewModel.liquidGlassBgDim.collectAsStateWithLifecycle()
@@ -106,6 +110,10 @@ fun AppearanceSettingsScreen(
         liquidGlassEnabled = liquidGlassEnabled,
         liquidGlassAlpha = liquidGlassAlpha,
         liquidGlassSheen = liquidGlassSheen,
+        liquidGlassTint = liquidGlassTint,
+        liquidGlassContainments = liquidGlassContainments,
+        liquidGlassBottomNav = liquidGlassBottomNav,
+        liquidGlassAddressBar = liquidGlassAddressBar,
         liquidGlassBgMode = liquidGlassBgMode,
         liquidGlassBgImageUri = liquidGlassBgImageUri,
         liquidGlassBgDim = liquidGlassBgDim,
@@ -132,6 +140,10 @@ fun AppearanceSettingsScreen(
         onLiquidGlassEnabledChange = viewModel::setLiquidGlassEnabled,
         onLiquidGlassAlphaChange = viewModel::setLiquidGlassAlpha,
         onLiquidGlassSheenChange = viewModel::setLiquidGlassSheen,
+        onLiquidGlassTintChange = viewModel::setLiquidGlassTint,
+        onLiquidGlassContainmentsChange = viewModel::setLiquidGlassContainments,
+        onLiquidGlassBottomNavChange = viewModel::setLiquidGlassBottomNav,
+        onLiquidGlassAddressBarChange = viewModel::setLiquidGlassAddressBar,
         onLiquidGlassBgModeChange = viewModel::setLiquidGlassBgMode,
         onLiquidGlassBgImageUriChange = viewModel::setLiquidGlassBgImageUri,
         onLiquidGlassBgDimChange = viewModel::setLiquidGlassBgDim,
@@ -165,6 +177,10 @@ fun AppearanceSettingsScreenContent(
     liquidGlassEnabled: Boolean = false,
     liquidGlassAlpha: Float = 0.70f,
     liquidGlassSheen: Float = 0.60f,
+    liquidGlassTint: String = "FROSTED",
+    liquidGlassContainments: Boolean = true,
+    liquidGlassBottomNav: Boolean = true,
+    liquidGlassAddressBar: Boolean = true,
     liquidGlassBgMode: String = "MORPHING",
     liquidGlassBgImageUri: String = "",
     liquidGlassBgDim: Float = 0.35f,
@@ -193,6 +209,10 @@ fun AppearanceSettingsScreenContent(
     onLiquidGlassEnabledChange: (Boolean) -> Unit = {},
     onLiquidGlassAlphaChange: (Float) -> Unit = {},
     onLiquidGlassSheenChange: (Float) -> Unit = {},
+    onLiquidGlassTintChange: (String) -> Unit = {},
+    onLiquidGlassContainmentsChange: (Boolean) -> Unit = {},
+    onLiquidGlassBottomNavChange: (Boolean) -> Unit = {},
+    onLiquidGlassAddressBarChange: (Boolean) -> Unit = {},
     onLiquidGlassBgModeChange: (String) -> Unit = {},
     onLiquidGlassBgImageUriChange: (String) -> Unit = {},
     onLiquidGlassBgDimChange: (Float) -> Unit = {},
@@ -833,6 +853,99 @@ fun AppearanceSettingsScreenContent(
                                     .padding(vertical = 4.dp),
                                 verticalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
+                                // Live Liquid Glass Interactive Preview Card
+                                val previewShape = RoundedCornerShape(24.dp)
+                                val previewSheen = liquidGlassSheen
+                                val previewAlpha = liquidGlassAlpha
+                                val previewBaseColor = when (liquidGlassTint) {
+                                    "ACCENT" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = previewAlpha * 0.85f)
+                                    "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = previewAlpha)
+                                    else -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = previewAlpha)
+                                }
+                                Card(
+                                    shape = previewShape,
+                                    colors = CardDefaults.cardColors(containerColor = previewBaseColor),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .liquidGlassChrome(
+                                            shape = previewShape,
+                                            enabled = true,
+                                            sheenIntensity = previewSheen,
+                                            tintColor = if (liquidGlassTint == "ACCENT") MaterialTheme.colorScheme.primary else Color.Unspecified
+                                        )
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(18.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(36.dp)
+                                                        .clip(CircleShape)
+                                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.AutoAwesome,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                }
+                                                Column {
+                                                    Text(
+                                                        text = "Liquid Glass Live Preview",
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Text(
+                                                        text = "Specular light refraction & chromatic rim",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        Text(
+                                            text = "Pure frosted glass material renders responsive chromatic edges and real-time alpha translucency over the active backdrop layer.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                // Glass Tint Style Selector
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = "Glass Tint & Material Style",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    ExpressiveButtonGroup(
+                                        items = listOf(
+                                            ExpressiveSegmentItem(id = "FROSTED", label = "Frosted", icon = Icons.Rounded.BlurOn),
+                                            ExpressiveSegmentItem(id = "ACCENT", label = "Tinted", icon = Icons.Rounded.ColorLens),
+                                            ExpressiveSegmentItem(id = "DEEP", label = "Deep Glass", icon = Icons.Rounded.DarkMode)
+                                        ),
+                                        selectedId = liquidGlassTint,
+                                        onItemSelected = onLiquidGlassTintChange,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
                                 // Glass Translucency Slider (Stride style PetalSlider)
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Row(
@@ -883,6 +996,49 @@ fun AppearanceSettingsScreenContent(
                                         valueRange = 0f..1f,
                                         modifier = Modifier.fillMaxWidth()
                                     )
+                                }
+
+                                Divider(
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                )
+
+                                // Component Level Tweaks (Stride custom components)
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        text = "Component Surfaces",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Cards & Containments",
+                                            subtitle = "Apply liquid glass material to cards, list groups & dialogs",
+                                            icon = Icons.Rounded.Layers,
+                                            checked = liquidGlassContainments,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
+                                            onCheckedChange = onLiquidGlassContainmentsChange
+                                        )
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Bottom Navigation Bar",
+                                            subtitle = "Translucent floating or persistent bottom navigation bar",
+                                            icon = Icons.Rounded.SpaceBar,
+                                            checked = liquidGlassBottomNav,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                                            onCheckedChange = onLiquidGlassBottomNavChange
+                                        )
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Address & Search Bar",
+                                            subtitle = "Translucent address bar pill with specular edge glow",
+                                            icon = Icons.Rounded.Search,
+                                            checked = liquidGlassAddressBar,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                                            onCheckedChange = onLiquidGlassAddressBarChange
+                                        )
+                                    }
                                 }
 
                                 Divider(

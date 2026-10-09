@@ -34,6 +34,10 @@ interface SettingsRepository {
     val liquidGlassEnabled: Flow<Boolean>
     val liquidGlassAlpha: Flow<Float>
     val liquidGlassSheen: Flow<Float>
+    val liquidGlassTint: Flow<String>
+    val liquidGlassContainments: Flow<Boolean>
+    val liquidGlassBottomNav: Flow<Boolean>
+    val liquidGlassAddressBar: Flow<Boolean>
     val liquidGlassBgMode: Flow<String>
     val liquidGlassBgImageUri: Flow<String>
     val liquidGlassBgDim: Flow<Float>
@@ -131,6 +135,10 @@ interface SettingsRepository {
     suspend fun setLiquidGlassEnabled(enabled: Boolean)
     suspend fun setLiquidGlassAlpha(alpha: Float)
     suspend fun setLiquidGlassSheen(sheen: Float)
+    suspend fun setLiquidGlassTint(tint: String)
+    suspend fun setLiquidGlassContainments(enabled: Boolean)
+    suspend fun setLiquidGlassBottomNav(enabled: Boolean)
+    suspend fun setLiquidGlassAddressBar(enabled: Boolean)
     suspend fun setLiquidGlassBgMode(mode: String)
     suspend fun setLiquidGlassBgImageUri(uri: String)
     suspend fun setLiquidGlassBgDim(dim: Float)
