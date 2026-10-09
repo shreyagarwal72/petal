@@ -41,6 +41,7 @@ import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.sniffer.PetalMediaSniffer
+import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.view.PetalToast
 
 /**
@@ -173,6 +174,8 @@ fun PetalAddressBar(
         else -> containerColor
     }
 
+    val topBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+
     Surface(
         shape = containerShape,
         color = effectiveContainerColor,
@@ -190,7 +193,7 @@ fun PetalAddressBar(
             )
             .then(
                 if (isLiquidGlass) {
-                    Modifier.com.petal.browser.ui.containment.liquidGlassChrome(containerShape, true, glassSheen)
+                    Modifier.liquidGlassChrome(containerShape, true, glassSheen)
                 } else Modifier
             )
             .pointerInput(isSwipeTabsEnabled) {
