@@ -68,11 +68,10 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 /** Only the bottom corners are rounded (24dp) for a clean Material 3 Expressive header look */
 private val HeaderShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
-
-import com.petal.browser.ui.containment.liquidGlassChrome
 
 /**
  * Material 3 Expressive Header component ported from LastWave-native (duxtami).
