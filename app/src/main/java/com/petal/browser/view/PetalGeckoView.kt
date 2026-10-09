@@ -2764,7 +2764,12 @@ class SafeGeckoView : GeckoView {
 
             MotionEvent.ACTION_MOVE -> {
                 val hasDragGestureStarted = eventY != initialDownY
-                if (!gestureCanReachParent && eventY > initialDownY) {
+                if (eventY < initialDownY) {
+                    // Scrolling up into webpage content: immediately disallow parent interception
+                    // so pull-to-refresh never conflicts with webpage scrolling or fling gestures
+                    gestureCanReachParent = false
+                    parent?.requestDisallowInterceptTouchEvent(true)
+                } else if (!gestureCanReachParent && eventY > initialDownY) {
                     val isAtTop = (parent as? PetalGeckoView)?.isPageAtTop() ?: false
                     if (isAtTop) {
                         gestureCanReachParent = true
