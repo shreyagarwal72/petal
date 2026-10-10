@@ -59,6 +59,8 @@ import com.petal.browser.haptics.PetalHapticEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.unit.PetalUpdateManager
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -380,9 +382,7 @@ fun PetalUpdateSheetContent(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var isDownloadEnqueued by remember { mutableStateOf(false) }
-    var isDownloading by remember { mutableStateOf(false) }
-    var downloadProgress by remember { mutableIntStateOf(0) }
+
 
     var fetchedNotes by remember(updateInfo.releaseNotes) { mutableStateOf<String?>(null) }
     var isFetchingNotes by remember(updateInfo.releaseNotes) { mutableStateOf(false) }
@@ -510,130 +510,164 @@ fun PetalUpdateSheetContent(
 
             // Action Buttons
             if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
-                if (isDownloading) {
-                    com.petal.browser.ui.containment.PetalHeroCard(
-                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                val liveUpdateState by PetalUpdateManager.downloadState.collectAsStateWithLifecycle()
+                LaunchedEffect(Unit) {
+                    PetalUpdateManager.initialize(context)
+                }
+
+                when (val state = liveUpdateState) {
+                    is PetalUpdateManager.UpdateDownloadState.Downloading -> {
+                        com.petal.browser.ui.containment.PetalHeroCard(
+                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            LinearWavyProgressIndicator(
-                                progress = { downloadProgress / 100f },
-                                modifier = Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                            )
-                            Text(
-                                text = stringResource(R.string.ui_downloading_update, downloadProgress),
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                } else if (isDownloadEnqueued) {
-                    com.petal.browser.ui.containment.PetalHeroCard(
-                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.DownloadDone,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.ui_downloading_in_background),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                LinearWavyProgressIndicator(
+                                    progress = { state.progress / 100f },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                                 )
-                                Text(
-                                    text = stringResource(R.string.ui_download_won_t_stop_if),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.ui_downloading_update, state.progress),
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    TextButton(
+                                        onClick = {
+                                            PetalUpdateManager.pauseUpdateDownload(context)
+                                        }
+                                    ) {
+                                        Text("Pause")
+                                    }
+                                }
                             }
                         }
                     }
-                } else {
-                    var updateSplitExpanded by remember { mutableStateOf(false) }
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        ExpressiveSplitButton(
-                            label = stringResource(R.string.ui_download_install_update),
-                            onPrimaryClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                                try {
-                                    val act = context as? Activity
-                                    if (act != null) {
-                                        com.petal.browser.update.PetalPlayUpdateManager.getInstance(act).openPlayStore(act)
-                                    } else {
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        context.startActivity(intent)
-                                    }
-                                } catch (_: Exception) {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
-                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    context.startActivity(intent)
-                                }
-                            },
-                            onMenuClick = { updateSplitExpanded = !updateSplitExpanded },
-                            icon = Icons.Rounded.FileDownload,
-                            isMenuExpanded = updateSplitExpanded,
-                            variant = SplitButtonVariant.FILLED,
-                            height = 50.dp,
+                    is PetalUpdateManager.UpdateDownloadState.Paused -> {
+                        com.petal.browser.ui.containment.PetalHeroCard(
+                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.fillMaxWidth()
-                        )
-
-                        com.petal.browser.ui.containment.PetalPopupMenu(
-                            expanded = updateSplitExpanded,
-                            onDismissRequest = { updateSplitExpanded = false },
-                            shape = RoundedCornerShape(20.dp),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_download_in_background)) },
-                                leadingIcon = {
-                                    Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                },
-                                onClick = {
-                                    updateSplitExpanded = false
-                                    try {
-                                        val act = context as? Activity
-                                        if (act != null) {
-                                            com.petal.browser.update.PetalPlayUpdateManager.getInstance(act).checkForUpdates(act as ComponentActivity, false)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                LinearWavyProgressIndicator(
+                                    progress = { state.progress / 100f },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = MaterialTheme.colorScheme.outline,
+                                    trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Update paused (${state.progress}%)",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Row {
+                                        TextButton(onClick = { PetalUpdateManager.resumeUpdateDownload(context) }) {
+                                            Text("Resume")
                                         }
-                                    } catch (_: Exception) {}
+                                        TextButton(onClick = { PetalUpdateManager.cancelUpdateDownload(context) }) {
+                                            Text("Cancel")
+                                        }
+                                    }
                                 }
+                            }
+                        }
+                    }
+                    is PetalUpdateManager.UpdateDownloadState.Completed -> {
+                        Button(
+                            onClick = {
+                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                PetalUpdateManager.installActiveUpdate(context)
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth().height(50.dp)
+                        ) {
+                            Icon(Icons.Rounded.DownloadDone, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Install Downloaded Update", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    else -> {
+                        // Idle or Failed
+                        var updateSplitExpanded by remember { mutableStateOf(false) }
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            ExpressiveSplitButton(
+                                label = stringResource(R.string.ui_download_install_update),
+                                onPrimaryClick = {
+                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                    PetalUpdateManager.startUpdateDownload(
+                                        context = context,
+                                        downloadUrl = updateInfo.downloadUrl,
+                                        version = updateInfo.versionName
+                                    )
+                                },
+                                onMenuClick = { updateSplitExpanded = !updateSplitExpanded },
+                                icon = Icons.Rounded.FileDownload,
+                                isMenuExpanded = updateSplitExpanded,
+                                variant = SplitButtonVariant.FILLED,
+                                height = 50.dp,
+                                modifier = Modifier.fillMaxWidth()
                             )
-                            if (updateInfo.releaseUrl.isNotBlank()) {
+
+                            com.petal.browser.ui.containment.PetalPopupMenu(
+                                expanded = updateSplitExpanded,
+                                onDismissRequest = { updateSplitExpanded = false },
+                                shape = RoundedCornerShape(20.dp),
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ) {
                                 com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                    text = { Text(stringResource(R.string.ui_open_github_releases)) },
+                                    text = { Text(stringResource(R.string.ui_download_in_background)) },
                                     leadingIcon = {
-                                        Icon(Icons.Rounded.OpenInBrowser, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                        Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                     },
                                     onClick = {
                                         updateSplitExpanded = false
-                                        try {
-                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
-                                            context.startActivity(intent)
-                                        } catch (_: Exception) {}
+                                        PetalUpdateManager.startUpdateDownload(
+                                            context = context,
+                                            downloadUrl = updateInfo.downloadUrl,
+                                            version = updateInfo.versionName
+                                        )
                                     }
                                 )
+                                if (updateInfo.releaseUrl.isNotBlank()) {
+                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                        text = { Text(stringResource(R.string.ui_open_github_releases)) },
+                                        leadingIcon = {
+                                            Icon(Icons.Rounded.OpenInBrowser, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                        },
+                                        onClick = {
+                                            updateSplitExpanded = false
+                                            try {
+                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
+                                                context.startActivity(intent)
+                                            } catch (_: Exception) {}
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

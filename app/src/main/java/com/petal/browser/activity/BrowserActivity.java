@@ -6168,6 +6168,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         String action = intent.getAction();
+        if ("com.petal.browser.action.SHOW_UPDATE".equals(action)) {
+            String updateVer = intent.getStringExtra("update_version");
+            String updateUrl = intent.getStringExtra("update_url");
+            intent.setAction("");
+            if (updateVer != null && updateUrl != null) {
+                com.petal.browser.ui.components.PetalUpdateSheetBridge.showUpdateSheet(
+                    this,
+                    new com.petal.browser.ui.components.PetalUpdateInfo(
+                        updateVer,
+                        "Squashed bugs, added magic. Ready to download & install!",
+                        updateUrl,
+                        "https://github.com/shreyagarwal72/petal/releases",
+                        true
+                    )
+                );
+            }
+            return;
+        }
         if (com.petal.browser.compose.incognito.PetalIncognitoSessionManager.ACTION_CLOSE_INCOGNITO.equals(action)) {
             closeAllIncognitoTabs();
             intent.setAction("");

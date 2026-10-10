@@ -31,6 +31,7 @@ import com.petal.browser.logger.PetalAppLogger
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalCrashReportingPicker
+import com.petal.browser.unit.PetalUpdateManager
 import com.petal.browser.unit.UpdateUnit
 import com.petal.browser.view.PetalToast
 import java.text.SimpleDateFormat
@@ -176,6 +177,120 @@ fun UpdaterSettingsScreenContent(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 }
+                            }
+
+                            val activeUpdateState by PetalUpdateManager.downloadState.collectAsStateWithLifecycle()
+                            LaunchedEffect(Unit) {
+                                PetalUpdateManager.initialize(context)
+                            }
+
+                            when (val state = activeUpdateState) {
+                                is PetalUpdateManager.UpdateDownloadState.Downloading -> {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "Downloading Update ${state.version} (${state.progress}%)",
+                                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                )
+                                                TextButton(onClick = { PetalUpdateManager.pauseUpdateDownload(context) }) {
+                                                    Text("Pause", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                                }
+                                            }
+                                            LinearProgressIndicator(
+                                                progress = { state.progress / 100f },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                color = MaterialTheme.colorScheme.primary,
+                                                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                                            )
+                                        }
+                                    }
+                                }
+                                is PetalUpdateManager.UpdateDownloadState.Paused -> {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "Update Paused (${state.progress}%)",
+                                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Row {
+                                                    TextButton(onClick = { PetalUpdateManager.resumeUpdateDownload(context) }) {
+                                                        Text("Resume")
+                                                    }
+                                                    TextButton(onClick = { PetalUpdateManager.cancelUpdateDownload(context) }) {
+                                                        Text("Cancel")
+                                                    }
+                                                }
+                                            }
+                                            LinearProgressIndicator(
+                                                progress = { state.progress / 100f },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                color = MaterialTheme.colorScheme.outline,
+                                                trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                                            )
+                                        }
+                                    }
+                                }
+                                is PetalUpdateManager.UpdateDownloadState.Completed -> {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = "Update Ready to Install",
+                                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                )
+                                                Text(
+                                                    text = "Version ${state.version} downloaded",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                                )
+                                            }
+                                            Button(
+                                                onClick = { PetalUpdateManager.installActiveUpdate(context) },
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Text("Install")
+                                            }
+                                        }
+                                    }
+                                }
+                                else -> {}
                             }
 
                             Row(
