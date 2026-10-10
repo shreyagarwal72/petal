@@ -131,18 +131,32 @@ jobs:
               aligned_apk="/tmp/aligned_$filename"
               final_apk="signed_apks/$filename"
 
-              $ANDROID_SDK_BUILD_TOOLS/zipalign -v -p 4 "$apk" "$aligned_apk"
-
-              $ANDROID_SDK_BUILD_TOOLS/apksigner sign \
-                --ks /tmp/signing.keystore \
-                --ks-pass pass:"$STORE_PASS" \
-                --key-pass pass:"$KEY_PASS" \
-                --ks-key-alias "$ALIAS_NAME" \
-                --out "$final_apk" \
-                "$aligned_apk"
+              # Gradle assembleRelease with release signingConfig already aligns and signs APKs (v1, v2, v3).
+              # Running zipalign on an already-signed APK corrupts signatures and causes INSTALL_PARSE_FAILED_NO_CERTIFICATES.
+              # Check if APK is already validly signed by Gradle:
+              if $ANDROID_SDK_BUILD_TOOLS/apksigner verify "$apk" >/dev/null 2>&1; then
+                echo "APK $filename is already cleanly signed and aligned by Gradle. Copying to signed_apks."
+                cp "$apk" "$final_apk"
+              else
+                echo "Signing $filename with apksigner (v1, v2, v3)..."
+                # Strip any existing broken signatures in META-INF before zipaligning and signing
+                zip -d "$apk" "META-INF/*.SF" "META-INF/*.RSA" "META-INF/*.DSA" "META-INF/*.EC" "META-INF/MANIFEST.MF" >/dev/null 2>&1 || true
+                $ANDROID_SDK_BUILD_TOOLS/zipalign -v -p 4 "$apk" "$aligned_apk"
+                $ANDROID_SDK_BUILD_TOOLS/apksigner sign \
+                  --ks /tmp/signing.keystore \
+                  --ks-pass pass:"$STORE_PASS" \
+                  --key-pass pass:"$KEY_PASS" \
+                  --ks-key-alias "$ALIAS_NAME" \
+                  --v1-signing-enabled true \
+                  --v2-signing-enabled true \
+                  --v3-signing-enabled true \
+                  --v4-signing-enabled false \
+                  --out "$final_apk" \
+                  "$aligned_apk"
+                rm -f "$aligned_apk"
+              fi
 
               $ANDROID_SDK_BUILD_TOOLS/apksigner verify --verbose "$final_apk"
-              rm -f "$aligned_apk"
             fi
           done
 
