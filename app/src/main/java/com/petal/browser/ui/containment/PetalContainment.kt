@@ -119,8 +119,22 @@ fun Modifier.liquidGlassChrome(
     shape: Shape,
     enabled: Boolean = true,
     sheenIntensity: Float = 0.60f,
-    tintColor: Color = Color.Unspecified
-): Modifier = if (!enabled) this else drawWithContent {
+    tintColor: Color = Color.Unspecified,
+    // When a backdrop is supplied (and the device supports it) the surface becomes REAL glass:
+    // live blur of what is behind it + lens refraction. The caller must keep its own container
+    // transparent in that case. Null keeps the old translucent-fill look.
+    backdrop: PetalBackdrop? = null,
+    isDark: Boolean = false
+): Modifier = if (!enabled) this else Modifier
+    .petalRealGlass(backdrop, shape, isDark)
+    .liquidGlassSheen(shape, sheenIntensity, tintColor)
+
+/** Specular highlight + rim stroke only (the original Petal "glass" look). */
+private fun Modifier.liquidGlassSheen(
+    shape: Shape,
+    sheenIntensity: Float,
+    tintColor: Color
+): Modifier = this.drawWithContent {
     drawContent()
     val outline = shape.createOutline(size, layoutDirection, this)
     val path = when (outline) {
