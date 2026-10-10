@@ -479,7 +479,6 @@ fun PetalTabGridSwitcher(
                         TabCategory.GROUPS -> if (groupsCount == 1) "1 active group" else "$groupsCount active groups"
                         TabCategory.REGULAR -> if (regularTabCount == 1) "1 active tab open" else "$regularTabCount active tabs open"
                     },
-                    enableLiquidGlass = true,
                     actions = {
                         if (selectionMode) {
                             // Select All / Deselect All toggle (Firefox parity)

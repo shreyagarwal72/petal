@@ -112,7 +112,6 @@ fun PetalInactiveTabsSheet(
                         title = "Inactive Tabs",
                         subtitle = subtitleText,
                         onBack = onDismiss,
-                        enableLiquidGlass = true,
                         actions = {
                             HeaderActionIcon(
                                 icon = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,

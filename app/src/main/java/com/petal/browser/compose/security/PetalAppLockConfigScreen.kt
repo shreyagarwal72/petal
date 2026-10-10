@@ -177,8 +177,7 @@ fun PetalAppLockConfigScreen(
                     ExpressiveHeader(
                         title = "App & Profile Lock",
                         subtitle = "Configure protection and authentication",
-                        onBack = onBack,
-                        enableLiquidGlass = true
+                        onBack = onBack
                     )
 
                     Column(
