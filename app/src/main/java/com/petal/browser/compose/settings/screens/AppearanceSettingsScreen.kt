@@ -1,7 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
 import com.petal.browser.ui.containment.PetalSettingsSection
-import com.petal.browser.ui.containment.liquidGlassChrome
 
 import android.app.Activity
 import android.content.Context
@@ -74,18 +73,6 @@ fun AppearanceSettingsScreen(
     val highRefreshRate by viewModel.highRefreshRate.collectAsStateWithLifecycle()
     val customFontName by viewModel.customFontName.collectAsStateWithLifecycle()
     val launchRippleEnabled by viewModel.launchRippleEnabled.collectAsStateWithLifecycle()
-    val liquidGlassUnlocked by viewModel.liquidGlassUnlocked.collectAsStateWithLifecycle()
-    val liquidGlassEnabled by viewModel.liquidGlassEnabled.collectAsStateWithLifecycle()
-    val liquidGlassAlpha by viewModel.liquidGlassAlpha.collectAsStateWithLifecycle()
-    val liquidGlassSheen by viewModel.liquidGlassSheen.collectAsStateWithLifecycle()
-    val liquidGlassTint by viewModel.liquidGlassTint.collectAsStateWithLifecycle()
-    val liquidGlassContainments by viewModel.liquidGlassContainments.collectAsStateWithLifecycle()
-    val liquidGlassBottomNav by viewModel.liquidGlassBottomNav.collectAsStateWithLifecycle()
-    val liquidGlassAddressBar by viewModel.liquidGlassAddressBar.collectAsStateWithLifecycle()
-    val liquidGlassBgMode by viewModel.liquidGlassBgMode.collectAsStateWithLifecycle()
-    val liquidGlassBgImageUri by viewModel.liquidGlassBgImageUri.collectAsStateWithLifecycle()
-    val liquidGlassBgDim by viewModel.liquidGlassBgDim.collectAsStateWithLifecycle()
-    val liquidGlassBgBlur by viewModel.liquidGlassBgBlur.collectAsStateWithLifecycle()
 
     AppearanceSettingsScreenContent(
         appFont = appFont,
@@ -107,18 +94,6 @@ fun AppearanceSettingsScreen(
         highRefreshRate = highRefreshRate,
         customFontName = customFontName,
         launchRippleEnabled = launchRippleEnabled,
-        liquidGlassUnlocked = liquidGlassUnlocked,
-        liquidGlassEnabled = liquidGlassEnabled,
-        liquidGlassAlpha = liquidGlassAlpha,
-        liquidGlassSheen = liquidGlassSheen,
-        liquidGlassTint = liquidGlassTint,
-        liquidGlassContainments = liquidGlassContainments,
-        liquidGlassBottomNav = liquidGlassBottomNav,
-        liquidGlassAddressBar = liquidGlassAddressBar,
-        liquidGlassBgMode = liquidGlassBgMode,
-        liquidGlassBgImageUri = liquidGlassBgImageUri,
-        liquidGlassBgDim = liquidGlassBgDim,
-        liquidGlassBgBlur = liquidGlassBgBlur,
         onAppFontChange = viewModel::setAppFont,
         onAppLanguageChange = viewModel::setAppLanguage,
         onMatchWebsiteLanguageChange = viewModel::setMatchWebsiteLanguage,
@@ -138,17 +113,6 @@ fun AppearanceSettingsScreen(
         onHighRefreshRateChange = viewModel::setHighRefreshRate,
         onCustomFontNameChange = viewModel::setCustomFontName,
         onLaunchRippleEnabledChange = viewModel::setLaunchRippleEnabled,
-        onLiquidGlassEnabledChange = viewModel::setLiquidGlassEnabled,
-        onLiquidGlassAlphaChange = viewModel::setLiquidGlassAlpha,
-        onLiquidGlassSheenChange = viewModel::setLiquidGlassSheen,
-        onLiquidGlassTintChange = viewModel::setLiquidGlassTint,
-        onLiquidGlassContainmentsChange = viewModel::setLiquidGlassContainments,
-        onLiquidGlassBottomNavChange = viewModel::setLiquidGlassBottomNav,
-        onLiquidGlassAddressBarChange = viewModel::setLiquidGlassAddressBar,
-        onLiquidGlassBgModeChange = viewModel::setLiquidGlassBgMode,
-        onLiquidGlassBgImageUriChange = viewModel::setLiquidGlassBgImageUri,
-        onLiquidGlassBgDimChange = viewModel::setLiquidGlassBgDim,
-        onLiquidGlassBgBlurChange = viewModel::setLiquidGlassBgBlur,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -174,18 +138,6 @@ fun AppearanceSettingsScreenContent(
     highRefreshRate: Boolean,
     customFontName: String,
     launchRippleEnabled: Boolean = true,
-    liquidGlassUnlocked: Boolean = false,
-    liquidGlassEnabled: Boolean = false,
-    liquidGlassAlpha: Float = 0.70f,
-    liquidGlassSheen: Float = 0.60f,
-    liquidGlassTint: String = "FROSTED",
-    liquidGlassContainments: Boolean = true,
-    liquidGlassBottomNav: Boolean = true,
-    liquidGlassAddressBar: Boolean = true,
-    liquidGlassBgMode: String = "MORPHING",
-    liquidGlassBgImageUri: String = "",
-    liquidGlassBgDim: Float = 0.35f,
-    liquidGlassBgBlur: Float = 16f,
     appLanguage: String = "system",
     matchWebsiteLanguage: Boolean = true,
     onAppFontChange: (AppFont) -> Unit,
@@ -207,17 +159,6 @@ fun AppearanceSettingsScreenContent(
     onHighRefreshRateChange: (Boolean) -> Unit,
     onCustomFontNameChange: (String) -> Unit,
     onLaunchRippleEnabledChange: (Boolean) -> Unit = {},
-    onLiquidGlassEnabledChange: (Boolean) -> Unit = {},
-    onLiquidGlassAlphaChange: (Float) -> Unit = {},
-    onLiquidGlassSheenChange: (Float) -> Unit = {},
-    onLiquidGlassTintChange: (String) -> Unit = {},
-    onLiquidGlassContainmentsChange: (Boolean) -> Unit = {},
-    onLiquidGlassBottomNavChange: (Boolean) -> Unit = {},
-    onLiquidGlassAddressBarChange: (Boolean) -> Unit = {},
-    onLiquidGlassBgModeChange: (String) -> Unit = {},
-    onLiquidGlassBgImageUriChange: (String) -> Unit = {},
-    onLiquidGlassBgDimChange: (Float) -> Unit = {},
-    onLiquidGlassBgBlurChange: (Float) -> Unit = {},
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -806,365 +747,6 @@ fun AppearanceSettingsScreenContent(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onCheckedChange = onLaunchRippleEnabledChange
                     )
-                }
-
-                // Section 5: Liquid Glass UI & Surfaces (Unlocked via Web Rendering Engine long press)
-                if (liquidGlassUnlocked) {
-                    val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                        contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
-                    ) { uri: android.net.Uri? ->
-                        uri?.let {
-                            try {
-                                context.contentResolver.takePersistableUriPermission(
-                                    it,
-                                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                )
-                            } catch (_: Throwable) {}
-                            onLiquidGlassBgImageUriChange(it.toString())
-                            onLiquidGlassBgModeChange("IMAGE")
-                        }
-                    }
-
-                    PetalSettingsSection(
-                        title = "Liquid Glass UI & Surfaces",
-                        icon = Icons.Rounded.AutoAwesome,
-                        cardId = "appearance_liquid_glass",
-                        targetHighlightId = targetHighlightItemId
-                    ) {
-                        Text(
-                            text = "Next-generation translucent frosted glass design system with dynamic specular edge lighting and custom backdrops.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        // Master Toggle
-                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                            title = "Liquid Glass UI",
-                            subtitle = if (liquidGlassEnabled) "Active system-wide across containments, bottom bar & address bar" else "Enable liquid glass materials & specular effects",
-                            icon = Icons.Rounded.BlurOn,
-                            checked = liquidGlassEnabled,
-                            position = if (liquidGlassEnabled) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
-                            onCheckedChange = onLiquidGlassEnabledChange
-                        )
-
-                        if (liquidGlassEnabled) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(14.dp)
-                            ) {
-                                // Live Liquid Glass Interactive Preview Card
-                                val previewShape = RoundedCornerShape(24.dp)
-                                val previewSheen = liquidGlassSheen
-                                val previewAlpha = liquidGlassAlpha
-                                val previewBaseColor = when (liquidGlassTint) {
-                                    "ACCENT" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = previewAlpha * 0.85f)
-                                    "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = previewAlpha)
-                                    else -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = previewAlpha)
-                                }
-                                Card(
-                                    shape = previewShape,
-                                    colors = CardDefaults.cardColors(containerColor = previewBaseColor),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .liquidGlassChrome(
-                                            shape = previewShape,
-                                            enabled = true,
-                                            sheenIntensity = previewSheen,
-                                            tintColor = if (liquidGlassTint == "ACCENT") MaterialTheme.colorScheme.primary else Color.Unspecified
-                                        )
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(18.dp),
-                                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(36.dp)
-                                                        .clip(CircleShape)
-                                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Rounded.AutoAwesome,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.size(20.dp)
-                                                    )
-                                                }
-                                                Column {
-                                                    Text(
-                                                        text = "Liquid Glass Live Preview",
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                    Text(
-                                                        text = "Specular light refraction & chromatic rim",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        Text(
-                                            text = "Pure frosted glass material renders responsive chromatic edges and real-time alpha translucency over the active backdrop layer.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                // Glass Tint Style Selector
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(
-                                        text = "Glass Tint & Material Style",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    ExpressiveButtonGroup(
-                                        items = listOf(
-                                            ExpressiveSegmentItem(id = "FROSTED", label = "Frosted", icon = Icons.Rounded.BlurOn),
-                                            ExpressiveSegmentItem(id = "ACCENT", label = "Tinted", icon = Icons.Rounded.ColorLens),
-                                            ExpressiveSegmentItem(id = "DEEP", label = "Deep Glass", icon = Icons.Rounded.DarkMode)
-                                        ),
-                                        selectedId = liquidGlassTint,
-                                        onItemSelected = onLiquidGlassTintChange,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-
-                                // Glass Translucency Slider (Stride style PetalSlider)
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "Surface Translucency / Opacity",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = "${Math.round(liquidGlassAlpha * 100)}%",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                    PetalSlider(
-                                        value = liquidGlassAlpha,
-                                        onValueChange = onLiquidGlassAlphaChange,
-                                        valueRange = 0.20f..0.95f,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-
-                                // Specular Sheen Intensity Slider
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "Specular Sheen & Border Reflection",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = "${Math.round(liquidGlassSheen * 100)}%",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                    PetalSlider(
-                                        value = liquidGlassSheen,
-                                        onValueChange = onLiquidGlassSheenChange,
-                                        valueRange = 0f..1f,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-
-                                Divider(
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier.padding(vertical = 2.dp)
-                                )
-
-                                // Component Level Tweaks (Stride custom components)
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(
-                                        text = "Component Surfaces",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalArrangement = Arrangement.spacedBy(3.dp)
-                                    ) {
-                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                            title = "Cards & Containments",
-                                            subtitle = "Apply liquid glass material to cards, list groups & dialogs",
-                                            icon = Icons.Rounded.Layers,
-                                            checked = liquidGlassContainments,
-                                            position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
-                                            onCheckedChange = onLiquidGlassContainmentsChange
-                                        )
-                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                            title = "Bottom Navigation Bar",
-                                            subtitle = "Translucent floating or persistent bottom navigation bar",
-                                            icon = Icons.Rounded.SpaceBar,
-                                            checked = liquidGlassBottomNav,
-                                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                                            onCheckedChange = onLiquidGlassBottomNavChange
-                                        )
-                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                            title = "Address & Search Bar",
-                                            subtitle = "Translucent address bar pill with specular edge glow",
-                                            icon = Icons.Rounded.Search,
-                                            checked = liquidGlassAddressBar,
-                                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                                            onCheckedChange = onLiquidGlassAddressBarChange
-                                        )
-                                    }
-                                }
-
-                                Divider(
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
-
-                                // Background Mode Selector
-                                Text(
-                                    text = "Liquid Glass Background Layer",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
-                                ExpressiveButtonGroup(
-                                    items = listOf(
-                                        ExpressiveSegmentItem(id = "MORPHING", label = "M3 Expressive Morphs", icon = Icons.Rounded.BubbleChart),
-                                        ExpressiveSegmentItem(id = "IMAGE", label = "Custom Wallpaper Image", icon = Icons.Rounded.Wallpaper)
-                                    ),
-                                    selectedId = liquidGlassBgMode,
-                                    onItemSelected = onLiquidGlassBgModeChange,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-
-                                if (liquidGlassBgMode == "IMAGE") {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 4.dp),
-                                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Button(
-                                                onClick = {
-                                                    photoPickerLauncher.launch(
-                                                        androidx.activity.result.PickVisualMediaRequest(
-                                                            androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
-                                                        )
-                                                    )
-                                                },
-                                                modifier = Modifier.weight(1f),
-                                                shape = RoundedCornerShape(16.dp)
-                                            ) {
-                                                Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text(if (liquidGlassBgImageUri.isNotEmpty()) "Replace Image" else "Choose Image")
-                                            }
-
-                                            if (liquidGlassBgImageUri.isNotEmpty()) {
-                                                OutlinedButton(
-                                                    onClick = {
-                                                        onLiquidGlassBgImageUriChange("")
-                                                        onLiquidGlassBgModeChange("MORPHING")
-                                                    },
-                                                    shape = RoundedCornerShape(16.dp)
-                                                ) {
-                                                    Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                    Spacer(Modifier.width(4.dp))
-                                                    Text("Clear")
-                                                }
-                                            }
-                                        }
-
-                                        if (liquidGlassBgImageUri.isNotEmpty()) {
-                                            // Image Dim Slider
-                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text(
-                                                        text = "Wallpaper Dim Level",
-                                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                    Text(
-                                                        text = "${Math.round(liquidGlassBgDim * 100)}%",
-                                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.primary
-                                                    )
-                                                }
-                                                PetalSlider(
-                                                    value = liquidGlassBgDim,
-                                                    onValueChange = onLiquidGlassBgDimChange,
-                                                    valueRange = 0f..0.85f,
-                                                    modifier = Modifier.fillMaxWidth()
-                                                )
-                                            }
-
-                                            // Image Blur Slider
-                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text(
-                                                        text = "Wallpaper Blur Radius",
-                                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                    Text(
-                                                        text = "${Math.round(liquidGlassBgBlur)} dp",
-                                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.primary
-                                                    )
-                                                }
-                                                PetalSlider(
-                                                    value = liquidGlassBgBlur,
-                                                    onValueChange = onLiquidGlassBgBlurChange,
-                                                    valueRange = 0f..40f,
-                                                    modifier = Modifier.fillMaxWidth()
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
 
                 Spacer(Modifier.height(32.dp))

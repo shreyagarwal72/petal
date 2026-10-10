@@ -526,27 +526,9 @@ fun AppInfoGroup(
                 )
             }
             1 -> {
-                val context = androidx.compose.ui.platform.LocalContext.current
                 PetalGroupListRow(
                     position = position,
-                    onClick = {
-                        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-                        val isUnlocked = sp.getBoolean("sp_liquid_glass_unlocked", false)
-                        if (isUnlocked) {
-                            com.petal.browser.view.PetalToast.show(context, "Liquid Glass settings available in Appearance & Theme")
-                        }
-                    },
-                    onLongClick = {
-                        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-                        val nowUnlocked = !sp.getBoolean("sp_liquid_glass_unlocked", false)
-                        sp.edit().putBoolean("sp_liquid_glass_unlocked", nowUnlocked).apply()
-                        val msg = if (nowUnlocked) {
-                            "✨ Liquid Glass UI settings unlocked in Appearance & Theme!"
-                        } else {
-                            "Liquid Glass UI settings locked"
-                        }
-                        com.petal.browser.view.PetalToast.show(context, msg)
-                    },
+                    onClick = {},
                     leading = {
                         PetalGroupIconBadge(
                             icon = Icons.Rounded.Speed,

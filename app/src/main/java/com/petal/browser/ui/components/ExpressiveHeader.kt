@@ -68,7 +68,6 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.petal.browser.ui.containment.liquidGlassChrome
 
 /** Only the bottom corners are rounded (24dp) for a clean Material 3 Expressive header look */
 private val HeaderShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
@@ -84,7 +83,6 @@ fun ExpressiveHeader(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
-    enableLiquidGlass: Boolean = false,
     maxTitleLines: Int = 2,
     maxSubtitleLines: Int = 2,
     actions: @Composable RowScope.() -> Unit = {},
@@ -97,7 +95,7 @@ fun ExpressiveHeader(
             shape = HeaderShape,
             color = MaterialTheme.colorScheme.surfaceContainer,
             tonalElevation = 2.dp,
-            modifier = Modifier.fillMaxWidth().liquidGlassChrome(HeaderShape, enableLiquidGlass),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Column(
                 Modifier
