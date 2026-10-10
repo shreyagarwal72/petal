@@ -96,7 +96,8 @@ fun ExpressiveHeader(
     val secondaryGlow = MaterialTheme.colorScheme.tertiary
 
     Box(modifier.fillMaxWidth().zIndex(1f)) {
-        val realGlass = enableLiquidGlass && backdrop != null &&
+        val effectiveBackdrop = backdrop ?: com.petal.browser.ui.containment.LocalPetalBackdrop.current
+        val realGlass = enableLiquidGlass && effectiveBackdrop != null &&
             com.petal.browser.ui.containment.petalRealGlassSupported
         val isDarkSurface = MaterialTheme.colorScheme.background.luminance() < 0.5f
         Surface(
@@ -107,7 +108,7 @@ fun ExpressiveHeader(
             modifier = Modifier.fillMaxWidth().liquidGlassChrome(
                 shape = HeaderShape,
                 enabled = enableLiquidGlass,
-                backdrop = if (realGlass) backdrop else null,
+                backdrop = if (realGlass) effectiveBackdrop else null,
                 isDark = isDarkSurface
             ),
         ) {

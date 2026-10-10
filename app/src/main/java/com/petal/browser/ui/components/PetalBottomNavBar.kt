@@ -166,9 +166,7 @@ fun PetalBottomNavBar(
         ) {
             val context = LocalContext.current
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) &&
-                sp.getBoolean("sp_liquid_glass_enabled", false) &&
-                sp.getBoolean("sp_liquid_glass_bottom_nav", true)
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
             val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
             val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
             val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
@@ -195,62 +193,242 @@ fun PetalBottomNavBar(
                 label = "swipe_rubber_band"
             )
 
-            HorizontalFloatingToolbar(
-                expanded = true,
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .height(64.dp)
-                    .graphicsLayer { translationX = dragOffsetPx }
-                    .shadow(16.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
-                    .border(
-                        0.75.dp,
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isLiquidGlass) 0.75f * glassSheen else 0.55f),
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isLiquidGlass) 0.30f * glassSheen else 0.15f)
-                            )
-                        ),
-                        CircleShape
-                    )
-                    .clip(CircleShape)
-                    .then(
-                        if (isLiquidGlass) {
-                            Modifier.liquidGlassChrome(CircleShape, true, glassSheen)
-                        } else Modifier
-                    )
-                    .pointerInput(Unit) {
-                        detectHorizontalDragGestures(
-                            onDragStart = { isDragging = true },
-                            onDragEnd = {
-                                isDragging = false
-                                if (dragAccumulator > 70f) {
-                                    onSwipeTabLeft()
-                                } else if (dragAccumulator < -70f) {
-                                    onSwipeTabRight()
+            val backdrop = com.petal.browser.ui.containment.LocalPetalBackdrop.current
+            val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+
+            if (isLiquidGlass) {
+                // Real Material 3 Expressive Liquid Glass Floating Tab Bar (SimpMusic port)
+                val barInteraction = com.petal.browser.ui.containment.rememberGlassInteraction()
+                val glassLayer = androidx.compose.ui.graphics.rememberGraphicsLayer()
+                val luminance = com.petal.browser.ui.containment.rememberGlassLuminance(glassLayer, enabled = backdrop != null && com.petal.browser.ui.containment.petalRealGlassSupported)
+
+                Box(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .height(64.dp)
+                        .graphicsLayer { translationX = dragOffsetPx }
+                        .pointerInput(barInteraction) { barInteraction.detectPress(this) }
+                        .pointerInput(Unit) {
+                            detectHorizontalDragGestures(
+                                onDragStart = { isDragging = true },
+                                onDragEnd = {
+                                    isDragging = false
+                                    if (dragAccumulator > 70f) {
+                                        onSwipeTabLeft()
+                                    } else if (dragAccumulator < -70f) {
+                                        onSwipeTabRight()
+                                    }
+                                    dragAccumulator = 0f
+                                },
+                                onDragCancel = {
+                                    isDragging = false
+                                    dragAccumulator = 0f
+                                },
+                                onHorizontalDrag = { _, dragAmount: Float ->
+                                    dragAccumulator += dragAmount
                                 }
-                                dragAccumulator = 0f
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Outer Liquid Glass interactive capsule
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .com.petal.browser.ui.containment.drawInteractiveGlass(
+                                isDark = isDarkTheme,
+                                backdrop = backdrop,
+                                layer = glassLayer,
+                                luminance = { luminance.value },
+                                shape = CircleShape,
+                                interaction = barInteraction
+                            )
+                            .border(
+                                0.75.dp,
+                                androidx.compose.ui.graphics.Brush.verticalGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f * glassSheen),
+                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f * glassSheen)
+                                    )
+                                ),
+                                CircleShape
+                            )
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .fillMaxHeight()
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        FloatingNavTabItem(
+                            selected = selectedTab == PetalNavTab.HOME,
+                            label = "Home",
+                            index = 0,
+                            icon = { isSelected, tint ->
+                                val iconScale by animateFloatAsState(
+                                    targetValue = if (isSelected) 1.15f else 1.0f,
+                                    animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                    label = "home_scale"
+                                )
+                                Crossfade(
+                                    targetState = isSelected,
+                                    animationSpec = tween(180),
+                                    label = "home_icon_crossfade",
+                                    modifier = Modifier.graphicsLayer {
+                                        scaleX = iconScale
+                                        scaleY = iconScale
+                                    }
+                                ) { filled ->
+                                    Icon(
+                                        painter = androidx.compose.ui.res.painterResource(
+                                            if (filled) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home
+                                        ),
+                                        contentDescription = "Home",
+                                        tint = tint,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             },
-                            onDragCancel = {
-                                isDragging = false
-                                dragAccumulator = 0f
+                            onClick = onHomeClick
+                        )
+
+                        FloatingNavTabItem(
+                            selected = selectedTab == PetalNavTab.NEW_TAB,
+                            label = newTabLabel,
+                            index = 1,
+                            icon = { isSelected, tint ->
+                                val rotationAngle by animateFloatAsState(
+                                    targetValue = if (isSelected) 90f else 0f,
+                                    animationSpec = spring(dampingRatio = 0.68f, stiffness = 450f),
+                                    label = "add_rotation"
+                                )
+                                val iconScale by animateFloatAsState(
+                                    targetValue = if (isSelected) 1.15f else 1.0f,
+                                    animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                    label = "add_scale"
+                                )
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = "New Tab",
+                                    tint = tint,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .graphicsLayer {
+                                            rotationZ = rotationAngle
+                                            scaleX = iconScale
+                                            scaleY = iconScale
+                                        }
+                                )
                             },
-                            onHorizontalDrag = { _, dragAmount: Float ->
-                                dragAccumulator += dragAmount
-                            }
+                            onClick = onNewTabClick
                         )
-                    },
-                colors = toolbarColors
-            ) {
-                FloatingNavTabItem(
-                    selected = selectedTab == PetalNavTab.HOME,
-                    label = "Home",
-                    index = 0,
-                    icon = { isSelected, tint ->
-                        val iconScale by animateFloatAsState(
-                            targetValue = if (isSelected) 1.15f else 1.0f,
-                            animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
-                            label = "home_scale"
+
+                        FloatingNavTabItem(
+                            selected = selectedTab == PetalNavTab.TABS,
+                            label = tabsLabel,
+                            index = 2,
+                            icon = { isSelected, tint ->
+                                val iconScale by animateFloatAsState(
+                                    targetValue = if (isSelected) 1.12f else 1.0f,
+                                    animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                    label = "tabs_scale"
+                                )
+                                TabCountBadge(
+                                    color = tint,
+                                    count = tabCount,
+                                    scale = badgeScale.value * iconScale
+                                )
+                            },
+                            onClick = onTabsClick
                         )
+
+                        FloatingNavTabItem(
+                            selected = selectedTab == PetalNavTab.MENU,
+                            label = "Menu",
+                            index = 3,
+                            icon = { isSelected, tint ->
+                                val rotationAngle by animateFloatAsState(
+                                    targetValue = if (isSelected) 180f else 0f,
+                                    animationSpec = spring(dampingRatio = 0.70f, stiffness = 420f),
+                                    label = "menu_rotation"
+                                )
+                                val iconScale by animateFloatAsState(
+                                    targetValue = if (isSelected) 1.15f else 1.0f,
+                                    animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                    label = "menu_scale"
+                                )
+                                Icon(
+                                    imageVector = Icons.Rounded.MoreVert,
+                                    contentDescription = "Menu",
+                                    tint = tint,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .graphicsLayer {
+                                            rotationZ = rotationAngle
+                                            scaleX = iconScale
+                                            scaleY = iconScale
+                                        }
+                                )
+                            },
+                            onClick = onMenuClick
+                        )
+                    }
+                }
+            } else {
+                HorizontalFloatingToolbar(
+                    expanded = true,
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .height(64.dp)
+                        .graphicsLayer { translationX = dragOffsetPx }
+                        .shadow(16.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
+                        .border(
+                            0.75.dp,
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                                )
+                            ),
+                            CircleShape
+                        )
+                        .clip(CircleShape)
+                        .pointerInput(Unit) {
+                            detectHorizontalDragGestures(
+                                onDragStart = { isDragging = true },
+                                onDragEnd = {
+                                    isDragging = false
+                                    if (dragAccumulator > 70f) {
+                                        onSwipeTabLeft()
+                                    } else if (dragAccumulator < -70f) {
+                                        onSwipeTabRight()
+                                    }
+                                    dragAccumulator = 0f
+                                },
+                                onDragCancel = {
+                                    isDragging = false
+                                    dragAccumulator = 0f
+                                },
+                                onHorizontalDrag = { _, dragAmount: Float ->
+                                    dragAccumulator += dragAmount
+                                }
+                            )
+                        },
+                    colors = toolbarColors
+                ) {
+                    FloatingNavTabItem(
+                        selected = selectedTab == PetalNavTab.HOME,
+                        label = "Home",
+                        index = 0,
+                        icon = { isSelected, tint ->
+                            val iconScale by animateFloatAsState(
+                                targetValue = if (isSelected) 1.15f else 1.0f,
+                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                label = "home_scale"
+                            )
                         Crossfade(
                             targetState = isSelected,
                             animationSpec = tween(180),
@@ -374,9 +552,7 @@ fun PetalBottomNavBar(
             }
             val context = LocalContext.current
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) &&
-                sp.getBoolean("sp_liquid_glass_enabled", false) &&
-                sp.getBoolean("sp_liquid_glass_bottom_nav", true)
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
             val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
             val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
             val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"

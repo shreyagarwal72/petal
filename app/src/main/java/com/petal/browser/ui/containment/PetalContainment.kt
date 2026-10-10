@@ -90,20 +90,16 @@ val LocalPetalSectionHighlighted = compositionLocalOf { false }
  * Checks whether Liquid Glass UI is enabled system-wide.
  */
 @Composable
-fun isLiquidGlassEnabled(componentKey: String = "sp_liquid_glass_containments"): Boolean {
+fun isLiquidGlassEnabled(componentKey: String = "sp_liquid_glass_enabled"): Boolean {
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var enabled by remember {
-        val master = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
-        val comp = sp.getBoolean(componentKey, true)
-        mutableStateOf(master && comp)
+        mutableStateOf(sp.getBoolean("sp_liquid_glass_enabled", false))
     }
-    DisposableEffect(sp, componentKey) {
+    DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "sp_liquid_glass_unlocked" || key == "sp_liquid_glass_enabled" || key == componentKey) {
-                val master = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
-                val comp = sp.getBoolean(componentKey, true)
-                enabled = master && comp
+            if (key == "sp_liquid_glass_enabled" || key == "sp_liquid_glass_unlocked") {
+                enabled = sp.getBoolean("sp_liquid_glass_enabled", false)
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)

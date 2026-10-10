@@ -164,9 +164,7 @@ fun PetalAddressBar(
         RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
     }
 
-    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) &&
-        sp.getBoolean("sp_liquid_glass_enabled", false) &&
-        sp.getBoolean("sp_liquid_glass_address_bar", true)
+    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
     val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
     val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
     val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
@@ -185,9 +183,12 @@ fun PetalAddressBar(
 
     val topBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
 
+    val backdrop = com.petal.browser.ui.containment.LocalPetalBackdrop.current
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
     Surface(
         shape = containerShape,
-        color = effectiveContainerColor,
+        color = if (isLiquidGlass && backdrop != null && com.petal.browser.ui.containment.petalRealGlassSupported) Color.Transparent else effectiveContainerColor,
         tonalElevation = if (resolvedIsBottom) 2.dp else 4.dp,
         shadowElevation = if (resolvedIsBottom) 4.dp else 4.dp,
         border = if (resolvedIsBottom && !isLiquidGlass) BorderStroke(0.65.dp, topBorderColor) else null,
@@ -202,7 +203,7 @@ fun PetalAddressBar(
             )
             .then(
                 if (isLiquidGlass) {
-                    Modifier.liquidGlassChrome(containerShape, true, glassSheen)
+                    Modifier.liquidGlassChrome(containerShape, true, glassSheen, backdrop = backdrop, isDark = isDark)
                 } else Modifier
             )
             .pointerInput(isSwipeTabsEnabled) {
