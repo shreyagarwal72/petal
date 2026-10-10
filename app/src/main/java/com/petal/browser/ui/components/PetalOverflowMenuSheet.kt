@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.containment.drawInteractiveGlass
 import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -417,7 +418,7 @@ fun PetalOverflowMenuSheet(
                     if (isLiquidGlass) {
                         Modifier
                             .shadow(24.dp, menuShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
-                            .com.petal.browser.ui.containment.drawInteractiveGlass(
+                            .drawInteractiveGlass(
                                 isDark = isDarkTheme,
                                 backdrop = backdrop,
                                 layer = sheetGlassLayer,
