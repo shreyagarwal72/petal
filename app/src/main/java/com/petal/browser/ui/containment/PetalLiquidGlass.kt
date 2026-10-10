@@ -78,7 +78,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withFrameNanos
+import androidx.compose.runtime.withFrameNanos
 import kotlin.math.abs
 import kotlin.math.sign
 import com.kyant.backdrop.backdrops.layerBackdrop as nativeBackdrop
@@ -205,6 +205,18 @@ fun rememberGlassLuminance(
     }
     return luminance.asState()
 }
+
+fun Modifier.petalRealGlass(
+    backdrop: PetalBackdrop?,
+    shape: Shape = CircleShape,
+    isDark: Boolean = false,
+    highlight: Highlight = Highlight.Default
+): Modifier = this.drawInteractiveGlass(
+    isDark = isDark,
+    backdrop = backdrop,
+    shape = shape,
+    highlight = highlight
+)
 
 /**
  * Draws the real SimpMusic liquid-glass effect.
