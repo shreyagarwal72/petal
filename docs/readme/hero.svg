@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" fill="none">
+  <defs>
+    <radialGradient id="grad1" cx="50%" cy="30%" r="80%" fx="50%" fy="30%">
+      <stop offset="0%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#090D16" />
+    </radialGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="50%" stop-color="#A78BFA" />
+      <stop offset="100%" stop-color="#F472B6" />
+    </linearGradient>
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.15)" />
+      <stop offset="100%" stop-color="rgba(255, 255, 255, 0.02)" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="60" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="420" rx="28" fill="url(#grad1)" />
+  <rect width="1200" height="420" rx="28" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" />
+
+  <!-- Background Ambient Glows -->
+  <circle cx="600" cy="180" r="160" fill="#6366F1" opacity="0.18" filter="url(#glow)" />
+  <circle cx="380" cy="220" r="120" fill="#06B6D4" opacity="0.12" filter="url(#glow)" />
+  <circle cx="820" cy="200" r="140" fill="#EC4899" opacity="0.12" filter="url(#glow)" />
+
+  <!-- Glass Card Accent Container -->
+  <rect x="220" y="45" width="760" height="330" rx="24" fill="url(#glassGrad)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.2" />
+
+  <!-- App Title & Icon -->
+  <g transform="translate(600, 130)" text-anchor="middle">
+    <text font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-weight="900" font-size="78" fill="url(#primaryGrad)" letter-spacing="-2">Petal</text>
+  </g>
+
+  <g transform="translate(600, 185)" text-anchor="middle">
+    <text font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-weight="600" font-size="21" fill="#E2E8F0" letter-spacing="0.5">The Material 3 Expressive Browser for Android</text>
+  </g>
+
+  <g transform="translate(600, 225)" text-anchor="middle">
+    <text font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-weight="400" font-size="15" fill="#94A3B8" letter-spacing="0.2">GeckoView 156 · Real Liquid Glass &amp; Optical Refraction · Inbuilt AI Hub · Total Privacy</text>
+  </g>
+
+  <!-- Pills / Feature Tags -->
+  <g transform="translate(600, 290)">
+    <g transform="translate(-270, 0)">
+      <rect x="0" y="0" width="160" height="36" rx="18" fill="rgba(99, 102, 241, 0.15)" stroke="rgba(165, 180, 252, 0.3)" stroke-width="1" />
+      <text x="80" y="23" font-family="sans-serif" font-size="13" font-weight="600" fill="#C7D2FE" text-anchor="middle">GeckoView 156</text>
+    </g>
+    <g transform="translate(-90, 0)">
+      <rect x="0" y="0" width="180" height="36" rx="18" fill="rgba(20, 184, 166, 0.15)" stroke="rgba(94, 234, 212, 0.3)" stroke-width="1" />
+      <text x="90" y="23" font-family="sans-serif" font-size="13" font-weight="600" fill="#5EEAD4" text-anchor="middle">Pure Liquid Glass</text>
+    </g>
+    <g transform="translate(110, 0)">
+      <rect x="0" y="0" width="160" height="36" rx="18" fill="rgba(236, 72, 153, 0.15)" stroke="rgba(244, 114, 182, 0.3)" stroke-width="1" />
+      <text x="80" y="23" font-family="sans-serif" font-size="13" font-weight="600" fill="#F472B6" text-anchor="middle">100% Private</text>
+    </g>
+  </g>
+</svg>
