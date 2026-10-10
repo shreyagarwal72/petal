@@ -837,10 +837,10 @@ fun AppearanceSettingsScreenContent(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                        // Master Toggle - Single unified Liquid Glass switch
+                        // Master Toggle
                         com.petal.browser.ui.containment.PetalSettingsToggleRow(
                             title = "Liquid Glass UI",
-                            subtitle = if (liquidGlassEnabled) "Active system-wide across bottom bar, overflow menu, header & address bar" else "Enable real Material 3 expressive liquid glass materials & refraction",
+                            subtitle = if (liquidGlassEnabled) "Active system-wide across containments, bottom bar & address bar" else "Enable liquid glass materials & specular effects",
                             icon = Icons.Rounded.BlurOn,
                             checked = liquidGlassEnabled,
                             position = if (liquidGlassEnabled) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
@@ -1004,7 +1004,43 @@ fun AppearanceSettingsScreenContent(
                                     modifier = Modifier.padding(vertical = 2.dp)
                                 )
 
-
+                                // Component Level Tweaks (Stride custom components)
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        text = "Component Surfaces",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Cards & Containments",
+                                            subtitle = "Apply liquid glass material to cards, list groups & dialogs",
+                                            icon = Icons.Rounded.Layers,
+                                            checked = liquidGlassContainments,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
+                                            onCheckedChange = onLiquidGlassContainmentsChange
+                                        )
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Bottom Navigation Bar",
+                                            subtitle = "Translucent floating or persistent bottom navigation bar",
+                                            icon = Icons.Rounded.SpaceBar,
+                                            checked = liquidGlassBottomNav,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                                            onCheckedChange = onLiquidGlassBottomNavChange
+                                        )
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Address & Search Bar",
+                                            subtitle = "Translucent address bar pill with specular edge glow",
+                                            icon = Icons.Rounded.Search,
+                                            checked = liquidGlassAddressBar,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                                            onCheckedChange = onLiquidGlassAddressBarChange
+                                        )
+                                    }
+                                }
 
                                 Divider(
                                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),

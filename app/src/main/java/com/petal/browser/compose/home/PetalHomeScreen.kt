@@ -45,7 +45,6 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.petal.browser.ui.containment.petalBackdropSource
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -518,38 +517,25 @@ fun PetalHomeScreen(
         com.petal.browser.collections.PetalCollectionManager.init(context)
     }
 
-    val homeGlassBackdrop = com.petal.browser.ui.containment.rememberPetalBackdrop()
-    val homeGlassOn = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
                     // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
-                    // This Box is the glass "source". The header below is its SIBLING (not a child).
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .then(
-                                if (homeGlassOn) Modifier.petalBackdropSource(homeGlassBackdrop)
-                                else Modifier
-                            )
-                    ) {
-                        val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
-                        if (!activeWallpaperUri.isNullOrBlank()) {
-                            com.petal.browser.wallpaper.PetalAnimatedWallpaperBackground(
-                                wallpaperUri = activeWallpaperUri,
-                                dim = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim,
-                                blur = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                                modifier = Modifier.fillMaxSize(),
-                                pageSeed = "home_page"
-                            )
-                        }
+                    val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
+                    if (!activeWallpaperUri.isNullOrBlank()) {
+                        com.petal.browser.wallpaper.PetalAnimatedWallpaperBackground(
+                            wallpaperUri = activeWallpaperUri,
+                            dim = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim,
+                            blur = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                            modifier = Modifier.fillMaxSize(),
+                            pageSeed = "home_page"
+                        )
                     }
 
                     Column(
@@ -558,8 +544,6 @@ fun PetalHomeScreen(
                         com.petal.browser.ui.components.ExpressiveHeader(
                             title = "Petal",
                             subtitle = "Personal Window to the Web",
-                            enableLiquidGlass = homeGlassOn,
-                            backdrop = if (homeGlassOn) homeGlassBackdrop else null,
                             actions = {
                                 // Wallpaper Customizer Action Button
                                 IconButton(

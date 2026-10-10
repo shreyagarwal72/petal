@@ -57,7 +57,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -86,8 +85,6 @@ fun ExpressiveHeader(
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     enableLiquidGlass: Boolean = false,
-    // Optional real-glass backdrop (must be a sibling of the screen background, see PetalLiquidGlass.kt)
-    backdrop: com.petal.browser.ui.containment.PetalBackdrop? = null,
     maxTitleLines: Int = 2,
     maxSubtitleLines: Int = 2,
     actions: @Composable RowScope.() -> Unit = {},
@@ -96,21 +93,11 @@ fun ExpressiveHeader(
     val secondaryGlow = MaterialTheme.colorScheme.tertiary
 
     Box(modifier.fillMaxWidth().zIndex(1f)) {
-        val effectiveBackdrop = backdrop ?: com.petal.browser.ui.containment.LocalPetalBackdrop.current
-        val realGlass = enableLiquidGlass && effectiveBackdrop != null &&
-            com.petal.browser.ui.containment.petalRealGlassSupported
-        val isDarkSurface = MaterialTheme.colorScheme.background.luminance() < 0.5f
         Surface(
             shape = HeaderShape,
-            // Real glass draws its own blurred backdrop, so the container must be see-through.
-            color = if (realGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = if (realGlass) 0.dp else 2.dp,
-            modifier = Modifier.fillMaxWidth().liquidGlassChrome(
-                shape = HeaderShape,
-                enabled = enableLiquidGlass,
-                backdrop = if (realGlass) effectiveBackdrop else null,
-                isDark = isDarkSurface
-            ),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = 2.dp,
+            modifier = Modifier.fillMaxWidth().liquidGlassChrome(HeaderShape, enableLiquidGlass),
         ) {
             Column(
                 Modifier

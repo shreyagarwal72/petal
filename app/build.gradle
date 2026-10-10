@@ -200,8 +200,6 @@ dependencies {
     implementation 'androidx.navigation:navigation-compose:2.8.4'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'io.coil-kt:coil-compose:2.7.0'
-    // Real liquid glass (backdrop blur + lens refraction + specular rim); same library SimpMusic uses
-    implementation 'io.github.kyant0:backdrop:2.0.1'
     implementation 'com.github.tonyofrancis.Fetch:fetch2:3.4.1'
     implementation 'com.github.tonyofrancis.Fetch:fetch2okhttp:3.4.1'
     // Pure-Java barcode/QR decoding for the FOSS Snap Photo scanner.

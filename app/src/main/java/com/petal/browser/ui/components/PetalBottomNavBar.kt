@@ -166,7 +166,9 @@ fun PetalBottomNavBar(
         ) {
             val context = LocalContext.current
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) &&
+                sp.getBoolean("sp_liquid_glass_enabled", false) &&
+                sp.getBoolean("sp_liquid_glass_bottom_nav", true)
             val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
             val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
             val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
@@ -372,7 +374,9 @@ fun PetalBottomNavBar(
             }
             val context = LocalContext.current
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) &&
+                sp.getBoolean("sp_liquid_glass_enabled", false) &&
+                sp.getBoolean("sp_liquid_glass_bottom_nav", true)
             val glassAlpha = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
             val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
             val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"

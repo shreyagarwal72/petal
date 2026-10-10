@@ -9,7 +9,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -30,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
@@ -45,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.ui.containment.drawInteractiveGlass
 import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -377,13 +374,6 @@ fun PetalOverflowMenuSheet(
         label = "MenuExpandAlpha"
     )
 
-    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
-    val glassSheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
-    val backdrop = com.petal.browser.ui.containment.LocalPetalBackdrop.current
-    val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
-    val menuShape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -395,11 +385,9 @@ fun PetalOverflowMenuSheet(
             .padding(top = 52.dp, end = 12.dp, start = 12.dp, bottom = 72.dp),
         contentAlignment = Alignment.BottomEnd
     ) {
-        val sheetInteraction = if (isLiquidGlass) com.petal.browser.ui.containment.rememberGlassInteraction() else null
-        val sheetGlassLayer = androidx.compose.ui.graphics.rememberGraphicsLayer()
-        val sheetLuminance = com.petal.browser.ui.containment.rememberGlassLuminance(sheetGlassLayer, enabled = isLiquidGlass && backdrop != null && com.petal.browser.ui.containment.petalRealGlassSupported)
-
-        Box(
+        com.petal.browser.ui.containment.PetalHeroCard(
+            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier
                 .fillMaxWidth(0.88f)
                 .widthIn(max = 350.dp)
@@ -415,36 +403,6 @@ fun PetalOverflowMenuSheet(
                     this.alpha = alpha
                     transformOrigin = TransformOrigin(1f, 1f)
                 }
-                .then(
-                    if (isLiquidGlass) {
-                        Modifier
-                            .shadow(24.dp, menuShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
-                            .drawInteractiveGlass(
-                                isDark = isDarkTheme,
-                                backdrop = backdrop,
-                                layer = sheetGlassLayer,
-                                luminance = { sheetLuminance.value },
-                                shape = menuShape,
-                                interaction = sheetInteraction
-                            )
-                            .border(
-                                0.75.dp,
-                                androidx.compose.ui.graphics.Brush.verticalGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f * glassSheen),
-                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f * glassSheen)
-                                    )
-                                ),
-                                menuShape
-                            )
-                            .clip(menuShape)
-                    } else {
-                        Modifier
-                            .shadow(16.dp, menuShape)
-                            .clip(menuShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    }
-                )
         ) {
             val isHomePage = remember(pageUrl, pageTitle) {
                 pageUrl.isBlank() ||
@@ -796,9 +754,6 @@ private fun CircularIconButton(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
-
     IconButton(
         onClick = {
             com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
@@ -809,11 +764,6 @@ private fun CircularIconButton(
         modifier = Modifier
             .size(44.dp)
             .clip(CircleShape)
-            .then(
-                if (isLiquidGlass) {
-                    Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                } else Modifier
-            )
     ) {
         val iconTint = if (enabled) {
             tint
