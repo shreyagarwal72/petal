@@ -246,35 +246,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         }
 
         if (disallowIntercept) {
-            // Respect child's disallow request (e.g. user scrolling webpage content).
-            // Only re-evaluate if the user is explicitly dragging downwards.
-            if (action == MotionEvent.ACTION_MOVE && activePointerId != MotionEvent.INVALID_POINTER_ID) {
-                int pIdx = ev.findPointerIndex(activePointerId);
-                if (pIdx >= 0) {
-                    float dy = ev.getY(pIdx) - initialDownY;
-                    float dx = ev.getX(pIdx) - initialDownX;
-                    // Upward motion: definitely scrolling into page content, invalidate startedAtTop
-                    if (dy < 0) {
-                        startedAtTop = false;
-                        return false;
-                    }
-                    if (dy > touchSlop && dy > Math.abs(dx) * VERTICAL_DOMINANCE) {
-                        boolean atTop = !canChildScrollUp() && (canPull == null || canPull.canPull());
-                        if (atTop) {
-                            disallowIntercept = false;
-                        } else {
-                            startedAtTop = false;
-                            return false;
-                        }
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
+            return false;
         }
 
         if (action == MotionEvent.ACTION_CANCEL || (action == MotionEvent.ACTION_UP && isQuickScaleInProgress)) {
@@ -343,10 +315,9 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     break;
                 }
 
-                // Page position validation: Child must not be able to scroll up
-                boolean atTopNow = !canChildScrollUp() && (canPull == null || canPull.canPull());
+                // Page position validation: Child must not be able to scroll up AND touch must have started at top (Firefox/Chromium spec)
+                boolean atTopNow = startedAtTop && !canChildScrollUp() && (canPull == null || canPull.canPull());
                 if (atTopNow) {
-                    startedAtTop = true;
                     disallowIntercept = false;
                     initialMotionY = initialDownY + touchSlop;
                     isIntercepting = true;
@@ -426,9 +397,8 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     if (dy < 0) {
                         startedAtTop = false;
                     }
-                    boolean atTopNow = !canChildScrollUp() && (canPull == null || canPull.canPull());
+                    boolean atTopNow = startedAtTop && !canChildScrollUp() && (canPull == null || canPull.canPull());
                     if (atTopNow && dy > touchSlop && dy > Math.abs(dx) * VERTICAL_DOMINANCE) {
-                        startedAtTop = true;
                         disallowIntercept = false;
                         initialMotionY = initialDownY + touchSlop;
                         isDragging = true;
