@@ -10,9 +10,9 @@ No telemetry, no tracking, no bloat — built for ultimate speed and aesthetics.
 
 <br>
 
-<a href="https://github.com/NikhilKain/Petal/releases/latest"><img src="docs/readme/badges/download.svg" height="40" alt="Download APK"></a>
+<a href="https://github.com/shreyagarwal72/petal/releases/latest"><img src="docs/readme/badges/download.svg" height="40" alt="Download APK"></a>
 <img src="docs/readme/badges/android.svg" height="40" alt="Android 8.0+">
-<a href="LICENSE"><img src="docs/readme/badges/license.svg" height="40" alt="License GPLv3"></a>
+<a href="LICENSE.md"><img src="docs/readme/badges/license.svg" height="40" alt="License GPLv3"></a>
 
 <br><br>
 
@@ -90,7 +90,7 @@ Install and run Mozilla add-ons and Firefox extensions natively. Customize your 
 ### GitHub Releases (Recommended)
 Grab the latest signed universal or architecture-specific APK directly from GitHub:
 
-[![Download APK](https://img.shields.io/badge/Download-Latest%20Release-00504A?style=for-the-badge&logo=android&logoColor=white)](https://github.com/NikhilKain/Petal/releases/latest)
+[![Download APK](https://img.shields.io/badge/Download-Latest%20Release-00504A?style=for-the-badge&logo=android&logoColor=white)](https://github.com/shreyagarwal72/petal/releases/latest)
 
 ```bash
 # Or install via ADB directly
@@ -105,8 +105,8 @@ Petal uses Gradle and the standard Android toolchain. Java 17+ and the Android S
 
 ```bash
 # Clone the repository
-git clone https://github.com/NikhilKain/Petal.git
-cd Petal
+git clone https://github.com/shreyagarwal72/petal.git
+cd petal
 
 # Build a debug APK
 ./gradlew assembleDebug
@@ -136,11 +136,11 @@ The compiled APK will be located at:
 
 ## License
 
-Petal is free and open-source software distributed under the terms of the **GNU General Public License v3.0**.
+Petal is free and open-source software distributed under the terms of the **[GNU General Public License v3.0 (GPL-3.0)](LICENSE.md)**.
 
 ```
 Petal Browser
-Copyright (C) 2024-2026 Nikhil Kain and contributors.
+Copyright (C) 2024-2026 Vanshu Agarwal and contributors.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
