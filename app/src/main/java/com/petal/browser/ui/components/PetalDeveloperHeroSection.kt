@@ -329,14 +329,14 @@ fun PetalDeveloperHeroSection(
                     OutlinedButton(
                         onClick = {
                             haptics.playClick(context)
-                            onOpenUrl("https://github.com/shreyagarwal72/candy-browser")
+                            onOpenUrl("https://nextup-resource.vercel.app/")
                         },
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.padding(horizontal = 4.dp)
                     ) {
-                        Icon(Icons.Rounded.TravelExplore, null, Modifier.size(16.dp))
+                        Icon(Icons.Rounded.AutoStories, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Candy Browser", style = MaterialTheme.typography.labelMedium)
+                        Text("Nextup Resources", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
