@@ -1485,9 +1485,9 @@ private fun TabCategorySwitcher(
 ) {
     com.petal.browser.ui.components.PetalChoiceButtonGroup(
         options = listOf(
-            com.petal.browser.ui.components.PetalChoiceOption(TabCategory.REGULAR, "Regular", icon = Icons.Rounded.Public),
-            com.petal.browser.ui.components.PetalChoiceOption(TabCategory.GROUPS, "Groups", icon = Icons.Rounded.FolderCopy),
-            com.petal.browser.ui.components.PetalChoiceOption(TabCategory.INCOGNITO, "Incognito", icon = Icons.Rounded.VisibilityOff),
+            com.petal.browser.ui.components.PetalButtonGroupItem(TabCategory.REGULAR, "Regular", icon = Icons.Rounded.Public),
+            com.petal.browser.ui.components.PetalButtonGroupItem(TabCategory.GROUPS, "Groups", icon = Icons.Rounded.FolderCopy),
+            com.petal.browser.ui.components.PetalButtonGroupItem(TabCategory.INCOGNITO, "Incognito", icon = Icons.Rounded.VisibilityOff),
         ),
         selected = selected,
         onSelect = onSelect,

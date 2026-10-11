@@ -201,11 +201,11 @@ fun SearchHomeSettingsScreenContent(
 
                     com.petal.browser.ui.components.PetalChoiceButtonGroup(
                         options = listOf(
-                            com.petal.browser.ui.components.PetalChoiceOption(
+                            com.petal.browser.ui.components.PetalButtonGroupItem(
                                 value = "0",
                                 label = stringResource(R.string.ui_petal_start_page)
                             ),
-                            com.petal.browser.ui.components.PetalChoiceOption(
+                            com.petal.browser.ui.components.PetalButtonGroupItem(
                                 value = "1",
                                 label = stringResource(R.string.ui_custom_url)
                             ),

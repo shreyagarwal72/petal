@@ -94,7 +94,7 @@ fun InactiveSettingsScreen(
 
                     com.petal.browser.ui.components.PetalChoiceButtonGroup(
                         options = thresholdOptions.map { (key, label) ->
-                            com.petal.browser.ui.components.PetalChoiceOption(
+                            com.petal.browser.ui.components.PetalButtonGroupItem(
                                 value = key,
                                 label = label
                             )

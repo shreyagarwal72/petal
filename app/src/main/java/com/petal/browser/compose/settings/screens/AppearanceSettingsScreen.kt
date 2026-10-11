@@ -374,9 +374,9 @@ fun AppearanceSettingsScreenContent(
                     Spacer(Modifier.height(4.dp))
                     com.petal.browser.ui.components.PetalChoiceButtonGroup(
                         options = listOf(
-                            com.petal.browser.ui.components.PetalChoiceOption(ThemeConfig.FOLLOW_SYSTEM, "System"),
-                            com.petal.browser.ui.components.PetalChoiceOption(ThemeConfig.LIGHT, "Light"),
-                            com.petal.browser.ui.components.PetalChoiceOption(ThemeConfig.DARK, "Dark"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem(ThemeConfig.FOLLOW_SYSTEM, "System"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem(ThemeConfig.LIGHT, "Light"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem(ThemeConfig.DARK, "Dark"),
                         ),
                         selected = themeConfig,
                         onSelect = { config ->
@@ -557,7 +557,7 @@ fun AppearanceSettingsScreenContent(
                     )
                     com.petal.browser.ui.components.PetalChoiceButtonGroup(
                         options = AppFont.values().map { font ->
-                            com.petal.browser.ui.components.PetalChoiceOption(font, font.label)
+                            com.petal.browser.ui.components.PetalButtonGroupItem(font, font.label)
                         },
                         selected = appFont,
                         onSelect = { font ->
@@ -577,7 +577,7 @@ fun AppearanceSettingsScreenContent(
                             )
                             com.petal.browser.ui.components.PetalChoiceButtonGroup(
                                 options = GSFlexPreset.values().map { preset ->
-                                    com.petal.browser.ui.components.PetalChoiceOption(
+                                    com.petal.browser.ui.components.PetalButtonGroupItem(
                                         preset,
                                         preset.label.substringBefore(" (")
                                     )
@@ -672,12 +672,12 @@ fun AppearanceSettingsScreenContent(
 
                             com.petal.browser.ui.components.PetalChoiceButtonGroup(
                                 options = listOf(
-                                    com.petal.browser.ui.components.PetalChoiceOption(
+                                    com.petal.browser.ui.components.PetalButtonGroupItem(
                                         value = "ALWAYS",
                                         label = "Always",
                                         icon = Icons.Rounded.Autorenew
                                     ),
-                                    com.petal.browser.ui.components.PetalChoiceOption(
+                                    com.petal.browser.ui.components.PetalButtonGroupItem(
                                         value = "PERIODIC",
                                         label = "Periodically",
                                         icon = Icons.Rounded.Schedule

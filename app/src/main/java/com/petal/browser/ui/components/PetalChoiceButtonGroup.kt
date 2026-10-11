@@ -39,7 +39,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 /**
  * Option item model for [PetalChoiceButtonGroup].
  */
-data class PetalChoiceOption<T>(
+data class PetalButtonGroupItem<T>(
     val value: T,
     val label: String,
     val icon: ImageVector? = null,
@@ -68,7 +68,7 @@ data class PetalChoiceOption<T>(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun <T> PetalChoiceButtonGroup(
-    options: List<PetalChoiceOption<T>>,
+    options: List<PetalButtonGroupItem<T>>,
     selected: T,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
@@ -184,7 +184,7 @@ fun PetalChoiceButtonGroup(
     scrollableIfCrowded: Boolean = true,
 ) {
     val options = labels.mapIndexed { index, label ->
-        PetalChoiceOption(
+        PetalButtonGroupItem(
             value = index,
             label = label,
             icon = icons?.getOrNull(index)

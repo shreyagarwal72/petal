@@ -143,10 +143,10 @@ fun PetalBrowserStoreScreen(
 
     val tabItems = remember {
         listOf(
-            com.petal.browser.ui.components.PetalChoiceOption(0, "Add-ons", icon = Icons.Rounded.Extension),
-            com.petal.browser.ui.components.PetalChoiceOption(1, "Scripts", icon = Icons.Rounded.Code),
-            com.petal.browser.ui.components.PetalChoiceOption(2, "Search", icon = Icons.Rounded.Search),
-            com.petal.browser.ui.components.PetalChoiceOption(3, "Filters", icon = Icons.Rounded.Shield)
+            com.petal.browser.ui.components.PetalButtonGroupItem(0, "Add-ons", icon = Icons.Rounded.Extension),
+            com.petal.browser.ui.components.PetalButtonGroupItem(1, "Scripts", icon = Icons.Rounded.Code),
+            com.petal.browser.ui.components.PetalButtonGroupItem(2, "Search", icon = Icons.Rounded.Search),
+            com.petal.browser.ui.components.PetalButtonGroupItem(3, "Filters", icon = Icons.Rounded.Shield)
         )
     }
 

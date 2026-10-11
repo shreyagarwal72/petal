@@ -57,8 +57,8 @@ fun AddressBarSettingsScreen(
                     Spacer(Modifier.height(4.dp))
                     com.petal.browser.ui.components.PetalChoiceButtonGroup(
                         options = listOf(
-                            com.petal.browser.ui.components.PetalChoiceOption("TOP", "Top Bar"),
-                            com.petal.browser.ui.components.PetalChoiceOption("BOTTOM", "Bottom Bar"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem("TOP", "Top Bar"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem("BOTTOM", "Bottom Bar"),
                         ),
                         selected = if (position.equals("TOP", ignoreCase = true)) "TOP" else "BOTTOM",
                         onSelect = { selectedPos ->
@@ -74,8 +74,8 @@ fun AddressBarSettingsScreen(
                     Spacer(Modifier.height(4.dp))
                     com.petal.browser.ui.components.PetalChoiceButtonGroup(
                         options = listOf(
-                            com.petal.browser.ui.components.PetalChoiceOption("COMPACT", "Compact"),
-                            com.petal.browser.ui.components.PetalChoiceOption("STANDARD", "Standard"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem("COMPACT", "Compact"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem("STANDARD", "Standard"),
                         ),
                         selected = height.uppercase(),
                         onSelect = { viewModel.setHeight(it) }
@@ -87,9 +87,9 @@ fun AddressBarSettingsScreen(
                     Spacer(Modifier.height(4.dp))
                     com.petal.browser.ui.components.PetalChoiceButtonGroup(
                         options = listOf(
-                            com.petal.browser.ui.components.PetalChoiceOption("AI", "AI"),
-                            com.petal.browser.ui.components.PetalChoiceOption("BOOKMARK", "Bookmark"),
-                            com.petal.browser.ui.components.PetalChoiceOption("NONE", "None"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem("AI", "AI"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem("BOOKMARK", "Bookmark"),
+                            com.petal.browser.ui.components.PetalButtonGroupItem("NONE", "None"),
                         ),
                         selected = action.uppercase(),
                         onSelect = { viewModel.setAction(it) }
