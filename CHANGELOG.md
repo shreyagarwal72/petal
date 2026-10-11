@@ -1,3 +1,19 @@
+### v4.3 — ⚡ Latest GeckoView 157 Engine & Expressive Connected Pickers
+
+> *"Major engine upgrade to Mozilla GeckoView & Android Components 157.0.1, coupled with a full redesign of pick-one selectors to Material 3 Expressive connected button groups."*
+
+#### 🌐 Engine & Core Upgrades
+- **Mozilla GeckoView 157.0.1**: Upgraded quantum browser engine to `157.0.20261005135250` with enhanced web standards compliance, security enhancements, and optimized multi-process rendering.
+- **Mozilla Android Components 157.0.1**: Bumped all components (`browser-engine-gecko`, `concept-engine`, `feature-readerview`, `feature-session`, `feature-customtabs`, `feature-pwa`, `feature-media`, etc.) to stable 157.0.1.
+
+#### 🎨 Material 3 Expressive UI Modernization
+- **Unified Connected Button Groups (`PetalChoiceButtonGroup`)**: Replaced all segmented buttons and pick-one selectors with Material 3 Expressive connected toggle buttons:
+  - Full-pill morphing shape transitions with spring dynamics.
+  - Generous 56dp touch targets, tactile haptic feedback, and accessibility radio button semantics.
+  - Seamless horizontal scrolling when options exceed 4 or labels are long, eliminating text clipping.
+
+---
+
 ### v4.0.1 — 🚀 Hotfix: Link Navigation & External App Intent Handling
 
 > *"Hotfix release restoring seamless link opening from external apps and fixing blank page issues on website link taps."*

@@ -25,8 +25,8 @@ android {
         applicationId "com.petal.browser"
         minSdkVersion 26
         targetSdkVersion 36
-        versionCode 420
-        versionName "4.2"
+        versionCode 430
+        versionName "4.3"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         resConfigs "ar", "b+hi+Latn", "b+sr+Latn", "cs", "de", "el", "es", "et", "fa", "fr", "he", "hi", "hu", "id", "it", "ja", "nl", "pl", "pt", "ro", "ru", "sr", "sv", "tr", "uk", "vi", "zh", "zh-rTW"
@@ -238,33 +238,33 @@ dependencies {
     implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'
     implementation 'io.github.junkfood02.youtubedl-android:aria2c:0.18.1'
 
-    // Mozilla GeckoView & Android Components (Release channel 156.0.1)
-    implementation 'org.mozilla.geckoview:geckoview:156.0.20260921121718'
-    implementation('org.mozilla.components:browser-engine-gecko:156.0.1') {
+    // Mozilla GeckoView & Android Components (Release channel 157.0.1)
+    implementation 'org.mozilla.geckoview:geckoview:157.0.20261005135250'
+    implementation('org.mozilla.components:browser-engine-gecko:157.0.1') {
         exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
     }
-    implementation 'org.mozilla.components:concept-engine:156.0.1'
-    implementation 'org.mozilla.components:browser-state:156.0.1'
-    implementation 'org.mozilla.components:browser-session-storage:156.0.1'
-    implementation 'org.mozilla.components:lib-state:156.0.1'
-    implementation 'org.mozilla.components:support-base:156.0.1'
-    implementation 'org.mozilla.components:support-utils:156.0.1'
+    implementation 'org.mozilla.components:concept-engine:157.0.1'
+    implementation 'org.mozilla.components:browser-state:157.0.1'
+    implementation 'org.mozilla.components:browser-session-storage:157.0.1'
+    implementation 'org.mozilla.components:lib-state:157.0.1'
+    implementation 'org.mozilla.components:support-base:157.0.1'
+    implementation 'org.mozilla.components:support-utils:157.0.1'
 
-    // Android Components Features (156.0.1)
-    implementation 'org.mozilla.components:feature-readerview:156.0.1'
-    implementation 'org.mozilla.components:feature-session:156.0.1'
+    // Android Components Features (157.0.1)
+    implementation 'org.mozilla.components:feature-readerview:157.0.1'
+    implementation 'org.mozilla.components:feature-session:157.0.1'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    implementation 'org.mozilla.components:feature-findinpage:156.0.1'
-    implementation 'org.mozilla.components:feature-sitepermissions:156.0.1'
-    implementation 'org.mozilla.components:feature-prompts:156.0.1'
-    implementation 'org.mozilla.components:feature-tabs:156.0.1'
-    implementation 'org.mozilla.components:feature-contextmenu:156.0.1'
-    implementation 'org.mozilla.components:feature-pwa:156.0.1'
-    implementation 'org.mozilla.components:feature-downloads:156.0.1'
-    implementation 'org.mozilla.components:feature-search:156.0.1'
-    implementation 'org.mozilla.components:feature-webcompat:156.0.1'
-    implementation 'org.mozilla.components:feature-customtabs:156.0.1'
-    implementation 'org.mozilla.components:feature-media:156.0.1'
+    implementation 'org.mozilla.components:feature-findinpage:157.0.1'
+    implementation 'org.mozilla.components:feature-sitepermissions:157.0.1'
+    implementation 'org.mozilla.components:feature-prompts:157.0.1'
+    implementation 'org.mozilla.components:feature-tabs:157.0.1'
+    implementation 'org.mozilla.components:feature-contextmenu:157.0.1'
+    implementation 'org.mozilla.components:feature-pwa:157.0.1'
+    implementation 'org.mozilla.components:feature-downloads:157.0.1'
+    implementation 'org.mozilla.components:feature-search:157.0.1'
+    implementation 'org.mozilla.components:feature-webcompat:157.0.1'
+    implementation 'org.mozilla.components:feature-customtabs:157.0.1'
+    implementation 'org.mozilla.components:feature-media:157.0.1'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.60.1'

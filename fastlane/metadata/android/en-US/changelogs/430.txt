@@ -1,0 +1,4 @@
+Petal Browser v4.3 Release:
+- Engine Update: Upgraded to latest Mozilla GeckoView & Android Components 157.0.1 (Quantum release 157.0.20261005135250) with enhanced web standards compliance, security patches, and rendering speed.
+- UI Overhaul: All segmented buttons and pick-one selectors across settings, tabs, store, and address bar unified to Material 3 Expressive connected button groups (PetalChoiceButtonGroup).
+- Smooth spring physics, morphing pill animations, 56dp touch targets, tactile haptics, and responsive layout.

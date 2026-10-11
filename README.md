@@ -5,7 +5,7 @@
 <br>
 
 **A browser that respects your attention, privacy, and device.**<br>
-Material 3 Expressive, powered by GeckoView 156.<br>
+Material 3 Expressive, powered by GeckoView 157.<br>
 No telemetry, no tracking, no bloat — built for ultimate speed and aesthetics.
 
 <br>
@@ -26,7 +26,7 @@ No telemetry, no tracking, no bloat — built for ultimate speed and aesthetics.
 
 Most browsers on Android are Chromium wrappers loaded with account sign-ins, news feeds, telemetry, and background trackers that drain battery and collect your browsing habits.
 
-**Petal** is built differently. Powered by a modern **GeckoView 156** engine, it delivers desktop-grade standards compliance, native ad blocking, and a fluid user experience adhering strictly to **Material 3 Expressive** guidelines. Featuring authentic adaptive morphing surfaces, smooth motion physics, and dynamic color palettes, Petal combines state-of-the-art aesthetics with zero-compromise privacy.
+**Petal** is built differently. Powered by a modern **GeckoView 157** engine, it delivers desktop-grade standards compliance, native ad blocking, and a fluid user experience adhering strictly to **Material 3 Expressive** guidelines. Featuring authentic adaptive morphing surfaces, smooth motion physics, and dynamic color palettes, Petal combines state-of-the-art aesthetics with zero-compromise privacy.
 
 ---
 
@@ -35,9 +35,9 @@ Most browsers on Android are Chromium wrappers loaded with account sign-ins, new
 <table>
 <tr>
 <td width="50%" valign="top">
-<img src="docs/readme/icons/engine.svg" width="44" height="44" alt="GeckoView 156"><br>
-<b>GeckoView 156 Powerhouse</b><br>
-Runs on Mozilla's GeckoView 156 engine with full multi-process architecture, quantum rendering, and web standards compliance. Independent of the system Chromium WebView.
+<img src="docs/readme/icons/engine.svg" width="44" height="44" alt="GeckoView 157"><br>
+<b>GeckoView 157 Powerhouse</b><br>
+Runs on Mozilla's GeckoView 157 engine with full multi-process architecture, quantum rendering, and web standards compliance. Independent of the system Chromium WebView.
 </td>
 <td width="50%" valign="top">
 <img src="docs/readme/icons/glass.svg" width="44" height="44" alt="Material 3 Expressive"><br>
@@ -125,7 +125,7 @@ The compiled APK will be located at:
 | Component | Technology / Library |
 | :--- | :--- |
 | **Language** | Kotlin 2.0+ & Java 17 |
-| **Engine** | Mozilla GeckoView 156 (arm64-v8a, armeabi-v7a, x86_64) |
+| **Engine** | Mozilla GeckoView 157 (arm64-v8a, armeabi-v7a, x86_64) |
 | **UI Framework** | Jetpack Compose + Material 3 Expressive components |
 | **Design System** | Material 3 Expressive shape morphing & dynamic color tokens |
 | **Architecture** | Clean Architecture / MVVM with Kotlin Coroutines & Flows |
