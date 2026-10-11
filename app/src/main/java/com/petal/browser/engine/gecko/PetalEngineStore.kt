@@ -110,7 +110,11 @@ object PetalEngineStore {
 
         val appContext = context.applicationContext
         val currentEngine = getEngine(appContext)
-        val storage = SessionStorage(appContext, currentEngine)
+        val storage = SessionStorage(
+            context = appContext,
+            engine = currentEngine,
+            applicationScope = mainScope
+        )
         sessionStorage = storage
 
         val currentStore = getStore(appContext)
@@ -123,7 +127,10 @@ object PetalEngineStore {
     @Synchronized
     fun getFileUploadsDirCleaner(context: Context): FileUploadsDirCleaner {
         fileUploadsDirCleaner?.let { return it }
-        return FileUploadsDirCleaner { context.applicationContext.cacheDir }.also {
+        return FileUploadsDirCleaner(
+            scope = mainScope,
+            cacheDirectory = { context.applicationContext.cacheDir }
+        ).also {
             fileUploadsDirCleaner = it
         }
     }
