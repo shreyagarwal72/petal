@@ -250,7 +250,7 @@ private fun PetalSetupContent(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                    letterSpacing = androidx.compose.ui.unit.sp(1.2)
+                                    letterSpacing = androidx.compose.ui.unit.TextUnit(1.2f, androidx.compose.ui.unit.TextUnitType.Sp)
                                 )
                             }
 
@@ -260,7 +260,7 @@ private fun PetalSetupContent(
                                 style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.onBackground,
-                                lineHeight = androidx.compose.ui.unit.sp(42)
+                                lineHeight = androidx.compose.ui.unit.TextUnit(42f, androidx.compose.ui.unit.TextUnitType.Sp)
                             )
 
                             // Subtitle description
@@ -268,7 +268,7 @@ private fun PetalSetupContent(
                                 text = stringResource(R.string.petal_setup_hero_subtitle),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = androidx.compose.ui.unit.sp(22)
+                                lineHeight = androidx.compose.ui.unit.TextUnit(22f, androidx.compose.ui.unit.TextUnitType.Sp)
                             )
                         }
 

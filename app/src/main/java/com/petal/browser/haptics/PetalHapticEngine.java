@@ -187,6 +187,10 @@ public class PetalHapticEngine {
         playIfEnabled(context, Pattern.CLICK, 0.85f, 0L);
     }
 
+    public void playHeavyClick(Context context) {
+        playIfEnabled(context, Pattern.HEAVY_CLICK, 1.0f, 0L);
+    }
+
     public void playTick(Context context) {
         playIfEnabled(context, Pattern.CLICK, 0.65f, 0L);
     }
