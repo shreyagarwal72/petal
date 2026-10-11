@@ -1,0 +1,25 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/site/index.html"
+    },
+    {
+      "source": "/(styles\\.css|app\\.js)",
+      "destination": "/site/$1"
+    },
+    {
+      "source": "/assets/(.*)",
+      "destination": "/site/assets/$1"
+    },
+    {
+      "source": "/site",
+      "destination": "/site/index.html"
+    },
+    {
+      "source": "/site/(.*)",
+      "destination": "/site/$1"
+    }
+  ]
+}
