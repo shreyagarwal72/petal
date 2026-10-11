@@ -993,22 +993,21 @@ class PetalGeckoView @JvmOverloads constructor(
                             if (fixerOn) {
                                 com.petal.browser.ui.components.PetalConfirmSheetBridge.showGoogleSearchFixerPrompt(
                                     act,
-                                    true,
-                                    choice -> {
-                                        sp.edit().putBoolean("petal_builtin_google_search_fixer", choice).apply()
-                                        com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(act, "petal_builtin_google_search_fixer", choice)
-                                        if (!choice) {
-                                            // Extract original query if available and reload without spoofed UA
-                                            val uri = android.net.Uri.parse(url)
-                                            val continueUrl = uri.getQueryParameter("continue")
-                                            if (!continueUrl.isNullOrBlank()) {
-                                                loadUrl(continueUrl)
-                                            } else {
-                                                reload()
-                                            }
+                                    true
+                                ) { choice ->
+                                    sp.edit().putBoolean("petal_builtin_google_search_fixer", choice).apply()
+                                    com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(act, "petal_builtin_google_search_fixer", choice)
+                                    if (!choice) {
+                                        // Extract original query if available and reload without spoofed UA
+                                        val uri = android.net.Uri.parse(url)
+                                        val continueUrl = uri.getQueryParameter("continue")
+                                        if (!continueUrl.isNullOrBlank()) {
+                                            loadUrl(continueUrl)
+                                        } else {
+                                            reload()
                                         }
                                     }
-                                )
+                                }
                             }
                         }
                     }
