@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.ui.components.*
+import com.petal.browser.ui.modifiers.scrollMotionBlur
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.view.PetalToast
@@ -66,6 +67,8 @@ fun AboutSettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .scrollMotionBlur(scrollState)
+                    .com.petal.browser.ui.modifiers.scrollMotionBlur(scrollState)
                     .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)

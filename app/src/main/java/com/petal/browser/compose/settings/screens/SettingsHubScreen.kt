@@ -177,10 +177,13 @@ fun SettingsHubScreen(
                 }
             }
 
+            val hubListState = androidx.compose.foundation.lazy.rememberLazyListState()
             LazyColumn(
+                state = hubListState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .com.petal.browser.ui.modifiers.scrollMotionBlur(hubListState),
                 contentPadding = PaddingValues(
                     top = 12.dp,
                     bottom = 24.dp,

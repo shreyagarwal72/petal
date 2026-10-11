@@ -994,6 +994,9 @@
     <string name="ui_force_120hz_144hz_peak_display">Force 120Hz/144Hz peak display refresh rate and smooth 120 FPS frame pacing (Detected hardware peak: %1$s Hz)</string>
     <string name="ui_app_launch_ripple_effect">App Launch Ripple Effect</string>
     <string name="ui_display_fluid_liquid_displacement_ripp">Display fluid liquid displacement ripple animation across the screen when opening the app</string>
+    <string name="ui_motion_blur">Motion Blur</string>
+    <string name="ui_motion_blur_subtitle">AGSL directional motion blur on scrollable pages</string>
+    <string name="ui_motion_blur_amount">Motion Blur Amount</string>
     <string name="ui_api_integrations_hub">API &amp; Integrations Hub</string>
     <string name="ui_androidx_webkit_google_credential_mana">AndroidX WebKit, Google Credential Manager &amp; Palette APIs</string>
     <string name="ui_petal_ai_api_keys_hub">Petal AI &amp; API Keys Hub</string>

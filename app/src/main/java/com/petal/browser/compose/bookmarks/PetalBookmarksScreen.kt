@@ -330,9 +330,12 @@ fun PetalBookmarksScreen(
                         title = if (searchQuery.isEmpty()) "No Bookmarks Saved Yet" else "No Matching Bookmarks",
                         description = if (searchQuery.isEmpty()) "Tap the star icon on web pages to save them" else "Try searching with a different URL or keyword"
                     )
-                } else {
+                    val bookmarksListState = androidx.compose.foundation.lazy.rememberLazyListState()
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
+                        state = bookmarksListState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .com.petal.browser.ui.modifiers.scrollMotionBlur(bookmarksListState),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {

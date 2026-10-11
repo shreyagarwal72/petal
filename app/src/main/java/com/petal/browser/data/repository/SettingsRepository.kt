@@ -30,6 +30,8 @@ interface SettingsRepository {
     val highRefreshRate: Flow<Boolean>
     val customFontName: Flow<String>
     val launchRippleEnabled: Flow<Boolean>
+    val motionBlurEnabled: Flow<Boolean>
+    val motionBlurScale: Flow<Float>
 
     // Search & Homepage
     val searchEngineIndex: Flow<String>
@@ -119,6 +121,8 @@ interface SettingsRepository {
     suspend fun setHighRefreshRate(enabled: Boolean)
     suspend fun setCustomFontName(name: String)
     suspend fun setLaunchRippleEnabled(enabled: Boolean)
+    suspend fun setMotionBlurEnabled(enabled: Boolean)
+    suspend fun setMotionBlurScale(scale: Float)
 
     suspend fun setSearchEngineIndex(index: String)
     suspend fun setHomepageType(type: String)

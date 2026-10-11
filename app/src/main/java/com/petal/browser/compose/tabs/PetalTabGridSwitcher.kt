@@ -862,7 +862,9 @@ fun PetalTabGridSwitcher(
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                             verticalArrangement = Arrangement.spacedBy(14.dp),
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .com.petal.browser.ui.modifiers.scrollMotionBlur(gridState)
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }
@@ -976,7 +978,9 @@ fun PetalTabGridSwitcher(
                             state = listState,
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .com.petal.browser.ui.modifiers.scrollMotionBlur(listState)
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }

@@ -602,6 +602,7 @@ fun PetalHomeScreen(
                         )
 
                         // Main home scrolling column wrapped with Candy-Browser profile switch animation
+                        val homeScrollState = rememberScrollState()
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -613,7 +614,8 @@ fun PetalHomeScreen(
                                     scaleX = scale
                                     scaleY = scale
                                 }
-                                .verticalScroll(rememberScrollState())
+                                .com.petal.browser.ui.modifiers.scrollMotionBlur(homeScrollState)
+                                .verticalScroll(homeScrollState)
                                 .padding(horizontal = 20.dp, vertical = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {

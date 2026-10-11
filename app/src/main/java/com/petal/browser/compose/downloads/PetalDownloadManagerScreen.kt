@@ -598,8 +598,12 @@ fun PetalDownloadManagerScreen(
             } else if (downloadList.isEmpty()) {
                 DownloadsEmptyState()
             } else {
+                val downloadsListState = androidx.compose.foundation.lazy.rememberLazyListState()
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    state = downloadsListState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .com.petal.browser.ui.modifiers.scrollMotionBlur(downloadsListState),
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {

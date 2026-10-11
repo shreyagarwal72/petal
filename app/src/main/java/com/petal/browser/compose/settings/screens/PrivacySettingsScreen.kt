@@ -221,6 +221,7 @@ fun PrivacySettingsScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .com.petal.browser.ui.modifiers.scrollMotionBlur(scrollState)
                     .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)

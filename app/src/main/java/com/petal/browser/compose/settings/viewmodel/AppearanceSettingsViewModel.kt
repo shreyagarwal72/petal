@@ -81,6 +81,12 @@ class AppearanceSettingsViewModel @Inject constructor(
     val launchRippleEnabled: StateFlow<Boolean> = settingsRepository.launchRippleEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val motionBlurEnabled: StateFlow<Boolean> = settingsRepository.motionBlurEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val motionBlurScale: StateFlow<Float> = settingsRepository.motionBlurScale
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
+
     fun setAppFont(font: AppFont) = viewModelScope.launch {
         settingsRepository.setAppFont(font)
     }
@@ -159,5 +165,13 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setLaunchRippleEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setLaunchRippleEnabled(enabled)
+    }
+
+    fun setMotionBlurEnabled(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setMotionBlurEnabled(enabled)
+    }
+
+    fun setMotionBlurScale(scale: Float) = viewModelScope.launch {
+        settingsRepository.setMotionBlurScale(scale)
     }
 }

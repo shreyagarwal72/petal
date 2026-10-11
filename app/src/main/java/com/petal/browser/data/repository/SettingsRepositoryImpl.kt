@@ -120,6 +120,14 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_launch_ripple_enabled", true)
     }
 
+    override val motionBlurEnabled: Flow<Boolean> = preferenceFlow("sp_motion_blur_enabled") {
+        sp.getBoolean("sp_motion_blur_enabled", false)
+    }
+
+    override val motionBlurScale: Flow<Float> = preferenceFlow("sp_motion_blur_scale") {
+        sp.getFloat("sp_motion_blur_scale", 1.0f)
+    }
+
     // ── Search & Homepage ─────────────────────────────────────────────────────
     override val searchEngineIndex: Flow<String> = preferenceFlow("sp_search_engine") {
         sp.getString("sp_search_engine", "0") ?: "0"
@@ -432,6 +440,14 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLaunchRippleEnabled(enabled: Boolean) {
         sp.edit().putBoolean("sp_launch_ripple_enabled", enabled).apply()
+    }
+
+    override suspend fun setMotionBlurEnabled(enabled: Boolean) {
+        sp.edit().putBoolean("sp_motion_blur_enabled", enabled).apply()
+    }
+
+    override suspend fun setMotionBlurScale(scale: Float) {
+        sp.edit().putFloat("sp_motion_blur_scale", scale).apply()
     }
 
     override suspend fun setSearchEngineIndex(index: String) {

@@ -41,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.compose.settings.viewmodel.AppearanceSettingsViewModel
 import com.petal.browser.ui.components.*
+import com.petal.browser.ui.modifiers.scrollMotionBlur
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.PetalHighRefreshRateManager
 import com.petal.browser.widget.PetalSearchWidgetProvider
@@ -73,6 +74,8 @@ fun AppearanceSettingsScreen(
     val highRefreshRate by viewModel.highRefreshRate.collectAsStateWithLifecycle()
     val customFontName by viewModel.customFontName.collectAsStateWithLifecycle()
     val launchRippleEnabled by viewModel.launchRippleEnabled.collectAsStateWithLifecycle()
+    val motionBlurEnabled by viewModel.motionBlurEnabled.collectAsStateWithLifecycle()
+    val motionBlurScale by viewModel.motionBlurScale.collectAsStateWithLifecycle()
 
     AppearanceSettingsScreenContent(
         appFont = appFont,
@@ -94,6 +97,8 @@ fun AppearanceSettingsScreen(
         highRefreshRate = highRefreshRate,
         customFontName = customFontName,
         launchRippleEnabled = launchRippleEnabled,
+        motionBlurEnabled = motionBlurEnabled,
+        motionBlurScale = motionBlurScale,
         onAppFontChange = viewModel::setAppFont,
         onAppLanguageChange = viewModel::setAppLanguage,
         onMatchWebsiteLanguageChange = viewModel::setMatchWebsiteLanguage,
@@ -113,6 +118,8 @@ fun AppearanceSettingsScreen(
         onHighRefreshRateChange = viewModel::setHighRefreshRate,
         onCustomFontNameChange = viewModel::setCustomFontName,
         onLaunchRippleEnabledChange = viewModel::setLaunchRippleEnabled,
+        onMotionBlurEnabledChange = viewModel::setMotionBlurEnabled,
+        onMotionBlurScaleChange = viewModel::setMotionBlurScale,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -138,6 +145,8 @@ fun AppearanceSettingsScreenContent(
     highRefreshRate: Boolean,
     customFontName: String,
     launchRippleEnabled: Boolean = true,
+    motionBlurEnabled: Boolean = false,
+    motionBlurScale: Float = 1.0f,
     appLanguage: String = "system",
     matchWebsiteLanguage: Boolean = true,
     onAppFontChange: (AppFont) -> Unit,
@@ -159,6 +168,8 @@ fun AppearanceSettingsScreenContent(
     onHighRefreshRateChange: (Boolean) -> Unit,
     onCustomFontNameChange: (String) -> Unit,
     onLaunchRippleEnabledChange: (Boolean) -> Unit = {},
+    onMotionBlurEnabledChange: (Boolean) -> Unit = {},
+    onMotionBlurScaleChange: (Float) -> Unit = {},
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -202,6 +213,8 @@ fun AppearanceSettingsScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .scrollMotionBlur(scrollState, enabled = motionBlurEnabled)
+                    .com.petal.browser.ui.modifiers.scrollMotionBlur(scrollState)
                     .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -744,9 +757,76 @@ fun AppearanceSettingsScreenContent(
                         subtitle = stringResource(R.string.ui_display_fluid_liquid_displacement_ripp),
                         icon = Icons.Rounded.WaterDrop,
                         checked = launchRippleEnabled,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         onCheckedChange = onLaunchRippleEnabledChange
                     )
+
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_motion_blur),
+                        subtitle = stringResource(R.string.ui_motion_blur_subtitle),
+                        iconRes = com.petal.browser.R.drawable.rounded_settings_motion_mode_24,
+                        checked = motionBlurEnabled,
+                        position = if (motionBlurEnabled) com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE else com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                        onCheckedChange = onMotionBlurEnabledChange
+                    )
+
+                    AnimatedVisibility(
+                        visible = motionBlurEnabled,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Card(
+                            shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM),
+                            colors = CardDefaults.cardColors(containerColor = com.petal.browser.ui.containment.petalGroupSurfaceColor()),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                            iconRes = com.petal.browser.R.drawable.rounded_settings_motion_mode_24,
+                                            container = MaterialTheme.colorScheme.secondaryContainer,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            size = 36.dp,
+                                            iconSize = 20.dp
+                                        )
+                                        Text(
+                                            stringResource(R.string.ui_motion_blur_amount),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                    Text(
+                                        String.format(java.util.Locale.getDefault(), "%.1fx", motionBlurScale),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                PetalSlider(
+                                    value = motionBlurScale,
+                                    onValueChange = onMotionBlurScaleChange,
+                                    valueRange = 0.5f..2.5f,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(32.dp))

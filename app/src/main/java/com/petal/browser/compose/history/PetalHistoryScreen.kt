@@ -273,8 +273,12 @@ fun PetalHistoryScreen(
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
+                        val historyListState = androidx.compose.foundation.lazy.rememberLazyListState()
                         LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
+                            state = historyListState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .com.petal.browser.ui.modifiers.scrollMotionBlur(historyListState),
                             verticalArrangement = Arrangement.spacedBy(3.dp),
                             contentPadding = PaddingValues(bottom = 24.dp)
                         ) {
