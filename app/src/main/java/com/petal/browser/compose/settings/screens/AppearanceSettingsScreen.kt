@@ -41,7 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.compose.settings.viewmodel.AppearanceSettingsViewModel
 import com.petal.browser.ui.components.*
-import com.petal.browser.ui.modifiers.scrollMotionBlur
+import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.PetalHighRefreshRateManager
 import com.petal.browser.widget.PetalSearchWidgetProvider
@@ -214,7 +214,6 @@ fun AppearanceSettingsScreenContent(
                     .fillMaxWidth()
                     .weight(1f)
                     .scrollMotionBlur(scrollState, enabled = motionBlurEnabled)
-                    .com.petal.browser.ui.modifiers.scrollMotionBlur(scrollState)
                     .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)

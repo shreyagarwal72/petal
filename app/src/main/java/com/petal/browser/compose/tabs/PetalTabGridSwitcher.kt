@@ -1,4 +1,5 @@
 package com.petal.browser.compose.tabs
+import com.petal.browser.ui.components.scrollMotionBlur
 
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
@@ -864,7 +865,7 @@ fun PetalTabGridSwitcher(
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
                             modifier = Modifier
                                 .fillMaxSize()
-                                .com.petal.browser.ui.modifiers.scrollMotionBlur(gridState)
+                                .scrollMotionBlur(gridState)
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }
@@ -980,7 +981,7 @@ fun PetalTabGridSwitcher(
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
                             modifier = Modifier
                                 .fillMaxSize()
-                                .com.petal.browser.ui.modifiers.scrollMotionBlur(listState)
+                                .scrollMotionBlur(listState)
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }

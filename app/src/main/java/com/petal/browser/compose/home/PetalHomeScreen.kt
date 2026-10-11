@@ -1,4 +1,5 @@
 /*
+import com.petal.browser.ui.components.scrollMotionBlur
  * PetalHomeScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Material 3 professional home screen for Petal Browser — Chrome/Edge-style
@@ -614,7 +615,7 @@ fun PetalHomeScreen(
                                     scaleX = scale
                                     scaleY = scale
                                 }
-                                .com.petal.browser.ui.modifiers.scrollMotionBlur(homeScrollState)
+                                .scrollMotionBlur(homeScrollState)
                                 .verticalScroll(homeScrollState)
                                 .padding(horizontal = 20.dp, vertical = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally

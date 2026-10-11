@@ -1,4 +1,5 @@
 package com.petal.browser.compose.settings.screens
+import com.petal.browser.ui.components.scrollMotionBlur
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -183,7 +184,7 @@ fun SettingsHubScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .com.petal.browser.ui.modifiers.scrollMotionBlur(hubListState),
+                    .scrollMotionBlur(hubListState),
                 contentPadding = PaddingValues(
                     top = 12.dp,
                     bottom = 24.dp,

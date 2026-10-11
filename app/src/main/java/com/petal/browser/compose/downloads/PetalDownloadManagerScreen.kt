@@ -1,4 +1,5 @@
 /*
+import com.petal.browser.ui.components.scrollMotionBlur
  * PetalDownloadManager.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Native Inbuilt Download Manager UI for Petal Browser featuring Chrome-style
@@ -603,7 +604,7 @@ fun PetalDownloadManagerScreen(
                     state = downloadsListState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .com.petal.browser.ui.modifiers.scrollMotionBlur(downloadsListState),
+                        .scrollMotionBlur(downloadsListState),
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {

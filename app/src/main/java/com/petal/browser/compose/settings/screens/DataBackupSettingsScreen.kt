@@ -1,4 +1,5 @@
 package com.petal.browser.compose.settings.screens
+import com.petal.browser.ui.components.scrollMotionBlur
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -511,7 +512,7 @@ fun DataBackupSettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .com.petal.browser.ui.modifiers.scrollMotionBlur(scrollState)
+                    .scrollMotionBlur(scrollState)
                     .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)

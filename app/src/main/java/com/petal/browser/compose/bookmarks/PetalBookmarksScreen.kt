@@ -1,4 +1,5 @@
 /*
+import com.petal.browser.ui.components.scrollMotionBlur
  * PetalBookmarksScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Chrome Android-inspired Material 3 Expressive Bookmarks Page for Petal Browser.
@@ -335,7 +336,7 @@ fun PetalBookmarksScreen(
                         state = bookmarksListState,
                         modifier = Modifier
                             .fillMaxSize()
-                            .com.petal.browser.ui.modifiers.scrollMotionBlur(bookmarksListState),
+                            .scrollMotionBlur(bookmarksListState),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {

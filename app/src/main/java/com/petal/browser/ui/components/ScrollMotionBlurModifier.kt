@@ -1,4 +1,4 @@
-package com.petal.browser.ui.modifiers
+package com.petal.browser.ui.components
 
 import android.content.Context
 import android.content.SharedPreferences
