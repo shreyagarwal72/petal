@@ -1,11 +1,11 @@
 <div align="center">
 
-<img alt="Petal — Material 3 Expressive GeckoView Browser for Android" src="docs/readme/hero.svg" width="100%">
+<img alt="Petal — Material 3 Expressive GeckoView Browser for Android" src="docs/readme/banner.jpg" width="100%">
 
 <br>
 
 **A browser that respects your attention, privacy, and device.**<br>
-Material 3 Expressive, powered by GeckoView 156 with pure Liquid Glass.<br>
+Material 3 Expressive, powered by GeckoView 156.<br>
 No telemetry, no tracking, no bloat — built for ultimate speed and aesthetics.
 
 <br>
@@ -26,7 +26,7 @@ No telemetry, no tracking, no bloat — built for ultimate speed and aesthetics.
 
 Most browsers on Android are Chromium wrappers loaded with account sign-ins, news feeds, telemetry, and background trackers that drain battery and collect your browsing habits.
 
-**Petal** is built differently. Powered by a modern **GeckoView 156** engine, it delivers desktop-grade standards compliance, native ad blocking, and a fluid user experience adhering strictly to **Material 3 Expressive** guidelines. Featuring authentic **Liquid Glass** surfaces with hardware-accelerated backdrop blur, chromatic aberration, and lens refraction, Petal combines state-of-the-art aesthetics with zero-compromise privacy.
+**Petal** is built differently. Powered by a modern **GeckoView 156** engine, it delivers desktop-grade standards compliance, native ad blocking, and a fluid user experience adhering strictly to **Material 3 Expressive** guidelines. Featuring authentic adaptive morphing surfaces, smooth motion physics, and dynamic color palettes, Petal combines state-of-the-art aesthetics with zero-compromise privacy.
 
 ---
 
@@ -40,9 +40,9 @@ Most browsers on Android are Chromium wrappers loaded with account sign-ins, new
 Runs on Mozilla's GeckoView 156 engine with full multi-process architecture, quantum rendering, and web standards compliance. Independent of the system Chromium WebView.
 </td>
 <td width="50%" valign="top">
-<img src="docs/readme/icons/glass.svg" width="44" height="44" alt="Pure Liquid Glass"><br>
-<b>Pure Liquid Glass & M3 Expressive</b><br>
-Material 3 Expressive morphing surfaces with real optical refraction, adaptive corner smoothing, and customizable backdrop blur tinting. Seamlessly adapts to your dynamic color palette.
+<img src="docs/readme/icons/glass.svg" width="44" height="44" alt="Material 3 Expressive"><br>
+<b>Material 3 Expressive UI</b><br>
+Material 3 Expressive morphing surfaces with dynamic container transforms, adaptive corner smoothing, and expressive shape tokens. Seamlessly adapts to your dynamic color palette.
 </td>
 </tr>
 <tr>
@@ -90,7 +90,7 @@ Install and run Mozilla add-ons and Firefox extensions natively. Customize your 
 ### GitHub Releases (Recommended)
 Grab the latest signed universal or architecture-specific APK directly from GitHub:
 
-[![Download APK](https://img.shields.io/badge/Download-Latest%20Release-00504A?style=for-the-badge&logo=android&logoColor=white)](https://github.com/shreyagarwal72/petal/releases/latest)
+[![Download APK](https://img.shields.io/badge/Download-Latest%20Release-B81D63?style=for-the-badge&logo=android&logoColor=white)](https://github.com/shreyagarwal72/petal/releases/latest)
 
 ```bash
 # Or install via ADB directly
@@ -124,10 +124,10 @@ The compiled APK will be located at:
 
 | Component | Technology / Library |
 | :--- | :--- |
-| **Language** | Kotlin 1.9+ |
+| **Language** | Kotlin 2.0+ & Java 17 |
 | **Engine** | Mozilla GeckoView 156 (arm64-v8a, armeabi-v7a, x86_64) |
 | **UI Framework** | Jetpack Compose + Material 3 Expressive components |
-| **Visual Effects** | Liquid Glass (RenderEffect / RenderScript blur fallback, optical refraction shader) |
+| **Design System** | Material 3 Expressive shape morphing & dynamic color tokens |
 | **Architecture** | Clean Architecture / MVVM with Kotlin Coroutines & Flows |
 | **Storage & Cache** | Room Database + SQLite, encrypted preferences |
 | **Target Android** | Android 8.0 (API 26) through Android 15 (API 35) |

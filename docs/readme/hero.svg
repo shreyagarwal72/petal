@@ -25,7 +25,7 @@
 
   <!-- Background Ambient Glows -->
   <circle cx="600" cy="180" r="160" fill="#6366F1" opacity="0.18" filter="url(#glow)" />
-  <circle cx="380" cy="220" r="120" fill="#06B6D4" opacity="0.12" filter="url(#glow)" />
+  <circle cx="380" cy="220" r="120" fill="#EC4899" opacity="0.12" filter="url(#glow)" />
   <circle cx="820" cy="200" r="140" fill="#EC4899" opacity="0.12" filter="url(#glow)" />
 
   <!-- Glass Card Accent Container -->
@@ -41,7 +41,7 @@
   </g>
 
   <g transform="translate(600, 225)" text-anchor="middle">
-    <text font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-weight="400" font-size="15" fill="#94A3B8" letter-spacing="0.2">GeckoView 156 · Real Liquid Glass &amp; Optical Refraction · Inbuilt AI Hub · Total Privacy</text>
+    <text font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-weight="400" font-size="15" fill="#94A3B8" letter-spacing="0.2">GeckoView 156 · Material 3 Expressive Design · Inbuilt AI Hub · Total Privacy</text>
   </g>
 
   <!-- Pills / Feature Tags -->
@@ -52,7 +52,7 @@
     </g>
     <g transform="translate(-90, 0)">
       <rect x="0" y="0" width="180" height="36" rx="18" fill="rgba(20, 184, 166, 0.15)" stroke="rgba(94, 234, 212, 0.3)" stroke-width="1" />
-      <text x="90" y="23" font-family="sans-serif" font-size="13" font-weight="600" fill="#5EEAD4" text-anchor="middle">Pure Liquid Glass</text>
+      <text x="90" y="23" font-family="sans-serif" font-size="13" font-weight="600" fill="#FECDD3" text-anchor="middle">M3 Expressive</text>
     </g>
     <g transform="translate(110, 0)">
       <rect x="0" y="0" width="160" height="36" rx="18" fill="rgba(236, 72, 153, 0.15)" stroke="rgba(244, 114, 182, 0.3)" stroke-width="1" />
