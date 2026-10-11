@@ -207,12 +207,14 @@ button {
   max-width: var(--site-max-width);
   margin-left: auto;
   margin-right: auto;
-  padding-left: clamp(1.25rem, 5vw, 2.5rem);
-  padding-right: clamp(1.25rem, 5vw, 2.5rem);
+  padding-left: clamp(1rem, 4vw, 2.5rem);
+  padding-right: clamp(1rem, 4vw, 2.5rem);
 }
 
 /* Top Announcement Banner */
 .top-notice {
+  width: 100%;
+  box-sizing: border-box;
   background: var(--color-surface-container-high);
   border-bottom: 1px solid var(--color-border);
   padding: 0.5rem 1rem;
@@ -223,6 +225,7 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .notice-pill {
@@ -1238,16 +1241,16 @@ button {
 
 @media (max-width: 640px) {
   .nav-inner {
-    height: 3.75rem;
+    height: 3.5rem;
     gap: 0.5rem;
   }
   .brand-link {
     font-size: 1.05rem;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
   .brand-icon-svg {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
   }
   .brand-version-tag {
     font-size: 0.625rem;
@@ -1260,7 +1263,7 @@ button {
     gap: 0.4rem;
   }
   .nav-actions .btn {
-    padding: 0.45rem 0.75rem;
+    padding: 0.4rem 0.75rem;
     font-size: 0.8125rem;
   }
   .nav-actions .btn-secondary {
@@ -1270,7 +1273,8 @@ button {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
-    padding: 0.75rem 1rem;
+    padding: 0.85rem 1rem;
+    margin-top: 1rem;
   }
   .palette-swatches {
     justify-content: flex-start;
@@ -1278,24 +1282,53 @@ button {
     gap: 0.65rem;
   }
   .hero-section {
-    padding-top: 2rem;
+    padding-top: 1.75rem;
     padding-bottom: 2.5rem;
   }
+  .hero-content {
+    text-align: left;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+  .hero-eyebrow {
+    font-size: 0.75rem;
+  }
   .hero-title {
-    font-size: 2.15rem;
+    font-size: 2.25rem;
+    letter-spacing: -0.03em;
   }
   .hero-desc {
     font-size: 0.95rem;
+    line-height: 1.55;
   }
   .hero-cta-group {
     flex-direction: column;
     width: 100%;
+    gap: 0.75rem;
   }
   .hero-cta-group .btn {
     width: 100%;
+    justify-content: center;
+  }
+  .hero-specs-strip {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem 1.25rem;
+    justify-content: flex-start;
+    text-align: left;
+    padding-top: 1.25rem;
+  }
+  .spec-item {
+    font-size: 0.75rem;
+    justify-content: flex-start;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
   }
   .device-viewport {
     max-width: 320px;
+    margin-top: 1.5rem;
   }
   .footer-grid {
     grid-template-columns: 1fr;
