@@ -199,7 +199,7 @@
     <string name="petal_pdf_viewer_name">Petal PDF Viewer</string>
     <string name="petal_image_viewer_name">Petal Image Viewer</string>
     <string name="petal_media_player_name">Petal Media Player</string>
-    <string name="petal_file_viewer_name">Petal Universal File Viewer</string>
+    <string name="petal_file_viewer_name">Petal File Viewer</string>
     <string name="petal_pwa_name">Petal Web App</string>
     <string name="petal_custom_tab_name">Petal Custom Tab</string>
     <!-- Built-in File Picker & Selector -->
@@ -510,17 +510,17 @@
     <string name="ui_share_summary">Share Summary</string>
     <string name="ui_ask_question">Ask Question</string>
     <string name="ui_about_developer">About Developer</string>
-    <string name="ui_crafted_with_for_android_termux">Crafted with ❤ for Android &amp; Termux</string>
+    <string name="ui_crafted_with_for_android_termux">Crafted with ❤ for Android</string>
     <string name="ui_share_profile">Share Profile</string>
     <string name="ui_petal_browser_open_source_project">Petal Browser • Open Source Project</string>
     <string name="ui_made_with_jetpack_compose_material">Made with Jetpack Compose &amp; Material 3 Expressive UI</string>
     <string name="ui_va">VA</string>
     <string name="ui_vanshu_agarwal">Vanshu Agarwal</string>
     <string name="ui_shreyagarwal72">\@shreyagarwal72</string>
-    <string name="ui_lead_android_systems_developer_craftin">Lead Android &amp; Systems Developer crafting high-performance browsers, native tools, and expressive UI experiences for Android &amp; Termux.</string>
+    <string name="ui_lead_android_systems_developer_craftin">Lead Android &amp; Systems Developer crafting high-performance browsers, native tools, and expressive UI experiences for Android.</string>
     <string name="ui_kotlin">Kotlin</string>
     <string name="ui_m3_expressive">M3 Expressive</string>
-    <string name="ui_termux">Termux</string>
+    <string name="ui_android">Android</string>
     <string name="ui_the_petal_mission">The Petal Mission</string>
     <string name="ui_petal_browser_was_built_to">Petal Browser was built to prove that an Android web browser can combine uncompromising speed, complete user privacy, and fluid Material 3 Expressive motion physics without corporate telemetry or heavy bloat.</string>
     <string name="ui_active_open_source_repositories_librar">Active Open Source Repositories &amp; Libraries</string>
@@ -533,7 +533,7 @@
     <string name="ui_native_webview_bridges">Native WebView Bridges</string>
     <string name="ui_pixelcopy_gpu_snapshots">PixelCopy GPU Snapshots</string>
     <string name="ui_adblock_rule_engine">AdBlock Rule Engine</string>
-    <string name="ui_termux_integration">Termux Integration</string>
+    <string name="ui_termux_integration">Expressive Motion Engine</string>
     <string name="ui_community_connect">Community &amp; Connect</string>
     <string name="ui_github">GitHub</string>
     <string name="ui_source">Source</string>
@@ -1434,6 +1434,10 @@
     <string name="petal_setup_continue">Continue setup</string>
     <string name="petal_setup_skip_anyway">Skip setup</string>
     <string name="petal_setup_skip_confirmation">Skip the setup now? You can change these choices later in Settings.</string>
+    <string name="petal_setup_welcome_eyebrow">WELCOME TO PETAL</string>
+    <string name="petal_setup_hero_headline">Every page worth keeping.</string>
+    <string name="petal_setup_hero_subtitle">Discover pages and media with speed and privacy you trust. One thoughtful home for everything.</string>
+    <string name="petal_setup_get_started">Get started</string>
     <string name="petal_setup_finished">Finished</string>
     <string name="petal_setup_hello_title">A browser that feels like yours</string>
     <string name="petal_setup_access_title">Choose your access</string>

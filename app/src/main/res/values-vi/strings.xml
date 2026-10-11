@@ -490,14 +490,14 @@
     <string name="ui_share_summary">Chia sẻ tóm tắt</string>
     <string name="ui_ask_question">Đặt câu hỏi</string>
     <string name="ui_about_developer">Giới thiệu về nhà phát triển</string>
-    <string name="ui_crafted_with_for_android_termux">Được chế tạo bằng ❤ dành cho Android &amp; Termux</string>
+    <string name="ui_crafted_with_for_android_termux">Được chế tạo bằng ❤ dành cho Android</string>
     <string name="ui_share_profile">Chia sẻ hồ sơ</string>
     <string name="ui_petal_browser_open_source_project">Petal Browser • Dự án mã nguồn mở</string>
     <string name="ui_made_with_jetpack_compose_material">Được tạo bằng giao diện người dùng biểu cảm Jetpack Compose &amp; Material 3</string>
     <string name="ui_va">VA</string>
     <string name="ui_vanshu_agarwal">Vanshu Agarwal</string>
     <string name="ui_shreyagarwal72">\@shreyagarwal72</string>
-    <string name="ui_lead_android_systems_developer_craftin">Dẫn dắt Nhà phát triển hệ thống và Android tạo ra các trình duyệt hiệu suất cao, công cụ gốc và trải nghiệm giao diện người dùng biểu cảm cho Android &amp; Termux.</string>
+    <string name="ui_lead_android_systems_developer_craftin">Dẫn dắt Nhà phát triển hệ thống và Android tạo ra các trình duyệt hiệu suất cao, công cụ gốc và trải nghiệm giao diện người dùng biểu cảm cho Android.</string>
     <string name="ui_kotlin">Kotlin</string>
     <string name="ui_m3_expressive">Biểu cảm M3</string>
     <string name="ui_termux">Thuật ngữ</string>

@@ -190,7 +190,7 @@
     <string name="petal_pdf_viewer_name">Kronblad PDF Viewer</string>
     <string name="petal_image_viewer_name">Kronbladsbildvisare</string>
     <string name="petal_media_player_name">Petal Media Player</string>
-    <string name="petal_file_viewer_name">Petal Universal File Viewer</string>
+    <string name="petal_file_viewer_name">Petal File Viewer</string>
     <string name="petal_pwa_name">Petal Web App</string>
     <string name="petal_custom_tab_name">Kronblad Custom Tab</string>
     <string name="file_picker_title">Välj Arkiv</string>
@@ -490,7 +490,7 @@
     <string name="ui_share_summary">Dela sammanfattning</string>
     <string name="ui_ask_question">Ställ fråga</string>
     <string name="ui_about_developer">Om utvecklare</string>
-    <string name="ui_crafted_with_for_android_termux">Tillverkad med ❤ för Android &amp; Termux</string>
+    <string name="ui_crafted_with_for_android_termux">Tillverkad med ❤ för Android</string>
     <string name="ui_share_profile">Dela profil</string>
     <string name="ui_petal_browser_open_source_project">Petal Browser • Open Source Project</string>
     <string name="ui_made_with_jetpack_compose_material">Tillverkad med Jetpack Compose &amp; Material 3 Expressive UI</string>

@@ -190,7 +190,7 @@
     <string name="petal_pdf_viewer_name">Blütenblatt-PDF-Viewer</string>
     <string name="petal_image_viewer_name">Blütenblatt-Bildbetrachter</string>
     <string name="petal_media_player_name">Blütenblatt-Mediaplayer</string>
-    <string name="petal_file_viewer_name">Petal Universal File Viewer</string>
+    <string name="petal_file_viewer_name">Petal File Viewer</string>
     <string name="petal_pwa_name">Petal-Web-App</string>
     <string name="petal_custom_tab_name">Registerkarte „Benutzerdefiniertes Blütenblatt“.</string>
     <string name="file_picker_title">Wählen Sie Datei aus</string>

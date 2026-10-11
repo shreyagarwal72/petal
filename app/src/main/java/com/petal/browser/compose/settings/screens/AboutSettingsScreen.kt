@@ -70,17 +70,10 @@ fun AboutSettingsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Section 1: Developer Profile & Identification
-                PetalSettingsSection(
-                    title = "Developer",
-                    icon = Icons.Rounded.Person,
-                    cardId = "about_developer_spotlight"
-                ) {
-                    DeveloperProfileGroup(
-                        onCopyGithub = { copyToClipboard("GitHub URL", "https://github.com/shreyagarwal72") },
-                        onOpenUrl = { openUrl(it) }
-                    )
-                }
+                // Top Developer Containment Section (Essentials M3 Expressive style)
+                PetalDeveloperHeroSection(
+                    onOpenUrl = { openUrl(it) }
+                )
 
                 // Section 2: Application Details & Environment
                 val pInfo = remember {

@@ -490,14 +490,14 @@
     <string name="ui_share_summary">Bagikan Ringkasan</string>
     <string name="ui_ask_question">Ajukan Pertanyaan</string>
     <string name="ui_about_developer">Tentang Pengembang</string>
-    <string name="ui_crafted_with_for_android_termux">Dibuat dengan ❤ untuk Android &amp; Termux</string>
+    <string name="ui_crafted_with_for_android_termux">Dibuat dengan ❤ untuk Android</string>
     <string name="ui_share_profile">Bagikan Profil</string>
     <string name="ui_petal_browser_open_source_project">Petal Browser • Proyek Sumber Terbuka</string>
     <string name="ui_made_with_jetpack_compose_material">Dibuat dengan UI Ekspresif Jetpack Compose &amp; Material 3</string>
     <string name="ui_va">VA</string>
     <string name="ui_vanshu_agarwal">Vanshu Agarwal</string>
     <string name="ui_shreyagarwal72">\@shreyagarwal72</string>
-    <string name="ui_lead_android_systems_developer_craftin">Pengembang Android &amp; Sistem Pimpin yang membuat browser berperforma tinggi, alat asli, dan pengalaman UI ekspresif untuk Android &amp; Termux.</string>
+    <string name="ui_lead_android_systems_developer_craftin">Pengembang Android &amp; Sistem Pimpin yang membuat browser berperforma tinggi, alat asli, dan pengalaman UI ekspresif untuk Android.</string>
     <string name="ui_kotlin">Kotlin</string>
     <string name="ui_m3_expressive">M3 Ekspresif</string>
     <string name="ui_termux">Termux</string>

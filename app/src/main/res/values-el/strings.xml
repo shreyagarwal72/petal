@@ -490,7 +490,7 @@
     <string name="ui_share_summary">Κοινή χρήση Σύνοψη</string>
     <string name="ui_ask_question">Κάνω ερώτηση</string>
     <string name="ui_about_developer">Σχετικά με τον προγραμματιστή</string>
-    <string name="ui_crafted_with_for_android_termux">Κατασκευασμένο με ❤ για Android &amp; Termux</string>
+    <string name="ui_crafted_with_for_android_termux">Κατασκευασμένο με ❤ για Android</string>
     <string name="ui_share_profile">Κοινή χρήση προφίλ</string>
     <string name="ui_petal_browser_open_source_project">Petal Browser • Έργο ανοιχτού κώδικα</string>
     <string name="ui_made_with_jetpack_compose_material">Κατασκευασμένο με Jetpack Compose &amp; Material 3 Expressive UI</string>

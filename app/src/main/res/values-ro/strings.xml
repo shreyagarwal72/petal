@@ -190,7 +190,7 @@
     <string name="petal_pdf_viewer_name">Petal PDF Viewer</string>
     <string name="petal_image_viewer_name">Petal Image Viewer</string>
     <string name="petal_media_player_name">Petal Media Player</string>
-    <string name="petal_file_viewer_name">Petal Universal File Viewer</string>
+    <string name="petal_file_viewer_name">Petal File Viewer</string>
     <string name="petal_pwa_name">Aplicația web Petal</string>
     <string name="petal_custom_tab_name">Fila personalizată petală</string>
     <string name="file_picker_title">Selectați Fișier</string>

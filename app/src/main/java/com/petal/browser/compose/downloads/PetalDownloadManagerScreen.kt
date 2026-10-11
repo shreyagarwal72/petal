@@ -820,7 +820,7 @@ private fun isUniversalViewable(name: String): Boolean {
         "pdf", "docx", "doc", "txt", "md", "markdown", "csv", "json", "xml",
         "html", "htm", "log", "kt", "java", "py", "c", "cpp", "h", "hpp", "js",
         "ts", "css", "sh", "yaml", "yml", "ini", "properties", "gradle", "sql", "svg",
-        "zip", "rar", "7z", "tar", "gz", "apk", "jar"
+        "zip", "rar", "7z", "tar", "gz", "tgz", "jar", "xpi"
     )
 }
 

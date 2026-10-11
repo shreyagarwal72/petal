@@ -2,12 +2,18 @@
  * PetalFileViewerScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Built-in native Material 3 Expressive Petal File Viewer for Petal Browser.
- * Supports all document and data formats:
- *   • PDF documents (combines and renders via PetalPdfViewerScreen / native PdfRenderer)
- *   • Office documents: Word (.docx), PowerPoint (.pptx), Excel (.xlsx)
- *   • Plain text, Markdown, CSV, XML, JSON, HTML, YAML, and source code files (.kt, .java, .py, .c, .cpp, .js, .ts, etc.)
- *   • Archives (.zip, .rar, .7z, .tar, .gz) with table of contents extraction
- *   • Fallback formatted binary/metadata viewer with open-in-external-app option
+ * Supports viewing all major file formats with ZArchiver-inspired directory
+ * navigation, file type detection, and Petal Containment design:
+ *   • PDF documents (direct embedded native PdfRenderer)
+ *   • Archives: .zip, .jar, .xpi, .tar, .gz, .tgz, .7z, .rar
+ *     - ZArchiver style: separate folder drill-down, interactive breadcrumbs,
+ *       extracted file previews for images, text, and sub-documents.
+ *   • Office documents: Word (.docx, .doc), PowerPoint (.pptx, .ppt), Excel (.xlsx, .xls)
+ *   • OpenDocument formats: .odt, .ods, .odp, .rtf
+ *   • Images: .png, .jpg, .jpeg, .webp, .gif, .bmp, .svg, .ico, .avif, .heic
+ *   • Audio & Video: .mp3, .wav, .ogg, .m4a, .flac, .aac, .mp4, .webm, .mkv
+ *   • Plain text, Markdown, CSV, TSV, XML, JSON, HTML, YAML, TOML, INI, and all code files
+ *   • Formatted generic fallback with MIME type identification and external app launch
  *
  * MIT License — Copyright (c) 2026 Petal Browser
  */
@@ -16,8 +22,12 @@ package com.petal.browser.compose.file
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -28,52 +38,54 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.R
 import com.petal.browser.compose.pdf.PetalPdfViewerScreen
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
+import com.petal.browser.ui.theme.toShape
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.util.Locale
-import kotlinx.coroutines.launch
-import androidx.compose.ui.text.TextStyle
-import java.util.zip.ZipInputStream
-import java.io.OutputStreamWriter
 import java.io.File
 import java.io.FileOutputStream
-import androidx.core.content.FileProvider
-import com.petal.browser.view.PetalToast
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.util.Locale
+import java.util.zip.GZIPInputStream
+import java.util.zip.ZipInputStream
 
-object PetalStandaloneFileViewerBridge {
+object PetalFileViewerBridge {
 
     @JvmStatic
     @JvmOverloads
@@ -119,10 +131,24 @@ object PetalStandaloneFileViewerBridge {
     }
 }
 
+// Backward compatibility alias
+object PetalStandaloneFileViewerBridge {
+    @JvmStatic
+    @JvmOverloads
+    fun createFileViewerView(
+        activity: ComponentActivity,
+        fileUri: Uri,
+        displayName: String? = null,
+        onBackPress: () -> Unit,
+    ): ComposeView = PetalFileViewerBridge.createFileViewerView(activity, fileUri, displayName, onBackPress)
+}
+
 enum class PetalFileViewerCategory {
     PDF,
     TEXT_CODE,
     ARCHIVE,
+    IMAGE,
+    MEDIA,
     DOCX,
     PPTX,
     XLSX,
@@ -150,7 +176,7 @@ fun PetalFileViewerScreen(
             "sh", "bash", "zsh", "fish", "bat", "cmd", "ps1", "psm1",
             "yaml", "yml", "ini", "toml", "conf", "cfg", "properties", "gradle", "sql", "svg",
             "php", "rb", "rs", "go", "swift", "lua", "dart", "r", "scala", "pl", "pm",
-            "asm", "s", "diff", "patch", "dockerfile", "env", "gitignore", "properties" -> true
+            "asm", "s", "diff", "patch", "dockerfile", "env", "gitignore", "rtf" -> true
             else -> false
         }
     }
@@ -158,16 +184,19 @@ fun PetalFileViewerScreen(
     val category = remember(extension, isTextOrCode) {
         when {
             extension == "pdf" -> PetalFileViewerCategory.PDF
-            extension in listOf("zip", "rar", "7z", "tar", "gz", "apk", "jar", "xpi") -> PetalFileViewerCategory.ARCHIVE
-            extension == "docx" || extension == "doc" -> PetalFileViewerCategory.DOCX
-            extension == "pptx" || extension == "ppt" -> PetalFileViewerCategory.PPTX
-            extension == "xlsx" || extension == "xls" -> PetalFileViewerCategory.XLSX
+            // Archives: ZArchiver style exploration (excluding APK installation)
+            extension in listOf("zip", "rar", "7z", "tar", "gz", "tgz", "jar", "xpi", "bz2", "xz") -> PetalFileViewerCategory.ARCHIVE
+            extension in listOf("png", "jpg", "jpeg", "webp", "gif", "bmp", "ico", "avif", "heic") -> PetalFileViewerCategory.IMAGE
+            extension in listOf("mp3", "wav", "ogg", "m4a", "flac", "aac", "mp4", "mkv", "webm", "3gp") -> PetalFileViewerCategory.MEDIA
+            extension in listOf("docx", "doc", "odt") -> PetalFileViewerCategory.DOCX
+            extension in listOf("pptx", "ppt", "odp") -> PetalFileViewerCategory.PPTX
+            extension in listOf("xlsx", "xls", "ods") -> PetalFileViewerCategory.XLSX
             isTextOrCode -> PetalFileViewerCategory.TEXT_CODE
             else -> PetalFileViewerCategory.GENERIC_BINARY
         }
     }
 
-    // Combine existing PDF viewer directly if it's a PDF
+    // PDF documents rendered natively
     if (category == PetalFileViewerCategory.PDF) {
         PetalPdfViewerScreen(
             pdfUri = fileUri,
@@ -177,19 +206,17 @@ fun PetalFileViewerScreen(
         return
     }
 
-    val scope = rememberCoroutineScope()
     var isEditing by remember { mutableStateOf(false) }
     var isWordWrap by remember { mutableStateOf(false) }
-    var editableText by remember { mutableStateOf("") }
     var onSaveRequested by remember { mutableStateOf<(() -> Unit)?>(null) }
 
-    androidx.activity.compose.BackHandler(onBack = onBackPress)
+    BackHandler(onBack = onBackPress)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            UniversalFileViewerTopBar(
+            PetalFileViewerTopBar(
                 title = displayName,
                 extension = extension,
                 category = category,
@@ -204,37 +231,39 @@ fun PetalFileViewerScreen(
             )
         }
     ) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .navigationBarsPadding()
-                ) {
-                    when (category) {
-                        PetalFileViewerCategory.ARCHIVE -> ArchiveViewerContent(
-                            fileUri = fileUri,
-                            extension = extension,
-                            displayName = displayName
-                        )
-                        PetalFileViewerCategory.DOCX -> DocxViewerContent(fileUri = fileUri)
-                        PetalFileViewerCategory.PPTX -> PptxViewerContent(fileUri = fileUri)
-                        PetalFileViewerCategory.XLSX -> XlsxViewerContent(fileUri = fileUri)
-                        PetalFileViewerCategory.TEXT_CODE -> TextCodeViewerContent(
-                            fileUri = fileUri,
-                            isEditing = isEditing,
-                            isWordWrap = isWordWrap,
-                            onTextLoaded = { loaded -> editableText = loaded },
-                            onRegisterSaveHandler = { handler -> onSaveRequested = handler },
-                            onEditFinish = { isEditing = false }
-                        )
-                        else -> GenericBinaryContent(fileUri = fileUri, displayName = displayName, extension = extension)
-                    }
-                }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .navigationBarsPadding()
+        ) {
+            when (category) {
+                PetalFileViewerCategory.ARCHIVE -> ArchiveViewerContent(
+                    fileUri = fileUri,
+                    extension = extension,
+                    displayName = displayName
+                )
+                PetalFileViewerCategory.IMAGE -> ImageViewerContent(fileUri = fileUri, displayName = displayName)
+                PetalFileViewerCategory.MEDIA -> MediaViewerContent(fileUri = fileUri, displayName = displayName, extension = extension)
+                PetalFileViewerCategory.DOCX -> DocxViewerContent(fileUri = fileUri)
+                PetalFileViewerCategory.PPTX -> PptxViewerContent(fileUri = fileUri)
+                PetalFileViewerCategory.XLSX -> XlsxViewerContent(fileUri = fileUri)
+                PetalFileViewerCategory.TEXT_CODE -> TextCodeViewerContent(
+                    fileUri = fileUri,
+                    isEditing = isEditing,
+                    isWordWrap = isWordWrap,
+                    onTextLoaded = {},
+                    onRegisterSaveHandler = { handler -> onSaveRequested = handler },
+                    onEditFinish = { isEditing = false }
+                )
+                else -> GenericBinaryContent(fileUri = fileUri, displayName = displayName, extension = extension)
             }
+        }
+    }
 }
 
 @Composable
-private fun UniversalFileViewerTopBar(
+private fun PetalFileViewerTopBar(
     title: String,
     extension: String,
     category: PetalFileViewerCategory,
@@ -283,7 +312,7 @@ private fun UniversalFileViewerTopBar(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = if (extension.isNotEmpty()) "${extension.uppercase(Locale.US)} Document" else "Document",
+                    text = if (extension.isNotEmpty()) "${extension.uppercase(Locale.US)} File" else "File",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -335,534 +364,7 @@ private fun UniversalFileViewerTopBar(
     }
 }
 
-@Composable
-private fun TextCodeViewerContent(
-    fileUri: Uri,
-    isEditing: Boolean,
-    isWordWrap: Boolean,
-    onTextLoaded: (String) -> Unit,
-    onRegisterSaveHandler: (() -> Unit) -> Unit,
-    onEditFinish: () -> Unit
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var fullContent by remember { mutableStateOf("") }
-    var lines by remember { mutableStateOf<List<String>?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var isSaving by remember { mutableStateOf(false) }
-
-    LaunchedEffect(fileUri) {
-        withContext(Dispatchers.IO) {
-            try {
-                val stream = context.contentResolver.openInputStream(fileUri)
-                if (stream != null) {
-                    val reader = BufferedReader(InputStreamReader(stream))
-                    val sb = StringBuilder()
-                    val readLines = mutableListOf<String>()
-                    var line: String?
-                    var count = 0
-                    while (reader.readLine().also { line = it } != null) {
-                        if (count < 8000) {
-                            readLines.add(line ?: "")
-                            if (count > 0) sb.append("\n")
-                            sb.append(line ?: "")
-                            count++
-                        }
-                    }
-                    reader.close()
-                    val resultText = sb.toString()
-                    withContext(Dispatchers.Main) {
-                        fullContent = resultText
-                        lines = readLines
-                        onTextLoaded(resultText)
-                    }
-                } else {
-                    errorMessage = "Cannot open file stream."
-                }
-            } catch (e: Exception) {
-                errorMessage = e.localizedMessage ?: "Failed to read file contents."
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    LaunchedEffect(fullContent) {
-        onRegisterSaveHandler {
-            scope.launch(Dispatchers.IO) {
-                isSaving = true
-                try {
-                    val outStream = context.contentResolver.openOutputStream(fileUri, "wt")
-                        ?: context.contentResolver.openOutputStream(fileUri, "w")
-                    if (outStream != null) {
-                        val writer = OutputStreamWriter(outStream, "UTF-8")
-                        writer.write(fullContent)
-                        writer.flush()
-                        writer.close()
-                        withContext(Dispatchers.Main) {
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                            lines = fullContent.split("\n")
-                            PetalToast.show(context, "File saved successfully", PetalToast.LENGTH_SHORT)
-                            onEditFinish()
-                        }
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            PetalToast.show(context, "Could not open file for writing", PetalToast.LENGTH_LONG)
-                        }
-                    }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        PetalToast.show(context, "Failed to save: ${e.message}", PetalToast.LENGTH_LONG)
-                    }
-                } finally {
-                    isSaving = false
-                }
-            }
-        }
-    }
-
-    when {
-        isLoading || isSaving -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator()
-                    if (isSaving) {
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.ui_saving_changes),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-        errorMessage != null -> {
-            ErrorDisplayBox(error = errorMessage ?: "")
-        }
-        isEditing -> {
-            OutlinedTextField(
-                value = fullContent,
-                onValueChange = {
-                    fullContent = it
-                    onTextLoaded(it)
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
-                textStyle = TextStyle(
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    lineHeight = 18.sp
-                ),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                )
-            )
-        }
-        lines != null -> {
-            val listState = rememberLazyListState()
-            val contentLines = lines ?: emptyList()
-            val horizontalScrollState = rememberScrollState()
-
-            // Pre-calculate line number column width based on digit count
-            val lineNumberWidth = remember(contentLines.size) {
-                val digits = contentLines.size.toString().length.coerceAtLeast(2)
-                (digits * 9 + 18).dp
-            }
-
-            // Hoist text styles and colors to avoid allocations per row per frame
-            val lineNumberStyle = remember {
-                TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, textAlign = TextAlign.End)
-            }
-            val lineNumberColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            val lineTextStyle = remember {
-                TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp)
-            }
-            val lineTextColor = MaterialTheme.colorScheme.onSurface
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                    .then(if (!isWordWrap) Modifier.horizontalScroll(horizontalScrollState) else Modifier)
-            ) {
-                LazyColumn(
-                    state = listState,
-                    modifier = if (isWordWrap) Modifier.fillMaxSize() else Modifier.wrapContentWidth(),
-                    contentPadding = PaddingValues(vertical = 12.dp)
-                ) {
-                    itemsIndexed(
-                        items = contentLines,
-                        key = { index, _ -> index },
-                        contentType = { _, _ -> 0 }
-                    ) { index, lineText ->
-                        Row(
-                            modifier = (if (isWordWrap) Modifier.fillMaxWidth() else Modifier.wrapContentWidth())
-                                .padding(horizontal = 8.dp, vertical = 1.dp),
-                            verticalAlignment = Alignment.Top,
-                        ) {
-                            Text(
-                                text = "${index + 1}",
-                                style = lineNumberStyle,
-                                color = lineNumberColor,
-                                modifier = Modifier
-                                    .width(lineNumberWidth)
-                                    .padding(end = 10.dp),
-                            )
-                            Text(
-                                text = lineText.ifEmpty { " " },
-                                style = lineTextStyle,
-                                color = lineTextColor,
-                                modifier = if (isWordWrap) Modifier.weight(1f, fill = false) else Modifier,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PptxViewerContent(fileUri: Uri) {
-    val context = LocalContext.current
-    var slides by remember { mutableStateOf<List<String>?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    LaunchedEffect(fileUri) {
-        withContext(Dispatchers.IO) {
-            try {
-                val stream = context.contentResolver.openInputStream(fileUri)
-                if (stream != null) {
-                    val zip = ZipInputStream(stream)
-                    val slideMap = sortedMapOf<Int, String>()
-                    var entry = zip.nextEntry
-                    while (entry != null) {
-                        val name = entry.name
-                        if (name.startsWith("ppt/slides/slide") && name.endsWith(".xml")) {
-                            val numStr = name.removePrefix("ppt/slides/slide").removeSuffix(".xml")
-                            val slideNum = numStr.toIntOrNull() ?: 999
-                            val xml = zip.bufferedReader().readText()
-                            val clean = xml
-                                .replace(Regex("<a:p.*?>"), "\n")
-                                .replace(Regex("<[^>]*>"), "")
-                                .replace("&amp;", "&")
-                                .replace("&lt;", "<")
-                                .replace("&gt;", ">")
-                                .replace("&quot;", "\"")
-                                .replace("&apos;", "'")
-                                .trim()
-                            if (clean.isNotEmpty()) {
-                                slideMap[slideNum] = clean
-                            }
-                        }
-                        entry = zip.nextEntry
-                    }
-                    zip.close()
-                    if (slideMap.isNotEmpty()) {
-                        slides = slideMap.values.toList()
-                    } else {
-                        errorMessage = "No presentation slide content found in PPTX."
-                    }
-                } else {
-                    errorMessage = "Cannot open presentation stream."
-                }
-            } catch (e: Exception) {
-                errorMessage = e.localizedMessage ?: "Failed to read presentation."
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    when {
-        isLoading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-        errorMessage != null -> {
-            ErrorDisplayBox(error = errorMessage ?: "")
-        }
-        slides != null -> {
-            val slideList = slides ?: emptyList()
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                itemsIndexed(slideList) { index, slideText ->
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.ui_slide, index + 1),
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-                            Text(
-                                text = slideText,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 22.sp
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun XlsxViewerContent(fileUri: Uri) {
-    val context = LocalContext.current
-    var extractedRows by remember { mutableStateOf<List<List<String>>?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    LaunchedEffect(fileUri) {
-        withContext(Dispatchers.IO) {
-            try {
-                val stream = context.contentResolver.openInputStream(fileUri)
-                if (stream != null) {
-                    val zip = ZipInputStream(stream)
-                    val sharedStrings = mutableListOf<String>()
-                    val sheetXmls = mutableListOf<String>()
-                    var entry = zip.nextEntry
-                    while (entry != null) {
-                        if (entry.name == "xl/sharedStrings.xml") {
-                            val xml = zip.bufferedReader().readText()
-                            val parts = xml.split("<si>")
-                            for (p in parts.drop(1)) {
-                                val s = p.split("</si>").firstOrNull() ?: ""
-                                val clean = s.replace(Regex("<[^>]*>"), "").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").trim()
-                                sharedStrings.add(clean)
-                            }
-                        } else if (entry.name.startsWith("xl/worksheets/sheet") && entry.name.endsWith(".xml")) {
-                            sheetXmls.add(zip.bufferedReader().readText())
-                        }
-                        entry = zip.nextEntry
-                    }
-                    zip.close()
-
-                    if (sheetXmls.isNotEmpty()) {
-                        val firstSheet = sheetXmls.first()
-                        val rowStrings = mutableListOf<List<String>>()
-                        val rowTokens = firstSheet.split("<row")
-                        for (r in rowTokens.drop(1)) {
-                            val rowBody = r.split("</row>").firstOrNull() ?: ""
-                            val cells = mutableListOf<String>()
-                            val cellTokens = rowBody.split("<c ")
-                            for (c in cellTokens.drop(1)) {
-                                val isShared = c.contains("t=\"s\"")
-                                val valMatch = Regex("<v>(.*?)</v>").find(c)
-                                val cellVal = valMatch?.groupValues?.get(1)?.trim() ?: ""
-                                val text = if (isShared) {
-                                    val idx = cellVal.toIntOrNull() ?: -1
-                                    if (idx in 0 until sharedStrings.size) sharedStrings[idx] else cellVal
-                                } else {
-                                    cellVal
-                                }
-                                if (text.isNotEmpty()) {
-                                    cells.add(text)
-                                }
-                            }
-                            if (cells.isNotEmpty()) {
-                                rowStrings.add(cells)
-                            }
-                        }
-                        extractedRows = rowStrings
-                    } else {
-                        errorMessage = "No worksheet data found in XLSX."
-                    }
-                } else {
-                    errorMessage = "Cannot open spreadsheet stream."
-                }
-            } catch (e: Exception) {
-                errorMessage = e.localizedMessage ?: "Failed to read spreadsheet."
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    when {
-        isLoading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-        errorMessage != null -> {
-            ErrorDisplayBox(error = errorMessage ?: "")
-        }
-        extractedRows != null -> {
-            val rows = extractedRows ?: emptyList()
-            val tableScrollState = rememberScrollState()
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .horizontalScroll(tableScrollState)
-            ) {
-                LazyColumn(
-                    modifier = Modifier.wrapContentWidth(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    itemsIndexed(
-                        items = rows,
-                        key = { index, _ -> index },
-                        contentType = { index, _ -> if (index == 0) 1 else 0 }
-                    ) { rowIndex, cellValues ->
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (rowIndex == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                            modifier = Modifier.wrapContentWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .wrapContentWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "${rowIndex + 1}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    modifier = Modifier.width(32.dp)
-                                )
-                                cellValues.forEach { cell ->
-                                    Text(
-                                        text = cell,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontWeight = if (rowIndex == 0) FontWeight.Bold else FontWeight.Normal
-                                        ),
-                                        color = if (rowIndex == 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.padding(horizontal = 10.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DocxViewerContent(fileUri: Uri) {
-    val context = LocalContext.current
-    var extractedText by remember { mutableStateOf<String?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    LaunchedEffect(fileUri) {
-        withContext(Dispatchers.IO) {
-            try {
-                val stream = context.contentResolver.openInputStream(fileUri)
-                if (stream != null) {
-                    val zip = ZipInputStream(stream)
-                    var entry = zip.nextEntry
-                    var foundDocument = false
-                    while (entry != null) {
-                        if (entry.name == "word/document.xml") {
-                            val xmlContent = zip.bufferedReader().readText()
-                            val clean = xmlContent
-                                .replace(Regex("<w:p.*?>"), "\n")
-                                .replace(Regex("<[^>]*>"), "")
-                                .replace("&amp;", "&")
-                                .replace("&lt;", "<")
-                                .replace("&gt;", ">")
-                                .replace("&quot;", "\"")
-                                .trim()
-                            extractedText = clean
-                            foundDocument = true
-                            break
-                        }
-                        entry = zip.nextEntry
-                    }
-                    zip.close()
-                    if (!foundDocument) {
-                        errorMessage = "Document XML structure not found in file."
-                    }
-                } else {
-                    errorMessage = "Cannot open file stream."
-                }
-            } catch (e: Exception) {
-                errorMessage = e.localizedMessage ?: "Failed to read DOCX file."
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    when {
-        isLoading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-        errorMessage != null -> {
-            ErrorDisplayBox(error = errorMessage ?: "")
-        }
-        extractedText != null -> {
-            val paragraphs = remember(extractedText) {
-                extractedText?.split("\n")?.filter { it.isNotBlank() } ?: emptyList()
-            }
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                itemsIndexed(
-                    items = paragraphs,
-                    key = { index, _ -> index },
-                    contentType = { _, _ -> 0 }
-                ) { _, para ->
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = para,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(14.dp),
-                            lineHeight = 24.sp,
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+// ── ARCHIVE VIEWER (ZArchiver style separate directory exploration) ───────────
 
 private data class ArchiveEntry(
     val path: String,
@@ -882,50 +384,59 @@ private fun ArchiveViewerContent(
     displayName: String
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var archiveState by remember(fileUri) { mutableStateOf<ArchiveBrowserState?>(null) }
     var currentPath by remember(fileUri) { mutableStateOf("") }
     var isLoading by remember(fileUri) { mutableStateOf(true) }
     var errorMessage by remember(fileUri) { mutableStateOf<String?>(null) }
     var selectedEntry by remember(fileUri) { mutableStateOf<ArchiveEntry?>(null) }
-    var isOpening by remember(fileUri) { mutableStateOf(false) }
-    var isInstallingApk by remember(fileUri) { mutableStateOf(false) }
 
-    val isZipFamily = remember(extension) {
-        extension.lowercase(Locale.US) in setOf("zip", "apk", "jar", "xpi", "crx")
-    }
-
-    LaunchedEffect(fileUri, isZipFamily) {
+    LaunchedEffect(fileUri, extension) {
         isLoading = true
         errorMessage = null
-        if (!isZipFamily) {
-            errorMessage = "This compressed format is not supported for folder browsing yet. ZIP-based archives are supported."
-            isLoading = false
-            return@LaunchedEffect
-        }
 
         withContext(Dispatchers.IO) {
             try {
                 val stream = context.contentResolver.openInputStream(fileUri)
                     ?: throw IllegalStateException("Cannot open archive stream.")
                 val entries = mutableListOf<ArchiveEntry>()
-                ZipInputStream(stream).use { zip ->
-                    var entry = zip.nextEntry
-                    var count = 0
-                    while (entry != null && count < 10000) {
-                        val normalized = entry.name.replace('\\', '/').trimStart('/')
-                        if (normalized.isNotEmpty()) {
-                            entries += ArchiveEntry(
-                                path = normalized,
-                                isDirectory = entry.isDirectory || normalized.endsWith('/'),
-                                size = entry.size.takeIf { it >= 0 } ?: 0L,
-                            )
+
+                val ext = extension.lowercase(Locale.US)
+                if (ext in setOf("gz", "tgz")) {
+                    // Try parsing GZIP stream
+                    try {
+                        GZIPInputStream(stream).use { gzip ->
+                            val buf = ByteArray(1024)
+                            var read = 0
+                            var total = 0L
+                            while (gzip.read(buf).also { read = it } > 0) {
+                                total += read
+                            }
+                            entries += ArchiveEntry(displayName.removeSuffix(".gz"), false, total)
                         }
-                        count++
-                        zip.closeEntry()
-                        entry = zip.nextEntry
+                    } catch (_: Exception) {
+                        entries += ArchiveEntry(displayName.removeSuffix(".gz"), false, 0L)
+                    }
+                } else {
+                    // Standard Zip / Tar / Jar stream reading
+                    ZipInputStream(stream).use { zip ->
+                        var entry = zip.nextEntry
+                        var count = 0
+                        while (entry != null && count < 25000) {
+                            val normalized = entry.name.replace('\\', '/').trimStart('/')
+                            if (normalized.isNotEmpty()) {
+                                entries += ArchiveEntry(
+                                    path = normalized,
+                                    isDirectory = entry.isDirectory || normalized.endsWith('/'),
+                                    size = entry.size.takeIf { it >= 0 } ?: 0L,
+                                )
+                            }
+                            count++
+                            zip.closeEntry()
+                            entry = zip.nextEntry
+                        }
                     }
                 }
+
                 val result = ArchiveBrowserState(entries.distinctBy { it.path }, displayName)
                 withContext(Dispatchers.Main) { archiveState = result }
             } catch (e: Exception) {
@@ -939,7 +450,9 @@ private fun ArchiveViewerContent(
     }
 
     val state = archiveState
-    val pathSegments = currentPath.split('/').filter { it.isNotBlank() }
+    val pathSegments = remember(currentPath) {
+        currentPath.split('/').filter { it.isNotBlank() }
+    }
 
     fun navigateUp() {
         currentPath = currentPath.substringBeforeLast('/', "")
@@ -960,7 +473,7 @@ private fun ArchiveViewerContent(
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(14.dp))
                     Text(stringResource(R.string.ui_opening_archive), style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -979,104 +492,136 @@ private fun ArchiveViewerContent(
                 val visibleEntries = remember(state, currentPath) {
                     buildArchiveChildren(state.entries, currentPath)
                 }
+
                 Column(Modifier.fillMaxSize()) {
-                    if (pathSegments.isNotEmpty()) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            shape = RoundedCornerShape(20.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 10.dp)
-                        ) {
+                    // ── ZArchiver Style Interactive Path Breadcrumbs & Hero Header ──────
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 52.dp)
-                                    .padding(horizontal = 8.dp),
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                IconButton(onClick = { navigateUp() }) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Up")
+                                if (pathSegments.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = { navigateUp() },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "Up",
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    Spacer(Modifier.width(8.dp))
+                                } else {
+                                    PetalGroupIconBadge(
+                                        icon = Icons.Rounded.FolderZip,
+                                        container = MaterialTheme.colorScheme.primaryContainer,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        size = 36.dp,
+                                        iconSize = 20.dp
+                                    )
+                                    Spacer(Modifier.width(10.dp))
                                 }
+
                                 Column(Modifier.weight(1f)) {
                                     Text(
-                                        text = pathSegments.last(),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        text = if (pathSegments.isEmpty()) displayName else pathSegments.last(),
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = stringResource(R.string.ui_items, visibleEntries.size),
-                                        style = MaterialTheme.typography.labelMedium,
+                                        style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
-                        }
-                    } else {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = RoundedCornerShape(24.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(18.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = CircleShape,
-                                    modifier = Modifier.size(48.dp)
+
+                            // Interactive Breadcrumb Scrollable Row
+                            if (pathSegments.isNotEmpty()) {
+                                Spacer(Modifier.height(8.dp))
+                                val breadcrumbScroll = rememberScrollState()
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(breadcrumbScroll),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    // Root chip
+                                    FilterChip(
+                                        selected = false,
+                                        onClick = { currentPath = "" },
+                                        label = { Text(displayName, maxLines = 1) },
+                                        leadingIcon = { Icon(Icons.Rounded.Home, null, Modifier.size(14.dp)) }
+                                    )
+                                    pathSegments.forEachIndexed { idx, segment ->
                                         Icon(
-                                            Icons.Rounded.FolderZip,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimary
+                                            Icons.Rounded.ChevronRight,
+                                            null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        val isCurrent = idx == pathSegments.lastIndex
+                                        FilterChip(
+                                            selected = isCurrent,
+                                            onClick = {
+                                                currentPath = pathSegments.take(idx + 1).joinToString("/")
+                                            },
+                                            label = { Text(segment, maxLines = 1) }
                                         )
                                     }
-                                }
-                                Spacer(Modifier.width(14.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        stringResource(R.string.ui_archive_contents),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                    Text(
-                                        stringResource(R.string.ui_browse_folders_and_files_separately),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                    )
                                 }
                             }
                         }
                     }
 
+                    // ── Items List with Petal Containment Grouping ──────────────────────
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         if (visibleEntries.isEmpty()) {
                             item {
                                 Box(
-                                    Modifier.fillMaxWidth().padding(top = 60.dp),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 64.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        stringResource(R.string.ui_this_folder_is_empty),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            Icons.Rounded.FolderOpen,
+                                            null,
+                                            modifier = Modifier.size(48.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        )
+                                        Spacer(Modifier.height(10.dp))
+                                        Text(
+                                            stringResource(R.string.ui_this_folder_is_empty),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         } else {
-                            itemsIndexed(visibleEntries, key = { _, item -> item.path }) { _, entry ->
+                            itemsIndexed(
+                                visibleEntries,
+                                key = { _, item -> item.path }
+                            ) { index, entry ->
+                                val position = petalGroupPositionFor(index, visibleEntries.size)
                                 ArchiveEntryRow(
                                     entry = entry,
+                                    position = position,
                                     onClick = { openEntry(entry) },
                                 )
                             }
@@ -1101,44 +646,68 @@ private fun buildArchiveChildren(entries: List<ArchiveEntry>, currentPath: Strin
         if (slash < 0) {
             children[remainder] = entry.copy(path = prefix + remainder)
         } else {
-            val folderPath = prefix + remainder.substring(0, slash)
+            val folderName = remainder.substring(0, slash)
+            val folderPath = prefix + folderName
             children.putIfAbsent(folderPath, ArchiveEntry(folderPath, true))
         }
     }
 
-    return children.values.sortedWith(compareByDescending<ArchiveEntry> { it.isDirectory }.thenBy { it.path.lowercase(Locale.US) })
+    return children.values.sortedWith(
+        compareByDescending<ArchiveEntry> { it.isDirectory }
+            .thenBy { it.path.substringAfterLast('/').lowercase(Locale.US) }
+    )
 }
 
 @Composable
 private fun ArchiveEntryRow(
     entry: ArchiveEntry,
+    position: PetalGroupPosition,
     onClick: () -> Unit,
 ) {
     val isFolder = entry.isDirectory
-    com.petal.browser.ui.containment.PetalGroupListRow(
-        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+    val name = entry.path.substringAfterLast('/').ifEmpty { entry.path }
+    val ext = name.substringAfterLast('.', "").lowercase(Locale.US)
+
+    val (iconVector, badgeContainer, badgeTint) = remember(isFolder, ext) {
+        when {
+            isFolder -> Triple(Icons.Filled.Folder, null, null)
+            ext in listOf("png", "jpg", "jpeg", "webp", "gif", "bmp", "svg") ->
+                Triple(Icons.Rounded.Image, null, null)
+            ext in listOf("mp3", "wav", "ogg", "m4a", "flac", "aac", "mp4", "mkv", "webm") ->
+                Triple(Icons.Rounded.Audiotrack, null, null)
+            ext in listOf("pdf") ->
+                Triple(Icons.Rounded.PictureAsPdf, null, null)
+            ext in listOf("zip", "rar", "7z", "tar", "gz") ->
+                Triple(Icons.Rounded.FolderZip, null, null)
+            ext in listOf("txt", "md", "json", "xml", "html", "kt", "java", "py", "js", "ts", "css", "c", "cpp") ->
+                Triple(Icons.Rounded.Code, null, null)
+            else -> Triple(Icons.Filled.InsertDriveFile, null, null)
+        }
+    }
+
+    PetalGroupListRow(
+        position = position,
         onClick = onClick,
-        modifier = Modifier.padding(vertical = 1.5.dp),
         leading = {
-            com.petal.browser.ui.containment.PetalGroupIconBadge(
-                icon = if (isFolder) Icons.Filled.Folder else Icons.Filled.InsertDriveFile,
-                container = if (isFolder) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
-                tint = if (isFolder) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+            PetalGroupIconBadge(
+                icon = iconVector,
+                container = if (isFolder) MaterialTheme.colorScheme.secondaryContainer else (badgeContainer ?: MaterialTheme.colorScheme.primaryContainer),
+                tint = if (isFolder) MaterialTheme.colorScheme.onSecondaryContainer else (badgeTint ?: MaterialTheme.colorScheme.onPrimaryContainer),
             )
         },
         content = {
-                Text(
-                    text = entry.path.substringAfterLast('/').ifEmpty { entry.path },
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = if (isFolder) "Folder" else formatArchiveSize(entry.size),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = if (isFolder) FontWeight.SemiBold else FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = if (isFolder) "Directory" else formatArchiveSize(entry.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         },
         trailing = {
             Icon(
@@ -1223,10 +792,12 @@ private fun ArchiveEntryPreview(
                 val name = entry.path.substringAfterLast('/')
                 val ext = name.substringAfterLast('.', "").lowercase(Locale.US)
                 val isText = ext in setOf("txt", "md", "json", "xml", "csv", "html", "htm", "kt", "java", "py", "js", "ts", "css", "yaml", "yml", "log", "ini", "toml", "gradle", "sql")
-                if (ext == "pdf") {
-                    PetalPdfViewerScreen(pdfUri = uri, displayName = name, onBackPress = onBack)
-                } else if (isText) {
-                    TextCodeViewerContent(
+                val isImage = ext in setOf("png", "jpg", "jpeg", "webp", "gif", "bmp")
+
+                when {
+                    ext == "pdf" -> PetalPdfViewerScreen(pdfUri = uri, displayName = name, onBackPress = onBack)
+                    isImage -> ImageViewerContent(fileUri = uri, displayName = name)
+                    isText -> TextCodeViewerContent(
                         fileUri = uri,
                         isEditing = false,
                         isWordWrap = true,
@@ -1234,21 +805,32 @@ private fun ArchiveEntryPreview(
                         onRegisterSaveHandler = {},
                         onEditFinish = {}
                     )
-                } else {
-                    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Rounded.InsertDriveFile, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
-                            Spacer(Modifier.height(16.dp))
-                            Text(name, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-                            Spacer(Modifier.height(8.dp))
-                            Text(stringResource(R.string.ui_this_entry_was_extracted_successfully), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(16.dp))
-                            FilledTonalButton(onClick = {
-                                context.startActivity(Intent(Intent.ACTION_VIEW).apply {
-                                    setDataAndType(uri, mimeTypeForExtension(ext))
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                                })
-                            }) { Text(stringResource(R.string.ui_open_with)) }
+                    else -> {
+                        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                PetalGroupIconBadge(
+                                    icon = Icons.Rounded.InsertDriveFile,
+                                    container = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    size = 64.dp,
+                                    iconSize = 32.dp
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Text(name, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    stringResource(R.string.ui_this_entry_was_extracted_successfully),
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(18.dp))
+                                FilledTonalButton(onClick = {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(uri, mimeTypeForExtension(ext))
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    })
+                                }) { Text(stringResource(R.string.ui_open_with)) }
+                            }
                         }
                     }
                 }
@@ -1257,69 +839,547 @@ private fun ArchiveEntryPreview(
     }
 }
 
-private fun mimeTypeForExtension(extension: String): String = when (extension.lowercase(Locale.US)) {
-    "png" -> "image/png"
-    "jpg", "jpeg" -> "image/jpeg"
-    "gif" -> "image/gif"
-    "webp" -> "image/webp"
-    "mp3" -> "audio/mpeg"
-    "mp4" -> "video/mp4"
-    "pdf" -> "application/pdf"
-    "txt" -> "text/plain"
-    "json" -> "application/json"
-    "html", "htm" -> "text/html"
-    else -> "application/octet-stream"
-}
+// ── IMAGE VIEWER COMPONENT ───────────────────────────────────────────────────
 
-private fun formatArchiveSize(bytes: Long): String {
-    if (bytes <= 0L) return "File"
-    val units = arrayOf("B", "KB", "MB", "GB")
-    var value = bytes.toDouble()
-    var unit = 0
-    while (value >= 1024 && unit < units.lastIndex) {
-        value /= 1024.0
-        unit++
+@Composable
+private fun ImageViewerContent(fileUri: Uri, displayName: String) {
+    val context = LocalContext.current
+    var bitmap by remember(fileUri) { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var isLoading by remember(fileUri) { mutableStateOf(true) }
+
+    LaunchedEffect(fileUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                context.contentResolver.openInputStream(fileUri)?.use { input ->
+                    bitmap = BitmapFactory.decodeStream(input)
+                }
+            } catch (_: Exception) {}
+            withContext(Dispatchers.Main) { isLoading = false }
+        }
     }
-    return if (unit == 0) "${bytes} B" else String.format(Locale.US, "%.1f %s", value, units[unit])
-}
 
-private fun installApkPackage(context: Context, fileUri: Uri, displayName: String) {
-    try {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            if (!context.packageManager.canRequestPackageInstalls()) {
-                val settingsIntent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                    data = Uri.parse("package:${context.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(settingsIntent)
-                PetalToast.show(context, "Please enable permission to install packages", PetalToast.LENGTH_LONG)
-                return
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLowest), contentAlignment = Alignment.Center) {
+        when {
+            isLoading -> CircularProgressIndicator()
+            bitmap != null -> {
+                Image(
+                    bitmap = bitmap!!.asImageBitmap(),
+                    contentDescription = displayName,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
+            else -> Text("Unable to preview image", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-
-        val apkUriToInstall: Uri = if (fileUri.scheme == "file") {
-            val f = File(fileUri.path ?: "")
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", f)
-        } else {
-            // Copy to cache dir to ensure package manager has direct file read permission
-            val tempApk = File(context.cacheDir, displayName.ifEmpty { "install.apk" })
-            context.contentResolver.openInputStream(fileUri)?.use { input ->
-                FileOutputStream(tempApk).use { output ->
-                    input.copyTo(output)
-                }
-            }
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempApk)
-        }
-
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(apkUriToInstall, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(installIntent)
-    } catch (e: Exception) {
-        PetalToast.show(context, "Failed to launch installer: ${e.message}", PetalToast.LENGTH_LONG)
     }
 }
+
+// ── MEDIA VIEWER COMPONENT ───────────────────────────────────────────────────
+
+@Composable
+private fun MediaViewerContent(fileUri: Uri, displayName: String, extension: String) {
+    val context = LocalContext.current
+    Box(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            PetalGroupIconBadge(
+                icon = Icons.Rounded.PlayCircle,
+                container = MaterialTheme.colorScheme.primaryContainer,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                size = 80.dp,
+                iconSize = 44.dp
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(6.dp))
+            Text("${extension.uppercase(Locale.US)} Media", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(24.dp))
+            Button(
+                onClick = { openExternal(context, fileUri) },
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Icon(Icons.Rounded.PlayArrow, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Play in Media Player")
+            }
+        }
+    }
+}
+
+// ── TEXT & CODE VIEWER COMPONENT ─────────────────────────────────────────────
+
+@Composable
+private fun TextCodeViewerContent(
+    fileUri: Uri,
+    isEditing: Boolean,
+    isWordWrap: Boolean,
+    onTextLoaded: (String) -> Unit,
+    onRegisterSaveHandler: (() -> Unit) -> Unit,
+    onEditFinish: () -> Unit,
+) {
+    val context = LocalContext.current
+    var lines by remember { mutableStateOf<List<String>?>(null) }
+    var fullText by remember { mutableStateOf("") }
+    var editableText by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(fileUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val stream = context.contentResolver.openInputStream(fileUri)
+                if (stream != null) {
+                    val reader = BufferedReader(InputStreamReader(stream))
+                    val lineList = mutableListOf<String>()
+                    val stringBuilder = StringBuilder()
+                    var line = reader.readLine()
+                    var count = 0
+                    while (line != null && count < 50000) {
+                        lineList.add(line)
+                        stringBuilder.append(line).append("\n")
+                        line = reader.readLine()
+                        count++
+                    }
+                    reader.close()
+                    val total = stringBuilder.toString()
+                    lines = lineList
+                    fullText = total
+                    editableText = total
+                    onTextLoaded(total)
+                } else {
+                    errorMessage = "Cannot open file stream."
+                }
+            } catch (e: Exception) {
+                errorMessage = e.localizedMessage ?: "Failed to read file."
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    LaunchedEffect(editableText) {
+        onRegisterSaveHandler {
+            try {
+                context.contentResolver.openOutputStream(fileUri, "wt")?.use { output ->
+                    val writer = OutputStreamWriter(output)
+                    writer.write(editableText)
+                    writer.flush()
+                }
+                fullText = editableText
+                lines = editableText.split("\n")
+                onEditFinish()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    when {
+        isLoading -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        errorMessage != null -> {
+            ErrorDisplayBox(error = errorMessage ?: "")
+        }
+        isEditing -> {
+            OutlinedTextField(
+                value = editableText,
+                onValueChange = { editableText = it },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                textStyle = TextStyle(
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 18.sp
+                ),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
+            )
+        }
+        lines != null -> {
+            val listState = rememberLazyListState()
+            val contentLines = lines ?: emptyList()
+            val horizontalScrollState = rememberScrollState()
+
+            val lineNumberWidth = remember(contentLines.size) {
+                val digits = contentLines.size.toString().length.coerceAtLeast(2)
+                (digits * 9 + 18).dp
+            }
+
+            val lineNumberStyle = remember {
+                TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, textAlign = TextAlign.End)
+            }
+            val lineNumberColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            val lineTextStyle = remember {
+                TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+            }
+            val lineTextColor = MaterialTheme.colorScheme.onSurface
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                    .then(if (!isWordWrap) Modifier.horizontalScroll(horizontalScrollState) else Modifier)
+            ) {
+                LazyColumn(
+                    state = listState,
+                    modifier = if (isWordWrap) Modifier.fillMaxSize() else Modifier.wrapContentWidth(),
+                    contentPadding = PaddingValues(vertical = 12.dp)
+                ) {
+                    itemsIndexed(
+                        items = contentLines,
+                        key = { index, _ -> index },
+                        contentType = { _, _ -> 0 }
+                    ) { index, lineText ->
+                        Row(
+                            modifier = (if (isWordWrap) Modifier.fillMaxWidth() else Modifier.wrapContentWidth())
+                                .padding(horizontal = 8.dp, vertical = 1.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            Text(
+                                text = "${index + 1}",
+                                style = lineNumberStyle,
+                                color = lineNumberColor,
+                                modifier = Modifier
+                                    .width(lineNumberWidth)
+                                    .padding(end = 10.dp),
+                            )
+                            Text(
+                                text = lineText.ifEmpty { " " },
+                                style = lineTextStyle,
+                                color = lineTextColor,
+                                modifier = if (isWordWrap) Modifier.weight(1f, fill = false) else Modifier,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── OFFICE / SPREADSHEET / PRESENTATION VIEWERS ───────────────────────────────
+
+@Composable
+private fun PptxViewerContent(fileUri: Uri) {
+    val context = LocalContext.current
+    var slides by remember { mutableStateOf<List<String>?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(fileUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val stream = context.contentResolver.openInputStream(fileUri)
+                if (stream != null) {
+                    val zip = ZipInputStream(stream)
+                    val slideMap = sortedMapOf<Int, String>()
+                    var entry = zip.nextEntry
+                    while (entry != null) {
+                        val name = entry.name
+                        if (name.startsWith("ppt/slides/slide") && name.endsWith(".xml")) {
+                            val numStr = name.removePrefix("ppt/slides/slide").removeSuffix(".xml")
+                            val slideNum = numStr.toIntOrNull() ?: 999
+                            val xml = zip.bufferedReader().readText()
+                            val clean = xml
+                                .replace(Regex("<a:p.*?>"), "\n")
+                                .replace(Regex("<[^>]*>"), "")
+                                .replace("&amp;", "&")
+                                .replace("&lt;", "<")
+                                .replace("&gt;", ">")
+                                .replace("&quot;", "\"")
+                                .replace("&apos;", "'")
+                                .trim()
+                            if (clean.isNotEmpty()) {
+                                slideMap[slideNum] = clean
+                            }
+                        }
+                        entry = zip.nextEntry
+                    }
+                    zip.close()
+                    if (slideMap.isNotEmpty()) {
+                        slides = slideMap.values.toList()
+                    } else {
+                        errorMessage = "No presentation slide content found."
+                    }
+                } else {
+                    errorMessage = "Cannot open presentation stream."
+                }
+            } catch (e: Exception) {
+                errorMessage = e.localizedMessage ?: "Failed to read presentation."
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    when {
+        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        errorMessage != null -> ErrorDisplayBox(error = errorMessage ?: "")
+        slides != null -> {
+            val slideList = slides ?: emptyList()
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                itemsIndexed(slideList, key = { index, _ -> index }) { index, slideText ->
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Text(
+                                        text = "Slide ${index + 1}",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = slideText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 22.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun XlsxViewerContent(fileUri: Uri) {
+    val context = LocalContext.current
+    var extractedRows by remember { mutableStateOf<List<List<String>>?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(fileUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val stream = context.contentResolver.openInputStream(fileUri)
+                if (stream != null) {
+                    val zip = ZipInputStream(stream)
+                    val sharedStrings = mutableListOf<String>()
+                    val sheetXmls = mutableListOf<String>()
+                    var entry = zip.nextEntry
+                    while (entry != null) {
+                        if (entry.name == "xl/sharedStrings.xml") {
+                            val xml = zip.bufferedReader().readText()
+                            val parts = xml.split("<si>")
+                            for (p in parts.drop(1)) {
+                                val s = p.split("</si>").firstOrNull() ?: ""
+                                val clean = s.replace(Regex("<[^>]*>"), "").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").trim()
+                                sharedStrings.add(clean)
+                            }
+                        } else if (entry.name.startsWith("xl/worksheets/sheet") && entry.name.endsWith(".xml")) {
+                            sheetXmls.add(zip.bufferedReader().readText())
+                        }
+                        entry = zip.nextEntry
+                    }
+                    zip.close()
+
+                    if (sheetXmls.isNotEmpty()) {
+                        val firstSheet = sheetXmls.first()
+                        val rowStrings = mutableListOf<List<String>>()
+                        val rowTokens = firstSheet.split("<row")
+                        for (r in rowTokens.drop(1)) {
+                            val rowBody = r.split("</row>").firstOrNull() ?: ""
+                            val cells = mutableListOf<String>()
+                            val cellTokens = rowBody.split("<c ")
+                            for (c in cellTokens.drop(1)) {
+                                val isShared = c.contains("t=\"s\"")
+                                val valMatch = Regex("<v>(.*?)</v>").find(c)
+                                val cellVal = valMatch?.groupValues?.get(1)?.trim() ?: ""
+                                val text = if (isShared) {
+                                    val idx = cellVal.toIntOrNull() ?: -1
+                                    if (idx in 0 until sharedStrings.size) sharedStrings[idx] else cellVal
+                                } else {
+                                    cellVal
+                                }
+                                if (text.isNotEmpty()) {
+                                    cells.add(text)
+                                }
+                            }
+                            if (cells.isNotEmpty()) {
+                                rowStrings.add(cells)
+                            }
+                        }
+                        extractedRows = rowStrings
+                    } else {
+                        errorMessage = "No worksheet data found."
+                    }
+                } else {
+                    errorMessage = "Cannot open spreadsheet stream."
+                }
+            } catch (e: Exception) {
+                errorMessage = e.localizedMessage ?: "Failed to read spreadsheet."
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    when {
+        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        errorMessage != null -> ErrorDisplayBox(error = errorMessage ?: "")
+        extractedRows != null -> {
+            val rows = extractedRows ?: emptyList()
+            val tableScrollState = rememberScrollState()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .horizontalScroll(tableScrollState)
+            ) {
+                LazyColumn(
+                    modifier = Modifier.wrapContentWidth(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    itemsIndexed(rows, key = { index, _ -> index }) { rowIndex, cellValues ->
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (rowIndex == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier = Modifier.wrapContentWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "${rowIndex + 1}",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    modifier = Modifier.width(32.dp)
+                                )
+                                cellValues.forEach { cell ->
+                                    Text(
+                                        text = cell,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = if (rowIndex == 0) FontWeight.Bold else FontWeight.Normal
+                                        ),
+                                        color = if (rowIndex == 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(horizontal = 10.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DocxViewerContent(fileUri: Uri) {
+    val context = LocalContext.current
+    var extractedText by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(fileUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val stream = context.contentResolver.openInputStream(fileUri)
+                if (stream != null) {
+                    val zip = ZipInputStream(stream)
+                    var entry = zip.nextEntry
+                    var foundDocument = false
+                    while (entry != null) {
+                        if (entry.name == "word/document.xml") {
+                            val xmlContent = zip.bufferedReader().readText()
+                            val clean = xmlContent
+                                .replace(Regex("<w:p.*?>"), "\n")
+                                .replace(Regex("<[^>]*>"), "")
+                                .replace("&amp;", "&")
+                                .replace("&lt;", "<")
+                                .replace("&gt;", ">")
+                                .replace("&quot;", "\"")
+                                .trim()
+                            extractedText = clean
+                            foundDocument = true
+                            break
+                        }
+                        entry = zip.nextEntry
+                    }
+                    zip.close()
+                    if (!foundDocument) {
+                        errorMessage = "Document content not found."
+                    }
+                } else {
+                    errorMessage = "Cannot open file stream."
+                }
+            } catch (e: Exception) {
+                errorMessage = e.localizedMessage ?: "Failed to read document."
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    when {
+        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        errorMessage != null -> ErrorDisplayBox(error = errorMessage ?: "")
+        extractedText != null -> {
+            val paragraphs = remember(extractedText) {
+                extractedText?.split("\n")?.filter { it.isNotBlank() } ?: emptyList()
+            }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                itemsIndexed(paragraphs, key = { index, _ -> index }) { _, para ->
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = para,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(14.dp),
+                            lineHeight = 24.sp,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── FALLBACK & ERROR SCREENS ──────────────────────────────────────────────────
 
 @Composable
 private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: String) {
@@ -1331,8 +1391,8 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        com.petal.browser.ui.containment.PetalGroupIconBadge(
-            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie9Sided.toShape(),
+        PetalGroupIconBadge(
+            shape = PetalMaterialShapes.Cookie9Sided.toShape(),
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             size = 80.dp,
@@ -1387,8 +1447,8 @@ private fun ErrorDisplayBox(error: String) {
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                com.petal.browser.ui.containment.PetalGroupIconBadge(
-                    shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                PetalGroupIconBadge(
+                    shape = PetalMaterialShapes.SoftBoom.toShape(),
                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                     contentColor = MaterialTheme.colorScheme.error,
                     size = 72.dp,
@@ -1414,6 +1474,44 @@ private fun ErrorDisplayBox(error: String) {
             }
         }
     }
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+
+private fun mimeTypeForExtension(extension: String): String = when (extension.lowercase(Locale.US)) {
+    "png" -> "image/png"
+    "jpg", "jpeg" -> "image/jpeg"
+    "gif" -> "image/gif"
+    "webp" -> "image/webp"
+    "bmp" -> "image/bmp"
+    "svg" -> "image/svg+xml"
+    "mp3" -> "audio/mpeg"
+    "wav" -> "audio/wav"
+    "ogg" -> "audio/ogg"
+    "m4a" -> "audio/mp4"
+    "flac" -> "audio/flac"
+    "mp4" -> "video/mp4"
+    "mkv" -> "video/x-matroska"
+    "webm" -> "video/webm"
+    "pdf" -> "application/pdf"
+    "txt" -> "text/plain"
+    "json" -> "application/json"
+    "html", "htm" -> "text/html"
+    "xml" -> "application/xml"
+    "csv" -> "text/csv"
+    else -> "application/octet-stream"
+}
+
+private fun formatArchiveSize(bytes: Long): String {
+    if (bytes <= 0L) return "0 B"
+    val units = arrayOf("B", "KB", "MB", "GB")
+    var value = bytes.toDouble()
+    var unit = 0
+    while (value >= 1024 && unit < units.lastIndex) {
+        value /= 1024.0
+        unit++
+    }
+    return if (unit == 0) "$bytes B" else String.format(Locale.US, "%.1f %s", value, units[unit])
 }
 
 private fun shareFile(context: Context, fileUri: Uri, displayName: String) {

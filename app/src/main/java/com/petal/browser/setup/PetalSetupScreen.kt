@@ -109,12 +109,8 @@ private fun PetalSetupContent(
                     true
                 )
                 Toast.makeText(context, context.getString(R.string.petal_setup_restore_success), Toast.LENGTH_LONG).show()
-                floatingTabs = sp.getBoolean("sp_floating_tab_bar", floatingTabs)
-                addressAtBottom = sp.getString("sp_address_bar_position", "TOP") == "BOTTOM"
-                dynamicColor = sp.getBoolean("useDynamicColor", dynamicColor)
-                amoled = sp.getBoolean("sp_amoled", amoled)
-                adBlock = PetalAdBlockEngine.isAdBlockEnabled(context)
-                darkWebpages = sp.getBoolean("petal_builtin_dark_webpages", darkWebpages)
+                // Skip setup immediately after restoring only
+                onFinished()
             }.onFailure {
                 Toast.makeText(context, it.localizedMessage ?: "Restore failed", Toast.LENGTH_SHORT).show()
             }
@@ -151,7 +147,7 @@ private fun PetalSetupContent(
     val nextLabel = if (isLastStage) stringResource(R.string.petal_setup_start_browsing) else stringResource(R.string.petal_setup_next)
 
     val stageTitles = listOf(
-        stringResource(R.string.petal_setup_hello_title),
+        stringResource(R.string.petal_setup_welcome_eyebrow),
         stringResource(R.string.petal_setup_access_title),
         stringResource(R.string.petal_setup_power_title),
         stringResource(R.string.petal_setup_you_title)
@@ -177,206 +173,298 @@ private fun PetalSetupContent(
                 Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp, bottom = if (floatingTabs) 88.dp else 76.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 10.dp, bottom = if (stage == 0) 16.dp else if (floatingTabs) 88.dp else 76.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Header with progress and Skip option
+                // Top Header: Segmented progress bars and explicit Skip button (matching reference design)
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            stringResource(R.string.petal_setup_brand),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            stageTitles[stage.coerceIn(0, 3)],
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                    // Segmented Expressive Progress Indicators
+                    Row(
+                        modifier = Modifier.weight(1f).padding(end = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        for (i in 0..3) {
+                            val isCompletedOrActive = i <= stage
+                            val segmentAlpha = if (i == stage) 1f else if (i < stage) 0.85f else 0.22f
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(4.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(
+                                        if (isCompletedOrActive) MaterialTheme.colorScheme.primary.copy(alpha = segmentAlpha)
+                                        else MaterialTheme.colorScheme.onSurface.copy(alpha = segmentAlpha)
+                                    )
+                            )
+                        }
                     }
+
+                    // Direct Skip button that skips entire setup immediately
                     TextButton(
                         onClick = onFinished,
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            stringResource(R.string.petal_setup_skip_button),
+                            stringResource(R.string.petal_setup_skip),
                             fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
-                LinearWavyProgressIndicator(
-                    progress = { (stage + 1) / 4f },
-                    modifier = Modifier.fillMaxWidth().height(4.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                )
-
-                // MiniPetal live preview: ONLY visible on the first page of setup (stage 0)
-                AnimatedVisibility(
-                    visible = stage == 0,
-                    enter = expandVertically(spring()) + fadeIn(),
-                    exit = shrinkVertically(spring()) + fadeOut()
-                ) {
-                    MiniPetal(
-                        floatingTabs = floatingTabs,
-                        addressAtBottom = addressAtBottom,
-                        darkWebpages = darkWebpages,
-                        adBlock = adBlock,
-                        engine = chosenEngine,
-                        modifier = Modifier.animateContentSize(spring())
-                    )
-                }
-
-                // Main Content with M3 Containment cards and expressive slide transitions
-                Surface(
-                    Modifier.weight(1f).fillMaxWidth(),
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    tonalElevation = 1.dp
-                ) {
+                if (stage == 0) {
+                    // ── NEW EXPRESSIVE FRONT PAGE ──────────────────────────────────────────
                     Column(
-                        Modifier
+                        modifier = Modifier
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        AnimatedContent(
-                            targetState = stage,
-                            transitionSpec = {
-                                if (targetState > initialState) {
-                                    (slideInHorizontally(tween(320)) { it / 2 } + fadeIn(tween(320)) + scaleIn(initialScale = 0.94f, animationSpec = tween(320)))
-                                        .togetherWith(slideOutHorizontally(tween(300)) { -it / 3 } + fadeOut(tween(250)) + scaleOut(targetScale = 0.94f, animationSpec = tween(250)))
-                                } else {
-                                    (slideInHorizontally(tween(320)) { -it / 2 } + fadeIn(tween(320)) + scaleIn(initialScale = 0.94f, animationSpec = tween(320)))
-                                        .togetherWith(slideOutHorizontally(tween(300)) { it / 3 } + fadeOut(tween(250)) + scaleOut(targetScale = 0.94f, animationSpec = tween(250)))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Spacer(Modifier.height(8.dp))
+
+                            // Animated M3 Expressive Shaped Hero Artwork
+                            PetalExpressiveHeroArt(
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            // Eyebrow Badge
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.petal_setup_welcome_eyebrow),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    letterSpacing = androidx.compose.ui.unit.sp(1.2)
+                                )
+                            }
+
+                            // Big Expressive Bold Headline
+                            Text(
+                                text = stringResource(R.string.petal_setup_hero_headline),
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                lineHeight = androidx.compose.ui.unit.sp(42)
+                            )
+
+                            // Subtitle description
+                            Text(
+                                text = stringResource(R.string.petal_setup_hero_subtitle),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = androidx.compose.ui.unit.sp(22)
+                            )
+                        }
+
+                        // Bottom Actions on Front Page: Get started pill button + Restore from backup
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            // Primary "Get started" Expressive Pill Button
+                            Button(
+                                onClick = { state.next() },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(28.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.petal_setup_get_started),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Icon(
+                                        imageVector = Icons.Rounded.ArrowForward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                 }
-                            },
-                            label = "petalSetupStageContent"
-                        ) { page ->
-                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                when (page) {
-                                    0 -> HelloStage(
-                                        language = language,
-                                        setLanguage = { state.setLanguage(it) },
-                                        sp = sp,
-                                        floating = floatingTabs,
-                                        setFloating = { floatingTabs = it },
-                                        bottom = addressAtBottom,
-                                        setBottom = { addressAtBottom = it },
-                                        dynamic = dynamicColor,
-                                        setDynamic = { dynamicColor = it },
-                                        amoled = amoled,
-                                        setAmoled = { amoled = it },
-                                        onRestoreBackup = { systemRestoreLauncher.launch(arrayOf("application/json", "*/*")) }
+                            }
+
+                            // Secondary "Restore from backup" action (Skips entire setup upon successful restore)
+                            OutlinedButton(
+                                onClick = { systemRestoreLauncher.launch(arrayOf("application/json", "*/*")) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(26.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Restore,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
-                                    1 -> AccessStage(
-                                        activity = activity,
-                                        sp = sp,
-                                        items = permissions,
-                                        refresh = permissionRefresh,
-                                        pending = pendingPermission,
-                                        request = { permission ->
-                                            pendingPermission = permission
-                                            val alreadyAsked = sp.getBoolean("setup_permission_asked_${permission.id}", false)
-                                            val permanentlyDenied = alreadyAsked && permission.permissions.all { perm ->
-                                                ContextCompat.checkSelfPermission(context, perm) != PackageManager.PERMISSION_GRANTED &&
-                                                    !activity.shouldShowRequestPermissionRationale(perm)
-                                            }
-                                            if (permanentlyDenied) {
-                                                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
-                                            } else {
-                                                sp.edit().putBoolean("setup_permission_asked_${permission.id}", true).apply()
-                                                try {
-                                                    permissionLauncher.launch(permission.permissions.toTypedArray())
-                                                } catch (_: Exception) {
-                                                    androidx.core.app.ActivityCompat.requestPermissions(activity, permission.permissions.toTypedArray(), 17322)
-                                                }
-                                            }
-                                        },
-                                        openSettings = {
-                                            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
-                                        }
-                                    )
-                                    2 -> PowerStage(
-                                        sp = sp,
-                                        adBlock = adBlock,
-                                        setAdBlock = { adBlock = it; PetalAdBlockEngine.setAdBlockEnabled(context, it) },
-                                        dark = darkWebpages,
-                                        setDark = { darkWebpages = it; PetalBuiltInExtensionManager.setEnabled(context, "petal_builtin_dark_webpages", it) }
-                                    )
-                                    3 -> MakePetalYoursStage(
-                                        engines = engines,
-                                        selectedEngine = selectedEngine,
-                                        onSelectEngine = {
-                                            selectedEngine = it
-                                            state.setSelectedEngine(it)
-                                            sp.edit().putString("sp_search_engine", it.toString()).putBoolean("sp_search_engine_chosen", true).apply()
-                                        },
-                                        showAi = showAiKey,
-                                        setShowAi = { showAiKey = it },
-                                        aiKey = aiKey,
-                                        setAiKey = {
-                                            aiKey = it
-                                            sp.edit().putString("sp_gemini_api_key", it).apply()
-                                        }
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(R.string.petal_setup_restore_button),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
                         }
-
-                        // Bottom Actions: Back, Skip, Next (with no text wrapping, flexible M3 expressive pill layout)
-                        if (skipConfirmation) {
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text(
-                                        stringResource(R.string.petal_setup_skip_confirmation),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        OutlinedButton(
-                                            onClick = { state.confirmSkip() },
-                                            shape = RoundedCornerShape(18.dp)
-                                        ) {
-                                            Text(stringResource(R.string.petal_setup_continue), maxLines = 1)
-                                        }
-                                        Button(
-                                            onClick = onFinished,
-                                            shape = RoundedCornerShape(18.dp),
-                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                                        ) {
-                                            Text(stringResource(R.string.petal_setup_skip_anyway), color = MaterialTheme.colorScheme.onError, maxLines = 1)
-                                        }
+                    }
+                } else {
+                    // Stages 1..3 with M3 containment and animated transitions
+                    Surface(
+                        Modifier.weight(1f).fillMaxWidth(),
+                        shape = RoundedCornerShape(28.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        tonalElevation = 1.dp
+                    ) {
+                        Column(
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            AnimatedContent(
+                                targetState = stage,
+                                transitionSpec = {
+                                    if (targetState > initialState) {
+                                        (slideInHorizontally(tween(320)) { it / 2 } + fadeIn(tween(320)) + scaleIn(initialScale = 0.94f, animationSpec = tween(320)))
+                                            .togetherWith(slideOutHorizontally(tween(300)) { -it / 3 } + fadeOut(tween(250)) + scaleOut(targetScale = 0.94f, animationSpec = tween(250)))
+                                    } else {
+                                        (slideInHorizontally(tween(320)) { -it / 2 } + fadeIn(tween(320)) + scaleIn(initialScale = 0.94f, animationSpec = tween(320)))
+                                            .togetherWith(slideOutHorizontally(tween(300)) { it / 3 } + fadeOut(tween(250)) + scaleOut(targetScale = 0.94f, animationSpec = tween(250)))
+                                    }
+                                },
+                                label = "petalSetupStageContent"
+                            ) { page ->
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    when (page) {
+                                        1 -> AccessStage(
+                                            activity = activity,
+                                            sp = sp,
+                                            items = permissions,
+                                            refresh = permissionRefresh,
+                                            pending = pendingPermission,
+                                            request = { permission ->
+                                                pendingPermission = permission
+                                                val alreadyAsked = sp.getBoolean("setup_permission_asked_${permission.id}", false)
+                                                val permanentlyDenied = alreadyAsked && permission.permissions.all { perm ->
+                                                    ContextCompat.checkSelfPermission(context, perm) != PackageManager.PERMISSION_GRANTED &&
+                                                        !activity.shouldShowRequestPermissionRationale(perm)
+                                                }
+                                                if (permanentlyDenied) {
+                                                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+                                                } else {
+                                                    sp.edit().putBoolean("setup_permission_asked_${permission.id}", true).apply()
+                                                    try {
+                                                        permissionLauncher.launch(permission.permissions.toTypedArray())
+                                                    } catch (_: Exception) {
+                                                        androidx.core.app.ActivityCompat.requestPermissions(activity, permission.permissions.toTypedArray(), 17322)
+                                                    }
+                                                }
+                                            },
+                                            openSettings = {
+                                                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+                                            }
+                                        )
+                                        2 -> PowerStage(
+                                            sp = sp,
+                                            adBlock = adBlock,
+                                            setAdBlock = { adBlock = it; PetalAdBlockEngine.setAdBlockEnabled(context, it) },
+                                            dark = darkWebpages,
+                                            setDark = { darkWebpages = it; PetalBuiltInExtensionManager.setEnabled(context, "petal_builtin_dark_webpages", it) }
+                                        )
+                                        3 -> MakePetalYoursStage(
+                                            engines = engines,
+                                            selectedEngine = selectedEngine,
+                                            onSelectEngine = {
+                                                selectedEngine = it
+                                                state.setSelectedEngine(it)
+                                                sp.edit().putString("sp_search_engine", it.toString()).putBoolean("sp_search_engine_chosen", true).apply()
+                                            },
+                                            showAi = showAiKey,
+                                            setShowAi = { showAiKey = it },
+                                            aiKey = aiKey,
+                                            setAiKey = {
+                                                aiKey = it
+                                                sp.edit().putString("sp_gemini_api_key", it).apply()
+                                            }
+                                        )
                                     }
                                 }
                             }
-                        } else {
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (stage > 0) {
+
+                            // Bottom Actions: Back, Skip, Next
+                            if (skipConfirmation) {
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Text(
+                                            stringResource(R.string.petal_setup_skip_confirmation),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            OutlinedButton(
+                                                onClick = { state.confirmSkip() },
+                                                shape = RoundedCornerShape(18.dp)
+                                            ) {
+                                                Text(stringResource(R.string.petal_setup_continue), maxLines = 1)
+                                            }
+                                            Button(
+                                                onClick = onFinished,
+                                                shape = RoundedCornerShape(18.dp),
+                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                            ) {
+                                                Text(stringResource(R.string.petal_setup_skip_anyway), color = MaterialTheme.colorScheme.onError, maxLines = 1)
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     OutlinedButton(
                                         onClick = { state.previous() },
                                         shape = RoundedCornerShape(20.dp),
@@ -386,36 +474,34 @@ private fun PetalSetupContent(
                                         Spacer(Modifier.width(6.dp))
                                         Text(stringResource(R.string.petal_setup_back), maxLines = 1)
                                     }
-                                }
-                                OutlinedButton(
-                                    onClick = {
-                                        if (stage < 3) state.next() else onFinished()
-                                    },
-                                    shape = RoundedCornerShape(20.dp),
-                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
-                                ) {
-                                    Text(stringResource(R.string.petal_setup_skip), maxLines = 1)
-                                }
-                                Button(
-                                    onClick = {
-                                        if (isLastStage) {
-                                            sp.edit().putString("sp_search_engine", selectedEngine.toString()).putBoolean("sp_search_engine_chosen", true).apply()
-                                            onFinished()
-                                        } else {
-                                            state.next()
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(20.dp),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
-                                ) {
-                                    Text(nextLabel, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Spacer(Modifier.width(6.dp))
-                                    Icon(
-                                        if (isLastStage) Icons.Rounded.Check else Icons.Rounded.ArrowForward,
-                                        null,
-                                        Modifier.size(16.dp)
-                                    )
+                                    OutlinedButton(
+                                        onClick = onFinished,
+                                        shape = RoundedCornerShape(20.dp),
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                                    ) {
+                                        Text(stringResource(R.string.petal_setup_skip), maxLines = 1)
+                                    }
+                                    Button(
+                                        onClick = {
+                                            if (isLastStage) {
+                                                sp.edit().putString("sp_search_engine", selectedEngine.toString()).putBoolean("sp_search_engine_chosen", true).apply()
+                                                onFinished()
+                                            } else {
+                                                state.next()
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(20.dp),
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                                    ) {
+                                        Text(nextLabel, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Spacer(Modifier.width(6.dp))
+                                        Icon(
+                                            if (isLastStage) Icons.Rounded.Check else Icons.Rounded.ArrowForward,
+                                            null,
+                                            Modifier.size(16.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -423,15 +509,17 @@ private fun PetalSetupContent(
                 }
             }
 
-            // Floating vs Docked bottom navbar dynamically connected with floatingTabs toggle
-            FloatingStageTabs(
-                stage = stage,
-                labels = stageLabels,
-                icons = stageIcons,
-                floating = floatingTabs,
-                onSelect = { state.goTo(it) },
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
+            // Floating vs Docked bottom navbar (only visible for stages > 0)
+            if (stage > 0) {
+                FloatingStageTabs(
+                    stage = stage,
+                    labels = stageLabels,
+                    icons = stageIcons,
+                    floating = floatingTabs,
+                    onSelect = { state.goTo(it) },
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
         }
     }
 }
