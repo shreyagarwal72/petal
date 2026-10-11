@@ -372,23 +372,14 @@ fun AppearanceSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(Modifier.height(4.dp))
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = listOf(
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("System"),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Light"),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Dark"),
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = listOf(
+                            com.petal.browser.ui.components.PetalChoiceOption(ThemeConfig.FOLLOW_SYSTEM, "System"),
+                            com.petal.browser.ui.components.PetalChoiceOption(ThemeConfig.LIGHT, "Light"),
+                            com.petal.browser.ui.components.PetalChoiceOption(ThemeConfig.DARK, "Dark"),
                         ),
-                        selectedIndex = when (themeConfig) {
-                            ThemeConfig.FOLLOW_SYSTEM -> 0
-                            ThemeConfig.LIGHT -> 1
-                            ThemeConfig.DARK -> 2
-                        },
-                        onSelect = { index ->
-                            val config = when (index) {
-                                1 -> ThemeConfig.LIGHT
-                                2 -> ThemeConfig.DARK
-                                else -> ThemeConfig.FOLLOW_SYSTEM
-                            }
+                        selected = themeConfig,
+                        onSelect = { config ->
                             onThemeConfigChange(config)
                             when (config) {
                                 ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
@@ -564,15 +555,16 @@ fun AppearanceSettingsScreenContent(
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = AppFont.values().map { font ->
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem(font.label, selected = appFont == font)
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = AppFont.values().map { font ->
+                            com.petal.browser.ui.components.PetalChoiceOption(font, font.label)
                         },
-                        selectedIndex = AppFont.values().indexOf(appFont),
-                        onSelect = { index -> AppFont.values().getOrNull(index)?.let { font ->
+                        selected = appFont,
+                        onSelect = { font ->
                             onAppFontChange(font)
                             if (font == AppFont.CUSTOM) showFontPicker = true
-                        } },
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     // GS Flex Preset Chips (For Petal Signature)
@@ -583,14 +575,16 @@ fun AppearanceSettingsScreenContent(
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                                items = GSFlexPreset.values().map { preset ->
-                                    com.petal.browser.ui.containment.PetalConnectedButtonItem(
-                                        preset.label.substringBefore(" ("), selected = gsFlexPreset == preset,
+                            com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                                options = GSFlexPreset.values().map { preset ->
+                                    com.petal.browser.ui.components.PetalChoiceOption(
+                                        preset,
+                                        preset.label.substringBefore(" (")
                                     )
                                 },
-                                selectedIndex = GSFlexPreset.values().indexOf(gsFlexPreset),
-                                onSelect = { index -> GSFlexPreset.values().getOrNull(index)?.let(onGsFlexPresetChange) },
+                                selected = gsFlexPreset,
+                                onSelect = onGsFlexPresetChange,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
@@ -676,13 +670,21 @@ fun AppearanceSettingsScreenContent(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            ExpressiveButtonGroup(
-                                items = listOf(
-                                    ExpressiveSegmentItem(id = "ALWAYS", label = "Always", icon = Icons.Rounded.Autorenew),
-                                    ExpressiveSegmentItem(id = "PERIODIC", label = "Periodically", icon = Icons.Rounded.Schedule)
+                            com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                                options = listOf(
+                                    com.petal.browser.ui.components.PetalChoiceOption(
+                                        value = "ALWAYS",
+                                        label = "Always",
+                                        icon = Icons.Rounded.Autorenew
+                                    ),
+                                    com.petal.browser.ui.components.PetalChoiceOption(
+                                        value = "PERIODIC",
+                                        label = "Periodically",
+                                        icon = Icons.Rounded.Schedule
+                                    )
                                 ),
-                                selectedId = bgShapeChangeMode,
-                                onItemSelected = onBgShapeChangeModeChange,
+                                selected = bgShapeChangeMode,
+                                onSelect = onBgShapeChangeModeChange,
                                 modifier = Modifier.fillMaxWidth()
                             )
 

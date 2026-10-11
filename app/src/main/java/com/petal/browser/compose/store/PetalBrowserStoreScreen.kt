@@ -143,10 +143,10 @@ fun PetalBrowserStoreScreen(
 
     val tabItems = remember {
         listOf(
-            PetalConnectedButtonItem("Add-ons", Icons.Rounded.Extension),
-            PetalConnectedButtonItem("Scripts", Icons.Rounded.Code),
-            PetalConnectedButtonItem("Search", Icons.Rounded.Search),
-            PetalConnectedButtonItem("Filters", Icons.Rounded.Shield)
+            com.petal.browser.ui.components.PetalChoiceOption(0, "Add-ons", icon = Icons.Rounded.Extension),
+            com.petal.browser.ui.components.PetalChoiceOption(1, "Scripts", icon = Icons.Rounded.Code),
+            com.petal.browser.ui.components.PetalChoiceOption(2, "Search", icon = Icons.Rounded.Search),
+            com.petal.browser.ui.components.PetalChoiceOption(3, "Filters", icon = Icons.Rounded.Shield)
         )
     }
 
@@ -179,11 +179,10 @@ fun PetalBrowserStoreScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 6.dp)
                         ) {
-                            PetalConnectedButtonGroup(
-                                items = tabItems,
-                                selectedIndex = selectedTabIndex,
+                            com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                                options = tabItems,
+                                selected = selectedTabIndex,
                                 onSelect = { index ->
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                     selectedTabIndex = index
                                 }
                             )

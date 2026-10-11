@@ -55,14 +55,14 @@ fun AddressBarSettingsScreen(
                 PetalSettingsSection("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
                     Text(stringResource(R.string.ui_choose_where_the_compact_address), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = listOf(
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Top Bar"),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Bottom Bar"),
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = listOf(
+                            com.petal.browser.ui.components.PetalChoiceOption("TOP", "Top Bar"),
+                            com.petal.browser.ui.components.PetalChoiceOption("BOTTOM", "Bottom Bar"),
                         ),
-                        selectedIndex = if (position.equals("TOP", ignoreCase = true)) 0 else 1,
-                        onSelect = { selected ->
-                            viewModel.setPosition(if (selected == 0) "TOP" else "BOTTOM")
+                        selected = if (position.equals("TOP", ignoreCase = true)) "TOP" else "BOTTOM",
+                        onSelect = { selectedPos ->
+                            viewModel.setPosition(selectedPos)
                             (context as? BrowserActivity)?.applyAddressBarPosition()
                             (context as? BrowserActivity)?.window?.decorView?.post { (context as? BrowserActivity)?.applyAddressBarPosition() }
                         }
@@ -72,20 +72,27 @@ fun AddressBarSettingsScreen(
                 PetalSettingsSection("Size", icon = Icons.Rounded.ViewCompact, cardId = "address_bar_size", targetHighlightId = targetHighlightItemId) {
                     Text(stringResource(R.string.ui_compact_is_the_recommended_short), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
-                    ChoiceRow(
-                        options = listOf("COMPACT" to "Compact", "STANDARD" to "Standard"),
-                        selected = height,
-                        onSelected = { viewModel.setHeight(it) }
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = listOf(
+                            com.petal.browser.ui.components.PetalChoiceOption("COMPACT", "Compact"),
+                            com.petal.browser.ui.components.PetalChoiceOption("STANDARD", "Standard"),
+                        ),
+                        selected = height.uppercase(),
+                        onSelect = { viewModel.setHeight(it) }
                     )
                 }
 
                 PetalSettingsSection("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
                     Text(stringResource(R.string.ui_choose_the_optional_action_shown), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
-                    ChoiceRow(
-                        options = listOf("AI" to "AI", "BOOKMARK" to "Bookmark", "NONE" to "None"),
-                        selected = action,
-                        onSelected = { viewModel.setAction(it) }
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = listOf(
+                            com.petal.browser.ui.components.PetalChoiceOption("AI", "AI"),
+                            com.petal.browser.ui.components.PetalChoiceOption("BOOKMARK", "Bookmark"),
+                            com.petal.browser.ui.components.PetalChoiceOption("NONE", "None"),
+                        ),
+                        selected = action.uppercase(),
+                        onSelect = { viewModel.setAction(it) }
                     )
                 }
 
@@ -115,13 +122,4 @@ fun AddressBarSettingsScreen(
             }
         }
     }
-}
-
-@Composable
-private fun ChoiceRow(options: List<Pair<String, String>>, selected: String, onSelected: (String) -> Unit) {
-    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-        items = options.map { (_, label) -> com.petal.browser.ui.containment.PetalConnectedButtonItem(label) },
-        selectedIndex = options.indexOfFirst { it.first.equals(selected, true) },
-        onSelect = { index -> options.getOrNull(index)?.first?.let(onSelected) },
-    )
 }

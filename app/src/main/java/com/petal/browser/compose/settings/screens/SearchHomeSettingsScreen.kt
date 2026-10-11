@@ -199,17 +199,20 @@ fun SearchHomeSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = listOf(
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem(
-                                stringResource(R.string.ui_petal_start_page), selected = homepageType == "0",
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = listOf(
+                            com.petal.browser.ui.components.PetalChoiceOption(
+                                value = "0",
+                                label = stringResource(R.string.ui_petal_start_page)
                             ),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem(
-                                stringResource(R.string.ui_custom_url), selected = homepageType == "1",
+                            com.petal.browser.ui.components.PetalChoiceOption(
+                                value = "1",
+                                label = stringResource(R.string.ui_custom_url)
                             ),
                         ),
-                        selectedIndex = if (homepageType == "1") 1 else 0,
-                        onSelect = { onHomepageTypeChange(if (it == 1) "1" else "0") },
+                        selected = homepageType,
+                        onSelect = onHomepageTypeChange,
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     if (homepageType == "1") {

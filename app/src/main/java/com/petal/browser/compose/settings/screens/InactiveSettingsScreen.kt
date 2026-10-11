@@ -92,29 +92,22 @@ fun InactiveSettingsScreen(
                     )
                     Spacer(Modifier.height(4.dp))
 
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        thresholdOptions.forEachIndexed { index, (key, label) ->
-                            SegmentedButton(
-                                selected = thresholdPref == key,
-                                onClick = {
-                                    thresholdPref = key
-                                    sp.edit().putString(
-                                        PetalInactiveTabManager.PREF_INACTIVE_DAYS_THRESHOLD, key
-                                    ).apply()
-                                },
-                                shape = SegmentedButtonDefaults.itemShape(
-                                    index = index,
-                                    count = thresholdOptions.size
-                                ),
-                                icon = {
-                                    SegmentedButtonDefaults.Icon(active = thresholdPref == key)
-                                },
-                                label = {
-                                    Text(label, style = MaterialTheme.typography.labelMedium)
-                                }
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = thresholdOptions.map { (key, label) ->
+                            com.petal.browser.ui.components.PetalChoiceOption(
+                                value = key,
+                                label = label
                             )
-                        }
-                    }
+                        },
+                        selected = thresholdPref,
+                        onSelect = { key ->
+                            thresholdPref = key
+                            sp.edit().putString(
+                                PetalInactiveTabManager.PREF_INACTIVE_DAYS_THRESHOLD, key
+                            ).apply()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     AnimatedVisibility(
                         visible = thresholdPref == "custom",

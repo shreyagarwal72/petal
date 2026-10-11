@@ -85,8 +85,7 @@ import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalGroupIconBadge
-import com.petal.browser.ui.containment.PetalConnectedButtonGroup
-import com.petal.browser.ui.containment.PetalConnectedButtonItem
+
 import com.petal.browser.ui.containment.PetalContainmentShapes
 import com.petal.browser.ui.components.PetalExpressiveMenuItem
 import com.petal.browser.ui.components.bouncyClickable
@@ -1484,18 +1483,15 @@ private fun TabCategorySwitcher(
     selected: TabCategory,
     onSelect: (TabCategory) -> Unit
 ) {
-    PetalConnectedButtonGroup(
-        items = listOf(
-            PetalConnectedButtonItem("Regular", Icons.Rounded.Public),
-            PetalConnectedButtonItem("Groups", Icons.Rounded.FolderCopy),
-            PetalConnectedButtonItem("Incognito", Icons.Rounded.VisibilityOff),
+    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+        options = listOf(
+            com.petal.browser.ui.components.PetalChoiceOption(TabCategory.REGULAR, "Regular", icon = Icons.Rounded.Public),
+            com.petal.browser.ui.components.PetalChoiceOption(TabCategory.GROUPS, "Groups", icon = Icons.Rounded.FolderCopy),
+            com.petal.browser.ui.components.PetalChoiceOption(TabCategory.INCOGNITO, "Incognito", icon = Icons.Rounded.VisibilityOff),
         ),
-        selectedIndex = when (selected) {
-            TabCategory.REGULAR -> 0
-            TabCategory.GROUPS -> 1
-            TabCategory.INCOGNITO -> 2
-        },
-        onSelect = { index -> onSelect(TabCategory.entries[index]) },
+        selected = selected,
+        onSelect = onSelect,
+        modifier = Modifier.fillMaxWidth()
     )
 }
 
