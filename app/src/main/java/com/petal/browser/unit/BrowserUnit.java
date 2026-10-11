@@ -195,6 +195,28 @@ public class BrowserUnit {
         }
     }
 
+    public static boolean isGoogleSearchQuery(Context context, String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return false;
+        }
+        String trimmed = query.trim();
+        if (isURL(trimmed)) {
+            String lower = trimmed.toLowerCase(Locale.US);
+            return lower.contains("google.com/search") || lower.contains("google.co.") || lower.contains("/search?");
+        }
+        if (trimmed.startsWith("@")) {
+            return false;
+        }
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        String customSearchEngine = sp.getString("sp_search_engine_custom", "");
+        String customSearches = sp.getString("sp_search_customSearches", "");
+        if (!customSearches.isEmpty() || (sp.getBoolean("searchEngineSwitch", false) && !customSearchEngine.isEmpty())) {
+            return customSearches.contains("google.") || customSearchEngine.contains("google.");
+        }
+        String selectedEngine = sp.getString("sp_search_engine", "0");
+        return "0".equals(selectedEngine);
+    }
+
     public static void download(final Context context, final String url, final String fileName, final String mimeType) {
         if (context == null || url == null || url.trim().isEmpty()) {
             return;

@@ -2237,12 +2237,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 @Override
                 public void onSearch(String query) {
                     if (query != null && !query.trim().isEmpty()) {
-                        String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, query.trim());
-                        if (currentAlbumController != null) {
-                            showAlbum(currentAlbumController, targetUrl);
-                        } else if (ninjaWebView != null) {
-                            showAlbum(currentAlbumController, targetUrl);
-                        }
+                        boolean isIncog = currentAlbumController != null && currentAlbumController.isIncognito();
+                        performSearchWithFixerPrompt(query.trim(), isIncog, targetUrl -> {
+                            if (currentAlbumController != null) {
+                                showAlbum(currentAlbumController, targetUrl);
+                            } else if (ninjaWebView != null) {
+                                showAlbum(currentAlbumController, targetUrl);
+                            } else {
+                                addAlbum(null, targetUrl, true, isIncog);
+                            }
+                        });
                     } else {
                         try {
                             showOmniboxPage("");
@@ -3854,18 +3858,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updateAddressBar();
     }
 
+    public void performSearchWithFixerPrompt(String query, boolean isIncognitoTab, java.util.function.Consumer<String> onReadyToNavigate) {
+        if (query == null || query.trim().isEmpty()) return;
+        final String trimmed = query.trim();
+        if (com.petal.browser.unit.BrowserUnit.isGoogleSearchQuery(this, trimmed)) {
+            boolean currentEnabled = sp.getBoolean("petal_builtin_google_search_fixer", false);
+            com.petal.browser.ui.components.PetalConfirmSheetBridge.showGoogleSearchFixerPrompt(
+                this,
+                currentEnabled,
+                choice -> {
+                    sp.edit().putBoolean("petal_builtin_google_search_fixer", choice).apply();
+                    com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(this, "petal_builtin_google_search_fixer", choice);
+                    String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, trimmed);
+                    onReadyToNavigate.accept(targetUrl);
+                }
+            );
+        } else {
+            String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, trimmed);
+            onReadyToNavigate.accept(targetUrl);
+        }
+    }
+
     public void handleFinalSearch(String query) {
         if (query != null && !query.trim().isEmpty()) {
             hideSearch();
-            String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, query.trim());
-            if (currentAlbumController != null) {
-                showAlbum(currentAlbumController, targetUrl);
-            } else if (ninjaWebView != null) {
-                showAlbum(currentAlbumController, targetUrl);
-            } else {
-                boolean isIncognito = currentAlbumController != null && currentAlbumController.isIncognito();
-                addAlbum(null, targetUrl, true, isIncognito);
-            }
+            boolean isIncognito = currentAlbumController != null && currentAlbumController.isIncognito();
+            performSearchWithFixerPrompt(query.trim(), isIncognito, targetUrl -> {
+                if (currentAlbumController != null) {
+                    showAlbum(currentAlbumController, targetUrl);
+                } else if (ninjaWebView != null) {
+                    showAlbum(currentAlbumController, targetUrl);
+                } else {
+                    addAlbum(null, targetUrl, true, isIncognito);
+                }
+            });
         } else {
             PetalToast.show(this, R.string.toast_input_empty);
         }
@@ -4944,15 +4970,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 result -> {
                     if (result != null && !result.trim().isEmpty()) {
-                        String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
-                        if (currentAlbumController != null) {
-                            showAlbum(currentAlbumController, targetUrl);
-                        } else if (BrowserContainer.size() > 0) {
-                            AlbumController controller = BrowserContainer.get(0);
-                            showAlbum(controller, targetUrl);
-                        } else {
-                            addAlbum(null, targetUrl, true, isIncognitoTab);
-                        }
+                        performSearchWithFixerPrompt(result.trim(), isIncognitoTab, targetUrl -> {
+                            if (currentAlbumController != null) {
+                                showAlbum(currentAlbumController, targetUrl);
+                            } else if (BrowserContainer.size() > 0) {
+                                AlbumController controller = BrowserContainer.get(0);
+                                showAlbum(controller, targetUrl);
+                            } else {
+                                addAlbum(null, targetUrl, true, isIncognitoTab);
+                            }
+                        });
                     }
                     return kotlin.Unit.INSTANCE;
                 }
@@ -6497,13 +6524,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 try {
                     com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(this, result -> {
                         if (result != null && !result.trim().isEmpty()) {
-                            String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
                             boolean isIncog = currentAlbumController != null && currentAlbumController.isIncognito();
-                            if (currentAlbumController != null) {
-                                showAlbum(currentAlbumController, targetUrl);
-                            } else {
-                                addAlbum(null, targetUrl, true, isIncog);
-                            }
+                            performSearchWithFixerPrompt(result.trim(), isIncog, targetUrl -> {
+                                if (currentAlbumController != null) {
+                                    showAlbum(currentAlbumController, targetUrl);
+                                } else {
+                                    addAlbum(null, targetUrl, true, isIncog);
+                                }
+                            });
                         }
                         return kotlin.Unit.INSTANCE;
                     });

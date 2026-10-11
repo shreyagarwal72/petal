@@ -143,6 +143,7 @@ fun PetalConfirmSheetContent(
 object PetalConfirmSheetBridge {
 
     @JvmStatic
+    @JvmOverloads
     fun showConfirmSheet(
         activity: ComponentActivity,
         icon: ImageVector = Icons.Rounded.Close,
@@ -151,7 +152,8 @@ object PetalConfirmSheetBridge {
         confirmText: String = "Confirm",
         cancelText: String = "Cancel",
         isDestructive: Boolean = false,
-        onConfirm: Runnable
+        onConfirm: Runnable,
+        onCancel: Runnable? = null
     ) {
         if (activity.isFinishing) return
 
@@ -191,6 +193,7 @@ object PetalConfirmSheetBridge {
                             },
                             onCancel = {
                                 dialog.dismiss()
+                                onCancel?.run()
                             }
                         )
                     }
@@ -277,6 +280,36 @@ object PetalConfirmSheetBridge {
             cancelText = "Cancel",
             isDestructive = true,
             onConfirm = onConfirm
+        )
+    }
+
+    @JvmStatic
+    fun showGoogleSearchFixerPrompt(
+        activity: ComponentActivity,
+        currentlyEnabled: Boolean,
+        onChoice: java.util.function.Consumer<Boolean>
+    ) {
+        val title = "Google Search Fixer"
+        val message = if (currentlyEnabled) {
+            "Google Search Fixer is currently ON (spoofs Chrome UA for modern widgets). Keep it ON, or turn it OFF to prevent Google Captchas?"
+        } else {
+            "Google Search Fixer is currently OFF (authentic Gecko headers). Turn it ON for modern Google mobile layout, or keep it OFF to prevent Captchas?"
+        }
+
+        showConfirmSheet(
+            activity = activity,
+            icon = Icons.Rounded.Search,
+            title = title,
+            message = message,
+            confirmText = "Turn ON",
+            cancelText = "Turn OFF",
+            isDestructive = false,
+            onConfirm = Runnable {
+                onChoice.accept(true)
+            },
+            onCancel = Runnable {
+                onChoice.accept(false)
+            }
         )
     }
 }

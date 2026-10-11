@@ -985,6 +985,32 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.updateAddressBar()
                         act.updatePersistentBottomNav()
                         act.updateBackCallbackState()
+
+                        // Detect Google anti-bot CAPTCHA redirect page (google.com/sorry)
+                        if (url.contains("google.") && url.contains("/sorry")) {
+                            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(act)
+                            val fixerOn = sp.getBoolean("petal_builtin_google_search_fixer", false)
+                            if (fixerOn) {
+                                com.petal.browser.ui.components.PetalConfirmSheetBridge.showGoogleSearchFixerPrompt(
+                                    act,
+                                    true,
+                                    choice -> {
+                                        sp.edit().putBoolean("petal_builtin_google_search_fixer", choice).apply()
+                                        com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(act, "petal_builtin_google_search_fixer", choice)
+                                        if (!choice) {
+                                            // Extract original query if available and reload without spoofed UA
+                                            val uri = android.net.Uri.parse(url)
+                                            val continueUrl = uri.getQueryParameter("continue")
+                                            if (!continueUrl.isNullOrBlank()) {
+                                                loadUrl(continueUrl)
+                                            } else {
+                                                reload()
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
