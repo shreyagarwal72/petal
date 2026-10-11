@@ -3862,21 +3862,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (query == null || query.trim().isEmpty()) return;
         final String trimmed = query.trim();
         if (com.petal.browser.unit.BrowserUnit.isGoogleSearchQuery(this, trimmed)) {
-            boolean currentEnabled = sp.getBoolean("petal_builtin_google_search_fixer", false);
-            com.petal.browser.ui.components.PetalConfirmSheetBridge.showGoogleSearchFixerPrompt(
-                this,
-                currentEnabled,
-                choice -> {
-                    sp.edit().putBoolean("petal_builtin_google_search_fixer", choice).apply();
-                    com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(this, "petal_builtin_google_search_fixer", choice);
-                    String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, trimmed);
-                    onReadyToNavigate.accept(targetUrl);
-                }
-            );
-        } else {
-            String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, trimmed);
-            onReadyToNavigate.accept(targetUrl);
+            boolean hasDecided = sp.contains("petal_builtin_google_search_fixer");
+            if (!hasDecided) {
+                boolean currentEnabled = sp.getBoolean("petal_builtin_google_search_fixer", false);
+                com.petal.browser.ui.components.PetalConfirmSheetBridge.showGoogleSearchFixerPrompt(
+                    this,
+                    currentEnabled,
+                    choice -> {
+                        sp.edit().putBoolean("petal_builtin_google_search_fixer", choice).apply();
+                        com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(this, "petal_builtin_google_search_fixer", choice);
+                        String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, trimmed);
+                        onReadyToNavigate.accept(targetUrl);
+                    }
+                );
+                return;
+            }
         }
+        String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, trimmed);
+        onReadyToNavigate.accept(targetUrl);
     }
 
     public void handleFinalSearch(String query) {
