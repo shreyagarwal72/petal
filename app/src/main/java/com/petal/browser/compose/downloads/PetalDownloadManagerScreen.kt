@@ -1,5 +1,4 @@
 /*
-import com.petal.browser.ui.components.scrollMotionBlur
  * PetalDownloadManager.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Native Inbuilt Download Manager UI for Petal Browser featuring Chrome-style
@@ -8,6 +7,7 @@ import com.petal.browser.ui.components.scrollMotionBlur
  */
 
 package com.petal.browser.compose.downloads
+import com.petal.browser.ui.components.scrollMotionBlur
 
 import com.petal.browser.view.PetalToast;
 import android.app.DownloadManager

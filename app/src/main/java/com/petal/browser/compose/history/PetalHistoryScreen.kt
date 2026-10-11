@@ -1,5 +1,4 @@
 /*
-import com.petal.browser.ui.components.scrollMotionBlur
  * PetalHistoryScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Chrome Android-inspired Material 3 Expressive History Page for Petal Browser.
@@ -8,6 +7,7 @@ import com.petal.browser.ui.components.scrollMotionBlur
  */
 
 package com.petal.browser.compose.history
+import com.petal.browser.ui.components.scrollMotionBlur
 
 import android.content.Context
 import androidx.activity.ComponentActivity

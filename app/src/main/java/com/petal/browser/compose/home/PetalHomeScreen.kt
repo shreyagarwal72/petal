@@ -1,5 +1,4 @@
 /*
-import com.petal.browser.ui.components.scrollMotionBlur
  * PetalHomeScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Material 3 professional home screen for Petal Browser — Chrome/Edge-style
@@ -10,6 +9,7 @@ import com.petal.browser.ui.components.scrollMotionBlur
  */
 
 package com.petal.browser.compose.home
+import com.petal.browser.ui.components.scrollMotionBlur
 
 import android.content.Context
 import android.net.Uri
