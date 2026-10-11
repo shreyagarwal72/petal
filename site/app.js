@@ -337,8 +337,8 @@ function initArchInspector() {
   const ARCH_DATA = {
     geckoview: {
       badge: 'Independent Quantum Core',
-      title: 'GeckoView 156 Standalone Engine',
-      desc: 'Petal embeds Mozilla GeckoView 156 with an isolated quantum multi-process pipeline. It does not use the OEM Android WebView, preventing vendor delays and third-party tracking hooks.',
+      title: 'GeckoView 157 Standalone Engine',
+      desc: 'Petal embeds Mozilla GeckoView 157 with an isolated quantum multi-process pipeline. It does not use the OEM Android WebView, preventing vendor delays and third-party tracking hooks.',
       code: 'GeckoRuntime.create(context, GeckoRuntimeSettings.Builder()\n  .aboutConfigEnabled(true)\n  .contentBlocking(ContentBlocking.STRICT)\n  .build())'
     },
     compose: {

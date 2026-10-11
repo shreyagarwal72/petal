@@ -1237,12 +1237,65 @@ button {
 }
 
 @media (max-width: 640px) {
+  .nav-inner {
+    height: 3.75rem;
+    gap: 0.5rem;
+  }
+  .brand-link {
+    font-size: 1.05rem;
+    gap: 0.5rem;
+  }
+  .brand-icon-svg {
+    width: 28px;
+    height: 28px;
+  }
+  .brand-version-tag {
+    font-size: 0.625rem;
+    padding: 0.15rem 0.35rem;
+  }
   .nav-links {
     display: none;
   }
+  .nav-actions {
+    gap: 0.4rem;
+  }
+  .nav-actions .btn {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  .nav-actions .btn-secondary {
+    display: none; /* Hide secondary GitHub in compact header so Download APK never wraps or clips */
+  }
   .palette-bar {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+  .palette-swatches {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+  .hero-section {
+    padding-top: 2rem;
+    padding-bottom: 2.5rem;
+  }
+  .hero-title {
+    font-size: 2.15rem;
+  }
+  .hero-desc {
+    font-size: 0.95rem;
+  }
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+  }
+  .hero-cta-group .btn {
+    width: 100%;
+  }
+  .device-viewport {
+    max-width: 320px;
   }
   .footer-grid {
     grid-template-columns: 1fr;
