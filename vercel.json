@@ -6,7 +6,7 @@
       "destination": "/site/index.html"
     },
     {
-      "source": "/(styles\\.css|app\\.js)",
+      "source": "/(styles\\.css|app\\.js|robots\\.txt|sitemap\\.xml|site\\.webmanifest|favicon\\.ico)",
       "destination": "/site/$1"
     },
     {

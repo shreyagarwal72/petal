@@ -1,0 +1,29 @@
+{
+  "name": "Petal Browser",
+  "short_name": "Petal",
+  "description": "Material 3 Expressive GeckoView Browser for Android with zero telemetry.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1b1013",
+  "theme_color": "#fff7f9",
+  "icons": [
+    {
+      "src": "/assets/favicons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/favicons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/favicons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://my-petal-browser.vercel.app/</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://my-petal-browser.vercel.app/assets/banner.jpg</image:loc>
+      <image:title>Petal Browser — Material 3 Expressive Android Browser</image:title>
+      <image:caption>Preview of Petal Browser UI with GeckoView 157 and Material 3 Expressive styling</image:caption>
+    </image:image>
+  </url>
+</urlset>
