@@ -2,548 +2,485 @@
 <html lang="en" data-theme-mode="light" data-palette="petal" data-amoled="false">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Petal Browser — Material 3 Expressive GeckoView Browser for Android</title>
   <meta name="description" content="A browser that respects your attention, privacy, and device. Material 3 Expressive, powered by Mozilla GeckoView 157 with zero telemetry.">
-  <link rel="stylesheet" href="styles.css?v=157.0.1">
+  <meta name="theme-color" content="#fff7f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1013" media="(prefers-color-scheme: dark)">
+  <meta property="og:title" content="Petal Browser">
+  <meta property="og:description" content="Material 3 Expressive browser for Android. GeckoView 157, zero telemetry, open source.">
+  <meta property="og:type" content="website">
+
+  <!-- Apply saved / system theme before first paint so the page never flashes -->
+  <script>
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      try {
+        var s = JSON.parse(localStorage.getItem('petal-theme') || 'null') || {};
+        var dark = s.mode ? s.mode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        d.setAttribute('data-theme-mode', dark ? 'dark' : 'light');
+        if (s.palette) d.setAttribute('data-palette', s.palette);
+        if (s.amoled && dark) d.setAttribute('data-amoled', 'true');
+      } catch (e) {}
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=157.0.2">
   <link rel="icon" type="image/svg+xml" href="assets/badges/android.svg">
 </head>
 <body>
 
-  <!-- Top Announcement Bar -->
-  <aside class="top-notice" aria-label="Project Status">
-    <span class="notice-pill">Open Source</span>
-    <span>Powered by Mozilla GeckoView 157 engine & Jetpack Compose Material 3 Expressive. Zero telemetry.</span>
-  </aside>
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></symbol>
+      <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-tabs" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.5" height="15" rx="1.6"/><rect x="13.5" y="4.5" width="4.5" height="15" rx="1.6"/></symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.9-6.4M3.5 4v4.6H8"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V7a2 2 0 0 1 2-2h8"/></symbol>
+      <symbol id="i-engine" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.6 0 2.2-1 2.2-2s-1-1.6-.5-2.6S15.2 15 17 15h1a3 3 0 0 0 3-3 9 9 0 0 0-9-9z"/><circle cx="7.5" cy="11" r="1" fill="currentColor"/><circle cx="10.5" cy="7" r="1" fill="currentColor"/><circle cx="15.5" cy="7.5" r="1" fill="currentColor"/></symbol>
+      <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 7h3.5c5 0 6 10 11 10H21M3 17h3.5c1.6 0 2.8-.7 3.8-1.8M14 8.8C15 7.7 16.2 7 17.5 7H21M18.5 4.5L21 7l-2.5 2.5M18.5 14.5L21 17l-2.5 2.5"/></symbol>
+    </defs>
+  </svg>
 
-  <!-- Navigation Header -->
-  <header class="header-nav" role="banner">
-    <div class="container nav-inner">
-      <a href="#hero" class="brand-link" aria-label="Petal Home">
-        <!-- SVG Icon adapted from ic_launcher_foreground.xml -->
-        <svg class="brand-icon-svg" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- App bar -->
+  <header class="appbar" id="appbar">
+    <div class="appbar-inner">
+      <a href="#hero" class="brand" aria-label="Petal home">
+        <svg class="brand-mark" viewBox="0 0 512 512" fill="none" aria-hidden="true">
           <path fill="#F472B6" d="M220.6,291.4 C234.0,256.2 230.3,200.8 262.6,171.7 C286.7,150.6 332.5,160.8 362.1,149.9 C351.2,179.5 361.4,225.3 340.3,249.4 C311.2,281.7 255.8,278.0 220.6,291.4 Z M291.4,220.6 C278.0,255.8 281.7,311.2 249.4,340.3 C225.3,361.4 179.5,351.2 149.9,362.1 C160.8,332.5 150.6,286.7 171.7,262.6 C200.8,230.3 256.2,234.0 291.4,220.6 Z"/>
           <path fill="#D81B60" d="M291.4,291.4 C256.2,278.0 200.8,281.7 171.7,249.4 C150.6,225.3 160.8,179.5 149.9,149.9 C179.5,160.8 225.3,150.6 249.4,171.7 C281.7,200.8 278.0,256.2 291.4,291.4 Z M220.6,220.6 C255.8,234.0 311.2,230.3 340.3,262.6 C361.4,286.7 351.2,332.5 362.1,362.1 C332.5,351.2 286.7,361.4 262.6,340.3 C230.3,311.2 234.0,255.8 220.6,220.6 Z"/>
         </svg>
         <span>Petal</span>
-        <span class="brand-version-tag">GeckoView 157</span>
+        <span class="brand-tag">GeckoView 157</span>
       </a>
 
-      <nav aria-label="Main Navigation">
-        <ul class="nav-links">
-          <li><a href="#differentiators">Differentiators</a></li>
-          <li><a href="#shapes">35 Shapes</a></li>
-          <li><a href="#media-player">Wavy Player</a></li>
+      <nav aria-label="Main">
+        <ul class="nav-links" id="nav-links">
+          <li><a href="#differentiators">Why Petal</a></li>
+          <li><a href="#shapes">Shapes</a></li>
+          <li><a href="#media-player">Player</a></li>
           <li><a href="#architecture">Architecture</a></li>
-          <li><a href="#specs">Specifications</a></li>
+          <li><a href="#specs">Specs</a></li>
         </ul>
       </nav>
 
       <div class="nav-actions">
-        <!-- Dark / Light Theme Toggle -->
-        <button id="theme-toggle-btn" class="btn-icon-only" aria-label="Toggle dark mode" type="button">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
+        <button id="theme-toggle-btn" class="icon-btn" type="button" aria-label="Switch to dark theme" data-ripple>
+          <svg class="i i-moon"><use href="#i-moon"/></svg>
+          <svg class="i i-sun" hidden><use href="#i-sun"/></svg>
         </button>
-
-        <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" aria-label="GitHub Repository">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
-          </svg>
-          <span>GitHub</span>
+        <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="icon-btn nav-github" aria-label="GitHub repository" data-ripple>
+          <svg class="i"><use href="#i-github"/></svg>
         </a>
-
-        <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-          </svg>
-          <span>Download APK</span>
+        <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled nav-download" aria-label="Download APK" data-ripple>
+          <svg class="i i--sm"><use href="#i-download"/></svg>
+          <span class="btn-label">Download</span>
         </a>
+        <button id="menu-btn" class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu" data-ripple>
+          <svg class="i i-menu"><use href="#i-menu"/></svg>
+          <svg class="i i-close"><use href="#i-close"/></svg>
+        </button>
       </div>
     </div>
   </header>
 
-  <main id="main-content">
-    <!-- Palette Studio Live Control Bar -->
-    <div class="container">
-      <section class="palette-bar" aria-label="Dynamic Theme and AMOLED Palette Controls">
-        <div class="palette-label">
-          <span>Material 3 Dynamic Palette:</span>
-        </div>
-        <div class="palette-swatches" role="radiogroup" aria-label="Choose Palette">
-          <button class="swatch-btn active" data-palette="petal" style="background: #D81B60;" title="Petal Pink (Default)" role="radio" aria-checked="true" aria-label="Petal Pink Palette"></button>
-          <button class="swatch-btn" data-palette="tide" style="background: #00A88E;" title="Tide (Teal)" role="radio" aria-checked="false" aria-label="Tide Palette"></button>
-          <button class="swatch-btn" data-palette="zen" style="background: #445E91;" title="Zen (Steel Blue)" role="radio" aria-checked="false" aria-label="Zen Palette"></button>
-          <button class="swatch-btn" data-palette="ember" style="background: #B4552D;" title="Ember (Coral)" role="radio" aria-checked="false" aria-label="Ember Palette"></button>
-          <button class="swatch-btn" data-palette="forest" style="background: #3B6939;" title="Forest (Pine)" role="radio" aria-checked="false" aria-label="Forest Palette"></button>
-          <button class="swatch-btn" data-palette="default" style="background: #4D568D;" title="Indigo (Classic)" role="radio" aria-checked="false" aria-label="Indigo Palette"></button>
-        </div>
-        <button id="amoled-toggle-btn" class="amoled-toggle-btn" type="button" aria-label="Toggle Pure AMOLED Black Ladder">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="10"/></svg>
-          <span>AMOLED #000000 Mode</span>
-        </button>
-      </section>
+  <!-- Mobile menu -->
+  <div class="menu" id="menu" aria-hidden="true">
+    <div class="menu-scrim" id="menu-scrim"></div>
+    <div class="menu-panel" role="dialog" aria-modal="true" aria-label="Site menu">
+      <div class="menu-head">
+        <span class="brand"><span>Petal</span></span>
+        <button class="icon-btn" id="menu-close" type="button" aria-label="Close menu" data-ripple><svg class="i"><use href="#i-close"/></svg></button>
+      </div>
+      <ul class="menu-list" id="menu-list">
+        <li style="--i:0"><a href="#differentiators">Why Petal <svg class="i"><use href="#i-arrow"/></svg></a></li>
+        <li style="--i:1"><a href="#shapes">35 shapes <svg class="i"><use href="#i-arrow"/></svg></a></li>
+        <li style="--i:2"><a href="#media-player">Wavy player <svg class="i"><use href="#i-arrow"/></svg></a></li>
+        <li style="--i:3"><a href="#architecture">Architecture <svg class="i"><use href="#i-arrow"/></svg></a></li>
+        <li style="--i:4"><a href="#specs">Specs <svg class="i"><use href="#i-arrow"/></svg></a></li>
+      </ul>
+      <div class="menu-foot">
+        <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled btn--lg btn--block" data-ripple>
+          <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
+        </a>
+        <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="btn btn--tonal btn--block" data-ripple>
+          <svg class="i i--sm"><use href="#i-github"/></svg><span>View on GitHub</span>
+        </a>
+      </div>
     </div>
+  </div>
 
-    <!-- Hero Section -->
-    <section id="hero" class="hero-section">
+  <main id="main-content">
+
+    <!-- Hero -->
+    <section id="hero" class="hero" aria-labelledby="hero-title">
       <div class="container hero-grid">
-        <div class="hero-content">
-          <div class="hero-eyebrow">
-            <span class="hero-eyebrow-dot" aria-hidden="true"></span>
-            <span>Next-Gen Android Web Architecture</span>
-          </div>
-          
-          <h1 class="hero-title">
-            A browser that respects your <span class="accent">attention</span>, privacy, and device.
-          </h1>
-
-          <p class="hero-desc">
+        <div class="hero-copy">
+          <h1 id="hero-title" class="display enter" style="--i:0">A browser that respects your attention, privacy, and device.</h1>
+          <p class="lead enter" style="--i:1">
             Petal breaks free from the Chromium monopoly. Built natively on Mozilla's GeckoView 157 engine with Jetpack Compose Material 3 Expressive, delivering quantum rendering, 35 adaptive polygon shapes, and authentic zero telemetry.
           </p>
-
-          <div class="hero-cta-group">
-            <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 0.85rem 1.75rem; font-size: 1rem;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-              </svg>
-              <span>Download Signed APK</span>
+          <div class="hero-cta enter" style="--i:2">
+            <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled btn--lg" data-ripple>
+              <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
             </a>
-            <a href="#shapes" class="btn btn-secondary" style="padding: 0.85rem 1.5rem;">
-              <span>Explore 35 M3 Shapes</span>
-            </a>
+            <a href="#shapes" class="btn btn--tonal btn--lg" data-ripple><span>Explore 35 shapes</span></a>
           </div>
-
-          <div class="hero-specs-strip">
-            <div class="spec-item">
-              <span>Engine:</span>
-              <strong>GeckoView 157.0</strong>
-            </div>
-            <div class="spec-item">
-              <span>UI Framework:</span>
-              <strong>Jetpack Compose M3</strong>
-            </div>
-            <div class="spec-item">
-              <span>Min Android:</span>
-              <strong>8.0+ (API 26–36)</strong>
-            </div>
-            <div class="spec-item">
-              <span>License:</span>
-              <strong>GPL-3.0</strong>
-            </div>
-          </div>
+          <dl class="facts enter" style="--i:3">
+            <div class="fact"><span>Engine</span><strong>GeckoView 157.0</strong></div>
+            <div class="fact"><span>UI framework</span><strong>Jetpack Compose M3</strong></div>
+            <div class="fact"><span>Min Android</span><strong>8.0+ (API 26–36)</strong></div>
+            <div class="fact"><span>License</span><strong>GPL-3.0</strong></div>
+          </dl>
         </div>
 
-        <!-- Live Interactive Android Phone Simulator -->
-        <div class="device-viewport" role="region" aria-label="Interactive Petal Omnibox Simulator">
-          <div class="device-notch">
-            <span>12:45</span>
-            <div style="display: flex; gap: 4px; align-items: center;">
-              <span>5G</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+        <!-- Live phone simulator -->
+        <div class="stage">
+          <div class="stage-blob" aria-hidden="true"><svg viewBox="0 0 100 100"><path id="hero-blob" d=""/></svg></div>
+
+          <div class="phone" role="group" aria-label="Interactive Petal address bar demo">
+            <div class="phone-screen">
+              <div class="sim-status" aria-hidden="true"><span>12:45</span><span>5G</span></div>
+
+              <div class="sim-omnibox" id="sim-omnibox">
+                <button class="sim-pill" id="sim-url-pill" type="button" aria-haspopup="dialog">
+                  <svg class="i lock"><use href="#i-lock"/></svg>
+                  <span class="host">petal.local</span>
+                  <svg class="i"><use href="#i-shield"/></svg>
+                  <svg class="i"><use href="#i-dots"/></svg>
+                </button>
+              </div>
+
+              <div class="sim-webview" id="sim-webview" tabindex="0" aria-label="Demo page. Scroll to collapse the address bar.">
+                <h3>Scroll down to collapse the bar</h3>
+                <div class="sim-card"><strong>GeckoView multi-process</strong>Isolated renderer tabs with separate content process memory spaces.</div>
+                <div class="sim-card"><strong>Strict tracking shield</strong>12 trackers blocked. Third-party cookie storage partitioned.</div>
+                <div class="sim-card"><strong>On-device AI hub</strong>Summarize page articles directly via local or API LLM bridges.</div>
+                <div class="sim-card"><strong>Material 3 motion</strong>Spring physics with 0.75f damping ratio and waveform haptic ticks.</div>
+                <div class="sim-card"><strong>WebExtensions ecosystem</strong>Mozilla AMO add-ons and desktop scripts running without restrictions.</div>
+              </div>
+
+              <button class="sim-fab" id="sim-fab" type="button" aria-label="Show address bar"><svg class="i"><use href="#i-search"/></svg></button>
+
+              <nav class="sim-dock" id="sim-dock" aria-label="Demo navigation" style="--idx:0">
+                <span class="dock-ind" aria-hidden="true"></span>
+                <button type="button" class="dock-btn" aria-current="true"><svg class="i"><use href="#i-home"/></svg>Home</button>
+                <button type="button" class="dock-btn" aria-current="false"><svg class="i"><use href="#i-plus"/></svg>New</button>
+                <button type="button" class="dock-btn" aria-current="false"><svg class="i"><use href="#i-tabs"/></svg>Tabs<span class="dock-badge">3</span></button>
+                <button type="button" class="dock-btn" aria-current="false"><svg class="i"><use href="#i-dots"/></svg>Menu</button>
+              </nav>
+
+              <div class="sim-scrim" id="sim-scrim"></div>
+              <div class="sim-sheet" id="sim-sheet" role="dialog" aria-label="Address bar actions">
+                <div class="sheet-handle"></div>
+                <h4>Clean URL copied</h4>
+                <ul>
+                  <li><svg class="i"><use href="#i-check"/></svg>Trackers stripped from the link</li>
+                  <li><svg class="i"><use href="#i-shield"/></svg>Enhanced Tracking Protection: Strict</li>
+                  <li><svg class="i"><use href="#i-moon"/></svg>Dark pages extension enabled</li>
+                </ul>
+              </div>
             </div>
           </div>
-
-          <div class="device-screen">
-            <!-- Collapsible Omnibox Header -->
-            <div id="sim-omnibox" class="sim-omnibox-wrapper">
-              <div id="sim-url-pill" class="sim-omnibox-pill" title="Tap to simulate Clean URL & Security sheet">
-                <div class="sim-omnibox-host">
-                  <svg class="sim-badge-secure" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                  <span>petal.local</span>
-                </div>
-                <div class="sim-omnibox-actions">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-                </div>
-              </div>
-            </div>
-
-            <!-- Floating Action Bubble (Reveals when scrolled) -->
-            <div id="sim-fab-bubble" class="sim-fab-bubble" title="Click to restore address bar">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-            </div>
-
-            <!-- Scrollable Simulated Webview -->
-            <div id="sim-webview-scroll" class="sim-webview">
-              <div style="font-weight: 700; font-size: 0.9375rem; color: var(--color-text-main); margin-bottom: 0.25rem;">
-                Scroll Down to Test Collapse
-              </div>
-              <div class="sim-webview-card">
-                <strong>GeckoView Multi-Process</strong>
-                <p style="font-size: 0.75rem; margin-top: 0.25rem;">Isolated renderer tabs with separate content process memory spaces.</p>
-              </div>
-              <div class="sim-webview-card">
-                <strong>Strict Tracking Shield</strong>
-                <p style="font-size: 0.75rem; margin-top: 0.25rem;">12 trackers blocked. Third-party cookie storage partitioned.</p>
-              </div>
-              <div class="sim-webview-card">
-                <strong>On-Device AI Hub</strong>
-                <p style="font-size: 0.75rem; margin-top: 0.25rem;">Summarize page articles directly via local or API LLM bridges.</p>
-              </div>
-              <div class="sim-webview-card">
-                <strong>Material 3 Motion</strong>
-                <p style="font-size: 0.75rem; margin-top: 0.25rem;">Spring physics with 0.75f damping ratio and waveform haptic ticks.</p>
-              </div>
-              <div class="sim-webview-card">
-                <strong>WebExtensions Ecosystem</strong>
-                <p style="font-size: 0.75rem; margin-top: 0.25rem;">Mozilla AMO add-ons and desktop scripts running without restrictions.</p>
-              </div>
-            </div>
-
-            <div class="sim-controls-toolbar">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-            </div>
-          </div>
-          <div class="sim-sim-note">Interactive scroll simulator (Jetpack Compose mechanics)</div>
+          <p class="stage-hint">Interactive demo. Scroll inside the phone, or tap the address bar.</p>
         </div>
       </div>
     </section>
 
-    <!-- Differentiators: The Anti-Chromium Trinity -->
+    <!-- Theme studio -->
+    <section id="theme" class="section--tight" aria-label="Theme controls">
+      <div class="container">
+        <div class="theme-card" data-reveal>
+          <div class="theme-copy">
+            <h2 class="h3">Try a palette</h2>
+            <p>Petal follows your wallpaper on Android 12+. Pick a color here and the whole page follows you.</p>
+          </div>
+          <div class="swatches" role="radiogroup" aria-label="Palette">
+            <button class="swatch" data-palette="petal" style="--h:5;--c:.21" role="radio" aria-checked="true" aria-label="Petal pink" title="Petal Pink"><svg class="i"><use href="#i-check"/></svg></button>
+            <button class="swatch" data-palette="tide" style="--h:178;--c:.12" role="radio" aria-checked="false" aria-label="Tide teal" title="Tide (Teal)"><svg class="i"><use href="#i-check"/></svg></button>
+            <button class="swatch" data-palette="zen" style="--h:255;--c:.12" role="radio" aria-checked="false" aria-label="Zen steel blue" title="Zen (Steel Blue)"><svg class="i"><use href="#i-check"/></svg></button>
+            <button class="swatch" data-palette="ember" style="--h:42;--c:.15" role="radio" aria-checked="false" aria-label="Ember coral" title="Ember (Coral)"><svg class="i"><use href="#i-check"/></svg></button>
+            <button class="swatch" data-palette="forest" style="--h:148;--c:.13" role="radio" aria-checked="false" aria-label="Forest pine" title="Forest (Pine)"><svg class="i"><use href="#i-check"/></svg></button>
+            <button class="swatch" data-palette="default" style="--h:275;--c:.13" role="radio" aria-checked="false" aria-label="Indigo" title="Indigo (Classic)"><svg class="i"><use href="#i-check"/></svg></button>
+          </div>
+          <div class="switches">
+            <div class="switch-row">
+              <span id="lbl-dark">Dark theme</span>
+              <button class="switch" id="dark-switch" type="button" role="switch" aria-checked="false" aria-labelledby="lbl-dark"><span class="switch-thumb"><svg class="i"><use href="#i-check"/></svg></span></button>
+            </div>
+            <div class="switch-row">
+              <span id="lbl-amoled"><span>AMOLED #000000 mode<small>Pure black surfaces save battery on OLED screens</small></span></span>
+              <button class="switch" id="amoled-switch" type="button" role="switch" aria-checked="false" aria-labelledby="lbl-amoled"><span class="switch-thumb"><svg class="i"><use href="#i-check"/></svg></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Principles -->
     <section id="differentiators" class="section">
       <div class="container">
-        <div class="section-head">
-          <span class="section-tag">Core Principles</span>
-          <h2 class="section-title">Engineered to be the anti-Chromium.</h2>
-          <p class="section-desc">
-            Most Android browsers are repackaged Chromium shells bundled with tracking services. Petal is an independent, native engineering achievement.
-          </p>
+        <div class="section-head" data-reveal>
+          <h2 class="h2">Engineered to be the anti-Chromium.</h2>
+          <p>Most Android browsers are repackaged Chromium shells bundled with tracking services. Petal is an independent, native engineering achievement.</p>
         </div>
 
-        <div class="trinity-grid">
-          <article class="trinity-card">
-            <span class="trinity-num">01 / ENGINE INDEPENDENCE</span>
-            <h3 class="trinity-title">GeckoView 157 Quantum Pipeline</h3>
-            <p class="trinity-body">
-              Petal does not delegate web rendering to the manufacturer's Android WebView. It bundles Mozilla's quantum engine with full multi-process isolation, native Firefox add-ons, and standards compliance.
-            </p>
-            <div class="trinity-meta">
-              Standalone engine · Firefox Add-ons (AMO) · Quantum multi-process
-            </div>
+        <div class="cards">
+          <article class="card card--a" data-reveal style="--i:0">
+            <div class="shape-badge" data-shape="cookie6" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
+            <h3 class="h3">GeckoView 157 quantum pipeline</h3>
+            <p>Petal does not delegate web rendering to the manufacturer's Android WebView. It bundles Mozilla's quantum engine with full multi-process isolation, native Firefox add-ons, and standards compliance.</p>
+            <ul class="chips"><li>Standalone engine</li><li>Firefox Add-ons (AMO)</li><li>Quantum multi-process</li></ul>
           </article>
 
-          <article class="trinity-card">
-            <span class="trinity-num">02 / ARCHITECTURAL PRIVACY</span>
-            <h3 class="trinity-title">Zero Telemetry by Construction</h3>
-            <p class="trinity-body">
-              Privacy is not a toggle in a submenu. Petal bundles zero analytics SDKs, zero telemetry endpoints, and zero cloud reporting beacons. Strict Enhanced Tracking Protection is active on first launch.
-            </p>
-            <div class="trinity-meta">
-              No Google Firebase · No Sentry · Isolated cookie jars
-            </div>
+          <article class="card card--b" data-reveal style="--i:1">
+            <div class="shape-badge" data-shape="softburst" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
+            <h3 class="h3">Zero telemetry by construction</h3>
+            <p>Privacy is not a toggle in a submenu. Petal bundles zero analytics SDKs, zero telemetry endpoints, and zero cloud reporting beacons. Strict Enhanced Tracking Protection is active on first launch.</p>
+            <ul class="chips"><li>No Google Firebase</li><li>No Sentry</li><li>Isolated cookie jars</li></ul>
           </article>
 
-          <article class="trinity-card">
-            <span class="trinity-num">03 / TACTILE CRAFT</span>
-            <h3 class="trinity-title">Material 3 Expressive & AMOLED Ladder</h3>
-            <p class="trinity-body">
-              Crafted in Jetpack Compose 1.5 with 35 dynamic polygon shape tokens, predictive back gesture morphing, tactile waveform haptics, and true pitch-black surfaces (<code style="font-family: var(--font-mono);">#000000</code>) for OLED battery conservation.
-            </p>
-            <div class="trinity-meta">
-              Spring damping 0.75f · 35 shape tokens · Pure AMOLED black
-            </div>
+          <article class="card card--c" data-reveal style="--i:2">
+            <div class="shape-badge" data-shape="flower" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
+            <h3 class="h3">Material 3 Expressive &amp; AMOLED ladder</h3>
+            <p>Crafted in Jetpack Compose 1.5 with 35 dynamic polygon shape tokens, predictive back gesture morphing, tactile waveform haptics, and true pitch-black surfaces (<code>#000000</code>) for OLED battery conservation.</p>
+            <ul class="chips"><li>Spring damping 0.75f</li><li>35 shape tokens</li><li>Pure AMOLED black</li></ul>
           </article>
         </div>
       </div>
     </section>
 
-    <!-- Interactive 35 Shapes Playground -->
+    <!-- Shapes studio -->
     <section id="shapes" class="section">
       <div class="container">
-        <div class="section-head">
-          <span class="section-tag">Design System Verification</span>
-          <h2 class="section-title">The 35 Dynamic Material 3 Expressive Shapes</h2>
-          <p class="section-desc">
-            Directly from <code style="font-family: var(--font-mono);">PetalMaterialShapes.kt</code>: every shortcut pill, dialog container, and FAB adapts dynamically across 35 mathematical geometries.
-          </p>
-        </div>
-
-        <div class="shapes-playground">
-          <div class="shapes-header-row">
-            <div>
-              <h3 style="font-size: 1.25rem; font-weight: 700;">Interactive Polygon Morphing Studio</h3>
-              <p style="font-size: 0.875rem; color: var(--color-text-muted);">Select any shape token to preview the vector geometry.</p>
-            </div>
-            <div id="shapes-count-tag" class="shapes-stats">35 Expressive Shapes Verified</div>
+        <div class="panel">
+          <div class="section-head" data-reveal>
+            <h2 class="h2">The 35 dynamic Material 3 Expressive shapes</h2>
+            <p>Directly from <code class="inline">PetalMaterialShapes.kt</code>: every shortcut pill, dialog container, and FAB adapts across 35 mathematical geometries. Tap one and watch the shape spring into place.</p>
           </div>
 
-          <div class="shape-showcase-stage">
-            <div class="shape-hero-frame">
-              <svg class="shape-morph-svg" viewBox="0 0 100 100" aria-hidden="true">
-                <path id="shape-hero-path" d="M 50,0 A 50,50 0 1,1 49.99,0 Z" />
-              </svg>
-              <div id="shape-hero-label" class="shape-hero-label">Polygon: Circle (circle)</div>
+          <div class="shapes" data-reveal>
+            <div class="shape-stage">
+              <button class="shape-hero" id="shape-hero" type="button" aria-label="Show next shape"><svg viewBox="0 0 100 100" aria-hidden="true"><path id="shape-hero-path" d=""/></svg></button>
+              <div>
+                <div class="shape-name" id="shape-hero-label" aria-live="polite">Circle</div>
+                <div class="shape-meta"><span id="shape-hero-count">1 of 35</span></div>
+              </div>
+              <button class="btn btn--tonal" id="shape-shuffle" type="button" data-ripple><svg class="i i--sm"><use href="#i-shuffle"/></svg><span>Surprise me</span></button>
             </div>
 
-            <div>
-              <div id="shapes-catalog-grid" class="shapes-catalog-grid" role="group" aria-label="Catalog of 35 Material 3 Expressive Shapes">
-                <!-- Dynamically generated by app.js -->
-              </div>
-            </div>
+            <div class="shape-grid" id="shapes-catalog-grid" role="group" aria-label="Catalog of 35 Material 3 Expressive shapes"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- mpvEx-Inspired Native Media Player & Wavy Seekbar -->
+    <!-- Wavy player -->
     <section id="media-player" class="section">
       <div class="container">
-        <div class="section-head">
-          <span class="section-tag">Compose Media Innovation</span>
-          <h2 class="section-title">mpvEx-Inspired Player with Wavy Seekbar</h2>
-          <p class="section-desc">
-            As specified in <code style="font-family: var(--font-mono);">PRD.md §3.3</code>: Petal features an active sine-wave seekbar that ripples smoothly during playback and immediately flattens during pause or gesture scrubbing.
-          </p>
+        <div class="section-head" data-reveal>
+          <h2 class="h2">mpvEx-inspired player with a wavy seekbar</h2>
+          <p>As specified in <code class="inline">PRD.md §3.3</code>: an active sine-wave seekbar ripples while a video plays, then flattens the moment you pause or scrub.</p>
         </div>
 
-        <div class="player-simulator">
+        <div class="player playing" id="player" data-reveal>
           <div class="player-screen">
-            <div class="player-bg-art">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.7;">
-                <circle cx="12" cy="12" r="10"/>
-                <polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/>
-              </svg>
-              <span class="player-watermark">GeckoView Quantum Video Stream</span>
-            </div>
+            <div class="player-art" data-shape="cookie9" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
+            <small>GeckoView quantum video stream</small>
           </div>
 
-          <!-- Wavy Canvas -->
-          <div class="wavy-canvas-container" title="Click or drag to scrub audio/video progress">
-            <canvas id="wavy-seekbar-canvas" class="wavy-canvas" height="48"></canvas>
+          <div class="wavy" id="wavy" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="245" aria-valuenow="93">
+            <canvas id="wavy-seekbar-canvas"></canvas>
           </div>
 
-          <div class="player-controls-row">
-            <div class="player-time-display">
-              <span id="player-time-current">1:33</span> / <span>4:05</span>
+          <div class="player-row">
+            <div class="time"><b id="player-time-current">1:33</b> <span>/ 4:05</span></div>
+            <div class="transport">
+              <button class="skip" id="player-back" type="button" aria-label="Back 10 seconds" data-ripple><svg class="i"><use href="#i-undo"/></svg><b>10</b></button>
+              <button class="play" id="player-play-btn" type="button" aria-pressed="true" aria-label="Pause" data-ripple>
+                <svg class="i i-pause"><use href="#i-pause"/></svg>
+                <svg class="i i-play"><use href="#i-play"/></svg>
+              </button>
+              <button class="skip skip--fwd" id="player-fwd" type="button" aria-label="Forward 10 seconds" data-ripple><svg class="i"><use href="#i-undo"/></svg><b>10</b></button>
             </div>
+            <div class="player-state" id="player-status-tag" aria-live="polite">Wavy sine</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-            <div class="player-btn-group">
-              <button id="player-play-btn" class="btn-icon-only" aria-label="Toggle playback" type="button">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16"/>
-                  <rect x="14" y="4" width="4" height="16"/>
-                </svg>
+    <!-- Architecture -->
+    <section id="architecture" class="section">
+      <div class="container">
+        <div class="panel">
+          <div class="section-head" data-reveal>
+            <h2 class="h2">Modular multi-process architecture</h2>
+            <p>Explore how Petal stitches together Mozilla GeckoView C++ runtime bindings with modern Jetpack Compose Kotlin layers.</p>
+          </div>
+
+          <div class="arch" data-reveal>
+            <div class="arch-tabs" role="tablist" aria-label="Architecture components">
+              <button class="arch-tab" id="tab-geckoview" data-node="geckoview" role="tab" aria-selected="true" aria-controls="arch-panel" type="button" data-ripple>
+                <span class="ico"><svg class="i"><use href="#i-engine"/></svg></span>
+                <span class="t"><b>Mozilla GeckoView 157 core</b><small>Engine</small></span>
+              </button>
+              <button class="arch-tab" id="tab-compose" data-node="compose" role="tab" aria-selected="false" aria-controls="arch-panel" tabindex="-1" type="button" data-ripple>
+                <span class="ico"><svg class="i"><use href="#i-palette"/></svg></span>
+                <span class="t"><b>Material 3 Expressive UI</b><small>Jetpack</small></span>
+              </button>
+              <button class="arch-tab" id="tab-etp" data-node="etp" role="tab" aria-selected="false" aria-controls="arch-panel" tabindex="-1" type="button" data-ripple>
+                <span class="ico"><svg class="i"><use href="#i-shield"/></svg></span>
+                <span class="t"><b>Zero telemetry &amp; strict ETP</b><small>Security</small></span>
+              </button>
+              <button class="arch-tab" id="tab-media" data-node="media" role="tab" aria-selected="false" aria-controls="arch-panel" tabindex="-1" type="button" data-ripple>
+                <span class="ico"><svg class="i"><use href="#i-film"/></svg></span>
+                <span class="t"><b>mpvEx &amp; media grabber</b><small>Media</small></span>
               </button>
             </div>
 
-            <div id="player-status-tag" class="player-status-tag">Wavy Sine Dynamic</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Technical Architecture Inspector -->
-    <section id="architecture" class="section">
-      <div class="container">
-        <div class="section-head">
-          <span class="section-tag">Under The Hood</span>
-          <h2 class="section-title">Modular Multi-Process Architecture</h2>
-          <p class="section-desc">
-            Explore how Petal stitches together Mozilla GeckoView C++ runtime bindings with modern Jetpack Compose Kotlin layers.
-          </p>
-        </div>
-
-        <div class="arch-grid">
-          <div class="arch-visual" role="tablist" aria-label="Architecture Components">
-            <button class="arch-node active" data-node="geckoview" role="tab" aria-selected="true">
-              <div class="arch-node-name">
-                <img src="assets/icons/engine.svg" width="24" height="24" alt="" aria-hidden="true">
-                <span>Mozilla GeckoView 157 Core</span>
-              </div>
-              <span class="arch-node-badge">Engine</span>
-            </button>
-
-            <button class="arch-node" data-node="compose" role="tab" aria-selected="false">
-              <div class="arch-node-name">
-                <img src="assets/icons/glass.svg" width="24" height="24" alt="" aria-hidden="true">
-                <span>Material 3 Expressive UI</span>
-              </div>
-              <span class="arch-node-badge">Jetpack</span>
-            </button>
-
-            <button class="arch-node" data-node="etp" role="tab" aria-selected="false">
-              <div class="arch-node-name">
-                <img src="assets/icons/privacy.svg" width="24" height="24" alt="" aria-hidden="true">
-                <span>Zero Telemetry & Strict ETP</span>
-              </div>
-              <span class="arch-node-badge">Security</span>
-            </button>
-
-            <button class="arch-node" data-node="media" role="tab" aria-selected="false">
-              <div class="arch-node-name">
-                <img src="assets/icons/download.svg" width="24" height="24" alt="" aria-hidden="true">
-                <span>mpvEx & Media Grabber</span>
-              </div>
-              <span class="arch-node-badge">Media</span>
-            </button>
-          </div>
-
-          <div class="arch-detail-panel">
-            <span id="arch-detail-badge" class="arch-detail-badge">Independent Quantum Core</span>
-            <h3 id="arch-detail-title" class="arch-detail-title">GeckoView 157 Standalone Engine</h3>
-            <p id="arch-detail-desc" class="arch-detail-desc">
-              Petal embeds Mozilla GeckoView 157 with an isolated quantum multi-process pipeline. It does not use the OEM Android WebView, preventing vendor delays and third-party tracking hooks.
-            </p>
-            <pre class="arch-code-snippet"><code id="arch-detail-code">GeckoRuntime.create(context, GeckoRuntimeSettings.Builder()
+            <div class="arch-panel" id="arch-panel" role="tabpanel" aria-labelledby="tab-geckoview">
+              <span id="arch-detail-badge" class="arch-badge">Independent Quantum Core</span>
+              <h3 id="arch-detail-title" class="h3">GeckoView 157 Standalone Engine</h3>
+              <p id="arch-detail-desc">Petal embeds Mozilla GeckoView 157 with an isolated quantum multi-process pipeline. It does not use the OEM Android WebView, preventing vendor delays and third-party tracking hooks.</p>
+              <pre class="code" tabindex="0"><code id="arch-detail-code">GeckoRuntime.create(context, GeckoRuntimeSettings.Builder()
   .aboutConfigEnabled(true)
   .contentBlocking(ContentBlocking.STRICT)
   .build())</code></pre>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Technical Specifications Table -->
+    <!-- Specs -->
     <section id="specs" class="section">
       <div class="container">
-        <div class="section-head">
-          <span class="section-tag">Verified Specifications</span>
-          <h2 class="section-title">Complete Technical Stack</h2>
-          <p class="section-desc">
-            Distinguishing verified codebase implementation details from marketing assumptions.
-          </p>
+        <div class="section-head" data-reveal>
+          <h2 class="h2">Complete technical stack</h2>
+          <p>Verified details from the codebase, kept apart from marketing assumptions.</p>
         </div>
 
-        <div class="specs-table-wrapper">
-          <table class="specs-table">
-            <thead>
-              <tr>
-                <th>Subsystem</th>
-                <th>Repository Implementation</th>
-                <th>Architectural Benefit</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Browsing Engine</strong></td>
-                <td>Mozilla GeckoView <code>157.0.0</code></td>
-                <td>Desktop-grade standards compliance, independent of Chromium WebView.</td>
-              </tr>
-              <tr>
-                <td><strong>Language & Toolchain</strong></td>
-                <td>Kotlin <code>2.0+</code>, Java 17, Gradle 8.x</td>
-                <td>Type-safe coroutines, Flow-based state, and null safety throughout.</td>
-              </tr>
-              <tr>
-                <td><strong>UI Framework</strong></td>
-                <td>Jetpack Compose + Material 3 Expressive <code>1.5.0-alpha17</code></td>
-                <td>Spring animations, adaptive polygon morphing, fluid 120Hz gesture handling.</td>
-              </tr>
-              <tr>
-                <td><strong>Target Architectures</strong></td>
-                <td><code>arm64-v8a</code>, <code>armeabi-v7a</code>, <code>x86</code>, <code>x86_64</code></td>
-                <td>Universal APK and ABI-split builds for legacy and modern Android devices.</td>
-              </tr>
-              <tr>
-                <td><strong>Operating System Range</strong></td>
-                <td>Android 8.0 (API 26) through Android 15/16 (API 36)</td>
-                <td>Broad compatibility with backward-compatible Room database migrations.</td>
-              </tr>
-              <tr>
-                <td><strong>Haptic Feedback</strong></td>
-                <td>Custom <code>PetalHapticEngine</code></td>
-                <td>Synthesizes tactile waveform ticks on scroll, swipe, and seekbar thresholds.</td>
-              </tr>
-              <tr>
-                <td><strong>Authentication</strong></td>
-                <td>FIDO2 / Passkey Hardware Bridge</td>
-                <td>Passwordless biometric login directly compatible with WebAuthn specs.</td>
-              </tr>
-              <tr>
-                <td><strong>License</strong></td>
-                <td>GNU General Public License v3.0 (<code>GPL-3.0</code>)</td>
-                <td>100% open-source software ensuring complete auditability and user freedom.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <ul class="specs" data-reveal>
+          <li class="spec"><h3>Browsing engine</h3><div class="v">Mozilla GeckoView <code class="inline">157.0.0</code></div><div class="b">Desktop-grade standards compliance, independent of Chromium WebView.</div></li>
+          <li class="spec"><h3>Language &amp; toolchain</h3><div class="v">Kotlin <code class="inline">2.0+</code>, Java 17, Gradle 8.x</div><div class="b">Type-safe coroutines, Flow-based state, and null safety throughout.</div></li>
+          <li class="spec"><h3>UI framework</h3><div class="v">Jetpack Compose + Material 3 Expressive <code class="inline">1.5.0-alpha17</code></div><div class="b">Spring animations, adaptive polygon morphing, fluid 120Hz gesture handling.</div></li>
+          <li class="spec"><h3>Target architectures</h3><div class="v"><code class="inline">arm64-v8a</code> <code class="inline">armeabi-v7a</code> <code class="inline">x86</code> <code class="inline">x86_64</code></div><div class="b">Universal APK and ABI-split builds for legacy and modern Android devices.</div></li>
+          <li class="spec"><h3>Operating system range</h3><div class="v">Android 8.0 (API 26) through Android 15/16 (API 36)</div><div class="b">Broad compatibility with backward-compatible Room database migrations.</div></li>
+          <li class="spec"><h3>Haptic feedback</h3><div class="v">Custom <code class="inline">PetalHapticEngine</code></div><div class="b">Synthesizes tactile waveform ticks on scroll, swipe, and seekbar thresholds.</div></li>
+          <li class="spec"><h3>Authentication</h3><div class="v">FIDO2 / Passkey hardware bridge</div><div class="b">Passwordless biometric login directly compatible with WebAuthn specs.</div></li>
+          <li class="spec"><h3>License</h3><div class="v">GNU General Public License v3.0 (<code class="inline">GPL-3.0</code>)</div><div class="b">100% open-source software ensuring complete auditability and user freedom.</div></li>
+        </ul>
 
-        <!-- Technical ADB Sideload Box -->
-        <div class="cli-box">
+        <div class="cli" data-reveal>
           <div>
-            <div style="font-weight: 600; font-size: 0.9375rem; margin-bottom: 0.25rem;">Power User Sideloading (ADB)</div>
-            <code class="cli-code">adb install -r Petal-release.apk</code>
+            <strong>Power user sideloading (ADB)</strong>
+            <code id="cli-code">adb install -r Petal-release.apk</code>
           </div>
-          <button id="cli-copy-btn" class="cli-copy-btn" type="button">Copy Command</button>
+          <button id="cli-copy-btn" class="btn btn--tonal copy-btn" type="button" data-ripple>
+            <svg class="i i--sm i-copy"><use href="#i-copy"/></svg>
+            <svg class="i i--sm i-check"><use href="#i-check"/></svg>
+            <span>Copy command</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final call to action -->
+    <section id="download" class="section" style="padding-top:0">
+      <div class="container">
+        <div class="cta" data-reveal>
+          <div class="cta-shape" data-shape="cookie12" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
+          <h2 class="h2">Take your browser back.</h2>
+          <p>Free, open source, and built without a single tracker. Install the signed APK in under a minute.</p>
+          <div class="cta-row">
+            <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--inverse btn--lg" data-ripple>
+              <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
+            </a>
+            <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="btn btn--ghost-inverse btn--lg" data-ripple>
+              <svg class="i"><use href="#i-github"/></svg><span>Source code</span>
+            </a>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Site Footer -->
-  <footer class="site-footer">
+  <footer class="footer">
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.125rem;">
-            <span>Petal Browser</span>
-          </div>
-          <p style="font-size: 0.8125rem; line-height: 1.5; color: var(--color-text-muted);">
-            A browser that respects your attention, privacy, and device. Powered by Mozilla GeckoView 157 and Material 3 Expressive.
-          </p>
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+          <span class="brand"><span>Petal Browser</span></span>
+          <p>A browser that respects your attention, privacy, and device. Powered by Mozilla GeckoView 157 and Material 3 Expressive.</p>
+          <div class="badges">
             <img src="assets/badges/android.svg" height="28" alt="Android 8.0+">
             <img src="assets/badges/license.svg" height="28" alt="GPLv3 License">
           </div>
         </div>
 
-        <div>
-          <h4 class="footer-col-title">Product</h4>
-          <ul class="footer-col-links">
-            <li><a href="#hero">Overview</a></li>
-            <li><a href="#differentiators">Differentiators</a></li>
-            <li><a href="#shapes">35 M3 Shapes</a></li>
-            <li><a href="#media-player">Wavy Seekbar</a></li>
-            <li><a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer">Releases</a></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 class="footer-col-title">Architecture</h4>
-          <ul class="footer-col-links">
-            <li><a href="https://github.com/shreyagarwal72/petal/blob/main/PRD.md" target="_blank" rel="noopener noreferrer">PRD.md</a></li>
-            <li><a href="https://github.com/shreyagarwal72/petal/blob/main/design.md" target="_blank" rel="noopener noreferrer">Design System</a></li>
-            <li><a href="https://github.com/shreyagarwal72/petal/blob/main/architecture.md" target="_blank" rel="noopener noreferrer">GeckoView Pipeline</a></li>
-            <li><a href="https://github.com/shreyagarwal72/petal/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">Changelog</a></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 class="footer-col-title">Open Source</h4>
-          <ul class="footer-col-links">
-            <li><a href="https://github.com/shreyagarwal72/petal/blob/main/LICENSE.md" target="_blank" rel="noopener noreferrer">GNU GPLv3 License</a></li>
-            <li><a href="https://github.com/shreyagarwal72/petal/blob/main/PRIVACY_POLICY.md" target="_blank" rel="noopener noreferrer">Zero Telemetry Policy</a></li>
-            <li><a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer">Source Repository</a></li>
-            <li><a href="https://github.com/shreyagarwal72/petal/issues" target="_blank" rel="noopener noreferrer">Issue Tracker</a></li>
-          </ul>
+        <div class="footer-links-wrap">
+          <div>
+            <h4>Product</h4>
+            <ul class="footer-links">
+              <li><a href="#hero">Overview</a></li>
+              <li><a href="#differentiators">Why Petal</a></li>
+              <li><a href="#shapes">35 M3 shapes</a></li>
+              <li><a href="#media-player">Wavy seekbar</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer">Releases</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Architecture</h4>
+            <ul class="footer-links">
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/PRD.md" target="_blank" rel="noopener noreferrer">PRD.md</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/design.md" target="_blank" rel="noopener noreferrer">Design system</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/architecture.md" target="_blank" rel="noopener noreferrer">GeckoView pipeline</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">Changelog</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Open source</h4>
+            <ul class="footer-links">
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/LICENSE.md" target="_blank" rel="noopener noreferrer">GNU GPLv3 license</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/PRIVACY_POLICY.md" target="_blank" rel="noopener noreferrer">Zero telemetry policy</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer">Source repository</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/issues" target="_blank" rel="noopener noreferrer">Issue tracker</a></li>
+            </ul>
+          </div>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <div>
-          &copy; 2024–2026 Vanshu Agarwal and contributors. Distributed under the GNU General Public License v3.0.
-        </div>
-        <div style="font-family: var(--font-mono); font-size: 0.75rem;">
-          GeckoView 157.0 · Jetpack Compose M3
-        </div>
+        <span>&copy; 2024–2026 Vanshu Agarwal and contributors. Distributed under the GNU General Public License v3.0.</span>
+        <span>GeckoView 157.0 · Jetpack Compose M3</span>
       </div>
     </div>
   </footer>
 
-  <script src="app.js?v=157.0.1"></script>
+  <div class="snackbar" id="snackbar" role="status" aria-live="polite"></div>
+
+  <script src="app.js?v=157.0.2"></script>
 </body>
 </html>

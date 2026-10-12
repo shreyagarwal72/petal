@@ -1,394 +1,586 @@
 /**
- * Petal Showcase Website Engine
- * Coordinates Material 3 Expressive 35 Shape Morphing,
- * Wavy Animated Seekbar, Collapsible Omnibox Simulator,
- * and Dynamic Palettes / AMOLED Black switching.
+ * Petal website — Material 3 Expressive behaviour
+ * 1. Shape engine: 35 shapes sampled as radius-per-angle, so any two shapes morph
+ *    into each other with a spring (overshoot included).
+ * 2. Theme engine: palette, dark, AMOLED, with a circular reveal transition.
+ * 3. Phone demo, wavy player, architecture tabs, menu, snackbar, ripple, reveal.
  */
+(function () {
+  'use strict';
 
-// 35 Material 3 Expressive Shapes Catalog from PetalMaterialShapes.kt
-const SHAPES_CATALOG = [
-  { id: 'circle', name: 'Circle', path: 'M 50,0 A 50,50 0 1,1 49.99,0 Z' },
-  { id: 'square', name: 'Square', path: 'M 10,10 L 90,10 A 8,8 0 0,1 98,18 L 98,82 A 8,8 0 0,1 90,90 L 10,90 A 8,8 0 0,1 2,82 L 2,18 A 8,8 0 0,1 10,10 Z' },
-  { id: 'slanted', name: 'Slanted', path: 'M 25,10 L 95,10 L 75,90 L 5,90 Z' },
-  { id: 'arch', name: 'Arch', path: 'M 10,90 L 10,50 A 40,40 0 0,1 90,50 L 90,90 Z' },
-  { id: 'semicircle', name: 'SemiCircle', path: 'M 5,50 A 45,45 0 0,1 95,50 L 95,50 L 5,50 Z' },
-  { id: 'oval', name: 'Oval', path: 'M 50,10 A 35,45 0 1,1 49.99,10 Z' },
-  { id: 'pill', name: 'Pill', path: 'M 30,15 L 70,15 A 35,35 0 0,1 70,85 L 30,85 A 35,35 0 0,1 30,15 Z' },
-  { id: 'triangle', name: 'Triangle', path: 'M 50,10 L 90,85 L 10,85 Z' },
-  { id: 'arrow', name: 'Arrow', path: 'M 50,10 L 90,55 L 65,55 L 65,90 L 35,90 L 35,55 L 10,55 Z' },
-  { id: 'fan', name: 'Fan', path: 'M 50,85 L 15,25 A 45,45 0 0,1 85,25 Z' },
-  { id: 'diamond', name: 'Diamond', path: 'M 50,5 L 95,50 L 50,95 L 5,50 Z' },
-  { id: 'clamshell', name: 'ClamShell', path: 'M 50,15 Q 90,15 90,50 Q 90,85 50,85 Q 10,85 10,50 Q 10,15 50,15 Z' },
-  { id: 'pentagon', name: 'Pentagon', path: 'M 50,8 L 92,38 L 76,88 L 24,88 L 8,38 Z' },
-  { id: 'gem', name: 'Gem', path: 'M 30,10 L 70,10 L 92,45 L 50,92 L 8,45 Z' },
-  { id: 'sunny', name: 'Sunny', path: 'M 50,5 L 62,35 L 95,50 L 62,65 L 50,95 L 38,65 L 5,50 L 38,35 Z' },
-  { id: 'verysunny', name: 'VerySunny', path: 'M 50,5 L 58,25 L 80,15 L 72,36 L 95,50 L 72,64 L 80,85 L 58,75 L 50,95 L 42,75 L 20,85 L 28,64 L 5,50 L 28,36 L 20,15 L 42,25 Z' },
-  { id: 'cookie4', name: 'Cookie4Sided', path: 'M 35,10 Q 50,22 65,10 Q 78,25 90,35 Q 78,50 90,65 Q 75,78 65,90 Q 50,78 35,90 Q 22,78 10,65 Q 22,50 10,35 Q 22,22 35,10 Z' },
-  { id: 'cookie6', name: 'Cookie6Sided', path: 'M 50,10 Q 65,18 78,12 Q 85,28 92,35 Q 85,50 92,65 Q 80,75 75,88 Q 60,82 50,90 Q 40,82 25,88 Q 20,75 8,65 Q 15,50 8,35 Q 18,25 22,12 Q 35,18 50,10 Z' },
-  { id: 'cookie7', name: 'Cookie7Sided', path: 'M 50,8 Q 62,20 74,14 Q 82,30 90,38 Q 85,55 90,68 Q 78,78 72,90 Q 55,85 45,92 Q 32,85 22,90 Q 18,74 10,65 Q 15,50 10,35 Q 20,25 24,14 Q 38,20 50,8 Z' },
-  { id: 'cookie9', name: 'Cookie9Sided', path: 'M 50,6 Q 60,18 72,12 Q 80,24 88,32 Q 84,46 92,56 Q 84,68 88,80 Q 74,84 66,92 Q 52,86 42,92 Q 30,86 20,90 Q 18,76 10,68 Q 16,56 10,44 Q 18,34 16,22 Q 30,22 38,12 Q 44,18 50,6 Z' },
-  { id: 'cookie12', name: 'Cookie12Sided', path: 'M 50,5 L 60,15 L 72,8 L 78,22 L 92,20 L 88,35 L 98,45 L 88,55 L 94,68 L 80,74 L 80,88 L 65,85 L 58,96 L 46,88 L 35,95 L 30,82 L 16,84 L 20,70 L 6,62 L 15,50 L 6,38 L 18,30 L 15,16 L 30,20 L 38,8 Z' },
-  { id: 'ghostish', name: 'Ghostish', path: 'M 15,50 A 35,35 0 0,1 85,50 L 85,85 Q 73,75 62,85 Q 50,75 38,85 Q 26,75 15,85 Z' },
-  { id: 'clover4', name: 'Clover4Leaf', path: 'M 50,50 Q 50,15 35,15 Q 20,15 20,35 Q 20,50 50,50 Q 80,50 80,35 Q 80,15 65,15 Q 50,15 50,50 Q 50,85 65,85 Q 80,85 80,65 Q 80,50 50,50 Q 20,50 20,65 Q 20,85 35,85 Q 50,85 50,50 Z' },
-  { id: 'clover8', name: 'Clover8Leaf', path: 'M 50,50 Q 50,10 40,15 Q 30,20 40,35 Q 20,20 15,30 Q 10,40 25,45 Q 10,50 15,60 Q 20,70 35,65 Q 20,80 30,85 Q 40,90 45,75 Q 50,90 60,85 Q 70,80 65,65 Q 80,70 85,60 Q 90,50 75,45 Q 90,40 85,30 Q 80,20 65,35 Q 70,20 60,15 Q 50,10 50,50 Z' },
-  { id: 'burst', name: 'Burst', path: 'M 50,0 L 62,35 L 98,20 L 75,50 L 98,80 L 62,65 L 50,100 L 38,65 L 2,80 L 25,50 L 2,20 L 38,35 Z' },
-  { id: 'softburst', name: 'SoftBurst', path: 'M 50,5 Q 65,25 80,15 Q 75,35 95,50 Q 75,65 80,85 Q 65,75 50,95 Q 35,75 20,85 Q 25,65 5,50 Q 25,35 20,15 Q 35,25 50,5 Z' },
-  { id: 'boom', name: 'Boom', path: 'M 50,0 L 65,30 L 100,15 L 80,48 L 98,75 L 68,70 L 65,100 L 45,78 L 20,95 L 30,65 L 0,55 L 28,40 L 10,15 L 40,28 Z' },
-  { id: 'softboom', name: 'SoftBoom', path: 'M 50,8 Q 70,22 88,18 Q 80,42 94,56 Q 78,70 82,90 Q 60,82 48,94 Q 38,80 20,86 Q 26,68 12,52 Q 28,40 22,22 Q 40,30 50,8 Z' },
-  { id: 'flower', name: 'Flower', path: 'M 50,25 C 45,8 55,8 50,25 C 65,12 72,20 58,32 C 78,28 82,38 65,45 C 82,52 78,62 58,58 C 72,70 65,78 50,65 C 55,82 45,82 50,65 C 35,78 28,70 42,58 C 22,62 18,52 35,45 C 18,38 22,28 42,32 C 28,20 35,12 50,25 Z' },
-  { id: 'puffy', name: 'Puffy', path: 'M 35,18 A 16,16 0 0,1 65,18 A 16,16 0 0,1 82,38 A 16,16 0 0,1 78,68 A 16,16 0 0,1 55,82 A 16,16 0 0,1 25,78 A 16,16 0 0,1 18,48 A 16,16 0 0,1 35,18 Z' },
-  { id: 'puffydiamond', name: 'PuffyDiamond', path: 'M 50,10 Q 75,25 90,50 Q 75,75 50,90 Q 25,75 10,50 Q 25,25 50,10 Z' },
-  { id: 'pixelcircle', name: 'PixelCircle', path: 'M 30,10 H 70 V 20 H 80 V 30 H 90 V 70 H 80 V 80 H 70 V 90 H 30 V 80 H 20 V 70 H 10 V 30 H 20 V 20 H 30 Z' },
-  { id: 'pixeltriangle', name: 'PixelTriangle', path: 'M 40,10 H 60 V 25 H 70 V 40 H 80 V 55 H 90 V 85 H 10 V 55 H 20 V 40 H 30 V 25 H 40 Z' },
-  { id: 'bun', name: 'Bun', path: 'M 20,40 C 20,15 80,15 80,40 C 85,60 85,80 75,85 C 60,88 40,88 25,85 C 15,80 15,60 20,40 Z' },
-  { id: 'heart', name: 'Heart', path: 'M 50,30 C 50,15 25,12 20,32 C 15,52 50,85 50,85 C 50,85 85,52 80,32 C 75,12 50,15 50,30 Z' }
-];
+  var root = document.documentElement;
+  var reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $ = function (s, c) { return (c || document).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
 
-document.addEventListener('DOMContentLoaded', () => {
-  initThemeEngine();
-  initShapesPlayground();
-  initWavyPlayer();
-  initDeviceSimulator();
-  initArchInspector();
-  initCliCopy();
-});
+  /* ======================================================================
+     1. SHAPE ENGINE
+     ====================================================================== */
+  var N = 144;                        // samples around the shape
+  var TAU = Math.PI * 2;
+  var START = -Math.PI / 2;           // first sample points straight up
 
-/* 1. Theme, Palette & AMOLED Switching */
-function initThemeEngine() {
-  const root = document.documentElement;
-  const themeToggle = document.getElementById('theme-toggle-btn');
-  const amoledToggle = document.getElementById('amoled-toggle-btn');
-  const swatches = document.querySelectorAll('.swatch-btn');
-
-  // Palette Switching
-  swatches.forEach(btn => {
-    btn.addEventListener('click', () => {
-      swatches.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const palette = btn.getAttribute('data-palette');
-      root.setAttribute('data-palette', palette);
-    });
-  });
-
-  // Dark/Light Theme Toggle
-  if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-      const current = root.getAttribute('data-theme-mode') || 'light';
-      const next = current === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme-mode', next);
-      themeToggle.setAttribute('aria-label', `Switch to ${current} mode`);
-      themeToggle.innerHTML = next === 'dark' 
-        ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`
-        : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-    });
+  function ngon(n, rotDeg) {
+    var out = [], rot = (rotDeg === undefined ? -90 : rotDeg) * Math.PI / 180;
+    for (var i = 0; i < n; i++) { var a = rot + TAU * i / n; out.push([Math.cos(a), Math.sin(a)]); }
+    return out;
+  }
+  function star(n, inner, rotDeg) {
+    var out = [], rot = (rotDeg === undefined ? -90 : rotDeg) * Math.PI / 180;
+    for (var i = 0; i < n * 2; i++) { var a = rot + Math.PI * i / n, r = i % 2 ? inner : 1; out.push([r * Math.cos(a), r * Math.sin(a)]); }
+    return out;
+  }
+  function polar(fn, steps) {
+    var out = [], n = steps || 360;
+    for (var i = 0; i < n; i++) { var a = TAU * i / n, r = fn(a); out.push([r * Math.cos(a), r * Math.sin(a)]); }
+    return out;
+  }
+  function arc(cx, cy, r, fromDeg, toDeg, steps) {
+    var out = [], n = steps || 48;
+    for (var i = 0; i <= n; i++) { var a = (fromDeg + (toDeg - fromDeg) * i / n) * Math.PI / 180; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+    return out;
+  }
+  function superellipse(a, b, p) {
+    return polar(function (t) {
+      var c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
+      return 1 / Math.pow(Math.pow(c / a, p) + Math.pow(s / b, p), 1 / p);
+    }, 240);
   }
 
-  // Pure AMOLED Black (#000000) Toggle
-  if (amoledToggle) {
-    amoledToggle.addEventListener('click', () => {
-      const isAmoled = root.getAttribute('data-amoled') === 'true';
-      if (!isAmoled) {
-        root.setAttribute('data-amoled', 'true');
-        root.setAttribute('data-theme-mode', 'dark'); // AMOLED necessitates dark
-        amoledToggle.classList.add('active');
-      } else {
-        root.setAttribute('data-amoled', 'false');
-        amoledToggle.classList.remove('active');
-      }
-    });
-  }
-}
+  // [id, name, polygon builder, corner softening (in samples)]
+  var DEFS = [
+    ['circle', 'Circle', function () { return polar(function () { return 1; }, 120); }, 0],
+    ['square', 'Square', function () { return superellipse(1, 1, 5); }, 0],
+    ['slanted', 'Slanted', function () { return [[-.55, -.8], [1, -.8], [.55, .8], [-1, .8]]; }, 5],
+    ['arch', 'Arch', function () { return arc(0, -.15, .85, 180, 360).concat([[.85, 1], [-.85, 1]]); }, 3],
+    ['semicircle', 'SemiCircle', function () { return arc(0, 0, 1, 180, 360, 60); }, 3],
+    ['oval', 'Oval', function () { return polar(function (t) { var a = .72, b = 1; return a * b / Math.sqrt(Math.pow(b * Math.cos(t), 2) + Math.pow(a * Math.sin(t), 2)); }, 180); }, 0],
+    ['pill', 'Pill', function () { return arc(0, -.42, .55, 180, 360).concat(arc(0, .42, .55, 0, 180)); }, 0],
+    ['triangle', 'Triangle', function () { return ngon(3); }, 9],
+    ['arrow', 'Arrow', function () { return [[0, -1], [1, 0], [.45, 0], [.45, 1], [-.45, 1], [-.45, 0], [-1, 0]]; }, 5],
+    ['fan', 'Fan', function () { return [[0, .95]].concat(arc(0, .95, 1.75, -145, -35)); }, 4],
+    ['diamond', 'Diamond', function () { return ngon(4); }, 5],
+    ['clamshell', 'ClamShell', function () { return polar(function (t) { return 1 + .07 * Math.cos(8 * t); }, 360).filter(function (p) { return p[1] <= .15; }).concat([[1, .35], [-1, .35]]).sort(function (a, b) { return Math.atan2(a[1] - .1, a[0]) - Math.atan2(b[1] - .1, b[0]); }); }, 2],
+    ['pentagon', 'Pentagon', function () { return ngon(5); }, 6],
+    ['gem', 'Gem', function () { return [[-.5, -.7], [.5, -.7], [1, -.1], [0, 1], [-1, -.1]]; }, 3],
+    ['sunny', 'Sunny', function () { return star(8, .8); }, 4],
+    ['verysunny', 'VerySunny', function () { return star(12, .84); }, 3],
+    ['cookie4', 'Cookie4Sided', function () { return polar(function (t) { return .86 + .14 * Math.cos(4 * t + Math.PI); }); }, 0],
+    ['cookie6', 'Cookie6Sided', function () { return polar(function (t) { return .88 + .12 * Math.cos(6 * t); }); }, 0],
+    ['cookie7', 'Cookie7Sided', function () { return polar(function (t) { return .89 + .11 * Math.cos(7 * t); }); }, 0],
+    ['cookie9', 'Cookie9Sided', function () { return polar(function (t) { return .91 + .09 * Math.cos(9 * t); }); }, 0],
+    ['cookie12', 'Cookie12Sided', function () { return polar(function (t) { return .93 + .07 * Math.cos(12 * t); }); }, 0],
+    ['ghostish', 'Ghostish', function () {
+      var top = arc(0, 0, 1, 180, 360, 48), bot = [], i, x;
+      for (i = 0; i <= 36; i++) { x = 1 - 2 * i / 36; bot.push([x, .95 + .12 * Math.sin(i / 36 * Math.PI * 6)]); }
+      return top.concat(bot);
+    }, 2],
+    ['clover4', 'Clover4Leaf', function () { return polar(function (t) { return .5 + .5 * Math.pow(Math.abs(Math.cos(2 * t)), .75); }); }, 1],
+    ['clover8', 'Clover8Leaf', function () { return polar(function (t) { return .62 + .38 * Math.pow(Math.abs(Math.cos(4 * t)), .8); }); }, 1],
+    ['burst', 'Burst', function () { return star(12, .62); }, 1],
+    ['softburst', 'SoftBurst', function () { return star(10, .72); }, 8],
+    ['boom', 'Boom', function () { return star(9, .5); }, 0],
+    ['softboom', 'SoftBoom', function () { return star(9, .64); }, 8],
+    ['flower', 'Flower', function () { return polar(function (t) { return .6 + .4 * Math.abs(Math.cos(2.5 * t)); }); }, 2],
+    ['puffy', 'Puffy', function () { return polar(function (t) { return .72 + .28 * Math.sqrt(Math.abs(Math.cos(3.5 * t))); }); }, 1],
+    ['puffydiamond', 'PuffyDiamond', function () { return polar(function (t) { return .7 + .3 * Math.sqrt(Math.abs(Math.sin(2 * t))); }); }, 1],
+    ['pixelcircle', 'PixelCircle', function () { return [[-.35, -1], [.35, -1], [.35, -.7], [.7, -.7], [.7, -.35], [1, -.35], [1, .35], [.7, .35], [.7, .7], [.35, .7], [.35, 1], [-.35, 1], [-.35, .7], [-.7, .7], [-.7, .35], [-1, .35], [-1, -.35], [-.7, -.35], [-.7, -.7], [-.35, -.7]]; }, 0],
+    ['pixeltriangle', 'PixelTriangle', function () { return [[-.18, -1], [.18, -1], [.18, -.7], [.42, -.7], [.42, -.4], [.66, -.4], [.66, -.1], [.9, -.1], [.9, .2], [1.1, .2], [1.1, .9], [-1.1, .9], [-1.1, .2], [-.9, .2], [-.9, -.1], [-.66, -.1], [-.66, -.4], [-.42, -.4], [-.42, -.7], [-.18, -.7]]; }, 0],
+    ['bun', 'Bun', function () { return superellipse(1, .85, 3).map(function (p) { return [p[0], p[1] > 0 ? p[1] * .8 : p[1]]; }); }, 0],
+    ['heart', 'Heart', function () {
+      var out = [], i, t;
+      for (i = 0; i < 240; i++) { t = TAU * i / 240; out.push([16 * Math.pow(Math.sin(t), 3), -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))]); }
+      return out;
+    }, 0]
+  ];
 
-/* 2. 35 Material 3 Expressive Shapes Playground */
-function initShapesPlayground() {
-  const catalogContainer = document.getElementById('shapes-catalog-grid');
-  const heroPath = document.getElementById('shape-hero-path');
-  const heroLabel = document.getElementById('shape-hero-label');
-  const countLabel = document.getElementById('shapes-count-tag');
-
-  if (!catalogContainer || !heroPath) return;
-
-  if (countLabel) {
-    countLabel.textContent = `${SHAPES_CATALOG.length} Expressive Shapes Verified`;
-  }
-
-  SHAPES_CATALOG.forEach((shape, index) => {
-    const chip = document.createElement('button');
-    chip.className = `shape-chip ${index === 0 ? 'active' : ''}`;
-    chip.setAttribute('type', 'button');
-    chip.setAttribute('title', shape.name);
-    chip.innerHTML = `
-      <svg class="shape-chip-icon" viewBox="0 0 100 100">
-        <path d="${shape.path}" />
-      </svg>
-      <span class="shape-chip-name">${shape.name}</span>
-    `;
-
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.shape-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      
-      // Animate path morph
-      heroPath.setAttribute('d', shape.path);
-      if (heroLabel) {
-        heroLabel.textContent = `Polygon: ${shape.name} (${shape.id})`;
-      }
-    });
-
-    catalogContainer.appendChild(chip);
-  });
-}
-
-/* 3. mpvEx-Inspired Native Media Player & Wavy Seekbar Canvas */
-function initWavyPlayer() {
-  const canvas = document.getElementById('wavy-seekbar-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  
-  const playBtn = document.getElementById('player-play-btn');
-  const timeCurrent = document.getElementById('player-time-current');
-  const statusTag = document.getElementById('player-status-tag');
-
-  let isPlaying = true;
-  let progress = 0.38; // 38%
-  let isScrubbing = false;
-  let animationFrameId = null;
-  let phase = 0;
-  const totalDuration = 245; // 4:05 in seconds
-
-  function resizeCanvas() {
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * window.devicePixelRatio;
-    canvas.height = rect.height * window.devicePixelRatio;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  }
-
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-
-  function formatTime(secs) {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  }
-
-  function render() {
-    const w = canvas.getBoundingClientRect().width;
-    const h = canvas.getBoundingClientRect().height;
-    ctx.clearRect(0, 0, w, h);
-
-    const centerY = h / 2;
-    const progressX = w * progress;
-    const amplitude = (isPlaying && !isScrubbing) ? 6.5 : 0; // Wave flattens when scrubbing or paused!
-    const frequency = 0.055;
-
-    // 1. Draw Inactive / Track Background (Right of thumb)
-    ctx.beginPath();
-    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-border') || '#444';
-    ctx.lineWidth = 3.5;
-    ctx.lineCap = 'round';
-    ctx.moveTo(progressX, centerY);
-    ctx.lineTo(w - 12, centerY);
-    ctx.stroke();
-
-    // 2. Draw Active Sine Wave (Left of thumb)
-    ctx.beginPath();
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#D81B60';
-    ctx.strokeStyle = primaryColor;
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    ctx.moveTo(12, centerY);
-    for (let x = 12; x <= progressX; x += 2) {
-      const y = centerY + Math.sin((x * frequency) + phase) * amplitude;
-      ctx.lineTo(x, y);
+  function centroid(poly) {
+    var a = 0, cx = 0, cy = 0, n = poly.length, i, p, q, f;
+    for (i = 0; i < n; i++) {
+      p = poly[i]; q = poly[(i + 1) % n]; f = p[0] * q[1] - q[0] * p[1];
+      a += f; cx += (p[0] + q[0]) * f; cy += (p[1] + q[1]) * f;
     }
-    ctx.stroke();
-
-    // 3. Draw Thumb Pill
-    const thumbY = centerY + Math.sin((progressX * frequency) + phase) * amplitude;
-    ctx.beginPath();
-    ctx.fillStyle = primaryColor;
-    ctx.arc(progressX, thumbY, 7.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Subtle thumb border
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Step state
-    if (isPlaying && !isScrubbing) {
-      phase += 0.08;
-      progress += 0.00045;
-      if (progress > 1) progress = 0;
-      if (timeCurrent) {
-        timeCurrent.textContent = formatTime(progress * totalDuration);
-      }
-    }
-
-    animationFrameId = requestAnimationFrame(render);
+    if (Math.abs(a) < 1e-9) return [0, 0];
+    return [cx / (3 * a), cy / (3 * a)];
   }
 
-  render();
-
-  // Play / Pause Toggle
-  if (playBtn) {
-    playBtn.addEventListener('click', () => {
-      isPlaying = !isPlaying;
-      playBtn.innerHTML = isPlaying
-        ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`
-        : `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
-      if (statusTag) {
-        statusTag.textContent = isPlaying ? 'Wavy Sine Dynamic' : 'Paused (Wave Flattened)';
-      }
-    });
+  // Farthest intersection of a ray from (cx, cy) with the polygon boundary
+  function castRadius(poly, cx, cy, ang) {
+    var dx = Math.cos(ang), dy = Math.sin(ang), best = 0, n = poly.length, i, a, b, ex, ey, den, t, u;
+    for (i = 0; i < n; i++) {
+      a = poly[i]; b = poly[(i + 1) % n];
+      ex = b[0] - a[0]; ey = b[1] - a[1];
+      den = dx * ey - dy * ex;
+      if (Math.abs(den) < 1e-12) continue;
+      t = ((a[0] - cx) * ey - (a[1] - cy) * ex) / den;
+      u = ((a[0] - cx) * dy - (a[1] - cy) * dx) / den;
+      if (t > 1e-9 && u >= -1e-9 && u <= 1 + 1e-9 && t > best) best = t;
+    }
+    return best;
   }
 
-  // Interactive Scrubbing (Pointer Events)
-  function handleScrub(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const x = Math.max(12, Math.min(rect.width - 12, clientX - rect.left));
-    progress = (x - 12) / (rect.width - 24);
-    if (timeCurrent) {
-      timeCurrent.textContent = formatTime(progress * totalDuration);
+  function blurCircular(arr, k) {
+    if (!k) return arr;
+    var n = arr.length, out = new Float32Array(n), i, j, s, w, tw;
+    for (i = 0; i < n; i++) {
+      s = 0; tw = 0;
+      for (j = -k; j <= k; j++) { w = k + 1 - Math.abs(j); s += arr[(i + j + n) % n] * w; tw += w; }
+      out[i] = s / tw;
     }
+    return out;
   }
 
-  canvas.addEventListener('mousedown', (e) => {
-    isScrubbing = true;
-    if (statusTag) statusTag.textContent = 'Scrubbing (Flat Seek)';
-    handleScrub(e);
-  });
-  window.addEventListener('mousemove', (e) => {
-    if (isScrubbing) handleScrub(e);
-  });
-  window.addEventListener('mouseup', () => {
-    if (isScrubbing) {
-      isScrubbing = false;
-      if (statusTag) statusTag.textContent = isPlaying ? 'Wavy Sine Dynamic' : 'Paused';
+  function buildShape(def) {
+    var poly = def[2](), soft = def[3], c = centroid(poly), r = new Float32Array(N), i, ang;
+    for (i = 0; i < N; i++) r[i] = castRadius(poly, c[0], c[1], START + TAU * i / N);
+    r = blurCircular(r, soft);
+    // bounding box around the centroid so every shape sits centred and equally big
+    var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, x, y;
+    for (i = 0; i < N; i++) {
+      ang = START + TAU * i / N; x = r[i] * Math.cos(ang); y = r[i] * Math.sin(ang);
+      if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
     }
-  });
-
-  // Touch support for mobile devices
-  canvas.addEventListener('touchstart', (e) => {
-    isScrubbing = true;
-    handleScrub(e);
-  }, { passive: true });
-  window.addEventListener('touchmove', (e) => {
-    if (isScrubbing) handleScrub(e);
-  }, { passive: true });
-  window.addEventListener('touchend', () => {
-    isScrubbing = false;
-  });
-}
-
-/* 4. Collapsible Omnibox & Tab Swipe Phone Simulator */
-function initDeviceSimulator() {
-  const webview = document.getElementById('sim-webview-scroll');
-  const omnibox = document.getElementById('sim-omnibox');
-  const fab = document.getElementById('sim-fab-bubble');
-  const urlPill = document.getElementById('sim-url-pill');
-
-  if (!webview || !omnibox || !fab) return;
-
-  let lastScrollTop = 0;
-
-  // Scroll offset collapse trigger
-  webview.addEventListener('scroll', () => {
-    const currentScroll = webview.scrollTop;
-    if (currentScroll > lastScrollTop && currentScroll > 40) {
-      // Scrolling down -> Collapse omnibox, show FAB
-      omnibox.classList.add('collapsed');
-      fab.classList.add('active');
-    } else if (currentScroll < lastScrollTop) {
-      // Scrolling up -> Restore full omnibox
-      omnibox.classList.remove('collapsed');
-      fab.classList.remove('active');
-    }
-    lastScrollTop = Math.max(0, currentScroll);
-  });
-
-  // Tap FAB to restore omnibox
-  fab.addEventListener('click', () => {
-    omnibox.classList.remove('collapsed');
-    fab.classList.remove('active');
-    webview.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-
-  // Click URL Pill to show quick clean sheet
-  if (urlPill) {
-    urlPill.addEventListener('click', () => {
-      alert("Petal Omnibox Action:\n• Clean URL Copied (Trackers Stripped)\n• Enhanced Tracking Protection: Strict Mode\n• WebExtension: Dark Mode Enabled");
-    });
+    var scale = 2 / Math.max(maxX - minX, maxY - minY);
+    var rr = new Float32Array(N);
+    for (i = 0; i < N; i++) rr[i] = r[i] * scale;
+    return { id: def[0], name: def[1], r: rr, ox: (minX + maxX) / 2 * scale, oy: (minY + maxY) / 2 * scale };
   }
-}
 
-/* 5. Architecture Multi-Process Inspector */
-function initArchInspector() {
-  const nodes = document.querySelectorAll('.arch-node');
-  const title = document.getElementById('arch-detail-title');
-  const desc = document.getElementById('arch-detail-desc');
-  const code = document.getElementById('arch-detail-code');
-  const badge = document.getElementById('arch-detail-badge');
+  var SHAPES = DEFS.map(buildShape);
+  var BY_ID = {};
+  SHAPES.forEach(function (s) { BY_ID[s.id] = s; });
 
-  const ARCH_DATA = {
-    geckoview: {
-      badge: 'Independent Quantum Core',
-      title: 'GeckoView 157 Standalone Engine',
-      desc: 'Petal embeds Mozilla GeckoView 157 with an isolated quantum multi-process pipeline. It does not use the OEM Android WebView, preventing vendor delays and third-party tracking hooks.',
-      code: 'GeckoRuntime.create(context, GeckoRuntimeSettings.Builder()\n  .aboutConfigEnabled(true)\n  .contentBlocking(ContentBlocking.STRICT)\n  .build())'
-    },
-    compose: {
-      badge: 'Material 3 Expressive UI',
-      title: 'Jetpack Compose & Spring Motion',
-      desc: 'Constructed strictly using Jetpack Compose with Material 3 Expressive 1.5-alpha components, low bouncy spring physics (0.75f damping), and 35 mathematical shape geometries.',
-      code: 'PetalExpressiveTheme(darkTheme = isDark, dynamicColor = true) {\n  Surface(shape = PetalMaterialShapes.Flower.toShape()) {\n    AddressBarCollapsible()\n  }\n}'
-    },
-    etp: {
-      badge: 'Zero-Telemetry Isolation',
-      title: 'Strict Content & Anti-Tracking Shield',
-      desc: 'Enhanced Tracking Protection rejects third-party cookies, tracking beacons, cryptominers, and canvas fingerprinting. Session databases are encrypted locally using Room and SQLCipher.',
-      code: 'settings.contentBlocking = ContentBlocking.STRICT\nsettings.cookieBehavior = GeckoSessionSettings.COOKIE_BEHAVIOR_REJECT_TRACKERS'
-    },
-    media: {
-      badge: 'Compose Media Subsystem',
-      title: 'mpvEx Overlay & Wavy Seekbar',
-      desc: 'Custom Compose video player overlay featuring gesture-driven brightness/volume sliders, smart PiP aspect preservation, and mathematical sine wave animation during playback.',
-      code: 'WavySeekbar(progress = playbackTime / duration,\n  waveState = if (isPlaying && !isScrubbing) Wave.ACTIVE else Wave.FLAT)'
+  var cosT = new Float32Array(N), sinT = new Float32Array(N);
+  (function () { for (var i = 0; i < N; i++) { var a = START + TAU * i / N; cosT[i] = Math.cos(a); sinT[i] = Math.sin(a); } })();
+
+  var R = 44; // radius in the 100x100 viewBox (leaves room for overshoot)
+  function f1(v) { return Math.round(v * 100) / 100; }
+
+  // Closed quadratic B-spline through the sampled points: smooth and can never overshoot,
+  // so sharp corners round off cleanly instead of growing little hooks.
+  function pathFor(r, ox, oy) {
+    var px = new Float32Array(N), py = new Float32Array(N), i, rad;
+    for (i = 0; i < N; i++) {
+      rad = r[i] < .02 ? .02 : r[i];
+      px[i] = 50 + R * (rad * cosT[i] - ox); py[i] = 50 + R * (rad * sinT[i] - oy);
     }
+    var d = 'M' + f1((px[N - 1] + px[0]) / 2) + ' ' + f1((py[N - 1] + py[0]) / 2), j;
+    for (i = 0; i < N; i++) {
+      j = (i + 1) % N;
+      d += 'Q' + f1(px[i]) + ' ' + f1(py[i]) + ' ' + f1((px[i] + px[j]) / 2) + ' ' + f1((py[i] + py[j]) / 2);
+    }
+    return d + 'Z';
+  }
+
+  // Spring-driven morph between shapes
+  function Morph(pathEl, startId) {
+    var s = BY_ID[startId] || SHAPES[0];
+    this.el = pathEl;
+    this.r = new Float32Array(s.r); this.ox = s.ox; this.oy = s.oy;
+    this.from = null; this.to = s;
+    this.x = 1; this.v = 0; this.raf = 0; this.last = 0;
+    this.el.setAttribute('d', pathFor(this.r, this.ox, this.oy));
+  }
+  Morph.prototype.set = function (id) {
+    var s = BY_ID[id]; if (!s) return;
+    this.to = s;
+    if (reduceMotion) {
+      this.r.set(s.r); this.ox = s.ox; this.oy = s.oy;
+      this.el.setAttribute('d', pathFor(this.r, this.ox, this.oy));
+      return;
+    }
+    this.from = { r: new Float32Array(this.r), ox: this.ox, oy: this.oy };
+    this.x = 0; this.v = 0; this.last = 0;
+    if (!this.raf) this.raf = requestAnimationFrame(this.tick.bind(this));
+  };
+  Morph.prototype.tick = function (now) {
+    var self = this, dt = this.last ? Math.min((now - this.last) / 1000, 1 / 30) : 1 / 60;
+    this.last = now;
+    var k = 260, zeta = .52, c = 2 * zeta * Math.sqrt(k);   // bouncy spatial spring
+    var steps = 2, h = dt / steps, i;
+    for (i = 0; i < steps; i++) { this.v += (k * (1 - this.x) - c * this.v) * h; this.x += this.v * h; }
+    var x = this.x, a = this.from, b = this.to;
+    for (i = 0; i < N; i++) this.r[i] = a.r[i] + (b.r[i] - a.r[i]) * x;
+    this.ox = a.ox + (b.ox - a.ox) * x; this.oy = a.oy + (b.oy - a.oy) * x;
+    this.el.setAttribute('d', pathFor(this.r, this.ox, this.oy));
+    if (Math.abs(1 - this.x) < .0008 && Math.abs(this.v) < .01) {
+      this.r.set(b.r); this.ox = b.ox; this.oy = b.oy;
+      this.el.setAttribute('d', pathFor(this.r, this.ox, this.oy));
+      this.raf = 0; return;
+    }
+    this.raf = requestAnimationFrame(function (t) { self.tick(t); });
   };
 
-  nodes.forEach(node => {
-    node.addEventListener('click', () => {
-      nodes.forEach(n => n.classList.remove('active'));
-      node.classList.add('active');
-      const key = node.getAttribute('data-node');
-      const data = ARCH_DATA[key];
-      if (data && title && desc && code && badge) {
-        badge.textContent = data.badge;
-        title.textContent = data.title;
-        desc.textContent = data.desc;
-        code.textContent = data.code;
-      }
-    });
-  });
-}
+  function staticPath(id) { var s = BY_ID[id]; return pathFor(s.r, s.ox, s.oy); }
 
-/* 6. ADB CLI Copy Button */
-function initCliCopy() {
-  const btn = document.getElementById('cli-copy-btn');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    const text = 'adb install -r Petal-release.apk';
-    navigator.clipboard.writeText(text).then(() => {
-      const orig = btn.textContent;
-      btn.textContent = 'Copied to Clipboard!';
-      setTimeout(() => btn.textContent = orig, 2000);
-    }).catch(() => {
-      btn.textContent = 'Copied!';
+  /* ======================================================================
+     2. SHAPES IN THE PAGE
+     ====================================================================== */
+  // Decorative badges that use data-shape
+  $$('[data-shape]').forEach(function (box) {
+    var p = $('path', box), id = box.getAttribute('data-shape');
+    if (p && BY_ID[id]) p.setAttribute('d', staticPath(id));
+  });
+
+  // Hero blob: cycles through shapes with a spring
+  var heroBlob = $('#hero-blob');
+  if (heroBlob) {
+    var heroMorph = new Morph(heroBlob, 'cookie9');
+    var seq = ['cookie9', 'softburst', 'flower', 'cookie6', 'sunny', 'clover4', 'puffy', 'cookie12'], si = 0, heroTimer = 0, heroVisible = true;
+    var runHero = function () { clearInterval(heroTimer); if (reduceMotion || !heroVisible || document.hidden) return; heroTimer = setInterval(function () { si = (si + 1) % seq.length; heroMorph.set(seq[si]); }, 2600); };
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (e) { heroVisible = e[0].isIntersecting; runHero(); }).observe(heroBlob.ownerSVGElement.parentNode);
+    }
+    document.addEventListener('visibilitychange', runHero);
+    runHero();
+  }
+
+  // Shape studio
+  (function () {
+    var grid = $('#shapes-catalog-grid'), heroP = $('#shape-hero-path');
+    if (!grid || !heroP) return;
+    var label = $('#shape-hero-label'), count = $('#shape-hero-count'), morph = new Morph(heroP, 'circle'), cur = 0, chips = [];
+
+    function select(i, fromUser) {
+      cur = (i + SHAPES.length) % SHAPES.length;
+      chips.forEach(function (c, j) { c.setAttribute('aria-pressed', j === cur ? 'true' : 'false'); });
+      morph.set(SHAPES[cur].id);
+      label.textContent = SHAPES[cur].name;
+      count.textContent = (cur + 1) + ' of ' + SHAPES.length;
+      if (fromUser && navigator.vibrate) { try { navigator.vibrate(8); } catch (e) {} }
+    }
+
+    SHAPES.forEach(function (s, i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'shape-chip';
+      b.setAttribute('aria-label', s.name); b.setAttribute('title', s.name);
+      b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+      b.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="' + staticPath(s.id) + '"/></svg>';
+      b.addEventListener('click', function () { select(i, true); });
+      grid.appendChild(b); chips.push(b);
+    });
+
+    $('#shape-hero').addEventListener('click', function () { select(cur + 1, true); });
+    $('#shape-shuffle').addEventListener('click', function () {
+      var n; do { n = Math.floor(Math.random() * SHAPES.length); } while (n === cur);
+      select(n, true);
+    });
+  })();
+
+  /* ======================================================================
+     3. THEME ENGINE
+     ====================================================================== */
+  var themeBtn = $('#theme-toggle-btn'), darkSw = $('#dark-switch'), amoledSw = $('#amoled-switch'), swatches = $$('.swatch');
+
+  function state() {
+    return {
+      mode: root.getAttribute('data-theme-mode') || 'light',
+      palette: root.getAttribute('data-palette') || 'petal',
+      amoled: root.getAttribute('data-amoled') === 'true'
+    };
+  }
+  function syncUI() {
+    var s = state(), dark = s.mode === 'dark';
+    darkSw.setAttribute('aria-checked', dark ? 'true' : 'false');
+    amoledSw.setAttribute('aria-checked', dark && s.amoled ? 'true' : 'false');
+    swatches.forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-palette') === s.palette ? 'true' : 'false'); });
+    // SVG elements ignore the .hidden property, so toggle the attribute
+    if (dark) { $('.i-moon', themeBtn).setAttribute('hidden', ''); $('.i-sun', themeBtn).removeAttribute('hidden'); }
+    else { $('.i-sun', themeBtn).setAttribute('hidden', ''); $('.i-moon', themeBtn).removeAttribute('hidden'); }
+    themeBtn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+  }
+  function save() { try { localStorage.setItem('petal-theme', JSON.stringify(state())); } catch (e) {} }
+
+  // Colour change that sweeps out from the control that was tapped
+  function themed(change, origin) {
+    if (!document.startViewTransition || reduceMotion) { change(); syncUI(); save(); return; }
+    var r = origin ? origin.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 };
+    var x = r.left + r.width / 2, y = r.top + r.height / 2;
+    var end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    var t = document.startViewTransition(function () { change(); syncUI(); });
+    t.ready.then(function () {
+      root.animate({ clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + end + 'px at ' + x + 'px ' + y + 'px)'] },
+        { duration: 650, easing: 'cubic-bezier(.2,0,0,1)', pseudoElement: '::view-transition-new(root)' });
+    }).catch(function () {});
+    t.finished.then(save, save);
+  }
+
+  function setMode(dark) {
+    root.setAttribute('data-theme-mode', dark ? 'dark' : 'light');
+    if (!dark) root.setAttribute('data-amoled', 'false');
+  }
+  themeBtn.addEventListener('click', function () { themed(function () { setMode(state().mode !== 'dark'); }, themeBtn); });
+  darkSw.addEventListener('click', function () { themed(function () { setMode(state().mode !== 'dark'); }, darkSw); });
+  amoledSw.addEventListener('click', function () {
+    themed(function () {
+      var on = !(state().mode === 'dark' && state().amoled);
+      root.setAttribute('data-amoled', on ? 'true' : 'false');
+      if (on) root.setAttribute('data-theme-mode', 'dark');
+    }, amoledSw);
+  });
+  swatches.forEach(function (b, i) {
+    b.addEventListener('click', function () { themed(function () { root.setAttribute('data-palette', b.getAttribute('data-palette')); }, b); });
+    b.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+      if (!d) return; e.preventDefault();
+      var n = swatches[(i + d + swatches.length) % swatches.length]; n.focus(); n.click();
     });
   });
-}
+  syncUI();
+
+  /* ======================================================================
+     4. APP BAR, MENU, SCROLL SPY
+     ====================================================================== */
+  var appbar = $('#appbar');
+  function onScroll() { appbar.classList.toggle('scrolled', scrollY > 8); }
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+  var menu = $('#menu'), menuBtn = $('#menu-btn');
+  function setMenu(open) {
+    menu.classList.toggle('open', open);
+    menu.setAttribute('aria-hidden', open ? 'false' : 'true');
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    document.body.style.overflow = open ? 'hidden' : '';
+    if (open) setTimeout(function () { var a = $('#menu-list a', menu); if (a) a.focus({ preventScroll: true }); }, 60);
+    else if (document.activeElement && menu.contains(document.activeElement)) menuBtn.focus({ preventScroll: true });
+  }
+  menuBtn.addEventListener('click', function () { setMenu(!menu.classList.contains('open')); });
+  $('#menu-close').addEventListener('click', function () { setMenu(false); });
+  $('#menu-scrim').addEventListener('click', function () { setMenu(false); });
+  $$('a', menu).forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
+  addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (menu.classList.contains('open')) setMenu(false); closeSheet(); } });
+  matchMedia('(min-width: 960px)').addEventListener('change', function (e) { if (e.matches) setMenu(false); });
+
+  // Scroll spy
+  (function () {
+    var ids = ['differentiators', 'shapes', 'media-player', 'architecture', 'specs'];
+    var links = $$('#nav-links a, #menu-list a');
+    if (!('IntersectionObserver' in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id); });
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    ids.forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+    var hero = $('#hero');
+    if (hero) new IntersectionObserver(function (e) { if (e[0].isIntersecting) links.forEach(function (a) { a.classList.remove('active'); }); }, { rootMargin: '-40% 0px -55% 0px' }).observe(hero);
+  })();
+
+  /* ======================================================================
+     5. SNACKBAR + RIPPLE + REVEAL
+     ====================================================================== */
+  var snack = $('#snackbar'), snackTimer = 0;
+  function toast(msg) {
+    snack.textContent = msg; snack.classList.add('show');
+    clearTimeout(snackTimer); snackTimer = setTimeout(function () { snack.classList.remove('show'); }, 2600);
+  }
+
+  document.addEventListener('pointerdown', function (e) {
+    if (reduceMotion) return;
+    var el = e.target.closest && e.target.closest('[data-ripple]');
+    if (!el) return;
+    var r = el.getBoundingClientRect(), size = Math.max(r.width, r.height) * 2.2, s = document.createElement('span');
+    s.className = 'ripple';
+    s.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' + (e.clientX - r.left - size / 2) + 'px;top:' + (e.clientY - r.top - size / 2) + 'px';
+    el.appendChild(s); setTimeout(function () { s.remove(); }, 650);
+  }, { passive: true });
+
+  if ('IntersectionObserver' in window) {
+    var rv = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); rv.unobserve(en.target); } });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
+    $$('[data-reveal]').forEach(function (el) { rv.observe(el); });
+  } else {
+    $$('[data-reveal]').forEach(function (el) { el.classList.add('in'); });
+  }
+
+  // Start the hero entrance once fonts are in (or after a short wait)
+  var go = function () { requestAnimationFrame(function () { root.classList.add('ready'); }); };
+  if (document.fonts && document.fonts.ready) { Promise.race([document.fonts.ready, new Promise(function (r) { setTimeout(r, 700); })]).then(go); } else go();
+
+  /* ======================================================================
+     6. PHONE DEMO
+     ====================================================================== */
+  var webview = $('#sim-webview'), omnibox = $('#sim-omnibox'), fab = $('#sim-fab');
+  var sheet = $('#sim-sheet'), scrim = $('#sim-scrim');
+  function closeSheet() { if (sheet) { sheet.classList.remove('show'); scrim.classList.remove('show'); } }
+  if (webview) {
+    var last = 0;
+    webview.addEventListener('scroll', function () {
+      var y = webview.scrollTop;
+      if (y > last && y > 40) { omnibox.classList.add('collapsed'); fab.classList.add('show'); }
+      else if (y < last - 2) { omnibox.classList.remove('collapsed'); fab.classList.remove('show'); }
+      last = Math.max(0, y);
+    }, { passive: true });
+    fab.addEventListener('click', function () {
+      omnibox.classList.remove('collapsed'); fab.classList.remove('show');
+      webview.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    });
+    $('#sim-url-pill').addEventListener('click', function () { sheet.classList.add('show'); scrim.classList.add('show'); });
+    scrim.addEventListener('click', closeSheet);
+
+    var dock = $('#sim-dock'), dockBtns = $$('.dock-btn', dock);
+    dockBtns.forEach(function (b, i) {
+      b.addEventListener('click', function () {
+        dock.style.setProperty('--idx', i);
+        dockBtns.forEach(function (o) { o.setAttribute('aria-current', o === b ? 'true' : 'false'); });
+      });
+    });
+  }
+
+  /* ======================================================================
+     7. WAVY PLAYER
+     ====================================================================== */
+  (function () {
+    var canvas = $('#wavy-seekbar-canvas'), wrap = $('#wavy'), player = $('#player');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d'), playBtn = $('#player-play-btn'), timeEl = $('#player-time-current'), tag = $('#player-status-tag');
+    var TOTAL = 245, playing = true, scrubbing = false, progress = .38, phase = 0, amp = 6, W = 0, H = 0, visible = true, raf = 0, lastT = 0, colors = {};
+
+    // Cookie shape that spins while playing
+    var art = $('.player-art path', player);
+    if (art) art.setAttribute('d', staticPath('cookie9'));
+
+    function readColors() {
+      var probe = document.createElement('span'); probe.style.display = 'none'; document.body.appendChild(probe);
+      var get = function (v) { probe.style.color = 'var(' + v + ')'; return getComputedStyle(probe).color; };
+      colors = { on: get('--primary'), off: get('--outline-variant'), thumb: get('--primary') };
+      probe.remove();
+    }
+    new MutationObserver(function () { setTimeout(readColors, 30); }).observe(root, { attributes: true, attributeFilter: ['data-theme-mode', 'data-palette', 'data-amoled'] });
+    readColors();
+
+    function resize() {
+      var r = wrap.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 3);
+      W = r.width; H = r.height;
+      canvas.width = Math.max(1, Math.round(W * dpr)); canvas.height = Math.max(1, Math.round(H * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    if ('ResizeObserver' in window) new ResizeObserver(resize).observe(wrap); else addEventListener('resize', resize);
+    resize();
+
+    function fmt(s) { var m = Math.floor(s / 60), x = Math.floor(s % 60); return m + ':' + (x < 10 ? '0' : '') + x; }
+    function setTag() { tag.textContent = scrubbing ? 'Scrubbing, flat' : playing ? 'Wavy sine' : 'Paused, flat'; }
+    function updateTime() {
+      var t = progress * TOTAL; timeEl.textContent = fmt(t);
+      wrap.setAttribute('aria-valuenow', Math.round(t)); wrap.setAttribute('aria-valuetext', fmt(t) + ' of ' + fmt(TOTAL));
+    }
+
+    function draw(now) {
+      var dt = lastT ? Math.min((now - lastT) / 1000, .05) : .016; lastT = now;
+      var pad = 12, cy = H / 2, x0 = pad, x1 = W - pad, px = x0 + (x1 - x0) * progress;
+      var target = (playing && !scrubbing) ? 6 : 0;
+      amp += (target - amp) * Math.min(1, dt * 9);                  // wave eases flat / back
+      if (playing && !scrubbing) { phase += dt * 5.2; progress += dt / 82; if (progress >= 1) progress = 0; updateTime(); }
+
+      ctx.clearRect(0, 0, W, H); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+      ctx.beginPath(); ctx.strokeStyle = colors.off; ctx.lineWidth = 5;
+      ctx.moveTo(px + 8, cy); ctx.lineTo(x1, cy); ctx.stroke();
+
+      ctx.beginPath(); ctx.strokeStyle = colors.on; ctx.lineWidth = 5;
+      var f = .09, x;
+      ctx.moveTo(x0, cy + Math.sin(x0 * f + phase) * amp);
+      for (x = x0 + 2; x <= px; x += 2) ctx.lineTo(x, cy + Math.sin(x * f + phase) * amp);
+      ctx.stroke();
+
+      // handle: tall rounded bar, widens a little while scrubbing
+      var hy = cy + Math.sin(px * f + phase) * amp, hw = scrubbing ? 3 : 5, hh = 28;
+      ctx.beginPath(); ctx.fillStyle = colors.thumb;
+      if (ctx.roundRect) ctx.roundRect(px - hw / 2, hy - hh / 2, hw, hh, hw / 2); else ctx.rect(px - hw / 2, hy - hh / 2, hw, hh);
+      ctx.fill();
+
+      raf = requestAnimationFrame(draw);
+    }
+    function start() { if (!raf && visible && !document.hidden) { lastT = 0; raf = requestAnimationFrame(draw); } }
+    function stop() { cancelAnimationFrame(raf); raf = 0; }
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { visible = e[0].isIntersecting; visible ? start() : stop(); }).observe(wrap);
+    document.addEventListener('visibilitychange', function () { document.hidden ? stop() : start(); });
+    start();
+
+    function setPlaying(p) {
+      playing = p;
+      playBtn.setAttribute('aria-pressed', p ? 'true' : 'false'); playBtn.setAttribute('aria-label', p ? 'Pause' : 'Play');
+      player.classList.toggle('playing', p); setTag();
+    }
+    playBtn.addEventListener('click', function () { setPlaying(!playing); });
+    $('#player-back').addEventListener('click', function () { progress = Math.max(0, progress - 10 / TOTAL); updateTime(); });
+    $('#player-fwd').addEventListener('click', function () { progress = Math.min(1, progress + 10 / TOTAL); updateTime(); });
+
+    function scrubTo(e) {
+      var r = wrap.getBoundingClientRect(), x = Math.max(12, Math.min(r.width - 12, e.clientX - r.left));
+      progress = (x - 12) / (r.width - 24); updateTime();
+    }
+    wrap.addEventListener('pointerdown', function (e) { scrubbing = true; wrap.setPointerCapture(e.pointerId); setTag(); scrubTo(e); });
+    wrap.addEventListener('pointermove', function (e) { if (scrubbing) scrubTo(e); });
+    var end = function () { if (scrubbing) { scrubbing = false; setTag(); } };
+    wrap.addEventListener('pointerup', end); wrap.addEventListener('pointercancel', end);
+    wrap.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' ? 5 : e.key === 'ArrowLeft' ? -5 : 0; if (!d) return;
+      e.preventDefault(); progress = Math.max(0, Math.min(1, progress + d / TOTAL)); updateTime();
+    });
+    updateTime(); setTag();
+  })();
+
+  /* ======================================================================
+     8. ARCHITECTURE TABS
+     ====================================================================== */
+  (function () {
+    var tabs = $$('.arch-tab'), panel = $('#arch-panel');
+    var badge = $('#arch-detail-badge'), title = $('#arch-detail-title'), desc = $('#arch-detail-desc'), code = $('#arch-detail-code');
+    if (!tabs.length) return;
+    var DATA = {
+      geckoview: { badge: 'Independent Quantum Core', title: 'GeckoView 157 Standalone Engine', desc: 'Petal embeds Mozilla GeckoView 157 with an isolated quantum multi-process pipeline. It does not use the OEM Android WebView, preventing vendor delays and third-party tracking hooks.', code: 'GeckoRuntime.create(context, GeckoRuntimeSettings.Builder()\n  .aboutConfigEnabled(true)\n  .contentBlocking(ContentBlocking.STRICT)\n  .build())' },
+      compose: { badge: 'Material 3 Expressive UI', title: 'Jetpack Compose & Spring Motion', desc: 'Constructed strictly using Jetpack Compose with Material 3 Expressive 1.5-alpha components, low bouncy spring physics (0.75f damping), and 35 mathematical shape geometries.', code: 'PetalExpressiveTheme(darkTheme = isDark, dynamicColor = true) {\n  Surface(shape = PetalMaterialShapes.Flower.toShape()) {\n    AddressBarCollapsible()\n  }\n}' },
+      etp: { badge: 'Zero-Telemetry Isolation', title: 'Strict Content & Anti-Tracking Shield', desc: 'Enhanced Tracking Protection rejects third-party cookies, tracking beacons, cryptominers, and canvas fingerprinting. Session databases are encrypted locally using Room and SQLCipher.', code: 'settings.contentBlocking = ContentBlocking.STRICT\nsettings.cookieBehavior = GeckoSessionSettings.COOKIE_BEHAVIOR_REJECT_TRACKERS' },
+      media: { badge: 'Compose Media Subsystem', title: 'mpvEx Overlay & Wavy Seekbar', desc: 'Custom Compose video player overlay featuring gesture-driven brightness/volume sliders, smart PiP aspect preservation, and mathematical sine wave animation during playback.', code: 'WavySeekbar(progress = playbackTime / duration,\n  waveState = if (isPlaying && !isScrubbing) Wave.ACTIVE else Wave.FLAT)' }
+    };
+    var order = ['geckoview', 'compose', 'etp', 'media'], idx = 0, first = true;
+
+    function show(i, focus) {
+      idx = (i + tabs.length) % tabs.length;
+      tabs.forEach(function (t, j) { t.setAttribute('aria-selected', j === idx ? 'true' : 'false'); t.tabIndex = j === idx ? 0 : -1; });
+      panel.setAttribute('aria-labelledby', tabs[idx].id);
+      if (focus) tabs[idx].focus();
+      var d = DATA[order[idx]];
+      var swap = function () { badge.textContent = d.badge; title.textContent = d.title; desc.textContent = d.desc; code.textContent = d.code; };
+      if (reduceMotion || first || !panel.animate) { swap(); first = false; return; }
+      panel.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(10px) scale(.985)' }], { duration: 120, easing: 'ease-in' })
+        .finished.then(function () {
+          swap();
+          panel.animate([{ opacity: 0, transform: 'translateY(-14px) scale(.985)' }, { opacity: 1, transform: 'none' }], { duration: 480, easing: 'cubic-bezier(.34,1.4,.64,1)' });
+        }).catch(swap);
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { show(i); });
+      t.addEventListener('keydown', function (e) {
+        var d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
+        if (e.key === 'Home') { e.preventDefault(); show(0, true); } else if (e.key === 'End') { e.preventDefault(); show(tabs.length - 1, true); }
+        else if (d) { e.preventDefault(); show(idx + d, true); }
+      });
+    });
+    first = false;
+  })();
+
+  /* ======================================================================
+     9. COPY ADB COMMAND
+     ====================================================================== */
+  (function () {
+    var btn = $('#cli-copy-btn'); if (!btn) return;
+    var text = $('#cli-code').textContent.trim(), label = $('span', btn), timer = 0;
+    function done() {
+      btn.classList.add('done'); label.textContent = 'Copied'; toast('Command copied');
+      clearTimeout(timer); timer = setTimeout(function () { btn.classList.remove('done'); label.textContent = 'Copy command'; }, 1800);
+    }
+    function fallback() {
+      var t = document.createElement('textarea'); t.value = text; t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); done(); } catch (e) { toast('Press and hold the command to copy'); }
+      t.remove();
+    }
+    btn.addEventListener('click', function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    });
+  })();
+})();
