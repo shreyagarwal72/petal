@@ -134,6 +134,10 @@ fun PetalExpressiveTheme(
         androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
             .getBoolean("sp_blur_effect_enabled", true)
     },
+    expressiveShapesEnabled: Boolean = run {
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+            .getBoolean(PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, true)
+    },
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -211,10 +215,16 @@ fun PetalExpressiveTheme(
         androidx.compose.runtime.mutableStateOf(sp.getBoolean("sp_touch_haptics", true))
     }
 
+    var expressiveShapesState by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(expressiveShapesEnabled)
+    }
+
     androidx.compose.runtime.DisposableEffect(sp) {
         val hapticListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_touch_haptics") {
                 hapticsEnabled = sp.getBoolean("sp_touch_haptics", true)
+            } else if (key == PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED) {
+                expressiveShapesState = sp.getBoolean(PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, true)
             }
         }
         sp.registerOnSharedPreferenceChangeListener(hapticListener)
@@ -223,6 +233,7 @@ fun PetalExpressiveTheme(
 
     CompositionLocalProvider(
         LocalPetalBlurEffectEnabled provides blurEffectEnabled,
+        LocalExpressiveShapesEnabled provides expressiveShapesState,
         com.petal.browser.haptics.LocalHapticEnabled provides hapticsEnabled,
         com.petal.browser.haptics.LocalVibrationIntensity provides com.petal.browser.haptics.VibrationIntensity.LIGHT,
         androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback

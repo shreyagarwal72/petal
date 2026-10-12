@@ -967,12 +967,16 @@ private fun ShortcutTile(
     val faviconUrl = remember(shortcut.url) { getFaviconUrl(shortcut.url) }
     var isImageError by remember(shortcut.url) { mutableStateOf(false) }
 
-    val tileShape = remember(shortcut.shapeName, index) {
-        if (!shortcut.shapeName.isNullOrBlank()) {
+    val defaultShape = homeShortcutShape(index)
+    val isExpressiveEnabled = com.petal.browser.ui.theme.LocalExpressiveShapesEnabled.current
+    val tileShape = remember(shortcut.shapeName, index, isExpressiveEnabled) {
+        if (!isExpressiveEnabled) {
+            RoundedCornerShape(16.dp)
+        } else if (!shortcut.shapeName.isNullOrBlank()) {
             val matched = PetalMaterialShapes.allShapes.find { it.name.equals(shortcut.shapeName, ignoreCase = true) }
-            matched?.toShape() ?: homeShortcutShape(index)
+            matched?.toShape() ?: defaultShape
         } else {
-            homeShortcutShape(index)
+            defaultShape
         }
     }
 
@@ -1055,7 +1059,8 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
             .homeLaunchEntrance(3 + index)
             .padding(vertical = 4.dp)
     ) {
-        val addTileShape = remember(index) { homeShortcutShape(index) }
+        val isExpressiveEnabled = com.petal.browser.ui.theme.LocalExpressiveShapesEnabled.current
+        val addTileShape = homeShortcutShape(index)
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -1087,7 +1092,10 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
     }
 }
 
+@Composable
 private fun homeShortcutShape(index: Int): Shape {
+    val enabled = com.petal.browser.ui.theme.LocalExpressiveShapesEnabled.current
+    if (!enabled) return RoundedCornerShape(16.dp)
     val all = PetalMaterialShapes.allShapes
     return all[index.mod(all.size)].toShape()
 }

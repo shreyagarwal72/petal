@@ -114,6 +114,13 @@ object PetalSettingsSearchIndex {
             keywords = listOf("floating tab bar", "bottom bar", "tabs", "island bar", "tab bar", "navigation")
         ),
         SettingsSearchItem(
+            id = "appearance_expressive_shapes",
+            title = "Material 3 Expressive Shapes (35 Shapes)",
+            subtitle = "Enable or disable all 35 authentic Material 3 Expressive shapes across homescreen, quick tools, badges, and settings",
+            category = SettingsCategory.APPEARANCE,
+            keywords = listOf("expressive shapes", "material 3 shapes", "35 shapes", "polygons", "geometry", "icons", "shortcuts", "badges")
+        ),
+        SettingsSearchItem(
             id = "appearance_refresh_rate",
             title = "High Refresh Rate (90Hz / 120Hz / 144Hz)",
             subtitle = "Force peak display refresh rate for buttery-smooth scrolling and animations",

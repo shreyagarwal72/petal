@@ -289,6 +289,16 @@ object PetalBrowserShapes {
         PetalIconCategory.Accessibility -> PetalMaterialShapes.Pill
         PetalIconCategory.Tools         -> PetalMaterialShapes.Diamond
     }
+
+    /**
+     * Resolves the Category [Shape] taking into account [LocalExpressiveShapesEnabled].
+     * Returns [fallback] (default 14.dp rounded corner) when expressive shapes are disabled.
+     */
+    @Composable
+    fun iconShapeAsShape(category: PetalIconCategory, fallback: Shape = RoundedCornerShape(14.dp)): Shape {
+        val enabled = LocalExpressiveShapesEnabled.current
+        return if (enabled) iconShapeFor(category).toShape() else fallback
+    }
 }
 
 /** Content category for [PetalBrowserShapes.iconShapeFor]. */

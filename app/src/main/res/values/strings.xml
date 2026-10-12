@@ -986,6 +986,8 @@
     <string name="ui_show_the_bottom_bar_as">Show the bottom bar as a floating pill instead of a flat bar</string>
     <string name="ui_m3_expressive_morphing_shapes">M3 Expressive Morphing Shapes</string>
     <string name="ui_display_ambient_morphing_background_sh">Display ambient morphing background shapes across all app screens</string>
+    <string name="ui_m3_expressive_shapes_global">Material 3 Expressive Shapes (35 Shapes)</string>
+    <string name="ui_m3_expressive_shapes_global_desc">Apply all 35 authentic Material 3 Expressive shapes across homescreen shortcuts, quick tools, download badges, and settings</string>
     <string name="ui_shape_change_mode">Shape Change Mode:</string>
     <string name="ui_auto_change_interval">Auto-Change Interval:</string>
     <string name="ui_min">%1$s min</string>

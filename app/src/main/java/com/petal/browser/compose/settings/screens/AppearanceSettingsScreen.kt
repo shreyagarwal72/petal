@@ -69,6 +69,7 @@ fun AppearanceSettingsScreen(
     val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
     val floatingTabBar by viewModel.floatingTabBar.collectAsStateWithLifecycle()
     val expressiveBgShapes by viewModel.expressiveBgShapes.collectAsStateWithLifecycle()
+    val expressiveShapes35 by viewModel.expressiveShapes35.collectAsStateWithLifecycle()
     val bgShapeChangeMode by viewModel.bgShapeChangeMode.collectAsStateWithLifecycle()
     val bgShapeRotationMin by viewModel.bgShapeRotationMin.collectAsStateWithLifecycle()
     val highRefreshRate by viewModel.highRefreshRate.collectAsStateWithLifecycle()
@@ -92,6 +93,7 @@ fun AppearanceSettingsScreen(
         themeConfig = themeConfig,
         floatingTabBar = floatingTabBar,
         expressiveBgShapes = expressiveBgShapes,
+        expressiveShapes35 = expressiveShapes35,
         bgShapeChangeMode = bgShapeChangeMode,
         bgShapeRotationMin = bgShapeRotationMin,
         highRefreshRate = highRefreshRate,
@@ -113,6 +115,7 @@ fun AppearanceSettingsScreen(
         onThemeConfigChange = viewModel::setThemeConfig,
         onFloatingTabBarChange = viewModel::setFloatingTabBar,
         onExpressiveBgShapesChange = viewModel::setExpressiveBgShapes,
+        onExpressiveShapes35Change = viewModel::setExpressiveShapes35,
         onBgShapeChangeModeChange = viewModel::setBgShapeChangeMode,
         onBgShapeRotationMinChange = viewModel::setBgShapeRotationMin,
         onHighRefreshRateChange = viewModel::setHighRefreshRate,
@@ -140,6 +143,7 @@ fun AppearanceSettingsScreenContent(
     themeConfig: ThemeConfig,
     floatingTabBar: Boolean,
     expressiveBgShapes: Boolean,
+    expressiveShapes35: Boolean = true,
     bgShapeChangeMode: String,
     bgShapeRotationMin: Int,
     highRefreshRate: Boolean,
@@ -163,6 +167,7 @@ fun AppearanceSettingsScreenContent(
     onThemeConfigChange: (ThemeConfig) -> Unit,
     onFloatingTabBarChange: (Boolean) -> Unit,
     onExpressiveBgShapesChange: (Boolean) -> Unit,
+    onExpressiveShapes35Change: (Boolean) -> Unit = {},
     onBgShapeChangeModeChange: (String) -> Unit,
     onBgShapeRotationMinChange: (Int) -> Unit,
     onHighRefreshRateChange: (Boolean) -> Unit,
@@ -646,6 +651,15 @@ fun AppearanceSettingsScreenContent(
                         checked = floatingTabBar,
                         position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         onCheckedChange = onFloatingTabBarChange
+                    )
+                    // Material 3 Expressive Shapes (35 Shapes) Global Toggle
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_m3_expressive_shapes_global),
+                        subtitle = stringResource(R.string.ui_m3_expressive_shapes_global_desc),
+                        icon = Icons.Rounded.Category,
+                        checked = expressiveShapes35,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        onCheckedChange = onExpressiveShapes35Change
                     )
                     // Material 3 Expressive Background Morphing Shapes Toggle
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(

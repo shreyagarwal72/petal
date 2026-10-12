@@ -68,7 +68,9 @@ import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.theme.ExpressiveShapeHolder
+import com.petal.browser.ui.theme.LocalExpressiveShapesEnabled
 import com.petal.browser.ui.theme.PetalMaterialShapes
+import com.petal.browser.ui.theme.resolveShape
 import com.petal.browser.ui.theme.toShape
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -305,8 +307,8 @@ private fun ExpressiveQuickToolItem(
         label = "toolScale"
     )
 
-    // Distinct semantic M3 Expressive Shape for this tool
-    val shape: Shape = remember(tool) { tool.expressiveShape.toShape() }
+    // Distinct semantic M3 Expressive Shape for this tool (or 16.dp squircle when disabled)
+    val shape: Shape = tool.expressiveShape.resolveShape(RoundedCornerShape(16.dp))
 
     // Adaptive color pairs based on index
     val (containerColor, iconColor) = when (tool.shapeIndex % 4) {

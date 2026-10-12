@@ -100,6 +100,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_expressive_bg_shapes", true)
     }
 
+    override val expressiveShapes35: Flow<Boolean> = preferenceFlow(com.petal.browser.ui.theme.PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED) {
+        sp.getBoolean(com.petal.browser.ui.theme.PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, true)
+    }
+
     override val bgShapeChangeMode: Flow<String> = preferenceFlow("sp_bg_shape_change_mode") {
         sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS"
     }
@@ -420,6 +424,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setExpressiveBgShapes(enabled: Boolean) {
         sp.edit().putBoolean("sp_expressive_bg_shapes", enabled).apply()
+    }
+
+    override suspend fun setExpressiveShapes35(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.ui.theme.PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, enabled).apply()
     }
 
     override suspend fun setBgShapeChangeMode(mode: String) {

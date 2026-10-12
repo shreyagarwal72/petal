@@ -3,6 +3,7 @@ package com.petal.browser.ui.theme
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.unit.dp
@@ -11,6 +12,12 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.circle
 import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
+
+/**
+ * CompositionLocal providing global enablement of the 35 Material 3 Expressive shapes.
+ * When false, components fall back to gentle default rounded corners.
+ */
+val LocalExpressiveShapesEnabled = compositionLocalOf { true }
 
 /**
  * PetalMaterialShapes
@@ -82,6 +89,7 @@ fun RoundedPolygon.toShape(): Shape {
 }
 
 object PetalMaterialShapes {
+    const val PREF_EXPRESSIVE_SHAPES_ENABLED = "sp_expressive_shapes_35_enabled"
 
     // --- 1. Basic & Geometric (8 Shapes) ---
     val Circle: ExpressiveShapeHolder by lazy {
@@ -632,3 +640,12 @@ val Shapes.largeIncreased: Shape
 val Shapes.extraLargeIncreased: Shape
     get() = RoundedCornerShape(28.dp)
 
+/**
+ * Resolves an expressive shape considering the global [LocalExpressiveShapesEnabled] toggle.
+ * When expressive shapes are disabled globally, returns the provided [fallback] shape (default 16.dp squircle).
+ */
+@androidx.compose.runtime.Composable
+fun ExpressiveShapeHolder.resolveShape(fallback: Shape = RoundedCornerShape(16.dp)): Shape {
+    val enabled = LocalExpressiveShapesEnabled.current
+    return if (enabled) toShape() else fallback
+}

@@ -25,6 +25,7 @@ interface SettingsRepository {
     val floatingTabBar: Flow<Boolean>
     val expressiveColors: Flow<Boolean>
     val expressiveBgShapes: Flow<Boolean>
+    val expressiveShapes35: Flow<Boolean>
     val bgShapeChangeMode: Flow<String>
     val bgShapeRotationMin: Flow<Int>
     val highRefreshRate: Flow<Boolean>
@@ -116,6 +117,7 @@ interface SettingsRepository {
     suspend fun setFloatingTabBar(enabled: Boolean)
     suspend fun setExpressiveColors(enabled: Boolean)
     suspend fun setExpressiveBgShapes(enabled: Boolean)
+    suspend fun setExpressiveShapes35(enabled: Boolean)
     suspend fun setBgShapeChangeMode(mode: String)
     suspend fun setBgShapeRotationMin(minutes: Int)
     suspend fun setHighRefreshRate(enabled: Boolean)
