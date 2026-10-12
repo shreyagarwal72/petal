@@ -55,6 +55,9 @@ import java.io.FileOutputStream
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
+import android.graphics.Bitmap
+import coil.request.ImageRequest
+
 data class WallpaperPreset(
     val id: String,
     val title: String,
@@ -70,11 +73,16 @@ val WALLPAPER_CATEGORIES = listOf(
     "Nature",
     "Minimal & Dark",
     "Space & Neon",
-    "Abstract"
+    "Abstract",
+    "City",
+    "Mountains",
+    "Ocean",
+    "Flowers",
+    "Technology"
 )
 
 val PRESET_WALLPAPERS = listOf(
-    // ── Live Video Wallpapers ──
+    // ── Live Video & Animated Wallpapers (from omni-browser & petal) ──
     WallpaperPreset(
         id = "w_live_ocean",
         title = "Ocean Waves",
@@ -115,6 +123,78 @@ val PRESET_WALLPAPERS = listOf(
         fullUrl = "https://videos.pexels.com/video-files/7191147/7191147-hd_1080_1920_25fps.mp4",
         isVideo = true
     ),
+    WallpaperPreset(
+        id = "w_live_sunlight",
+        title = "Sunlight in Trees",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400",
+        fullUrl = "https://videos.pexels.com/video-files/11265968/11265968-hd_1920_1080_25fps.mp4",
+        isVideo = true
+    ),
+    WallpaperPreset(
+        id = "w_live_skyscrapers",
+        title = "City Skyscrapers",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400",
+        fullUrl = "https://videos.pexels.com/video-files/12685044/12685044-hd_1920_1080_30fps.mp4",
+        isVideo = true
+    ),
+    WallpaperPreset(
+        id = "w_live_rainy_city",
+        title = "Rainy Night City",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=400",
+        fullUrl = "https://videos.pexels.com/video-files/855432/855432-hd_1840_1034_25fps.mp4",
+        isVideo = true
+    ),
+    WallpaperPreset(
+        id = "w_live_abstract_colors",
+        title = "Abstract Colors",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400",
+        fullUrl = "https://videos.pexels.com/video-files/10881637/10881637-hd_1920_1080_25fps.mp4",
+        isVideo = true
+    ),
+    WallpaperPreset(
+        id = "w_live_river_plants",
+        title = "Plants by River",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400",
+        fullUrl = "https://videos.pexels.com/video-files/1208094/1208094-hd_1920_1080_30fps.mp4",
+        isVideo = true
+    ),
+    WallpaperPreset(
+        id = "w_live_woods_walk",
+        title = "Walking in Woods",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400",
+        fullUrl = "https://videos.pexels.com/video-files/8424070/8424070-hd_1920_1080_30fps.mp4",
+        isVideo = true
+    ),
+    WallpaperPreset(
+        id = "w_live_sea_waves",
+        title = "Blue Sea Waves",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400",
+        fullUrl = "https://videos.pexels.com/video-files/5668625/5668625-hd_2048_1080_30fps.mp4",
+        isVideo = true
+    ),
+    WallpaperPreset(
+        id = "w_live_matrix",
+        title = "Matrix Code",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400",
+        fullUrl = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdW9uaXZ4OWYwNGd1bmM1c3Q4ZGFzeXJ4NnM2azE5enptcW5vdDVzdiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/L1R1tvI9svkIWwpVYr/giphy.gif",
+        isVideo = false
+    ),
+    WallpaperPreset(
+        id = "w_live_lofi",
+        title = "Lo-Fi Cafe",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400",
+        fullUrl = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHpucjNlOWRxeWFvZmVudDFndDFjcHZtZ3d1NHEycDdmcDduYmsyeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d480lR5b5h8k9X0M/giphy.gif",
+        isVideo = false
+    ),
 
     // ── Nature Wallpapers ──
     WallpaperPreset(
@@ -152,6 +232,13 @@ val PRESET_WALLPAPERS = listOf(
         thumbUrl = "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=400",
         fullUrl = "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=1600"
     ),
+    WallpaperPreset(
+        id = "w_meadow",
+        title = "Wild Grassland",
+        category = "Nature",
+        thumbUrl = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600"
+    ),
 
     // ── Minimal & Dark Wallpapers ──
     WallpaperPreset(
@@ -174,6 +261,13 @@ val PRESET_WALLPAPERS = listOf(
         category = "Minimal & Dark",
         thumbUrl = "https://images.unsplash.com/photo-1550684847-75bdda21cc95?w=400",
         fullUrl = "https://images.unsplash.com/photo-1550684847-75bdda21cc95?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_dark_texture",
+        title = "Obsidian Mesh",
+        category = "Minimal & Dark",
+        thumbUrl = "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=1600"
     ),
 
     // ── Space & Neon Wallpapers ──
@@ -198,6 +292,13 @@ val PRESET_WALLPAPERS = listOf(
         thumbUrl = "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=400",
         fullUrl = "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=1600"
     ),
+    WallpaperPreset(
+        id = "w_neon_geometry",
+        title = "Cyber Glow",
+        category = "Space & Neon",
+        thumbUrl = "https://images.unsplash.com/photo-1563089145-599997674d42?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1563089145-599997674d42?w=1600"
+    ),
 
     // ── Abstract Wallpapers ──
     WallpaperPreset(
@@ -215,11 +316,105 @@ val PRESET_WALLPAPERS = listOf(
         fullUrl = "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=1600"
     ),
     WallpaperPreset(
-        id = "w_city",
-        title = "City Lights",
+        id = "w_gradient_aura",
+        title = "Pastel Aura",
         category = "Abstract",
+        thumbUrl = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_paper_craft",
+        title = "Silk Wave",
+        category = "Abstract",
+        thumbUrl = "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1600"
+    ),
+
+    // ── City Wallpapers ──
+    WallpaperPreset(
+        id = "w_city_lights",
+        title = "Metropolis Pulse",
+        category = "City",
         thumbUrl = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400",
         fullUrl = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_city_rain",
+        title = "Rainy Boulevard",
+        category = "City",
+        thumbUrl = "https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_city_architecture",
+        title = "Urban Facade",
+        category = "City",
+        thumbUrl = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600"
+    ),
+
+    // ── Mountains Wallpapers ──
+    WallpaperPreset(
+        id = "w_mountain_mist",
+        title = "Misty Ridge",
+        category = "Mountains",
+        thumbUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_mountain_snow",
+        title = "Summit Sunset",
+        category = "Mountains",
+        thumbUrl = "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1600"
+    ),
+
+    // ── Ocean Wallpapers ──
+    WallpaperPreset(
+        id = "w_ocean_deep",
+        title = "Pacific Waves",
+        category = "Ocean",
+        thumbUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_ocean_coast",
+        title = "Seaside Horizons",
+        category = "Ocean",
+        thumbUrl = "https://images.unsplash.com/photo-1506815444479-bfdb1e96c566?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1506815444479-bfdb1e96c566?w=1600"
+    ),
+
+    // ── Flowers Wallpapers ──
+    WallpaperPreset(
+        id = "w_flower_bloom",
+        title = "Spring Petals",
+        category = "Flowers",
+        thumbUrl = "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_flower_field",
+        title = "Wild Flora",
+        category = "Flowers",
+        thumbUrl = "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=1600"
+    ),
+
+    // ── Technology Wallpapers ──
+    WallpaperPreset(
+        id = "w_tech_matrix",
+        title = "Binary Flow",
+        category = "Technology",
+        thumbUrl = "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_tech_circuits",
+        title = "Circuit Grid",
+        category = "Technology",
+        thumbUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600"
     )
 )
 
@@ -446,8 +641,17 @@ fun PetalWallpaperSheet(
                                 shape = RoundedCornerShape(16.dp)
                             )
                     ) {
+                        val thumbRequest = remember(preset.thumbUrl) {
+                            ImageRequest.Builder(context)
+                                .data(preset.thumbUrl)
+                                .size(176, 260)
+                                .crossfade(200)
+                                .allowHardware(true)
+                                .bitmapConfig(Bitmap.Config.RGB_565)
+                                .build()
+                        }
                         AsyncImage(
-                            model = preset.thumbUrl,
+                            model = thumbRequest,
                             contentDescription = preset.title,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()

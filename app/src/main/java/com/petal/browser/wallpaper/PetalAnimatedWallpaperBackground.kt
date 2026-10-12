@@ -44,6 +44,12 @@ import com.petal.browser.R
 import com.petal.browser.ui.components.PRESET_WALLPAPERS
 import java.io.File
 
+import android.graphics.Bitmap
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.exoplayer.DefaultLoadControl
+
 @OptIn(UnstableApi::class)
 @Composable
 fun PetalAnimatedWallpaperBackground(
@@ -53,6 +59,7 @@ fun PetalAnimatedWallpaperBackground(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val isVideo = remember(wallpaperUri) {
         val lower = wallpaperUri.lowercase()
         lower.endsWith(".mp4") ||
@@ -100,7 +107,20 @@ fun PetalAnimatedWallpaperBackground(
                     Uri.parse(wallpaperUri)
                 }
 
-                ExoPlayer.Builder(context).build().apply {
+                // Low-memory LoadControl: minimal buffer footprint tailored for looping wallpaper clips
+                val loadControl = DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                        1500, // minBufferMs
+                        4000, // maxBufferMs
+                        500,  // bufferForPlaybackMs
+                        1000  // bufferForPlaybackAfterRebufferMs
+                    )
+                    .setPrioritizeTimeOverSizeThresholds(true)
+                    .build()
+
+                ExoPlayer.Builder(context)
+                    .setLoadControl(loadControl)
+                    .build().apply {
                     val mediaItem = MediaItem.fromUri(mediaUri)
                     setMediaItem(mediaItem)
                     repeatMode = Player.REPEAT_MODE_ALL
@@ -121,8 +141,24 @@ fun PetalAnimatedWallpaperBackground(
                 }
             }
 
-            DisposableEffect(exoPlayer) {
+            // Lifecycle-aware playback: pause decoding when activity or home screen is stopped/paused
+            DisposableEffect(exoPlayer, lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    when (event) {
+                        Lifecycle.Event.ON_START -> {
+                            if (exoPlayer.playbackState != Player.STATE_ENDED) {
+                                exoPlayer.play()
+                            }
+                        }
+                        Lifecycle.Event.ON_STOP -> {
+                            exoPlayer.pause()
+                        }
+                        else -> {}
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
                 onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
                     exoPlayer.stop()
                     exoPlayer.release()
                 }
@@ -203,6 +239,8 @@ fun PetalAnimatedWallpaperBackground(
                 ImageRequest.Builder(context)
                     .data(imageModel)
                     .crossfade(300)
+                    .allowHardware(true)
+                    .bitmapConfig(Bitmap.Config.RGB_565)
                     .build()
             }
 

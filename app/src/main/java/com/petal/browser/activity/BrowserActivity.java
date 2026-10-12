@@ -660,6 +660,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         
         sp = PreferenceManager.getDefaultSharedPreferences(context);
+        try {
+            com.petal.browser.profile.PetalProfileManager.INSTANCE.init(this);
+            com.petal.browser.wallpaper.PetalWallpaperManager.INSTANCE.init(this);
+        } catch (Throwable ignored) {}
 
         // Blend the splash exit with the launch ripple: on a fresh launch the splash icon scales/fades out while
         // the liquid ripple radiates from the icon's centre. Uses the same conditions as the launch ripple further

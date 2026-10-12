@@ -116,6 +116,13 @@ class PetalApplication : Application() {
             )
             TabThumbnailCache.initDiskCache(this)
             com.petal.browser.appleduo.AppleDuoManager.init(this)
+            try {
+                com.petal.browser.profile.PetalProfileManager.init(this)
+                com.petal.browser.wallpaper.PetalWallpaperManager.init(this)
+                com.petal.browser.collections.PetalCollectionManager.init(this)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Early profile/wallpaper init failed", t)
+            }
             Log.i(TAG, "Early engine initialization complete")
         } catch (e: Exception) {
             Log.e(TAG, "Failed early engine init", e)
