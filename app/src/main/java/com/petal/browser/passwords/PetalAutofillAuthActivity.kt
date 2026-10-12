@@ -97,10 +97,11 @@ class PetalAutofillAuthActivity : FragmentActivity() {
         val usernameId = IntentCompat.getParcelableExtra(intent, EXTRA_USERNAME_ID, AutofillId::class.java)
         val passwordId = IntentCompat.getParcelableExtra(intent, EXTRA_PASSWORD_ID, AutofillId::class.java)
 
+        val friendlyTarget = PetalAutofillService.cleanDisplayLabel(applicationContext, cred.domain)
         val presentation = PetalAutofillService.buildPresentation(
             packageName,
-            cred.username.ifBlank { cred.domain },
-            "Petal • ${cred.domain}"
+            cred.username.ifBlank { friendlyTarget },
+            friendlyTarget
         )
         val dataset = Dataset.Builder(presentation)
         var fieldCount = 0

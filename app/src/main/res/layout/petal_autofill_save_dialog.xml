@@ -11,13 +11,13 @@
     android:gravity="center_horizontal"
     android:paddingStart="24dp"
     android:paddingEnd="24dp"
-    android:paddingTop="20dp"
-    android:paddingBottom="20dp">
+    android:paddingTop="16dp"
+    android:paddingBottom="16dp">
 
-    <!-- Material 3 Expressive Icon Container -->
+    <!-- Material 3 Expressive Icon Squircle Container -->
     <LinearLayout
-        android:layout_width="56dp"
-        android:layout_height="56dp"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
         android:gravity="center"
         android:background="@drawable/petal_autofill_badge_bg">
         <ImageView
@@ -29,14 +29,14 @@
             android:scaleType="fitCenter" />
     </LinearLayout>
 
-    <!-- Save title -->
+    <!-- Save title (Clean & cohesive with system bottom sheet) -->
     <TextView
         android:id="@+id/petal_save_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="Save to Petal Vault?"
-        android:textSize="19sp"
+        android:textSize="20sp"
         android:fontFamily="sans-serif-medium"
         android:textStyle="bold"
         android:textColor="@color/petal_autofill_title"
@@ -48,8 +48,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:textSize="14sp"
-        android:fontFamily="sans-serif"
+        android:textSize="15sp"
+        android:fontFamily="sans-serif-medium"
         android:textColor="@color/petal_autofill_subtitle"
         android:gravity="center"
         android:maxLines="1"
@@ -74,12 +74,21 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
         android:orientation="horizontal"
-        android:gravity="center"
+        android:gravity="center_vertical"
         android:background="@drawable/petal_autofill_pill_bg"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         android:paddingTop="5dp"
         android:paddingBottom="5dp">
+
+        <ImageView
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="6dp"
+            android:src="@drawable/icon_secure"
+            android:tint="@color/petal_autofill_accent"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter" />
 
         <TextView
             android:layout_width="wrap_content"

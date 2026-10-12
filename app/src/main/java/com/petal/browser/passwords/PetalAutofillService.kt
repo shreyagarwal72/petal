@@ -70,15 +70,24 @@ class PetalAutofillService : AutofillService() {
          * to a user-friendly application display name if possible.
          */
         fun cleanDisplayLabel(context: Context, rawTarget: String): String {
-            if (!rawTarget.startsWith("app://") && !rawTarget.contains('.')) return rawTarget
-            val pkg = rawTarget.removePrefix("app://").trim()
-            return try {
-                val pm = context.packageManager
-                val appInfo = pm.getApplicationInfo(pkg, 0)
-                pm.getApplicationLabel(appInfo).toString()
-            } catch (_: Exception) {
-                if (pkg == context.packageName) "Petal Browser" else pkg
+            if (rawTarget.isBlank()) return "Petal"
+            if (rawTarget.startsWith("app://") || rawTarget.contains('.')) {
+                val pkg = rawTarget.removePrefix("app://").trim()
+                try {
+                    val pm = context.packageManager
+                    val appInfo = pm.getApplicationInfo(pkg, 0)
+                    val label = pm.getApplicationLabel(appInfo).toString()
+                    if (label.isNotBlank()) return label
+                } catch (_: Exception) {}
+                if (pkg == context.packageName) return "Petal Browser"
+                if (rawTarget.startsWith("app://")) return pkg
             }
+            // For web domains: remove protocols and www prefix
+            return rawTarget
+                .removePrefix("https://")
+                .removePrefix("http://")
+                .removePrefix("www.")
+                .trimEnd('/')
         }
 
         /**
@@ -179,8 +188,9 @@ class PetalAutofillService : AutofillService() {
         val response = FillResponse.Builder()
 
         matches.forEachIndexed { index, cred ->
-            val title = cred.username.ifBlank { cred.domain }
-            val subtitle = "Petal • ${cleanDisplayLabel(applicationContext, cred.domain)}"
+            val friendlyTarget = cleanDisplayLabel(applicationContext, cred.domain)
+            val title = cred.username.ifBlank { friendlyTarget }
+            val subtitle = friendlyTarget
 
             val authIntent = Intent(this, PetalAutofillAuthActivity::class.java).apply {
                 putExtra(PetalAutofillAuthActivity.EXTRA_CREDENTIAL_ID, cred.id)

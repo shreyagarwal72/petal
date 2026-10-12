@@ -4,23 +4,24 @@
   NOTE: RemoteViews does NOT support:
   - ?attr/color… attributes (theme attributes don't resolve in RemoteViews)
   - ConstraintLayout
-  Colors reference @color/ which resolve correctly per night/light configuration.
+  Colors reference @color/ which resolve correctly per night/light configuration
+  and Android 12+ dynamic Material You palettes.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="64dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
     android:paddingTop="8dp"
     android:paddingBottom="8dp"
     android:background="@drawable/petal_autofill_chip_bg">
 
-    <!-- Material 3 Expressive Key/Lock Badge Container -->
+    <!-- Material 3 Expressive Squircle Key/Lock Badge Container -->
     <LinearLayout
-        android:layout_width="38dp"
-        android:layout_height="38dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:gravity="center"
         android:background="@drawable/petal_autofill_badge_bg">
         <ImageView
@@ -39,7 +40,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:layout_marginStart="14dp">
+        android:layout_marginStart="12dp">
 
         <TextView
             android:id="@+id/petal_autofill_username"
@@ -64,14 +65,24 @@
 
     </LinearLayout>
 
-    <!-- Petal brand label pill -->
-    <TextView
+    <!-- Petal brand label pill container -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Petal"
-        android:textSize="11sp"
-        android:fontFamily="sans-serif-medium"
-        android:textColor="@color/petal_autofill_accent"
-        android:layout_marginStart="8dp" />
+        android:background="@drawable/petal_autofill_pill_bg"
+        android:paddingStart="9dp"
+        android:paddingEnd="9dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp"
+        android:layout_marginStart="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Petal"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/petal_autofill_accent" />
+    </LinearLayout>
 
 </LinearLayout>
