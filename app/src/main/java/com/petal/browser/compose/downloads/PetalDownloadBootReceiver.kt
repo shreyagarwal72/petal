@@ -31,7 +31,7 @@ class PetalDownloadBootReceiver : BroadcastReceiver() {
                     if (hasActive) {
                         Log.i("PetalDownloadBoot", "Unfinished downloads found. Starting PetalDownloadService...")
                         val serviceIntent = Intent(appContext, PetalDownloadService::class.java).apply {
-                            action = PetalDownloadService.ACTION_RESTORE_DOWNLOADS
+                            setAction(PetalDownloadService.ACTION_RESTORE_DOWNLOADS)
                         }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             appContext.startForegroundService(serviceIntent)
