@@ -22,7 +22,7 @@
             android:layout_weight="1"
             android:textStyle="bold"
             android:textSize="14sp"
-            android:textColor="?android:attr/textColorPrimary"
+            android:textColor="@color/md_theme_onSurface"
             android:singleLine="true"
             android:ellipsize="middle"
             android:text="Downloading File" />
@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:textSize="12sp"
             android:textStyle="bold"
-            android:textColor="@color/md_theme_primary"
+            android:textColor="@color/live_update_accent"
             android:paddingStart="6dp"
             android:paddingEnd="6dp"
             android:paddingTop="2dp"
@@ -47,7 +47,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="12sp"
-        android:textColor="?android:attr/textColorSecondary"
+        android:textColor="@color/md_theme_onSurfaceVariant"
         android:layout_marginTop="2dp"
         android:singleLine="true"
         android:ellipsize="end"
@@ -70,12 +70,13 @@
             android:src="@drawable/ic_doll_run_1"
             android:contentDescription="Live Download Runner" />
 
-        <!-- Trailing space connecting doll to the finish marker -->
-        <View
+        <!-- Trailing space connecting doll to the finish marker (using ImageView as RemoteViews safe spacer) -->
+        <ImageView
             android:id="@+id/notification_runner_spacer_right"
             android:layout_width="0dp"
             android:layout_height="1dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:contentDescription="@null" />
 
         <!-- Finish Trophy icon marker at end of track -->
         <TextView
