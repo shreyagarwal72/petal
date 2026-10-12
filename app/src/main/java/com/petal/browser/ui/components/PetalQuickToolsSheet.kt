@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.theme.ExpressiveShapeHolder
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
 import androidx.compose.ui.res.stringResource

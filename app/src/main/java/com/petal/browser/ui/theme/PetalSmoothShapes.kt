@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -274,21 +273,21 @@ object PetalBrowserShapes {
      * Mirrors Relay's [avatarFor] pattern for device kinds.
      */
     fun iconShapeFor(category: PetalIconCategory): ExpressiveShapeHolder = when (category) {
-        PetalIconCategory.Web           -> MaterialShapes.Cookie6Sided
-        PetalIconCategory.Download      -> MaterialShapes.Square
-        PetalIconCategory.History       -> MaterialShapes.Clover4Leaf
-        PetalIconCategory.Bookmark      -> MaterialShapes.Sunny
-        PetalIconCategory.Settings      -> MaterialShapes.Pentagon
-        PetalIconCategory.Extension     -> MaterialShapes.Gem
-        PetalIconCategory.Media         -> MaterialShapes.Flower
-        PetalIconCategory.Privacy       -> MaterialShapes.Cookie9Sided
-        PetalIconCategory.Appearance    -> MaterialShapes.Sun
-        PetalIconCategory.Security      -> MaterialShapes.Arch
-        PetalIconCategory.Performance   -> MaterialShapes.Boom
-        PetalIconCategory.Search        -> MaterialShapes.Cookie4Sided
-        PetalIconCategory.Sync          -> MaterialShapes.Clover8Leaf
-        PetalIconCategory.Accessibility -> MaterialShapes.Pill
-        PetalIconCategory.Tools         -> MaterialShapes.Diamond
+        PetalIconCategory.Web           -> PetalMaterialShapes.Cookie6Sided
+        PetalIconCategory.Download      -> PetalMaterialShapes.Square
+        PetalIconCategory.History       -> PetalMaterialShapes.Clover4Leaf
+        PetalIconCategory.Bookmark      -> PetalMaterialShapes.Sunny
+        PetalIconCategory.Settings      -> PetalMaterialShapes.Pentagon
+        PetalIconCategory.Extension     -> PetalMaterialShapes.Gem
+        PetalIconCategory.Media         -> PetalMaterialShapes.Flower
+        PetalIconCategory.Privacy       -> PetalMaterialShapes.Cookie9Sided
+        PetalIconCategory.Appearance    -> PetalMaterialShapes.Sunny
+        PetalIconCategory.Security      -> PetalMaterialShapes.Arch
+        PetalIconCategory.Performance   -> PetalMaterialShapes.Boom
+        PetalIconCategory.Search        -> PetalMaterialShapes.Cookie4Sided
+        PetalIconCategory.Sync          -> PetalMaterialShapes.Clover8Leaf
+        PetalIconCategory.Accessibility -> PetalMaterialShapes.Pill
+        PetalIconCategory.Tools         -> PetalMaterialShapes.Diamond
     }
 }
 
