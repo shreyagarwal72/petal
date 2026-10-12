@@ -95,11 +95,12 @@ object PetalEngineStore {
             middleware = listOf(
                 downloadMiddleware,
                 PromptMiddleware(),
-                FileUploadsDirCleanerMiddleware(uploadCleaner)
+                FileUploadsDirCleanerMiddleware(uploadCleaner),
+                PetalSessionPrioritizationMiddleware()
             ) + engineMiddleware
         )
         store = newStore
-        Log.i(TAG, "Initialized Mozilla BrowserStore with EngineMiddleware and DownloadMiddleware")
+        Log.i(TAG, "Initialized Mozilla BrowserStore with Prioritization, EngineMiddleware and DownloadMiddleware")
         return newStore
     }
 
@@ -409,5 +410,41 @@ object PetalEngineStore {
                 )
             )
         )
+    }
+
+    /**
+     * Propagates OS Low Memory / Trim Memory events to Mozilla Components [TrimMemoryMiddleware].
+     */
+    @JvmStatic
+    fun onLowMemory(context: Context, level: Int) {
+        try {
+            getStore(context).dispatch(
+                mozilla.components.browser.state.action.SystemAction.LowMemoryAction(level)
+            )
+        } catch (_: Throwable) {}
+    }
+
+    /**
+     * Propagates application pause lifecycle event to BrowserStore for background form data capture.
+     */
+    @JvmStatic
+    fun onAppPause(context: Context) {
+        try {
+            getStore(context).dispatch(
+                mozilla.components.browser.state.action.AppLifecycleAction.PauseAction
+            )
+        } catch (_: Throwable) {}
+    }
+
+    /**
+     * Propagates application resume lifecycle event to BrowserStore.
+     */
+    @JvmStatic
+    fun onAppResume(context: Context) {
+        try {
+            getStore(context).dispatch(
+                mozilla.components.browser.state.action.AppLifecycleAction.ResumeAction
+            )
+        } catch (_: Throwable) {}
     }
 }

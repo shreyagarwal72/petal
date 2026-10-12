@@ -1147,6 +1147,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             ((com.petal.browser.view.PetalGeckoView) currentAlbumController).onResume();
         }
+        try {
+            com.petal.browser.engine.gecko.PetalEngineStore.onAppResume(this);
+            com.petal.browser.engine.gecko.PetalTabSuspender.checkAndSuspendInactiveTabs(this, currentAlbumController);
+        } catch (Throwable ignored) {}
         if (sp.getBoolean("sp_camera", false)) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
@@ -1223,31 +1227,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onTrimMemory(level);
         try {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.onTrimMemory(this, level);
+            com.petal.browser.engine.gecko.PetalEngineStore.onLowMemory(this, level);
             if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
                 com.petal.browser.unit.TabThumbnailCache.clearMemory();
             }
         } catch (Throwable t) {
             Log.d(TAG, "Error in onTrimMemory: " + t.getMessage());
         }
-        // Proactively suspend background GeckoView tabs under memory pressure so the OS
-        // doesn't OOM-kill the content process mid-session. Levels RUNNING_LOW (10),
-        // RUNNING_CRITICAL (15), and COMPLETE (80) are the most urgent signals.
-        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+        // Firefox-grade tab suspension under memory pressure:
+        // Levels RUNNING_LOW (10), RUNNING_CRITICAL (15), and COMPLETE (80)
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL ||
+            level >= android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
             try {
-                for (int i = 0; i < com.petal.browser.browser.BrowserContainer.size(); i++) {
-                    com.petal.browser.browser.AlbumController controller =
-                        com.petal.browser.browser.BrowserContainer.get(i);
-                    if (controller == currentAlbumController) continue; // keep foreground tab alive
-                    if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                        com.petal.browser.view.PetalGeckoView gv =
-                            (com.petal.browser.view.PetalGeckoView) controller;
-                        // Suspend the background session — GeckoView will stop compositing
-                        // and reduce native memory footprint for that content process.
-                        try { gv.getSession().setActive(false); } catch (Exception ignored) {}
-                    }
-                }
+                // Critical memory pressure: preserve only the foreground tab, suspend all others
+                com.petal.browser.engine.gecko.PetalTabSuspender.trimBackgroundTabs(this, currentAlbumController, 0);
             } catch (Exception e) {
-                Log.e(TAG, "Error trimming background GeckoView memory", e);
+                Log.e(TAG, "Error trimming background tabs on critical memory", e);
+            }
+        } else if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            try {
+                // Moderate memory pressure: preserve foreground tab + top 2 active tabs
+                com.petal.browser.engine.gecko.PetalTabSuspender.trimBackgroundTabs(this, currentAlbumController, 2);
+            } catch (Exception e) {
+                Log.e(TAG, "Error trimming background tabs on low memory", e);
             }
         }
     }
@@ -7150,6 +7152,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 activeController.updatePreviewCache(true);
             }
             saveOpenedTabs();
+            com.petal.browser.engine.gecko.PetalEngineStore.onAppPause(this);
         } catch (Exception e) {
             Log.e(TAG, "Error saving tab session in onPause", e);
         }

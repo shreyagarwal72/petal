@@ -644,6 +644,7 @@ class PetalGeckoView @JvmOverloads constructor(
     private var isIncognito: Boolean = initialIncognito
     private var isForegroundTab: Boolean = false
     private var isStopped: Boolean = false
+    private var isMediaPlaying: Boolean = false
     private var previewRevision: Long = 0L
     private var capturedPreviewRevision: Long = -1L
     private var previewCaptureSequence: Long = 0L
@@ -1352,6 +1353,7 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onPlay(session: GeckoSession, mediaSession: MediaSession) {
+                isMediaPlaying = true
                 mediaBridge?.setActiveGeckoMediaSession(mediaSession)
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
@@ -1365,6 +1367,7 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onPause(session: GeckoSession, mediaSession: MediaSession) {
+                isMediaPlaying = false
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     if (act is com.petal.browser.activity.BrowserActivity) {
@@ -1377,6 +1380,7 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onStop(session: GeckoSession, mediaSession: MediaSession) {
+                isMediaPlaying = false
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
@@ -2036,7 +2040,9 @@ class PetalGeckoView @JvmOverloads constructor(
         isForegroundTab = false
         album.deactivate()
         try {
-            session.setActive(false)
+            if (!isPlayingAudio()) {
+                session.setActive(false)
+            }
         } catch (_: Throwable) {}
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(session, null)
     }
@@ -2291,8 +2297,20 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun onPause() {
-        session.setActive(false)
+        if (!isPlayingAudio()) {
+            session.setActive(false)
+        }
     }
+
+    /**
+     * Returns true if audio/video is currently playing in this tab.
+     */
+    fun isPlayingAudio(): Boolean = isMediaPlaying
+
+    /**
+     * Returns true if this tab has an active or paused media session.
+     */
+    fun hasActiveMediaSession(): Boolean = mediaBridge?.activeGeckoMediaSession != null
 
     fun resumeTimers() {}
 

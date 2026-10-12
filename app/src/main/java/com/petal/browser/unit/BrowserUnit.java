@@ -334,6 +334,12 @@ public class BrowserUnit {
         // 3. Keep tab thumbnails across app exits. They are removed only when the
         // corresponding tab is explicitly closed or all tabs are explicitly closed.
         // Note: NEVER remove account logins, Google credentials, saved passwords, or auth tokens on exit.
+
+        // 4. Firefox-grade ephemeral storage clean & SQLite database compaction
+        try {
+            com.petal.browser.engine.gecko.PetalStorageManager.cleanEphemeralStorage(context);
+            com.petal.browser.engine.gecko.PetalStorageManager.optimizeDatabases(context);
+        } catch (Exception ignored) {}
     }
 
     public static void clearBrowserData(Context context) {

@@ -167,6 +167,66 @@ fun TabsSettingsScreen(
                         }
                     }
                 }
+
+                PetalSettingsSection(
+                    title = "Performance & Memory",
+                    icon = Icons.Rounded.Speed,
+                    cardId = "performance_memory",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Text(
+                        text = "Firefox-grade CPU prioritization and tab memory hibernation to extend battery life.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+
+                    var memorySaverMode by remember {
+                        mutableStateOf(sp.getString(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_MEMORY_SAVER_MODE, "balanced") ?: "balanced")
+                    }
+                    var suspendTimeout by remember {
+                        mutableStateOf(sp.getString(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_TAB_SUSPEND_TIMEOUT, "15") ?: "15")
+                    }
+
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = "Memory Saver Mode",
+                                    subtitle = if (memorySaverMode != "off") "Frees RAM and halts CPU cycles for inactive tabs" else "Disabled (all tabs kept loaded)",
+                                    icon = Icons.Rounded.Memory,
+                                    checked = memorySaverMode != "off",
+                                    position = position,
+                                    onCheckedChange = { isEnabled ->
+                                        val newMode = if (isEnabled) "balanced" else "off"
+                                        memorySaverMode = newMode
+                                        sp.edit().putString(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_MEMORY_SAVER_MODE, newMode).apply()
+                                    }
+                                )
+                            }
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.HourglassTop,
+                                    title = "Tab Hibernation Interval",
+                                    subtitle = if (memorySaverMode == "off") "Disabled" else "After $suspendTimeout minutes of inactivity",
+                                    position = position,
+                                    onClick = {
+                                        if (memorySaverMode != "off") {
+                                            val next = when (suspendTimeout) {
+                                                "5" -> "15"
+                                                "15" -> "30"
+                                                "30" -> "5"
+                                                else -> "15"
+                                            }
+                                            suspendTimeout = next
+                                            sp.edit().putString(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_TAB_SUSPEND_TIMEOUT, next).apply()
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

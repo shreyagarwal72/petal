@@ -121,6 +121,9 @@ class PetalApplication : Application() {
                 com.petal.browser.wallpaper.PetalWallpaperManager.init(this)
                 com.petal.browser.collections.PetalCollectionManager.init(this)
                 com.petal.browser.compose.downloads.PetalFetchDownloadBridge.ensureInitialized(this)
+                // Sweep ephemeral upload buffers & compact SQLite databases
+                com.petal.browser.engine.gecko.PetalStorageManager.cleanEphemeralStorage(this)
+                com.petal.browser.engine.gecko.PetalStorageManager.optimizeDatabases(this)
             } catch (t: Throwable) {
                 Log.w(TAG, "Early profile/wallpaper/download init failed", t)
             }
@@ -179,6 +182,7 @@ class PetalApplication : Application() {
         if (!isMainProcess()) return
         try {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.onTrimMemory(this, level)
+            com.petal.browser.engine.gecko.PetalEngineStore.onLowMemory(this, level)
         } catch (_: Throwable) {}
     }
 
@@ -187,6 +191,7 @@ class PetalApplication : Application() {
         if (!isMainProcess()) return
         try {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.onLowMemory(this)
+            com.petal.browser.engine.gecko.PetalEngineStore.onLowMemory(this, android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
             com.petal.browser.unit.TabThumbnailCache.clearMemory()
         } catch (_: Throwable) {}
     }
