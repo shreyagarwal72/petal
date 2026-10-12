@@ -187,8 +187,9 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
+    shape: Shape = RoundedCornerShape(14.dp),
 ) {
-    Box(modifier.size(size).clip(RoundedCornerShape(14.dp)).background(container), contentAlignment = Alignment.Center) {
+    Box(modifier.size(size).clip(shape).background(container), contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
 }
@@ -201,8 +202,9 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
+    shape: Shape = RoundedCornerShape(14.dp),
 ) {
-    Box(modifier.size(size).clip(RoundedCornerShape(14.dp)).background(container), contentAlignment = Alignment.Center) {
+    Box(modifier.size(size).clip(shape).background(container), contentAlignment = Alignment.Center) {
         Icon(painter, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
 }
@@ -215,8 +217,9 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
+    shape: Shape = RoundedCornerShape(14.dp),
 ) {
-    Box(modifier.size(size).clip(RoundedCornerShape(14.dp)).background(container), contentAlignment = Alignment.Center) {
+    Box(modifier.size(size).clip(shape).background(container), contentAlignment = Alignment.Center) {
         Icon(painterResource(iconRes), contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
 }

@@ -273,21 +273,29 @@ object PetalBrowserShapes {
      *
      * Mirrors Relay's [avatarFor] pattern for device kinds.
      */
-    fun iconShapeFor(category: PetalIconCategory) = when (category) {
-        PetalIconCategory.Web       -> MaterialShapes.Cookie6Sided
-        PetalIconCategory.Download  -> MaterialShapes.Square
-        PetalIconCategory.History   -> MaterialShapes.Clover4Leaf
-        PetalIconCategory.Bookmark  -> MaterialShapes.Sunny
-        PetalIconCategory.Settings  -> MaterialShapes.Pentagon
-        PetalIconCategory.Extension -> MaterialShapes.Gem
-        PetalIconCategory.Media     -> MaterialShapes.Flower
-        PetalIconCategory.Privacy   -> MaterialShapes.Cookie9Sided
+    fun iconShapeFor(category: PetalIconCategory): ExpressiveShapeHolder = when (category) {
+        PetalIconCategory.Web           -> MaterialShapes.Cookie6Sided
+        PetalIconCategory.Download      -> MaterialShapes.Square
+        PetalIconCategory.History       -> MaterialShapes.Clover4Leaf
+        PetalIconCategory.Bookmark      -> MaterialShapes.Sunny
+        PetalIconCategory.Settings      -> MaterialShapes.Pentagon
+        PetalIconCategory.Extension     -> MaterialShapes.Gem
+        PetalIconCategory.Media         -> MaterialShapes.Flower
+        PetalIconCategory.Privacy       -> MaterialShapes.Cookie9Sided
+        PetalIconCategory.Appearance    -> MaterialShapes.Sun
+        PetalIconCategory.Security      -> MaterialShapes.Arch
+        PetalIconCategory.Performance   -> MaterialShapes.Boom
+        PetalIconCategory.Search        -> MaterialShapes.Cookie4Sided
+        PetalIconCategory.Sync          -> MaterialShapes.Clover8Leaf
+        PetalIconCategory.Accessibility -> MaterialShapes.Pill
+        PetalIconCategory.Tools         -> MaterialShapes.Diamond
     }
 }
 
 /** Content category for [PetalBrowserShapes.iconShapeFor]. */
 enum class PetalIconCategory {
-    Web, Download, History, Bookmark, Settings, Extension, Media, Privacy
+    Web, Download, History, Bookmark, Settings, Extension, Media, Privacy,
+    Appearance, Security, Performance, Search, Sync, Accessibility, Tools
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

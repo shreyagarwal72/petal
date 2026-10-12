@@ -1087,10 +1087,9 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
     }
 }
 
-private fun homeShortcutShape(index: Int): Shape = when (index.mod(3)) {
-    0 -> PetalMaterialShapes.Flower.toShape()
-    1 -> PetalMaterialShapes.Cookie7Sided.toShape()
-    else -> PetalMaterialShapes.Gem.toShape()
+private fun homeShortcutShape(index: Int): Shape {
+    val all = PetalMaterialShapes.allShapes
+    return all[index.mod(all.size)].toShape()
 }
 
 // ── 6. Search Bar ─────────────────────────────────────────────────────────
@@ -1490,20 +1489,20 @@ private fun EditShortcutDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                // Shape selector horizontal carousel
+                // Shape selector horizontal carousel showcasing all 35 M3 Expressive shapes
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    PetalMaterialShapes.homescreenShapes.forEach { shapeHolder ->
+                    PetalMaterialShapes.allShapes.forEach { shapeHolder ->
                         val isSelected = shapeHolder.name.equals(selectedShapeName, ignoreCase = true)
                         val shape = shapeHolder.toShape()
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(46.dp)
                                 .clip(shape)
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primary
@@ -1519,8 +1518,8 @@ private fun EditShortcutDialog(
                                 }
                         ) {
                             Text(
-                                text = shapeHolder.name.take(1),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                text = shapeHolder.name.take(2),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }

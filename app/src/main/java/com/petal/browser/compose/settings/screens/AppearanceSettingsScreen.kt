@@ -726,6 +726,111 @@ fun AppearanceSettingsScreenContent(
                             }
                         }
                     }
+
+                    // Interactive M3 Expressive 35 Shapes Studio
+                    Spacer(Modifier.height(8.dp))
+                    var previewShapeIndex by remember { mutableStateOf(0) }
+                    val allM3Shapes = PetalMaterialShapes.allShapes
+                    val activeShape = allM3Shapes[previewShapeIndex % allM3Shapes.size]
+
+                    Surface(
+                        shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.SINGLE),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "M3 Expressive Shape Studio",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Interactive gallery of all 35 official geometric tokens",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(54.dp)
+                                        .clip(activeShape.toShape())
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
+                                        .border(1.5.dp, MaterialTheme.colorScheme.primary, activeShape.toShape())
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "${activeShape.name} (${activeShape.category})",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "${(previewShapeIndex % allM3Shapes.size) + 1} of ${allM3Shapes.size}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            // Carousel of all 35 shapes
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                allM3Shapes.forEachIndexed { idx, holder ->
+                                    val isSelected = idx == (previewShapeIndex % allM3Shapes.size)
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier
+                                            .size(42.dp)
+                                            .clip(holder.toShape())
+                                            .background(
+                                                if (isSelected) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.surfaceContainerHighest
+                                            )
+                                            .border(
+                                                width = if (isSelected) 2.dp else 0.5.dp,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                                shape = holder.toShape()
+                                            )
+                                            .clickable {
+                                                previewShapeIndex = idx
+                                            }
+                                    ) {
+                                        Text(
+                                            text = "${idx + 1}",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Section 4: Display Refresh Rate & Performance

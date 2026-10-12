@@ -82,21 +82,41 @@ enum class QuickToolId(
     val shapeIndex: Int
 ) {
     QR_SCANNER("qr_scanner", "QR Scanner", Icons.Rounded.QrCodeScanner, "Scan QR with camera", 0),
-    TRANSLATOR("translator", "Translator", Icons.Rounded.Translate, "Translate page", 2),
-    EDIT_PAGE("edit_page", "Edit Page", Icons.Rounded.Edit, "Modify text on page", 3),
-    NETWORK("network", "Network", Icons.Rounded.Language, "Connection & DNS inspector", 5),
-    AUTO_SCROLL("auto_scroll", "Auto-Scroll", Icons.Rounded.ArrowDownward, "Hands-free reader", 7),
-    QR_SCAN_PAGE("qr_scan_page", "QR Scan Page", Icons.Rounded.CropFree, "Find QR codes on page", 8),
-    QR_GENERATOR("qr_generator", "QR Generator", Icons.Rounded.QrCode, "Share link as QR", 9),
-    DEV_NOTES("dev_notes", "Dev Notes", Icons.Rounded.Description, "Notes for this site", 11),
-    SITE_STYLE("site_style", "Site Style", Icons.Rounded.Palette, "Custom color & font themes", 12),
-    IMAGE_GRABBER("image_grabber", "Image Grabber", Icons.Rounded.PhotoLibrary, "Extract all images", 13),
-    INSPECTOR("inspector", "Inspector", Icons.Rounded.Code, "DOM element inspector", 14),
-    BLOCK_AREA("block_area", "Block Area", Icons.Rounded.VisibilityOff, "Element zapper", 15),
-    SPOOF_IDENTITY("spoof_identity", "Spoof Identity", Icons.Rounded.Devices, "Change User-Agent", 16),
-    FORCE_ZOOM("force_zoom", "Force Zoom", Icons.Rounded.ZoomIn, "Bypass zoom locks", 0),
-    SCREENSHOT("screenshot", "Screenshot", Icons.Rounded.Screenshot, "Capture page screenshot", 1),
-    TORRENT_MAGNET("torrent_magnet", "Torrents", Icons.Rounded.Download, "Magnet & torrent links", 2)
+    TRANSLATOR("translator", "Translator", Icons.Rounded.Translate, "Translate page", 1),
+    EDIT_PAGE("edit_page", "Edit Page", Icons.Rounded.Edit, "Modify text on page", 2),
+    NETWORK("network", "Network", Icons.Rounded.Language, "Connection & DNS inspector", 3),
+    AUTO_SCROLL("auto_scroll", "Auto-Scroll", Icons.Rounded.ArrowDownward, "Hands-free reader", 4),
+    QR_SCAN_PAGE("qr_scan_page", "QR Scan Page", Icons.Rounded.CropFree, "Find QR codes on page", 5),
+    QR_GENERATOR("qr_generator", "QR Generator", Icons.Rounded.QrCode, "Share link as QR", 6),
+    DEV_NOTES("dev_notes", "Dev Notes", Icons.Rounded.Description, "Notes for this site", 7),
+    SITE_STYLE("site_style", "Site Style", Icons.Rounded.Palette, "Custom color & font themes", 8),
+    IMAGE_GRABBER("image_grabber", "Image Grabber", Icons.Rounded.PhotoLibrary, "Extract all images", 9),
+    INSPECTOR("inspector", "Inspector", Icons.Rounded.Code, "DOM element inspector", 10),
+    BLOCK_AREA("block_area", "Block Area", Icons.Rounded.VisibilityOff, "Element zapper", 11),
+    SPOOF_IDENTITY("spoof_identity", "Spoof Identity", Icons.Rounded.Devices, "Change User-Agent", 12),
+    FORCE_ZOOM("force_zoom", "Force Zoom", Icons.Rounded.ZoomIn, "Bypass zoom locks", 13),
+    SCREENSHOT("screenshot", "Screenshot", Icons.Rounded.Screenshot, "Capture page screenshot", 14),
+    TORRENT_MAGNET("torrent_magnet", "Torrents", Icons.Rounded.Download, "Magnet & torrent links", 15);
+
+    val expressiveShape: ExpressiveShapeHolder
+        get() = when (this) {
+            QR_SCANNER     -> PetalMaterialShapes.PixelCircle
+            TRANSLATOR     -> PetalMaterialShapes.Clover4Leaf
+            EDIT_PAGE      -> PetalMaterialShapes.Slanted
+            NETWORK        -> PetalMaterialShapes.Pentagon
+            AUTO_SCROLL    -> PetalMaterialShapes.Arrow
+            QR_SCAN_PAGE   -> PetalMaterialShapes.PixelTriangle
+            QR_GENERATOR   -> PetalMaterialShapes.Sunny
+            DEV_NOTES      -> PetalMaterialShapes.Arch
+            SITE_STYLE     -> PetalMaterialShapes.Flower
+            IMAGE_GRABBER  -> PetalMaterialShapes.Gem
+            INSPECTOR      -> PetalMaterialShapes.Diamond
+            BLOCK_AREA     -> PetalMaterialShapes.Cookie4Sided
+            SPOOF_IDENTITY -> PetalMaterialShapes.Ghostish
+            FORCE_ZOOM     -> PetalMaterialShapes.PuffyDiamond
+            SCREENSHOT     -> PetalMaterialShapes.Fan
+            TORRENT_MAGNET -> PetalMaterialShapes.Boom
+        }
 }
 
 interface PetalQuickToolsActionHandler {
@@ -284,12 +304,8 @@ private fun ExpressiveQuickToolItem(
         label = "toolScale"
     )
 
-    // Curated M3 Expressive Shape selection
-    val shapeHolder = remember(tool.shapeIndex) {
-        val shapes = PetalMaterialShapes.homescreenShapes
-        shapes[tool.shapeIndex % shapes.size]
-    }
-    val shape: Shape = remember(shapeHolder) { shapeHolder.toShape() }
+    // Distinct semantic M3 Expressive Shape for this tool
+    val shape: Shape = remember(tool) { tool.expressiveShape.toShape() }
 
     // Adaptive color pairs based on index
     val (containerColor, iconColor) = when (tool.shapeIndex % 4) {

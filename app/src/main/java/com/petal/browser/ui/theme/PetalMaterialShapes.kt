@@ -63,7 +63,8 @@ data class ExpressiveShapeHolder(
     val category: String,
     val polygon: RoundedPolygon
 ) {
-    fun toShape(): Shape = polygon.toShape()
+    val cachedShape: Shape by lazy { polygon.toShape() }
+    fun toShape(): Shape = cachedShape
 }
 
 /**
