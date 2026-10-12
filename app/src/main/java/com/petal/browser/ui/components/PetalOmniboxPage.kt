@@ -96,10 +96,27 @@ import java.net.URI
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
+enum class SuggestionSource { RECENT_SEARCH, BROWSING_HISTORY, SEARCH_ENGINE }
+
 data class OmniboxSuggestion(
     val query: String,
-    val isHistory: Boolean
+    val isHistory: Boolean,
+    val source: SuggestionSource = SuggestionSource.SEARCH_ENGINE
 )
+
+/**
+ * Firefox-style smart ellipsis:
+ * - URLs get start-ellipsis (…end/of/path) so the unique suffix stays visible.
+ * - Plain search queries get end-ellipsis (beginning of intent stays visible).
+ */
+private fun smartEllipsize(text: String, isUrl: Boolean, maxChars: Int = 48): String {
+    if (text.length <= maxChars) return text
+    return if (isUrl) {
+        "\u2026" + text.takeLast(maxChars)
+    } else {
+        text.take(maxChars) + "\u2026"
+    }
+}
 
 private data class TopSiteShortcut(
     val title: String,
@@ -311,6 +328,7 @@ fun PetalOmniboxPage(
     }
 
     // Fetch local search/browsing history from SQLite database (only when not in Incognito).
+    // Records are sorted by most-recently-visited first (Firefox AwesomeBar convention).
     val localHistoryList = remember(isIncognito) {
         if (isIncognito) {
             emptyList<String>()
@@ -321,7 +339,8 @@ fun PetalOmniboxPage(
                 action.open(false)
                 val records: List<Record> = action.listHistory(context)
                 action.close()
-                records.forEach { r ->
+                // Sort by time descending so most-recently-visited titles appear first
+                records.sortedByDescending { it.time }.forEach { r ->
                     if (!r.title.isNullOrBlank()) list.add(r.title)
                 }
             } catch (e: Exception) {
@@ -336,12 +355,20 @@ fun PetalOmniboxPage(
         val currentText = queryState.text.trim()
         val savedQueries = getSavedSearchHistory()
         if (currentText.isEmpty()) {
-            // Rank most recent searches directly at the top in exact MRU order (index 0 is newest)
-            suggestions = (savedQueries + localHistoryList)
-                .distinctBy { it.lowercase() }
+            // Firefox-style: Recent Searches (MRU, exact order) come first, then
+            // Browsing History entries below — two visually separated groups.
+            val recentSearchItems = savedQueries
                 .filter { !removedSuggestions.contains(it) }
-                .take(8)
-                .map { OmniboxSuggestion(it, isHistory = true) }
+                .take(5)
+                .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.RECENT_SEARCH) }
+
+            val recentSearchSet = recentSearchItems.map { it.query.lowercase() }.toSet()
+            val browsingHistoryItems = localHistoryList
+                .filter { !removedSuggestions.contains(it) && !recentSearchSet.contains(it.lowercase()) }
+                .take(8 - recentSearchItems.size)
+                .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.BROWSING_HISTORY) }
+
+            suggestions = recentSearchItems + browsingHistoryItems
         } else {
             val queryTokens = currentText.lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
             val savedMatches = savedQueries
@@ -350,7 +377,7 @@ fun PetalOmniboxPage(
                     (lower.contains(currentText.lowercase()) || queryTokens.all { lower.contains(it) }) && !removedSuggestions.contains(query)
                 }
                 .take(4)
-                .map { OmniboxSuggestion(it, isHistory = true) }
+                .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.RECENT_SEARCH) }
 
             val localMatches = localHistoryList
                 .filter { title ->
@@ -360,7 +387,7 @@ fun PetalOmniboxPage(
                             savedMatches.none { it.query.equals(title, ignoreCase = true) }
                 }
                 .take(4 - savedMatches.size)
-                .map { OmniboxSuggestion(it, isHistory = true) }
+                .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.BROWSING_HISTORY) }
 
             val historyMatches = savedMatches + localMatches
             suggestions = historyMatches
@@ -375,18 +402,18 @@ fun PetalOmniboxPage(
                     engineResults.forEach { res ->
                         val trimmedRes = res.trim()
                         if (trimmedRes.isNotEmpty() && !removedSuggestions.contains(trimmedRes) && combined.none { it.query.equals(trimmedRes, ignoreCase = true) }) {
-                            combined.add(OmniboxSuggestion(trimmedRes, isHistory = false))
+                            combined.add(OmniboxSuggestion(trimmedRes, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
                         }
                     }
                     // For longer searches, ensure the exact query is presented as an actionable direct search row if not already present
                     if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && combined.none { it.query.equals(currentText, ignoreCase = true) }) {
-                        combined.add(0, OmniboxSuggestion(currentText, isHistory = false))
+                        combined.add(0, OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
                     }
                     suggestions = combined
                 }
             } else {
                 if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && historyMatches.none { it.query.equals(currentText, ignoreCase = true) }) {
-                    suggestions = listOf(OmniboxSuggestion(currentText, isHistory = false)) + historyMatches
+                    suggestions = listOf(OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE)) + historyMatches
                 }
             }
         }
@@ -970,67 +997,132 @@ fun PetalOmniboxPage(
                                         text = stringResource(R.string.ui_search_suggestions),
                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
                                     )
+
+                                    // Build a flat list interleaving section header entries and suggestion row entries.
+                                    // `remember` is valid here — we are inside the Column composable scope.
+                                    val listEntries = remember(suggestions) {
+                                        buildList {
+                                            var lastSrc: SuggestionSource? = null
+                                            suggestions.forEach { item ->
+                                                if (item.source != lastSrc) {
+                                                    lastSrc = item.source
+                                                    add("header_${item.source.name}" to item.source)
+                                                }
+                                                add("item_${item.source.name}_${item.query}" to item)
+                                            }
+                                        }
+                                    }
 
                                     LazyColumn(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .weight(1f, fill = false),
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        verticalArrangement = Arrangement.spacedBy(2.dp)
                                     ) {
-                                         itemsIndexed(
-                                             items = suggestions,
-                                             key = { _, item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
-                                         ) { index, item ->
-                                             com.petal.browser.ui.containment.PetalGroupListRow(
-                                                 position = com.petal.browser.ui.containment.petalGroupPositionFor(index, suggestions.size),
-                                                 onClick = {
-                                                     val trimmed = item.query.trim()
-                                                     if (trimmed.isNotEmpty()) submitSearch(trimmed)
-                                                 },
-                                                 onLongClick = {
-                                                     try {
-                                                         com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                                                     } catch (ignored: Exception) {}
-                                                     suggestionToRemove = item
-                                                 },
-                                                 modifier = Modifier
-                                                     .fillMaxWidth()
-                                                     // Rows fade in/out and slide smoothly into their
-                                                     // new position as `suggestions` is replaced on
-                                                     // every keystroke, instead of the list just
-                                                     // popping to its new contents.
-                                                     .animateItem(
-                                                         fadeInSpec = tween(220),
-                                                         fadeOutSpec = tween(150),
-                                                         placementSpec = spring(
-                                                             dampingRatio = Spring.DampingRatioNoBouncy,
-                                                             stiffness = Spring.StiffnessMediumLow
-                                                         )
-                                                     ),
-                                                 leading = {
-                                                     com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                                         icon = if (item.isHistory) Icons.Filled.History else Icons.Filled.Search,
-                                                         container = if (item.isHistory) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
-                                                         tint = if (item.isHistory) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
-                                                     )
-                                                 },
-                                                 content = {
-                                                     Text(item.query, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                 },
-                                                 trailing = {
-                                                     IconButton(
-                                                         onClick = { queryState = TextFieldValue(text = item.query, selection = TextRange(item.query.length)) },
-                                                         modifier = Modifier.size(40.dp),
-                                                     ) {
-                                                         Icon(Icons.Filled.NorthWest, contentDescription = stringResource(R.string.ui_insert_query_into_omnibox), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                                                     }
-                                                 },
-                                             )
+                                        itemsIndexed(
+                                            items = listEntries,
+                                            key = { _, entry -> entry.first }
+                                        ) { entryIndex, entry ->
+                                            when (val payload = entry.second) {
+                                                is SuggestionSource -> {
+                                                    // Section header
+                                                    val headerLabel = when (payload) {
+                                                        SuggestionSource.RECENT_SEARCH -> "Recent Searches"
+                                                        SuggestionSource.BROWSING_HISTORY -> "From Browsing History"
+                                                        SuggestionSource.SEARCH_ENGINE -> stringResource(R.string.ui_search_suggestions)
+                                                    }
+                                                    Text(
+                                                        text = headerLabel,
+                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+                                                        modifier = Modifier.padding(
+                                                            horizontal = 16.dp,
+                                                            top = if (entryIndex == 0) 2.dp else 10.dp,
+                                                            bottom = 2.dp
+                                                        )
+                                                    )
+                                                }
+                                                is OmniboxSuggestion -> {
+                                                    // Suggestion row index within `suggestions` for group shape
+                                                    val itemIndex = suggestions.indexOf(payload)
+
+                                                    // Smart ellipsis: URLs keep their end (path visible),
+                                                    // plain queries keep their beginning (intent visible) — Firefox pattern.
+                                                    val isUrl = payload.query.startsWith("http") ||
+                                                            (payload.query.contains(".") && !payload.query.contains(" "))
+                                                    val displayText = smartEllipsize(payload.query, isUrl)
+
+                                                    // Icon and tint per source group
+                                                    val badgeIcon = when (payload.source) {
+                                                        SuggestionSource.RECENT_SEARCH -> Icons.Filled.History
+                                                        SuggestionSource.BROWSING_HISTORY -> Icons.Filled.History
+                                                        SuggestionSource.SEARCH_ENGINE -> Icons.Filled.Search
+                                                    }
+                                                    val badgeContainer = when (payload.source) {
+                                                        SuggestionSource.RECENT_SEARCH -> MaterialTheme.colorScheme.secondaryContainer
+                                                        SuggestionSource.BROWSING_HISTORY -> MaterialTheme.colorScheme.tertiaryContainer
+                                                        SuggestionSource.SEARCH_ENGINE -> MaterialTheme.colorScheme.primaryContainer
+                                                    }
+                                                    val badgeTint = when (payload.source) {
+                                                        SuggestionSource.RECENT_SEARCH -> MaterialTheme.colorScheme.onSecondaryContainer
+                                                        SuggestionSource.BROWSING_HISTORY -> MaterialTheme.colorScheme.onTertiaryContainer
+                                                        SuggestionSource.SEARCH_ENGINE -> MaterialTheme.colorScheme.onPrimaryContainer
+                                                    }
+
+                                                    com.petal.browser.ui.containment.PetalGroupListRow(
+                                                        position = com.petal.browser.ui.containment.petalGroupPositionFor(itemIndex, suggestions.size),
+                                                        onClick = {
+                                                            val trimmed = payload.query.trim()
+                                                            if (trimmed.isNotEmpty()) submitSearch(trimmed)
+                                                        },
+                                                        onLongClick = {
+                                                            try {
+                                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                                            } catch (ignored: Exception) {}
+                                                            suggestionToRemove = payload
+                                                        },
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            // Rows fade in/out and slide smoothly into their
+                                                            // new position as `suggestions` is replaced on
+                                                            // every keystroke, instead of the list just
+                                                            // popping to its new contents.
+                                                            .animateItem(
+                                                                fadeInSpec = tween(220),
+                                                                fadeOutSpec = tween(150),
+                                                                placementSpec = spring(
+                                                                    dampingRatio = Spring.DampingRatioNoBouncy,
+                                                                    stiffness = Spring.StiffnessMediumLow
+                                                                )
+                                                            ),
+                                                        leading = {
+                                                            com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                                                icon = badgeIcon,
+                                                                container = badgeContainer,
+                                                                tint = badgeTint,
+                                                            )
+                                                        },
+                                                        content = {
+                                                            // bodyMedium (14sp) matches Firefox AwesomeBar density
+                                                            Text(displayText, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                        },
+                                                        trailing = {
+                                                            IconButton(
+                                                                onClick = { queryState = TextFieldValue(text = payload.query, selection = TextRange(payload.query.length)) },
+                                                                modifier = Modifier.size(40.dp),
+                                                            ) {
+                                                                Icon(Icons.Filled.NorthWest, contentDescription = stringResource(R.string.ui_insert_query_into_omnibox), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                                            }
+                                                        },
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
+
                                 }
                             }
                         }
