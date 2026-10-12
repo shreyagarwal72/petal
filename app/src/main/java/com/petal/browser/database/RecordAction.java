@@ -129,7 +129,7 @@ public class RecordAction {
                 null,
                 null,
                 null,
-                RecordUnit.COLUMN_TIME + " COLLATE NOCASE;"
+                RecordUnit.COLUMN_TIME + " DESC"
         );
 
         cursor.moveToFirst();

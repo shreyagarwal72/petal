@@ -52,4 +52,17 @@ object PetalSessionHistoryManager {
             Log.e(TAG, "Error clearing session history on exit", e)
         }
     }
+
+    /**
+     * Resets the in-memory session tracker without deleting any rows from the SQLite HISTORY table.
+     * Called on app exit when the user has NOT opted into "Clear History on Exit" — so the
+     * duplicate-visit suppression set is refreshed for the next session while all history
+     * rows are preserved permanently, matching Firefox's behaviour.
+     */
+    @JvmStatic
+    fun resetSession() {
+        sessionStartTime = System.currentTimeMillis()
+        sessionUrls.clear()
+        Log.d(TAG, "Session tracker reset — browsing history preserved in DB")
+    }
 }

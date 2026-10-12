@@ -309,11 +309,18 @@ public class BrowserUnit {
         boolean clearHistory = sp.getBoolean("sp_clear_history", false);
         boolean clearCache = sp.getBoolean("sp_clear_cache", false);
 
-        // 1. History cleanup: full history table if clearHistory is true, otherwise session-scoped history
+        // 1. History cleanup: full table wipe only when the user explicitly opted in.
+        //    Session history is preserved across restarts unless sp_clear_history is true —
+        //    matching Firefox's behaviour where "Clear on Exit" for cache/cookies does NOT
+        //    automatically delete browsing history.
         if (clearHistory) {
             BrowserUnit.clearHistory(context);
+            PetalSessionHistoryManager.clearSessionHistory(context);
+        } else {
+            // Reset in-memory session tracker (clears duplicate-visit suppression set)
+            // without touching any rows in the SQLite HISTORY table.
+            PetalSessionHistoryManager.resetSession();
         }
-        PetalSessionHistoryManager.clearSessionHistory(context);
 
         // 2. Clear render & disk cache if explicitly enabled OR when clear on exit is active
         if (clearCache || clearQuit) {

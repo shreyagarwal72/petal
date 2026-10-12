@@ -2,7 +2,7 @@
  * PetalHistoryScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Chrome Android-inspired Material 3 Expressive History Page for Petal Browser.
- * Features live search/filter, grouped dates, individual entry deletion,
+ * Features live search/filter, Firefox-style date groups, individual entry deletion,
  * clear browsing data action, and 60fps smooth animations.
  */
 
@@ -65,6 +65,7 @@ import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.res.stringResource
@@ -76,6 +77,74 @@ fun interface HistoryUrlHandler {
 
 fun interface HistoryActionHandler {
     fun action()
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Firefox-style date group labels
+// ─────────────────────────────────────────────────────────────────────────
+
+private enum class HistoryDateGroup(val label: String) {
+    TODAY("Today"),
+    YESTERDAY("Yesterday"),
+    THIS_WEEK("This Week"),
+    THIS_MONTH("This Month"),
+    OLDER("Older")
+}
+
+private fun getHistoryDateGroup(timestamp: Long): String {
+    if (timestamp <= 0L) return HistoryDateGroup.OLDER.label
+
+    val todayStart = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+    }
+    val yesterdayStart = (todayStart.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) }
+    val weekStart = (todayStart.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -6) }
+    val monthStart = (todayStart.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -29) }
+
+    return when {
+        timestamp >= todayStart.timeInMillis -> HistoryDateGroup.TODAY.label
+        timestamp >= yesterdayStart.timeInMillis -> HistoryDateGroup.YESTERDAY.label
+        timestamp >= weekStart.timeInMillis -> HistoryDateGroup.THIS_WEEK.label
+        timestamp >= monthStart.timeInMillis -> HistoryDateGroup.THIS_MONTH.label
+        else -> {
+            // Older items grouped by "Month Year" (e.g. "September 2026")
+            SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(timestamp))
+        }
+    }
+}
+
+/** Sealed list item for the LazyColumn — either a date-group header or a history record. */
+private sealed class HistoryListItem {
+    data class Header(val label: String) : HistoryListItem()
+    data class Entry(val record: Record, val indexInGroup: Int, val groupSize: Int) : HistoryListItem()
+}
+
+/** Build a flat list of [HistoryListItem]s with group headers inserted, preserving DESC order. */
+private fun buildGroupedItems(records: List<Record>): List<HistoryListItem> {
+    val result = mutableListOf<HistoryListItem>()
+    var currentGroup: String? = null
+    var groupBuffer = mutableListOf<Record>()
+
+    fun flushGroup() {
+        if (groupBuffer.isEmpty()) return
+        result.add(HistoryListItem.Header(currentGroup!!))
+        groupBuffer.forEachIndexed { i, r ->
+            result.add(HistoryListItem.Entry(r, i, groupBuffer.size))
+        }
+        groupBuffer = mutableListOf()
+    }
+
+    for (record in records) {
+        val group = getHistoryDateGroup(record.time)
+        if (group != currentGroup) {
+            flushGroup()
+            currentGroup = group
+        }
+        groupBuffer.add(record)
+    }
+    flushGroup()
+    return result
 }
 
 object PetalHistoryBridge {
@@ -145,16 +214,17 @@ fun PetalHistoryScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showClearConfirm by remember { mutableStateOf(false) }
 
-    // Load history records from SQLite database asynchronously
+    // Load history records from SQLite database asynchronously.
+    // listHistory() returns records in DESC order (most recent first) — no reversal needed.
     var rawHistory by remember { mutableStateOf<List<Record>?>(null) }
-    
+
     LaunchedEffect(Unit) {
         try {
             val action = RecordAction(context)
             action.open(false)
             val list = action.listHistory(context)
             action.close()
-            rawHistory = list.reversed().filter { record ->
+            rawHistory = list.filter { record ->
                 val url = record.url?.trim() ?: ""
                 url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true) && !url.startsWith("about:", ignoreCase = true)
             }
@@ -174,6 +244,13 @@ fun PetalHistoryScreen(
                 (record.url?.lowercase()?.contains(query) == true)
             }
         }
+    }
+
+    // Build grouped items — date headers inserted when browsing normally.
+    // When searching, show flat results without headers for clarity.
+    val groupedItems = remember(filteredHistory, searchQuery) {
+        if (searchQuery.isBlank()) buildGroupedItems(filteredHistory)
+        else filteredHistory.mapIndexed { i, r -> HistoryListItem.Entry(r, i, filteredHistory.size) }
     }
 
     if (showClearConfirm) {
@@ -292,7 +369,7 @@ fun PetalHistoryScreen(
                                 )
                             }
 
-                            if (filteredHistory.isEmpty()) {
+                            if (groupedItems.isEmpty()) {
                                 item(key = "empty_state") {
                                     com.petal.browser.ui.components.EmptyStateBlob(
                                         illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.HISTORY,
@@ -302,95 +379,119 @@ fun PetalHistoryScreen(
                                 }
                             } else {
                                 itemsIndexed(
-                                    items = filteredHistory,
-                                    key = { _, item -> "${item.url}_${item.time}" }
-                                ) { index, record ->
-                                    val timeFormatted = remember(record.time) {
-                                        if (record.time > 0L) SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(record.time)) else ""
+                                    items = groupedItems,
+                                    key = { _, item ->
+                                        when (item) {
+                                            is HistoryListItem.Header -> "header_${item.label}"
+                                            is HistoryListItem.Entry -> "${item.record.url}_${item.record.time}"
+                                        }
                                     }
-                                    val faviconUrl = remember(record.url) {
-                                        val domain = record.domain?.takeIf { it.isNotBlank() }
-                                            ?: try { java.net.URI(record.url ?: "").host } catch (_: Exception) { null }
-                                        if (!domain.isNullOrEmpty()) "https://www.google.com/s2/favicons?domain=$domain&sz=32" else null
-                                    }
-                                    PetalGroupListRow(
-                                        position = petalGroupPositionFor(index, filteredHistory.size),
-                                        onClick = { record.url?.let(onOpenUrl) },
-                                        modifier = Modifier.animateItem(
-                                            fadeInSpec = PetalSpring.fadeIn(),
-                                            fadeOutSpec = PetalSpring.fadeOut(),
-                                            placementSpec = PetalSpring.spatial()
-                                        ).entrance(index = index, playKey = "${record.url}_${record.time}"),
-                                        leading = {
-                                            Box(
-                                                Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                if (faviconUrl != null) {
-                                                    SubcomposeAsyncImage(
-                                                        model = faviconUrl,
-                                                        contentDescription = "Website Icon",
-                                                        modifier = Modifier.size(24.dp).clip(CircleShape),
-                                                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                                                        loading = { Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) },
-                                                        error = { Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) }
-                                                    )
-                                                } else Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+                                ) { _, listItem ->
+                                    when (listItem) {
+                                        is HistoryListItem.Header -> {
+                                            // Firefox-style date group label
+                                            Text(
+                                                text = listItem.label,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.SemiBold,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(start = 4.dp, top = 16.dp, bottom = 4.dp)
+                                            )
+                                        }
+                                        is HistoryListItem.Entry -> {
+                                            val record = listItem.record
+                                            val timeFormatted = remember(record.time) {
+                                                if (record.time > 0L) SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(record.time)) else ""
                                             }
-                                        },
-                                        content = {
-                                            Text(record.title?.takeIf { it.isNotBlank() } ?: record.domain ?: "Web Page",
-                                                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-                                                maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                            Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                            if (timeFormatted.isNotEmpty()) Text(timeFormatted, style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.primary)
-                                        },
-                                        trailing = {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                IconButton(onClick = {
-                                            val deletedRecord = record
-                                            val deletedIndex = rawHistory?.indexOfFirst { it.url == record.url } ?: -1
-                                            try {
-                                                val action = RecordAction(context)
-                                                action.open(true)
-                                                action.deleteURL(deletedRecord.url, RecordUnit.TABLE_HISTORY)
-                                                action.close()
-                                                rawHistory = rawHistory?.filter { it.url != deletedRecord.url } ?: emptyList()
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
+                                            val faviconUrl = remember(record.url) {
+                                                val domain = record.domain?.takeIf { it.isNotBlank() }
+                                                    ?: try { java.net.URI(record.url ?: "").host } catch (_: Exception) { null }
+                                                if (!domain.isNullOrEmpty()) "https://www.google.com/s2/favicons?domain=$domain&sz=32" else null
                                             }
-                                            coroutineScope.launch {
-                                                val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "History item"
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Deleted \"$displayTitle\"",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) {
-                                                    try {
-                                                        val action = RecordAction(context)
-                                                        action.open(true)
-                                                        action.addHistory(deletedRecord)
-                                                        action.close()
-                                                        val current = rawHistory?.toMutableList() ?: mutableListOf()
-                                                        if (deletedIndex in 0..current.size) {
-                                                            current.add(deletedIndex, deletedRecord)
-                                                        } else {
-                                                            current.add(deletedRecord)
+                                            PetalGroupListRow(
+                                                position = petalGroupPositionFor(listItem.indexInGroup, listItem.groupSize),
+                                                onClick = { record.url?.let(onOpenUrl) },
+                                                modifier = Modifier.animateItem(
+                                                    fadeInSpec = PetalSpring.fadeIn(),
+                                                    fadeOutSpec = PetalSpring.fadeOut(),
+                                                    placementSpec = PetalSpring.spatial()
+                                                ).entrance(index = listItem.indexInGroup, playKey = "${record.url}_${record.time}"),
+                                                leading = {
+                                                    Box(
+                                                        Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        if (faviconUrl != null) {
+                                                            SubcomposeAsyncImage(
+                                                                model = faviconUrl,
+                                                                contentDescription = "Website Icon",
+                                                                modifier = Modifier.size(24.dp).clip(CircleShape),
+                                                                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                                                loading = { Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) },
+                                                                error = { Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) }
+                                                            )
+                                                        } else Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+                                                    }
+                                                },
+                                                content = {
+                                                    Text(record.title?.takeIf { it.isNotBlank() } ?: record.domain ?: "Web Page",
+                                                        style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                                                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                    Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                    if (timeFormatted.isNotEmpty()) Text(timeFormatted, style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.primary)
+                                                },
+                                                trailing = {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        IconButton(onClick = {
+                                                            val deletedRecord = record
+                                                            val deletedIndex = rawHistory?.indexOfFirst { it.url == record.url } ?: -1
+                                                            try {
+                                                                val action = RecordAction(context)
+                                                                action.open(true)
+                                                                action.deleteURL(deletedRecord.url, RecordUnit.TABLE_HISTORY)
+                                                                action.close()
+                                                                rawHistory = rawHistory?.filter { it.url != deletedRecord.url } ?: emptyList()
+                                                            } catch (e: Exception) {
+                                                                e.printStackTrace()
+                                                            }
+                                                            coroutineScope.launch {
+                                                                val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "History item"
+                                                                val result = snackbarHostState.showSnackbar(
+                                                                    message = "Deleted \"$displayTitle\"",
+                                                                    actionLabel = "Undo",
+                                                                    duration = SnackbarDuration.Short
+                                                                )
+                                                                if (result == SnackbarResult.ActionPerformed) {
+                                                                    try {
+                                                                        val action = RecordAction(context)
+                                                                        action.open(true)
+                                                                        action.addHistory(deletedRecord)
+                                                                        action.close()
+                                                                        val current = rawHistory?.toMutableList() ?: mutableListOf()
+                                                                        if (deletedIndex in 0..current.size) {
+                                                                            current.add(deletedIndex, deletedRecord)
+                                                                        } else {
+                                                                            current.add(deletedRecord)
+                                                                        }
+                                                                        rawHistory = current
+                                                                    } catch (e: Exception) {
+                                                                        e.printStackTrace()
+                                                                    }
+                                                                }
+                                                            }
+                                                        }) {
+                                                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.ui_remove_entry), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                                         }
-                                                        rawHistory = current
-                                                    } catch (e: Exception) {
-                                                        e.printStackTrace()
+                                                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                                     }
                                                 }
-                                            }
-                                                }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.ui_remove_entry), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
-                                                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                            }
+                                            )
                                         }
-                                    )
+                                    }
                                 }
                             }
                         }
