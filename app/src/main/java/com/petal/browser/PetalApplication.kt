@@ -120,8 +120,9 @@ class PetalApplication : Application() {
                 com.petal.browser.profile.PetalProfileManager.init(this)
                 com.petal.browser.wallpaper.PetalWallpaperManager.init(this)
                 com.petal.browser.collections.PetalCollectionManager.init(this)
+                com.petal.browser.compose.downloads.PetalFetchDownloadBridge.ensureInitialized(this)
             } catch (t: Throwable) {
-                Log.w(TAG, "Early profile/wallpaper init failed", t)
+                Log.w(TAG, "Early profile/wallpaper/download init failed", t)
             }
             Log.i(TAG, "Early engine initialization complete")
         } catch (e: Exception) {
