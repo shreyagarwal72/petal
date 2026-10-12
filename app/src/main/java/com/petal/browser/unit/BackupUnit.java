@@ -176,11 +176,35 @@ public class BackupUnit {
                 "profile".equals(key) || "sp_app_font".equals(key) ||
                 "sp_color_style".equals(key) || "sp_palette_id".equals(key) ||
                 "sp_gs_flex_preset".equals(key) || "sp_reader_theme".equals(key) ||
-                "sp_reader_font".equals(key) || key.startsWith("icon_");
+                "sp_reader_font".equals(key) || "sp_theme_config".equals(key) ||
+                "sp_theme".equals(key) || "sp_bg_shape_change_mode".equals(key) ||
+                "sp_address_bar_position".equals(key) || "sp_address_bar_action".equals(key) ||
+                "sp_address_bar_height".equals(key) || "sp_app_language".equals(key) ||
+                "sp_app_lock_passcode".equals(key) || "sp_app_lock_type".equals(key) ||
+                "sp_private_dns_mode".equals(key) || "sp_custom_doh_url".equals(key) ||
+                "sp_torrent_engine".equals(key) || "sp_download_manager_mode".equals(key) ||
+                "sp_custom_font_name".equals(key) || "sp_custom_font_path".equals(key) ||
+                "sp_home_wallpaper_uri".equals(key) || "sp_custom_homepage_url".equals(key) ||
+                "sp_home_type".equals(key) || "sp_tab_display_mode".equals(key) ||
+                "sp_inactive_tab_display_mode".equals(key) || "sp_etp_mode".equals(key) ||
+                "sp_ai_provider".equals(key) || "sp_ai_default_action".equals(key) ||
+                "sp_ai_custom_endpoint".equals(key) || "sp_recently_closed_lock_type".equals(key) ||
+                "sp_recently_closed_pwd_hash".equals(key) || "sp_recently_closed_records_json".equals(key) ||
+                "sp_custom_home_shortcuts_json_v3".equals(key) || "sp_quick_tools_order_v1".equals(key) ||
+                "sp_petal_active_profile_id_v1".equals(key) || "sp_petal_profiles_list_v1".equals(key) ||
+                "sp_pinned_tab_ids".equals(key) || "sp_search_customSearches".equals(key) ||
+                "sp_custom_search_engines".equals(key) || "sp_adblock_whitelisted_domains".equals(key) ||
+                "sp_store_installed_scripts".equals(key) || "sp_store_subscribed_filter_lists".equals(key) ||
+                "sp_removed_suggestions".equals(key) || "sp_removed_home_shortcut_urls_v1".equals(key) ||
+                "start_tab".equals(key) || "favoriteURL".equals(key) || "urlForPosting".equals(key) ||
+                "ab_hosts".equals(key) || "edit_standard".equals(key) || key.startsWith("icon_") ||
+                key.startsWith("setting_gesture_");
     }
 
     private static final String[] BUILTIN_PREF_NAMES = {
-        "petal_settings", "petal_menu", "petal_tab_groups", "petal_inactive_tabs", "petal_ytdlp", "petal_fx_sync_prefs"
+        "petal_settings", "petal_menu", "petal_tab_groups", "petal_inactive_tabs", "petal_ytdlp",
+        "petal_fx_sync_prefs", "MenuPreferences", "petal_tab_collections_prefs",
+        "petal_inactive_tabs_prefs", "petal_tab_groups_prefs", "petal_ytdlp_engine_prefs"
     };
 
     public static Set<String> getAllKnownPreferenceNames(Context context) {
@@ -221,8 +245,11 @@ public class BackupUnit {
                     valuesObj.put(key, val);
                     typesObj.put(key, "bool");
                 } else if (val instanceof Float) {
-                    valuesObj.put(key, ((Float) val).doubleValue());
-                    typesObj.put(key, "float");
+                    Float fVal = (Float) val;
+                    if (!fVal.isNaN() && !fVal.isInfinite()) {
+                        valuesObj.put(key, fVal.doubleValue());
+                        typesObj.put(key, "float");
+                    }
                 } else if (val instanceof Integer) {
                     valuesObj.put(key, val);
                     typesObj.put(key, "int");
@@ -257,13 +284,6 @@ public class BackupUnit {
             if (valuesObj == null) return;
 
             SharedPreferences.Editor editor = sp.edit();
-            java.util.Iterator<String> clearKeys = valuesObj.keys();
-            while (clearKeys.hasNext()) {
-                editor.remove(clearKeys.next());
-            }
-            editor.apply();
-
-            editor = sp.edit();
             java.util.Iterator<String> keys = valuesObj.keys();
             while (keys.hasNext()) {
                 String key = keys.next();
