@@ -219,7 +219,8 @@ fun M3ExpressiveVariableBackground(
         }
     }
 
-    if (!isShapesEnabled) return
+    val isGlobalExpressiveEnabled = com.petal.browser.ui.theme.LocalExpressiveShapesEnabled.current
+    if (!isShapesEnabled || !isGlobalExpressiveEnabled) return
 
     // Static seed epoch for PERIODIC mode so shapes remain stable until timer ticks
     var periodicSeedEpoch by rememberSaveable { mutableLongStateOf(sp.getLong("sp_periodic_seed_epoch", 1000L)) }

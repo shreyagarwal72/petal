@@ -144,7 +144,7 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(icon.name),
 ) {
     val (container, tint) = variant.colors()
     Box(
@@ -165,7 +165,7 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(painter.hashCode()),
 ) {
     val (container, tint) = variant.colors()
     Box(
@@ -187,7 +187,7 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(icon.name),
 ) {
     Box(modifier.size(size).clip(shape).background(container), contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
@@ -202,7 +202,7 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(painter.hashCode()),
 ) {
     Box(modifier.size(size).clip(shape).background(container), contentAlignment = Alignment.Center) {
         Icon(painter, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
@@ -217,7 +217,7 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(iconRes),
 ) {
     Box(modifier.size(size).clip(shape).background(container), contentAlignment = Alignment.Center) {
         Icon(painterResource(iconRes), contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))

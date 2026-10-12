@@ -649,3 +649,22 @@ fun ExpressiveShapeHolder.resolveShape(fallback: Shape = RoundedCornerShape(16.d
     val enabled = LocalExpressiveShapesEnabled.current
     return if (enabled) toShape() else fallback
 }
+
+/**
+ * Dynamically resolves one of the 35 Material 3 Expressive shapes keyed by [key].
+ * Uses a stable pseudo-random index mapping based on key hash code so distinct components
+ * get distinct shapes from the 35 shapes collection.
+ * When expressive shapes are globally disabled via [LocalExpressiveShapesEnabled],
+ * returns the provided [fallback] shape.
+ */
+@androidx.compose.runtime.Composable
+fun rememberExpressiveShape(key: Any?, fallback: Shape = RoundedCornerShape(14.dp)): Shape {
+    val enabled = LocalExpressiveShapesEnabled.current
+    if (!enabled) return fallback
+    val all = PetalMaterialShapes.allShapes
+    if (all.isEmpty()) return fallback
+    val hash = key?.hashCode() ?: 0
+    val idx = (hash and 0x7FFFFFFF) % all.size
+    return all[idx].toShape()
+}
+
