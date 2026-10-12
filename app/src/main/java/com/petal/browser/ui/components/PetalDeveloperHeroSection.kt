@@ -140,9 +140,9 @@ fun PetalDeveloperHeroSection(
 
             Spacer(Modifier.height(4.dp))
 
-            // Developed by Vanshu Agarwal with heart from India
+            // Crafted by Vanshu Agarwal with heart from India
             Text(
-                text = "Developed by Vanshu Agarwal\nwith ❤️ from 🇮🇳",
+                text = "Crafted by Vanshu Agarwal\nwith ❤️ from 🇮🇳",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -150,7 +150,7 @@ fun PetalDeveloperHeroSection(
                 lineHeight = 22.sp
             )
 
-            // Segmented 3-Pill Contact Row (Website / GitHub, Email, Telegram)
+            // Segmented 3-Pill Contact Row (Website, Email, Telegram)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -160,11 +160,11 @@ fun PetalDeveloperHeroSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    // Website / GitHub Pill
+                    // Petal Official Website Pill
                     Button(
                         onClick = {
                             haptics.playClick(context)
-                            onOpenUrl("https://github.com/shreyagarwal72")
+                            onOpenUrl("https://my-petal-browser.vercel.app/")
                         },
                         shape = RoundedCornerShape(
                             topStart = 20.dp,
