@@ -1039,7 +1039,8 @@ fun PetalOmniboxPage(
                                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
                                                         modifier = Modifier.padding(
-                                                            horizontal = 16.dp,
+                                                            start = 16.dp,
+                                                            end = 16.dp,
                                                             top = if (entryIndex == 0) 2.dp else 10.dp,
                                                             bottom = 2.dp
                                                         )
