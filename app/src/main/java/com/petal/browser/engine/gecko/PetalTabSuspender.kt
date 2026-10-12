@@ -58,13 +58,13 @@ object PetalTabSuspender {
         val controller = BrowserContainer.get(index)
         if (controller !is PetalGeckoView) return false
 
-        val tabId = controller.tabId
+        val tabId = controller.getTabId()
         val url = if (controller.persistentUrl.isNotBlank()) controller.persistentUrl else controller.url
         val title = controller.title
-        val favicon = controller.favicon
-        val groupId = controller.tabGroupId
-        val groupTitle = controller.tabGroupTitle
-        val isIncognito = controller.isIncognito
+        val favicon = controller.getFavicon()
+        val groupId = controller.getTabGroupId()
+        val groupTitle = controller.getTabGroupTitle()
+        val isIncognito = controller.isIncognito()
 
         // Save preview thumbnail before tearing down native surface
         try {
@@ -125,7 +125,7 @@ object PetalTabSuspender {
             if (controller === activeController) continue
             if (controller is PetalGeckoView) {
                 if (!canSuspendTab(controller, false)) continue
-                val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, controller.tabId)
+                val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, controller.getTabId())
                 if (lastAccess > 0L && (now - lastAccess) >= timeoutMs) {
                     suspendTab(context, i)
                 }
@@ -146,7 +146,7 @@ object PetalTabSuspender {
             if (controller === activeController) continue
             if (controller is PetalGeckoView) {
                 if (!canSuspendTab(controller, false)) continue
-                val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, controller.tabId)
+                val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, controller.getTabId())
                 candidates.add(Pair(i, lastAccess))
             }
         }

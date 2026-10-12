@@ -388,4 +388,19 @@ public class RecordAction {
             } catch (Exception ignored) {}
         }
     }
+
+    public void optimizeDatabase() {
+        if (database == null || !database.isOpen()) return;
+        try {
+            database.execSQL("PRAGMA cache_size = -4000;");
+            Cursor c = database.rawQuery("PRAGMA wal_checkpoint(TRUNCATE);", null);
+            if (c != null) {
+                c.moveToFirst();
+                c.close();
+            }
+            database.execSQL("VACUUM;");
+        } catch (Exception e) {
+            Log.w("RecordAction", "Database optimization skipped or failed: " + e.getMessage());
+        }
+    }
 }

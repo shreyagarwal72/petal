@@ -3,7 +3,6 @@ package com.petal.browser.engine.gecko
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
-import com.petal.browser.database.RecordHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -74,15 +73,10 @@ object PetalStorageManager {
     fun optimizeDatabases(context: Context) {
         bgScope.launch {
             try {
-                val helper = RecordHelper(context.applicationContext)
-                val db = helper.writableDatabase
-                // Enforce bounded cache size: -4000 = ~4MB maximum memory cache
-                db.execSQL("PRAGMA cache_size = -4000;")
-                // Checkpoint Write-Ahead-Log
-                db.rawQuery("PRAGMA wal_checkpoint(TRUNCATE);", null).use { it.moveToFirst() }
-                // Reclaim unused allocated disk pages
-                db.execSQL("VACUUM;")
-                helper.close()
+                val action = com.petal.browser.database.RecordAction(context.applicationContext)
+                action.open(true)
+                action.optimizeDatabase()
+                action.close()
                 Log.d(TAG, "Successfully compacted Petal SQLite databases")
             } catch (t: Throwable) {
                 Log.w(TAG, "Database optimization skipped or failed: ${t.message}")
