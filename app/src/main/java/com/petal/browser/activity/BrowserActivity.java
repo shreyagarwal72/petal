@@ -150,7 +150,6 @@ import com.petal.browser.database.FaviconHelper;
 import com.petal.browser.database.Record;
 import com.petal.browser.database.RecordAction;
 import com.petal.browser.dialogs.CustomRedirectsDialog;
-import com.petal.browser.fragment.Fragment_settings_Backup;
 import com.petal.browser.objects.CustomRedirect;
 import com.petal.browser.objects.CustomSearchesHelper;
 import com.petal.browser.unit.BrowserUnit;
@@ -158,7 +157,6 @@ import com.petal.browser.unit.HelperUnit;
 import com.petal.browser.unit.RecordUnit;
 import com.petal.browser.view.AdapterCustomSearches;
 import com.petal.browser.view.AdapterMenu;
-import com.petal.browser.view.AdapterSearch;
 import com.petal.browser.view.GridAdapter;
 import com.petal.browser.view.GridItem;
 import com.petal.browser.view.MenuItem;
@@ -192,7 +190,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public boolean isMediaPlaying = false;
     public FloatingActionButton fab_menu;
     public BadgeDrawable badgeDrawable;
-    public AdapterSearch adapterSearch;
 
     // Layouts
     public LinearProgressIndicator progressBar;
@@ -1192,7 +1189,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 BrowserUnit.clearOnExit(this);
             }
             if (sp != null && sp.getBoolean("sp_backup_quit", false)) {
-                Fragment_settings_Backup.backup(activity);
+                com.petal.browser.unit.BackupUnit.backupData(activity, 0);
             }
             com.petal.browser.media.BrowserMediaDelegate.unregisterPipReceiver(this);
         } catch (Exception e) {
@@ -6793,17 +6790,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             geckoView.activate();
             if (dialogOverview != null) dialogOverview.cancel();
             showAlbum(geckoView);
-
-            try {
-                android.view.View albumView = geckoView.getTabView();
-                if (albumView != null && tab_container != null) {
-                    if (albumView.getParent() != null) {
-                        ((android.view.ViewGroup) albumView.getParent()).removeView(albumView);
-                    }
-                    tab_container.addView(albumView, android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
-                }
-            } catch (Exception ignored) {}
 
             updateOmniBox();
             updatePersistentBottomNav();

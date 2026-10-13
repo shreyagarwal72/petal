@@ -657,7 +657,6 @@ class PetalGeckoView @JvmOverloads constructor(
     private var tabGroupId: String? = null
     private var tabGroupTitle: String? = null
     private var predecessor: AlbumController? = null
-    private val album: AdapterTabs = AdapterTabs(context, this, globalBrowserController)
 
     private var currentUrl: String = "about:blank"
     var isAdoptedPopup: Boolean = false
@@ -702,7 +701,6 @@ class PetalGeckoView @JvmOverloads constructor(
         if (PetalGeckoRuntime.isGeckoAvailable(context)) {
             initGeckoSession()
         }
-        album.setBrowserController(globalBrowserController)
         this.pwaManager = PetalPwaManager(context, this, null)
     }
 
@@ -751,7 +749,6 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
 
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
-                album.setAlbumTitle(currentTitle, url)
                 updateProgress(10)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, true)
@@ -956,7 +953,6 @@ class PetalGeckoView @JvmOverloads constructor(
                     persistentUrl = url
                 }
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
-                album.setAlbumTitle(currentTitle, url)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateUrlAndTitle(context, tabId, url, currentTitle)
                 }
@@ -1157,7 +1153,6 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onTitleChange(session: GeckoSession, title: String?) {
                 title?.let {
                     currentTitle = it
-                    album.setAlbumTitle(it, currentUrl)
                     onPageTitleChanged?.invoke(it)
                     if (engineSession != null) {
                         com.petal.browser.engine.gecko.PetalEngineStore.updateUrlAndTitle(context, tabId, currentUrl, it)
@@ -1572,7 +1567,6 @@ class PetalGeckoView @JvmOverloads constructor(
             session.loadUri("about:blank")
             currentUrl = "about:blank"
             currentTitle = "Petal Home"
-            album.setAlbumTitle("Petal Home", "petal://home")
             return
         }
 
@@ -1605,7 +1599,6 @@ class PetalGeckoView @JvmOverloads constructor(
             session.loadUri("about:blank")
             currentUrl = "about:blank"
             currentTitle = "Petal Home"
-            album.setAlbumTitle("Petal Home", "petal://home")
             return
         }
 
@@ -1619,7 +1612,6 @@ class PetalGeckoView @JvmOverloads constructor(
         // Persist the intended URL separately from the live currentUrl so saveSession()
         // can recover it even if about:blank fires before the page finishes loading.
         persistentUrl = targetUrl
-        album.setAlbumTitle(targetUrl, targetUrl)
         if (engineSession != null) {
             engineSession.loadUrl(targetUrl)
         } else {
@@ -1634,7 +1626,6 @@ class PetalGeckoView @JvmOverloads constructor(
             val encodedData = android.util.Base64.encodeToString(data.toByteArray(java.nio.charset.StandardCharsets.UTF_8), android.util.Base64.NO_WRAP)
             val dataUri = "data:${mimeType ?: "text/html"};charset=${encoding ?: "utf-8"};base64,$encodedData"
             currentUrl = baseUrl ?: dataUri
-            album.setAlbumTitle(currentTitle.ifEmpty { "File" }, currentUrl)
             session.loadUri(dataUri)
         } catch (e: Exception) {
             android.util.Log.e(TAG, "Error in loadDataWithBaseURL", e)
@@ -1998,7 +1989,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     override fun getAlbumView(): View = this
 
-    fun getTabView(): View = album.albumView
+    fun getTabView(): View = this
 
     override fun activate() {
         // Give IME/editor actions to GeckoView itself. Focusing the wrapper FrameLayout
@@ -2007,7 +1998,6 @@ class PetalGeckoView @JvmOverloads constructor(
         geckoView.isFocusableInTouchMode = true
         geckoView.requestFocus()
         isForegroundTab = true
-        album.activate()
         session.setActive(true)
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(null, session)
         geckoView.visibility = View.VISIBLE
@@ -2038,7 +2028,6 @@ class PetalGeckoView @JvmOverloads constructor(
             updatePreviewCache()
         } catch (_: Throwable) {}
         isForegroundTab = false
-        album.deactivate()
         try {
             if (!isPlayingAudio()) {
                 session.setActive(false)
@@ -2051,20 +2040,11 @@ class PetalGeckoView @JvmOverloads constructor(
         if (currentTitle.isNotEmpty() && !currentTitle.equals("Petal Start", ignoreCase = true)) {
             return currentTitle
         }
-        val aTitle = getAlbumTitle()
-        if (aTitle.isNotEmpty() && !aTitle.equals("Petal Start", ignoreCase = true) && !aTitle.equals("Petal Home", ignoreCase = true)) {
-            return aTitle
-        }
         return currentTitle
     }
 
     fun getAlbumTitle(): String {
-        return try {
-            val t = album.title
-            if (!t.isNullOrBlank()) t else currentTitle
-        } catch (_: Exception) {
-            currentTitle
-        }
+        return currentTitle
     }
 
     override fun getUrl(): String {
@@ -2077,7 +2057,6 @@ class PetalGeckoView @JvmOverloads constructor(
         hideLoadingSkeleton()
         currentUrl = "about:blank"
         currentTitle = "Petal Home"
-        album.setAlbumTitle("Petal Home", "about:blank")
         try {
             session.stop()
             session.loadUri("about:blank")
@@ -2085,7 +2064,12 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun setAlbumTitle(title: String?, url: String?) {
-        album.setAlbumTitle(title, url)
+        if (!title.isNullOrBlank()) {
+            currentTitle = title
+        }
+        if (!url.isNullOrBlank()) {
+            currentUrl = url
+        }
     }
 
     /**
@@ -2105,7 +2089,7 @@ class PetalGeckoView @JvmOverloads constructor(
         val target = url?.trim().orEmpty()
         if (target.isEmpty() || BrowserUnit.isHomePage(target)) return
         currentUrl = target
-        album.setAlbumTitle(target, target)
+        currentTitle = target
     }
 
     fun getTabId(): String = tabId
@@ -2157,7 +2141,6 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun setBrowserController(controller: BrowserController?) {
         globalBrowserController = controller
-        album.setBrowserController(controller)
     }
 
     fun setOnScrollChangeListener(listener: OnScrollChangeListener?) {
@@ -2188,7 +2171,7 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun updateFavicon(url: String) {
-        FaviconHelper.setFavicon(context, album.albumView, url, R.id.item_icon, R.drawable.icon_image_broken)
+        // No-op for modern tab architecture; favicon cache updated in setFavicon
     }
 
     // ─────────────────────────────────────────────────────────────────────────

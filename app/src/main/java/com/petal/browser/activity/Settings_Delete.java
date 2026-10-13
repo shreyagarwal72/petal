@@ -16,7 +16,6 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.Objects;
 
 import com.petal.browser.R;
-import com.petal.browser.fragment.Fragment_settings_Delete;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 
