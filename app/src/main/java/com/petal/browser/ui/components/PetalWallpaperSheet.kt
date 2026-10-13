@@ -175,8 +175,16 @@ val PRESET_WALLPAPERS = listOf(
         id = "w_live_sea_waves",
         title = "Blue Sea Waves",
         category = "Live Video",
-        thumbUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400",
+        thumbUrl = "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400",
         fullUrl = "https://videos.pexels.com/video-files/5668625/5668625-hd_2048_1080_30fps.mp4",
+        isVideo = true
+    ),
+    WallpaperPreset(
+        id = "w_live_pinterest_city",
+        title = "Pinterest City Clip",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=400",
+        fullUrl = "https://v1.pinimg.com/videos/iht/hls/d0/b6/93/d0b69328b1f41ad0271fe4374baa688b.m3u8",
         isVideo = true
     ),
     WallpaperPreset(
@@ -269,6 +277,13 @@ val PRESET_WALLPAPERS = listOf(
         thumbUrl = "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=400",
         fullUrl = "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=1600"
     ),
+    WallpaperPreset(
+        id = "w_dark_geometry",
+        title = "Geometric Dark",
+        category = "Minimal & Dark",
+        thumbUrl = "https://images.unsplash.com/photo-1604871000636-074fa5117945?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1604871000636-074fa5117945?w=1600"
+    ),
 
     // ── Space & Neon Wallpapers ──
     WallpaperPreset(
@@ -346,11 +361,18 @@ val PRESET_WALLPAPERS = listOf(
         fullUrl = "https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=1600"
     ),
     WallpaperPreset(
-        id = "w_city_architecture",
-        title = "Urban Facade",
+        id = "w_city_skyline",
+        title = "Urban Skyline",
         category = "City",
-        thumbUrl = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400",
-        fullUrl = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600"
+        thumbUrl = "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_city_night_traffic",
+        title = "Night Traffic Trails",
+        category = "City",
+        thumbUrl = "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=1600"
     ),
 
     // ── Mountains Wallpapers ──
@@ -358,8 +380,8 @@ val PRESET_WALLPAPERS = listOf(
         id = "w_mountain_mist",
         title = "Misty Ridge",
         category = "Mountains",
-        thumbUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400",
-        fullUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600"
+        thumbUrl = "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=1600"
     ),
     WallpaperPreset(
         id = "w_mountain_snow",
@@ -368,21 +390,42 @@ val PRESET_WALLPAPERS = listOf(
         thumbUrl = "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400",
         fullUrl = "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1600"
     ),
+    WallpaperPreset(
+        id = "w_mountain_lake",
+        title = "Alpine Reflection",
+        category = "Mountains",
+        thumbUrl = "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_mountain_dolomites",
+        title = "Dolomite Peaks",
+        category = "Mountains",
+        thumbUrl = "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1600"
+    ),
 
     // ── Ocean Wallpapers ──
     WallpaperPreset(
         id = "w_ocean_deep",
         title = "Pacific Waves",
         category = "Ocean",
-        thumbUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400",
-        fullUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600"
+        thumbUrl = "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1600"
     ),
     WallpaperPreset(
         id = "w_ocean_coast",
         title = "Seaside Horizons",
         category = "Ocean",
-        thumbUrl = "https://images.unsplash.com/photo-1506815444479-bfdb1e96c566?w=400",
-        fullUrl = "https://images.unsplash.com/photo-1506815444479-bfdb1e96c566?w=1600"
+        thumbUrl = "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_ocean_aerial",
+        title = "Aerial Coastline",
+        category = "Ocean",
+        thumbUrl = "https://images.unsplash.com/photo-1509233725247-49e657c54213?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1509233725247-49e657c54213?w=1600"
     ),
 
     // ── Flowers Wallpapers ──
@@ -397,8 +440,15 @@ val PRESET_WALLPAPERS = listOf(
         id = "w_flower_field",
         title = "Wild Flora",
         category = "Flowers",
-        thumbUrl = "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=400",
-        fullUrl = "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=1600"
+        thumbUrl = "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_flower_cherry",
+        title = "Cherry Blossom",
+        category = "Flowers",
+        thumbUrl = "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=1600"
     ),
 
     // ── Technology Wallpapers ──
@@ -413,8 +463,15 @@ val PRESET_WALLPAPERS = listOf(
         id = "w_tech_circuits",
         title = "Circuit Grid",
         category = "Technology",
-        thumbUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400",
-        fullUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600"
+        thumbUrl = "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1600"
+    ),
+    WallpaperPreset(
+        id = "w_tech_server",
+        title = "Data Core",
+        category = "Technology",
+        thumbUrl = "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400",
+        fullUrl = "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1600"
     )
 )
 

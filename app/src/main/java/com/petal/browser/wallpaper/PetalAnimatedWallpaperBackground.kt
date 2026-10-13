@@ -48,7 +48,12 @@ import android.graphics.Bitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -71,6 +76,8 @@ fun PetalAnimatedWallpaperBackground(
         lower.endsWith(".avi") ||
         lower.endsWith(".flv") ||
         lower.endsWith(".m4v") ||
+        lower.endsWith(".m3u8") ||
+        lower.contains(".m3u8?") ||
         lower.contains(".mp4?") ||
         lower.contains(".webm?") ||
         lower.contains("video-files") ||
@@ -82,6 +89,13 @@ fun PetalAnimatedWallpaperBackground(
             val mime = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
             mime?.startsWith("video/") == true
         }.getOrDefault(false)
+    }
+
+    val isGif = remember(wallpaperUri, isVideo) {
+        if (isVideo) false else {
+            val lower = wallpaperUri.lowercase()
+            lower.endsWith(".gif") || lower.contains(".gif?") || lower.contains("giphy.com")
+        }
     }
 
     // Tracks whether the current video actually started playing. A stale/expired CDN link
@@ -118,8 +132,17 @@ fun PetalAnimatedWallpaperBackground(
                     .setPrioritizeTimeOverSizeThresholds(true)
                     .build()
 
+                val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                    .setUserAgent("Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36")
+                    .setAllowCrossProtocolRedirects(true)
+
+                val dataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
+                val mediaSourceFactory = DefaultMediaSourceFactory(context)
+                    .setDataSourceFactory(dataSourceFactory)
+
                 ExoPlayer.Builder(context)
                     .setLoadControl(loadControl)
+                    .setMediaSourceFactory(mediaSourceFactory)
                     .build().apply {
                     val mediaItem = MediaItem.fromUri(mediaUri)
                     setMediaItem(mediaItem)
@@ -235,12 +258,24 @@ fun PetalAnimatedWallpaperBackground(
                     effectiveUri
                 }
             }
-            val imageRequest = remember(imageModel) {
+            val imageRequest = remember(imageModel, isGif) {
                 ImageRequest.Builder(context)
                     .data(imageModel)
                     .crossfade(300)
-                    .allowHardware(true)
-                    .bitmapConfig(Bitmap.Config.RGB_565)
+                    .apply {
+                        if (isGif) {
+                            decoderFactory(
+                                if (Build.VERSION.SDK_INT >= 28) {
+                                    ImageDecoderDecoder.Factory()
+                                } else {
+                                    GifDecoder.Factory()
+                                }
+                            )
+                        } else {
+                            allowHardware(true)
+                            bitmapConfig(Bitmap.Config.RGB_565)
+                        }
+                    }
                     .build()
             }
 
