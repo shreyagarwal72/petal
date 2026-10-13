@@ -199,14 +199,17 @@ fun PetalFloatingTtsPlayerBar(
                         fontWeight = FontWeight.Bold
                     )
                 }
-                DropdownMenu(
+                com.petal.browser.ui.containment.PetalPopupMenu(
                     expanded = showSpeedMenu,
                     onDismissRequest = { showSpeedMenu = false },
-                    shape = RoundedCornerShape(16.dp)
                 ) {
                     speedOptions.forEach { speed ->
-                        DropdownMenuItem(
-                            text = { Text("${speed}x", fontWeight = if (engine.speechRate == speed) FontWeight.Bold else FontWeight.Normal) },
+                        val isSelected = engine.speechRate == speed
+                        com.petal.browser.ui.containment.PetalPopupMenuItem(
+                            text = "${speed}x",
+                            trailingIcon = if (isSelected) {
+                                { Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                            } else null,
                             onClick = {
                                 engine.setRate(speed)
                                 showSpeedMenu = false

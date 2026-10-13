@@ -23,6 +23,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.components.PetalSpring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.ui.graphics.graphicsLayer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,23 +89,36 @@ fun PetalPopupMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(24.dp),
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(26.dp),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    tonalElevation: Dp = 4.dp,
-    shadowElevation: Dp = 6.dp,
-    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+    tonalElevation: Dp = 6.dp,
+    shadowElevation: Dp = 8.dp,
+    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = modifier,
+        modifier = modifier.padding(vertical = 4.dp),
         shape = shape,
         containerColor = containerColor,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
         border = border,
         content = content,
+    )
+}
+
+@Composable
+fun PetalMenuDivider(
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+    thickness: Dp = 1.dp
+) {
+    HorizontalDivider(
+        modifier = modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+        color = color,
+        thickness = thickness
     )
 }
 
@@ -111,14 +130,43 @@ fun PetalPopupMenuItem(
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
+    destructive: Boolean = false,
+    iconContainerColor: Color? = null,
+    iconContentColor: Color? = null,
     colors: MenuItemColors = MenuDefaults.itemColors(),
-    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
 ) {
+    val defaultIconBg = when {
+        destructive -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerHighest
+    }
+    val defaultIconFg = when {
+        destructive -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.primary
+    }
+
+    val wrappedLeadingIcon: (@Composable () -> Unit)? = leadingIcon?.let { icon ->
+        {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = iconContainerColor ?: defaultIconBg,
+                contentColor = iconContentColor ?: defaultIconFg,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    icon()
+                }
+            }
+        }
+    }
+
     DropdownMenuItem(
         text = text,
         onClick = onClick,
-        modifier = modifier.heightIn(min = 56.dp),
-        leadingIcon = leadingIcon,
+        modifier = modifier
+            .heightIn(min = 52.dp)
+            .bouncyClickable(scaleDown = 0.97f, onClick = onClick),
+        leadingIcon = wrappedLeadingIcon,
         trailingIcon = trailingIcon,
         enabled = enabled,
         colors = colors,
@@ -134,15 +182,27 @@ fun PetalPopupMenuItem(
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
+    destructive: Boolean = false,
+    iconContainerColor: Color? = null,
+    iconContentColor: Color? = null,
 ) {
-    DropdownMenuItem(
-        text = { Text(text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium) },
+    PetalPopupMenuItem(
+        text = {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = if (destructive) MaterialTheme.colorScheme.error else Color.Unspecified
+            )
+        },
         onClick = onClick,
-        modifier = modifier.heightIn(min = 56.dp),
+        modifier = modifier,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         enabled = enabled,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        destructive = destructive,
+        iconContainerColor = iconContainerColor,
+        iconContentColor = iconContentColor,
     )
 }
 

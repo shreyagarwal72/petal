@@ -406,10 +406,18 @@ private fun FilePickerBrowserContent(
                 }
 
                 Box {
-                    IconButton(onClick = {
-                        haptics.playClick(context)
-                        showSortMenu = true
-                    }) {
+                    val sortMenuRotation by animateFloatAsState(
+                        targetValue = if (showSortMenu) 180f else 0f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                        label = "file_picker_sort_rot"
+                    )
+                    IconButton(
+                        onClick = {
+                            haptics.playClick(context)
+                            showSortMenu = true
+                        },
+                        modifier = Modifier.graphicsLayer { rotationZ = sortMenuRotation }
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.Sort,
                             contentDescription = stringResource(R.string.ui_sort),
@@ -422,40 +430,40 @@ private fun FilePickerBrowserContent(
                         onDismissRequest = { showSortMenu = false }
                     ) {
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.file_picker_sort_name_asc)) },
+                            text = stringResource(R.string.file_picker_sort_name_asc),
                             leadingIcon = { if (sortMode == FileSortMode.NAME_ASC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.NAME_ASC; showSortMenu = false }
                         )
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.file_picker_sort_name_desc)) },
+                            text = stringResource(R.string.file_picker_sort_name_desc),
                             leadingIcon = { if (sortMode == FileSortMode.NAME_DESC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.NAME_DESC; showSortMenu = false }
                         )
-                        HorizontalDivider()
+                        com.petal.browser.ui.containment.PetalMenuDivider()
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.file_picker_sort_size_desc)) },
+                            text = stringResource(R.string.file_picker_sort_size_desc),
                             leadingIcon = { if (sortMode == FileSortMode.SIZE_DESC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.SIZE_DESC; showSortMenu = false }
                         )
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.file_picker_sort_size_asc)) },
+                            text = stringResource(R.string.file_picker_sort_size_asc),
                             leadingIcon = { if (sortMode == FileSortMode.SIZE_ASC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.SIZE_ASC; showSortMenu = false }
                         )
-                        HorizontalDivider()
+                        com.petal.browser.ui.containment.PetalMenuDivider()
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.file_picker_sort_date_desc)) },
+                            text = stringResource(R.string.file_picker_sort_date_desc),
                             leadingIcon = { if (sortMode == FileSortMode.DATE_DESC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.DATE_DESC; showSortMenu = false }
                         )
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.file_picker_sort_date_asc)) },
+                            text = stringResource(R.string.file_picker_sort_date_asc),
                             leadingIcon = { if (sortMode == FileSortMode.DATE_ASC) Icon(Icons.Rounded.Check, null) },
                             onClick = { sortMode = FileSortMode.DATE_ASC; showSortMenu = false }
                         )
-                        HorizontalDivider()
+                        com.petal.browser.ui.containment.PetalMenuDivider()
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.file_picker_show_hidden_files)) },
+                            text = { Text(stringResource(R.string.file_picker_show_hidden_files), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) },
                             trailingIcon = {
                                 Switch(
                                     checked = showHiddenFiles,

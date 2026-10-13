@@ -1549,8 +1549,16 @@ private fun PdfViewerTopBar(
                 )
             }
 
+            val menuRotation by animateFloatAsState(
+                targetValue = if (menuExpanded) 180f else 0f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                label = "pdf_menu_rot"
+            )
             Box {
-                IconButton(onClick = { menuExpanded = true }) {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.graphicsLayer { rotationZ = menuRotation }
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
                         contentDescription = stringResource(R.string.ui_more),
@@ -1560,31 +1568,31 @@ private fun PdfViewerTopBar(
                 com.petal.browser.ui.containment.PetalPopupMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text(stringResource(R.string.ui_edit_annotate)) },
+                        text = stringResource(R.string.ui_edit_annotate),
                         leadingIcon = { Icon(Icons.Rounded.Edit, null) },
                         onClick = { menuExpanded = false; onEditMode() }
                     )
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text(stringResource(R.string.ui_jump_to_page)) },
+                        text = stringResource(R.string.ui_jump_to_page),
                         leadingIcon = { Icon(Icons.Rounded.FindInPage, null) },
                         onClick = { menuExpanded = false; onJumpPage() }
                     )
+                    com.petal.browser.ui.containment.PetalMenuDivider()
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text(stringResource(R.string.ui_print)) },
+                        text = stringResource(R.string.ui_print),
                         leadingIcon = { Icon(Icons.Rounded.Print, null) },
                         onClick = { menuExpanded = false; onPrint() }
                     )
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text(stringResource(R.string.ui_share)) },
+                        text = stringResource(R.string.ui_share),
                         leadingIcon = { Icon(Icons.Rounded.Share, null) },
                         onClick = { menuExpanded = false; onShare() }
                     )
+                    com.petal.browser.ui.containment.PetalMenuDivider()
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text(stringResource(R.string.ui_document_info)) },
+                        text = stringResource(R.string.ui_document_info),
                         leadingIcon = { Icon(Icons.Rounded.Info, null) },
                         onClick = { menuExpanded = false; onInfo() }
                     )

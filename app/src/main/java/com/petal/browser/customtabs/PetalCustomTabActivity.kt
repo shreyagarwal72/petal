@@ -461,8 +461,16 @@ private fun CustomTabTopBar(
                 Spacer(Modifier.width(2.dp))
 
                 // ── Overflow: Share / Copy / Desktop ─────────────────────
+                val menuRotation by animateFloatAsState(
+                    targetValue = if (menuExpanded) 180f else 0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                    label = "cct_menu_rot"
+                )
                 Box {
-                    IconButton(onClick = { menuExpanded = true }) {
+                    IconButton(
+                        onClick = { menuExpanded = true },
+                        modifier = Modifier.graphicsLayer { rotationZ = menuRotation }
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
                             contentDescription = stringResource(R.string.ui_more_options),
@@ -473,10 +481,9 @@ private fun CustomTabTopBar(
                     com.petal.browser.ui.containment.PetalPopupMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
-                        shape = RoundedCornerShape(18.dp)
                     ) {
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(text = stringResource(R.string.ui_share_link), style = MaterialTheme.typography.bodyMedium) },
+                            text = stringResource(R.string.ui_share_link),
                             leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(20.dp)) },
                             onClick = {
                                 menuExpanded = false
@@ -484,20 +491,16 @@ private fun CustomTabTopBar(
                             }
                         )
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(text = stringResource(R.string.ui_copy_link), style = MaterialTheme.typography.bodyMedium) },
+                            text = stringResource(R.string.ui_copy_link),
                             leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(20.dp)) },
                             onClick = {
                                 menuExpanded = false
                                 onCopyUrl()
                             }
                         )
+                        com.petal.browser.ui.containment.PetalMenuDivider()
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = {
-                                Text(
-                                    text = if (isDesktopMode) "Mobile site" else "Desktop site",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            },
+                            text = if (isDesktopMode) "Mobile site" else "Desktop site",
                             leadingIcon = {
                                 Icon(
                                     imageVector = if (isDesktopMode) Icons.Rounded.PhoneAndroid else Icons.Rounded.DesktopWindows,

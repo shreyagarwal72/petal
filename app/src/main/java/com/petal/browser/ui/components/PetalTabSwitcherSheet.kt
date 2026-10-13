@@ -518,10 +518,17 @@ fun PetalTabSwitcherContent(
                     }
 
                     // Far Right: Three-dot overflow menu button
+                    val switcherMenuRotation by animateFloatAsState(
+                        targetValue = if (showOverflowMenu) 180f else 0f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                        label = "tab_switcher_overflow_rot"
+                    )
                     Box {
                         IconButton(
                             onClick = { showOverflowMenu = true },
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier
+                                .size(40.dp)
+                                .graphicsLayer { rotationZ = switcherMenuRotation }
                         ) {
                             Icon(
                                 Icons.Rounded.MoreVert,
@@ -535,16 +542,18 @@ fun PetalTabSwitcherContent(
                             onDismissRequest = { showOverflowMenu = false }
                         ) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_new_tab)) },
+                                text = stringResource(R.string.ui_new_tab),
                                 leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                                 onClick = {
                                     showOverflowMenu = false
                                     onNewTab()
                                 }
                             )
+                            com.petal.browser.ui.containment.PetalMenuDivider()
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_close_all_tabs), color = MaterialTheme.colorScheme.error) },
+                                text = stringResource(R.string.ui_close_all_tabs),
                                 leadingIcon = { Icon(Icons.Rounded.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                destructive = true,
                                 onClick = {
                                     showOverflowMenu = false
                                     onCloseAllTabs()

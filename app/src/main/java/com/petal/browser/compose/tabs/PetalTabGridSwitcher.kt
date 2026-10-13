@@ -518,12 +518,22 @@ fun PetalTabGridSwitcher(
                             }
                         )
 
+                        val headerMenuRotation by animateFloatAsState(
+                            targetValue = if (isOverflowMenuExpanded) 180f else 0f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                            label = "tab_grid_header_menu_rot"
+                        )
                         Box {
-                            HeaderActionIcon(
-                                icon = Icons.Rounded.MoreVert,
-                                contentDescription = stringResource(R.string.ui_more_options),
-                                onClick = { isOverflowMenuExpanded = true }
-                            )
+                            IconButton(
+                                onClick = { isOverflowMenuExpanded = true },
+                                modifier = Modifier.graphicsLayer { rotationZ = headerMenuRotation }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.MoreVert,
+                                    contentDescription = stringResource(R.string.ui_more_options),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
 
                             com.petal.browser.ui.containment.PetalPopupMenu(
                                 expanded = isOverflowMenuExpanded,
@@ -547,7 +557,7 @@ fun PetalTabGridSwitcher(
                                         launchNewTab(true)
                                     }
                                 )
-                                HorizontalDivider()
+                                com.petal.browser.ui.containment.PetalMenuDivider()
                                 PetalExpressiveMenuItem(
                                     text = stringResource(R.string.ui_tab_manager_settings),
                                     leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
@@ -556,10 +566,11 @@ fun PetalTabGridSwitcher(
                                         onOpenSettings()
                                     }
                                 )
-                                HorizontalDivider()
+                                com.petal.browser.ui.containment.PetalMenuDivider()
                                 PetalExpressiveMenuItem(
                                     text = stringResource(R.string.ui_close_all_tabs),
                                     leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                    destructive = true,
                                     onClick = {
                                         isOverflowMenuExpanded = false
                                         val needConfirm = sp.getBoolean("sp_close_tab_confirm", false) || sp.getBoolean("sp_close_browser_confirm", false)
@@ -1910,9 +1921,9 @@ private fun PetalTabCard(
                 }
             )
             PetalExpressiveMenuItem(text = stringResource(R.string.ui_select_tab), leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) }, onClick = { onDismissContextMenu(); onSelectForSelection() })
-            HorizontalDivider()
-            PetalExpressiveMenuItem(text = stringResource(R.string.ui_close_other_tabs), leadingIcon = { Icon(Icons.Rounded.CloseFullscreen, null) }, onClick = { onDismissContextMenu(); onCloseOtherTabs() })
-            PetalExpressiveMenuItem(text = stringResource(R.string.ui_close_tab_2), leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
+            com.petal.browser.ui.containment.PetalMenuDivider()
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_close_other_tabs), leadingIcon = { Icon(Icons.Rounded.CloseFullscreen, null, tint = MaterialTheme.colorScheme.error) }, destructive = true, onClick = { onDismissContextMenu(); onCloseOtherTabs() })
+            PetalExpressiveMenuItem(text = stringResource(R.string.ui_close_tab_2), leadingIcon = { Icon(Icons.Rounded.Close, null, tint = MaterialTheme.colorScheme.error) }, destructive = true, onClick = { onDismissContextMenu(); onTabClose() })
         }
     }
 }

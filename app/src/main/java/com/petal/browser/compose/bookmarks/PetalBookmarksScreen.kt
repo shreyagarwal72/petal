@@ -218,23 +218,28 @@ fun PetalBookmarksScreen(
                             onClick = { showAddDialog = true }
                         )
                         if (!rawBookmarks.isNullOrEmpty()) {
+                            val menuRotation by animateFloatAsState(
+                                targetValue = if (overflowMenuExpanded) 180f else 0f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                                label = "bookmark_menu_rot"
+                            )
                             Box {
-                                HeaderActionIcon(
-                                    icon = Icons.Rounded.MoreVert,
-                                    contentDescription = "More Options",
-                                    onClick = { overflowMenuExpanded = true }
-                                )
+                                IconButton(
+                                    onClick = { overflowMenuExpanded = true },
+                                    modifier = Modifier.graphicsLayer { rotationZ = menuRotation }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.MoreVert,
+                                        contentDescription = "More Options",
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                                 com.petal.browser.ui.containment.PetalPopupMenu(
                                     expanded = overflowMenuExpanded,
                                     onDismissRequest = { overflowMenuExpanded = false }
                                 ) {
                                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                        text = {
-                                            Text(
-                                                stringResource(R.string.ui_clear_all_bookmarks),
-                                                color = MaterialTheme.colorScheme.error
-                                            )
-                                        },
+                                        text = stringResource(R.string.ui_clear_all_bookmarks),
                                         leadingIcon = {
                                             Icon(
                                                 Icons.Rounded.DeleteSweep,
@@ -242,6 +247,7 @@ fun PetalBookmarksScreen(
                                                 tint = MaterialTheme.colorScheme.error
                                             )
                                         },
+                                        destructive = true,
                                         onClick = {
                                             overflowMenuExpanded = false
                                             showClearConfirm = true

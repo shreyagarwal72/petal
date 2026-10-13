@@ -759,14 +759,22 @@ private fun ExtensionRow(
                     icon = Icons.Rounded.Check,
                     onCheckedChange = onToggleEnabled
                 )
+            val menuRotation by animateFloatAsState(
+                targetValue = if (showMenu) 180f else 0f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                label = "ext_menu_rot"
+            )
             Box {
-                IconButton(onClick = { showMenu = true }) {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.graphicsLayer { rotationZ = menuRotation }
+                ) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.ui_more_options))
                 }
                 com.petal.browser.ui.containment.PetalPopupMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     if (extension.optionsPageUrl != null) {
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.ui_settings)) },
+                            text = stringResource(R.string.ui_settings),
                             leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
                             onClick = {
                                 showMenu = false
@@ -775,16 +783,18 @@ private fun ExtensionRow(
                         )
                     }
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text(stringResource(R.string.ui_details)) },
+                        text = stringResource(R.string.ui_details),
                         leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
                         onClick = {
                             showMenu = false
                             onShowDetails()
                         }
                     )
+                    com.petal.browser.ui.containment.PetalMenuDivider()
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text(stringResource(R.string.ui_remove)) },
-                        leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
+                        text = stringResource(R.string.ui_remove),
+                        leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                        destructive = true,
                         onClick = {
                             showMenu = false
                             onUninstall()

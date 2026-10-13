@@ -1020,10 +1020,17 @@ private fun DownloadRowItem(
             }
         },
         trailing = {
+                val menuRotation by animateFloatAsState(
+                    targetValue = if (menuExpanded) 180f else 0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                    label = "dl_item_menu_rot"
+                )
                 Box {
                     IconButton(
                         onClick = { menuExpanded = true },
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier
+                            .size(40.dp)
+                            .graphicsLayer { rotationZ = menuRotation }
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
@@ -1038,7 +1045,7 @@ private fun DownloadRowItem(
                     ) {
                         if (item.status == DownloadManager.STATUS_RUNNING) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_pause)) },
+                                text = stringResource(R.string.ui_pause),
                                 leadingIcon = { Icon(Icons.Rounded.Pause, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -1048,7 +1055,7 @@ private fun DownloadRowItem(
                         }
                         if (item.status == DownloadManager.STATUS_PAUSED) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_resume)) },
+                                text = stringResource(R.string.ui_resume),
                                 leadingIcon = { Icon(Icons.Rounded.PlayArrow, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -1058,7 +1065,7 @@ private fun DownloadRowItem(
                         }
                         if (item.status == DownloadManager.STATUS_FAILED) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_retry)) },
+                                text = stringResource(R.string.ui_retry),
                                 leadingIcon = { Icon(Icons.Rounded.Refresh, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -1068,7 +1075,7 @@ private fun DownloadRowItem(
                         }
                         if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_open)) },
+                                text = stringResource(R.string.ui_open),
                                 leadingIcon = { Icon(Icons.Rounded.OpenInNew, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -1076,7 +1083,7 @@ private fun DownloadRowItem(
                                 }
                             )
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_share)) },
+                                text = stringResource(R.string.ui_share),
                                 leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -1084,7 +1091,7 @@ private fun DownloadRowItem(
                                 }
                             )
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_rename)) },
+                                text = stringResource(R.string.ui_rename),
                                 leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -1093,16 +1100,18 @@ private fun DownloadRowItem(
                             )
                         }
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.ui_copy_link_2)) },
+                            text = stringResource(R.string.ui_copy_link_2),
                             leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
                             onClick = {
                                 menuExpanded = false
                                 copyDownloadLink(context, item.fileUrl)
                             }
                         )
+                        com.petal.browser.ui.containment.PetalMenuDivider()
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.ui_delete), color = MaterialTheme.colorScheme.error) },
+                            text = stringResource(R.string.ui_delete),
                             leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                            destructive = true,
                             onClick = {
                                 menuExpanded = false
                                 if (androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_confirm_download_delete", true)) {

@@ -158,7 +158,10 @@ fun PetalExpressiveMenuItem(
     modifier: Modifier = Modifier,
     leadingIcon: (@Composable (() -> Unit))? = null,
     trailingIcon: (@Composable (() -> Unit))? = null,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    destructive: Boolean = false,
+    iconContainerColor: Color? = null,
+    iconContentColor: Color? = null,
 ) {
     com.petal.browser.ui.containment.PetalPopupMenuItem(
         text = text,
@@ -167,6 +170,9 @@ fun PetalExpressiveMenuItem(
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         enabled = enabled,
+        destructive = destructive,
+        iconContainerColor = iconContainerColor,
+        iconContentColor = iconContentColor,
     )
 }
 

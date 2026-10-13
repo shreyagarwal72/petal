@@ -713,8 +713,16 @@ private fun ImageViewerTopBar(
             }
 
             // More options
+            val menuRotation by animateFloatAsState(
+                targetValue = if (moreMenuExpanded) 180f else 0f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                label = "img_menu_rot"
+            )
             Box {
-                IconButton(onClick = { moreMenuExpanded = true }) {
+                IconButton(
+                    onClick = { moreMenuExpanded = true },
+                    modifier = Modifier.graphicsLayer { rotationZ = menuRotation }
+                ) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.ui_more), tint = Color.White)
                 }
                 com.petal.browser.ui.containment.PetalPopupMenu(
@@ -722,12 +730,13 @@ private fun ImageViewerTopBar(
                     onDismissRequest = { moreMenuExpanded = false },
                 ) {
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text(stringResource(R.string.ui_open_in_external_app)) },
+                        text = stringResource(R.string.ui_open_in_external_app),
                         leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) },
                         onClick = { moreMenuExpanded = false; onOpenExternal() },
                     )
+                    com.petal.browser.ui.containment.PetalMenuDivider()
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = { Text(stringResource(R.string.ui_copy_url)) },
+                        text = stringResource(R.string.ui_copy_url),
                         leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) },
                         onClick = { moreMenuExpanded = false; onCopyUrl() },
                     )
