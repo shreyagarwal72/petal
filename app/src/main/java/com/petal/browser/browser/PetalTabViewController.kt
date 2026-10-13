@@ -485,6 +485,7 @@ class PetalTabViewController private constructor(
         var ctx: android.content.Context? = context
         while (ctx is android.content.ContextWrapper) {
             if (ctx is com.petal.browser.activity.BrowserActivity) return true
+            if (ctx is com.petal.browser.customtabs.PetalCustomTabActivity) return true
             ctx = ctx.baseContext
         }
         return false

@@ -19,8 +19,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
@@ -29,21 +30,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.browser.PetalTabViewController
+import com.petal.browser.ui.components.ExpressivePullToRefreshWaterRipple
+import com.petal.browser.ui.components.LinearRipplingWavyProgressIndicator
+import com.petal.browser.ui.components.PullToRefreshFrameLayout
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.view.PetalToast
-import com.petal.browser.browser.PetalTabViewController
-import androidx.compose.ui.res.stringResource
 
 /**
  * PetalCustomTabActivity
@@ -56,7 +60,10 @@ import androidx.compose.ui.res.stringResource
  *  - Real-time progress indicator using Material 3 Expressive linear wavy bar.
  *  - Dynamic security status (HTTPS lock vs unencrypted alert).
  *  - Strict Enhanced Tracking Protection (ETP) isolation honoring user preferences.
- *  - Overflow action menu: Share, Copy link, Desktop site toggle, and Open in Petal Browser.
+ *  - Overflow action menu: Share, Copy link, Desktop site toggle.
+ *  - Visible "Open in Petal Browser" pill button in the toolbar.
+ *  - Petal-native PullToRefreshFrameLayout (same as BrowserActivity) replacing
+ *    Mozilla's SwipeRefreshLayout — no scroll-up/pull-to-refresh intersection.
  *  - Seamless session and tab handoff to [BrowserActivity].
  */
 class PetalCustomTabActivity : ComponentActivity() {
@@ -68,6 +75,10 @@ class PetalCustomTabActivity : ComponentActivity() {
     private var isSecureState by mutableStateOf(false)
     private var progressState by mutableStateOf(0)
     private var isDesktopModeState by mutableStateOf(false)
+
+    // Pull-to-refresh state driven by PullToRefreshFrameLayout callbacks
+    private var pullProgressState by mutableStateOf(0f)
+    private var isRefreshingState by mutableStateOf(false)
 
     // CustomTabsIntent customizations
     private var customToolbarColor: Color? = null
@@ -120,41 +131,75 @@ class PetalCustomTabActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
+                        // PullToRefreshFrameLayout wraps the browser surface.
+                        // canPull guard prevents activation when page isn't at top.
                         AndroidView(
                             factory = { ctx ->
-                                val tabId = "tab_custom_${System.currentTimeMillis()}"
-                                val sessionPair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
-                                    context = ctx,
-                                    tabId = tabId,
-                                    url = targetUrl.ifBlank { "about:blank" },
-                                    title = "",
-                                    isIncognito = false,
-                                    select = true
-                                )
-                                PetalTabViewController(ctx).also { surface ->
-                                    customTabId = tabId
-                                    surface.bindTab(sessionPair.first)
-                                    surface.attachLifecycle(this@PetalCustomTabActivity)
-                                    surface.onBrowserStateChanged = { state ->
-                                        currentUrlState = state.url
-                                        currentTitleState = state.title
-                                        progressState = state.progress
-                                        isSecureState = state.isSecure
+                                PullToRefreshFrameLayout(ctx).also { p2r ->
+                                    p2r.setCanPull { tabSurface?.isPageAtTop() == true }
+                                    p2r.setOnPullListener { progress ->
+                                        pullProgressState = progress
                                     }
-                                    val customTabEtpEnabled = PreferenceManager.getDefaultSharedPreferences(ctx)
-                                        .getBoolean("sp_custom_tabs_etp", true)
-                                    if (customTabEtpEnabled) surface.setTrackingProtection(true)
-                                    surface.layoutParams = FrameLayout.LayoutParams(
+                                    p2r.setOnReleaseListener { triggered ->
+                                        if (triggered) {
+                                            isRefreshingState = true
+                                            tabSurface?.reload()
+                                        }
+                                        pullProgressState = 0f
+                                    }
+
+                                    val tabId = "tab_custom_${System.currentTimeMillis()}"
+                                    val sessionPair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                                        context = ctx,
+                                        tabId = tabId,
+                                        url = targetUrl.ifBlank { "about:blank" },
+                                        title = "",
+                                        isIncognito = false,
+                                        select = true
+                                    )
+                                    val surface = PetalTabViewController(ctx).also { surface ->
+                                        customTabId = tabId
+                                        surface.bindTab(sessionPair.first)
+                                        surface.attachLifecycle(this@PetalCustomTabActivity)
+                                        surface.onBrowserStateChanged = { state ->
+                                            currentUrlState = state.url
+                                            currentTitleState = state.title
+                                            progressState = state.progress
+                                            isSecureState = state.isSecure
+                                            // Clear refreshing indicator when page finishes loading
+                                            if (state.progress >= 100) {
+                                                isRefreshingState = false
+                                            }
+                                        }
+                                        val customTabEtpEnabled = PreferenceManager.getDefaultSharedPreferences(ctx)
+                                            .getBoolean("sp_custom_tabs_etp", true)
+                                        if (customTabEtpEnabled) surface.setTrackingProtection(true)
+                                        surface.layoutParams = FrameLayout.LayoutParams(
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                            ViewGroup.LayoutParams.MATCH_PARENT
+                                        )
+                                        tabSurface = surface
+                                        if (targetUrl.isNotBlank() && !targetUrl.equals("about:blank", ignoreCase = true)) {
+                                            surface.loadUrl(targetUrl)
+                                        }
+                                    }
+                                    p2r.addView(surface)
+                                    p2r.layoutParams = FrameLayout.LayoutParams(
                                         ViewGroup.LayoutParams.MATCH_PARENT,
                                         ViewGroup.LayoutParams.MATCH_PARENT
                                     )
-                                    tabSurface = surface
-                                    if (targetUrl.isNotBlank() && !targetUrl.equals("about:blank", ignoreCase = true)) {
-                                        surface.loadUrl(targetUrl)
-                                    }
                                 }
                             },
                             modifier = Modifier.fillMaxSize()
+                        )
+
+                        // Expressive water-ripple pull-to-refresh overlay
+                        ExpressivePullToRefreshWaterRipple(
+                            isRefreshing = isRefreshingState,
+                            pullFraction = pullProgressState,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 8.dp)
                         )
                     }
                 }
@@ -293,7 +338,9 @@ private fun CustomTabTopBar(
         }
     }
 
-    val barColor = customBgColor ?: MaterialTheme.colorScheme.surfaceContainerHighest
+    val barColor = customBgColor ?: MaterialTheme.colorScheme.surfaceContainerLow
+    // Squircle shape for the Petal logo badge on the left
+    val squircleShape = RoundedCornerShape(28)
 
     Column(
         modifier = Modifier
@@ -302,35 +349,49 @@ private fun CustomTabTopBar(
     ) {
         Surface(
             color = barColor,
-            tonalElevation = 3.dp,
-            shadowElevation = 2.dp,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 8.dp),
+                    .height(60.dp)
+                    .padding(horizontal = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onClose) {
+                // ── Left: Squircle Petal logo badge (tapping = close) ──────
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(squircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(bounded = true),
+                            onClick = onClose
+                        )
+                ) {
                     if (customCloseIcon != null) {
                         Image(
                             bitmap = customCloseIcon.asImageBitmap(),
                             contentDescription = stringResource(R.string.ui_close_custom_tab),
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     } else {
                         Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.ui_close_custom_tab),
-                            tint = MaterialTheme.colorScheme.onSurface
+                            painter = painterResource(R.drawable.ic_petal_letter_p),
+                            contentDescription = stringResource(R.string.ui_petal_logo),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
 
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(10.dp))
 
+                // ── Center: Title + security indicator + host ─────────────
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -340,7 +401,7 @@ private fun CustomTabTopBar(
                     if (title.isNotBlank() && !title.equals("about:blank", ignoreCase = true)) {
                         Text(
                             text = title,
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -349,26 +410,25 @@ private fun CustomTabTopBar(
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        if (isSecure) {
-                            Icon(
+                        when {
+                            isSecure -> Icon(
                                 imageVector = Icons.Rounded.Lock,
                                 contentDescription = stringResource(R.string.ui_secure_connection),
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(13.dp)
+                                modifier = Modifier.size(12.dp)
                             )
-                        } else if (!url.equals("about:blank", ignoreCase = true)) {
-                            Icon(
-                                imageVector = Icons.Rounded.WarningAmber,
+                            !url.equals("about:blank", ignoreCase = true) -> Icon(
+                                imageVector = Icons.Rounded.Warning,
                                 contentDescription = stringResource(R.string.ui_insecure_connection),
                                 tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(13.dp)
+                                modifier = Modifier.size(12.dp)
                             )
                         }
                         Text(
                             text = displayHost,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -376,15 +436,37 @@ private fun CustomTabTopBar(
                     }
                 }
 
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(6.dp))
 
-                // Overflow Actions Menu
+                // ── Right: "Open in Petal" pill button ───────────────────
+                FilledTonalButton(
+                    onClick = onOpenInPetal,
+                    shape = RoundedCornerShape(50),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(R.string.ui_open_in_petal_browser),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1
+                    )
+                }
+
+                Spacer(Modifier.width(2.dp))
+
+                // ── Overflow: Share / Copy / Desktop ─────────────────────
                 Box {
                     IconButton(onClick = { menuExpanded = true }) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
                             contentDescription = stringResource(R.string.ui_more_options),
-                            tint = MaterialTheme.colorScheme.onSurface
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -428,46 +510,22 @@ private fun CustomTabTopBar(
                                 onToggleDesktop()
                             }
                         )
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = {
-                                Text(
-                                    text = stringResource(R.string.ui_open_in_petal_browser),
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.AutoMirrored.Rounded.OpenInNew,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                onOpenInPetal()
-                            }
-                        )
                     }
                 }
             }
         }
 
-        // Animated Material 3 Loading Progress Bar
+        // ── Animated M3 Expressive wavy loading progress bar ─────────────
         AnimatedVisibility(
             visible = progress in 1..99,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            LinearProgressIndicator(
-                progress = { progress / 100f },
+            LinearRipplingWavyProgressIndicator(
+                progress = progress / 100f,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(3.dp),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    .height(4.dp)
             )
         }
     }
