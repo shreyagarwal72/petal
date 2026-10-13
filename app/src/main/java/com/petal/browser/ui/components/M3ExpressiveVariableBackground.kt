@@ -303,6 +303,8 @@ fun M3ExpressiveVariableBackground(
         0f
     }
 
+    val scratchMatrix = remember { Matrix() }
+
     Canvas(modifier = modifier.fillMaxSize()) {
         val width = size.width
         val height = size.height
@@ -319,10 +321,10 @@ fun M3ExpressiveVariableBackground(
 
             rotate(degrees = animatedRotation, pivot = Offset(cx, cy)) {
                 val androidPath = blob.morph.toPath(progress = morphProgress)
-                val matrix = Matrix()
-                matrix.postScale(radius, radius)
-                matrix.postTranslate(cx, cy)
-                androidPath.transform(matrix)
+                scratchMatrix.reset()
+                scratchMatrix.postScale(radius, radius)
+                scratchMatrix.postTranslate(cx, cy)
+                androidPath.transform(scratchMatrix)
                 val path = androidPath.asComposePath()
 
                 val radialBrush = Brush.radialGradient(

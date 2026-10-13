@@ -100,6 +100,7 @@ import com.petal.browser.R
 
 // ── 1. Data model & Persistence ───────────────────────────────────────────
 
+@Immutable
 data class PetalShortcut(
     val label: String,
     val url: String,

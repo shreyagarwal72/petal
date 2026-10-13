@@ -60,6 +60,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
+@Immutable
 data class TabModel(
     val album: AlbumController,
     val title: String,
@@ -412,12 +413,14 @@ fun PetalTabSwitcherContent(
 
     var lastClosedTab by remember { mutableStateOf<TabModel?>(null) }
 
-    val filteredTabs = remember(tabs, searchQuery) {
-        if (searchQuery.isBlank()) {
-            tabs
-        } else {
-            val q = searchQuery.trim().lowercase()
-            tabs.filter { it.title.lowercase().contains(q) || it.url.lowercase().contains(q) }
+    val filteredTabs by remember(tabs) {
+        derivedStateOf {
+            if (searchQuery.isBlank()) {
+                tabs
+            } else {
+                val q = searchQuery.trim().lowercase()
+                tabs.filter { it.title.lowercase().contains(q) || it.url.lowercase().contains(q) }
+            }
         }
     }
 
@@ -657,7 +660,11 @@ fun PetalTabSwitcherContent(
                             .fillMaxWidth()
                             .heightIn(max = 440.dp)
                     ) {
-                        items(filteredTabs, key = { it.album.hashCode() }) { tab ->
+                        items(
+                            filteredTabs,
+                            key = { it.album.hashCode() },
+                            contentType = { "tab_card" }
+                        ) { tab ->
                             TabCard(
                                 tab = tab,
                                 onSelect = { onSelectTab(tab) },

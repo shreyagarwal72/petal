@@ -115,8 +115,11 @@ private fun getHistoryDateGroup(timestamp: Long): String {
 }
 
 /** Sealed list item for the LazyColumn — either a date-group header or a history record. */
+@Immutable
 private sealed class HistoryListItem {
+    @Immutable
     data class Header(val label: String) : HistoryListItem()
+    @Immutable
     data class Entry(val record: Record, val indexInGroup: Int, val groupSize: Int) : HistoryListItem()
 }
 

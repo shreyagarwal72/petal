@@ -101,6 +101,7 @@ import kotlin.math.sin
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
+@Immutable
 data class DownloadItem(
     val id: Long,
     val fileName: String,

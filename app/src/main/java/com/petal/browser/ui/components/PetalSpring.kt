@@ -58,6 +58,18 @@ object PetalSpring {
         stiffness = Spring.StiffnessMedium,
     )
 
+    /** Material 3 Expressive Dialogs: snappy, tactile pop-in with controlled settle. */
+    fun <T> dialog(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = 0.82f,
+        stiffness = 380f,
+    )
+
+    /** Expressive Sheets: smooth decelerating slide with subtle spring cushion. */
+    fun <T> sheet(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = 0.88f,
+        stiffness = 320f,
+    )
+
     /** Pure opacity/colour changes. Fade-in slightly slower than fade-out. */
     fun <T> fadeIn(): FiniteAnimationSpec<T> = tween(durationMillis = 200, easing = EmphasizedEasing)
     fun <T> fadeOut(): FiniteAnimationSpec<T> = tween(durationMillis = 140, easing = EmphasizedEasing)
