@@ -80,7 +80,10 @@ class PetalAutofillService : AutofillService() {
                     if (label.isNotBlank()) return label
                 } catch (_: Exception) {}
                 if (pkg == context.packageName) return "Petal Browser"
-                if (rawTarget.startsWith("app://")) return pkg
+                // Last resort: humanize the package name (e.g. "com.musheer360.swiftslate" → "Swiftslate")
+                val readable = pkg.substringAfterLast('.')
+                    .replaceFirstChar { it.uppercaseChar() }
+                if (readable.isNotBlank()) return readable
             }
             // For web domains: remove protocols and www prefix
             return rawTarget
@@ -188,9 +191,11 @@ class PetalAutofillService : AutofillService() {
         val response = FillResponse.Builder()
 
         matches.forEachIndexed { index, cred ->
-            val friendlyTarget = cleanDisplayLabel(applicationContext, cred.domain)
-            val title = cred.username.ifBlank { friendlyTarget }
-            val subtitle = friendlyTarget
+            val appLabel = cleanDisplayLabel(applicationContext, cred.domain)
+            // Title shows the username; fall back to app/domain name when no username stored
+            val title = cred.username.ifBlank { appLabel }
+            // Subtitle shows app/domain under the username, or a generic fallback
+            val subtitle = if (cred.username.isNotBlank()) appLabel else "Saved password"
 
             val authIntent = Intent(this, PetalAutofillAuthActivity::class.java).apply {
                 putExtra(PetalAutofillAuthActivity.EXTRA_CREDENTIAL_ID, cred.id)

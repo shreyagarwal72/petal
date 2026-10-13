@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material 3 Expressive squircle icon background — save dialog Petal P icon (22dp radius, solid icon_bg color) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="22dp" />
+    <solid android:color="@color/petal_autofill_icon_bg" />
+</shape>

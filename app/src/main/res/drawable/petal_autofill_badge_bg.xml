@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Material 3 Expressive squircle badge background with 16dp rounded radius -->
+<!-- Material 3 Expressive squircle badge background — chip badge (20dp radius) -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="16dp" />
+    <corners android:radius="20dp" />
     <solid android:color="@color/petal_autofill_badge_bg" />
 </shape>

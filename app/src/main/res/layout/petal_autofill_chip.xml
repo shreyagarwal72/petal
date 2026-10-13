@@ -9,26 +9,26 @@
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="64dp"
+    android:layout_height="68dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingStart="14dp"
     android:paddingEnd="14dp"
     android:paddingTop="8dp"
     android:paddingBottom="8dp"
-    android:background="@drawable/petal_autofill_chip_bg">
+    android:background="@color/petal_autofill_surface_container">
 
-    <!-- Material 3 Expressive Squircle Key/Lock Badge Container -->
+    <!-- Material 3 Expressive Squircle Petal P Badge Container -->
     <LinearLayout
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:gravity="center"
         android:background="@drawable/petal_autofill_badge_bg">
         <ImageView
             android:id="@+id/petal_autofill_icon"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:src="@drawable/icon_secure"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_petal_letter_p"
             android:tint="@color/petal_autofill_accent"
             android:contentDescription="@null"
             android:scaleType="fitCenter" />
@@ -60,21 +60,32 @@
             android:textSize="12sp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:fontFamily="sans-serif"
+            android:fontFamily="sans-serif-light"
             android:textColor="@color/petal_autofill_subtitle" />
 
     </LinearLayout>
 
-    <!-- Petal brand label pill container -->
+    <!-- Petal brand pill: lock icon + "Petal" text -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:background="@drawable/petal_autofill_pill_bg"
-        android:paddingStart="9dp"
-        android:paddingEnd="9dp"
-        android:paddingTop="3dp"
-        android:paddingBottom="3dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         android:layout_marginStart="8dp">
+
+        <ImageView
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginEnd="4dp"
+            android:src="@drawable/icon_secure"
+            android:tint="@color/petal_autofill_accent"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter" />
 
         <TextView
             android:layout_width="wrap_content"

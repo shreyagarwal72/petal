@@ -50,14 +50,14 @@ class PetalAutofillAuthActivity : FragmentActivity() {
         // No fingerprint and no screen lock on the phone = we refuse to hand out passwords.
         val canAuth = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
-            Toast.makeText(this, "Set a screen lock to use Petal autofill", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Add a screen lock to use Petal Autofill securely", Toast.LENGTH_LONG).show()
             cancel()
             return
         }
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Unlock Petal")
-            .setSubtitle("Confirm it's you to fill your password")
+            .setTitle("Verify it's you")
+            .setSubtitle("Petal needs your fingerprint or PIN to fill this password")
             .setAllowedAuthenticators(authenticators)
             .build()
 

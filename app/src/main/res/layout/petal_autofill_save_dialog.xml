@@ -11,79 +11,100 @@
     android:gravity="center_horizontal"
     android:paddingStart="24dp"
     android:paddingEnd="24dp"
-    android:paddingTop="16dp"
-    android:paddingBottom="16dp">
+    android:paddingTop="20dp"
+    android:paddingBottom="20dp">
 
-    <!-- Material 3 Expressive Icon Squircle Container -->
+    <!-- Material 3 Expressive Petal P Squircle Icon Container -->
     <LinearLayout
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:gravity="center"
-        android:background="@drawable/petal_autofill_badge_bg">
+        android:background="@drawable/petal_autofill_icon_bg">
         <ImageView
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/icon_secure"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_petal_letter_p"
             android:tint="@color/petal_autofill_accent"
             android:contentDescription="@null"
             android:scaleType="fitCenter" />
     </LinearLayout>
 
-    <!-- Save title (Clean & cohesive with system bottom sheet) -->
+    <!-- Save title -->
     <TextView
         android:id="@+id/petal_save_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="20dp"
         android:text="Save to Petal Vault?"
-        android:textSize="20sp"
+        android:textSize="22sp"
         android:fontFamily="sans-serif-medium"
         android:textStyle="bold"
         android:textColor="@color/petal_autofill_title"
         android:gravity="center" />
 
-    <!-- Credential being saved (Username or Title) -->
-    <TextView
-        android:id="@+id/petal_save_username"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:textSize="15sp"
-        android:fontFamily="sans-serif-medium"
-        android:textColor="@color/petal_autofill_subtitle"
-        android:gravity="center"
-        android:maxLines="1"
-        android:ellipsize="middle" />
+    <!-- Subtle separator -->
+    <View
+        android:layout_width="48dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="14dp"
+        android:background="@color/petal_autofill_chip_stroke" />
 
-    <!-- Domain / App Name -->
-    <TextView
-        android:id="@+id/petal_save_domain"
-        android:layout_width="match_parent"
+    <!-- Credential row: username · domain -->
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textSize="13sp"
-        android:fontFamily="sans-serif"
-        android:textColor="@color/petal_autofill_caption"
-        android:gravity="center"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="12dp">
+
+        <TextView
+            android:id="@+id/petal_save_username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/petal_autofill_subtitle"
+            android:maxLines="1"
+            android:ellipsize="middle" />
+
+        <!-- Dot separator shown only when username is non-empty (set visibility via code if needed) -->
+        <TextView
+            android:id="@+id/petal_save_dot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" · "
+            android:textSize="14sp"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/petal_autofill_caption" />
+
+        <TextView
+            android:id="@+id/petal_save_domain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-light"
+            android:textColor="@color/petal_autofill_caption"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+    </LinearLayout>
 
     <!-- Expressive Encrypted pill badge -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="16dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="@drawable/petal_autofill_pill_bg"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="5dp"
-        android:paddingBottom="5dp">
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
 
         <ImageView
-            android:layout_width="12dp"
-            android:layout_height="12dp"
+            android:layout_width="13dp"
+            android:layout_height="13dp"
             android:layout_marginEnd="6dp"
             android:src="@drawable/icon_secure"
             android:tint="@color/petal_autofill_accent"
