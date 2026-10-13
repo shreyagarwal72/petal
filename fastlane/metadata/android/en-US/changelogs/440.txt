@@ -1,0 +1,6 @@
+Petal Browser v4.4 Release:
+- Material 3 Expressive 3-Dot Menus: Redesigned all 3-dot overflow and item action menus across Bookmarks, Downloads, Extensions, Files, PDF Viewer, Tabs, and Custom Tabs with tonal elevation, squircle icon badges, and bouncy spring rotation animations.
+- Interactive Feature Explainers: Added Material 3 Expressive info icons with animated interactive preview dialogs for complex settings (Apple Duo 3D fold, Address Bar ergonomics, Trie AdBlock Shield, Morphing Shapes, Motion Blur).
+- Android 14 Predictive Back Navigation: Full predictive back gesture adoption with real-time scaling and background blur effects across all viewer screens and secure vault.
+- Petal Autofill Redesign: Complete Material 3 Expressive UI and UX overhaul for password, card, and credential autofill.
+- Performance & Anti-Jank Optimization: Zero-allocation Canvas ambient morphing, Compose @Immutable compiler stability annotations, derivedStateOf query pruning, and calibrated spring motion physics.

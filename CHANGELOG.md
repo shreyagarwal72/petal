@@ -1,3 +1,35 @@
+### v4.4 — 🌸 Material 3 Expressive 3-Dot Menus, Feature Explainers & Smooth Performance
+
+> *"Major UI & UX milestone introducing Material 3 Expressive 3-dot menus with bouncy rotation physics, animated live feature explainer dialogs, Android 14 predictive back with blur across viewers, full Petal Autofill redesign, and zero-allocation anti-jank rendering."*
+
+#### 🎨 Material 3 Expressive 3-Dot Menus & Bouncy Motion
+- **Unified Expressive Menus (`PetalPopupMenu`)**: Redesigned all secondary and item action menus app-wide (Bookmarks, Downloads, Extensions, File Picker, PDF Viewer, Tab Switcher, and Custom Tabs) with:
+  - 28dp rounded container shapes and tonal surface container elevation.
+  - Interactive squircle icon badges, bold typography, and destructive action tints.
+  - Tactile bouncy physics: Spring-driven 180° rotation on the 3-dot trigger button (`Spring.DampingRatioMediumBouncy`) plus scale and fade entrance on menu popup surfaces.
+
+#### 💡 Interactive Material 3 Expressive Feature Explainers
+- **Info Icon System (`PetalFeatureInfoButton`)**: Embedded tactile info icon buttons beside complex feature sections in Settings.
+- **Animated Explainer Dialogs (`PetalFeatureExplainerDialog`)**: Interactive modal dialogs with live animated micro-previews:
+  - *Apple Duo (BETA)*: Live 3D dual-pane foldable preview with real-time perspective tilt and frosted glass crease blur.
+  - *Address Bar Position*: Top vs. bottom floating island one-handed reachability demonstration.
+  - *Ad & Tracker Shield*: Sub-millisecond Trie algorithm firewall visualization routing clean web traffic while intercepting tracking packets.
+  - *Morphing Shapes & Scroll Motion Blur*: Live continuous ambient polygon morphing and velocity-based directional blur demo.
+
+#### 🔙 Android 14 Predictive Back Navigation
+- **Predictive Back with Live Blur**: Upgraded all full-screen viewers (PDF viewer, Image viewer, File viewer, and Recently Closed Vault) to adhere strictly to Android 14 predictive back guidelines with real-time scaling and frosted background blur snapshots.
+
+#### 🔐 Petal Autofill Expressive Redesign
+- **Expressive Credential Overhaul**: Full Material 3 Expressive UI and UX redesign of password, credit card, and identity autofill prompts with fluid animations, biometrics, and living color harmony.
+
+#### ⚡ Performance & Anti-Jank Optimizations
+- **Zero-Allocation Canvas Rendering**: Pre-allocated and reused scratch matrices inside `M3ExpressiveVariableBackground`, eliminating hundreds of short-lived heap allocations per second and eradicating GC pause stutters.
+- **Compose Compiler Stability**: Added `@Immutable` stability annotations across core data models (`TabModel`, `DownloadItem`, `PetalShortcut`, `HistoryListItem`), allowing Compose to skip recomposition during high-speed fling scrolling.
+- **Recomposition Pruning**: Wrapped dynamic search queries and filter pipelines in `derivedStateOf`, and added explicit `contentType` tags across lazy lists to prevent measure thrashing.
+- **Calibrated Spring Curves**: Standardized `PetalSpring.dialog()` and `PetalSpring.sheet()` curves for crisp, snappy settles without sluggish settle times.
+
+---
+
 ### v4.3 — ⚡ Latest GeckoView 157 Engine & Expressive Connected Pickers
 
 > *"Major engine upgrade to Mozilla GeckoView & Android Components 157.0.1, coupled with a full redesign of pick-one selectors to Material 3 Expressive connected button groups."*
