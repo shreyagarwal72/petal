@@ -275,6 +275,8 @@ fun PetalRecentlyClosedVault(
             }
         }
     }
+        }
+    }
 
     // ── Forgot Lock / Reset Vault Dialog ──
     if (showForgotLockDialog) {
@@ -610,9 +612,6 @@ private fun UnlockedVaultContent(
                     },
                 )
             }
-        }
-    }
-}
         }
     }
 }

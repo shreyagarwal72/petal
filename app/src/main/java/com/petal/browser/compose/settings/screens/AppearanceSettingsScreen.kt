@@ -206,19 +206,45 @@ fun AppearanceSettingsScreenContent(
     var showMorphingShapesExplainer by remember { mutableStateOf(false) }
     var showMotionBlurExplainer by remember { mutableStateOf(false) }
 
-    if (showMorphingShapesExplainer) {
-        PetalFeatureExplainerDialog(
-            feature = PetalExplainerFeature.EXPRESSIVE_MORPHING_SHAPES,
-            onDismissRequest = { showMorphingShapesExplainer = false }
+    PetalFeatureExplainerDialog(
+        visible = showMorphingShapesExplainer,
+        onDismissRequest = { showMorphingShapesExplainer = false },
+        feature = PetalExplainerFeature(
+            type = ExplainerFeatureType.EXPRESSIVE_MORPHING_SHAPES,
+            title = "Morphing Shapes",
+            badge = "M3 EXPRESSIVE",
+            subtitle = "Fluid Continuous Vector Geometry",
+            bullets = listOf(
+                "Smoothly interpolates multi-point polygons and organic curves in ambient backgrounds.",
+                "Transitions dynamically between 35 expressive geometric archetypes.",
+                "Optimized GPU bezier rasterization with near-zero battery consumption.",
+                "Harmonizes continuously with your Material You dynamic color theme."
+            ),
+            icon = Icons.Rounded.BubbleChart,
+            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            iconTint = MaterialTheme.colorScheme.primary
         )
-    }
+    )
 
-    if (showMotionBlurExplainer) {
-        PetalFeatureExplainerDialog(
-            feature = PetalExplainerFeature.MOTION_BLUR,
-            onDismissRequest = { showMotionBlurExplainer = false }
+    PetalFeatureExplainerDialog(
+        visible = showMotionBlurExplainer,
+        onDismissRequest = { showMotionBlurExplainer = false },
+        feature = PetalExplainerFeature(
+            type = ExplainerFeatureType.MOTION_BLUR,
+            title = "Scroll Motion Blur",
+            badge = "CINEMATIC",
+            subtitle = "Velocity-Based Directional Blur",
+            bullets = listOf(
+                "Applies real-time GPU directional shader blur proportional to scroll fling velocity.",
+                "Gives lists and web views an ultra-fluid, cinematic high refresh rate appearance.",
+                "Instantly snaps back to tack-sharp focus the millisecond motion stops.",
+                "Fully hardware accelerated with negligible frame drop."
+            ),
+            icon = Icons.Rounded.Speed,
+            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+            iconTint = MaterialTheme.colorScheme.secondary
         )
-    }
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "appearance_settings")
