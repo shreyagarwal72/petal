@@ -3685,7 +3685,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         fab_overview = findViewById(R.id.fab_overview);
-        list_search = dialogViewSearch.findViewById(R.id.list_search);
         progressBar = findViewById(R.id.main_progress_bar);
         androidx.compose.ui.platform.ComposeView progressBarComposeView = findViewById(R.id.main_progress_bar_compose);
         if (progressBarComposeView != null) {
@@ -3760,77 +3759,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
         }
 
-        TextInputLayout search_textField  = dialogViewSearch.findViewById(R.id.search_textField);
-        if (search_textField != null) {
-            search_textField.setStartIconOnClickListener(v -> {
-                if (search_input != null && Objects.requireNonNull(search_input.getText()).toString().isEmpty()) {
-                    hideSearch();
-                } else if (search_input != null) {
-                    search_input.setText("");
-                }
-            });
-            search_textField.setEndIconOnLongClickListener(v -> {
-                String query = (search_input != null && search_input.getText() != null) ? search_input.getText().toString().trim() : "";
-                String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : "");
-                if (!query.isEmpty() && !query.equals(activeUrl)) {
-                    showDialogCustomSearches(query);
-                } else {
-                    PetalToast.show(this, R.string.toast_input_empty);
-                }
-                return false;
-            });
-            search_textField.setEndIconOnClickListener(v -> {
-                String query = (search_input != null && search_input.getText() != null) ? search_input.getText().toString().trim() : "";
-                handleFinalSearch(query);
-            });
-        }
-        if (search_input != null) {
-            search_input.setOnEditorActionListener((v, actionId, event) -> {
-                String query = (search_input.getText() != null) ? search_input.getText().toString().trim() : "";
-                handleFinalSearch(query);
-                return true;
-            });
-
-            search_input.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    String liveText = s.toString().trim();
-                    boolean hasText = !liveText.isEmpty();
-                    if (search_textField != null) {
-                        if (hasText) {
-                            TypedValue typedValue = new TypedValue();
-                            context.getTheme().resolveAttribute(R.attr.colorOnSurface, typedValue, true);
-                            int color = typedValue.data;
-                            search_textField.setStartIconTintList(ColorStateList.valueOf(color));
-                            search_textField.setEndIconTintList(ColorStateList.valueOf(color));
-                        } else {
-                            search_textField.setStartIconTintList(ColorStateList.valueOf(Color.GRAY));
-                            search_textField.setEndIconTintList(ColorStateList.valueOf(Color.GRAY));
-                        }
-                    }
-                    if (adapterSearch != null && adapterSearch.getFilter() != null) {
-                        adapterSearch.getFilter().filter(s);
-                    }
-                    sp.edit().putString("searchInput", s.toString()).apply();
-
-                    boolean enableLiveSuggestions = true;
-                    if (hasText && adapterSearch != null && enableLiveSuggestions) {
-                        String searchEngine = sp.getString("sp_search_engine", "0");
-                        com.petal.browser.unit.SearchSuggestionsManager.fetchSuggestionsForEngine(searchEngine, liveText, suggestions -> {
-                            if (adapterSearch != null) adapterSearch.setLiveSuggestions(suggestions);
-                        });
-                    } else if (adapterSearch != null) {
-                        adapterSearch.setLiveSuggestions(null);
-                    }
-                }
-
-                @Override
-                public void afterTextChanged(Editable s) {}
-            });
-        }
         if (fab_overview != null) {
             HelperUnit.applyBouncyTouchFeedback(fab_overview);
             fab_overview.setOnClickListener(v -> showOverview());
@@ -3843,7 +3771,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @SuppressLint({"ClickableViewAccessibility", "UnsafeOptInUsageError"})
     public void initOmniBox() {
-        search_input = dialogViewSearch.findViewById(R.id.search_input);
         contentView = findViewById(android.R.id.content);
         composeAddressBar = findViewById(R.id.compose_address_bar);
 
