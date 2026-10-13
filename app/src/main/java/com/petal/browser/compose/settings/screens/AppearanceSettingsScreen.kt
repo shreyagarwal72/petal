@@ -203,6 +203,23 @@ fun AppearanceSettingsScreenContent(
         PetalHighRefreshRateManager.getMaxSupportedRefreshRate(context)
     }
 
+    var showMorphingShapesExplainer by remember { mutableStateOf(false) }
+    var showMotionBlurExplainer by remember { mutableStateOf(false) }
+
+    if (showMorphingShapesExplainer) {
+        PetalFeatureExplainerDialog(
+            feature = PetalExplainerFeature.EXPRESSIVE_MORPHING_SHAPES,
+            onDismissRequest = { showMorphingShapesExplainer = false }
+        )
+    }
+
+    if (showMotionBlurExplainer) {
+        PetalFeatureExplainerDialog(
+            feature = PetalExplainerFeature.MOTION_BLUR,
+            onDismissRequest = { showMotionBlurExplainer = false }
+        )
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "appearance_settings")
 
@@ -641,7 +658,8 @@ fun AppearanceSettingsScreenContent(
                     title = stringResource(R.string.ui_layout_expressive_motion),
                     iconRes = com.petal.browser.R.drawable.layers_filled,
                     cardId = "appearance_layout",
-                    targetHighlightId = targetHighlightItemId
+                    targetHighlightId = targetHighlightItemId,
+                    onInfoClick = { showMorphingShapesExplainer = true }
                 ) {
                     // Floating Tab Bar Toggle
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -748,7 +766,8 @@ fun AppearanceSettingsScreenContent(
                     title = stringResource(R.string.ui_display_performance),
                     icon = Icons.Rounded.Speed,
                     cardId = "appearance_refresh",
-                    targetHighlightId = targetHighlightItemId
+                    targetHighlightId = targetHighlightItemId,
+                    onInfoClick = { showMotionBlurExplainer = true }
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = stringResource(R.string.ui_high_refresh_rate_120hz),

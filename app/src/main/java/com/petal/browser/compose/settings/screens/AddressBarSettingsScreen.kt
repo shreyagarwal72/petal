@@ -39,6 +39,27 @@ fun AddressBarSettingsScreen(
     val swipeTabs by viewModel.swipeTabs.collectAsStateWithLifecycle()
     val quickActions by viewModel.quickActions.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var showPositionExplainer by remember { mutableStateOf(false) }
+
+    PetalFeatureExplainerDialog(
+        visible = showPositionExplainer,
+        onDismissRequest = { showPositionExplainer = false },
+        feature = PetalExplainerFeature(
+            type = ExplainerFeatureType.ADDRESS_BAR_POSITION,
+            title = "Address Bar Position",
+            badge = "ERGONOMICS",
+            subtitle = "Floating Island Reachability",
+            bullets = listOf(
+                "Bottom Bar: Optimized for modern tall phone displays for effortless one-handed thumb navigation.",
+                "Top Bar: Classic desktop-style URL bar placement with maximum bottom viewport space.",
+                "Transitions seamlessly with smooth squircle morphing animations.",
+                "Supports swipe-up gesture to quickly open tabs or search."
+            ),
+            icon = Icons.Rounded.SwapVert,
+            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            iconTint = MaterialTheme.colorScheme.primary
+        )
+    )
 
     Box(modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "address_bar_settings")
@@ -52,7 +73,13 @@ fun AddressBarSettingsScreen(
                 Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                PetalSettingsSection("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
+                PetalSettingsSection(
+                    title = "Position",
+                    icon = Icons.Rounded.SwapVert,
+                    cardId = "address_bar_position",
+                    targetHighlightId = targetHighlightItemId,
+                    onInfoClick = { showPositionExplainer = true }
+                ) {
                     Text(stringResource(R.string.ui_choose_where_the_compact_address), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     com.petal.browser.ui.components.PetalChoiceButtonGroup(

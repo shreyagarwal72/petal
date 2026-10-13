@@ -22,6 +22,7 @@ fun PetalSettingsSection(
     iconRes: Int? = null,
     cardId: String? = null,
     targetHighlightId: String? = null,
+    onInfoClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val matched = remember(cardId, targetHighlightId) {
@@ -47,6 +48,9 @@ fun PetalSettingsSection(
                 icon != null -> PetalGroupIconBadge(icon)
             }
             PetalSectionLabel(title, modifier = Modifier.weight(1f))
+            if (onInfoClick != null) {
+                com.petal.browser.compose.settings.screens.PetalFeatureInfoButton(onClick = onInfoClick)
+            }
         }
         CompositionLocalProvider(LocalPetalSectionHighlighted provides highlighted) {
             Column(

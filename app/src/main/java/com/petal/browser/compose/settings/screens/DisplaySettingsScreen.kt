@@ -163,6 +163,31 @@ fun DisplaySettingsScreenContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var showAppleDuoExplainer by remember { mutableStateOf(false) }
+
+    PetalFeatureExplainerDialog(
+        visible = showAppleDuoExplainer,
+        onDismissRequest = { showAppleDuoExplainer = false },
+        feature = PetalExplainerFeature(
+            type = ExplainerFeatureType.APPLE_DUO,
+            title = "Apple Duo (BETA)",
+            badge = "BETA",
+            subtitle = "3D Dual-Pane Frosted Glass Folding",
+            bullets = listOf(
+                "Simulates a dual-screen foldable device with dynamic real-time perspective depth.",
+                "Real-time frosted glass blur and specular lighting across the central fold seam.",
+                "Responds to 6DoF gyroscope sensor motion tracking or customizable manual touch tilt.",
+                "Zero battery overhead when browsing static 2D web pages."
+            ),
+            icon = Icons.Rounded.Animation,
+            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            iconTint = MaterialTheme.colorScheme.primary
+        ),
+        actionLabel = if (!appleDuoEnabled) "Enable Apple Duo" else "Got it",
+        onActionClick = {
+            if (!appleDuoEnabled) onAppleDuoEnabledChange(true)
+        }
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "display_zoom_settings")
@@ -205,7 +230,8 @@ fun DisplaySettingsScreenContent(
                     title = stringResource(R.string.ui_apple_duo_beta),
                     icon = Icons.Rounded.Animation,
                     cardId = "apple_duo",
-                    targetHighlightId = targetHighlightItemId
+                    targetHighlightId = targetHighlightItemId,
+                    onInfoClick = { showAppleDuoExplainer = true }
                 ) {
                     Text(
                         text = stringResource(R.string.ui_real_time_frosted_glass_fold),

@@ -217,6 +217,35 @@ fun PrivacySettingsScreenContent(
                 onBack = onNavigateBack
             )
 
+            var showAdBlockExplainer by remember { mutableStateOf(false) }
+
+            PetalFeatureExplainerDialog(
+                visible = showAdBlockExplainer,
+                onDismissRequest = { showAdBlockExplainer = false },
+                feature = PetalExplainerFeature(
+                    type = ExplainerFeatureType.ADBLOCK_TRIE_SHIELD,
+                    title = "Ad & Tracker Shield",
+                    badge = "PROTECTION",
+                    subtitle = "High-Performance Trie Algorithm",
+                    bullets = listOf(
+                        "Uses compact algorithmic Trie tree indexing for sub-millisecond rule matching.",
+                        "Directly intercepts third-party trackers, cryptominers, and malicious popups.",
+                        "Compatible with uBlock Origin and AdGuard filter syntax.",
+                        "Saves up to 45% mobile data and reduces website page load times."
+                    ),
+                    icon = Icons.Rounded.Shield,
+                    iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    iconTint = MaterialTheme.colorScheme.primary
+                ),
+                actionLabel = if (!adBlockEnabled) "Turn Shield On" else "Got it",
+                onActionClick = {
+                    if (!adBlockEnabled) {
+                        onAdBlockEnabledChange(true)
+                        PetalAdBlockEngine.setAdBlockEnabled(context, true)
+                    }
+                }
+            )
+
             val scrollState = rememberScrollState()
             Column(
                 modifier = Modifier
@@ -232,7 +261,8 @@ fun PrivacySettingsScreenContent(
                     title = stringResource(R.string.ui_shield_anti_tracking),
                     iconRes = com.petal.browser.R.drawable.layers_filled,
                     cardId = "privacy_adblock",
-                    targetHighlightId = targetHighlightItemId
+                    targetHighlightId = targetHighlightItemId,
+                    onInfoClick = { showAdBlockExplainer = true }
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
