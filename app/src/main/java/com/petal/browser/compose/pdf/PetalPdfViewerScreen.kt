@@ -579,7 +579,11 @@ fun PetalPdfViewerScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler {
+    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+
+    val shouldTriggerPredictiveBack = !isTextEditMode && !isEditMode && !showFindBar
+
+    androidx.activity.compose.BackHandler(enabled = !shouldTriggerPredictiveBack) {
         if (isTextEditMode) {
             isTextEditMode = false
             textEditUndoStack.clear()
@@ -587,14 +591,17 @@ fun PetalPdfViewerScreen(
             isEditMode = false
         } else if (showFindBar) {
             showFindBar = false
-        } else {
-            onBackPress()
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = shouldTriggerPredictiveBack,
+        onBack = onBackPress
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = {
             com.petal.browser.ui.containment.PetalSnackbarHost(
                 hostState = snackbarHostState,
@@ -947,6 +954,8 @@ fun PetalPdfViewerScreen(
                     }
                 }
             }
+        }
+    }
         }
     }
 

@@ -300,11 +300,16 @@ fun PetalImageViewerScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler(onBack = onBackPress)
+    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
-    Scaffold(
-        containerColor = Color.Black,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onBackPress
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Scaffold(
+                containerColor = Color.Black,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = {
             com.petal.browser.ui.containment.PetalSnackbarHost(
                 hostState = snackbarHostState,
@@ -432,6 +437,8 @@ fun PetalImageViewerScreen(
                     }
                 }
             }
+        }
+    }
 
     // ── Image Info Bottom Sheet ──────────────────────────
     if (showInfoSheet && currentEntry != null) {

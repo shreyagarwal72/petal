@@ -1,6 +1,8 @@
 package com.petal.browser.compose.tabs
 
-import androidx.activity.compose.BackHandler
+import androidx.compose.ui.graphics.asImageBitmap
+import com.petal.browser.predictive.PetalPredictiveBackSurface
+import com.petal.browser.predictive.PetalScreenWrapper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -91,9 +93,9 @@ fun PetalRecentlyClosedVault(
         records = PetalRecentlyClosedManager.getRecentlyClosedTabs()
     }
 
-    // Back: settings page -> vault page -> close vault
-    BackHandler(enabled = true) {
-        if (showSettingsPage) showSettingsPage = false else onDismiss()
+    // Back: settings page -> vault page (vault dismissal handled by PetalPredictiveBackSurface)
+    androidx.activity.compose.BackHandler(enabled = showSettingsPage) {
+        showSettingsPage = false
     }
 
     // Trigger biometric if lockType is biometric
@@ -117,10 +119,17 @@ fun PetalRecentlyClosedVault(
         }
     }
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+
+    PetalPredictiveBackSurface(
+        enabled = !showSettingsPage,
+        onBack = onDismiss
     ) {
+        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Surface(
+                modifier = modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
         Box(Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(
                 modifier = Modifier.fillMaxSize(),
@@ -601,6 +610,9 @@ private fun UnlockedVaultContent(
                     },
                 )
             }
+        }
+    }
+}
         }
     }
 }

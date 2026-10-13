@@ -17,7 +17,7 @@ import android.os.Build
 import android.util.Rational
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.activity.compose.BackHandler
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -128,15 +128,18 @@ fun PetalVideoPlayerScreen(
         }
     }
 
-    BackHandler {
-        onClose()
-    }
+    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black),
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onClose
     ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(Color.Black),
+            ) {
         // ExoPlayer PlayerView
         AndroidView(
             modifier = Modifier.fillMaxSize(),
@@ -233,6 +236,8 @@ fun PetalVideoPlayerScreen(
                 },
                 modifier = Modifier.fillMaxSize(),
             )
+        }
+    }
         }
     }
 }

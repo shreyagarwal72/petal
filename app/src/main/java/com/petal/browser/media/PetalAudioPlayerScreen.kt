@@ -15,7 +15,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import androidx.activity.compose.BackHandler
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -231,23 +231,26 @@ fun PetalAudioPlayerScreen(
         }
     }
 
-    BackHandler {
-        onClose()
-    }
+    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.surfaceContainerHighest,
-                        MaterialTheme.colorScheme.surface,
-                        MaterialTheme.colorScheme.background,
-                    )
-                )
-            ),
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onClose
     ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surfaceContainerHighest,
+                                MaterialTheme.colorScheme.surface,
+                                MaterialTheme.colorScheme.background,
+                            )
+                        )
+                    ),
+            ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -561,6 +564,8 @@ fun PetalAudioPlayerScreen(
                     )
                 }
             }
+        }
+    }
         }
     }
 }

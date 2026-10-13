@@ -25,7 +25,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -210,11 +210,16 @@ fun PetalFileViewerScreen(
     var isWordWrap by remember { mutableStateOf(false) }
     var onSaveRequested by remember { mutableStateOf<(() -> Unit)?>(null) }
 
-    BackHandler(onBack = onBackPress)
+    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onBackPress
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             PetalFileViewerTopBar(
                 title = displayName,
@@ -258,6 +263,8 @@ fun PetalFileViewerScreen(
                 )
                 else -> GenericBinaryContent(fileUri = fileUri, displayName = displayName, extension = extension)
             }
+        }
+    }
         }
     }
 }

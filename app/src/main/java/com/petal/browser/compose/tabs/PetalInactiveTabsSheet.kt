@@ -29,7 +29,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
+import androidx.compose.ui.graphics.asImageBitmap
 import com.petal.browser.predictive.PetalPredictiveBackSurface
+import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveTabGroupPill
 import com.petal.browser.ui.components.HeaderActionIcon
@@ -87,14 +89,17 @@ fun PetalInactiveTabsSheet(
         }
     }
 
+    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+
     PetalPredictiveBackSurface(
         enabled = true,
         onBack = onDismiss
     ) {
-        Surface(
-            color = MaterialTheme.colorScheme.background,
-            modifier = modifier.fillMaxSize()
-        ) {
+        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Surface(
+                color = MaterialTheme.colorScheme.background,
+                modifier = modifier.fillMaxSize()
+            ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 M3ExpressiveVariableBackground(pageSeed = "inactive_tabs_sheet")
 
@@ -286,6 +291,7 @@ fun PetalInactiveTabsSheet(
             }
         }
     }
+}
 }
 
 /**
