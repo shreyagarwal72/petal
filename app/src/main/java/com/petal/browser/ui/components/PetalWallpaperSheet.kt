@@ -203,6 +203,14 @@ val PRESET_WALLPAPERS = listOf(
         fullUrl = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHpucjNlOWRxeWFvZmVudDFndDFjcHZtZ3d1NHEycDdmcDduYmsyeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d480lR5b5h8k9X0M/giphy.gif",
         isVideo = false
     ),
+    WallpaperPreset(
+        id = "w_live_diy_gifts",
+        title = "DIY Gift Ideas",
+        category = "Live Video",
+        thumbUrl = "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400",
+        fullUrl = "android.resource://com.petal.browser/raw/wallpaper_diy_gifts",
+        isVideo = true
+    ),
 
     // ── Nature Wallpapers ──
     WallpaperPreset(

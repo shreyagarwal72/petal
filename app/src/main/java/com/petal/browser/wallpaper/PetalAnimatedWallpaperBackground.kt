@@ -113,12 +113,11 @@ fun PetalAnimatedWallpaperBackground(
 
         if (isVideo && !videoPlaybackFailed) {
             val exoPlayer = remember(wallpaperUri) {
-                val mediaUri = if (wallpaperUri.startsWith("file://")) {
-                    Uri.fromFile(File(wallpaperUri.removePrefix("file://")))
-                } else if (wallpaperUri.startsWith("/")) {
-                    Uri.fromFile(File(wallpaperUri))
-                } else {
-                    Uri.parse(wallpaperUri)
+                val mediaUri = when {
+                    wallpaperUri.startsWith("android.resource://") -> Uri.parse(wallpaperUri)
+                    wallpaperUri.startsWith("file://") -> Uri.fromFile(File(wallpaperUri.removePrefix("file://")))
+                    wallpaperUri.startsWith("/") -> Uri.fromFile(File(wallpaperUri))
+                    else -> Uri.parse(wallpaperUri)
                 }
 
                 // Low-memory LoadControl: minimal buffer footprint tailored for looping wallpaper clips
@@ -250,12 +249,11 @@ fun PetalAnimatedWallpaperBackground(
                 } else {
                     wallpaperUri
                 }
-                if (effectiveUri.startsWith("file://")) {
-                    File(effectiveUri.removePrefix("file://"))
-                } else if (effectiveUri.startsWith("/")) {
-                    File(effectiveUri)
-                } else {
-                    effectiveUri
+                when {
+                    effectiveUri.startsWith("android.resource://") -> Uri.parse(effectiveUri)
+                    effectiveUri.startsWith("file://") -> File(effectiveUri.removePrefix("file://"))
+                    effectiveUri.startsWith("/") -> File(effectiveUri)
+                    else -> effectiveUri
                 }
             }
             val imageRequest = remember(imageModel, isGif) {
