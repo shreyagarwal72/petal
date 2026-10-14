@@ -135,6 +135,26 @@ private fun getWidgetColorScheme(context: Context): androidx.compose.material3.C
     } else if (isDark && isAmoled) {
         scheme = scheme.applyAmoled()
     }
+
+    val liquidGlassEnabled = sp.getBoolean("sp_liquid_glass_enabled", false)
+    if (liquidGlassEnabled) {
+        val glassAlpha = sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f)
+        val outerAlpha = (glassAlpha * 0.72f).coerceIn(0.18f, 0.90f)
+        val innerAlpha = (glassAlpha * 0.88f).coerceIn(0.25f, 0.95f)
+        val pillAlpha = (glassAlpha * 0.58f).coerceIn(0.20f, 0.85f)
+
+        scheme = scheme.copy(
+            surfaceContainerLow = scheme.surfaceContainerLow.copy(alpha = outerAlpha),
+            surfaceContainer = scheme.surfaceContainer.copy(alpha = innerAlpha),
+            surfaceContainerHigh = scheme.surfaceContainerHigh.copy(alpha = innerAlpha),
+            surfaceContainerHighest = scheme.surfaceContainerHighest.copy(alpha = innerAlpha),
+            surfaceContainerLowest = scheme.surfaceContainerLowest.copy(alpha = outerAlpha),
+            primaryContainer = scheme.primaryContainer.copy(alpha = pillAlpha),
+            secondaryContainer = scheme.secondaryContainer.copy(alpha = pillAlpha),
+            tertiaryContainer = scheme.tertiaryContainer.copy(alpha = pillAlpha)
+        )
+    }
+
     return scheme
 }
 
@@ -176,6 +196,7 @@ private fun widgetActionIntent(context: Context, action: String): Intent =
 
 /**
  * Generates an anti-aliased bitmap with an expressive radial gradient and bold letter "P".
+ * When Liquid Glass is enabled, renders specular reflective rim stroke and translucent gradient.
  */
 private fun createGoogleStylePBadgeBitmap(
     sizeDp: Int = 42,
@@ -193,6 +214,9 @@ private fun createGoogleStylePBadgeBitmap(
     val centerY = px / 2f
     val radius = px / 2f
 
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val isGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+
     val gradient = RadialGradient(
         centerX,
         centerY * 0.7f,
@@ -206,6 +230,22 @@ private fun createGoogleStylePBadgeBitmap(
         style = Paint.Style.FILL
     }
     canvas.drawCircle(centerX, centerY, radius * 0.94f, paintBg)
+
+    if (isGlass) {
+        val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
+        val rimStrokeWidth = 1.75f * density
+        val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = rimStrokeWidth
+            shader = android.graphics.LinearGradient(
+                0f, 0f, px.toFloat(), px.toFloat(),
+                android.graphics.Color.argb((180 * sheen).toInt().coerceIn(40, 240), 255, 255, 255),
+                android.graphics.Color.argb((40 * sheen).toInt().coerceIn(10, 100), 255, 255, 255),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawCircle(centerX, centerY, (radius * 0.94f) - (rimStrokeWidth / 2f), rimPaint)
+    }
 
     val customTypeface = getWidgetTypeface(context)
     val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -224,6 +264,7 @@ private fun createGoogleStylePBadgeBitmap(
 /**
  * Generates an anti-aliased bitmap for a shape (Scallop, Circle, Pill) with an embedded
  * centered monogram letter or brand icon.
+ * When Liquid Glass is enabled, renders specular reflective rim stroke.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private fun createMonogramBadgeBitmap(
@@ -243,6 +284,9 @@ private fun createMonogramBadgeBitmap(
     val centerY = px / 2f
     val radius = px / 2f
 
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val isGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+
     val paintBg = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = bgColor
         style = Paint.Style.FILL
@@ -257,9 +301,41 @@ private fun createMonogramBadgeBitmap(
             centerX = centerX,
             centerY = centerY
         )
-        canvas.drawPath(polygon.toPath(), paintBg)
+        val path = polygon.toPath()
+        canvas.drawPath(path, paintBg)
+
+        if (isGlass) {
+            val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
+            val rimStrokeWidth = 1.75f * density
+            val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = rimStrokeWidth
+                shader = android.graphics.LinearGradient(
+                    0f, 0f, px.toFloat(), px.toFloat(),
+                    android.graphics.Color.argb((180 * sheen).toInt().coerceIn(40, 240), 255, 255, 255),
+                    android.graphics.Color.argb((40 * sheen).toInt().coerceIn(10, 100), 255, 255, 255),
+                    Shader.TileMode.CLAMP
+                )
+            }
+            canvas.drawPath(path, rimPaint)
+        }
     } else {
         canvas.drawCircle(centerX, centerY, radius * 0.95f, paintBg)
+        if (isGlass) {
+            val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
+            val rimStrokeWidth = 1.75f * density
+            val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = rimStrokeWidth
+                shader = android.graphics.LinearGradient(
+                    0f, 0f, px.toFloat(), px.toFloat(),
+                    android.graphics.Color.argb((180 * sheen).toInt().coerceIn(40, 240), 255, 255, 255),
+                    android.graphics.Color.argb((40 * sheen).toInt().coerceIn(10, 100), 255, 255, 255),
+                    Shader.TileMode.CLAMP
+                )
+            }
+            canvas.drawCircle(centerX, centerY, (radius * 0.95f) - (rimStrokeWidth / 2f), rimPaint)
+        }
     }
 
     val customTypeface = getWidgetTypeface(context)

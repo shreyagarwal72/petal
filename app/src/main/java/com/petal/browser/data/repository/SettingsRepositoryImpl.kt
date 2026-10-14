@@ -25,6 +25,14 @@ class SettingsRepositoryImpl @Inject constructor(
 
     private val sp: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(application)
 
+    init {
+        sp.registerOnSharedPreferenceChangeListener { _, key ->
+            if (key != null && (key.startsWith("sp_liquid_glass") || key == "useDynamicColor" || key == "sp_palette_id" || key == "sp_color_style" || key == "sp_amoled" || key == "sp_theme_config")) {
+                com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
+            }
+        }
+    }
+
     private fun <T> preferenceFlow(key: String, getter: () -> T): Flow<T> = callbackFlow {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
             if (changedKey == key) {
@@ -448,22 +456,27 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setColorStyle(style: ColorStyle) {
         sp.edit().putString("sp_color_style", style.name).apply()
+        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }
 
     override suspend fun setPaletteId(id: String) {
         sp.edit().putString("sp_palette_id", id).apply()
+        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }
 
     override suspend fun setDynamicColor(enabled: Boolean) {
         sp.edit().putBoolean("useDynamicColor", enabled).apply()
+        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }
 
     override suspend fun setAmoledMode(enabled: Boolean) {
         sp.edit().putBoolean("sp_amoled", enabled).apply()
+        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }
 
     override suspend fun setThemeConfig(config: ThemeConfig) {
         sp.edit().putString("sp_theme_config", config.name).apply()
+        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }
 
     override suspend fun setFloatingTabBar(enabled: Boolean) {
@@ -516,14 +529,17 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLiquidGlassEnabled(enabled: Boolean) {
         sp.edit().putBoolean("sp_liquid_glass_enabled", enabled).apply()
+        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }
 
     override suspend fun setLiquidGlassAlpha(alpha: Float) {
         sp.edit().putFloat("sp_liquid_glass_alpha", alpha).apply()
+        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }
 
     override suspend fun setLiquidGlassSheen(sheen: Float) {
         sp.edit().putFloat("sp_liquid_glass_sheen", sheen).apply()
+        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }
 
     override suspend fun setLiquidGlassTint(tint: String) {
