@@ -196,7 +196,7 @@ fun M3ExpressiveVariableBackground(
     LocalPetalGlassRevision.current
     val wallpaper = LocalPetalGlassWallpaper.current
     var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
-    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
     val liquidGlassBgMode = sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
     val liquidGlassImageUri = sp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
 

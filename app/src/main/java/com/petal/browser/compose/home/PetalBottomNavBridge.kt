@@ -144,12 +144,14 @@ object PetalBottomNavBridge {
                             .wrapContentHeight(),
                         contentAlignment = Alignment.BottomCenter
                     ) {
+                        val glassSource = remember { activity.findViewById<android.view.View>(com.petal.browser.R.id.main_content) }
                         PetalBottomNavBar(
                             selectedTab = currentTab,
                             tabCount = currentCount,
                             isIncognito = currentIncognito,
                             isFloatingStyle = floatingTabBar,
                             isBottomAddressBar = isBottomAddressBar,
+                            glassSource = glassSource,
                             onHomeClick = { currentHandler?.onHomeClick() },
                             onNewTabClick = { currentHandler?.onNewTabClick() },
                             onTabsClick = { currentHandler?.onTabsClick() },

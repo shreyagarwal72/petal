@@ -200,13 +200,7 @@ fun PetalBottomNavBar(
             com.petal.browser.ui.glass.LocalPetalGlassRevision.current
             val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
             val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) glassSource else null)
-            val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
-
-            val baseContainer = when (glassTint) {
-                "ACCENT" -> MaterialTheme.colorScheme.primaryContainer
-                "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest
-                else -> MaterialTheme.colorScheme.surfaceContainer
-            }
+            val baseContainer = MaterialTheme.colorScheme.surfaceContainerHigh
 
             Surface(
                 shape = navBarShape,

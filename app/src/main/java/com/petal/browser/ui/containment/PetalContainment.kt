@@ -99,14 +99,14 @@ fun isLiquidGlassEnabled(componentKey: String = "sp_liquid_glass_containments"):
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var enabled by remember(sp, componentKey) {
-        val master = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+        val master = sp.getBoolean("sp_liquid_glass_enabled", false)
         val comp = sp.getBoolean(componentKey, true)
         mutableStateOf(master && comp)
     }
     DisposableEffect(sp, componentKey) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_liquid_glass_unlocked" || key == "sp_liquid_glass_enabled" || key == componentKey) {
-                val master = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+                val master = sp.getBoolean("sp_liquid_glass_enabled", false)
                 val comp = sp.getBoolean(componentKey, true)
                 enabled = master && comp
             }
@@ -137,14 +137,14 @@ fun Modifier.liquidGlassChrome(
         val sp = PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
         val dark = MaterialTheme.colorScheme.background.luminance() < .5f
         val opacity = sp.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.20f, .95f)
-        val tint = when (sp.getString("sp_liquid_glass_tint", "FROSTED")) {
-            "ACCENT" -> MaterialTheme.colorScheme.primaryContainer
-            "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest
-            else -> MaterialTheme.colorScheme.surfaceContainerHigh
-        }
-        // The existing opacity slider scales Stride's 22/32 percent material veil.
-        return this.petalGlassPanel(shape, tint.copy(alpha = ((if (dark) .22f else .32f) * opacity / .70f).coerceIn(0f, 1f)),
-            sp.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f)
+        // Single unified premium material veil (harmonizing surface container with theme background)
+        val tint = MaterialTheme.colorScheme.surfaceContainerHigh
+        val sheen = sp.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f)
+        return this.petalGlassPanel(
+            shape = shape,
+            tint = tint.copy(alpha = ((if (dark) .22f else .32f) * opacity / .70f).coerceIn(0f, 1f)),
+            edge = sheen / .60f
+        )
     }
     return this.petalRealGlass(backdrop, shape, isDark)
         .liquidGlassSheen(shape, sheenIntensity, tintColor)
@@ -203,13 +203,7 @@ fun petalGroupSurfaceColor(): Color {
         return if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .45f) else Color.Transparent
     }
     val glassAlpha = if (isGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
-    val glassTint = if (isGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
-
-    val baseGlassColor = when (glassTint) {
-        "ACCENT" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = glassAlpha * 0.85f)
-        "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = glassAlpha)
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha)
-    }
+    val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha * 0.75f)
 
     val target = when {
         LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)

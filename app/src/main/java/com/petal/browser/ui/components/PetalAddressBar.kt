@@ -169,13 +169,7 @@ fun PetalAddressBar(
     val glassSource = androidx.compose.ui.platform.LocalView.current.rootView
         .findViewById<android.view.View>(com.petal.browser.R.id.main_content)
     val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) glassSource else null)
-    val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
-
-    val baseGlassColor = when (glassTint) {
-        "ACCENT" -> MaterialTheme.colorScheme.primaryContainer
-        "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh
-    }
+    val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
     val effectiveContainerColor = when {
         isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer

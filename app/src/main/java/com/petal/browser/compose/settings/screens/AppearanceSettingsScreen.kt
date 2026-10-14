@@ -991,11 +991,7 @@ fun AppearanceSettingsScreenContent(
                                 val previewShape = RoundedCornerShape(24.dp)
                                 val previewSheen = liquidGlassSheen
                                 val previewAlpha = liquidGlassAlpha
-                                val previewBaseColor = when (liquidGlassTint) {
-                                    "ACCENT" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = previewAlpha * 0.85f)
-                                    "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = previewAlpha)
-                                    else -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = previewAlpha)
-                                }
+                                val previewBaseColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = previewAlpha * 0.75f)
                                 Card(
                                     shape = previewShape,
                                     colors = CardDefaults.cardColors(containerColor = if (com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current?.ready == true) Color.Transparent else previewBaseColor),
@@ -1005,8 +1001,7 @@ fun AppearanceSettingsScreenContent(
                                         .liquidGlassChrome(
                                             shape = previewShape,
                                             enabled = true,
-                                            sheenIntensity = previewSheen,
-                                            tintColor = if (liquidGlassTint == "ACCENT") MaterialTheme.colorScheme.primary else Color.Unspecified
+                                            sheenIntensity = previewSheen
                                         )
                                 ) {
                                     Column(
@@ -1059,25 +1054,6 @@ fun AppearanceSettingsScreenContent(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                }
-
-                                // Glass Tint Style Selector
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(
-                                        text = "Glass Tint & Material Style",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    ExpressiveButtonGroup(
-                                        items = listOf(
-                                            ExpressiveSegmentItem(id = "FROSTED", label = "Frosted", icon = Icons.Rounded.BlurOn),
-                                            ExpressiveSegmentItem(id = "ACCENT", label = "Tinted", icon = Icons.Rounded.ColorLens),
-                                            ExpressiveSegmentItem(id = "DEEP", label = "Deep Glass", icon = Icons.Rounded.DarkMode)
-                                        ),
-                                        selectedId = liquidGlassTint,
-                                        onItemSelected = onLiquidGlassTintChange,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
                                 }
 
                                 // Glass Translucency Slider (Stride style PetalSlider)
