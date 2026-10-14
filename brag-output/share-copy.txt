@@ -1,0 +1,5 @@
+Break free from the Chromium monopoly. 🌸
+
+Meet Petal: Material 3 Expressive UI, Mozilla GeckoView 157 quantum engine, 35 dynamic polygon morphing shapes, and zero telemetry by construction.
+
+Download the signed APK on GitHub: https://github.com/shreyagarwal72/petal

@@ -216,6 +216,9 @@ fun PetalOmniboxPage(
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
     fun getSavedSearchHistory(): List<String> {
         val listKey = if (isIncognito) "sp_incognito_search_history_list" else "sp_search_history_list"
         val legacyKey = if (isIncognito) "sp_incognito_search_history_queries" else "sp_search_history_queries"
@@ -551,8 +554,7 @@ fun PetalOmniboxPage(
 
                                             com.petal.browser.ui.containment.PetalPopupMenu(
                                                 expanded = showEngineMenu,
-                                                onDismissRequest = { showEngineMenu = false },
-                                                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                                onDismissRequest = { showEngineMenu = false }
                                             ) {
                                                 Text(
                                                     text = stringResource(R.string.ui_search_engine),
@@ -641,25 +643,28 @@ fun PetalOmniboxPage(
                                 }),
                                 shape = RoundedCornerShape(50),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    focusedContainerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    unfocusedContainerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                                     focusedBorderColor = Color.Transparent,
                                     unfocusedBorderColor = Color.Transparent
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
+                                    .com.petal.browser.ui.containment.liquidGlassChrome(shape = RoundedCornerShape(50), enabled = isGlass, sheenIntensity = sheen)
                                     .focusRequester(focusRequester)
                             )
                         }
 
                         // Chrome-style Quick Actions Card when an active webpage is focused and user hasn't edited the search
                         if (cleanPageUrl.isNotBlank() && queryState.text.trim() == cleanPageUrl) {
+                            val qaShape = RoundedCornerShape(20.dp)
                             Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = qaShape,
+                                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 4.dp)
+                                    .com.petal.browser.ui.containment.liquidGlassChrome(shape = qaShape, enabled = isGlass, sheenIntensity = sheen)
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -802,6 +807,7 @@ fun PetalOmniboxPage(
                             exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
                         ) {
                             clipboardText?.let { clip ->
+                                val pasteShape = RoundedCornerShape(24.dp)
                                 Surface(
                                     onClick = {
                                         try {
@@ -812,11 +818,12 @@ fun PetalOmniboxPage(
                                         } catch (_: Throwable) {}
                                         submitSearch(clip, saveToHistory = !isClipboardUrl)
                                     },
-                                    shape = RoundedCornerShape(24.dp),
-                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = pasteShape,
+                                    color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 12.dp, vertical = 6.dp)
+                                        .com.petal.browser.ui.containment.liquidGlassChrome(shape = pasteShape, enabled = isGlass, sheenIntensity = sheen)
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -912,12 +919,15 @@ fun PetalOmniboxPage(
                                             com.petal.browser.database.FaviconHelper.getGoogleFaviconUrl(shortcut.url)
                                         }
 
+                                        val shortcutShape = RoundedCornerShape(16.dp)
                                         Surface(
                                             onClick = { submitSearch(shortcut.url) },
-                                            shape = RoundedCornerShape(16.dp),
-                                            color = MaterialTheme.colorScheme.surfaceContainer,
-                                            tonalElevation = 1.dp,
-                                            modifier = Modifier.width(92.dp)
+                                            shape = shortcutShape,
+                                            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                                            tonalElevation = if (isGlass) 0.dp else 1.dp,
+                                            modifier = Modifier
+                                                .width(92.dp)
+                                                .com.petal.browser.ui.containment.liquidGlassChrome(shape = shortcutShape, enabled = isGlass, sheenIntensity = sheen)
                                         ) {
                                             Column(
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),

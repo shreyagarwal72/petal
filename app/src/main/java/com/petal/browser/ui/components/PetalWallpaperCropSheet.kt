@@ -53,6 +53,8 @@ import com.petal.browser.R
 @Composable
 fun PetalWallpaperCropSheet(
     imageUri: Uri,
+    title: String? = null,
+    buttonLabel: String? = null,
     onDismiss: () -> Unit,
     onWallpaperCropped: (Uri) -> Unit
 ) {
@@ -131,7 +133,7 @@ fun PetalWallpaperCropSheet(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.ui_crop_wallpaper),
+                        text = title ?: stringResource(R.string.ui_crop_wallpaper),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -291,7 +293,7 @@ fun PetalWallpaperCropSheet(
                     Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = stringResource(R.string.ui_set_as_home_wallpaper),
+                        text = buttonLabel ?: stringResource(R.string.ui_set_as_home_wallpaper),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 }

@@ -103,6 +103,9 @@ object PetalQuickToolsBridge {
         val currentTitle = currentController?.title ?: ""
 
         try {
+            val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+
             val dialog = BottomSheetDialog(activity)
             dialog.behavior.skipCollapsed = true
             dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
@@ -112,6 +115,11 @@ object PetalQuickToolsBridge {
                 androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
                 win.statusBarColor = android.graphics.Color.TRANSPARENT
                 win.navigationBarColor = android.graphics.Color.TRANSPARENT
+                win.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            }
+            dialog.setOnDismissListener {
+                com.petal.browser.predictive.PetalContentSnapshot.clear()
             }
 
             val sp = PreferenceManager.getDefaultSharedPreferences(activity)
@@ -155,6 +163,8 @@ object PetalQuickToolsBridge {
 
             dialog.setContentView(composeView)
             dialog.show()
+            dialog.window?.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         } catch (e: Exception) {
             e.printStackTrace()
         }

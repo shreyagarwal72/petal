@@ -195,10 +195,11 @@ fun M3ExpressiveVariableBackground(
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     LocalPetalGlassRevision.current
     val wallpaper = LocalPetalGlassWallpaper.current
-    var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
-    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
-    val liquidGlassBgMode = sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
-    val liquidGlassImageUri = sp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
+    var isLiquidGlass by remember { mutableStateOf(sp.getBoolean("sp_liquid_glass_enabled", false)) }
+    var liquidGlassBgMode by remember { mutableStateOf(sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE") }
+    var liquidGlassImageUri by remember { mutableStateOf(sp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()) }
+    var liquidGlassBgDim by remember { mutableFloatStateOf(sp.getFloat("sp_liquid_glass_bg_dim", 0.35f)) }
+    var liquidGlassBgBlur by remember { mutableFloatStateOf(sp.getFloat("sp_liquid_glass_bg_blur", 16f)) }
 
     val isSettingsPage = remember(pageSeed) {
         pageSeed.endsWith("_settings") || pageSeed.endsWith("_hub") || pageSeed == "delete_page"
@@ -216,15 +217,32 @@ fun M3ExpressiveVariableBackground(
     }
 
     if (isLiquidGlass && liquidGlassBgMode == "IMAGE" && liquidGlassImageUri.isNotEmpty()) {
-        val dim = sp.getFloat("sp_liquid_glass_bg_dim", 0.35f).coerceIn(0f, 0.9f)
-        val blur = sp.getFloat("sp_liquid_glass_bg_blur", 16f).coerceIn(0f, 40f)
+        val dim = liquidGlassBgDim.coerceIn(0f, 0.9f)
+        val blur = liquidGlassBgBlur.coerceIn(0f, 40f)
+
+        val imageModel = remember(liquidGlassImageUri) {
+            when {
+                liquidGlassImageUri.startsWith("android.resource://") -> android.net.Uri.parse(liquidGlassImageUri)
+                liquidGlassImageUri.startsWith("file://") -> java.io.File(liquidGlassImageUri.removePrefix("file://"))
+                liquidGlassImageUri.startsWith("/") -> java.io.File(liquidGlassImageUri)
+                liquidGlassImageUri.startsWith("content://") -> android.net.Uri.parse(liquidGlassImageUri)
+                else -> liquidGlassImageUri
+            }
+        }
+        val imageRequest = remember(imageModel) {
+            coil.request.ImageRequest.Builder(context)
+                .data(imageModel)
+                .crossfade(true)
+                .allowHardware(true)
+                .build()
+        }
 
         val density = androidx.compose.ui.platform.LocalDensity.current
         androidx.compose.foundation.layout.Box(modifier = modifier.fillMaxSize()
             .then(if (wallpaper != null) Modifier.captureGlassWallpaper(wallpaper) else Modifier)
             .background(MaterialTheme.colorScheme.background)) {
             coil.compose.AsyncImage(
-                model = liquidGlassImageUri,
+                model = imageRequest,
                 contentDescription = null,
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                 modifier = Modifier
@@ -257,6 +275,21 @@ fun M3ExpressiveVariableBackground(
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when (key) {
+                "sp_liquid_glass_enabled" -> {
+                    isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+                }
+                "sp_liquid_glass_bg_mode" -> {
+                    liquidGlassBgMode = sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
+                }
+                "sp_liquid_glass_bg_image_uri" -> {
+                    liquidGlassImageUri = sp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
+                }
+                "sp_liquid_glass_bg_dim" -> {
+                    liquidGlassBgDim = sp.getFloat("sp_liquid_glass_bg_dim", 0.35f)
+                }
+                "sp_liquid_glass_bg_blur" -> {
+                    liquidGlassBgBlur = sp.getFloat("sp_liquid_glass_bg_blur", 16f)
+                }
                 "sp_expressive_bg_shapes" -> {
                     isShapesEnabled = sp.getBoolean("sp_expressive_bg_shapes", true)
                 }

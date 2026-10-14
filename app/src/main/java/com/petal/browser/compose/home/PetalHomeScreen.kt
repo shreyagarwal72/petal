@@ -527,12 +527,32 @@ fun PetalHomeScreen(
         Box(modifier = Modifier.fillMaxSize()) {
                     // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
                     val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
-                    if (!activeWallpaperUri.isNullOrBlank()) {
+                    val homeSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+                    val isGlassEnabled = homeSp.getBoolean("sp_liquid_glass_enabled", false)
+                    val glassBgMode = homeSp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
+                    val glassImageUri = homeSp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
+                    val effectiveWallpaperUri = when {
+                        !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
+                        isGlassEnabled && glassBgMode == "IMAGE" && glassImageUri.isNotBlank() -> glassImageUri
+                        else -> null
+                    }
+
+                    if (!effectiveWallpaperUri.isNullOrBlank()) {
                         val glassWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
+                        val effDim = if (!activeWallpaperUri.isNullOrBlank()) {
+                            com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim
+                        } else {
+                            homeSp.getFloat("sp_liquid_glass_bg_dim", 0.35f)
+                        }
+                        val effBlur = if (!activeWallpaperUri.isNullOrBlank()) {
+                            com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur
+                        } else {
+                            homeSp.getFloat("sp_liquid_glass_bg_blur", 16f)
+                        }
                         com.petal.browser.wallpaper.PetalAnimatedWallpaperBackground(
-                            wallpaperUri = activeWallpaperUri,
-                            dim = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim,
-                            blur = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur,
+                            wallpaperUri = effectiveWallpaperUri,
+                            dim = effDim,
+                            blur = effBlur,
                             modifier = Modifier.fillMaxSize().then(
                                 if (glassWallpaper != null) Modifier.captureGlassWallpaper(glassWallpaper) else Modifier
                             )
@@ -568,12 +588,15 @@ fun PetalHomeScreen(
 
                                 // Expressive Profile Switcher Pill Button (Issue #23)
                                 val currentProfile = com.petal.browser.profile.PetalProfileManager.activeProfile
+                                val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                                val profilePillShape = RoundedCornerShape(20.dp)
                                 Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
+                                    shape = profilePillShape,
+                                    color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
                                     border = BorderStroke(1.dp, currentProfile.getComposeColor().copy(alpha = 0.5f)),
                                     modifier = Modifier
                                         .height(34.dp)
+                                        .com.petal.browser.ui.containment.liquidGlassChrome(shape = profilePillShape, enabled = isGlass)
                                         .clickable { showProfileSwitchSheet = true }
                                 ) {
                                     Row(
@@ -985,6 +1008,7 @@ private fun ShortcutTile(
         }
     }
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -1004,12 +1028,13 @@ private fun ShortcutTile(
             modifier = Modifier
                 .size(60.dp)
                 .graphicsLayer { scaleX = scale; scaleY = scale }
-                .shadow(elevation = 2.dp, shape = tileShape, clip = false)
+                .shadow(elevation = if (isGlass) 0.dp else 2.dp, shape = tileShape, clip = false)
+                .com.petal.browser.ui.containment.liquidGlassChrome(shape = tileShape, enabled = isGlass)
                 .clip(tileShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                .background(if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
                 .border(
                     width = 0.75.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.30f else 0.45f),
                     shape = tileShape
                 )
         ) {
@@ -1064,17 +1089,18 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
             .homeLaunchEntrance(3 + index)
             .padding(vertical = 4.dp)
     ) {
-        val isExpressiveEnabled = com.petal.browser.ui.theme.LocalExpressiveShapesEnabled.current
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
         val addTileShape = homeShortcutShape(index)
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(60.dp)
+                .com.petal.browser.ui.containment.liquidGlassChrome(shape = addTileShape, enabled = isGlass)
                 .clip(addTileShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .background(if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow)
                 .border(
                     width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.35f else 0.65f),
                     shape = addTileShape
                 )
         ) {

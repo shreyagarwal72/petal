@@ -154,11 +154,16 @@ fun PetalQuickToolsSheet(
     var toolsList by remember { mutableStateOf(loadOrder()) }
     var isReorderMode by remember { mutableStateOf(false) }
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 6.dp
+        modifier = Modifier
+            .fillMaxWidth()
+            .com.petal.browser.ui.containment.liquidGlassChrome(shape = sheetShape, enabled = isGlass),
+        shape = sheetShape,
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = if (isGlass) 0.dp else 6.dp
     ) {
         Column(
             modifier = Modifier

@@ -247,6 +247,12 @@ fun AppearanceSettingsScreenContent(
     var showFontPicker by remember { mutableStateOf(false) }
     var showLanguageSheet by remember { mutableStateOf(false) }
     var languageSearchQuery by remember { mutableStateOf("") }
+
+    // Liquid Glass Background Image Picker states
+    var showBgPickerChoice by remember { mutableStateOf(false) }
+    var showBuiltInImagePicker by remember { mutableStateOf(false) }
+    var pendingGlassCropUri by remember { mutableStateOf<android.net.Uri?>(null) }
+
     // System picker kept as fallback for the Petal picker's "Browse system" button
     val systemFontPicker = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
@@ -953,8 +959,7 @@ fun AppearanceSettingsScreenContent(
                                     android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
                                 )
                             } catch (_: Throwable) {}
-                            onLiquidGlassBgImageUriChange(it.toString())
-                            onLiquidGlassBgModeChange("IMAGE")
+                            pendingGlassCropUri = it
                         }
                     }
 
@@ -1187,13 +1192,7 @@ fun AppearanceSettingsScreenContent(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Button(
-                                                onClick = {
-                                                    photoPickerLauncher.launch(
-                                                        androidx.activity.result.PickVisualMediaRequest(
-                                                            androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
-                                                        )
-                                                    )
-                                                },
+                                                onClick = { showBgPickerChoice = true },
                                                 modifier = Modifier.weight(1f),
                                                 shape = RoundedCornerShape(16.dp)
                                             ) {
@@ -1279,6 +1278,104 @@ fun AppearanceSettingsScreenContent(
 
                 Spacer(Modifier.height(32.dp))
             }
+        }
+
+        if (showBgPickerChoice) {
+            com.petal.browser.ui.containment.PetalSheet(
+                onDismissRequest = { showBgPickerChoice = false }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 8.dp, bottom = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Choose Wallpaper Source",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Select an image using Petal's built-in file picker or your device's media gallery.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+
+                    com.petal.browser.ui.containment.PetalSelectableOptionCard(
+                        title = "Petal Built-in File & Image Picker",
+                        subtitle = "Browse device folders, downloads, and storage roots directly in Petal",
+                        selected = false,
+                        onClick = {
+                            showBgPickerChoice = false
+                            showBuiltInImagePicker = true
+                        },
+                        leading = {
+                            com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                icon = Icons.Rounded.FolderOpen,
+                                container = MaterialTheme.colorScheme.primaryContainer,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    )
+
+                    com.petal.browser.ui.containment.PetalSelectableOptionCard(
+                        title = "System Media Gallery",
+                        subtitle = "Select from Google Photos, Gallery or System File Picker",
+                        selected = false,
+                        onClick = {
+                            showBgPickerChoice = false
+                            photoPickerLauncher.launch(
+                                androidx.activity.result.PickVisualMediaRequest(
+                                    androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        },
+                        leading = {
+                            com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                icon = Icons.Rounded.PhotoLibrary,
+                                container = MaterialTheme.colorScheme.secondaryContainer,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        if (showBuiltInImagePicker) {
+            com.petal.browser.compose.file.PetalFilePickerScreen(
+                mimeTypes = arrayOf("image/*"),
+                onDismissRequest = { showBuiltInImagePicker = false },
+                onFileSelected = { file ->
+                    showBuiltInImagePicker = false
+                    pendingGlassCropUri = android.net.Uri.fromFile(file)
+                },
+                onBrowseSystemFallback = {
+                    showBuiltInImagePicker = false
+                    photoPickerLauncher.launch(
+                        androidx.activity.result.PickVisualMediaRequest(
+                            androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                        )
+                    )
+                }
+            )
+        }
+
+        pendingGlassCropUri?.let { cropUri ->
+            PetalWallpaperCropSheet(
+                imageUri = cropUri,
+                title = "Crop Liquid Glass Wallpaper",
+                buttonLabel = "Apply Liquid Glass Wallpaper",
+                onDismiss = { pendingGlassCropUri = null },
+                onWallpaperCropped = { croppedLocalUri ->
+                    pendingGlassCropUri = null
+                    onLiquidGlassBgImageUriChange(croppedLocalUri.toString())
+                    onLiquidGlassBgModeChange("IMAGE")
+                }
+            )
         }
 
         if (showFontPicker) {
