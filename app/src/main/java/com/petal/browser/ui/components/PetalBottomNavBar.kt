@@ -629,7 +629,7 @@ private fun FloatingNavTabItem(
  * count), reused as the icon slot for the Tabs item in both bar styles.
  */
 @Composable
-private fun TabCountBadge(color: Color, count: Int, scale: Float) {
+internal fun TabCountBadge(color: Color, count: Int, scale: Float) {
     Box(
         modifier = Modifier
             .size(24.dp)
