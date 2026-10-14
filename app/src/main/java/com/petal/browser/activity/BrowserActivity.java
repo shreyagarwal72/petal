@@ -2836,7 +2836,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean reserveBarSpace = !isNonWebSurface;
             int topInset = reserveBarSpace ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0;
             int bottomInset = reserveBarSpace ? (isBottom ? addressHeight + bottomNavHeight : reservedNavHeight)
-                    : (isHome ? reservedNavHeight : 0);
+                    : 0;
             mainContent.setPadding(0, topInset, 0, bottomInset);
 
 

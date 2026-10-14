@@ -11,9 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.luminance
@@ -58,10 +60,18 @@ fun rememberGlassBar(source: View?): GlassBar? {
  */
 @Composable
 fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
-    if (bar == null) return this.clip(shape).background(tint.copy(alpha = 0.94f))
+    LocalPetalGlassRevision.current
+    val wallpaper = LocalPetalGlassWallpaper.current
+    if (bar == null) {
+        if (wallpaper != null && wallpaper.ready) {
+            val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
+            val edge = prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f
+            return this.petalGlassPanel(shape, tint.copy(alpha = 0.45f), edge)
+        }
+        return this.clip(shape).background(tint.copy(alpha = 0.94f))
+    }
     val density = LocalDensity.current
     val dark = tint.luminance() < 0.5f
-    LocalPetalGlassRevision.current
     val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
     val themeGlass = prefs.getBoolean("sp_liquid_glass_enabled", false)
     val opacity = if (themeGlass) prefs.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.20f, .95f) / .70f else 1f
@@ -124,8 +134,9 @@ fun Modifier.glassTile(target: () -> Rect?, shape: Shape, tint: Color, bar: Glas
         )
     }
     if (bar == null) {
-        // No glass: a plain tinted pill under the selected item.
-        val solid = tint.copy(alpha = 0.16f)
+        val wallpaper = LocalPetalGlassWallpaper.current
+        val isGlass = wallpaper != null && wallpaper.ready
+        val solid = if (isGlass) tint.copy(alpha = 0.28f) else tint.copy(alpha = 0.16f)
         val place = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
         return this
             .onGloballyPositioned { place[0] = it }
@@ -135,6 +146,14 @@ fun Modifier.glassTile(target: () -> Rect?, shape: Shape, tint: Color, bar: Glas
                     val r = target()?.translate(-own) ?: return@onDrawBehind
                     translate(r.left, r.top) {
                         drawOutline(shape.createOutline(r.size, layoutDirection, this), solid)
+                        if (isGlass) {
+                            val rim = Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.65f), Color.White.copy(alpha = 0.15f)),
+                                startY = 0f,
+                                endY = r.size.height
+                            )
+                            drawOutline(shape.createOutline(r.size, layoutDirection, this), rim, style = Stroke(1.5f.dp.toPx()))
+                        }
                     }
                 }
             }
