@@ -292,21 +292,21 @@ object PetalOverflowBridge {
                 }
             }
             dialog.setContentView(composeView)
-            dialog.window?.let { window ->
-                window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
-                window.setGravity(android.view.Gravity.TOP or android.view.Gravity.END)
-                if (useBlurBg && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                    window.setBackgroundBlurRadius(32)
-                    window.setDimAmount(0.08f)
-                } else {
-                    window.setDimAmount(0.35f)
+            dialog.setOnShowListener {
+                dialog.window?.let { window ->
+                    window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
+                    window.setGravity(android.view.Gravity.TOP or android.view.Gravity.END)
+                    window.setBackgroundDrawableResource(android.R.color.transparent)
+                    if (useBlurBg && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                        window.setBackgroundBlurRadius(32)
+                        window.setDimAmount(0.08f)
+                    } else {
+                        window.setDimAmount(0.35f)
+                    }
                 }
-                window.setBackgroundDrawableResource(android.R.color.transparent)
             }
             dialog.show()
-            // Re-apply full screen layout after show() in case the window manager reset dialog dimensions
-            dialog.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
         } catch (e: Exception) {
             e.printStackTrace()
         }

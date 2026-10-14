@@ -267,6 +267,7 @@ fun PetalSnackbar(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(percent = 50)
 ) {
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val (iconRes, iconTint) = when (data.type) {
         PetalSnackbarType.INFO -> Pair(R.drawable.icon_info, MaterialTheme.colorScheme.primary)
         PetalSnackbarType.SUCCESS -> Pair(R.drawable.icon_check, MaterialTheme.colorScheme.tertiary)
@@ -281,13 +282,14 @@ fun PetalSnackbar(
                         onDismiss()
                     }
                 }
-            },
+            }
+            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = 0.65f) else Modifier),
         shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        tonalElevation = 6.dp,
+        tonalElevation = if (isGlass) 0.dp else 6.dp,
         shadowElevation = 8.dp,
-        border = androidx.compose.foundation.BorderStroke(
+        border = if (isGlass) null else androidx.compose.foundation.BorderStroke(
             width = 1.dp,
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )

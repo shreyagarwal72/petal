@@ -595,6 +595,7 @@ fun PetalWallpaperSheet(
     com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismissRequest,
     ) {
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
         Column(
             modifier = Modifier
                 .fillMaxWidth()

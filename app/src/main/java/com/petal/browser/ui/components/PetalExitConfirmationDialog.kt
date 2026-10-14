@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.BasicAlertDialog
@@ -153,81 +154,77 @@ private fun ExitDialogContent(
     onStay: () -> Unit,
     onExit: () -> Unit,
 ) {
-    // This content is hosted inside the platform Dialog above. Do not create a
-    // second BasicAlertDialog window here; nested dialog windows can render blank.
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val dialogShape = RoundedCornerShape(28.dp)
+
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 6.dp,
-        shadowElevation = 4.dp
+        modifier = Modifier
+            .fillMaxWidth()
+            .liquidGlassChrome(dialogShape, enabled = isGlass, sheenIntensity = 0.55f),
+        shape = dialogShape,
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = if (isGlass) 0.dp else 6.dp,
+        shadowElevation = if (isGlass) 4.dp else 6.dp,
+        border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp)),
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            shadowElevation = 4.dp,
+        Column(
+            modifier = Modifier.padding(start = 24.dp, top = 22.dp, end = 24.dp, bottom = 18.dp),
         ) {
-            Column(
-                modifier = Modifier.padding(start = 24.dp, top = 22.dp, end = 24.dp, bottom = 18.dp),
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = stringResource(R.string.ui_close),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .semantics { contentDescription = "Close" }
+                    .width(28.dp)
+                    .height(28.dp)
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            Text(
+                text = stringResource(R.string.ui_leave_petal_browser),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = stringResource(R.string.ui_do_you_want_to_exit),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(Modifier.height(22.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = stringResource(R.string.ui_close),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .semantics { contentDescription = "Close" }
-                        .width(28.dp)
-                        .height(28.dp)
-                )
-
-                Spacer(Modifier.height(10.dp))
-
-                Text(
-                    text = stringResource(R.string.ui_leave_petal_browser),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    text = stringResource(R.string.ui_do_you_want_to_exit),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                Spacer(Modifier.height(22.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
+                TextButton(
+                    onClick = onStay,
+                    modifier = Modifier.semantics { role = Role.Button },
                 ) {
-                    TextButton(
-                        onClick = onStay,
-                        modifier = Modifier.semantics { role = Role.Button },
-                    ) {
-                        Text(stringResource(R.string.ui_stay))
-                    }
+                    Text(stringResource(R.string.ui_stay))
+                }
 
-                    Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(8.dp))
 
-                    Button(
-                        onClick = onExit,
-                        shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                        ),
-                        contentPadding = ButtonDefaults.ContentPadding,
-                        modifier = Modifier.semantics { role = Role.Button },
-                    ) {
-                        Text(stringResource(R.string.ui_exit))
-                    }
+                Button(
+                    onClick = onExit,
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                    contentPadding = ButtonDefaults.ContentPadding,
+                    modifier = Modifier
+                        .semantics { role = Role.Button }
+                        .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(20.dp), enabled = true, sheenIntensity = 0.45f) else Modifier),
+                ) {
+                    Text(stringResource(R.string.ui_exit))
                 }
             }
         }

@@ -819,9 +819,17 @@ fun PetalSheet(
         modifier = modifier.liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = sheen),
         sheetState = sheetState,
         shape = sheetShape,
-        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = if (isGlass) {
+            val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+            val baseColor = MaterialTheme.colorScheme.surfaceContainerLow
+            baseColor.copy(alpha = if (dark) 0.78f else 0.88f)
+        } else MaterialTheme.colorScheme.surfaceContainerLow,
         dragHandle = dragHandle,
-        content = content
+        content = {
+            CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides null) {
+                content()
+            }
+        }
     )
 }
 

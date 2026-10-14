@@ -143,33 +143,37 @@ fun PetalFeatureExplainerDialog(
                                 )
                             }
                         }
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
                                     text = feature.title,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                                 feature.badge?.let { b ->
+                                    val badgeColor = feature.iconTint ?: MaterialTheme.colorScheme.primary
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                        modifier = Modifier.padding(top = 1.dp)
+                                        color = badgeColor.copy(alpha = 0.16f),
+                                        border = BorderStroke(0.5.dp, badgeColor.copy(alpha = 0.4f))
                                     ) {
                                         Text(
                                             text = b,
-                                            style = MaterialTheme.typography.labelSmall,
+                                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
                                             fontWeight = FontWeight.ExtraBold,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            color = badgeColor,
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
                                         )
                                     }
                                 }
                             }
+                            Spacer(Modifier.height(2.dp))
                             Text(
                                 text = feature.subtitle,
                                 style = MaterialTheme.typography.bodySmall,
@@ -256,10 +260,15 @@ fun PetalFeatureExplainerDialog(
                         onActionClick?.invoke()
                         onDismissRequest()
                     },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .height(50.dp)
+                        .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(18.dp), enabled = true, sheenIntensity = 0.5f) else Modifier)
                 ) {
                     Text(
                         text = actionLabel,

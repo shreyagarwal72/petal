@@ -44,6 +44,7 @@ fun PetalSnackbarHost(
             listOf("saved", "success", "installed", "enabled", "done").any { message.contains(it, true) } -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.tertiaryContainer
             else -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.primaryContainer
         }
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
         SwipeToDismissBox(
             state = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
                 if (value != SwipeToDismissBoxValue.Settled) { data.dismiss(); true } else false
@@ -55,11 +56,12 @@ fun PetalSnackbarHost(
         ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurface,
-                tonalElevation = 6.dp,
+                tonalElevation = if (isGlass) 0.dp else 6.dp,
                 shadowElevation = 6.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+                border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+                modifier = if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.65f) else Modifier
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
