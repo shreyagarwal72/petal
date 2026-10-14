@@ -143,8 +143,16 @@ fun ExpressiveHeader(
                             FilledTonalIconButton(
                                 onClick = { onBack?.invoke() },
                                 colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    containerColor = if (enableLiquidGlass) {
+                                        com.petal.browser.ui.containment.petalGroupSurfaceColor()
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceContainerHighest
+                                    },
+                                    contentColor = MaterialTheme.colorScheme.onSurface
                                 ),
+                                modifier = if (enableLiquidGlass) {
+                                    Modifier.liquidGlassChrome(CircleShape, enabled = true)
+                                } else Modifier
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
@@ -187,6 +195,7 @@ fun ExpressiveHeader(
                                     fontSize = titleFontSize,
                                     lineHeight = (titleFontSize.value + 4).sp
                                 ),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false,

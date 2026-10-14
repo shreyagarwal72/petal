@@ -83,12 +83,16 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.PetalPopupMenu
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -214,27 +218,33 @@ fun PetalFilePickerScreen(
         onBack = onDismissRequest
     ) {
         PetalScreenWrapper {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                if (!hasPerms) {
-                    StoragePermissionRequestState(
-                        onGrant = { requestPermissions() },
-                        onDismiss = onDismissRequest,
-                        onBrowseSystemFallback = onBrowseSystemFallback
-                    )
-                } else {
-                    FilePickerBrowserContent(
-                        mimeTypes = mimeTypes,
-                        allowFolderSelection = allowFolderSelection,
-                        allowMultiple = allowMultiple,
-                        onDismissRequest = onDismissRequest,
-                        onFileSelected = onFileSelected,
-                        onMultipleFilesSelected = onMultipleFilesSelected,
-                        onPreviewFile = onPreviewFile,
-                        onBrowseSystemFallback = onBrowseSystemFallback
-                    )
+            Box(modifier = Modifier.fillMaxSize()) {
+                M3ExpressiveVariableBackground(
+                    modifier = Modifier.fillMaxSize(),
+                    pageSeed = "petal_file_picker"
+                )
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color.Transparent
+                ) {
+                    if (!hasPerms) {
+                        StoragePermissionRequestState(
+                            onGrant = { requestPermissions() },
+                            onDismiss = onDismissRequest,
+                            onBrowseSystemFallback = onBrowseSystemFallback
+                        )
+                    } else {
+                        FilePickerBrowserContent(
+                            mimeTypes = mimeTypes,
+                            allowFolderSelection = allowFolderSelection,
+                            allowMultiple = allowMultiple,
+                            onDismissRequest = onDismissRequest,
+                            onFileSelected = onFileSelected,
+                            onMultipleFilesSelected = onMultipleFilesSelected,
+                            onPreviewFile = onPreviewFile,
+                            onBrowseSystemFallback = onBrowseSystemFallback
+                        )
+                    }
                 }
             }
         }
@@ -702,10 +712,14 @@ private fun FilePickerBrowserContent(
 
         // Bottom Action Bar: Folder selection or Multi-file confirm
         if (allowFolderSelection || (allowMultiple && selectedFiles.isNotEmpty())) {
+            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
             Surface(
                 tonalElevation = 6.dp,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth()
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .liquidGlassChrome(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), enabled = isGlass)
             ) {
                 Row(
                     modifier = Modifier

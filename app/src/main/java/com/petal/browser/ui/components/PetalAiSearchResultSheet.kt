@@ -99,6 +99,20 @@ object PetalAiSearchBridge {
                 }
             }
             dialog.setContentView(composeView)
+            dialog.window?.let { win ->
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
+                win.statusBarColor = android.graphics.Color.TRANSPARENT
+                win.navigationBarColor = android.graphics.Color.TRANSPARENT
+                win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                win.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    win.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    win.attributes = win.attributes.apply {
+                        blurBehindRadius = 40
+                    }
+                }
+            }
             dialog.show()
         }
     }

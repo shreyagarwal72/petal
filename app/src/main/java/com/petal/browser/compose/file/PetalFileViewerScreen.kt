@@ -502,12 +502,15 @@ private fun ArchiveViewerContent(
 
                 Column(Modifier.fillMaxSize()) {
                     // ── ZArchiver Style Interactive Path Breadcrumbs & Hero Header ──────
+                    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val headerShape = RoundedCornerShape(20.dp)
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        shape = RoundedCornerShape(20.dp),
+                        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = headerShape,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .liquidGlassChrome(headerShape, enabled = isGlass)
                     ) {
                         Column(Modifier.padding(12.dp)) {
                             Row(

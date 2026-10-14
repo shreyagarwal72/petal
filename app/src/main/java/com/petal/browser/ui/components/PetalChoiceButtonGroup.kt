@@ -80,9 +80,11 @@ fun <T> PetalChoiceButtonGroup(
     val context = LocalContext.current
     val shouldScroll = scrollableIfCrowded && (options.size > 4 || options.any { it.label.length > 12 })
 
-    val unselectedContainer = MaterialTheme.colorScheme.surfaceContainerLowest
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+
+    val unselectedContainer = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLowest
     val unselectedContent = MaterialTheme.colorScheme.onSurface
-    val selectedContainer = MaterialTheme.colorScheme.primaryContainer
+    val selectedContainer = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primaryContainer
     val selectedContent = MaterialTheme.colorScheme.onPrimaryContainer
 
     val rowModifier = if (shouldScroll) {
@@ -102,7 +104,7 @@ fun <T> PetalChoiceButtonGroup(
         options.forEachIndexed { index, option ->
             val isChecked = (option.value == selected)
 
-            val buttonModifier = if (shouldScroll) {
+            val baseModifier = if (shouldScroll) {
                 Modifier
                     .defaultMinSize(minHeight = minHeight)
                     .semantics { role = Role.RadioButton }
@@ -118,6 +120,16 @@ fun <T> PetalChoiceButtonGroup(
                 index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                 index == count - 1 -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                 else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+            }
+
+            val buttonModifier = if (isGlass) {
+                baseModifier.com.petal.browser.ui.containment.liquidGlassChrome(
+                    shape = if (isChecked) androidx.compose.foundation.shape.RoundedCornerShape(24.dp) else androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    enabled = true,
+                    sheenIntensity = if (isChecked) 0.80f else 0.45f
+                )
+            } else {
+                baseModifier
             }
 
             ToggleButton(

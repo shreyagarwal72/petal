@@ -92,6 +92,9 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.*
 import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.Dispatchers
@@ -1402,6 +1405,8 @@ private fun PdfTextEditTopBar(
 ) {
     val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val topShape = RoundedCornerShape(24.dp)
 
     Box(
         modifier = Modifier
@@ -1410,14 +1415,16 @@ private fun PdfTextEditTopBar(
             .padding(horizontal = 12.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
+            shape = topShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
             shadowElevation = 8.dp,
-            modifier = Modifier.border(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                RoundedCornerShape(24.dp)
-            )
+            modifier = Modifier
+                .border(
+                    1.dp,
+                    if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    topShape
+                )
+                .liquidGlassChrome(topShape, enabled = isGlass)
         ) {
             Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                 Row(
@@ -1851,6 +1858,8 @@ private fun PdfViewerBottomBar(
     val bottomClearance = WindowInsets.navigationBars.asPaddingValues()
         .calculateBottomPadding().coerceAtLeast(16.dp)
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val bottomShape = RoundedCornerShape(28.dp)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1859,14 +1868,16 @@ private fun PdfViewerBottomBar(
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.94f),
+            shape = bottomShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.94f),
             shadowElevation = 6.dp,
-            modifier = Modifier.border(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                RoundedCornerShape(28.dp)
-            )
+            modifier = Modifier
+                .border(
+                    1.dp,
+                    if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    bottomShape
+                )
+                .liquidGlassChrome(bottomShape, enabled = isGlass)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),

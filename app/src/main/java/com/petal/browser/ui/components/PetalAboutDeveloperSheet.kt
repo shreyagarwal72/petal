@@ -762,12 +762,14 @@ fun CommunityEcosystemGroup(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CoreTechStackGroup() {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val shape = RoundedCornerShape(20.dp)
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 1.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-        modifier = Modifier.fillMaxWidth()
+        shape = shape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = if (isGlass) 0.dp else 1.dp,
+        border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)) else null,
+        modifier = Modifier.fillMaxWidth().liquidGlassChrome(shape, enabled = isGlass)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -778,25 +780,27 @@ fun CoreTechStackGroup() {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                M3TechTag(stringResource(R.string.ui_jetpack_compose))
-                M3TechTag(stringResource(R.string.ui_kotlin_coroutines_flow))
-                M3TechTag(stringResource(R.string.ui_material_3_expressive))
-                M3TechTag("GeckoView Quantum")
-                M3TechTag(stringResource(R.string.ui_native_webview_bridges))
-                M3TechTag(stringResource(R.string.ui_pixelcopy_gpu_snapshots))
-                M3TechTag(stringResource(R.string.ui_adblock_rule_engine))
-                M3TechTag(stringResource(R.string.ui_termux_integration))
+                M3TechTag(stringResource(R.string.ui_jetpack_compose), isGlass)
+                M3TechTag(stringResource(R.string.ui_kotlin_coroutines_flow), isGlass)
+                M3TechTag(stringResource(R.string.ui_material_3_expressive), isGlass)
+                M3TechTag("GeckoView Quantum", isGlass)
+                M3TechTag(stringResource(R.string.ui_native_webview_bridges), isGlass)
+                M3TechTag(stringResource(R.string.ui_pixelcopy_gpu_snapshots), isGlass)
+                M3TechTag(stringResource(R.string.ui_adblock_rule_engine), isGlass)
+                M3TechTag(stringResource(R.string.ui_termux_integration), isGlass)
             }
         }
     }
 }
 
 @Composable
-private fun M3TechTag(label: String) {
+private fun M3TechTag(label: String, isGlass: Boolean = false) {
+    val tagShape = RoundedCornerShape(12.dp)
     Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+        shape = tagShape,
+        color = if (isGlass) MaterialTheme.colorScheme.surface.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)) else null,
+        modifier = if (isGlass) Modifier.liquidGlassChrome(tagShape, enabled = true, sheenIntensity = 0.40f) else Modifier
     ) {
         Text(
             text = label,
@@ -812,16 +816,18 @@ private fun M3TechTag(label: String) {
  */
 @Composable
 fun MissionMetricsGroup() {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val shape = RoundedCornerShape(20.dp)
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            tonalElevation = 1.dp,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-            modifier = Modifier.fillMaxWidth()
+            shape = shape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+            tonalElevation = if (isGlass) 0.dp else 1.dp,
+            border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)) else null,
+            modifier = Modifier.fillMaxWidth().liquidGlassChrome(shape, enabled = isGlass)
         ) {
             Text(
                 text = stringResource(R.string.ui_petal_browser_was_built_to),

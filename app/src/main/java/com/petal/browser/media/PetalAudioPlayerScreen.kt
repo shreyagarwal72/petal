@@ -65,6 +65,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -304,11 +307,15 @@ fun PetalAudioPlayerScreen(
 
             // Speed Selector Dialog / Card
             if (showSpeedDialog) {
+                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val speedShape = RoundedCornerShape(20.dp)
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = speedShape,
+                    color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                     shadowElevation = 4.dp,
-                    modifier = Modifier.padding(bottom = 12.dp),
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .liquidGlassChrome(speedShape, enabled = isGlass),
                 ) {
                     Row(
                         modifier = Modifier

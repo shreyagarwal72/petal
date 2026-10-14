@@ -30,6 +30,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.petal.browser.R
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 enum class ExplainerFeatureType {
     APPLE_DUO,
@@ -90,20 +91,25 @@ fun PetalFeatureExplainerDialog(
 ) {
     if (!visible) return
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val dialogShape = RoundedCornerShape(32.dp)
+    val canvasShape = RoundedCornerShape(22.dp)
+
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
+            shape = dialogShape,
+            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = if (isGlass) 0.dp else 6.dp,
             shadowElevation = 12.dp,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+            border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)) else null,
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight()
                 .padding(vertical = 24.dp)
+                .liquidGlassChrome(dialogShape, enabled = isGlass)
         ) {
             Column(
                 modifier = Modifier
@@ -186,12 +192,13 @@ fun PetalFeatureExplainerDialog(
 
                 // ── 2. Live Interactive Animated Preview Canvas ──
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                    shape = canvasShape,
+                    color = if (isGlass) MaterialTheme.colorScheme.surface.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)) else null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(170.dp)
+                        .then(if (isGlass) Modifier.liquidGlassChrome(canvasShape, enabled = true) else Modifier)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
