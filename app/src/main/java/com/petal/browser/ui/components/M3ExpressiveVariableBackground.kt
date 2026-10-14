@@ -40,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -268,6 +269,7 @@ fun M3ExpressiveVariableBackground(
         return
     }
 
+    var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
     var shapeChangeMode by remember { mutableStateOf(sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS") } // "ALWAYS" or "PERIODIC"
     var rotationMinutes by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) } // 1..60 min
     var seedEpoch by remember { mutableLongStateOf(System.currentTimeMillis()) }

@@ -26,6 +26,8 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import org.json.JSONArray
 import org.json.JSONObject
 import androidx.compose.ui.res.stringResource
@@ -198,8 +200,8 @@ fun PetalSearchEngineSheetContent(
 
     Surface(
         shape = sheetShape,
-        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth().com.petal.browser.ui.containment.liquidGlassChrome(shape = sheetShape, enabled = isGlass)
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth().liquidGlassChrome(shape = sheetShape, enabled = isGlass)
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).padding(bottom = 24.dp)

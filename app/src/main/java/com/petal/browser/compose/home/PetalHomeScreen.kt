@@ -85,6 +85,8 @@ import com.petal.browser.ui.components.homeLaunchEntrance
 import com.petal.browser.ui.containment.PetalFloatingToolbar
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.mediumIncreased
@@ -592,11 +594,11 @@ fun PetalHomeScreen(
                                 val profilePillShape = RoundedCornerShape(20.dp)
                                 Surface(
                                     shape = profilePillShape,
-                                    color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
+                                    color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
                                     border = BorderStroke(1.dp, currentProfile.getComposeColor().copy(alpha = 0.5f)),
                                     modifier = Modifier
                                         .height(34.dp)
-                                        .com.petal.browser.ui.containment.liquidGlassChrome(shape = profilePillShape, enabled = isGlass)
+                                        .liquidGlassChrome(shape = profilePillShape, enabled = isGlass)
                                         .clickable { showProfileSwitchSheet = true }
                                 ) {
                                     Row(
@@ -1029,9 +1031,9 @@ private fun ShortcutTile(
                 .size(60.dp)
                 .graphicsLayer { scaleX = scale; scaleY = scale }
                 .shadow(elevation = if (isGlass) 0.dp else 2.dp, shape = tileShape, clip = false)
-                .com.petal.browser.ui.containment.liquidGlassChrome(shape = tileShape, enabled = isGlass)
+                .liquidGlassChrome(shape = tileShape, enabled = isGlass)
                 .clip(tileShape)
-                .background(if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
+                .background(if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
                 .border(
                     width = 0.75.dp,
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.30f else 0.45f),
@@ -1095,9 +1097,9 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(60.dp)
-                .com.petal.browser.ui.containment.liquidGlassChrome(shape = addTileShape, enabled = isGlass)
+                .liquidGlassChrome(shape = addTileShape, enabled = isGlass)
                 .clip(addTileShape)
-                .background(if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow)
+                .background(if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow)
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.35f else 0.65f),

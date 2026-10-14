@@ -263,6 +263,20 @@ fun AppearanceSettingsScreenContent(
         }
     }
 
+    val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: Throwable) {}
+            pendingGlassCropUri = it
+        }
+    }
+
     val maxDetectedRefreshRate = remember(context) {
         PetalHighRefreshRateManager.getMaxSupportedRefreshRate(context)
     }
@@ -949,20 +963,6 @@ fun AppearanceSettingsScreenContent(
                 // Section 5: Liquid Glass UI & Surfaces. Always shown: its old unlock (a long
                 // press in the About Developer sheet) is no longer reachable from the app.
                 run {
-                    val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                        contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
-                    ) { uri: android.net.Uri? ->
-                        uri?.let {
-                            try {
-                                context.contentResolver.takePersistableUriPermission(
-                                    it,
-                                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                )
-                            } catch (_: Throwable) {}
-                            pendingGlassCropUri = it
-                        }
-                    }
-
                     PetalSettingsSection(
                         title = "Liquid Glass UI & Surfaces",
                         icon = Icons.Rounded.AutoAwesome,

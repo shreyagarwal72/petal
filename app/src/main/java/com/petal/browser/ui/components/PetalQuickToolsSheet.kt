@@ -74,6 +74,8 @@ import com.petal.browser.ui.theme.resolveShape
 import com.petal.browser.ui.theme.toShape
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 private const val PREF_QUICK_TOOLS_ORDER = "sp_quick_tools_order_v1"
 
@@ -160,9 +162,9 @@ fun PetalQuickToolsSheet(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .com.petal.browser.ui.containment.liquidGlassChrome(shape = sheetShape, enabled = isGlass),
+            .liquidGlassChrome(shape = sheetShape, enabled = isGlass),
         shape = sheetShape,
-        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = if (isGlass) 0.dp else 6.dp
     ) {
         Column(

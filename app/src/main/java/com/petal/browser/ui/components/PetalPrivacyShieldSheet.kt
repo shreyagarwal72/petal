@@ -89,6 +89,8 @@ import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.PetalSettingsToggleRow
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -278,7 +280,7 @@ object PetalPrivacyShieldSheet {
 
         Surface(
             shape = shieldShape,
-            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
             contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 2.dp,
             shadowElevation = if (isGlass) 4.dp else 12.dp,
@@ -286,7 +288,7 @@ object PetalPrivacyShieldSheet {
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .heightIn(max = 560.dp)
-                .com.petal.browser.ui.containment.liquidGlassChrome(shape = shieldShape, enabled = isGlass, sheenIntensity = sheen),
+                .liquidGlassChrome(shape = shieldShape, enabled = isGlass, sheenIntensity = sheen),
         ) {
             Column(
                 modifier = Modifier
