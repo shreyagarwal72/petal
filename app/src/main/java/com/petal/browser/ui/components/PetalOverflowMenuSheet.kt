@@ -109,18 +109,9 @@ object PetalOverflowBridge {
             val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
             val useBlurBg = sp.getBoolean("sp_overflow_menu_blur_bg", true) && isLiquidGlass
 
-            val dialog = android.app.Dialog(activity, com.google.android.material.R.style.Theme_Design_BottomSheetDialog)
-            dialog.window?.let { window ->
-                window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
-                window.setGravity(android.view.Gravity.TOP or android.view.Gravity.END)
-                if (useBlurBg && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                    window.setBackgroundBlurRadius(32)
-                    window.setDimAmount(0.08f)
-                } else {
-                    window.setDimAmount(0.35f)
-                }
-                window.setBackgroundDrawableResource(android.R.color.transparent)
+            val dialog = android.app.Dialog(activity, com.google.android.material.R.style.Theme_Design_BottomSheetDialog).apply {
+                setCanceledOnTouchOutside(true)
+                setCancelable(true)
             }
             dialog.setOnDismissListener {
                 com.petal.browser.predictive.PetalContentSnapshot.clear()
@@ -131,6 +122,10 @@ object PetalOverflowBridge {
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 setContent {
                     val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
                     val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
@@ -296,7 +291,21 @@ object PetalOverflowBridge {
                 }
             }
             dialog.setContentView(composeView)
+            dialog.window?.let { window ->
+                window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
+                window.setGravity(android.view.Gravity.TOP or android.view.Gravity.END)
+                if (useBlurBg && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    window.setBackgroundBlurRadius(32)
+                    window.setDimAmount(0.08f)
+                } else {
+                    window.setDimAmount(0.35f)
+                }
+                window.setBackgroundDrawableResource(android.R.color.transparent)
+            }
             dialog.show()
+            // Re-apply full screen layout after show() in case the window manager reset dialog dimensions
+            dialog.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -368,6 +377,9 @@ fun PetalOverflowMenuSheet(
         }
     }
 
+    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val isTopAddressBar = remember(sp) { "TOP".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true) }
+
     val scale by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0.2f,
         animationSpec = spring(
@@ -378,12 +390,12 @@ fun PetalOverflowMenuSheet(
     )
 
     val translationY by animateFloatAsState(
-        targetValue = if (isVisible) 0f else 120f,
+        targetValue = if (isVisible) 0f else (if (isTopAddressBar) -60f else 60f),
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioLowBouncy,
             stiffness = Spring.StiffnessMediumLow
         ),
-        label = "MenuSlideUp"
+        label = "MenuSlide"
     )
 
     val alpha by animateFloatAsState(
@@ -400,8 +412,13 @@ fun PetalOverflowMenuSheet(
                 indication = null,
                 onClick = handleDismiss
             )
-            .padding(top = 52.dp, end = 12.dp, start = 12.dp, bottom = 72.dp),
-        contentAlignment = Alignment.BottomEnd
+            .padding(
+                top = if (isTopAddressBar) 68.dp else 40.dp,
+                end = 12.dp,
+                start = 12.dp,
+                bottom = if (isTopAddressBar) 40.dp else 72.dp
+            ),
+        contentAlignment = if (isTopAddressBar) Alignment.TopEnd else Alignment.BottomEnd
     ) {
         com.petal.browser.ui.containment.PetalHeroCard(
             shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
@@ -419,7 +436,7 @@ fun PetalOverflowMenuSheet(
                     scaleY = scale
                     this.translationY = translationY
                     this.alpha = alpha
-                    transformOrigin = TransformOrigin(1f, 1f)
+                    transformOrigin = if (isTopAddressBar) TransformOrigin(1f, 0f) else TransformOrigin(1f, 1f)
                 }
         ) {
             val isHomePage = remember(pageUrl, pageTitle) {
