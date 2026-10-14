@@ -37,11 +37,12 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.theme.PetalBrowserShapes
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 /**
  * Message types for PetalSnackbar specifying visual accent and leading icon.
@@ -285,8 +286,7 @@ fun PetalSnackbar(
             }
             .then(
                 if (isGlass) {
-                    com.petal.browser.ui.containment.liquidGlassChrome(
-                        Modifier,
+                    Modifier.liquidGlassChrome(
                         shape = shape,
                         enabled = true,
                         sheenIntensity = 0.65f
@@ -294,7 +294,7 @@ fun PetalSnackbar(
                 } else Modifier
             ),
         shape = shape,
-        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
         contentColor = MaterialTheme.colorScheme.onSurface,
         tonalElevation = if (isGlass) 0.dp else 6.dp,
         shadowElevation = 8.dp,
