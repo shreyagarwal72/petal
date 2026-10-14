@@ -109,7 +109,12 @@ object PetalPrivacyShieldSheet {
 
         activity.runOnUiThread {
             try {
+                val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+                com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
                 val dialog = android.app.Dialog(activity, com.petal.browser.R.style.PetalContextMenuDialogTheme)
+                dialog.setOnDismissListener {
+                    com.petal.browser.predictive.PetalContentSnapshot.clear()
+                }
                 val composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
@@ -267,15 +272,21 @@ object PetalPrivacyShieldSheet {
             mutableStateOf(sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false)))
         }
 
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+        val shieldShape = RoundedCornerShape(32.dp)
+
         Surface(
-            shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = shieldShape,
+            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 2.dp,
-            shadowElevation = 12.dp,
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+            shadowElevation = if (isGlass) 4.dp else 12.dp,
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .heightIn(max = 560.dp),
+                .heightIn(max = 560.dp)
+                .com.petal.browser.ui.containment.liquidGlassChrome(shape = shieldShape, enabled = isGlass, sheenIntensity = sheen),
         ) {
             Column(
                 modifier = Modifier

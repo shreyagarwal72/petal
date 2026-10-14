@@ -93,6 +93,10 @@ object PetalSearchEngineBridge {
     fun showSearchEngineDialog(activity: ComponentActivity, onDismiss: Runnable? = null) {
         try {
             val dialog = BottomSheetDialog(activity)
+            dialog.window?.let { window ->
+                window.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            }
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
@@ -189,60 +193,69 @@ fun PetalSearchEngineSheetContent(
     }
 
     val engines = availableSearchEngines + customEngines
-    Column(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp).padding(bottom = 24.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
+    Surface(
+        shape = sheetShape,
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth().com.petal.browser.ui.containment.liquidGlassChrome(shape = sheetShape, enabled = isGlass)
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            PetalGroupIconBadge(Icons.Rounded.Search, size = 48.dp)
-            Column {
-                Text(stringResource(R.string.ui_choose_default_search_engine), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                Text(stringResource(R.string.ui_built_in_and_unlimited_custom), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-
-        PetalGroup(rowCount = engines.size, modifier = Modifier.fillMaxWidth()) { index, position ->
-            val engine = engines[index]
-            val isSelected = engine.index == selectedIndex
-            PetalGroupListRow(
-                position = position,
-                selected = isSelected,
-                onClick = { selectedIndex = engine.index },
-                leading = { PetalGroupIconBadge(if (engine.custom) Icons.Rounded.Tune else Icons.Rounded.Search, size = 40.dp, iconSize = 20.dp) },
-                content = {
-                    Text(engine.name, fontWeight = FontWeight.SemiBold)
-                    Text(engine.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                },
-                trailing = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (engine.custom) {
-                    IconButton(onClick = { editingEngine = engine }) { Icon(Icons.Rounded.Edit, "Edit") }
-                    IconButton(onClick = {
-                        customEngines = customEngines.filterNot { it.index == engine.index }
-                        saveCustomSearchEngines(context, customEngines)
-                        if (selectedIndex == engine.index) selectedIndex = 0
-                    }) { Icon(Icons.Rounded.DeleteOutline, "Delete") }
-                        }
-                        RadioButton(selected = isSelected, onClick = { selectedIndex = engine.index })
-                    }
-                },
-            )
-        }
-
-        OutlinedButton(
-            onClick = { showAddDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).padding(bottom = 24.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(Icons.Rounded.Add, null)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.ui_add_custom_search_engine))
-        }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                PetalGroupIconBadge(Icons.Rounded.Search, size = 48.dp)
+                Column {
+                    Text(stringResource(R.string.ui_choose_default_search_engine), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.ui_built_in_and_unlimited_custom), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onCancel) { Text(stringResource(R.string.ui_cancel)) }
-            Button(onClick = { onConfirm(selectedIndex) }) { Text(stringResource(R.string.ui_use_selected_engine)) }
+            PetalGroup(rowCount = engines.size, modifier = Modifier.fillMaxWidth()) { index, position ->
+                val engine = engines[index]
+                val isSelected = engine.index == selectedIndex
+                PetalGroupListRow(
+                    position = position,
+                    selected = isSelected,
+                    onClick = { selectedIndex = engine.index },
+                    leading = { PetalGroupIconBadge(if (engine.custom) Icons.Rounded.Tune else Icons.Rounded.Search, size = 40.dp, iconSize = 20.dp) },
+                    content = {
+                        Text(engine.name, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(engine.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    },
+                    trailing = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (engine.custom) {
+                        IconButton(onClick = { editingEngine = engine }) { Icon(Icons.Rounded.Edit, "Edit") }
+                        IconButton(onClick = {
+                            customEngines = customEngines.filterNot { it.index == engine.index }
+                            saveCustomSearchEngines(context, customEngines)
+                            if (selectedIndex == engine.index) selectedIndex = 0
+                        }) { Icon(Icons.Rounded.DeleteOutline, "Delete") }
+                            }
+                            RadioButton(selected = isSelected, onClick = { selectedIndex = engine.index })
+                        }
+                    },
+                )
+            }
+
+            OutlinedButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Rounded.Add, null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.ui_add_custom_search_engine))
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onCancel) { Text(stringResource(R.string.ui_cancel)) }
+                Button(onClick = { onConfirm(selectedIndex) }) { Text(stringResource(R.string.ui_use_selected_engine)) }
+            }
         }
     }
 }

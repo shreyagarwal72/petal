@@ -447,11 +447,8 @@ fun PetalAddressBar(
     if (showQuickActionsMenu) {
         val haptics = com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
 
-        ModalBottomSheet(
+        com.petal.browser.ui.containment.PetalSheet(
             onDismissRequest = { showQuickActionsMenu = false },
-            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp
         ) {
             Column(
                 modifier = Modifier

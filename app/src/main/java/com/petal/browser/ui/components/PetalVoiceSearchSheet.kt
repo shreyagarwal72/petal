@@ -85,6 +85,10 @@ object PetalVoiceSearchBridge {
             activeLifecycleOwner = null
 
             val dialog = BottomSheetDialog(activity)
+            dialog.window?.let { window ->
+                window.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            }
             activeDialog = dialog
 
             val dialogLifecycleOwner = VoiceSearchDialogLifecycleOwner()

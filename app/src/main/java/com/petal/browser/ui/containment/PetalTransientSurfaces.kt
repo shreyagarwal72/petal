@@ -96,15 +96,22 @@ fun PetalPopupMenu(
     border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = modifier.padding(vertical = 4.dp),
+        modifier = modifier
+            .padding(vertical = 4.dp)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
         shape = shape,
-        containerColor = containerColor,
+        containerColor = if (isGlass) petalGroupSurfaceColor() else containerColor,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
-        border = border,
+        border = if (isGlass) null else border,
         content = content,
     )
 }
@@ -218,9 +225,15 @@ fun PetalAlertDialog(
     confirmText: String = "OK",
     dismissText: String? = "Cancel",
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val dialogShape = RoundedCornerShape(32.dp)
+
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        modifier = modifier,
+        modifier = modifier.liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
         icon = {
             Surface(
                 shape = RoundedCornerShape(18.dp),
@@ -231,7 +244,7 @@ fun PetalAlertDialog(
                 Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(26.dp)) }
             }
         },
-        title = { Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) },
+        title = { Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
         text = { Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         confirmButton = {
             Button(
@@ -245,8 +258,8 @@ fun PetalAlertDialog(
                 TextButton(onClick = onDismissRequest, modifier = Modifier.heightIn(min = 48.dp)) { Text(label) }
             }
         },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = dialogShape,
+        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 0.dp,
     )
 }
@@ -268,16 +281,21 @@ fun PetalMaterialAlertDialog(
     tonalElevation: Dp = 0.dp,
     properties: DialogProperties = DialogProperties(),
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = confirmButton,
-        modifier = modifier,
+        modifier = modifier.liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
         dismissButton = dismissButton,
         icon = icon,
         title = title,
         text = text,
         shape = shape,
-        containerColor = containerColor,
+        containerColor = if (isGlass) petalGroupSurfaceColor() else containerColor,
         iconContentColor = iconContentColor,
         titleContentColor = titleContentColor,
         textContentColor = textContentColor,
@@ -295,15 +313,23 @@ fun PetalDialog(
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
         Surface(
-            modifier = modifier.fillMaxWidth(0.92f).wrapContentHeight(),
+            modifier = modifier
+                .fillMaxWidth(0.92f)
+                .wrapContentHeight()
+                .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
             shape = shape,
-            color = containerColor,
+            color = if (isGlass) petalGroupSurfaceColor() else containerColor,
             contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 0.dp,
-            shadowElevation = 12.dp,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+            shadowElevation = if (isGlass) 4.dp else 12.dp,
+            border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
         ) {
             Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
         }
