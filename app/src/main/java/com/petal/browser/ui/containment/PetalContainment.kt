@@ -629,6 +629,83 @@ fun PetalSettingsToggleRow(
 }
 
 @Composable
+fun PetalSettingsToggleRow(
+    title: String,
+    subtitle: String,
+    iconRes: Int,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+    position: PetalGroupPosition = PetalGroupPosition.SINGLE,
+    modifier: Modifier = Modifier,
+) {
+    val source = remember { MutableInteractionSource() }
+    val scale = rememberPetalGroupPressScale(source)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val shape = petalGroupShape(position)
+    val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+    val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    Card(
+        onClick = { if (enabled) onCheckedChange(!checked) },
+        enabled = enabled,
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = source,
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PetalGroupIconBadge(
+                painter = painterResource(iconRes),
+                container = badgeContainer,
+                tint = badgeTint
+            )
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.38f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (subtitle.isNotBlank()) {
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.38f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = if (enabled) onCheckedChange else null,
+                enabled = enabled,
+                thumbContent = if (checked) ({
+                    Icon(
+                        painter = painterResource(iconRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(SwitchDefaults.IconSize)
+                    )
+                }) else null
+            )
+        }
+    }
+}
+
+@Composable
 fun PetalGroupListRow(
     position: PetalGroupPosition,
     onClick: () -> Unit,
