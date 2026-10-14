@@ -602,6 +602,7 @@ fun PetalAiResearchSheet(
                             .padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
                         com.petal.browser.compose.composable.PetalContainedLoadingIndicator(
                             size = 48.dp
                         )
