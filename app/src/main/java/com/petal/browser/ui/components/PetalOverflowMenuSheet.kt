@@ -45,6 +45,9 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.extensions.PetalExtensionManager
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -783,8 +786,8 @@ private fun CircularIconButton(
             .then(
                 if (isGlass) {
                     Modifier
-                        .com.petal.browser.ui.containment.liquidGlassChrome(CircleShape)
-                        .background(com.petal.browser.ui.containment.petalGroupSurfaceColor())
+                        .liquidGlassChrome(CircleShape)
+                        .background(petalGroupSurfaceColor())
                 } else Modifier
             )
     ) {
