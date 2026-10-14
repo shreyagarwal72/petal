@@ -745,8 +745,8 @@ fun AppearanceSettingsScreenContent(
                     )
 
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.pref_title_expressive_shapes),
-                        subtitle = stringResource(R.string.pref_summary_expressive_shapes),
+                        title = stringResource(R.string.ui_m3_expressive_shapes_global),
+                        subtitle = stringResource(R.string.ui_m3_expressive_shapes_global_desc),
                         icon = Icons.Rounded.Shapes,
                         checked = expressiveShapes35,
                         position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
@@ -876,7 +876,7 @@ fun AppearanceSettingsScreenContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    stringResource(R.string.ui_motion_blur_intensity),
+                                    stringResource(R.string.ui_motion_blur_amount),
                                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
