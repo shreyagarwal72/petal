@@ -47,7 +47,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.browser.PetalTabViewController
-import com.petal.browser.ui.components.ExpressivePullToRefreshWaterRipple
+import com.petal.browser.compose.composable.RefreshBarLoadingIndicator
 import com.petal.browser.ui.components.LinearRipplingWavyProgressIndicator
 import com.petal.browser.ui.components.PullToRefreshFrameLayout
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -197,13 +197,11 @@ class PetalCustomTabActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize()
                         )
 
-                        // Expressive water-ripple pull-to-refresh overlay
-                        ExpressivePullToRefreshWaterRipple(
+                        // Authentic Petal pull-to-refresh loading indicator (supports Liquid Glass)
+                        RefreshBarLoadingIndicator(
                             isRefreshing = isRefreshingState,
-                            pullFraction = pullProgressState,
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 8.dp)
+                            pullProgress = pullProgressState,
+                            modifier = Modifier.align(Alignment.TopCenter)
                         )
                     }
                 }
