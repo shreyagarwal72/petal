@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 /**
  * Option item model for [PetalChoiceButtonGroup].
@@ -123,7 +124,7 @@ fun <T> PetalChoiceButtonGroup(
             }
 
             val buttonModifier = if (isGlass) {
-                baseModifier.com.petal.browser.ui.containment.liquidGlassChrome(
+                baseModifier.liquidGlassChrome(
                     shape = if (isChecked) androidx.compose.foundation.shape.RoundedCornerShape(24.dp) else androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                     enabled = true,
                     sheenIntensity = if (isChecked) 0.80f else 0.45f

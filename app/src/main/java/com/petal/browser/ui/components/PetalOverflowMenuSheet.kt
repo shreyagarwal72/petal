@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring

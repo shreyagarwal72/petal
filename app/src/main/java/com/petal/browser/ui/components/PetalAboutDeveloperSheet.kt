@@ -9,6 +9,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
