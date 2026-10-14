@@ -747,7 +747,7 @@ fun AppearanceSettingsScreenContent(
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = stringResource(R.string.ui_m3_expressive_shapes_global),
                         subtitle = stringResource(R.string.ui_m3_expressive_shapes_global_desc),
-                        icon = Icons.Rounded.Shapes,
+                        icon = Icons.Rounded.Category,
                         checked = expressiveShapes35,
                         position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onCheckedChange = onExpressiveShapes35Change
