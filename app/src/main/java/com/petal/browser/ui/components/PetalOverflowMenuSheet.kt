@@ -100,12 +100,17 @@ object PetalOverflowBridge {
         handler: PetalOverflowMenuActionHandler
     ) {
         try {
+            val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
             val dialog = android.app.Dialog(activity, com.google.android.material.R.style.Theme_Design_BottomSheetDialog)
             dialog.window?.let { window ->
                 window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
                 window.setGravity(android.view.Gravity.TOP or android.view.Gravity.END)
                 window.setDimAmount(0.35f)
                 window.setBackgroundDrawableResource(android.R.color.transparent)
+            }
+            dialog.setOnDismissListener {
+                com.petal.browser.predictive.PetalContentSnapshot.clear()
             }
 
             val composeView = ComposeView(activity).apply {

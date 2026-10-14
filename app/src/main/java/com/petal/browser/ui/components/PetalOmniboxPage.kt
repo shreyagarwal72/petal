@@ -1108,7 +1108,14 @@ fun PetalOmniboxPage(
                                                         },
                                                         content = {
                                                             // bodyMedium (14sp) matches Firefox AwesomeBar density
-                                                            Text(displayText, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                            Text(
+                                                                displayText,
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                fontWeight = FontWeight.Medium,
+                                                                color = MaterialTheme.colorScheme.onSurface,
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis
+                                                            )
                                                         },
                                                         trailing = {
                                                             IconButton(
