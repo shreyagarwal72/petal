@@ -153,6 +153,7 @@ fun PetalBottomNavBar(
 
     val effectiveFloating = isFloatingStyle && !isBottomAddressBar
     if (effectiveFloating) {
+        // Stride's floating glass nav bar (see PetalStrideNavBar).
         Box(
             modifier = modifier
                 .graphicsLayer {
@@ -161,179 +162,21 @@ fun PetalBottomNavBar(
                 }
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
+                .padding(bottom = 18.dp, start = 12.dp, end = 12.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
-            // Material 3 Expressive Floating Toolbar with styled surfaceContainer for proper theme presentation
-            val toolbarColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
-                toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                toolbarContentColor = MaterialTheme.colorScheme.onSurface
+            PetalStrideNavBar(
+                selectedTab = selectedTab,
+                tabCount = tabCount,
+                badgeScale = badgeScale.value,
+                glassSource = glassSource,
+                onHomeClick = onHomeClick,
+                onNewTabClick = onNewTabClick,
+                onTabsClick = onTabsClick,
+                onMenuClick = onMenuClick,
+                onSwipeTabLeft = onSwipeTabLeft,
+                onSwipeTabRight = onSwipeTabRight
             )
-
-            var dragAccumulator by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
-            var isDragging by remember { mutableStateOf(false) }
-            val maxDragPx = with(LocalDensity.current) { 28.dp.toPx() }
-            // Bar follows the finger with resistance while swiping, then springs back on release
-            val dragOffsetPx by animateFloatAsState(
-                targetValue = if (isDragging) (dragAccumulator * 0.35f).coerceIn(-maxDragPx, maxDragPx) else 0f,
-                animationSpec = if (isDragging) snap() else spring(dampingRatio = 0.50f, stiffness = 320f),
-                label = "swipe_rubber_band"
-            )
-
-            HorizontalFloatingToolbar(
-                expanded = true,
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .height(64.dp)
-                    .graphicsLayer { translationX = dragOffsetPx }
-                    .shadow(16.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
-                    .border(
-                        0.75.dp,
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-                            )
-                        ),
-                        CircleShape
-                    )
-                    .clip(CircleShape)
-                    .pointerInput(Unit) {
-                        detectHorizontalDragGestures(
-                            onDragStart = { isDragging = true },
-                            onDragEnd = {
-                                isDragging = false
-                                if (dragAccumulator > 70f) {
-                                    onSwipeTabLeft()
-                                } else if (dragAccumulator < -70f) {
-                                    onSwipeTabRight()
-                                }
-                                dragAccumulator = 0f
-                            },
-                            onDragCancel = {
-                                isDragging = false
-                                dragAccumulator = 0f
-                            },
-                            onHorizontalDrag = { _, dragAmount: Float ->
-                                dragAccumulator += dragAmount
-                            }
-                        )
-                    },
-                colors = toolbarColors
-            ) {
-                FloatingNavTabItem(
-                    selected = selectedTab == PetalNavTab.HOME,
-                    label = "Home",
-                    index = 0,
-                    icon = { isSelected, tint ->
-                        val iconScale by animateFloatAsState(
-                            targetValue = if (isSelected) 1.15f else 1.0f,
-                            animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
-                            label = "home_scale"
-                        )
-                        Crossfade(
-                            targetState = isSelected,
-                            animationSpec = tween(180),
-                            label = "home_icon_crossfade",
-                            modifier = Modifier.graphicsLayer {
-                                scaleX = iconScale
-                                scaleY = iconScale
-                            }
-                        ) { filled ->
-                            Icon(
-                                painter = androidx.compose.ui.res.painterResource(
-                                    if (filled) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home
-                                ),
-                                contentDescription = "Home",
-                                tint = tint,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    },
-                    onClick = onHomeClick
-                )
-
-                FloatingNavTabItem(
-                    selected = selectedTab == PetalNavTab.NEW_TAB,
-                    label = newTabLabel,
-                    index = 1,
-                    icon = { isSelected, tint ->
-                        val rotationAngle by animateFloatAsState(
-                            targetValue = if (isSelected) 90f else 0f,
-                            animationSpec = spring(dampingRatio = 0.68f, stiffness = 450f),
-                            label = "add_rotation"
-                        )
-                        val iconScale by animateFloatAsState(
-                            targetValue = if (isSelected) 1.15f else 1.0f,
-                            animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
-                            label = "add_scale"
-                        )
-                        Icon(
-                            imageVector = Icons.Rounded.Add,
-                            contentDescription = "New Tab",
-                            tint = tint,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .graphicsLayer {
-                                    rotationZ = rotationAngle
-                                    scaleX = iconScale
-                                    scaleY = iconScale
-                                }
-                        )
-                    },
-                    onClick = onNewTabClick
-                )
-
-                FloatingNavTabItem(
-                    selected = selectedTab == PetalNavTab.TABS,
-                    label = tabsLabel,
-                    index = 2,
-                    icon = { isSelected, tint ->
-                        val iconScale by animateFloatAsState(
-                            targetValue = if (isSelected) 1.12f else 1.0f,
-                            animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
-                            label = "tabs_scale"
-                        )
-                        TabCountBadge(
-                            color = tint,
-                            count = tabCount,
-                            scale = badgeScale.value * iconScale
-                        )
-                    },
-                    onClick = onTabsClick
-                )
-
-                FloatingNavTabItem(
-                    selected = selectedTab == PetalNavTab.MENU,
-                    label = "Menu",
-                    index = 3,
-                    icon = { isSelected, tint ->
-                        val rotationAngle by animateFloatAsState(
-                            targetValue = if (isSelected) 180f else 0f,
-                            animationSpec = spring(dampingRatio = 0.70f, stiffness = 420f),
-                            label = "menu_rotation"
-                        )
-                        val iconScale by animateFloatAsState(
-                            targetValue = if (isSelected) 1.15f else 1.0f,
-                            animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
-                            label = "menu_scale"
-                        )
-                        Icon(
-                            imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = "Menu",
-                            tint = tint,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .graphicsLayer {
-                                    rotationZ = rotationAngle
-                                    scaleX = iconScale
-                                    scaleY = iconScale
-                                }
-                        )
-                    },
-                    onClick = onMenuClick
-                )
-            }
         }
     } else {
         // Material 3 Expressive Non-Floating Bottom Navigation Bar

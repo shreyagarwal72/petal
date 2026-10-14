@@ -72,6 +72,7 @@ fun <T> PetalChoiceButtonGroup(
     selected: T,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
+    minHeight: androidx.compose.ui.unit.Dp = 48.dp,
     scrollableIfCrowded: Boolean = true,
 ) {
     if (options.isEmpty()) return
@@ -103,12 +104,12 @@ fun <T> PetalChoiceButtonGroup(
 
             val buttonModifier = if (shouldScroll) {
                 Modifier
-                    .defaultMinSize(minHeight = 56.dp)
+                    .defaultMinSize(minHeight = minHeight)
                     .semantics { role = Role.RadioButton }
             } else {
                 Modifier
                     .weight(1f)
-                    .defaultMinSize(minHeight = 56.dp)
+                    .defaultMinSize(minHeight = minHeight)
                     .semantics { role = Role.RadioButton }
             }
 
@@ -181,6 +182,7 @@ fun PetalChoiceButtonGroup(
     onSelectIndex: (Int) -> Unit,
     modifier: Modifier = Modifier,
     icons: List<ImageVector?>? = null,
+    minHeight: androidx.compose.ui.unit.Dp = 48.dp,
     scrollableIfCrowded: Boolean = true,
 ) {
     val options = labels.mapIndexed { index, label ->
@@ -195,6 +197,7 @@ fun PetalChoiceButtonGroup(
         selected = selectedIndex,
         onSelect = onSelectIndex,
         modifier = modifier,
+        minHeight = minHeight,
         scrollableIfCrowded = scrollableIfCrowded
     )
 }

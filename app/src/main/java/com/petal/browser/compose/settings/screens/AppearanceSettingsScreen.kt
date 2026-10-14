@@ -261,6 +261,49 @@ fun AppearanceSettingsScreenContent(
         PetalHighRefreshRateManager.getMaxSupportedRefreshRate(context)
     }
 
+    var showMorphingShapesExplainer by remember { mutableStateOf(false) }
+    var showMotionBlurExplainer by remember { mutableStateOf(false) }
+
+    PetalFeatureExplainerDialog(
+        visible = showMorphingShapesExplainer,
+        onDismissRequest = { showMorphingShapesExplainer = false },
+        feature = PetalExplainerFeature(
+            type = ExplainerFeatureType.EXPRESSIVE_MORPHING_SHAPES,
+            title = "Morphing Ambient Shapes",
+            badge = "M3 EXPRESSIVE",
+            subtitle = "Fluid Continuous Kinetic Geometry",
+            bullets = listOf(
+                "Real-time polygonal morphing powered by AndroidX Graphics Shapes.",
+                "Smooth cubic Bézier corner interpolation with adaptive breathing cycles.",
+                "Automatically paused during battery saver or low power states.",
+                "Fully tinted dynamically according to your active Material You color style."
+            ),
+            icon = Icons.Rounded.BubbleChart,
+            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            iconTint = MaterialTheme.colorScheme.primary
+        )
+    )
+
+    PetalFeatureExplainerDialog(
+        visible = showMotionBlurExplainer,
+        onDismissRequest = { showMotionBlurExplainer = false },
+        feature = PetalExplainerFeature(
+            type = ExplainerFeatureType.MOTION_BLUR,
+            title = "Motion Blur Engine",
+            badge = "PHYSICS",
+            subtitle = "Velocity-Scaled Kinetic Smearing",
+            bullets = listOf(
+                "GPU-accelerated directional RenderEffect velocity smearing on fast list/grid flings.",
+                "Calibrated to your screen's peak refresh rate (up to 120Hz/144Hz).",
+                "Scalable blur intensity multiplier from 0.5x to 2.5x.",
+                "Adaptive frame pacing ensures 60+ FPS without dropped scroll frames."
+            ),
+            icon = Icons.Rounded.Speed,
+            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            iconTint = MaterialTheme.colorScheme.primary
+        )
+    )
+
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "appearance_settings")
 
@@ -435,23 +478,15 @@ fun AppearanceSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(Modifier.height(4.dp))
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = listOf(
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("System"),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Light"),
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem("Dark"),
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = listOf(
+                            com.petal.browser.ui.components.PetalButtonGroupItem(ThemeConfig.FOLLOW_SYSTEM, "System", icon = Icons.Rounded.BrightnessAuto),
+                            com.petal.browser.ui.components.PetalButtonGroupItem(ThemeConfig.LIGHT, "Light", icon = Icons.Rounded.LightMode),
+                            com.petal.browser.ui.components.PetalButtonGroupItem(ThemeConfig.DARK, "Dark", icon = Icons.Rounded.DarkMode),
                         ),
-                        selectedIndex = when (themeConfig) {
-                            ThemeConfig.FOLLOW_SYSTEM -> 0
-                            ThemeConfig.LIGHT -> 1
-                            ThemeConfig.DARK -> 2
-                        },
-                        onSelect = { index ->
-                            val config = when (index) {
-                                1 -> ThemeConfig.LIGHT
-                                2 -> ThemeConfig.DARK
-                                else -> ThemeConfig.FOLLOW_SYSTEM
-                            }
+                        selected = themeConfig,
+                        minHeight = 44.dp,
+                        onSelect = { config ->
                             onThemeConfigChange(config)
                             when (config) {
                                 ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
@@ -627,15 +662,19 @@ fun AppearanceSettingsScreenContent(
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                        items = AppFont.values().map { font ->
-                            com.petal.browser.ui.containment.PetalConnectedButtonItem(font.label, selected = appFont == font)
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = AppFont.values().map { font ->
+                            com.petal.browser.ui.components.PetalButtonGroupItem(
+                                value = font,
+                                label = font.label
+                            )
                         },
-                        selectedIndex = AppFont.values().indexOf(appFont),
-                        onSelect = { index -> AppFont.values().getOrNull(index)?.let { font ->
+                        selected = appFont,
+                        minHeight = 44.dp,
+                        onSelect = { font ->
                             onAppFontChange(font)
                             if (font == AppFont.CUSTOM) showFontPicker = true
-                        } },
+                        }
                     )
 
                     // GS Flex Preset Chips (For Petal Signature)
@@ -646,14 +685,16 @@ fun AppearanceSettingsScreenContent(
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            com.petal.browser.ui.containment.PetalConnectedButtonGroup(
-                                items = GSFlexPreset.values().map { preset ->
-                                    com.petal.browser.ui.containment.PetalConnectedButtonItem(
-                                        preset.label.substringBefore(" ("), selected = gsFlexPreset == preset,
+                            com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                                options = GSFlexPreset.values().map { preset ->
+                                    com.petal.browser.ui.components.PetalButtonGroupItem(
+                                        value = preset,
+                                        label = preset.label.substringBefore(" (")
                                     )
                                 },
-                                selectedIndex = GSFlexPreset.values().indexOf(gsFlexPreset),
-                                onSelect = { index -> GSFlexPreset.values().getOrNull(index)?.let(onGsFlexPresetChange) },
+                                selected = gsFlexPreset,
+                                minHeight = 44.dp,
+                                onSelect = onGsFlexPresetChange
                             )
                         }
                     }
@@ -705,7 +746,8 @@ fun AppearanceSettingsScreenContent(
                     title = stringResource(R.string.ui_layout_expressive_motion),
                     iconRes = com.petal.browser.R.drawable.layers_filled,
                     cardId = "appearance_layout",
-                    targetHighlightId = targetHighlightItemId
+                    targetHighlightId = targetHighlightItemId,
+                    onInfoClick = { showMorphingShapesExplainer = true }
                 ) {
                     // Floating Tab Bar Toggle
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -821,7 +863,8 @@ fun AppearanceSettingsScreenContent(
                     title = stringResource(R.string.ui_display_performance),
                     icon = Icons.Rounded.Speed,
                     cardId = "appearance_refresh",
-                    targetHighlightId = targetHighlightItemId
+                    targetHighlightId = targetHighlightItemId,
+                    onInfoClick = { showMotionBlurExplainer = true }
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = stringResource(R.string.ui_high_refresh_rate_120hz),
