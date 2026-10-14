@@ -283,7 +283,16 @@ fun PetalSnackbar(
                     }
                 }
             }
-            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = 0.65f) else Modifier),
+            .then(
+                if (isGlass) {
+                    com.petal.browser.ui.containment.liquidGlassChrome(
+                        Modifier,
+                        shape = shape,
+                        enabled = true,
+                        sheenIntensity = 0.65f
+                    )
+                } else Modifier
+            ),
         shape = shape,
         color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
         contentColor = MaterialTheme.colorScheme.onSurface,
