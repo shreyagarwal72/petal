@@ -210,6 +210,16 @@ fun PetalExpressiveTheme(
     }
 
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    var glassRevision by remember(sp) { androidx.compose.runtime.mutableIntStateOf(0) }
+    androidx.compose.runtime.DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == null || key.startsWith("sp_liquid_glass_") || key == "sp_stride_glass_nav") glassRevision++
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+    val glassEnabled = com.petal.browser.ui.containment.isLiquidGlassEnabled()
+    val wallpaper = if (glassEnabled) com.petal.browser.ui.glass.rememberPetalGlassWallpaper() else null
     val hapticFeedback = androidx.compose.runtime.remember(context) { PetalHapticFeedback(context) }
     var hapticsEnabled by androidx.compose.runtime.remember {
         androidx.compose.runtime.mutableStateOf(sp.getBoolean("sp_touch_haptics", true))
@@ -232,6 +242,8 @@ fun PetalExpressiveTheme(
     }
 
     CompositionLocalProvider(
+        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper,
+        com.petal.browser.ui.glass.LocalPetalGlassRevision provides glassRevision,
         LocalPetalBlurEffectEnabled provides blurEffectEnabled,
         LocalExpressiveShapesEnabled provides expressiveShapesState,
         com.petal.browser.haptics.LocalHapticEnabled provides hapticsEnabled,

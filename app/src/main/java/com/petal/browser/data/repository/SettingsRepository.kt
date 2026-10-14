@@ -33,6 +33,18 @@ interface SettingsRepository {
     val launchRippleEnabled: Flow<Boolean>
     val motionBlurEnabled: Flow<Boolean>
     val motionBlurScale: Flow<Float>
+    val liquidGlassUnlocked: Flow<Boolean>
+    val liquidGlassEnabled: Flow<Boolean>
+    val liquidGlassAlpha: Flow<Float>
+    val liquidGlassSheen: Flow<Float>
+    val liquidGlassTint: Flow<String>
+    val liquidGlassContainments: Flow<Boolean>
+    val liquidGlassBottomNav: Flow<Boolean>
+    val liquidGlassAddressBar: Flow<Boolean>
+    val liquidGlassBgMode: Flow<String>
+    val liquidGlassBgImageUri: Flow<String>
+    val liquidGlassBgDim: Flow<Float>
+    val liquidGlassBgBlur: Flow<Float>
 
     // Search & Homepage
     val searchEngineIndex: Flow<String>
@@ -125,6 +137,18 @@ interface SettingsRepository {
     suspend fun setLaunchRippleEnabled(enabled: Boolean)
     suspend fun setMotionBlurEnabled(enabled: Boolean)
     suspend fun setMotionBlurScale(scale: Float)
+    suspend fun setLiquidGlassUnlocked(unlocked: Boolean)
+    suspend fun setLiquidGlassEnabled(enabled: Boolean)
+    suspend fun setLiquidGlassAlpha(alpha: Float)
+    suspend fun setLiquidGlassSheen(sheen: Float)
+    suspend fun setLiquidGlassTint(tint: String)
+    suspend fun setLiquidGlassContainments(enabled: Boolean)
+    suspend fun setLiquidGlassBottomNav(enabled: Boolean)
+    suspend fun setLiquidGlassAddressBar(enabled: Boolean)
+    suspend fun setLiquidGlassBgMode(mode: String)
+    suspend fun setLiquidGlassBgImageUri(uri: String)
+    suspend fun setLiquidGlassBgDim(dim: Float)
+    suspend fun setLiquidGlassBgBlur(blur: Float)
 
     suspend fun setSearchEngineIndex(index: String)
     suspend fun setHomepageType(type: String)

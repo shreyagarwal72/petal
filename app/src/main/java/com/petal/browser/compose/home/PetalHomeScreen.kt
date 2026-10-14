@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.petal.browser.ui.glass.captureGlassWallpaper
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -527,11 +528,14 @@ fun PetalHomeScreen(
                     // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
                     val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
                     if (!activeWallpaperUri.isNullOrBlank()) {
+                        val glassWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
                         com.petal.browser.wallpaper.PetalAnimatedWallpaperBackground(
                             wallpaperUri = activeWallpaperUri,
                             dim = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim,
                             blur = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize().then(
+                                if (glassWallpaper != null) Modifier.captureGlassWallpaper(glassWallpaper) else Modifier
+                            )
                         )
                     } else {
                         com.petal.browser.ui.components.M3ExpressiveVariableBackground(

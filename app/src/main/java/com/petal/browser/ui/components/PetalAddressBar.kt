@@ -41,6 +41,7 @@ import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.sniffer.PetalMediaSniffer
+import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.view.PetalToast
 
 /**
@@ -163,14 +164,33 @@ fun PetalAddressBar(
         RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
     }
 
+    com.petal.browser.ui.glass.LocalPetalGlassRevision.current
+    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") && !isIncognito
+    val glassSource = androidx.compose.ui.platform.LocalView.current.rootView
+        .findViewById<android.view.View>(com.petal.browser.R.id.main_content)
+    val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) glassSource else null)
+    val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
+
+    val baseGlassColor = when (glassTint) {
+        "ACCENT" -> MaterialTheme.colorScheme.primaryContainer
+        "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+
+    val effectiveContainerColor = when {
+        isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
+        isLiquidGlass -> Color.Transparent
+        else -> containerColor
+    }
+
     val topBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
 
     Surface(
         shape = containerShape,
-        color = containerColor,
-        tonalElevation = if (resolvedIsBottom) 2.dp else 4.dp,
+        color = effectiveContainerColor,
+        tonalElevation = if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 2.dp else 4.dp,
         shadowElevation = if (resolvedIsBottom) 4.dp else 4.dp,
-        border = if (resolvedIsBottom) BorderStroke(0.65.dp, topBorderColor) else null,
+        border = if (resolvedIsBottom && !isLiquidGlass) BorderStroke(0.65.dp, topBorderColor) else null,
         modifier = modifier
             .fillMaxWidth()
             .then(
@@ -179,6 +199,11 @@ fun PetalAddressBar(
                 } else {
                     Modifier.padding(horizontal = 12.dp, vertical = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp)
                 }
+            )
+            .then(
+                if (isLiquidGlass) {
+                    Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
+                } else Modifier
             )
             .pointerInput(isSwipeTabsEnabled) {
                 if (!isSwipeTabsEnabled) return@pointerInput

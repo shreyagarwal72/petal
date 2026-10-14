@@ -59,6 +59,13 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.toPath
 import androidx.preference.PreferenceManager
 import com.petal.browser.ui.theme.PetalMaterialShapes
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.LocalPetalGlassRevision
+import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.PetalGlassPattern
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.background
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlinx.coroutines.delay
@@ -186,12 +193,60 @@ fun M3ExpressiveVariableBackground(
 ) {
     val context = LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    LocalPetalGlassRevision.current
+    val wallpaper = LocalPetalGlassWallpaper.current
     var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
+    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+    val liquidGlassBgMode = sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
+    val liquidGlassImageUri = sp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
+
     val isSettingsPage = remember(pageSeed) {
         pageSeed.endsWith("_settings") || pageSeed.endsWith("_hub") || pageSeed == "delete_page"
     }
-    if (isSettingsPage && !showInSettings) {
+
+    // When Liquid Glass is enabled with custom image or morphing shapes, apply across all pages including settings
+    if (isSettingsPage && !showInSettings && !isLiquidGlass) {
         // RvSystem-Monitor containment style: clean, un-muddled high-contrast Material 3 background for all settings surfaces
+        return
+    }
+
+    if (wallpaper != null && (liquidGlassBgMode == "STRIDE" || (liquidGlassBgMode == "IMAGE" && liquidGlassImageUri.isEmpty()))) {
+        PetalGlassPattern(modifier.captureGlassWallpaper(wallpaper))
+        return
+    }
+
+    if (isLiquidGlass && liquidGlassBgMode == "IMAGE" && liquidGlassImageUri.isNotEmpty()) {
+        val dim = sp.getFloat("sp_liquid_glass_bg_dim", 0.35f).coerceIn(0f, 0.9f)
+        val blur = sp.getFloat("sp_liquid_glass_bg_blur", 16f).coerceIn(0f, 40f)
+
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        androidx.compose.foundation.layout.Box(modifier = modifier.fillMaxSize()
+            .then(if (wallpaper != null) Modifier.captureGlassWallpaper(wallpaper) else Modifier)
+            .background(MaterialTheme.colorScheme.background)) {
+            coil.compose.AsyncImage(
+                model = liquidGlassImageUri,
+                contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (blur > 0.5f && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                            Modifier.graphicsLayer {
+                                renderEffect = android.graphics.RenderEffect
+                                    .createBlurEffect(with(density) { blur.dp.toPx() }, with(density) { blur.dp.toPx() }, android.graphics.Shader.TileMode.CLAMP)
+                                    .asComposeRenderEffect()
+                            }
+                        } else Modifier
+                    )
+            )
+            if (dim > 0f) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = dim))
+                )
+            }
+        }
         return
     }
 
@@ -305,7 +360,8 @@ fun M3ExpressiveVariableBackground(
 
     val scratchMatrix = remember { Matrix() }
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(modifier = modifier.fillMaxSize()
+        .then(if (wallpaper != null) Modifier.captureGlassWallpaper(wallpaper) else Modifier)) {
         val width = size.width
         val height = size.height
 

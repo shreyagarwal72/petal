@@ -90,6 +90,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import kotlinx.coroutines.delay
 
@@ -119,6 +120,7 @@ fun PetalBottomNavBar(
     isIncognito: Boolean = false,
     isFloatingStyle: Boolean = true,
     isBottomAddressBar: Boolean = false,
+    glassSource: android.view.View? = null,
     onHomeClick: () -> Unit,
     onNewTabClick: () -> Unit,
     onTabsClick: () -> Unit,
@@ -350,14 +352,32 @@ fun PetalBottomNavBar(
             } else {
                 RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
             }
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+            com.petal.browser.ui.glass.LocalPetalGlassRevision.current
+            val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+            val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) glassSource else null)
+            val glassTint = if (isLiquidGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
+
+            val baseContainer = when (glassTint) {
+                "ACCENT" -> MaterialTheme.colorScheme.primaryContainer
+                "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest
+                else -> MaterialTheme.colorScheme.surfaceContainer
+            }
+
             Surface(
                 shape = navBarShape,
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = if (isBottomAddressBar) 0.dp else 3.dp,
+                color = if (isLiquidGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = if (isLiquidGlass || isBottomAddressBar) 0.dp else 3.dp,
                 shadowElevation = if (isBottomAddressBar) 0.dp else 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
+                    .then(
+                        if (isLiquidGlass) {
+                            Modifier.liquidGlass(navBarShape, baseContainer, glassBar)
+                        } else Modifier
+                    )
             ) {
                 Row(
                     modifier = Modifier

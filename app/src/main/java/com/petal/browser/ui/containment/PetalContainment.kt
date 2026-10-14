@@ -50,16 +50,19 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -71,16 +74,146 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.tween
 
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.preference.PreferenceManager
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.LocalPetalGlassRevision
+import com.petal.browser.ui.glass.petalGlassPanel
+
 enum class PetalGroupPosition { SINGLE, TOP, MIDDLE, BOTTOM }
 
 val LocalPetalSectionHighlighted = compositionLocalOf { false }
 
+/**
+ * Checks whether Liquid Glass UI is enabled system-wide.
+ */
+@Composable
+fun isLiquidGlassEnabled(componentKey: String = "sp_liquid_glass_containments"): Boolean {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    var enabled by remember(sp, componentKey) {
+        val master = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+        val comp = sp.getBoolean(componentKey, true)
+        mutableStateOf(master && comp)
+    }
+    DisposableEffect(sp, componentKey) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sp_liquid_glass_unlocked" || key == "sp_liquid_glass_enabled" || key == componentKey) {
+                val master = sp.getBoolean("sp_liquid_glass_unlocked", false) && sp.getBoolean("sp_liquid_glass_enabled", false)
+                val comp = sp.getBoolean(componentKey, true)
+                enabled = master && comp
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+    return enabled
+}
+
+/**
+ * Specular highlight, frosted refraction gradient, and chromatic reflection border for Liquid Glass containments.
+ */
+@Composable
+fun Modifier.liquidGlassChrome(
+    shape: Shape,
+    enabled: Boolean = true,
+    sheenIntensity: Float = 0.60f,
+    tintColor: Color = Color.Unspecified,
+    // Explicit sibling backdrop for headers; otherwise use the theme's shared wallpaper.
+    // The caller keeps its container transparent when either source is available.
+    backdrop: PetalBackdrop? = null,
+    isDark: Boolean = false
+): Modifier {
+    if (!enabled) return this
+    if (backdrop == null && LocalPetalGlassWallpaper.current?.ready == true) {
+        LocalPetalGlassRevision.current
+        val sp = PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
+        val dark = MaterialTheme.colorScheme.background.luminance() < .5f
+        val opacity = sp.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.20f, .95f)
+        val tint = when (sp.getString("sp_liquid_glass_tint", "FROSTED")) {
+            "ACCENT" -> MaterialTheme.colorScheme.primaryContainer
+            "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest
+            else -> MaterialTheme.colorScheme.surfaceContainerHigh
+        }
+        // The existing opacity slider scales Stride's 22/32 percent material veil.
+        return this.petalGlassPanel(shape, tint.copy(alpha = ((if (dark) .22f else .32f) * opacity / .70f).coerceIn(0f, 1f)),
+            sp.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f)
+    }
+    return this.petalRealGlass(backdrop, shape, isDark)
+        .liquidGlassSheen(shape, sheenIntensity, tintColor)
+}
+
+/** Specular highlight + rim stroke only (the original Petal "glass" look). */
+private fun Modifier.liquidGlassSheen(
+    shape: Shape,
+    sheenIntensity: Float,
+    tintColor: Color
+): Modifier = this.drawWithContent {
+    drawContent()
+    val outline = shape.createOutline(size, layoutDirection, this)
+    val path = when (outline) {
+        is Outline.Rounded -> Path().apply { addRoundRect(outline.roundRect) }
+        is Outline.Generic -> outline.path
+        is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
+    }
+
+    // 1. Soft top specular reflection sheen + subtle caustic gradient
+    clipPath(path) {
+        drawRect(
+            brush = Brush.verticalGradient(
+                0f to Color.White.copy(alpha = (0.16f * sheenIntensity).coerceIn(0f, 1f)),
+                0.35f to Color.White.copy(alpha = (0.04f * sheenIntensity).coerceIn(0f, 1f)),
+                0.70f to Color.Transparent,
+                1f to (if (tintColor != Color.Unspecified) tintColor.copy(alpha = 0.05f * sheenIntensity) else Color.White.copy(alpha = 0.02f * sheenIntensity)),
+                startY = 0f,
+                endY = size.height,
+            ),
+        )
+    }
+
+    // 2. High-precision dual-angle chromatic rim reflection stroke (light incident from top-left)
+    drawPath(
+        path = path,
+        brush = Brush.linearGradient(
+            0f to Color.White.copy(alpha = (0.48f * sheenIntensity).coerceIn(0f, 1f)),
+            0.30f to (if (tintColor != Color.Unspecified) tintColor.copy(alpha = (0.28f * sheenIntensity).coerceIn(0f, 1f)) else Color.White.copy(alpha = (0.15f * sheenIntensity).coerceIn(0f, 1f))),
+            0.70f to Color.White.copy(alpha = (0.06f * sheenIntensity).coerceIn(0f, 1f)),
+            1f to Color.White.copy(alpha = (0.24f * sheenIntensity).coerceIn(0f, 1f)),
+            start = Offset.Zero,
+            end = Offset(size.width, size.height),
+        ),
+        style = Stroke(width = 1.15.dp.toPx()),
+    )
+}
+
 @Composable
 fun petalGroupSurfaceColor(): Color {
-    val target = if (LocalPetalSectionHighlighted.current) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    LocalPetalGlassRevision.current
+    if (isGlass && LocalPetalGlassWallpaper.current?.ready == true) {
+        return if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .45f) else Color.Transparent
+    }
+    val glassAlpha = if (isGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
+    val glassTint = if (isGlass) sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED" else "FROSTED"
+
+    val baseGlassColor = when (glassTint) {
+        "ACCENT" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = glassAlpha * 0.85f)
+        "DEEP" -> MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = glassAlpha)
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha)
+    }
+
+    val target = when {
+        LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+        isGlass -> baseGlassColor
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
     val color by animateColorAsState(target, label = "petalGroupSurface")
     return color
@@ -144,7 +277,7 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(icon.name),
+    shape: Shape = RoundedCornerShape(14.dp),
 ) {
     val (container, tint) = variant.colors()
     Box(
@@ -165,7 +298,7 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(painter.hashCode()),
+    shape: Shape = RoundedCornerShape(14.dp),
 ) {
     val (container, tint) = variant.colors()
     Box(
@@ -187,9 +320,8 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(icon.name),
 ) {
-    Box(modifier.size(size).clip(shape).background(container), contentAlignment = Alignment.Center) {
+    Box(modifier.size(size).clip(RoundedCornerShape(14.dp)).background(container), contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
 }
@@ -202,25 +334,9 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(painter.hashCode()),
 ) {
-    Box(modifier.size(size).clip(shape).background(container), contentAlignment = Alignment.Center) {
+    Box(modifier.size(size).clip(RoundedCornerShape(14.dp)).background(container), contentAlignment = Alignment.Center) {
         Icon(painter, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
-    }
-}
-
-@Composable
-fun PetalGroupIconBadge(
-    iconRes: Int,
-    container: Color = MaterialTheme.colorScheme.primaryContainer,
-    tint: Color = MaterialTheme.colorScheme.onPrimaryContainer,
-    modifier: Modifier = Modifier,
-    size: Dp = 44.dp,
-    iconSize: Dp = 22.dp,
-    shape: Shape = com.petal.browser.ui.theme.rememberExpressiveShape(iconRes),
-) {
-    Box(modifier.size(size).clip(shape).background(container), contentAlignment = Alignment.Center) {
-        Icon(painterResource(iconRes), contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
 }
 
@@ -260,14 +376,22 @@ fun PetalGroupRow(
 ) {
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val shape = petalGroupShape(position)
     Card(
         onClick = onClick,
         enabled = enabled,
-        shape = petalGroupShape(position),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
-        modifier = modifier.fillMaxWidth().scale(scale),
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             PetalGroupIconBadge(icon, iconContainer, iconTint)
@@ -311,14 +435,22 @@ fun PetalGroupControlRow(
     val (containerColor, contentColor) = variant.colors()
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val shape = petalGroupShape(position)
     Card(
         onClick = { if (enabled) onCheckedChange(!checked) },
         enabled = enabled,
-        shape = petalGroupShape(position),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
-        modifier = modifier.fillMaxWidth().scale(scale),
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             if (leadingIcon != null) {
@@ -395,14 +527,22 @@ fun PetalGroupToggleRow(
 ) {
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val shape = petalGroupShape(position)
     Card(
         onClick = { if (enabled) onCheckedChange(!checked) },
         enabled = enabled,
-        shape = petalGroupShape(position),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
-        modifier = modifier.fillMaxWidth().scale(scale),
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             leadingIcon()
@@ -434,16 +574,24 @@ fun PetalSettingsToggleRow(
 ) {
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val shape = petalGroupShape(position)
     val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     Card(
         onClick = { if (enabled) onCheckedChange(!checked) },
         enabled = enabled,
-        shape = petalGroupShape(position),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
-        modifier = modifier.fillMaxWidth().scale(scale),
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
     ) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
@@ -481,75 +629,6 @@ fun PetalSettingsToggleRow(
 }
 
 @Composable
-fun PetalSettingsToggleRow(
-    title: String,
-    subtitle: String,
-    iconRes: Int,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    enabled: Boolean = true,
-    position: PetalGroupPosition = PetalGroupPosition.SINGLE,
-    modifier: Modifier = Modifier,
-) {
-    val source = remember { MutableInteractionSource() }
-    val scale = rememberPetalGroupPressScale(source)
-    val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-    val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
-    Card(
-        onClick = { if (enabled) onCheckedChange(!checked) },
-        enabled = enabled,
-        shape = petalGroupShape(position),
-        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        interactionSource = source,
-        modifier = modifier.fillMaxWidth().scale(scale),
-    ) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            PetalGroupIconBadge(
-                painter = painterResource(iconRes),
-                container = badgeContainer,
-                tint = badgeTint
-            )
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f).padding(end = 8.dp)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.38f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (subtitle.isNotBlank()) {
-                    Text(
-                        subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.38f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = if (enabled) onCheckedChange else null,
-                enabled = enabled,
-                thumbContent = if (checked) ({
-                    Icon(
-                        painter = painterResource(iconRes),
-                        contentDescription = null,
-                        modifier = Modifier.size(SwitchDefaults.IconSize)
-                    )
-                }) else null
-            )
-        }
-    }
-}
-
-@Composable
 fun PetalGroupListRow(
     position: PetalGroupPosition,
     onClick: () -> Unit,
@@ -564,9 +643,21 @@ fun PetalGroupListRow(
     val scale = rememberPetalGroupPressScale(source)
     val haptics = LocalHapticFeedback.current
     val selectedColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-    Card(shape = petalGroupShape(position), colors = CardDefaults.cardColors(containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else if (selected) selectedColor else petalGroupSurfaceColor()),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), modifier = modifier.fillMaxWidth().scale(scale)
-            .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val shape = petalGroupShape(position)
+    Card(
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else if (selected) selectedColor else petalGroupSurfaceColor()),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen)
+            .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })
+    ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             leading(); Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f), content = content); trailing?.invoke()
         }
@@ -579,7 +670,36 @@ fun PetalSectionLabel(text: String, modifier: Modifier = Modifier) {
         fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
 }
 
+data class PetalConnectedButtonItem(val label: String, val icon: ImageVector? = null, val selected: Boolean = false)
 
+private fun petalConnectedShape(index: Int, count: Int): Shape = when {
+    count <= 1 -> RoundedCornerShape(20.dp)
+    index == 0 -> RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp, topEnd = 4.dp, bottomEnd = 4.dp)
+    index == count - 1 -> RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 20.dp, bottomEnd = 20.dp)
+    else -> RoundedCornerShape(4.dp)
+}
+
+@Composable
+fun PetalConnectedButtonGroup(items: List<PetalConnectedButtonItem>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val haptics = LocalHapticFeedback.current
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy((-1).dp), verticalAlignment = Alignment.CenterVertically) {
+        items.forEachIndexed { index, item ->
+            val selected = item.selected || (selectedIndex >= 0 && index == selectedIndex)
+            val shape = petalConnectedShape(index, items.size)
+            Surface(onClick = { haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onSelect(index) }, modifier = Modifier.weight(1f),
+                shape = shape, color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))) {
+                val compact = items.size >= 3
+                Row(Modifier.defaultMinSize(minHeight = 44.dp).padding(horizontal = if (compact) 4.dp else 8.dp, vertical = 10.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                    item.icon?.let { Icon(it, null, Modifier.size(if (compact) 16.dp else 18.dp)); Spacer(Modifier.width(if (compact) 4.dp else 6.dp)) }
+                    Text(item.label, style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun PetalFloatingToolbar(modifier: Modifier = Modifier, elevation: Dp = 6.dp, content: @Composable RowScope.() -> Unit) {
@@ -640,8 +760,10 @@ fun PetalHeroCard(
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Card(modifier = modifier.fillMaxWidth(), shape = shape,
-        colors = CardDefaults.cardColors(containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else containerColor),
+    val glass = isLiquidGlassEnabled() && LocalPetalGlassWallpaper.current?.ready == true
+    Card(modifier = modifier.fillMaxWidth().liquidGlassChrome(shape, enabled = glass), shape = shape,
+        colors = CardDefaults.cardColors(containerColor = if (glass || LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else containerColor,
+            contentColor = androidx.compose.material3.contentColorFor(containerColor)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), content = content)
 }
 
@@ -656,12 +778,14 @@ fun PetalActionCard(
 ) {
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
+    val glass = isLiquidGlassEnabled() && LocalPetalGlassWallpaper.current?.ready == true
     Card(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.scale(scale),
+        modifier = modifier.scale(scale).liquidGlassChrome(shape, enabled = glass),
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else containerColor),
+        colors = CardDefaults.cardColors(containerColor = if (glass || LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else containerColor,
+            contentColor = androidx.compose.material3.contentColorFor(containerColor)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
         content = content,
