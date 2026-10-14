@@ -620,7 +620,7 @@ fun PetalPdfViewerScreen(
                 isLoading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 48.dp)
                             Spacer(Modifier.height(16.dp))
                             Text(
                                 text = stringResource(R.string.ui_loading_pdf),

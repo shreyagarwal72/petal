@@ -50,9 +50,24 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.LoadingIndicatorDefaults
+import androidx.compose.material3.toShape
+import androidx.compose.runtime.LaunchedEffect
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+
 /**
  * Petal Material 3 Expressive ContainedLoadingIndicator composable.
  * Displays an indeterminate loading indicator filling available screen bounds.
+ *
+ * When Liquid Glass is ON: Uses SimpMusic's dynamic polygon-morphing indicator
+ * with glass refraction, specular highlight, and translucent container.
+ * When Liquid Glass is OFF: Uses the standard Zenith primary contained indicator.
  *
  * @param modifier The modifier to be applied to the composable
  */
@@ -66,10 +81,66 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         val description = "Loading..."
-        ContainedLoadingIndicator(
+        PetalContainedLoadingIndicator(
             modifier = Modifier
-                .requiredSize(40.dp)
+                .requiredSize(44.dp)
                 .semantics { stateDescription = description }
+        )
+    }
+}
+
+/**
+ * Universal Contained Loading Indicator for Petal Browser.
+ *
+ * If Liquid Glass is enabled:
+ * - Dynamically morphs between Material 3 Expressive polygons (SimpMusic style).
+ * - Applies glass surface color, specular edge reflection, and primary indicator glow.
+ *
+ * If Liquid Glass is disabled:
+ * - Falls back to the classic Zenith-style primary contained indicator.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun PetalContainedLoadingIndicator(
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 40.dp
+) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+
+    if (isGlass) {
+        var containerShape by remember {
+            mutableStateOf(LoadingIndicatorDefaults.IndeterminateIndicatorPolygons.first())
+        }
+
+        LaunchedEffect(Unit) {
+            while (isActive) {
+                containerShape = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons.random()
+                delay(650)
+            }
+        }
+
+        val glassContainer = petalGroupSurfaceColor()
+        val currentShape = containerShape.toShape()
+
+        Crossfade(
+            targetState = currentShape,
+            animationSpec = tween(400),
+            modifier = modifier,
+            label = "LiquidGlassMorphingCrossfade"
+        ) { shape ->
+            androidx.compose.material3.ContainedLoadingIndicator(
+                modifier = Modifier
+                    .requiredSize(size)
+                    .liquidGlassChrome(shape = shape, enabled = true),
+                polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons,
+                containerColor = glassContainer,
+                indicatorColor = MaterialTheme.colorScheme.primary,
+                containerShape = shape
+            )
+        }
+    } else {
+        ZenithContainedLoadingIndicator(
+            modifier = modifier.requiredSize(size)
         )
     }
 }
@@ -174,7 +245,7 @@ fun RefreshBarLoadingIndicator(
                 color = Color.Transparent,
                 shadowElevation = 4.dp,
                 modifier = Modifier
-                    .requiredSize(40.dp)
+                    .requiredSize(42.dp)
                     .graphicsLayer {
                         translationY = animatedOffsetY.dp.toPx()
                         alpha = animatedOpacity
@@ -182,8 +253,9 @@ fun RefreshBarLoadingIndicator(
                         scaleY = currentScale
                     }
             ) {
-                ZenithContainedLoadingIndicator(
-                    modifier = Modifier.requiredSize(40.dp)
+                PetalContainedLoadingIndicator(
+                    modifier = Modifier.requiredSize(42.dp),
+                    size = 42.dp
                 )
             }
         }

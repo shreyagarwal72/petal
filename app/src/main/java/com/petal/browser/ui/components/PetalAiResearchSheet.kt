@@ -602,20 +602,9 @@ fun PetalAiResearchSheet(
                             .padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        PetalGroupIconBadge(
-                            shape = PetalMaterialShapes.Burst.toShape(),
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            size = 52.dp,
-                            iconSize = 26.dp
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(26.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                strokeWidth = 3.dp
-                            )
-                        }
+                        com.petal.browser.compose.composable.PetalContainedLoadingIndicator(
+                            size = 48.dp
+                        )
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
                                 stringResource(R.string.ui_researching_synthesizing),

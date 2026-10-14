@@ -446,19 +446,9 @@ fun PetalAiSearchResultSheet(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                PetalGroupIconBadge(
-                                    shape = PetalMaterialShapes.Burst.toShape(),
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    size = 56.dp,
-                                    iconSize = 28.dp
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(28.dp),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        strokeWidth = 3.dp
-                                    )
-                                }
+                                com.petal.browser.compose.composable.PetalContainedLoadingIndicator(
+                                    size = 48.dp
+                                )
 
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,

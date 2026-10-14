@@ -329,7 +329,7 @@ fun PetalBookmarksScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 48.dp)
                     }
                 } else if (filteredBookmarks.isEmpty()) {
                     com.petal.browser.ui.components.EmptyStateBlob(

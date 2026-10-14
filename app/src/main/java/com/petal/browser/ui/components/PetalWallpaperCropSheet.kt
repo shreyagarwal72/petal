@@ -157,7 +157,7 @@ fun PetalWallpaperCropSheet(
                         .height(380.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 48.dp)
                 }
             } else {
                 val bitmap = sourceBitmap!!
