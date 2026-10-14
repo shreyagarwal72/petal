@@ -102,11 +102,21 @@ object PetalOverflowBridge {
         try {
             val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
             com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+            val useBlurBg = sp.getBoolean("sp_overflow_menu_blur_bg", true) && isLiquidGlass
+
             val dialog = android.app.Dialog(activity, com.google.android.material.R.style.Theme_Design_BottomSheetDialog)
             dialog.window?.let { window ->
                 window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
                 window.setGravity(android.view.Gravity.TOP or android.view.Gravity.END)
-                window.setDimAmount(0.35f)
+                if (useBlurBg && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    window.setBackgroundBlurRadius(32)
+                    window.setDimAmount(0.08f)
+                } else {
+                    window.setDimAmount(0.35f)
+                }
                 window.setBackgroundDrawableResource(android.R.color.transparent)
             }
             dialog.setOnDismissListener {
@@ -759,6 +769,7 @@ private fun CircularIconButton(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     IconButton(
         onClick = {
             com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
@@ -769,6 +780,13 @@ private fun CircularIconButton(
         modifier = Modifier
             .size(44.dp)
             .clip(CircleShape)
+            .then(
+                if (isGlass) {
+                    Modifier
+                        .com.petal.browser.ui.containment.liquidGlassChrome(CircleShape)
+                        .background(com.petal.browser.ui.containment.petalGroupSurfaceColor())
+                } else Modifier
+            )
     ) {
         val iconTint = if (enabled) {
             tint

@@ -101,11 +101,16 @@ fun ExpressiveHeader(
             com.petal.browser.ui.containment.petalRealGlassSupported) ||
             sharedWallpaper)
         val isDarkSurface = MaterialTheme.colorScheme.background.luminance() < 0.5f
+        val headerColor = when {
+            realGlass -> Color.Transparent
+            enableLiquidGlass -> com.petal.browser.ui.containment.petalGroupSurfaceColor()
+            else -> MaterialTheme.colorScheme.surfaceContainer
+        }
         Surface(
             shape = HeaderShape,
             // Real glass draws its own blurred backdrop, so the container must be see-through.
-            color = if (realGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = if (realGlass) 0.dp else 2.dp,
+            color = headerColor,
+            tonalElevation = if (enableLiquidGlass) 0.dp else 2.dp,
             modifier = Modifier.fillMaxWidth().liquidGlassChrome(
                 shape = HeaderShape,
                 enabled = enableLiquidGlass,
@@ -116,7 +121,7 @@ fun ExpressiveHeader(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .drawGlowBackground(glow, secondaryGlow)
+                    .then(if (!enableLiquidGlass) Modifier.drawGlowBackground(glow, secondaryGlow) else Modifier)
                     .statusBarsPadding()
                     .padding(horizontal = 20.dp)
                     .padding(top = 4.dp, bottom = 12.dp),

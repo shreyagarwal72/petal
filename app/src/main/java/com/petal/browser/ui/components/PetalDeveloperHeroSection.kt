@@ -36,6 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
 
@@ -77,11 +80,16 @@ fun PetalDeveloperHeroSection(
         label = "cookie_rotation"
     )
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val heroShape = RoundedCornerShape(32.dp)
+
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 2.dp
+        modifier = modifier
+            .fillMaxWidth()
+            .liquidGlassChrome(shape = heroShape, enabled = isGlass),
+        shape = heroShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = if (isGlass) 0.dp else 2.dp
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -342,16 +350,18 @@ fun PetalDeveloperHeroSection(
             }
 
             // GitHub Repository Live Badge
+            val gitHubShape = RoundedCornerShape(22.dp)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp))
+                    .liquidGlassChrome(shape = gitHubShape, enabled = isGlass)
+                    .clip(gitHubShape)
                     .clickable {
                         haptics.playClick(context)
                         onOpenUrl("https://github.com/shreyagarwal72/petal")
                     },
-                shape = RoundedCornerShape(22.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLowest
+                shape = gitHubShape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLowest
             ) {
                 Row(
                     modifier = Modifier

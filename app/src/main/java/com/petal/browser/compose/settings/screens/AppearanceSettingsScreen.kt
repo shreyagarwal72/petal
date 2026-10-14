@@ -85,6 +85,7 @@ fun AppearanceSettingsScreen(
     val liquidGlassContainments by viewModel.liquidGlassContainments.collectAsStateWithLifecycle()
     val liquidGlassBottomNav by viewModel.liquidGlassBottomNav.collectAsStateWithLifecycle()
     val liquidGlassAddressBar by viewModel.liquidGlassAddressBar.collectAsStateWithLifecycle()
+    val liquidGlassOverflowBlurBg by viewModel.liquidGlassOverflowBlurBg.collectAsStateWithLifecycle()
     val liquidGlassBgMode by viewModel.liquidGlassBgMode.collectAsStateWithLifecycle()
     val liquidGlassBgImageUri by viewModel.liquidGlassBgImageUri.collectAsStateWithLifecycle()
     val liquidGlassBgDim by viewModel.liquidGlassBgDim.collectAsStateWithLifecycle()
@@ -121,6 +122,7 @@ fun AppearanceSettingsScreen(
         liquidGlassContainments = liquidGlassContainments,
         liquidGlassBottomNav = liquidGlassBottomNav,
         liquidGlassAddressBar = liquidGlassAddressBar,
+        liquidGlassOverflowBlurBg = liquidGlassOverflowBlurBg,
         liquidGlassBgMode = liquidGlassBgMode,
         liquidGlassBgImageUri = liquidGlassBgImageUri,
         liquidGlassBgDim = liquidGlassBgDim,
@@ -154,6 +156,7 @@ fun AppearanceSettingsScreen(
         onLiquidGlassContainmentsChange = viewModel::setLiquidGlassContainments,
         onLiquidGlassBottomNavChange = viewModel::setLiquidGlassBottomNav,
         onLiquidGlassAddressBarChange = viewModel::setLiquidGlassAddressBar,
+        onLiquidGlassOverflowBlurBgChange = viewModel::setLiquidGlassOverflowBlurBg,
         onLiquidGlassBgModeChange = viewModel::setLiquidGlassBgMode,
         onLiquidGlassBgImageUriChange = viewModel::setLiquidGlassBgImageUri,
         onLiquidGlassBgDimChange = viewModel::setLiquidGlassBgDim,
@@ -194,6 +197,7 @@ fun AppearanceSettingsScreenContent(
     liquidGlassContainments: Boolean = true,
     liquidGlassBottomNav: Boolean = true,
     liquidGlassAddressBar: Boolean = true,
+    liquidGlassOverflowBlurBg: Boolean = true,
     liquidGlassBgMode: String = "STRIDE",
     liquidGlassBgImageUri: String = "",
     liquidGlassBgDim: Float = 0.35f,
@@ -229,6 +233,7 @@ fun AppearanceSettingsScreenContent(
     onLiquidGlassContainmentsChange: (Boolean) -> Unit = {},
     onLiquidGlassBottomNavChange: (Boolean) -> Unit = {},
     onLiquidGlassAddressBarChange: (Boolean) -> Unit = {},
+    onLiquidGlassOverflowBlurBgChange: (Boolean) -> Unit = {},
     onLiquidGlassBgModeChange: (String) -> Unit = {},
     onLiquidGlassBgImageUriChange: (String) -> Unit = {},
     onLiquidGlassBgDimChange: (Float) -> Unit = {},
@@ -1150,8 +1155,16 @@ fun AppearanceSettingsScreenContent(
                                             subtitle = "Translucent address bar pill with specular edge glow",
                                             icon = Icons.Rounded.Search,
                                             checked = liquidGlassAddressBar,
-                                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                                             onCheckedChange = onLiquidGlassAddressBarChange
+                                        )
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Overflow Menu Background Blur",
+                                            subtitle = "Blur outside wallpaper & window instead of dark dimming when menu opens",
+                                            icon = Icons.Rounded.BlurCircular,
+                                            checked = liquidGlassOverflowBlurBg,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                                            onCheckedChange = onLiquidGlassOverflowBlurBgChange
                                         )
                                     }
                                 }

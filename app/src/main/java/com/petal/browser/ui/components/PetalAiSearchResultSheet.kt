@@ -52,6 +52,9 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 object PetalAiSearchBridge {
     @JvmStatic
@@ -167,10 +170,16 @@ fun PetalAiSearchResultSheet(
         }
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    val pillShape = RoundedCornerShape(28.dp)
+
     Surface(
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth()
+        shape = sheetShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier
+            .fillMaxWidth()
+            .liquidGlassChrome(shape = sheetShape, enabled = isGlass)
     ) {
         Column(
             modifier = Modifier
@@ -251,9 +260,11 @@ fun PetalAiSearchResultSheet(
 
             // ── Search pill ──
             Surface(
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth()
+                shape = pillShape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .liquidGlassChrome(shape = pillShape, enabled = isGlass)
             ) {
                 Row(
                     modifier = Modifier

@@ -1571,14 +1571,17 @@ private fun EditShortcutDialog(
                 }
 
                 // Live Preview with 0-padding full-bleed expressive shape
+                val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val previewRowShape = RoundedCornerShape(16.dp)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .liquidGlassChrome(shape = previewRowShape, enabled = isGlass)
                         .background(
-                            MaterialTheme.colorScheme.surfaceContainerLow,
-                            RoundedCornerShape(16.dp)
+                            if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+                            previewRowShape
                         )
                         .padding(12.dp)
                 ) {

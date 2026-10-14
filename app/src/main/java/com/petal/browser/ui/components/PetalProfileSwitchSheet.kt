@@ -46,6 +46,9 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.profile.PetalProfile
 import com.petal.browser.profile.PetalProfileAvatar
 import com.petal.browser.profile.PetalProfileManager
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -142,15 +145,25 @@ fun PetalProfileSwitchSheet(
                     items(profiles, key = { it.id }) { profile ->
                         val isSelected = profile.id == active.id
                         val profileColor = profile.getComposeColor()
+                        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        val profileShape = RoundedCornerShape(16.dp)
 
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-                            else MaterialTheme.colorScheme.surfaceContainerHighest,
-                            border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-                            else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                            shape = profileShape,
+                            color = when {
+                                isSelected && isGlass -> profileColor.copy(alpha = 0.22f)
+                                isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                                isGlass -> petalGroupSurfaceColor()
+                                else -> MaterialTheme.colorScheme.surfaceContainerHighest
+                            },
+                            border = when {
+                                isSelected -> BorderStroke(1.5.dp, profileColor)
+                                isGlass -> BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                                else -> BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .liquidGlassChrome(shape = profileShape, enabled = isGlass)
                                 .clickable {
                                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     onDismissRequest()

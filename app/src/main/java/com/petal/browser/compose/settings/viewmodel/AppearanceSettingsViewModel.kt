@@ -114,6 +114,9 @@ class AppearanceSettingsViewModel @Inject constructor(
     val liquidGlassAddressBar: StateFlow<Boolean> = settingsRepository.liquidGlassAddressBar
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val liquidGlassOverflowBlurBg: StateFlow<Boolean> = settingsRepository.liquidGlassOverflowBlurBg
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val liquidGlassBgMode: StateFlow<String> = settingsRepository.liquidGlassBgMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "STRIDE")
 
@@ -251,6 +254,10 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setLiquidGlassAddressBar(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setLiquidGlassAddressBar(enabled)
+    }
+
+    fun setLiquidGlassOverflowBlurBg(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setLiquidGlassOverflowBlurBg(enabled)
     }
 
     fun setLiquidGlassBgMode(mode: String) = viewModelScope.launch {

@@ -103,10 +103,12 @@ fun ApiIntegrationsSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
+                    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val fadeEdgeColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow
                     val aiProviderScrollState = rememberScrollState()
                     ScrollFadeRow(
                         scrollState = aiProviderScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        edgeColor = fadeEdgeColor
                     ) {
                         Row(
                             modifier = Modifier
@@ -306,7 +308,7 @@ fun ApiIntegrationsSettingsScreenContent(
                             val modelScrollState = rememberScrollState()
                             ScrollFadeRow(
                                 scrollState = modelScrollState,
-                                edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                edgeColor = fadeEdgeColor
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -335,7 +337,7 @@ fun ApiIntegrationsSettingsScreenContent(
                         val modelScrollState = rememberScrollState()
                         ScrollFadeRow(
                             scrollState = modelScrollState,
-                            edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                            edgeColor = fadeEdgeColor
                         ) {
                             Row(
                                 modifier = Modifier

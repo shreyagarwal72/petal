@@ -164,6 +164,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_liquid_glass_address_bar", true)
     }
 
+    override val liquidGlassOverflowBlurBg: Flow<Boolean> = preferenceFlow("sp_overflow_menu_blur_bg") {
+        sp.getBoolean("sp_overflow_menu_blur_bg", true)
+    }
+
     override val liquidGlassBgMode: Flow<String> = preferenceFlow("sp_liquid_glass_bg_mode") {
         sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
     }
@@ -536,6 +540,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLiquidGlassAddressBar(enabled: Boolean) {
         sp.edit().putBoolean("sp_liquid_glass_address_bar", enabled).apply()
+    }
+
+    override suspend fun setLiquidGlassOverflowBlurBg(enabled: Boolean) {
+        sp.edit().putBoolean("sp_overflow_menu_blur_bg", enabled).apply()
     }
 
     override suspend fun setLiquidGlassBgMode(mode: String) {
