@@ -79,11 +79,11 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     // Liquid glass tint: authentic physical glass with pure light bending refraction,
     // beveled specular sheen, and clear optical depth.
     val look = with(density) {
-        val blur = (2.5f + alphaPref * 4.5f).dp.toPx()
-        val lensHeight = 12.dp.toPx()
-        val lensAmount = 14.dp.toPx()
+        val blur = (2.5f + alphaPref * 5.0f).dp.toPx()
+        val lensHeight = 16.dp.toPx()
+        val lensAmount = 18.dp.toPx()
         // Ensure pad completely accommodates both blur and refraction displacement
-        val pad = blur * 1.5f + lensAmount + 4.dp.toPx()
+        val pad = blur * 1.5f + lensAmount + 6.dp.toPx()
         GlassLook(
             fill = tint.copy(alpha = baseTintAlpha).argb(),
             specular = Color.White.copy(alpha = ((if (dark) 0.35f else 0.65f) * baseEdge).coerceIn(0f, 1f)).argb(),

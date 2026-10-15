@@ -41,7 +41,6 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.petal.browser.ui.glass.captureGlassWallpaper
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -300,8 +299,8 @@ object PetalOverflowBridge {
                     window.setBackgroundDrawableResource(android.R.color.transparent)
                     if (useBlurBg && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                        window.setBackgroundBlurRadius(32)
-                        window.setDimAmount(0.08f)
+                        window.setBackgroundBlurRadius(54)
+                        window.setDimAmount(0.12f)
                     } else {
                         window.setDimAmount(0.35f)
                     }
@@ -406,9 +405,6 @@ fun PetalOverflowMenuSheet(
         label = "MenuExpandAlpha"
     )
 
-    val wallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
-    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -417,46 +413,21 @@ fun PetalOverflowMenuSheet(
                 indication = null,
                 onClick = handleDismiss
             )
+            .padding(
+                top = if (isTopAddressBar) 68.dp else 40.dp,
+                end = 12.dp,
+                start = 12.dp,
+                bottom = if (isTopAddressBar) 40.dp else 72.dp
+            ),
+        contentAlignment = if (isTopAddressBar) Alignment.TopEnd else Alignment.BottomEnd
     ) {
-        // If Liquid Glass is enabled and a wallpaper is available, capture the screen snapshot
-        // into the frosted wallpaper graphicsLayer so PetalHeroCard refracts the real webpage/content.
-        if (wallpaper != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .captureGlassWallpaper(wallpaper)
-            ) {
-                if (snapshotBitmap != null) {
-                    androidx.compose.foundation.Image(
-                        bitmap = snapshotBitmap,
-                        contentDescription = null,
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
-                }
-            }
-        }
-
-        Box(
+        com.petal.browser.ui.containment.PetalHeroCard(
+            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    top = if (isTopAddressBar) 68.dp else 40.dp,
-                    end = 12.dp,
-                    start = 12.dp,
-                    bottom = if (isTopAddressBar) 40.dp else 72.dp
-                ),
-            contentAlignment = if (isTopAddressBar) Alignment.TopEnd else Alignment.BottomEnd
-        ) {
-            com.petal.browser.ui.containment.PetalHeroCard(
-                shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier
-                    .fillMaxWidth(0.88f)
-                    .widthIn(max = 350.dp)
-                    .clickable(
+                .fillMaxWidth(0.88f)
+                .widthIn(max = 350.dp)
+                .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {}
@@ -808,7 +779,6 @@ fun PetalOverflowMenuSheet(
             }
         }
     }
-}
 }
 
 @Composable

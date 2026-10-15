@@ -355,8 +355,8 @@ private fun lensShaderEffect(size: Size, pad: Float, radii: FloatArray, height: 
 }
 
 /** Corner radii in the shader's order — top-left, top-right, bottom-right, bottom-left. */
-internal fun cornerRadii(shape: Shape, size: Size, direction: LayoutDirection, density: Density): FloatArray? {
-    if (shape !is CornerBasedShape) return null
+internal fun cornerRadii(shape: Shape, size: Size, direction: LayoutDirection, density: Density): FloatArray {
+    if (shape !is CornerBasedShape) return floatArrayOf(0f, 0f, 0f, 0f)
     val ltr = direction == LayoutDirection.Ltr
     val topStart = shape.topStart.toPx(size, density)
     val topEnd = shape.topEnd.toPx(size, density)
