@@ -354,14 +354,13 @@ fun PetalDeveloperHeroSection(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .liquidGlassChrome(shape = gitHubShape, enabled = isGlass)
                     .clip(gitHubShape)
                     .clickable {
                         haptics.playClick(context)
                         onOpenUrl("https://github.com/shreyagarwal72/petal")
                     },
                 shape = gitHubShape,
-                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLowest
+                color = if (isGlass) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.40f) else MaterialTheme.colorScheme.surfaceContainerLowest
             ) {
                 Row(
                     modifier = Modifier

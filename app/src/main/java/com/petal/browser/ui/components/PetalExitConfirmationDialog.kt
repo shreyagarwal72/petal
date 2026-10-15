@@ -65,6 +65,12 @@ object PetalExitConfirmationDialog {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCanceledOnTouchOutside(true)
 
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+        dialog.setOnDismissListener {
+            com.petal.browser.predictive.PetalContentSnapshot.clear()
+        }
+
         val composeView = ComposeView(activity).apply {
             // A Dialog has its own window, so the Activity's view-tree owners are NOT inherited.
             // Without these, attaching the ComposeView throws
@@ -78,13 +84,18 @@ object PetalExitConfirmationDialog {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
             setContent {
                 PetalExpressiveTheme {
-                    ExitDialogContent(
-                        onStay = { dialog.dismiss() },
-                        onExit = {
-                            dialog.dismiss()
-                            onExit.run()
-                        }
-                    )
+                    com.petal.browser.ui.glass.PetalGlassContainer(
+                        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                        enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    ) {
+                        ExitDialogContent(
+                            onStay = { dialog.dismiss() },
+                            onExit = {
+                                dialog.dismiss()
+                                onExit.run()
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -220,9 +231,7 @@ private fun ExitDialogContent(
                         contentColor = MaterialTheme.colorScheme.onError,
                     ),
                     contentPadding = ButtonDefaults.ContentPadding,
-                    modifier = Modifier
-                        .semantics { role = Role.Button }
-                        .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(20.dp), enabled = true, sheenIntensity = 0.45f) else Modifier),
+                    modifier = Modifier.semantics { role = Role.Button },
                 ) {
                     Text(stringResource(R.string.ui_exit))
                 }

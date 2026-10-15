@@ -481,9 +481,13 @@ fun PetalOmniboxPage(
                         pageSeed = "omnibox_page"
                     )
 
-                    Column(
-                        modifier = Modifier.fillMaxSize()
+                    com.petal.browser.ui.glass.PetalGlassContainer(
+                        modifier = Modifier.fillMaxSize(),
+                        enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                     ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
                         // Chrome-style search field row pinned to top with status bar padding
                         Row(
                             modifier = Modifier
@@ -1150,6 +1154,7 @@ fun PetalOmniboxPage(
                 }
             }
         }
+    }
     }
 
     if (suggestionToRemove != null) {

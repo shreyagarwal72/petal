@@ -163,7 +163,6 @@ fun PetalProfileSwitchSheet(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .liquidGlassChrome(shape = profileShape, enabled = isGlass)
                                 .clickable {
                                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     onDismissRequest()

@@ -94,7 +94,13 @@ object PetalSearchEngineBridge {
     @JvmStatic
     fun showSearchEngineDialog(activity: ComponentActivity, onDismiss: Runnable? = null) {
         try {
+            val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+
             val dialog = BottomSheetDialog(activity)
+            dialog.setOnDismissListener {
+                com.petal.browser.predictive.PetalContentSnapshot.clear()
+            }
             dialog.window?.let { window ->
                 window.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
                     ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -106,21 +112,26 @@ object PetalSearchEngineBridge {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     PetalExpressiveTheme {
-                        PetalSearchEngineSheetContent(
-                            onConfirm = { index ->
-                                PreferenceManager.getDefaultSharedPreferences(activity).edit()
-                                    .putString("sp_search_engine", index.toString())
-                                    .putBoolean("sp_search_engine_chosen", true)
-                                    .putBoolean("searchEngineSwitch", false)
-                                    .apply()
-                                dialog.dismiss()
-                                onDismiss?.run()
-                            },
-                            onCancel = {
-                                dialog.dismiss()
-                                onDismiss?.run()
-                            }
-                        )
+                        com.petal.browser.ui.glass.PetalGlassContainer(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        ) {
+                            PetalSearchEngineSheetContent(
+                                onConfirm = { index ->
+                                    PreferenceManager.getDefaultSharedPreferences(activity).edit()
+                                        .putString("sp_search_engine", index.toString())
+                                        .putBoolean("sp_search_engine_chosen", true)
+                                        .putBoolean("searchEngineSwitch", false)
+                                        .apply()
+                                    dialog.dismiss()
+                                    onDismiss?.run()
+                                },
+                                onCancel = {
+                                    dialog.dismiss()
+                                    onDismiss?.run()
+                                }
+                            )
+                        }
                     }
                 }
             }

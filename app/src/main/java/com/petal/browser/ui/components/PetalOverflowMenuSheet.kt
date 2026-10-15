@@ -835,9 +835,7 @@ private fun CircularIconButton(
             .clip(CircleShape)
             .then(
                 if (isGlass) {
-                    Modifier
-                        .liquidGlassChrome(CircleShape)
-                        .background(petalGroupSurfaceColor())
+                    Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
                 } else Modifier
             )
     ) {
