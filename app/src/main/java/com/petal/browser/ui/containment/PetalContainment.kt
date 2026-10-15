@@ -203,7 +203,7 @@ fun petalGroupSurfaceColor(): Color {
         return if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .45f) else Color.Transparent
     }
     val glassAlpha = if (isGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
-    val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha * 0.75f)
+    val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha * 0.40f)
 
     val target = when {
         LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
@@ -822,7 +822,7 @@ fun PetalSheet(
         containerColor = if (isGlass) {
             val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
             val baseColor = MaterialTheme.colorScheme.surfaceContainerLow
-            baseColor.copy(alpha = if (dark) 0.78f else 0.88f)
+            baseColor.copy(alpha = if (dark) 0.35f else 0.45f)
         } else MaterialTheme.colorScheme.surfaceContainerLow,
         dragHandle = dragHandle,
         content = {

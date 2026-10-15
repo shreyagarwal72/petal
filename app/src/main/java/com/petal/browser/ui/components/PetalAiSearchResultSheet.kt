@@ -109,11 +109,14 @@ object PetalAiSearchBridge {
                     val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
                     bottomSheet?.background = null
                     bottomSheet?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    val isLiquidGlass = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+                        .getBoolean("sp_liquid_glass_enabled", false)
+                    if (isLiquidGlass && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                         win.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                        win.attributes = win.attributes.apply {
-                            blurBehindRadius = 40
-                        }
+                        win.setBackgroundBlurRadius(36)
+                        win.setDimAmount(0.08f)
+                    } else {
+                        win.setDimAmount(0.35f)
                     }
                 }
             }
@@ -196,7 +199,7 @@ fun PetalAiSearchResultSheet(
         shape = sheetShape,
         color = if (isGlass) {
             val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-            MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (dark) 0.78f else 0.88f)
+            MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (dark) 0.35f else 0.45f)
         } else MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier
             .fillMaxWidth()
