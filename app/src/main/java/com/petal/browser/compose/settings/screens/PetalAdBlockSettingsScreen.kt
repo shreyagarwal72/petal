@@ -40,6 +40,8 @@ import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalMaterialAlertDialog
 import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -350,13 +352,13 @@ fun PetalAdBlockSettingsScreen(
                                     activeMode = mode
                                     PetalAdBlockEngine.setAdBlockMode(context, mode)
                                 }
-                                .com.petal.browser.ui.containment.liquidGlassChrome(
+                                .liquidGlassChrome(
                                     shape = cardShape,
                                     enabled = isGlass,
                                     sheenIntensity = sheen
                                 ),
                             colors = CardDefaults.cardColors(
-                                containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else cardColor
+                                containerColor = if (isGlass) petalGroupSurfaceColor() else cardColor
                             ),
                             border = if (!isGlass && isSelected) BorderStroke(2.dp, borderColor) else if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
                             shape = cardShape

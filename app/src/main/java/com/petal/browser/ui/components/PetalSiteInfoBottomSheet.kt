@@ -30,6 +30,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.view.PetalGeckoView
+import com.petal.browser.ui.glass.captureGlassWallpaper
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -121,7 +122,7 @@ fun PetalSiteInfoBottomSheet(
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .com.petal.browser.ui.glass.captureGlassWallpaper(wallpaper)
+                            .captureGlassWallpaper(wallpaper)
                     ) {
                         if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
                             Image(

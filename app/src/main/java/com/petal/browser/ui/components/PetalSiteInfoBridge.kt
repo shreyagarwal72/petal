@@ -78,7 +78,6 @@ object PetalSiteInfoBridge {
                     }
                 }
 
-                val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content)
                 if (rootView != null) {
                     rootView.addView(
                         composeView,
