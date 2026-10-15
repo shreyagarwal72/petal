@@ -283,12 +283,46 @@ fun PetalAdBlockSettingsScreen(
                 val activeListsCount = subscriptions.count { it.isEnabled }
 
                 PetalHeroCard(
-                    title = "Petal Shield Active",
-                    subtitle = "$totalBlocked ads & trackers blocked across $activeListsCount filter lists",
-                    icon = Icons.Rounded.Security,
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Security,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Petal Shield Active",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = "$totalBlocked ads & trackers blocked across $activeListsCount filter lists",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
 
                 // ── Protection Mode Selector (Brave Shields Style) ──
                 Text(
@@ -441,7 +475,7 @@ fun PetalAdBlockSettingsScreen(
                     // Individual subscription list items
                     subscriptions.forEachIndexed { index, sub ->
                         val position = when {
-                            subscriptions.size == 1 -> PetalGroupPosition.SOLO
+                            subscriptions.size == 1 -> PetalGroupPosition.SINGLE
                             index == 0 -> PetalGroupPosition.TOP
                             index == subscriptions.size - 1 -> PetalGroupPosition.BOTTOM
                             else -> PetalGroupPosition.MIDDLE
