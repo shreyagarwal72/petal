@@ -73,19 +73,19 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     val density = LocalDensity.current
     val dark = tint.luminance() < 0.5f
     val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
-    val themeGlass = prefs.getBoolean("sp_liquid_glass_enabled", false)
-    val opacity = if (themeGlass) prefs.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.20f, .95f) / .70f else 1f
-    val edge = if (themeGlass) prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f else 1f
+    val alphaPref = prefs.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.10f, .95f)
+    val opacity = if (themeGlass) (0.25f + alphaPref * 1.05f) else 1f
+    val edge = if (themeGlass) (prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f) else 1f
     // Liquid glass tint: authentic physical glass with pure light bending refraction,
     // beveled specular sheen, and clear optical depth.
     val look = with(density) {
-        val blur = 4.dp.toPx()
+        val blur = (2.5f + alphaPref * 4.5f).dp.toPx()
         val lensHeight = 12.dp.toPx()
         val lensAmount = 14.dp.toPx()
         // Ensure pad completely accommodates both blur and refraction displacement
         val pad = blur * 1.5f + lensAmount + 4.dp.toPx()
         GlassLook(
-            fill = tint.copy(alpha = ((if (dark) 0.18f else 0.22f) * opacity).coerceIn(0f, 1f)).argb(),
+            fill = tint.copy(alpha = ((if (dark) 0.12f else 0.16f) * opacity).coerceIn(0f, 0.94f)).argb(),
             specular = Color.White.copy(alpha = ((if (dark) 0.35f else 0.65f) * edge).coerceIn(0f, 1f)).argb(),
             rimTop = Color.White.copy(alpha = ((if (dark) 0.55f else 0.85f) * edge).coerceIn(0f, 1f)).argb(),
             rimBottom = Color.White.copy(alpha = ((if (dark) 0.12f else 0.30f) * edge).coerceIn(0f, 1f)).argb(),

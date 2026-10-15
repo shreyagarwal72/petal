@@ -129,25 +129,30 @@ fun Modifier.liquidGlassChrome(
     // Explicit sibling backdrop for headers; otherwise use the theme's shared wallpaper.
     // The caller keeps its container transparent when either source is available.
     backdrop: PetalBackdrop? = null,
-    isDark: Boolean = false
+    isDark: Boolean = false,
+    alphaOverride: Float? = null,
+    sheenOverride: Float? = null
 ): Modifier {
     if (!enabled) return this
     if (backdrop == null && LocalPetalGlassWallpaper.current?.ready == true) {
         LocalPetalGlassRevision.current
         val sp = PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
         val dark = MaterialTheme.colorScheme.background.luminance() < .5f
-        val opacity = sp.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.20f, .95f)
-        // Single unified premium material veil (harmonizing surface container with theme background)
-        val tint = MaterialTheme.colorScheme.surfaceContainerHigh
-        val sheen = sp.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f)
+        val opacity = (alphaOverride ?: sp.getFloat("sp_liquid_glass_alpha", .70f)).coerceIn(.10f, .95f)
+        val tint = if (tintColor != Color.Unspecified) tintColor else MaterialTheme.colorScheme.surfaceContainerHigh
+        val sheen = (sheenOverride ?: sp.getFloat("sp_liquid_glass_sheen", .60f)).coerceIn(0f, 1f)
+        // Authentic physical liquid glass: alpha directly modulates translucency vs opacity.
+        // At 0.10, glass is ultra-clear; at 0.95, it is milky dense frosted glass.
+        val baseAlpha = if (dark) 0.14f + (opacity * 0.40f) else 0.18f + (opacity * 0.50f)
         return this.petalGlassPanel(
             shape = shape,
-            tint = tint.copy(alpha = ((if (dark) .22f else .32f) * opacity / .70f).coerceIn(0f, 1f)),
-            edge = sheen / .60f
+            tint = tint.copy(alpha = baseAlpha.coerceIn(0f, 0.96f)),
+            edge = (sheen / 0.60f).coerceIn(0f, 2.5f)
         )
     }
+    val effectiveSheen = sheenOverride ?: sheenIntensity
     return this.petalRealGlass(backdrop, shape, isDark)
-        .liquidGlassSheen(shape, sheenIntensity, tintColor)
+        .liquidGlassSheen(shape, effectiveSheen, tintColor)
 }
 
 /** Specular highlight + rim stroke only (the original Petal "glass" look). */
@@ -202,8 +207,8 @@ fun petalGroupSurfaceColor(): Color {
     if (isGlass && LocalPetalGlassWallpaper.current?.ready == true) {
         return if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .45f) else Color.Transparent
     }
-    val glassAlpha = if (isGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f) else 1f
-    val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = glassAlpha * 0.40f)
+    val glassAlpha = if (isGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.10f, 0.95f) else 1f
+    val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = (0.10f + glassAlpha * 0.45f).coerceIn(0f, 0.95f))
 
     val target = when {
         LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)

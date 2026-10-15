@@ -997,72 +997,101 @@ fun AppearanceSettingsScreenContent(
                                     .padding(vertical = 4.dp),
                                 verticalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
+                                // Real-time local state so sliding immediately updates on this screen without lag or waiting for disk writes
+                                var liveAlpha by remember(liquidGlassAlpha) { mutableFloatStateOf(liquidGlassAlpha) }
+                                var liveSheen by remember(liquidGlassSheen) { mutableFloatStateOf(liquidGlassSheen) }
+
                                 // Live Liquid Glass Interactive Preview Card
                                 val previewShape = RoundedCornerShape(24.dp)
-                                val previewSheen = liquidGlassSheen
-                                val previewAlpha = liquidGlassAlpha
-                                val previewBaseColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = previewAlpha * 0.75f)
-                                Card(
-                                    shape = previewShape,
-                                    colors = CardDefaults.cardColors(containerColor = if (com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current?.ready == true) Color.Transparent else previewBaseColor),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                val previewBaseColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = (0.12f + liveAlpha * 0.40f).coerceIn(0f, 1f))
+                                
+                                // Vibrant backdrop container behind the glass card to demonstrate live refraction & translucency
+                                Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .liquidGlassChrome(
-                                            shape = previewShape,
-                                            enabled = true,
-                                            sheenIntensity = previewSheen
-                                        )
+                                        .clip(previewShape)
                                 ) {
-                                    Column(
+                                    // Colorful vivid multi-color gradient underneath to showcase light bending & transparency
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .background(
+                                                Brush.linearGradient(
+                                                    listOf(
+                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.40f),
+                                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f)
+                                                    )
+                                                )
+                                            )
+                                    )
+
+                                    Card(
+                                        shape = previewShape,
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current?.ready == true) Color.Transparent else previewBaseColor
+                                        ),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(18.dp),
-                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                            .liquidGlassChrome(
+                                                shape = previewShape,
+                                                enabled = true,
+                                                sheenIntensity = liveSheen,
+                                                alphaOverride = liveAlpha,
+                                                sheenOverride = liveSheen
+                                            )
                                     ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(18.dp),
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
                                         ) {
                                             Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(36.dp)
-                                                        .clip(CircleShape)
-                                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                                                    contentAlignment = Alignment.Center
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                                 ) {
-                                                    Icon(
-                                                        imageVector = Icons.Rounded.AutoAwesome,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.size(20.dp)
-                                                    )
-                                                }
-                                                Column {
-                                                    Text(
-                                                        text = "Liquid Glass Live Preview",
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                    Text(
-                                                        text = "Specular light refraction & chromatic rim",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(36.dp)
+                                                            .clip(CircleShape)
+                                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.AutoAwesome,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+                                                    Column {
+                                                        Text(
+                                                            text = "Liquid Glass Live Preview",
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                        Text(
+                                                            text = "Specular light refraction & chromatic rim",
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
                                                 }
                                             }
+                                            Text(
+                                                text = "Pure frosted glass material renders responsive chromatic edges and real-time alpha translucency over the active backdrop layer.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
-                                        Text(
-                                            text = "Pure frosted glass material renders responsive chromatic edges and real-time alpha translucency over the active backdrop layer.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
                                     }
                                 }
 
@@ -1079,15 +1108,18 @@ fun AppearanceSettingsScreenContent(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
-                                            text = "${Math.round(liquidGlassAlpha * 100)}%",
+                                            text = "${Math.round(liveAlpha * 100)}%",
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                     PetalSlider(
-                                        value = liquidGlassAlpha,
-                                        onValueChange = onLiquidGlassAlphaChange,
-                                        valueRange = 0.20f..0.95f,
+                                        value = liveAlpha,
+                                        onValueChange = {
+                                            liveAlpha = it
+                                            onLiquidGlassAlphaChange(it)
+                                        },
+                                        valueRange = 0.10f..0.95f,
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
@@ -1105,14 +1137,17 @@ fun AppearanceSettingsScreenContent(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
-                                            text = "${Math.round(liquidGlassSheen * 100)}%",
+                                            text = "${Math.round(liveSheen * 100)}%",
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                     PetalSlider(
-                                        value = liquidGlassSheen,
-                                        onValueChange = onLiquidGlassSheenChange,
+                                        value = liveSheen,
+                                        onValueChange = {
+                                            liveSheen = it
+                                            onLiquidGlassSheenChange(it)
+                                        },
                                         valueRange = 0f..1f,
                                         modifier = Modifier.fillMaxWidth()
                                     )

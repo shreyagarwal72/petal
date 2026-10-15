@@ -202,6 +202,46 @@ fun M3ExpressiveVariableBackground(
     var liquidGlassBgDim by remember { mutableFloatStateOf(sp.getFloat("sp_liquid_glass_bg_dim", 0.35f)) }
     var liquidGlassBgBlur by remember { mutableFloatStateOf(sp.getFloat("sp_liquid_glass_bg_blur", 16f)) }
 
+    var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
+    var shapeChangeMode by remember { mutableStateOf(sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS") } // "ALWAYS" or "PERIODIC"
+    var rotationMinutes by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) } // 1..60 min
+    var seedEpoch by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                "sp_liquid_glass_enabled" -> {
+                    isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+                }
+                "sp_liquid_glass_bg_mode" -> {
+                    liquidGlassBgMode = sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
+                }
+                "sp_liquid_glass_bg_image_uri" -> {
+                    liquidGlassImageUri = sp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
+                }
+                "sp_liquid_glass_bg_dim" -> {
+                    liquidGlassBgDim = sp.getFloat("sp_liquid_glass_bg_dim", 0.35f)
+                }
+                "sp_liquid_glass_bg_blur" -> {
+                    liquidGlassBgBlur = sp.getFloat("sp_liquid_glass_bg_blur", 16f)
+                }
+                "sp_expressive_bg_shapes" -> {
+                    isShapesEnabled = sp.getBoolean("sp_expressive_bg_shapes", true)
+                }
+                "sp_bg_shape_change_mode" -> {
+                    shapeChangeMode = sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS"
+                }
+                "sp_bg_shape_rotation_min" -> {
+                    rotationMinutes = sp.getInt("sp_bg_shape_rotation_min", 5)
+                }
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            sp.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+
     val isSettingsPage = remember(pageSeed) {
         pageSeed.endsWith("_settings") || pageSeed.endsWith("_hub") || pageSeed == "delete_page"
     }
@@ -269,45 +309,7 @@ fun M3ExpressiveVariableBackground(
         return
     }
 
-    var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
-    var shapeChangeMode by remember { mutableStateOf(sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS") } // "ALWAYS" or "PERIODIC"
-    var rotationMinutes by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) } // 1..60 min
-    var seedEpoch by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
-    DisposableEffect(sp) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            when (key) {
-                "sp_liquid_glass_enabled" -> {
-                    isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
-                }
-                "sp_liquid_glass_bg_mode" -> {
-                    liquidGlassBgMode = sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
-                }
-                "sp_liquid_glass_bg_image_uri" -> {
-                    liquidGlassImageUri = sp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
-                }
-                "sp_liquid_glass_bg_dim" -> {
-                    liquidGlassBgDim = sp.getFloat("sp_liquid_glass_bg_dim", 0.35f)
-                }
-                "sp_liquid_glass_bg_blur" -> {
-                    liquidGlassBgBlur = sp.getFloat("sp_liquid_glass_bg_blur", 16f)
-                }
-                "sp_expressive_bg_shapes" -> {
-                    isShapesEnabled = sp.getBoolean("sp_expressive_bg_shapes", true)
-                }
-                "sp_bg_shape_change_mode" -> {
-                    shapeChangeMode = sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS"
-                }
-                "sp_bg_shape_rotation_min" -> {
-                    rotationMinutes = sp.getInt("sp_bg_shape_rotation_min", 5)
-                }
-            }
-        }
-        sp.registerOnSharedPreferenceChangeListener(listener)
-        onDispose {
-            sp.unregisterOnSharedPreferenceChangeListener(listener)
-        }
-    }
 
     val isGlobalExpressiveEnabled = com.petal.browser.ui.theme.LocalExpressiveShapesEnabled.current
     if (!isShapesEnabled || !isGlobalExpressiveEnabled) return
