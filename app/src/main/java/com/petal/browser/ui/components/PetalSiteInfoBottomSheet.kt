@@ -103,6 +103,10 @@ fun PetalSiteInfoBottomSheet(
     val isDomainWhitelisted = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.isDomainWhitelisted(domain) }
     var trackingProtectionEnabled by remember(domain, isDomainWhitelisted) { mutableStateOf(!isDomainWhitelisted) }
     val blockedCount = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.getBlockedCountForDomain(domain) }
+    val initialDomainMode = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(context, domain) }
+    var siteShieldMode by remember(domain, initialDomainMode) {
+        mutableStateOf(if (initialDomainMode == com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE) com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE else com.petal.browser.browser.PetalAdBlockMode.STANDARD)
+    }
 
     com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismissRequest,
@@ -350,6 +354,39 @@ fun PetalSiteInfoBottomSheet(
                                 label = { Text(stringResource(R.string.ui_fingerprinters), fontSize = 11.sp) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Mode for this site:",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            FilterChip(
+                                selected = siteShieldMode == com.petal.browser.browser.PetalAdBlockMode.STANDARD,
+                                onClick = {
+                                    siteShieldMode = com.petal.browser.browser.PetalAdBlockMode.STANDARD
+                                    com.petal.browser.browser.PetalAdBlockEngine.setDomainOverride(context, domain, com.petal.browser.browser.PetalAdBlockMode.STANDARD)
+                                    geckoView?.reloadWithoutInit()
+                                },
+                                label = { Text("Standard", fontSize = 11.sp) },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            FilterChip(
+                                selected = siteShieldMode == com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE,
+                                onClick = {
+                                    siteShieldMode = com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE
+                                    com.petal.browser.browser.PetalAdBlockEngine.setDomainOverride(context, domain, com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE)
+                                    geckoView?.reloadWithoutInit()
+                                },
+                                label = { Text("Aggressive", fontSize = 11.sp) },
+                                shape = RoundedCornerShape(8.dp)
                             )
                         }
                     }

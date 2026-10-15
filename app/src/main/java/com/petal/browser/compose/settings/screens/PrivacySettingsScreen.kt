@@ -130,9 +130,21 @@ fun PrivacySettingsScreenContent(
 ) {
     val context = LocalContext.current
     var showPasswordsScreen by remember { mutableStateOf(false) }
+    var showAdBlockSettings by remember { mutableStateOf(false) }
     var showWhitelistDialog by remember { mutableStateOf(false) }
     var whitelistDomainInput by remember { mutableStateOf("") }
     var whitelistedDomainsState by remember { mutableStateOf(PetalAdBlockEngine.getWhitelistedDomains()) }
+
+    if (showAdBlockSettings) {
+        PetalAdBlockSettingsScreen(
+            onNavigateBack = {
+                showAdBlockSettings = false
+                whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
+            },
+            modifier = modifier
+        )
+        return
+    }
 
     if (showWhitelistDialog) {
         com.petal.browser.ui.containment.PetalMaterialAlertDialog(
@@ -264,11 +276,18 @@ fun PrivacySettingsScreenContent(
                     targetHighlightId = targetHighlightItemId,
                     onInfoClick = { showAdBlockExplainer = true }
                 ) {
+                    PetalGroupNavigationRow(
+                        title = "Shields & Filter Subscriptions",
+                        subtitle = "Brave modes, Cromite filter lists & custom rules",
+                        position = PetalGroupPosition.TOP,
+                        onClick = { showAdBlockSettings = true },
+                        leadingIcon = { Icon(Icons.Rounded.Shield, contentDescription = null) }
+                    )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_ad_tracker_shield),
                         subtitle = stringResource(R.string.ui_ublock_origin_adguard_grade_trie),
-                        icon = Icons.Rounded.Shield,
+                        icon = Icons.Rounded.VerifiedUser,
                         checked = adBlockEnabled,
                         onCheckedChange = { newValue ->
                             onAdBlockEnabledChange(newValue)

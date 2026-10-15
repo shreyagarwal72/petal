@@ -98,6 +98,9 @@ object PetalAdBlockEngine {
             val whitelistSet = sp.getStringSet("sp_adblock_whitelisted_domains", emptySet()) ?: emptySet()
             whitelistedDomains.addAll(whitelistSet)
 
+            // Initialize active filter subscriptions
+            PetalFilterSubscriptionManager.reloadActiveRules(appContext)
+
             isInitialized = true
         }
     }
@@ -111,21 +114,65 @@ object PetalAdBlockEngine {
     }
 
     @JvmStatic
-    fun isAdBlockEnabled(context: Context): Boolean {
+    fun getAdBlockMode(context: Context): PetalAdBlockMode {
         val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
-        return sp.getBoolean("sp_ad_block", true)
+        val isEnabled = sp.getBoolean("sp_ad_block", true)
+        if (!isEnabled) return PetalAdBlockMode.DISABLED
+        val modeStr = sp.getString("sp_adblock_protection_mode", PetalAdBlockMode.STANDARD.id)
+        return PetalAdBlockMode.fromId(modeStr)
     }
 
     @JvmStatic
-    fun setAdBlockEnabled(context: Context, enabled: Boolean) {
+    fun setAdBlockMode(context: Context, mode: PetalAdBlockMode) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
+        val isEnabled = mode != PetalAdBlockMode.DISABLED
         sp.edit()
-            .putBoolean("sp_ad_block", enabled)
-            .putBoolean("profileStandard_adBlock", enabled)
+            .putBoolean("sp_ad_block", isEnabled)
+            .putBoolean("profileStandard_adBlock", isEnabled)
+            .putString("sp_adblock_protection_mode", mode.id)
             .apply()
         try {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
         } catch (_: Throwable) {}
+    }
+
+    @JvmStatic
+    fun getDomainOverride(context: Context, domain: String?): PetalAdBlockMode? {
+        if (domain.isNullOrBlank()) return null
+        val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
+        val modeStr = sp.getString("sp_adblock_domain_mode_$cleanDomain", null) ?: return null
+        return PetalAdBlockMode.fromId(modeStr)
+    }
+
+    @JvmStatic
+    fun setDomainOverride(context: Context, domain: String, mode: PetalAdBlockMode?) {
+        if (domain.isBlank()) return
+        val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
+        if (mode == null) {
+            sp.edit().remove("sp_adblock_domain_mode_$cleanDomain").apply()
+        } else {
+            sp.edit().putString("sp_adblock_domain_mode_$cleanDomain", mode.id).apply()
+        }
+    }
+
+    @JvmStatic
+    fun getEffectiveMode(context: Context, domain: String?): PetalAdBlockMode {
+        if (domain != null && isDomainWhitelisted(domain)) return PetalAdBlockMode.DISABLED
+        val override = getDomainOverride(context, domain)
+        return override ?: getAdBlockMode(context)
+    }
+
+    @JvmStatic
+    fun isAdBlockEnabled(context: Context): Boolean {
+        return getAdBlockMode(context) != PetalAdBlockMode.DISABLED
+    }
+
+    @JvmStatic
+    fun setAdBlockEnabled(context: Context, enabled: Boolean) {
+        val targetMode = if (enabled) PetalAdBlockMode.STANDARD else PetalAdBlockMode.DISABLED
+        setAdBlockMode(context, targetMode)
     }
 
     @JvmStatic
@@ -159,13 +206,16 @@ object PetalAdBlockEngine {
 
     @JvmStatic
     fun shouldBlockUrl(context: Context, requestUrl: String, pageUrl: String? = null): Boolean {
-        if (!isAdBlockEnabled(context)) return false
         if (requestUrl.isBlank()) return false
+        val pageHost = try { Uri.parse(pageUrl ?: "").host ?: "" } catch (e: Exception) { "" }
+        val effectiveMode = getEffectiveMode(context, pageHost)
+        if (effectiveMode == PetalAdBlockMode.DISABLED) return false
 
-        // Check if top page URL is whitelisted
-        if (!pageUrl.isNullOrBlank()) {
-            val pageHost = try { Uri.parse(pageUrl).host ?: "" } catch (e: Exception) { "" }
-            if (isDomainWhitelisted(pageHost)) return false
+        // Check if request host is in active subscription lists (Cromite-style)
+        val requestHost = try { Uri.parse(requestUrl).host ?: "" } catch (e: Exception) { "" }
+        if (requestHost.isNotEmpty() && PetalFilterSubscriptionManager.isDomainInActiveSubscriptions(requestHost)) {
+            recordBlock(pageUrl)
+            return true
         }
 
         // 1. Petal ContentBlocker advanced rules & host indexes (EasyList, uAssets, HaGeZi)
@@ -186,8 +236,21 @@ object PetalAdBlockEngine {
         val trieBlocked = trieEngine.containsSubstring(requestUrl)
         if (trieBlocked) {
             recordBlock(pageUrl)
+            return true
         }
-        return trieBlocked
+
+        // 3. Aggressive mode extra heuristics (Brave-style strict blocking)
+        if (effectiveMode == PetalAdBlockMode.AGGRESSIVE) {
+            val lower = requestUrl.lowercase(Locale.US)
+            if (lower.contains("/telemetry") || lower.contains("/analytics") || 
+                lower.contains("/pixel") || lower.contains("/collect?") ||
+                lower.contains("cookie-banner") || lower.contains("consent.js")) {
+                recordBlock(pageUrl)
+                return true
+            }
+        }
+
+        return false
     }
 
     fun recordBlock(pageUrl: String?) {

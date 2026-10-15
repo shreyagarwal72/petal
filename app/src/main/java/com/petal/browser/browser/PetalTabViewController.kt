@@ -611,20 +611,23 @@ class PetalTabViewController private constructor(
         }
         session.toggleDesktopMode(desktopEnabled, reload = false)
 
-        val trackingProtectionEnabled = com.petal.browser.browser.PetalAdBlockEngine.isAdBlockEnabled(appContext) &&
-            (host.isNullOrBlank() || !com.petal.browser.browser.PetalAdBlockEngine.isDomainWhitelisted(host))
-        setTrackingProtection(trackingProtectionEnabled)
+        val effectiveMode = com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(appContext, host)
+        applyTrackingProtectionMode(effectiveMode)
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(preferences)
     }
 
+    fun applyTrackingProtectionMode(mode: com.petal.browser.browser.PetalAdBlockMode) {
+        val policy = when (mode) {
+            com.petal.browser.browser.PetalAdBlockMode.DISABLED -> EngineSession.TrackingProtectionPolicy.none()
+            com.petal.browser.browser.PetalAdBlockMode.STANDARD -> EngineSession.TrackingProtectionPolicy.recommended()
+            com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE -> EngineSession.TrackingProtectionPolicy.strict()
+        }
+        observedSession?.updateTrackingProtection(policy)
+    }
+
     fun setTrackingProtection(enabled: Boolean) {
-        observedSession?.updateTrackingProtection(
-            if (enabled) {
-                EngineSession.TrackingProtectionPolicy.strict()
-            } else {
-                EngineSession.TrackingProtectionPolicy.none()
-            }
-        )
+        val mode = if (enabled) com.petal.browser.browser.PetalAdBlockMode.STANDARD else com.petal.browser.browser.PetalAdBlockMode.DISABLED
+        applyTrackingProtectionMode(mode)
     }
 
     fun attachLifecycle(owner: LifecycleOwner) {
