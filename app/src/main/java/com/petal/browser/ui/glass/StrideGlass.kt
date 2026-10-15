@@ -86,7 +86,7 @@ class GlassBackdrop internal constructor(private val source: View) {
         for (bar in bars) bar.record()
     }
 
-    private fun recordSource(): Boolean {
+    internal fun recordSource(): Boolean {
         val w = source.width
         val h = source.height
         if (!source.isAttachedToWindow || w <= 0 || h <= 0) return false
@@ -242,6 +242,10 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
         val pad = look.pad
         val w = size.width
         val h = size.height
+
+        if (!backdrop.node.hasDisplayList()) {
+            backdrop.recordSource()
+        }
 
         val pw = ceil(w + 2 * pad).toInt()
         val ph = ceil(h + 2 * pad).toInt()

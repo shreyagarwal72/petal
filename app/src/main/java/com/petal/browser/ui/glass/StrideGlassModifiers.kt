@@ -105,8 +105,15 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
                 bar.record()
                 drawIntoCanvas { canvas ->
                     if (!bar.drawBar(canvas.nativeCanvas)) {
-                        // Software canvas or initial frame before backdrop records
-                        drawOutline(shape.createOutline(size, layoutDirection, this), tint.copy(alpha = 0.94f))
+                        drawOutline(shape.createOutline(size, layoutDirection, this), tint.copy(alpha = baseTintAlpha))
+                        val fallbackOutline = shape.createOutline(size, layoutDirection, this)
+                        val rimBrush = Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = ((if (dark) 0.55f else 0.85f) * baseEdge).coerceIn(0f, 1f)),
+                                Color.White.copy(alpha = ((if (dark) 0.12f else 0.30f) * baseEdge).coerceIn(0f, 1f))
+                            )
+                        )
+                        drawOutline(fallbackOutline, rimBrush, style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
                     }
                 }
             }

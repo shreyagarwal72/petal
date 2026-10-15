@@ -405,33 +405,62 @@ fun PetalOverflowMenuSheet(
         label = "MenuExpandAlpha"
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = handleDismiss
-            )
-            .padding(
-                top = if (isTopAddressBar) 68.dp else 40.dp,
-                end = 12.dp,
-                start = 12.dp,
-                bottom = if (isTopAddressBar) 40.dp else 72.dp
-            ),
-        contentAlignment = if (isTopAddressBar) Alignment.TopEnd else Alignment.BottomEnd
-    ) {
-        com.petal.browser.ui.containment.PetalHeroCard(
-            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val wallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
+
+    CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth(0.88f)
-                .widthIn(max = 350.dp)
+                .fillMaxSize()
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = {}
+                    onClick = handleDismiss
                 )
+        ) {
+            // Layer 0: Background source captured into PetalGlassWallpaper for lens refraction
+            if (isLiquidGlass) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .com.petal.browser.ui.glass.captureGlassWallpaper(wallpaper)
+                ) {
+                    if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
+                        Image(
+                            bitmap = snapshotBitmap.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.FillBounds
+                        )
+                    } else {
+                        com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        top = if (isTopAddressBar) 68.dp else 40.dp,
+                        end = 12.dp,
+                        start = 12.dp,
+                        bottom = if (isTopAddressBar) 40.dp else 72.dp
+                    ),
+                contentAlignment = if (isTopAddressBar) Alignment.TopEnd else Alignment.BottomEnd
+            ) {
+                com.petal.browser.ui.containment.PetalHeroCard(
+                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier
+                        .fillMaxWidth(0.88f)
+                        .widthIn(max = 350.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}
+                        )
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
@@ -778,6 +807,7 @@ fun PetalOverflowMenuSheet(
                 Spacer(Modifier.height(8.dp))
             }
         }
+    }
     }
 }
 

@@ -206,7 +206,7 @@ fun PetalBottomNavBar(
                 shape = navBarShape,
                 color = if (isLiquidGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainer,
                 tonalElevation = if (isLiquidGlass || isBottomAddressBar) 0.dp else 3.dp,
-                shadowElevation = if (isBottomAddressBar) 0.dp else 8.dp,
+                shadowElevation = if (isLiquidGlass || isBottomAddressBar) 0.dp else 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)

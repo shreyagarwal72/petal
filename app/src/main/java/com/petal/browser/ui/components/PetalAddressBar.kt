@@ -183,7 +183,7 @@ fun PetalAddressBar(
         shape = containerShape,
         color = effectiveContainerColor,
         tonalElevation = if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 2.dp else 4.dp,
-        shadowElevation = if (resolvedIsBottom) 4.dp else 4.dp,
+        shadowElevation = if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 4.dp else 4.dp,
         border = if (resolvedIsBottom && !isLiquidGlass) BorderStroke(0.65.dp, topBorderColor) else null,
         modifier = modifier
             .fillMaxWidth()

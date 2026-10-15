@@ -2834,10 +2834,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean isFloatingNavStyle = sp.getBoolean("sp_floating_tab_bar", true);
             boolean liquidGlassOn = sp.getBoolean("sp_liquid_glass_enabled", false) &&
                     (sp.getBoolean("sp_liquid_glass_bottom_nav", true) || (isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true)));
+            boolean liquidGlassTopOn = sp.getBoolean("sp_liquid_glass_enabled", false) &&
+                    (!isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true));
             int reservedNavHeight = (isFloatingNavStyle && !isBottom) ? 0 : bottomNavHeight;
             boolean reserveBarSpace = !isNonWebSurface;
-            int topInset = reserveBarSpace ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0;
-            // When liquid glass is enabled, allow web content to extend all the way to the bottom edge
+            int topInset = (reserveBarSpace && !liquidGlassTopOn) ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0;
+            // When liquid glass is enabled, allow web content to extend all the way to the edges
             // of the viewport so liquid glass can refract and blur the live webpage behind both bars.
             int bottomInset = (reserveBarSpace && !liquidGlassOn) ? (isBottom ? addressHeight + bottomNavHeight : reservedNavHeight)
                     : 0;
