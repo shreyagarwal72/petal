@@ -405,6 +405,9 @@ fun PetalOverflowMenuSheet(
         label = "MenuExpandAlpha"
     )
 
+    val wallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
+    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -413,21 +416,46 @@ fun PetalOverflowMenuSheet(
                 indication = null,
                 onClick = handleDismiss
             )
-            .padding(
-                top = if (isTopAddressBar) 68.dp else 40.dp,
-                end = 12.dp,
-                start = 12.dp,
-                bottom = if (isTopAddressBar) 40.dp else 72.dp
-            ),
-        contentAlignment = if (isTopAddressBar) Alignment.TopEnd else Alignment.BottomEnd
     ) {
-        com.petal.browser.ui.containment.PetalHeroCard(
-            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        // If Liquid Glass is enabled and a wallpaper is available, capture the screen snapshot
+        // into the frosted wallpaper graphicsLayer so PetalHeroCard refracts the real webpage/content.
+        if (wallpaper != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .com.petal.browser.ui.glass.captureGlassWallpaper(wallpaper)
+            ) {
+                if (snapshotBitmap != null) {
+                    androidx.compose.foundation.Image(
+                        bitmap = snapshotBitmap,
+                        contentDescription = null,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
+                }
+            }
+        }
+
+        Box(
             modifier = Modifier
-                .fillMaxWidth(0.88f)
-                .widthIn(max = 350.dp)
-                .clickable(
+                .fillMaxSize()
+                .padding(
+                    top = if (isTopAddressBar) 68.dp else 40.dp,
+                    end = 12.dp,
+                    start = 12.dp,
+                    bottom = if (isTopAddressBar) 40.dp else 72.dp
+                ),
+            contentAlignment = if (isTopAddressBar) Alignment.TopEnd else Alignment.BottomEnd
+        ) {
+            com.petal.browser.ui.containment.PetalHeroCard(
+                shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .fillMaxWidth(0.88f)
+                    .widthIn(max = 350.dp)
+                    .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {}

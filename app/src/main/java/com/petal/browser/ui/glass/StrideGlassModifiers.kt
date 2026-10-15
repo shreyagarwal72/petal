@@ -62,20 +62,20 @@ fun rememberGlassBar(source: View?): GlassBar? {
 fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     LocalPetalGlassRevision.current
     val wallpaper = LocalPetalGlassWallpaper.current
-    if (bar == null) {
-        if (wallpaper != null && wallpaper.ready) {
-            val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
-            val edge = prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f
-            return this.petalGlassPanel(shape, tint.copy(alpha = 0.45f), edge)
-        }
-        return this.clip(shape).background(tint.copy(alpha = 0.94f))
-    }
     val density = LocalDensity.current
     val dark = tint.luminance() < 0.5f
     val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
+    val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
     val alphaPref = prefs.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.10f, .95f)
     val opacity = if (themeGlass) (0.25f + alphaPref * 1.05f) else 1f
-    val edge = if (themeGlass) (prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f) else 1f
+    val baseEdge = if (themeGlass) (prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f) else 1f
+    val baseTintAlpha = ((if (dark) 0.12f else 0.16f) * opacity).coerceIn(0f, 0.94f)
+    if (bar == null) {
+        if (wallpaper != null && wallpaper.ready) {
+            return this.petalGlassPanel(shape, tint.copy(alpha = baseTintAlpha), baseEdge)
+        }
+        return this.clip(shape).background(tint.copy(alpha = 0.94f))
+    }
     // Liquid glass tint: authentic physical glass with pure light bending refraction,
     // beveled specular sheen, and clear optical depth.
     val look = with(density) {
@@ -85,10 +85,10 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
         // Ensure pad completely accommodates both blur and refraction displacement
         val pad = blur * 1.5f + lensAmount + 4.dp.toPx()
         GlassLook(
-            fill = tint.copy(alpha = ((if (dark) 0.12f else 0.16f) * opacity).coerceIn(0f, 0.94f)).argb(),
-            specular = Color.White.copy(alpha = ((if (dark) 0.35f else 0.65f) * edge).coerceIn(0f, 1f)).argb(),
-            rimTop = Color.White.copy(alpha = ((if (dark) 0.55f else 0.85f) * edge).coerceIn(0f, 1f)).argb(),
-            rimBottom = Color.White.copy(alpha = ((if (dark) 0.12f else 0.30f) * edge).coerceIn(0f, 1f)).argb(),
+            fill = tint.copy(alpha = baseTintAlpha).argb(),
+            specular = Color.White.copy(alpha = ((if (dark) 0.35f else 0.65f) * baseEdge).coerceIn(0f, 1f)).argb(),
+            rimTop = Color.White.copy(alpha = ((if (dark) 0.55f else 0.85f) * baseEdge).coerceIn(0f, 1f)).argb(),
+            rimBottom = Color.White.copy(alpha = ((if (dark) 0.12f else 0.30f) * baseEdge).coerceIn(0f, 1f)).argb(),
             blur = blur,
             lensHeight = lensHeight,
             lensAmount = lensAmount,
@@ -105,7 +105,7 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
                 bar.record()
                 drawIntoCanvas { canvas ->
                     if (!bar.drawBar(canvas.nativeCanvas)) {
-                        // First frame, before the backdrop exists, or a software canvas.
+                        // Software canvas or initial frame before backdrop records
                         drawOutline(shape.createOutline(size, layoutDirection, this), tint.copy(alpha = 0.94f))
                     }
                 }
