@@ -253,7 +253,8 @@ fun PetalAddressBar(
                 // Center: Flexible Width URL Text & Favicon / Security Chip (Firefox Android styled URL pill)
                 val urlBoxShape = RoundedCornerShape(20.dp)
                 val urlBoxBackground = if (resolvedIsBottom) {
-                    MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f)
+                    if (isLiquidGlass) MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.35f)
+                    else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f)
                 } else {
                     androidx.compose.ui.graphics.Color.Transparent
                 }

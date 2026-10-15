@@ -2832,10 +2832,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // When address bar is at the bottom, it docks flush right above the bottom nav (if visible) or parent bottom.
             // Reserved bottom padding for mainContent ensures webpage content sits flush above the bottom toolbar.
             boolean isFloatingNavStyle = sp.getBoolean("sp_floating_tab_bar", true);
+            boolean liquidGlassOn = sp.getBoolean("sp_liquid_glass_enabled", false) &&
+                    (sp.getBoolean("sp_liquid_glass_bottom_nav", true) || (isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true)));
             int reservedNavHeight = (isFloatingNavStyle && !isBottom) ? 0 : bottomNavHeight;
             boolean reserveBarSpace = !isNonWebSurface;
             int topInset = reserveBarSpace ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0;
-            int bottomInset = reserveBarSpace ? (isBottom ? addressHeight + bottomNavHeight : reservedNavHeight)
+            // When liquid glass is enabled, allow web content to extend all the way to the bottom edge
+            // of the viewport so liquid glass can refract and blur the live webpage behind both bars.
+            int bottomInset = (reserveBarSpace && !liquidGlassOn) ? (isBottom ? addressHeight + bottomNavHeight : reservedNavHeight)
                     : 0;
             mainContent.setPadding(0, topInset, 0, bottomInset);
 

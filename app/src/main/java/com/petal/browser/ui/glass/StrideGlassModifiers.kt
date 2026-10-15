@@ -76,17 +76,15 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     val themeGlass = prefs.getBoolean("sp_liquid_glass_enabled", false)
     val opacity = if (themeGlass) prefs.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.20f, .95f) / .70f else 1f
     val edge = if (themeGlass) prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f else 1f
-    // Stride's bar only ever floats over its own themed screens, so a breath of tint
-    // (14-20 %) is enough there. A browser's floats over any page — a white article in the
-    // dark theme washed its icons out — so the tint is heavier here; the blur, the bent rim
-    // and the lit edge still carry the glass.
+    // Liquid glass tint: balanced so icons stay legible over light or dark web pages,
+    // while keeping high translucency so live web content and background are vibrantly visible.
     val look = with(density) {
         val blur = 6.dp.toPx()
         GlassLook(
-            fill = tint.copy(alpha = ((if (dark) 0.5f else 0.55f) * opacity).coerceIn(0f, 1f)).argb(),
-            specular = Color.White.copy(alpha = ((if (dark) 0.22f else 0.55f) * edge).coerceIn(0f, 1f)).argb(),
-            rimTop = Color.White.copy(alpha = ((if (dark) 0.35f else 0.8f) * edge).coerceIn(0f, 1f)).argb(),
-            rimBottom = Color.White.copy(alpha = ((if (dark) 0.06f else 0.25f) * edge).coerceIn(0f, 1f)).argb(),
+            fill = tint.copy(alpha = ((if (dark) 0.28f else 0.32f) * opacity).coerceIn(0f, 1f)).argb(),
+            specular = Color.White.copy(alpha = ((if (dark) 0.25f else 0.55f) * edge).coerceIn(0f, 1f)).argb(),
+            rimTop = Color.White.copy(alpha = ((if (dark) 0.40f else 0.8f) * edge).coerceIn(0f, 1f)).argb(),
+            rimBottom = Color.White.copy(alpha = ((if (dark) 0.08f else 0.25f) * edge).coerceIn(0f, 1f)).argb(),
             blur = blur,
             lensHeight = 22.dp.toPx(),
             lensAmount = 36.dp.toPx(),

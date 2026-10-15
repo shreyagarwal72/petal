@@ -105,11 +105,12 @@ internal fun PetalStrideNavBar(
         label = "swipe_rubber_band"
     )
 
+    val isLiquidGlassActive = glassBar != null || themeGlass
     BoxWithConstraints(
         modifier = modifier
             .graphicsLayer { translationX = dragOffsetPx }
-            .shadow(12.dp, pill, clip = false)
-            .liquidGlass(pill, scheme.surfaceContainer, glassBar)
+            .then(if (!isLiquidGlassActive) Modifier.shadow(12.dp, pill, clip = false) else Modifier)
+            .liquidGlass(pill, scheme.surfaceContainerHigh, glassBar)
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
                     onDragStart = { isDragging = true },

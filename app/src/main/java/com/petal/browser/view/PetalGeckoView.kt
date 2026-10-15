@@ -626,7 +626,11 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     private val childHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)
-    val geckoView: GeckoView = SafeGeckoView(context)
+    val geckoView: GeckoView = SafeGeckoView(context).apply {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            com.petal.browser.ui.glass.GeckoGlassBackend.useTextureView(this)
+        }
+    }
     // The session mode is immutable after GeckoSession construction. Creating a normal
     // session and switching to private mode later is too late and can leak normal-profile
     // state into an Incognito tab, especially during cold startup.
