@@ -662,6 +662,16 @@ class PetalGeckoView @JvmOverloads constructor(
     private var tabGroupTitle: String? = null
     private var predecessor: AlbumController? = null
 
+    enum class SessionState {
+        UNINITIALIZED,
+        INITIALIZING,
+        READY,
+        DESTROYED
+    }
+
+    private var sessionState: SessionState = SessionState.UNINITIALIZED
+    private var pendingLoadUrl: String? = null
+
     private var currentUrl: String = "about:blank"
     var isAdoptedPopup: Boolean = false
     /**
@@ -716,6 +726,7 @@ class PetalGeckoView @JvmOverloads constructor(
             return
         }
         sessionInitializationStarted = true
+        sessionState = SessionState.INITIALIZING
 
         val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
         // GeckoSession.open() must only be invoked for a newly-created, unopened session.
@@ -1421,6 +1432,13 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         applySettings()
+        sessionState = SessionState.READY
+
+        val queuedUrl = pendingLoadUrl
+        if (!queuedUrl.isNullOrBlank()) {
+            pendingLoadUrl = null
+            loadUrl(queuedUrl)
+        }
     }
 
     /**
@@ -1619,6 +1637,15 @@ class PetalGeckoView @JvmOverloads constructor(
         if (engineSession != null) {
             engineSession.loadUrl(targetUrl)
         } else {
+            if (sessionState != SessionState.READY || !session.isOpen) {
+                // Queue the navigation request until GeckoSession initialization and attachment completes.
+                // Calling session.loadUri before session.open() or during unattached state silently drops requests.
+                pendingLoadUrl = targetUrl
+                if (!sessionInitializationStarted && PetalGeckoRuntime.isGeckoAvailable(context)) {
+                    initGeckoSession()
+                }
+                return
+            }
             applySettings()
             session.loadUri(targetUrl)
         }
@@ -2317,6 +2344,8 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     override fun destroy() {
+        sessionState = SessionState.DESTROYED
+        pendingLoadUrl = null
         stopLoading()
         try { session.setActive(false) } catch (_: Throwable) {}
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(session, null)

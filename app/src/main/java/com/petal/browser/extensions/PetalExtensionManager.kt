@@ -331,6 +331,9 @@ object PetalExtensionManager {
      * state/badges depending on the current website. */
     private val sessionActionByExtensionId = java.util.concurrent.ConcurrentHashMap<GeckoSession, MutableMap<String, WebExtension.Action>>()
 
+    /** All currently active/opened tab GeckoSessions registered with the extension manager. */
+    private val openSessions = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<GeckoSession, Boolean>())
+
     private fun rememberAction(extension: WebExtension, session: GeckoSession?, action: WebExtension.Action) {
         // GeckoView may deliver the action with the originating tab session. Keep the
         // per-session action authoritative so a stale action from another tab cannot be
@@ -567,9 +570,14 @@ object PetalExtensionManager {
      */
     private fun attachExtensionToOpenSessions(extension: WebExtension) {
         val ctx = appContext ?: return
+        val allSessions = mutableSetOf<GeckoSession>()
+        openSessions.filter { it.isOpen }.forEach { allSessions.add(it) }
+        openSessions.retainAll { it.isOpen }
         BrowserContainer.list().forEach { controller ->
-            val session = geckoSessionFor(controller) ?: return@forEach
-            if (!session.isOpen) return@forEach
+            val session = geckoSessionFor(controller)
+            if (session != null && session.isOpen) allSessions.add(session)
+        }
+        allSessions.forEach { session ->
             try {
                 session.webExtensionController.setActionDelegate(extension, object : WebExtension.ActionDelegate {
                     override fun onBrowserAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
@@ -652,6 +660,9 @@ object PetalExtensionManager {
     @JvmStatic
     fun attachSession(session: GeckoSession?) {
         if (session == null) return
+        if (session.isOpen) {
+            openSessions.add(session)
+        }
         val ctx = appContext ?: return
         for (extItem in _extensions.value) {
             val ext = extItem.raw

@@ -2472,11 +2472,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : (currentUrl != null && !currentUrl.isEmpty() ? currentUrl : albumSavedUrl);
 
                 if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl)) {
-                    // Fix #25: also call loadUrl if the GeckoView session has not yet rendered
-                    // (isStopped == true means the session engine is not running, i.e. cold-start
-                    // or never-displayed tab — onResume() alone won't load it in that case).
-                    if (currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl)
-                            || !currentUrl.equalsIgnoreCase(targetUrl) || geckoView.isStopped()) {
+                    // Only loadUrl if the tab is truly uninitialized, blank, or an explicit override URL was provided.
+                    // If the tab is already on targetUrl or actively loading, do not abort its network request mid-flight.
+                    boolean isDifferentTarget = overrideUrl != null && !overrideUrl.isEmpty() && !overrideUrl.equalsIgnoreCase(currentUrl);
+                    boolean isBlankOrEmpty = currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl);
+                    if (isBlankOrEmpty || isDifferentTarget) {
                         geckoView.loadUrl(targetUrl);
                     } else {
                         geckoView.onResume();
