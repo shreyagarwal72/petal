@@ -4,7 +4,9 @@ import com.petal.browser.ui.components.scrollMotionBlur
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -135,6 +137,15 @@ data class PetalTabItem(
     val groupId: String? = null,
     val groupTitle: String? = null,
     val groupColorHex: String? = null
+)
+
+/**
+ * Snapshot record of a closed tab pushed to the LIFO undo stack.
+ */
+data class ClosedTabEntry(
+    val tab: PetalTabItem,
+    val originalIndex: Int = -1,
+    val timestamp: Long = System.currentTimeMillis()
 )
 
 /**
@@ -320,7 +331,7 @@ fun PetalTabGridSwitcher(
     }
 
     val pendingRemovalIds = remember { mutableStateListOf<String>() }
-    val recentlyClosedBatch = remember { mutableStateListOf<PetalTabItem>() }
+    val undoStack = remember { mutableStateListOf<ClosedTabEntry>() }
     var isUndoBannerVisible by remember { mutableStateOf(false) }
     var undoBannerKey by remember { mutableLongStateOf(0L) }
     var newTabLaunchKey by remember { mutableLongStateOf(0L) }
@@ -335,27 +346,35 @@ fun PetalTabGridSwitcher(
         if (undoBannerKey > 0L && isUndoBannerVisible) {
             kotlinx.coroutines.delay(4500L)
             isUndoBannerVisible = false
-            recentlyClosedBatch.clear()
+            undoStack.clear()
         }
     }
 
     fun requestOptimisticClose(tab: PetalTabItem) {
         if (tab.id in pendingRemovalIds) return
+        val originalIndex = tabs.indexOfFirst { it.id == tab.id }.takeIf { it >= 0 } ?: tabs.size
         pendingRemovalIds.add(tab.id)
-        recentlyClosedBatch.add(tab)
+        undoStack.add(ClosedTabEntry(tab = tab, originalIndex = originalIndex))
         undoBannerKey = System.currentTimeMillis()
         isUndoBannerVisible = true
         onTabClose(tab)
     }
 
     fun undoClosedTabs() {
-        val toRestore = if (recentlyClosedBatch.isNotEmpty()) {
-            val list = recentlyClosedBatch.toList()
-            recentlyClosedBatch.clear()
-            list
+        if (undoStack.isNotEmpty()) {
+            val topEntry = undoStack.removeAt(undoStack.lastIndex)
+            pendingRemovalIds.remove(topEntry.tab.id)
+            onRestoreTab?.invoke(topEntry.tab)
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playClick(context)
+            if (undoStack.isNotEmpty()) {
+                undoBannerKey = System.currentTimeMillis()
+                isUndoBannerVisible = true
+            } else {
+                isUndoBannerVisible = false
+            }
         } else {
             PetalRecentlyClosedManager.popLastClosedTab()?.let { rec ->
-                listOf(PetalTabItem(
+                val restoredTab = PetalTabItem(
                     id = rec.id,
                     title = rec.title,
                     url = rec.url,
@@ -363,17 +382,12 @@ fun PetalTabGridSwitcher(
                     groupId = rec.groupId,
                     groupTitle = rec.groupTitle,
                     groupColorHex = rec.groupColorHex
-                ))
-            } ?: emptyList()
-        }
-
-        if (toRestore.isNotEmpty()) {
-            isUndoBannerVisible = false
-            toRestore.forEach { restoredTab ->
+                )
+                isUndoBannerVisible = false
                 pendingRemovalIds.remove(restoredTab.id)
                 onRestoreTab?.invoke(restoredTab)
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playClick(context)
             }
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playClick(context)
         }
     }
 
@@ -1199,16 +1213,16 @@ fun PetalTabGridSwitcher(
                 }
             }
 
-            // Floating Material 3 Expressive Undo Banner with slide-to-hide gesture and auto-grouping
+            // Floating Material 3 Expressive Undo Banner with slide-to-hide gesture and LIFO undo stack
+            val currentUndoEntry = undoStack.lastOrNull()
             ExpressiveTabUndoBanner(
-                visible = isUndoBannerVisible && recentlyClosedBatch.isNotEmpty() && !selectionMode,
-                initialTabTitle = recentlyClosedBatch.firstOrNull()?.title.orEmpty(),
-                totalClosedCount = recentlyClosedBatch.size,
+                visible = isUndoBannerVisible && currentUndoEntry != null && !selectionMode,
+                closedTab = currentUndoEntry?.tab,
                 accentColor = accentColor,
                 onUndo = { undoClosedTabs() },
                 onDismiss = {
                     isUndoBannerVisible = false
-                    recentlyClosedBatch.clear()
+                    undoStack.clear()
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -2585,15 +2599,16 @@ object PetalTabGridBridge {
 }
 
 /**
- * Material 3 Expressive Floating Tab Undo Banner with slide-to-hide (swipe dismiss) physics,
- * auto-grouping with the initial closed tab displayed first, fluid spring entrance/exit,
- * and bold action button.
+ * Material 3 Expressive Floating Tab Undo Banner modeled after Chromium.
+ * - Displays the most recently closed tab title with clean, compact typography.
+ * - Text-only "Undo" button (no icons).
+ * - Smooth vertical sliding crossfade between consecutive stacked items.
+ * - Liquid Glass container with swipe-to-dismiss gesture physics.
  */
 @Composable
 fun ExpressiveTabUndoBanner(
     visible: Boolean,
-    initialTabTitle: String,
-    totalClosedCount: Int,
+    closedTab: PetalTabItem?,
     accentColor: Color,
     onUndo: () -> Unit,
     onDismiss: () -> Unit,
@@ -2607,11 +2622,12 @@ fun ExpressiveTabUndoBanner(
     )
 
     AnimatedVisibility(
-        visible = visible,
-        enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn() + scaleIn(initialScale = 0.9f),
-        exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut() + scaleOut(targetScale = 0.9f),
+        visible = visible && closedTab != null,
+        enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn() + scaleIn(initialScale = 0.92f),
+        exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut() + scaleOut(targetScale = 0.92f),
         modifier = modifier
     ) {
+        val tabTitle = closedTab?.title.orEmpty().ifBlank { "Tab" }
         com.petal.browser.ui.containment.PetalFloatingToolbar(
             modifier = Modifier
                 .fillMaxWidth()
@@ -2634,65 +2650,46 @@ fun ExpressiveTabUndoBanner(
                     )
                 }
         ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    com.petal.browser.ui.containment.PetalGroupIconBadge(
-                        icon = Icons.Filled.Tab,
-                        container = MaterialTheme.colorScheme.secondaryContainer,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        size = 34.dp,
-                        iconSize = 18.dp
-                    )
-                    val displayText = if (totalClosedCount <= 1) {
-                        "Closed \"${initialTabTitle.ifBlank { "Tab" }}\""
-                    } else {
-                        val others = totalClosedCount - 1
-                        "Closed \"${initialTabTitle.ifBlank { "Tab" }}\" (+$others more)"
-                    }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 4.dp, end = 8.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                AnimatedContent(
+                    targetState = closedTab?.id.orEmpty(),
+                    transitionSpec = {
+                        (slideInVertically { height -> -height } + fadeIn())
+                            .togetherWith(slideOutVertically { height -> height } + fadeOut())
+                    },
+                    label = "tabUndoTextAnimation"
+                ) { _ ->
                     Text(
-                        text = displayText,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        text = "Closed $tabTitle",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+            }
 
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(
-                        onClick = onUndo,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = accentColor
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Undo,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.ui_undo),
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.ui_dismiss),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
+            TextButton(
+                onClick = onUndo,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = accentColor
+                ),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.ui_undo),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            }
         }
     }
 }
