@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.glass.captureGlassWallpaper
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -423,7 +424,7 @@ fun PetalOverflowMenuSheet(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .com.petal.browser.ui.glass.captureGlassWallpaper(wallpaper)
+                    .captureGlassWallpaper(wallpaper)
             ) {
                 if (snapshotBitmap != null) {
                     androidx.compose.foundation.Image(

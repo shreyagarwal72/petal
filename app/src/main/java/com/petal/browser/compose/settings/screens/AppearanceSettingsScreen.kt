@@ -1016,7 +1016,7 @@ fun AppearanceSettingsScreenContent(
                                         modifier = Modifier
                                             .matchParentSize()
                                             .background(
-                                                Brush.linearGradient(
+                                                androidx.compose.ui.graphics.Brush.linearGradient(
                                                     listOf(
                                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
                                                         MaterialTheme.colorScheme.tertiary.copy(alpha = 0.40f),
