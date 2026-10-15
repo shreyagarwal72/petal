@@ -809,6 +809,7 @@ fun PetalOverflowMenuSheet(
         }
     }
 }
+}
 
 @Composable
 private fun CircularIconButton(
