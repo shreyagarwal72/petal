@@ -321,19 +321,24 @@ fun PetalDialog(
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
 
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
-        Surface(
-            modifier = modifier
-                .fillMaxWidth(0.92f)
-                .wrapContentHeight()
-                .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
-            shape = shape,
-            color = if (isGlass) petalGroupSurfaceColor() else containerColor,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 0.dp,
-            shadowElevation = if (isGlass) 4.dp else 12.dp,
-            border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+        com.petal.browser.ui.glass.PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(0.92f).wrapContentHeight(),
+            enabled = isGlass
         ) {
-            Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
+            Surface(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
+                shape = shape,
+                color = if (isGlass) petalGroupSurfaceColor() else containerColor,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 0.dp,
+                shadowElevation = if (isGlass) 4.dp else 12.dp,
+                border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+            ) {
+                Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
+            }
         }
     }
 }

@@ -115,22 +115,40 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
     val place = remember { GlassPanelPlace() }
     val glass = rememberGraphicsLayer()
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
+    val glowPref = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
     return onGloballyPositioned { place.coords = it; place.origin = it.positionInRoot() }
         .drawWithCache {
             val outline = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawWithCache)) }
-            val lensHeight = 12.dp.toPx()
-            val lensAmount = 14.dp.toPx()
+            val lensHeight = 14.dp.toPx()
+            val lensAmount = 16.dp.toPx()
             val pad = lensAmount + 4.dp.toPx()
             val radii = cornerRadii(shape, size, layoutDirection, this)
             val effect = radii?.let { lensEffect(size, pad, it, lensHeight, lensAmount) }
             glass.renderEffect = effect?.asComposeRenderEffect()
-            val full = IntSize(ceil(size.width + 2 * pad).toInt().coerceAtLeast(1),
-                ceil(size.height + 2 * pad).toInt().coerceAtLeast(1))
-            val rim = Brush.verticalGradient(listOf(
-                Color.White.copy(alpha = ((if (dark) .3f else .75f) * edge).coerceIn(0f, 1f)),
-                Color.White.copy(alpha = ((if (dark) .05f else .2f) * edge).coerceIn(0f, 1f))))
-            val spec = Brush.verticalGradient(listOf(Color.White.copy(alpha = .22f * edge.coerceIn(0f, 1f)),
-                Color.Transparent), endY = 3.dp.toPx())
+            val full = IntSize(
+                ceil(size.width + 2 * pad).toInt().coerceAtLeast(1),
+                ceil(size.height + 2 * pad).toInt().coerceAtLeast(1)
+            )
+            // Chromatic dual-angle glowing rim reflecting theme primary accent and specular highlight
+            val rim = Brush.linearGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = ((if (dark) 0.50f else 0.85f) * edge).coerceIn(0f, 1f)),
+                    primaryColor.copy(alpha = ((if (dark) 0.35f else 0.45f) * edge * glowPref).coerceIn(0f, 1f)),
+                    Color.White.copy(alpha = ((if (dark) 0.08f else 0.20f) * edge).coerceIn(0f, 1f)),
+                    Color.White.copy(alpha = ((if (dark) 0.25f else 0.45f) * edge).coerceIn(0f, 1f))
+                ),
+                start = Offset.Zero,
+                end = Offset(size.width, size.height)
+            )
+            val spec = Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = (0.28f * edge).coerceIn(0f, 1f)),
+                    Color.Transparent
+                ),
+                endY = 4.dp.toPx()
+            )
             onDrawBehind {
                 val stored = place.origin
                 val origin = place.coords?.takeIf { it.isAttached }?.positionInRoot() ?: stored
@@ -145,7 +163,7 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
                     drawRect(if (Build.VERSION.SDK_INT < 31) tint.copy(alpha = .85f) else tint)
                     drawRect(spec)
                 }
-                drawPath(outline, rim, style = Stroke(2.dp.toPx()))
+                drawPath(outline, rim, style = Stroke((1.25.dp * (0.8f + edge * 0.4f)).toPx()))
             }
         }
 }
@@ -154,3 +172,46 @@ private class GlassPanelPlace {
     var coords: LayoutCoordinates? = null
     var origin by mutableStateOf(Offset.Zero)
 }
+
+/**
+ * Universal container for floating dialogs, bottom sheets, and popups that provides
+ * an authentic physical liquid glass backdrop. Captures the screen behind the dialog
+ * (via PetalContentSnapshot or procedural pattern) and supplies LocalPetalGlassWallpaper
+ * so petalGlassPanel activates its genuine AGSL lens refraction and dynamic glow rims.
+ */
+@Composable
+fun PetalGlassContainer(
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    if (!enabled) {
+        Box(modifier) { content() }
+        return
+    }
+    val wallpaper = rememberPetalGlassWallpaper()
+    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
+
+    CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
+        Box(modifier) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .captureGlassWallpaper(wallpaper)
+            ) {
+                if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
+                    androidx.compose.foundation.Image(
+                        bitmap = snapshotBitmap.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    PetalGlassPattern(Modifier.fillMaxSize())
+                }
+            }
+            content()
+        }
+    }
+}
+

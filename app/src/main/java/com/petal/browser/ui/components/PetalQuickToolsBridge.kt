@@ -146,17 +146,22 @@ object PetalQuickToolsBridge {
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
-                        PetalQuickToolsSheet(
-                            currentPageUrl = currentUrl,
-                            currentPageTitle = currentTitle,
-                            onToolClicked = { tool ->
-                                try { dialog.dismiss() } catch (_: Exception) {}
-                                handleToolClick(activity, currentController, currentUrl, currentTitle, tool)
-                            },
-                            onDismissRequest = {
-                                try { dialog.dismiss() } catch (_: Exception) {}
-                            }
-                        )
+                        com.petal.browser.ui.glass.PetalGlassContainer(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        ) {
+                            PetalQuickToolsSheet(
+                                currentPageUrl = currentUrl,
+                                currentPageTitle = currentTitle,
+                                onToolClicked = { tool ->
+                                    try { dialog.dismiss() } catch (_: Exception) {}
+                                    handleToolClick(activity, currentController, currentUrl, currentTitle, tool)
+                                },
+                                onDismissRequest = {
+                                    try { dialog.dismiss() } catch (_: Exception) {}
+                                }
+                            )
+                        }
                     }
                 }
             }

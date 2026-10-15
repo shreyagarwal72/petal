@@ -186,33 +186,40 @@ object PetalPrivacyShieldSheet {
                             colorStyle = colorStyle,
                             paletteId = paletteId
                         ) {
-                            Box(
+                            com.petal.browser.ui.glass.PetalGlassContainer(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .wrapContentHeight(),
-                                contentAlignment = Alignment.Center,
+                                enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                             ) {
-                                PrivacyShieldContent(
-                                    activity = activity,
-                                    domain = cleanHost.ifEmpty { "Current Website" },
-                                    pageUrl = pageUrl,
-                                    isHttps = isHttps,
-                                    blockedCount = blockedCount,
-                                    totalBlocked = totalBlocked,
-                                    onDismiss = { dialog.dismiss() },
-                                    onReloadRequested = {
-                                        if (activity is com.petal.browser.activity.BrowserActivity) {
-                                            val current = activity.currentAlbumController
-                                            if (current is com.petal.browser.browser.PetalTabViewController) {
-                                                current.reload()
-                                            } else if (current is com.petal.browser.view.PetalGeckoView) {
-                                                current.initPreferences(pageUrl)
-                                                current.reload()
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    PrivacyShieldContent(
+                                        activity = activity,
+                                        domain = cleanHost.ifEmpty { "Current Website" },
+                                        pageUrl = pageUrl,
+                                        isHttps = isHttps,
+                                        blockedCount = blockedCount,
+                                        totalBlocked = totalBlocked,
+                                        onDismiss = { dialog.dismiss() },
+                                        onReloadRequested = {
+                                            if (activity is com.petal.browser.activity.BrowserActivity) {
+                                                val current = activity.currentAlbumController
+                                                if (current is com.petal.browser.browser.PetalTabViewController) {
+                                                    current.reload()
+                                                } else if (current is com.petal.browser.view.PetalGeckoView) {
+                                                    current.initPreferences(pageUrl)
+                                                    current.reload()
+                                                }
                                             }
-                                        }
-                                    },
-                                    onToggleAdBlock = onToggleAdBlock
-                                )
+                                        },
+                                        onToggleAdBlock = onToggleAdBlock
+                                    )
+                                }
                             }
                         }
                     }
@@ -226,7 +233,7 @@ object PetalPrivacyShieldSheet {
                     )
                     window.setGravity(android.view.Gravity.CENTER)
                     window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                    window.setDimAmount(0.55f)
+                    window.setDimAmount(0.40f)
                 }
                 dialog.setCanceledOnTouchOutside(true)
                 dialog.show()

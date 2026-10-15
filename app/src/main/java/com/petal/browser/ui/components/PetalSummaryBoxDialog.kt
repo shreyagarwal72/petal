@@ -93,48 +93,52 @@ fun PetalSummaryBoxDialog(
     val dialogShape = RoundedCornerShape(28.dp)
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = dialogShape,
-            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = if (isGlass) 0.dp else 8.dp,
-            shadowElevation = if (isGlass) 4.dp else 12.dp,
+        com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-                .liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen)
+                .wrapContentHeight(),
+            enabled = isGlass
         ) {
-            Column(
+            Surface(
+                shape = dialogShape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = if (isGlass) 0.dp else 8.dp,
+                shadowElevation = if (isGlass) 4.dp else 12.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(horizontal = 4.dp)
+                    .liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen)
             ) {
-                // Expressive Header Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    // Expressive Header Row
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.50f) else Modifier)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.AutoAwesome,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Rounded.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
-                        }
                         Column {
                             Text(
                                 stringResource(R.string.ui_page_summary),
@@ -191,9 +195,7 @@ fun PetalSummaryBoxDialog(
                         Surface(
                             shape = errorCardShape,
                             color = MaterialTheme.colorScheme.errorContainer,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .then(if (isGlass) Modifier.liquidGlassChrome(errorCardShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(
                                 modifier = Modifier.padding(14.dp),
@@ -294,8 +296,7 @@ fun PetalSummaryBoxDialog(
                     Button(
                         onClick = onAskQuestion,
                         shape = askButtonShape,
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
-                        modifier = if (isGlass) Modifier.liquidGlassChrome(askButtonShape, enabled = true, sheenIntensity = 0.50f) else Modifier
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
                     ) {
                         Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))

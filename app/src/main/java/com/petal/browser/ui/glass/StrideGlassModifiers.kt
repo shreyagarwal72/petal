@@ -107,13 +107,17 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
                     if (!bar.drawBar(canvas.nativeCanvas)) {
                         drawOutline(shape.createOutline(size, layoutDirection, this), tint.copy(alpha = baseTintAlpha))
                         val fallbackOutline = shape.createOutline(size, layoutDirection, this)
-                        val rimBrush = Brush.verticalGradient(
+                        val rimBrush = Brush.linearGradient(
                             listOf(
                                 Color.White.copy(alpha = ((if (dark) 0.55f else 0.85f) * baseEdge).coerceIn(0f, 1f)),
-                                Color.White.copy(alpha = ((if (dark) 0.12f else 0.30f) * baseEdge).coerceIn(0f, 1f))
-                            )
+                                tint.copy(alpha = ((if (dark) 0.35f else 0.50f) * baseEdge).coerceIn(0f, 1f)),
+                                Color.White.copy(alpha = ((if (dark) 0.10f else 0.20f) * baseEdge).coerceIn(0f, 1f)),
+                                Color.White.copy(alpha = ((if (dark) 0.25f else 0.40f) * baseEdge).coerceIn(0f, 1f))
+                            ),
+                            start = androidx.compose.ui.geometry.Offset.Zero,
+                            end = androidx.compose.ui.geometry.Offset(size.width, size.height)
                         )
-                        drawOutline(fallbackOutline, rimBrush, style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
+                        drawOutline(fallbackOutline, rimBrush, style = androidx.compose.ui.graphics.drawscope.Stroke((1.25.dp * (0.8f + baseEdge * 0.4f)).toPx()))
                     }
                 }
             }
