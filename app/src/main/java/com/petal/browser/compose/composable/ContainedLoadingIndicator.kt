@@ -119,7 +119,10 @@ fun PetalContainedLoadingIndicator(
             }
         }
 
-        val glassContainer = petalGroupSurfaceColor()
+        // When Liquid Glass is ON: follow SimpMusic's container & indicator colors (surfaceContainerHighest & onSurfaceVariant)
+        // with liquid glass chrome, instead of Material You / primary colors
+        val glassContainer = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f)
+        val glassIndicator = MaterialTheme.colorScheme.onSurfaceVariant
         val currentShape = containerShape.toShape()
 
         Crossfade(
@@ -134,7 +137,7 @@ fun PetalContainedLoadingIndicator(
                     .liquidGlassChrome(shape = shape, enabled = true),
                 polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons,
                 containerColor = glassContainer,
-                indicatorColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = glassIndicator,
                 containerShape = shape
             )
         }
