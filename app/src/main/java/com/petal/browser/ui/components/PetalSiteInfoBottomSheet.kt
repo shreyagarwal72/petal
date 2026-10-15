@@ -108,14 +108,39 @@ fun PetalSiteInfoBottomSheet(
         mutableStateOf(if (initialDomainMode == com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE) com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE else com.petal.browser.browser.PetalAdBlockMode.STANDARD)
     }
 
-    com.petal.browser.ui.containment.PetalSheet(
-        onDismissRequest = onDismissRequest,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 4.dp)
+    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val wallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
+
+    CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper) {
+        com.petal.browser.ui.containment.PetalSheet(
+            onDismissRequest = onDismissRequest,
         ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                if (isLiquidGlass) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .com.petal.browser.ui.glass.captureGlassWallpaper(wallpaper)
+                    ) {
+                        if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
+                            Image(
+                                bitmap = snapshotBitmap.asImageBitmap(),
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                        } else {
+                            com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 4.dp)
+                ) {
             // --- Domain & Security Header ---
             com.petal.browser.ui.containment.PetalHeroCard(
                 shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
@@ -682,6 +707,8 @@ fun PetalSiteInfoBottomSheet(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
+                }
+            }
         }
     }
 }

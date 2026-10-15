@@ -59,6 +59,10 @@ fun PetalAdBlockSettingsScreen(
     var isUpdatingLists by remember { mutableStateOf(false) }
     var updateProgressText by remember { mutableStateOf("") }
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
     var showAddCustomListDialog by remember { mutableStateOf(false) }
     var customListNameInput by remember { mutableStateOf("") }
     var customListUrlInput by remember { mutableStateOf("") }
@@ -302,18 +306,26 @@ fun PetalAdBlockSettingsScreen(
                         } else {
                             Pair(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), Color.Transparent)
                         }
+                        val cardShape = RoundedCornerShape(16.dp)
 
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(cardShape)
                                 .clickable {
                                     activeMode = mode
                                     PetalAdBlockEngine.setAdBlockMode(context, mode)
-                                },
-                            colors = CardDefaults.cardColors(containerColor = cardColor),
-                            border = if (isSelected) BorderStroke(2.dp, borderColor) else null,
-                            shape = RoundedCornerShape(16.dp)
+                                }
+                                .com.petal.browser.ui.containment.liquidGlassChrome(
+                                    shape = cardShape,
+                                    enabled = isGlass,
+                                    sheenIntensity = sheen
+                                ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else cardColor
+                            ),
+                            border = if (!isGlass && isSelected) BorderStroke(2.dp, borderColor) else if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                            shape = cardShape
                         ) {
                             Row(
                                 modifier = Modifier

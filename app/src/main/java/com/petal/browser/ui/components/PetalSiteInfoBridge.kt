@@ -24,6 +24,10 @@ object PetalSiteInfoBridge {
     ) {
         activity.runOnUiThread {
             try {
+                val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content)
+                if (rootView != null) {
+                    com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+                }
                 var composeView: ComposeView? = null
                 composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
@@ -31,6 +35,11 @@ object PetalSiteInfoBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                     setContent {
+                        DisposableEffect(Unit) {
+                            onDispose {
+                                com.petal.browser.predictive.PetalContentSnapshot.clear()
+                            }
+                        }
                         val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                         val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
