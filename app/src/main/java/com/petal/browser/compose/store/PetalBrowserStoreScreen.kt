@@ -60,8 +60,7 @@ import kotlinx.coroutines.launch
  *   PetalGroupListRow, PetalConnectedButtonGroup, PetalGroupIconBadge).
  * - Tab 0: Add-ons (Curated Firefox WebExtensions from AMO with 1-tap install)
  * - Tab 1: Petal Scripts (Verified Userscripts with SHA-256 integrity verification)
- * - Tab 2: Search Engines (Curated privacy search engines with 1-tap set default)
- * - Tab 3: Filter Lists (AdBlock & Tracker Shield blocklist subscriptions)
+ * - Tab 2: Filter Lists (AdBlock & Tracker Shield blocklist subscriptions)
  */
 object PetalBrowserStoreBridge {
     @JvmStatic
@@ -131,10 +130,6 @@ fun PetalBrowserStoreScreen(
 
     var installedScriptIds by remember { mutableStateOf(PetalStoreCatalog.getInstalledScriptIds(context)) }
     var subscribedFilterIds by remember { mutableStateOf(PetalStoreCatalog.getSubscribedFilterListIds(context)) }
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    var currentDefaultEngineIndex by remember {
-        mutableIntStateOf(sp.getString("sp_search_engine", "0")?.toIntOrNull() ?: 0)
-    }
 
     LaunchedEffect(Unit) {
         PetalExtensionManager.attach(context)
@@ -145,8 +140,7 @@ fun PetalBrowserStoreScreen(
         listOf(
             com.petal.browser.ui.components.PetalButtonGroupItem(0, "Add-ons", icon = Icons.Rounded.Extension),
             com.petal.browser.ui.components.PetalButtonGroupItem(1, "Scripts", icon = Icons.Rounded.Code),
-            com.petal.browser.ui.components.PetalButtonGroupItem(2, "Search", icon = Icons.Rounded.Search),
-            com.petal.browser.ui.components.PetalButtonGroupItem(3, "Filters", icon = Icons.Rounded.Shield)
+            com.petal.browser.ui.components.PetalButtonGroupItem(2, "Filters", icon = Icons.Rounded.Shield)
         )
     }
 
@@ -259,19 +253,7 @@ fun PetalBrowserStoreScreen(
                                             }
                                         }
                                     )
-                                    2 -> StoreSearchEnginesPage(
-                                        searchQuery = searchQuery,
-                                        defaultEngineIndex = currentDefaultEngineIndex,
-                                        onSetDefaultEngine = { engine ->
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
-                                            sp.edit().putString("sp_search_engine", engine.id.toString()).apply()
-                                            currentDefaultEngineIndex = engine.id
-                                            coroutineScope.launch {
-                                                snackbarHostState.showSnackbar("Set default search engine to ${engine.name}")
-                                            }
-                                        }
-                                    )
-                                    3 -> StoreFilterListsPage(
+                                    2 -> StoreFilterListsPage(
                                         searchQuery = searchQuery,
                                         subscribedFilterIds = subscribedFilterIds,
                                         onToggleFilterList = { filter, subscribe ->
@@ -285,6 +267,8 @@ fun PetalBrowserStoreScreen(
                                             }
                                         }
                                     )
+                                    else -> {}
+                                }
                                 }
                             }
                         }
@@ -721,152 +705,7 @@ private fun StoreScriptsPage(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Subpage 3: Search Engines
-// ─────────────────────────────────────────────────────────────────────────────
-@Composable
-private fun StoreSearchEnginesPage(
-    searchQuery: String,
-    defaultEngineIndex: Int,
-    onSetDefaultEngine: (PetalStoreCatalog.StoreSearchEngine) -> Unit
-) {
-    val filteredEngines = remember(searchQuery) {
-        PetalStoreCatalog.storeSearchEngines.filter { engine ->
-            searchQuery.isBlank() ||
-                engine.name.contains(searchQuery, ignoreCase = true) ||
-                engine.description.contains(searchQuery, ignoreCase = true)
-        }
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            end = 16.dp,
-            top = 8.dp,
-            bottom = 32.dp
-        ),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            PetalHeroCard(
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    PetalGroupIconBadge(
-                        icon = Icons.Rounded.Search,
-                        variant = PetalBadgeVariant.TERTIARY,
-                        size = 48.dp,
-                        iconSize = 26.dp,
-                        shape = PetalMaterialShapes.Bun.toShape()
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Privacy Search Hub",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                        Text(
-                            text = stringResource(R.string.ui_store_search_catalog_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-
-        item {
-            PetalSettingsSection(
-                title = "Independent Search Engines",
-                icon = Icons.Rounded.TravelExplore
-            ) {
-                if (filteredEngines.isEmpty()) {
-                    StoreEmptyStateCard(
-                        message = "No matching search engines found",
-                        icon = Icons.Rounded.SearchOff
-                    )
-                } else {
-                    filteredEngines.forEachIndexed { index, engine ->
-                        val isDefault = defaultEngineIndex == engine.id
-                        val position = petalGroupPositionFor(index, filteredEngines.size)
-
-                        PetalGroupListRow(
-                            position = position,
-                            selected = isDefault,
-                            onClick = { onSetDefaultEngine(engine) },
-                            leading = {
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(RoundedCornerShape(14.dp))
-                                        .background(if (isDefault) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.TravelExplore,
-                                        contentDescription = null,
-                                        tint = if (isDefault) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            },
-                            content = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = engine.name,
-                                        fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f, fill = false)
-                                    )
-                                    Surface(
-                                        shape = RoundedCornerShape(50),
-                                        color = MaterialTheme.colorScheme.secondaryContainer
-                                    ) {
-                                        Text(
-                                            text = "Privacy: ${engine.privacyScore}",
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                                Text(
-                                    text = engine.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            },
-                            trailing = {
-                                RadioButton(
-                                    selected = isDefault,
-                                    onClick = { onSetDefaultEngine(engine) }
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Subpage 4: Filter Lists
+// Subpage 3: Filter Lists
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun StoreFilterListsPage(

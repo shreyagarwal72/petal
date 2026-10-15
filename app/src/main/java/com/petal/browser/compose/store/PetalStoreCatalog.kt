@@ -12,8 +12,7 @@ import java.security.MessageDigest
  * Unified catalog and persistence layer for the Petal Browser Store:
  * 1. Curated AMO Add-ons (Firefox WebExtensions)
  * 2. Verified Client Userscripts (with SHA-256 integrity verification)
- * 3. Curated Privacy Search Engines
- * 4. Filter List Subscriptions (AdBlock & Tracker Shield)
+ * 3. Filter List Subscriptions (AdBlock, Privacy & Tracker Shield)
  */
 object PetalStoreCatalog {
 
@@ -52,6 +51,15 @@ object PetalStoreCatalog {
             downloads = "7M+"
         ),
         StoreAddon(
+            id = "darkreader",
+            name = "Dark Reader",
+            description = "Dark mode for every website. Invert colors with eye-pleasing high-contrast dark theme presets and brightness controls.",
+            amoSlug = "darkreader",
+            category = AddonCategory.TOOLS,
+            rating = 4.8f,
+            downloads = "5M+"
+        ),
+        StoreAddon(
             id = "privacy-badger17",
             name = "Privacy Badger",
             description = "EFF's smart privacy protector. Automatically learns to block invisible tracking scripts as you browse.",
@@ -70,13 +78,31 @@ object PetalStoreCatalog {
             downloads = "500K+"
         ),
         StoreAddon(
+            id = "bitwarden-password-manager",
+            name = "Bitwarden Password Manager",
+            description = "Secure open-source password manager vault with auto-fill support for web logins and two-factor codes.",
+            amoSlug = "bitwarden-password-manager",
+            category = AddonCategory.PRIVACY,
+            rating = 4.9f,
+            downloads = "3M+"
+        ),
+        StoreAddon(
             id = "traduzir-paginas-web",
-            name = "Translate Web Pages",
+            name = "Translate Web Pages (TWP)",
             description = "Translates entire web pages in real-time using Google Translate or DeepL without reloading.",
             amoSlug = "traduzir-paginas-web",
             category = AddonCategory.TOOLS,
             rating = 4.7f,
             downloads = "900K+"
+        ),
+        StoreAddon(
+            id = "tampermonkey",
+            name = "Tampermonkey",
+            description = "The world's most popular userscript manager. Run custom JS scripts across your favorite websites effortlessly.",
+            amoSlug = "tampermonkey",
+            category = AddonCategory.TOOLS,
+            rating = 4.7f,
+            downloads = "10M+"
         ),
         StoreAddon(
             id = "clearurls",
@@ -90,7 +116,7 @@ object PetalStoreCatalog {
         StoreAddon(
             id = "violentmonkey",
             name = "Violentmonkey",
-            description = "Lightweight userscript runner supporting Tampermonkey and Greasemonkey scripts seamlessly.",
+            description = "Lightweight open-source userscript runner supporting Tampermonkey and Greasemonkey scripts seamlessly.",
             amoSlug = "violentmonkey",
             category = AddonCategory.TOOLS,
             rating = 4.8f,
@@ -106,28 +132,28 @@ object PetalStoreCatalog {
             downloads = "800K+"
         ),
         StoreAddon(
-            id = "bitwarden-password-manager",
-            name = "Bitwarden",
-            description = "Secure open-source password manager vault with auto-fill support for web logins.",
-            amoSlug = "bitwarden-password-manager",
-            category = AddonCategory.PRIVACY,
-            rating = 4.9f,
-            downloads = "3M+"
-        ),
-        StoreAddon(
-            id = "proton-pass",
-            name = "Proton Pass",
-            description = "End-to-end encrypted password and email alias manager developed by the Proton team.",
-            amoSlug = "proton-pass",
-            category = AddonCategory.PRIVACY,
+            id = "return-youtube-dislikes",
+            name = "Return YouTube Dislike",
+            description = "Restores the ability to see dislike counts on YouTube videos using crowd-sourced API data.",
+            amoSlug = "return-youtube-dislikes",
+            category = AddonCategory.MEDIA,
             rating = 4.8f,
-            downloads = "200K+"
+            downloads = "1M+"
         ),
         StoreAddon(
-            id = "keepassxc-browser",
-            name = "KeePassXC-Browser",
-            description = "Official browser extension connecting Petal to local KeePassXC databases securely.",
-            amoSlug = "keepassxc-browser",
+            id = "youtube-recommended-videos",
+            name = "Unhook - Remove YouTube Recommendations",
+            description = "Focus mode for YouTube: hides recommendation feed, sidebar comments, and trending distractions.",
+            amoSlug = "youtube-recommended-videos",
+            category = AddonCategory.MEDIA,
+            rating = 4.9f,
+            downloads = "600K+"
+        ),
+        StoreAddon(
+            id = "cookie-autodelete",
+            name = "Cookie AutoDelete",
+            description = "Automatically deletes unused cookies and local storage when closing a tab to prevent long-term tracking.",
+            amoSlug = "cookie-autodelete",
             category = AddonCategory.PRIVACY,
             rating = 4.6f,
             downloads = "350K+"
@@ -160,6 +186,24 @@ object PetalStoreCatalog {
             downloads = "4M+"
         ),
         StoreAddon(
+            id = "proton-pass",
+            name = "Proton Pass",
+            description = "End-to-end encrypted password and email alias manager developed by the Proton team.",
+            amoSlug = "proton-pass",
+            category = AddonCategory.PRIVACY,
+            rating = 4.8f,
+            downloads = "200K+"
+        ),
+        StoreAddon(
+            id = "keepassxc-browser",
+            name = "KeePassXC-Browser",
+            description = "Official browser extension connecting Petal to local KeePassXC databases securely.",
+            amoSlug = "keepassxc-browser",
+            category = AddonCategory.PRIVACY,
+            rating = 4.6f,
+            downloads = "350K+"
+        ),
+        StoreAddon(
             id = "video-background-play-fix",
             name = "Video Background Play Fix",
             description = "Prevents YouTube and HTML5 videos from pausing when switching tabs or turning off the screen.",
@@ -187,6 +231,15 @@ object PetalStoreCatalog {
             downloads = "1.2M+"
         ),
         StoreAddon(
+            id = "user-agent-string-switcher",
+            name = "User-Agent Switcher",
+            description = "Spoofs browser user agent strings to access desktop sites or alternate browser views easily.",
+            amoSlug = "user-agent-string-switcher",
+            category = AddonCategory.TOOLS,
+            rating = 4.6f,
+            downloads = "500K+"
+        ),
+        StoreAddon(
             id = "search_by_image",
             name = "Search by Image",
             description = "Reverse image search helper supporting Google, Bing, Yandex, TinEye, and Baidu.",
@@ -212,6 +265,15 @@ object PetalStoreCatalog {
             category = AddonCategory.TOOLS,
             rating = 4.9f,
             downloads = "250K+"
+        ),
+        StoreAddon(
+            id = "leechblock-ng",
+            name = "LeechBlock NG",
+            description = "Simple yet powerful productivity tool designed to block time-wasting sites on customizable schedules.",
+            amoSlug = "leechblock-ng",
+            category = AddonCategory.TOOLS,
+            rating = 4.7f,
+            downloads = "200K+"
         )
     )
 
@@ -274,11 +336,39 @@ object PetalStoreCatalog {
             """.trimIndent()
         ),
         createVerifiedScript(
+            id = "petal-dont-track-me-google",
+            name = "Don't Track Me Google",
+            author = "Petal Verified",
+            version = "2.1.0",
+            description = "Removes ugly and privacy-invasive Google Search result tracking redirects (/url?q=...).",
+            matchPattern = "*://*.google.*/*",
+            scriptContent = """
+                (function() {
+                    'use strict';
+                    const cleanLinks = () => {
+                        document.querySelectorAll('a[href*="/url?"]').forEach(a => {
+                            try {
+                                const url = new URL(a.href);
+                                const real = url.searchParams.get('url') || url.searchParams.get('q');
+                                if (real) {
+                                    a.href = real;
+                                    a.removeAttribute('data-ved');
+                                    a.removeAttribute('ping');
+                                }
+                            } catch (_) {}
+                        });
+                    };
+                    document.addEventListener('DOMContentLoaded', cleanLinks);
+                    setInterval(cleanLinks, 1500);
+                })();
+            """.trimIndent()
+        ),
+        createVerifiedScript(
             id = "petal-clean-redirects",
             name = "Clean Outgoing Redirects",
             author = "Petal Verified",
             version = "1.1.2",
-            description = "Bypasses intermediary redirect landing pages (Google, Facebook, Steam, Reddit) and visits destination URLs directly.",
+            description = "Bypasses intermediary redirect landing pages (Facebook, Steam, Twitter, Reddit) and visits destination URLs directly.",
             matchPattern = "*://*/*",
             scriptContent = """
                 (function() {
@@ -286,12 +376,16 @@ object PetalStoreCatalog {
                     document.addEventListener('click', (e) => {
                         const anchor = e.target.closest('a');
                         if (!anchor || !anchor.href) return;
-                        const url = new URL(anchor.href, window.location.href);
-                        if (url.searchParams.has('url')) {
-                            anchor.href = url.searchParams.get('url');
-                        } else if (url.searchParams.has('q') && url.pathname.includes('/url')) {
-                            anchor.href = url.searchParams.get('q');
-                        }
+                        try {
+                            const url = new URL(anchor.href, window.location.href);
+                            if (url.searchParams.has('url')) {
+                                anchor.href = url.searchParams.get('url');
+                            } else if (url.searchParams.has('q') && url.pathname.includes('/url')) {
+                                anchor.href = url.searchParams.get('q');
+                            } else if (url.searchParams.has('dest')) {
+                                anchor.href = url.searchParams.get('dest');
+                            }
+                        } catch (_) {}
                     }, true);
                 })();
             """.trimIndent()
@@ -314,6 +408,43 @@ object PetalStoreCatalog {
                     setInterval(restoreScroll, 1000);
                 })();
             """.trimIndent()
+        ),
+        createVerifiedScript(
+            id = "petal-auto-bypass-shorteners",
+            name = "Auto-Bypass Shorteners & Timers",
+            author = "Petal Verified",
+            version = "1.5.0",
+            description = "Automatically accelerates wait timers and reveals direct download links on link shorteners.",
+            matchPattern = "*://*/*",
+            scriptContent = """
+                (function() {
+                    'use strict';
+                    window.addEventListener('DOMContentLoaded', () => {
+                        ['countdown', 'timer', 'timer-count', 'seconds'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) el.innerText = '0';
+                        });
+                        const btn = document.querySelector('.btn-captcha, #btn-main, .get-link');
+                        if (btn && !btn.disabled) btn.click();
+                    });
+                })();
+            """.trimIndent()
+        ),
+        createVerifiedScript(
+            id = "petal-github-mobile-wrap",
+            name = "GitHub Mobile Code Wrap",
+            author = "Petal Verified",
+            version = "1.0.2",
+            description = "Wraps horizontal overflowing code blocks on mobile GitHub so you don't need to endlessly scroll sideways.",
+            matchPattern = "*://*.github.com/*",
+            scriptContent = """
+                (function() {
+                    'use strict';
+                    const style = document.createElement('style');
+                    style.textContent = 'pre, code, .blob-code-inner { white-space: pre-wrap !important; word-break: break-word !important; }';
+                    (document.head || document.documentElement).appendChild(style);
+                })();
+            """.trimIndent()
         )
     )
 
@@ -333,77 +464,7 @@ object PetalStoreCatalog {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 3. Search Engine Catalog
-    // ─────────────────────────────────────────────────────────────────────────
-    data class StoreSearchEngine(
-        val id: Int,
-        val name: String,
-        val description: String,
-        val queryUrl: String,
-        val privacyScore: String = "A+"
-    )
-
-    val storeSearchEngines: List<StoreSearchEngine> = listOf(
-        StoreSearchEngine(
-            id = 1,
-            name = "DuckDuckGo",
-            description = "Privacy-first web search without tracking or personalized profiling.",
-            queryUrl = "https://duckduckgo.com/?q=%s",
-            privacyScore = "A+"
-        ),
-        StoreSearchEngine(
-            id = 2,
-            name = "Startpage",
-            description = "Delivers Google-grade results with complete privacy protection and zero logging.",
-            queryUrl = "https://www.startpage.com/sp/search?query=%s",
-            privacyScore = "A+"
-        ),
-        StoreSearchEngine(
-            id = 3,
-            name = "Brave Search",
-            description = "Independent search engine powered by its own web index, fully private and ad-free.",
-            queryUrl = "https://search.brave.com/search?q=%s",
-            privacyScore = "A+"
-        ),
-        StoreSearchEngine(
-            id = 5,
-            name = "SearXNG",
-            description = "Decentralized open-source metasearch engine combining results from dozens of sources.",
-            queryUrl = "https://searx.space/search?q=%s",
-            privacyScore = "A+"
-        ),
-        StoreSearchEngine(
-            id = 6,
-            name = "Qwant",
-            description = "European privacy search engine that doesn't track users or sell search queries.",
-            queryUrl = "https://www.qwant.com/?q=%s",
-            privacyScore = "A"
-        ),
-        StoreSearchEngine(
-            id = 7,
-            name = "Ecosia",
-            description = "Eco-friendly search engine that plants trees with its advertising revenue.",
-            queryUrl = "https://www.ecosia.org/search?q=%s",
-            privacyScore = "A-"
-        ),
-        StoreSearchEngine(
-            id = 8,
-            name = "Kagi Search",
-            description = "Premium, ultra-fast ad-free search engine focused on high-quality technical results.",
-            queryUrl = "https://kagi.com/search?q=%s",
-            privacyScore = "A+"
-        ),
-        StoreSearchEngine(
-            id = 9,
-            name = "Mojeek",
-            description = "Completely independent web crawler search engine based in the UK with a strict no-tracking policy.",
-            queryUrl = "https://www.mojeek.com/search?q=%s",
-            privacyScore = "A+"
-        )
-    )
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 4. Curated Filter List Subscriptions Catalog
+    // 3. Curated Filter List Subscriptions Catalog
     // ─────────────────────────────────────────────────────────────────────────
     data class StoreFilterList(
         val id: String,
@@ -440,6 +501,14 @@ object PetalStoreCatalog {
             maintainer = "AdGuard Team"
         ),
         StoreFilterList(
+            id = "adguard-mobile",
+            name = "AdGuard Mobile Filter",
+            description = "Specifically targeted at blocking advertisements, interstitials, and banners on mobile web browsers.",
+            url = "https://filters.adtidy.org/extension/ublock/filters/11.txt",
+            ruleCount = "20,000+",
+            maintainer = "AdGuard Team"
+        ),
+        StoreFilterList(
             id = "fanboy-annoyances",
             name = "Fanboy's Annoyance List",
             description = "Blocks popups, in-page notifications, social media widgets, and newsletter subscription nags.",
@@ -448,12 +517,44 @@ object PetalStoreCatalog {
             maintainer = "Fanboy / uBlock"
         ),
         StoreFilterList(
+            id = "ublock-filters",
+            name = "uBlock Filters",
+            description = "Essential specific fixes and anti-adblock circumvention rules developed by gorhill and the uBlock team.",
+            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt",
+            ruleCount = "30,000+",
+            maintainer = "gorhill / uBlock"
+        ),
+        StoreFilterList(
+            id = "ublock-badware",
+            name = "uBlock Badware Risks",
+            description = "Actively blocks deceptive malicious software domains, ransomware, and scam sites.",
+            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt",
+            ruleCount = "15,000+",
+            maintainer = "gorhill / uBlock"
+        ),
+        StoreFilterList(
             id = "oisd-basic",
             name = "OISD Privacy & Ad Filter",
             description = "Ultra-lean, zero-breakage blocklist curated for mobile network speed and battery savings.",
             url = "https://basic.oisd.nl/",
             ruleCount = "25,000+",
             maintainer = "SJ (OISD)"
+        ),
+        StoreFilterList(
+            id = "nocoin-filter",
+            name = "NoCoin Filter List",
+            description = "Blocks browser cryptocurrency miners and CoinHive scripts from abusing your device processor.",
+            url = "https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt",
+            ruleCount = "5,000+",
+            maintainer = "NoCoin Community"
+        ),
+        StoreFilterList(
+            id = "peter-lowe-list",
+            name = "Peter Lowe's Ad and Tracking Server List",
+            description = "Authoritative, curated minimal list of ad servers and tracking domains with zero false positives.",
+            url = "https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext",
+            ruleCount = "4,000+",
+            maintainer = "Peter Lowe"
         )
     )
 
