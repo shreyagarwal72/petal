@@ -28,6 +28,10 @@ import androidx.compose.ui.window.Dialog
 import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.ResearchMode
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import androidx.preference.PreferenceManager
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -82,15 +86,21 @@ fun PetalSummaryBoxDialog(
         generateSummary()
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val dialogShape = RoundedCornerShape(28.dp)
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 8.dp,
-            shadowElevation = 12.dp,
+            shape = dialogShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = if (isGlass) 0.dp else 8.dp,
+            shadowElevation = if (isGlass) 4.dp else 12.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp)
+                .liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen)
         ) {
             Column(
                 modifier = Modifier
@@ -111,7 +121,9 @@ fun PetalSummaryBoxDialog(
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier
+                                .size(40.dp)
+                                .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.50f) else Modifier)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
@@ -174,14 +186,17 @@ fun PetalSummaryBoxDialog(
                             )
                         }
                     } else if (errorMessage != null) {
+                        val errorCardShape = RoundedCornerShape(16.dp)
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
+                            shape = errorCardShape,
                             color = MaterialTheme.colorScheme.errorContainer,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(if (isGlass) Modifier.liquidGlassChrome(errorCardShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
                         ) {
                             Column(
                                 modifier = Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
@@ -190,24 +205,35 @@ fun PetalSummaryBoxDialog(
                                 Text(errorMessage!!, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Button(
                                         onClick = { generateSummary() },
                                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                        shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text(stringResource(R.string.ui_retry))
+                                        Text(stringResource(R.string.ui_retry), maxLines = 1)
                                     }
                                     OutlinedButton(
                                         onClick = onOpenSettings,
-                                        modifier = Modifier.weight(1f)
+                                        shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                                        modifier = Modifier.weight(1.2f)
                                     ) {
                                         Icon(Icons.Rounded.Key, contentDescription = null, modifier = Modifier.size(16.dp))
-                                        Spacer(Modifier.width(6.dp))
-                                        Text(stringResource(R.string.ui_configure_key))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            stringResource(R.string.ui_configure_key),
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                 }
                             }
@@ -263,10 +289,12 @@ fun PetalSummaryBoxDialog(
                     }
 
                     // Primary Expressive "Ask Question" Button at last
+                    val askButtonShape = RoundedCornerShape(16.dp)
                     Button(
                         onClick = onAskQuestion,
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                        shape = askButtonShape,
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(askButtonShape, enabled = true, sheenIntensity = 0.50f) else Modifier
                     ) {
                         Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
