@@ -41,6 +41,7 @@ import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalMaterialAlertDialog
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
