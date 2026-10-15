@@ -172,7 +172,7 @@ object SamsungContentBlockerBridge {
                 val existingCustom = PetalFilterSubscriptionManager.getCustomUserRules(context)
                 val header = "\n! Samsung Blocker: $packageName\n"
                 val newRulesText = existingCustom + header + extractedRules.joinToString("\n")
-                PetalFilterSubscriptionManager.setCustomUserRules(context, newRulesText)
+                PetalFilterSubscriptionManager.saveCustomUserRules(context, newRulesText)
                 PetalFilterSubscriptionManager.reloadActiveRules(context)
             }
         } catch (e: Exception) {

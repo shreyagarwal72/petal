@@ -269,7 +269,6 @@ fun PetalBrowserStoreScreen(
                                     )
                                     else -> {}
                                 }
-                                }
                             }
                         }
                     }
