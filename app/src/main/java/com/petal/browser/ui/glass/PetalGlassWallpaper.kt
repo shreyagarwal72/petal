@@ -118,9 +118,11 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
     return onGloballyPositioned { place.coords = it; place.origin = it.positionInRoot() }
         .drawWithCache {
             val outline = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawWithCache)) }
-            val pad = 2.dp.toPx()
+            val lensHeight = 12.dp.toPx()
+            val lensAmount = 14.dp.toPx()
+            val pad = lensAmount + 4.dp.toPx()
             val radii = cornerRadii(shape, size, layoutDirection, this)
-            val effect = radii?.let { lensEffect(size, pad, it, 24.dp.toPx(), 56.dp.toPx()) }
+            val effect = radii?.let { lensEffect(size, pad, it, lensHeight, lensAmount) }
             glass.renderEffect = effect?.asComposeRenderEffect()
             val full = IntSize(ceil(size.width + 2 * pad).toInt().coerceAtLeast(1),
                 ceil(size.height + 2 * pad).toInt().coerceAtLeast(1))

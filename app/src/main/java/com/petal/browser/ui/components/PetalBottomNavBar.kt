@@ -227,6 +227,7 @@ fun PetalBottomNavBar(
                         selected = selectedTab == PetalNavTab.HOME,
                         label = "Home",
                         index = 0,
+                        isLiquidGlass = isLiquidGlass,
                         modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
                             val iconScale by animateFloatAsState(
@@ -260,6 +261,7 @@ fun PetalBottomNavBar(
                         selected = selectedTab == PetalNavTab.NEW_TAB,
                         label = newTabLabel,
                         index = 1,
+                        isLiquidGlass = isLiquidGlass,
                         modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
                             val rotationAngle by animateFloatAsState(
@@ -293,6 +295,7 @@ fun PetalBottomNavBar(
                         label = "Tabs",
                         badgeText = if (tabCount > 99) "99+" else tabCount.toString(),
                         index = 2,
+                        isLiquidGlass = isLiquidGlass,
                         modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
                             val iconScale by animateFloatAsState(
@@ -313,6 +316,7 @@ fun PetalBottomNavBar(
                         selected = selectedTab == PetalNavTab.MENU,
                         label = "Menu",
                         index = 3,
+                        isLiquidGlass = isLiquidGlass,
                         modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
                             val rotationAngle by animateFloatAsState(
@@ -523,6 +527,7 @@ private fun ExpressiveNavTabItem(
     icon: @Composable (isSelected: Boolean, tint: Color) -> Unit,
     onClick: () -> Unit,
     badgeText: String? = null,
+    isLiquidGlass: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -565,7 +570,11 @@ private fun ExpressiveNavTabItem(
 
     val activeIndicatorHeight = 28.dp
 
-    val activeIndicatorColor = MaterialTheme.colorScheme.primaryContainer
+    val activeIndicatorColor = if (isLiquidGlass) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+    } else {
+        MaterialTheme.colorScheme.primaryContainer
+    }
     val indicatorBgColor by animateColorAsState(
         targetValue = if (selected) activeIndicatorColor else Color.Transparent,
         animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
@@ -573,7 +582,7 @@ private fun ExpressiveNavTabItem(
     )
 
     val contentTint by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
         label = "expressive_content_tint_$index"
     )
@@ -593,6 +602,7 @@ private fun ExpressiveNavTabItem(
         enter.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 320f))
     }
 
+    val indicatorShape = RoundedCornerShape(14.dp)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -614,8 +624,16 @@ private fun ExpressiveNavTabItem(
             .semantics { contentDescription = label }
     ) {
         Surface(
-            shape = RoundedCornerShape(14.dp),
+            shape = indicatorShape,
             color = indicatorBgColor,
+            border = if (isLiquidGlass && selected) {
+                BorderStroke(
+                    1.dp,
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(Color.White.copy(alpha = 0.70f), Color.White.copy(alpha = 0.20f))
+                    )
+                )
+            } else null,
             modifier = Modifier
                 .width(activeIndicatorWidth)
                 .height(activeIndicatorHeight)

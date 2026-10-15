@@ -435,7 +435,10 @@ half4 main(float2 coord) {
     float gradRadius = min(radius * 1.5, min(halfSize.x, halfSize.y));
     float2 grad = normalize(gradSdRoundedRect(centeredCoord, halfSize, gradRadius) + depthEffect * normalize(centeredCoord));
 
-    float2 refractedCoord = coord + d * grad;
+    // Clamp refracted coordinate within the recorded glass buffer [0, size - 2 * offset]
+    // Note that offset is negative (-pad, -pad), so the buffer size is size + 2 * pad.
+    float2 maxCoord = size - 2.0 * offset;
+    float2 refractedCoord = clamp(coord + d * grad, float2(0.5), maxCoord - float2(0.5));
     return content.eval(refractedCoord);
 }
 """

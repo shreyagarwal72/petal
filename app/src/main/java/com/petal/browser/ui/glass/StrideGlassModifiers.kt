@@ -76,22 +76,25 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     val themeGlass = prefs.getBoolean("sp_liquid_glass_enabled", false)
     val opacity = if (themeGlass) prefs.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.20f, .95f) / .70f else 1f
     val edge = if (themeGlass) prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f else 1f
-    // Liquid glass tint: balanced so icons stay legible over light or dark web pages,
-    // while keeping high translucency so live web content and background are vibrantly visible.
+    // Liquid glass tint: authentic physical glass with pure light bending refraction,
+    // beveled specular sheen, and clear optical depth.
     val look = with(density) {
-        val blur = 6.dp.toPx()
+        val blur = 4.dp.toPx()
+        val lensHeight = 12.dp.toPx()
+        val lensAmount = 14.dp.toPx()
+        // Ensure pad completely accommodates both blur and refraction displacement
+        val pad = blur * 1.5f + lensAmount + 4.dp.toPx()
         GlassLook(
-            fill = tint.copy(alpha = ((if (dark) 0.28f else 0.32f) * opacity).coerceIn(0f, 1f)).argb(),
-            specular = Color.White.copy(alpha = ((if (dark) 0.25f else 0.55f) * edge).coerceIn(0f, 1f)).argb(),
-            rimTop = Color.White.copy(alpha = ((if (dark) 0.40f else 0.8f) * edge).coerceIn(0f, 1f)).argb(),
-            rimBottom = Color.White.copy(alpha = ((if (dark) 0.08f else 0.25f) * edge).coerceIn(0f, 1f)).argb(),
+            fill = tint.copy(alpha = ((if (dark) 0.18f else 0.22f) * opacity).coerceIn(0f, 1f)).argb(),
+            specular = Color.White.copy(alpha = ((if (dark) 0.35f else 0.65f) * edge).coerceIn(0f, 1f)).argb(),
+            rimTop = Color.White.copy(alpha = ((if (dark) 0.55f else 0.85f) * edge).coerceIn(0f, 1f)).argb(),
+            rimBottom = Color.White.copy(alpha = ((if (dark) 0.12f else 0.30f) * edge).coerceIn(0f, 1f)).argb(),
             blur = blur,
-            lensHeight = 22.dp.toPx(),
-            lensAmount = 36.dp.toPx(),
+            lensHeight = lensHeight,
+            lensAmount = lensAmount,
             specHeight = 3.dp.toPx(),
             rimWidth = 1.dp.toPx(),
-            // Margin for the blur only; the lens samples inward and needs none.
-            pad = blur * 1.5f + 2.dp.toPx()
+            pad = pad
         )
     }
     return this
@@ -121,14 +124,16 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
 fun Modifier.glassTile(target: () -> Rect?, shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     val density = LocalDensity.current
     val look = with(density) {
+        val lensHeight = 12.dp.toPx()
+        val lensAmount = 14.dp.toPx()
         SlabLook(
-            fill = tint.copy(alpha = 0.08f).argb(),
-            rimTop = Color.White.copy(alpha = 0.9f).argb(),
-            rimBottom = Color.White.copy(alpha = 0.3f).argb(),
-            lensHeight = 14.dp.toPx(),
-            lensAmount = 22.dp.toPx(),
+            fill = tint.copy(alpha = 0.12f).argb(),
+            rimTop = Color.White.copy(alpha = 0.95f).argb(),
+            rimBottom = Color.White.copy(alpha = 0.35f).argb(),
+            lensHeight = lensHeight,
+            lensAmount = lensAmount,
             rimWidth = 1.dp.toPx(),
-            pad = 2.dp.toPx()
+            pad = lensAmount + 4.dp.toPx()
         )
     }
     if (bar == null) {
