@@ -62,8 +62,16 @@
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:node="remove" />
 
-    <!-- Queries for Google Lens, Google App and external browser intent integration -->
+    <!-- Samsung Internet Content Blocker Integration -->
+    <uses-permission android:name="com.samsung.android.sbrowser.permission.CONTENTBLOCKER" />
+
     <queries>
+        <!-- Samsung Content Blocker packages and providers -->
+        <package android:name="com.samsung.android.app.sbrowser" />
+        <package android:name="com.sec.android.app.sbrowser" />
+        <intent>
+            <action android:name="com.samsung.android.sbrowser.contentBlocker.ACTION_UPDATE" />
+        </intent>
         <package android:name="com.google.ar.lens" />
         <package android:name="com.google.android.googlequicksearchbox" />
         <package android:name="com.google.android.apps.photos" />
@@ -581,6 +589,16 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+
+        <!-- Samsung Content Blocker Dynamic Update Receiver -->
+        <receiver
+            android:name="com.petal.browser.browser.samsung.SamsungContentBlockerUpdateReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.samsung.android.sbrowser.contentBlocker.ACTION_UPDATE" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

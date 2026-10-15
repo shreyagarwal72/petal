@@ -567,6 +567,77 @@ fun PetalAdBlockSettingsScreen(
                     }
                 }
 
+                // ── Samsung Internet Content Blockers Bridge ──
+                val samsungBlockers = remember {
+                    com.petal.browser.browser.samsung.SamsungContentBlockerBridge.findInstalledSamsungBlockers(context)
+                }
+                if (samsungBlockers.isNotEmpty()) {
+                    PetalSettingsSection(
+                        title = "Samsung Internet Extensions",
+                        iconRes = com.petal.browser.R.drawable.layers_filled
+                    ) {
+                        samsungBlockers.forEachIndexed { index, blocker ->
+                            var enabled by remember {
+                                mutableStateOf(com.petal.browser.browser.samsung.SamsungContentBlockerBridge.isBlockerEnabled(context, blocker.packageName))
+                            }
+                            val shape = petalGroupShape(
+                                when {
+                                    samsungBlockers.size == 1 -> PetalGroupPosition.SINGLE
+                                    index == 0 -> PetalGroupPosition.TOP
+                                    index == samsungBlockers.lastIndex -> PetalGroupPosition.BOTTOM
+                                    else -> PetalGroupPosition.MIDDLE
+                                }
+                            )
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(shape)
+                                    .liquidGlassChrome(
+                                        shape = shape,
+                                        enabled = isGlass,
+                                        sheenIntensity = sheen
+                                    ),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
+                                ),
+                                shape = shape
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = blocker.appName,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = "Samsung Content Blocker (${blocker.packageName})",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Switch(
+                                        checked = enabled,
+                                        onCheckedChange = { isChecked ->
+                                            enabled = isChecked
+                                            com.petal.browser.browser.samsung.SamsungContentBlockerBridge.setBlockerEnabled(
+                                                context,
+                                                blocker.packageName,
+                                                isChecked
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ── Rules & Whitelist Section ──
                 PetalSettingsSection(
                     title = "Rules & Exceptions",
