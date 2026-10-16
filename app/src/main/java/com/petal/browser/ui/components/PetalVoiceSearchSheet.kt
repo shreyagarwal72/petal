@@ -44,6 +44,8 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.liveGlassWallpaper
+import com.petal.browser.ui.glass.recordGlassWallpaper
 import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.PetalGlassPattern
@@ -292,6 +294,20 @@ fun PetalVoiceSearchSheet(
     val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
 
+    val liveSource = remember(context) {
+        var c: android.content.Context? = context
+        while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+        (c as? android.app.Activity)?.let {
+            it.findViewById<android.view.View>(R.id.main) ?: it.findViewById<android.view.View>(android.R.id.content)
+        }
+    }
+    val frameTick = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(isLiquidGlass, liveSource) {
+        if (isLiquidGlass && liveSource != null) {
+            while (true) { withFrameNanos { frameTick.longValue = it } }
+        }
+    }
+
     CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
         com.petal.browser.ui.containment.PetalSheet(
             onDismissRequest = onDismiss,
@@ -299,19 +315,31 @@ fun PetalVoiceSearchSheet(
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 if (isLiquidGlass) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .captureGlassWallpaper(wallpaper)
-                    ) {
-                        if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
+                    if (liveSource != null) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .liveGlassWallpaper(wallpaper, liveSource) { frameTick.longValue }
+                        )
+                    } else if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .recordGlassWallpaper(wallpaper)
+                        ) {
                             Image(
                                 bitmap = snapshotBitmap.asImageBitmap(),
                                 contentDescription = null,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop
                             )
-                        } else {
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .captureGlassWallpaper(wallpaper)
+                        ) {
                             PetalGlassPattern(Modifier.fillMaxSize())
                         }
                     }
@@ -328,7 +356,11 @@ fun PetalVoiceSearchSheet(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        IconButton(onClick = onDismiss) {
+                        val closeShape = CircleShape
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = if (isLiquidGlass) Modifier.liquidGlassChrome(closeShape, enabled = true, sheenIntensity = 0.5f) else Modifier
+                        ) {
                             Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                         }
                     }
@@ -345,7 +377,7 @@ fun PetalVoiceSearchSheet(
                             .clip(micShape)
                             .background(
                                 if (isListening) {
-                                    if (isLiquidGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+                                    if (isLiquidGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
                                     else MaterialTheme.colorScheme.primaryContainer
                                 } else {
                                     if (isLiquidGlass) petalGroupSurfaceColor()
