@@ -88,17 +88,17 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
                 start = androidx.compose.ui.geometry.Offset.Zero,
                 end = androidx.compose.ui.geometry.Offset(1000f, 1000f)
             )
-            val specBrush = Brush.verticalGradient(
-                listOf(
-                    Color.White.copy(alpha = (0.28f * baseEdge).coerceIn(0f, 1f)),
-                    Color.Transparent
-                ),
-                endY = 4.dp.toPx()
-            )
             return this
                 .clip(shape)
                 .drawWithCache {
                     val outline = shape.createOutline(size, layoutDirection, this)
+                    val specBrush = Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = (0.28f * baseEdge).coerceIn(0f, 1f)),
+                            Color.Transparent
+                        ),
+                        endY = 4.dp.toPx()
+                    )
                     onDrawBehind {
                         drawOutline(outline, tint.copy(alpha = (fallbackAlpha * opacity).coerceIn(0.15f, 0.85f)))
                         drawRect(specBrush)
