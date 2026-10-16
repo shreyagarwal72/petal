@@ -488,22 +488,14 @@ fun PetalOmniboxPage(
                     Column(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        // Chrome-style search field row pinned to top with status bar padding
+                        // Search field row pinned to top with status bar padding
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .statusBarsPadding()
-                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = onBackPress) {
-                                Icon(
-                                    imageVector = Icons.Rounded.ArrowBack,
-                                    contentDescription = stringResource(R.string.ui_back),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
                             var currentEngineIndexStr by remember {
                                 mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0")
                             }
@@ -655,7 +647,7 @@ fun PetalOmniboxPage(
                                     unfocusedBorderColor = Color.Transparent
                                 ),
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .fillMaxWidth()
                                     .liquidGlassChrome(shape = RoundedCornerShape(50), enabled = isGlass, sheenIntensity = sheen)
                                     .focusRequester(focusRequester)
                             )
