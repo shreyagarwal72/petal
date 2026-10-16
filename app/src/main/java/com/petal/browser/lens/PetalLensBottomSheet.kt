@@ -46,6 +46,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 /**
  * Petal Lens Sheet Content & BottomSheet launcher wrapper.
@@ -249,7 +250,7 @@ fun PetalLensBottomSheet(
         modifier = Modifier
             .fillMaxWidth()
             .then(
-                if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(sheetShape, enabled = true)
+                if (isLiquidGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true)
                 else Modifier
             )
     ) {
@@ -427,7 +428,7 @@ fun PetalLensBottomSheet(
                     catch (_: Exception) { PetalLensManager.launchGoogleLensApp(context); onDismissRequest() }
                 },
                 modifier = Modifier.fillMaxWidth().then(
-                    if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true) else Modifier
+                    if (isLiquidGlass) Modifier.liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true) else Modifier
                 ),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else Color.Transparent
@@ -446,7 +447,7 @@ fun PetalLensBottomSheet(
                     shape = permShape,
                     color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
                     modifier = Modifier.fillMaxWidth().then(
-                        if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(permShape, enabled = true) else Modifier
+                        if (isLiquidGlass) Modifier.liquidGlassChrome(permShape, enabled = true) else Modifier
                     )
                 ) {
                     Column(
