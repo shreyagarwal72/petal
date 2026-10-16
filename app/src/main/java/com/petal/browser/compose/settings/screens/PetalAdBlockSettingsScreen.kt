@@ -460,11 +460,7 @@ fun PetalAdBlockSettingsScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             if (isUpdatingLists) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
+                                com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 18.dp)
                             } else {
                                 Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))

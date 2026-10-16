@@ -34,7 +34,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import android.content.ClipData
@@ -457,11 +457,7 @@ private fun PetalMediaSheet(
                                     enabled = !isUpdatingExtractor
                                 ) {
                                     if (isUpdatingExtractor) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(16.dp),
-                                            strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
+                                        PetalContainedLoadingIndicator(size = 16.dp)
                                     } else {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                     }
@@ -523,10 +519,7 @@ private fun PetalMediaSheet(
                                         horizontalArrangement = Arrangement.Center,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(20.dp),
-                                            strokeWidth = 2.dp
-                                        )
+                                        PetalContainedLoadingIndicator(size = 20.dp)
                                         Spacer(Modifier.width(12.dp))
                                         Text(
                                             stringResource(R.string.ui_fetching_media_information),

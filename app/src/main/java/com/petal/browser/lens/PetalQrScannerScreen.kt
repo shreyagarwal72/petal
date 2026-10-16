@@ -448,10 +448,8 @@ fun PetalQrScannerScreen(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             if (isCapturing) {
-                                CircularProgressIndicator(
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(32.dp),
-                                    strokeWidth = 3.dp
+                                com.petal.browser.compose.composable.PetalContainedLoadingIndicator(
+                                    size = 32.dp
                                 )
                             } else {
                                 Icon(

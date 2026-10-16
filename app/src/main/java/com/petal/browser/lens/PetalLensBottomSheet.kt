@@ -493,7 +493,7 @@ fun PetalLensBottomSheet(
                         .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 40.dp)
                 }
             } else if (mediaItems.isEmpty()) {
                 Surface(

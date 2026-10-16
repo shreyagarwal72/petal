@@ -262,10 +262,8 @@ fun PetalImageScanResultSheet(
                         .padding(vertical = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(36.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        strokeWidth = 3.dp
+                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(
+                        size = 40.dp
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(

@@ -232,7 +232,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 }
                             ) {
                                 if (isFetchingModels) {
-                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 16.dp)
                                     Spacer(Modifier.width(6.dp))
                                 } else {
                                     Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -264,7 +264,7 @@ fun ApiIntegrationsSettingsScreenContent(
                             }
                         ) {
                             if (isTestingKey) {
-                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 16.dp)
                                 Spacer(Modifier.width(6.dp))
                             } else {
                                 Icon(Icons.Rounded.NetworkCheck, contentDescription = null, modifier = Modifier.size(16.dp))

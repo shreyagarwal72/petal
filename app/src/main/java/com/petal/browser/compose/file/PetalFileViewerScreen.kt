@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -479,7 +480,7 @@ private fun ArchiveViewerContent(
         isLoading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator()
+                    PetalContainedLoadingIndicator(size = 48.dp)
                     Spacer(Modifier.height(14.dp))
                     Text(stringResource(R.string.ui_opening_archive), style = MaterialTheme.typography.bodyMedium)
                 }
@@ -795,7 +796,7 @@ private fun ArchiveEntryPreview(
         }
 
         when {
-            isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PetalContainedLoadingIndicator(size = 48.dp) }
             error != null -> ErrorDisplayBox(error ?: "")
             tempUri != null -> {
                 val uri = tempUri!!
@@ -870,7 +871,7 @@ private fun ImageViewerContent(fileUri: Uri, displayName: String) {
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLowest), contentAlignment = Alignment.Center) {
         when {
-            isLoading -> CircularProgressIndicator()
+            isLoading -> PetalContainedLoadingIndicator(size = 48.dp)
             bitmap != null -> {
                 Image(
                     bitmap = bitmap!!.asImageBitmap(),
@@ -988,7 +989,7 @@ private fun TextCodeViewerContent(
     when {
         isLoading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                PetalContainedLoadingIndicator(size = 48.dp)
             }
         }
         errorMessage != null -> {
@@ -1134,7 +1135,7 @@ private fun PptxViewerContent(fileUri: Uri) {
     }
 
     when {
-        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PetalContainedLoadingIndicator(size = 48.dp) }
         errorMessage != null -> ErrorDisplayBox(error = errorMessage ?: "")
         slides != null -> {
             val slideList = slides ?: emptyList()
@@ -1256,7 +1257,7 @@ private fun XlsxViewerContent(fileUri: Uri) {
     }
 
     when {
-        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PetalContainedLoadingIndicator(size = 48.dp) }
         errorMessage != null -> ErrorDisplayBox(error = errorMessage ?: "")
         extractedRows != null -> {
             val rows = extractedRows ?: emptyList()
@@ -1356,7 +1357,7 @@ private fun DocxViewerContent(fileUri: Uri) {
     }
 
     when {
-        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PetalContainedLoadingIndicator(size = 48.dp) }
         errorMessage != null -> ErrorDisplayBox(error = errorMessage ?: "")
         extractedText != null -> {
             val paragraphs = remember(extractedText) {

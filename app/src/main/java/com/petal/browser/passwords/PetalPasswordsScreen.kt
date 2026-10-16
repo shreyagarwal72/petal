@@ -27,7 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalExpressiveDialog
@@ -526,7 +526,7 @@ private fun PasswordDetailsDialog(
             shape = RoundedCornerShape(14.dp)
         ) {
             if (isCheckingBreach) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                PetalContainedLoadingIndicator(size = 16.dp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Checking HIBP...")
             } else {

@@ -179,9 +179,8 @@ fun PetalSummaryBoxDialog(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(32.dp),
-                                strokeWidth = 3.dp
+                            com.petal.browser.compose.composable.PetalContainedLoadingIndicator(
+                                size = 40.dp
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(

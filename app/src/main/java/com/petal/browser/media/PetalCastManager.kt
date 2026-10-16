@@ -500,10 +500,8 @@ fun PetalCastDeviceSheet(
                         .padding(vertical = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(36.dp),
-                        strokeWidth = 3.dp,
-                        color = MaterialTheme.colorScheme.primary,
+                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(
+                        size = 40.dp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -602,10 +600,8 @@ fun PetalCastDeviceSheet(
                                     }
                                 }
                                 if (isThisCasting) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(20.dp),
-                                        strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary,
+                                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(
+                                        size = 20.dp
                                     )
                                 }
                             }

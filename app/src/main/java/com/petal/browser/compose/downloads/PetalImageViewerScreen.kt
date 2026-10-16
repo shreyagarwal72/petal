@@ -555,7 +555,7 @@ private fun ZoomableImagePage(
                 loading = {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = Color.White.copy(alpha = 0.7f))
+                            com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 48.dp)
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 text  = entry.label,
@@ -626,7 +626,7 @@ private fun ZoomableImagePage(
                     )
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = Color.White.copy(alpha = 0.7f))
+                        com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 48.dp)
                         Spacer(Modifier.height(12.dp))
                         Text(
                             text  = entry.label,

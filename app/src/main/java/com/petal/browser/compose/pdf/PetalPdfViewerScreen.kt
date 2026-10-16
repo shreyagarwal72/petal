@@ -65,6 +65,7 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -1112,11 +1113,7 @@ fun PetalPdfViewerScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (isSavingTextEdit) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                        PetalContainedLoadingIndicator(size = 18.dp)
                     } else {
                         Text(stringResource(R.string.ui_save))
                     }
@@ -1221,11 +1218,7 @@ private fun PdfPageView(
                 )
             } else {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                        modifier = Modifier.size(32.dp),
-                        strokeWidth = 2.5.dp
-                    )
+                    PetalContainedLoadingIndicator(size = 36.dp)
                 }
             }
 
@@ -1444,12 +1437,9 @@ private fun PdfTextEditTopBar(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (isLoading || isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .padding(end = 4.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
+                            PetalContainedLoadingIndicator(
+                                size = 20.dp,
+                                modifier = Modifier.padding(end = 4.dp)
                             )
                         }
                         IconButton(
@@ -1795,11 +1785,7 @@ private fun PdfEditTopBar(
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                     ) {
                         if (isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
+                            PetalContainedLoadingIndicator(size = 18.dp)
                         } else {
                             Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
                         }
@@ -2190,7 +2176,7 @@ private fun PdfThumbnailItem(
                 )
             } else {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    PetalContainedLoadingIndicator(size = 20.dp)
                 }
             }
         }

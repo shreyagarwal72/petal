@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
 import com.petal.browser.compose.file.PetalFilePickerBridge
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroup
@@ -184,7 +185,7 @@ fun PetalPasswordImportSheet(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        CircularProgressIndicator()
+                        PetalContainedLoadingIndicator()
                         Text(
                             text = "Importing passwords...",
                             style = MaterialTheme.typography.bodyMedium,

@@ -37,6 +37,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.petal.browser.R
+import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.ytdlp.PetalSocialDownloadService
@@ -427,7 +428,7 @@ fun PetalMediaGrabberPopupDialog(
                                             horizontalArrangement = Arrangement.Center,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                            PetalContainedLoadingIndicator(size = 20.dp)
                                             Spacer(Modifier.width(12.dp))
                                             Text(
                                                 "Extracting stream formats...",
@@ -696,11 +697,7 @@ fun PetalMediaGrabberPopupDialog(
                                     shape = RoundedCornerShape(14.dp)
                                 ) {
                                     if (isUpdatingExtractor) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(18.dp),
-                                            strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                        )
+                                        PetalContainedLoadingIndicator(size = 18.dp)
                                         Spacer(Modifier.width(8.dp))
                                         Text("Updating yt-dlp...")
                                     } else {

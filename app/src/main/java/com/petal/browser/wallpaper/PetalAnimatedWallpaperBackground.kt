@@ -16,16 +16,23 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.OptIn
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.graphicsLayer
+import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -103,6 +110,13 @@ fun PetalAnimatedWallpaperBackground(
     // error and renders nothing, which looks indistinguishable from "not working".
     var videoPlaybackFailed by remember(wallpaperUri) { mutableStateOf(false) }
     var videoBuffering by remember(wallpaperUri) { mutableStateOf(true) }
+    var isFirstFrameRendered by remember(wallpaperUri) { mutableStateOf(false) }
+
+    val videoEntranceAlpha by animateFloatAsState(
+        targetValue = if (isFirstFrameRendered) 1f else 0f,
+        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        label = "LiveWallpaperEntranceAlpha"
+    )
 
     Box(
         modifier = modifier
@@ -110,6 +124,51 @@ fun PetalAnimatedWallpaperBackground(
             .clipToBounds()
     ) {
         val blurModifier = if (blur > 0.5f) Modifier.blur(blur.dp) else Modifier
+
+        val imageModel = remember(wallpaperUri, videoPlaybackFailed) {
+            val effectiveUri = if (isVideo) {
+                PRESET_WALLPAPERS.firstOrNull { it.fullUrl == wallpaperUri }?.thumbUrl ?: wallpaperUri
+            } else {
+                wallpaperUri
+            }
+            when {
+                effectiveUri.startsWith("android.resource://") -> Uri.parse(effectiveUri)
+                effectiveUri.startsWith("file://") -> File(effectiveUri.removePrefix("file://"))
+                effectiveUri.startsWith("/") -> File(effectiveUri)
+                else -> effectiveUri
+            }
+        }
+        val imageRequest = remember(imageModel, isGif) {
+            ImageRequest.Builder(context)
+                .data(imageModel)
+                .crossfade(300)
+                .apply {
+                    if (isGif) {
+                        decoderFactory(
+                            if (Build.VERSION.SDK_INT >= 28) {
+                                ImageDecoderDecoder.Factory()
+                            } else {
+                                GifDecoder.Factory()
+                            }
+                        )
+                    } else {
+                        allowHardware(true)
+                        bitmapConfig(Bitmap.Config.RGB_565)
+                    }
+                }
+                .build()
+        }
+
+        // Static thumbnail / preview layer is ALWAYS rendered beneath the video or static image
+        // to prevent black screen flickers during live wallpaper initialization.
+        AsyncImage(
+            model = imageRequest,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .then(blurModifier)
+        )
 
         if (isVideo && !videoPlaybackFailed) {
             val exoPlayer = remember(wallpaperUri) {
@@ -120,7 +179,6 @@ fun PetalAnimatedWallpaperBackground(
                     else -> Uri.parse(wallpaperUri)
                 }
 
-                // Low-memory LoadControl: minimal buffer footprint tailored for looping wallpaper clips
                 val loadControl = DefaultLoadControl.Builder()
                     .setBufferDurationsMs(
                         1500, // minBufferMs
@@ -156,6 +214,11 @@ fun PetalAnimatedWallpaperBackground(
 
                         override fun onPlaybackStateChanged(playbackState: Int) {
                             videoBuffering = playbackState == Player.STATE_BUFFERING
+                        }
+
+                        override fun onRenderedFirstFrame() {
+                            isFirstFrameRendered = true
+                            videoBuffering = false
                         }
                     })
                     prepare()
@@ -231,60 +294,20 @@ fun PetalAnimatedWallpaperBackground(
                 modifier = Modifier
                     .fillMaxSize()
                     .then(blurModifier)
-            )
-
-            // Buffering feedback so a slow-loading video isn't mistaken for a broken one.
-            if (videoBuffering) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        } else {
-            val imageModel = remember(wallpaperUri, videoPlaybackFailed) {
-                // If this was a video that failed to play, fall back to its curated preset's
-                // thumbnail (when known) instead of leaving the background blank.
-                val effectiveUri = if (isVideo && videoPlaybackFailed) {
-                    PRESET_WALLPAPERS.firstOrNull { it.fullUrl == wallpaperUri }?.thumbUrl ?: wallpaperUri
-                } else {
-                    wallpaperUri
-                }
-                when {
-                    effectiveUri.startsWith("android.resource://") -> Uri.parse(effectiveUri)
-                    effectiveUri.startsWith("file://") -> File(effectiveUri.removePrefix("file://"))
-                    effectiveUri.startsWith("/") -> File(effectiveUri)
-                    else -> effectiveUri
-                }
-            }
-            val imageRequest = remember(imageModel, isGif) {
-                ImageRequest.Builder(context)
-                    .data(imageModel)
-                    .crossfade(300)
-                    .apply {
-                        if (isGif) {
-                            decoderFactory(
-                                if (Build.VERSION.SDK_INT >= 28) {
-                                    ImageDecoderDecoder.Factory()
-                                } else {
-                                    GifDecoder.Factory()
-                                }
-                            )
-                        } else {
-                            allowHardware(true)
-                            bitmapConfig(Bitmap.Config.RGB_565)
-                        }
+                    .graphicsLayer {
+                        alpha = videoEntranceAlpha
                     }
-                    .build()
-            }
-
-            AsyncImage(
-                model = imageRequest,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(blurModifier)
             )
+
+            // Buffering feedback using ContainedLoadingIndicator with smooth fade-out
+            AnimatedVisibility(
+                visible = videoBuffering && !isFirstFrameRendered,
+                enter = fadeIn(tween(200)),
+                exit = fadeOut(tween(300)),
+                modifier = Modifier.align(Alignment.Center)
+            ) {
+                PetalContainedLoadingIndicator(size = 44.dp)
+            }
         }
 
         // Adjustable dimming overlay

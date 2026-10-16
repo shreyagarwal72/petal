@@ -1001,7 +1001,7 @@ private fun AddExtensionSheet(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 if (busy) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 18.dp)
                     Spacer(Modifier.width(8.dp))
                 }
                 Text(stringResource(R.string.ui_install_2))
