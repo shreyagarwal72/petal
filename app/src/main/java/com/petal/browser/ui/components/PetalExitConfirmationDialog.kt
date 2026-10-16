@@ -176,7 +176,7 @@ private fun ExitDialogContent(
         shape = dialogShape,
         color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = if (isGlass) 0.dp else 6.dp,
-        shadowElevation = if (isGlass) 4.dp else 6.dp,
+        shadowElevation = if (isGlass) 0.dp else 6.dp,
         border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     ) {
         Column(

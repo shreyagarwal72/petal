@@ -322,11 +322,13 @@ fun PetalDialog(
 
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
         com.petal.browser.ui.glass.PetalGlassContainer(
-            modifier = Modifier.fillMaxWidth(0.92f).wrapContentHeight(),
+            modifier = modifier
+                .fillMaxWidth(0.92f)
+                .wrapContentHeight(),
             enabled = isGlass
         ) {
             Surface(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
                     .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
@@ -334,7 +336,7 @@ fun PetalDialog(
                 color = if (isGlass) petalGroupSurfaceColor() else containerColor,
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 tonalElevation = 0.dp,
-                shadowElevation = if (isGlass) 4.dp else 12.dp,
+                shadowElevation = if (isGlass) 0.dp else 12.dp,
                 border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
             ) {
                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)

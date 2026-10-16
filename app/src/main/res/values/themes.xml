@@ -68,6 +68,16 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
+        <item name="android:dialogTheme">@style/PetalTransparentDialogTheme</item>
+        <item name="dialogTheme">@style/PetalTransparentDialogTheme</item>
+        <item name="android:alertDialogTheme">@style/PetalTransparentDialogTheme</item>
+        <item name="alertDialogTheme">@style/PetalTransparentDialogTheme</item>
+    </style>
+
+    <style name="PetalTransparentDialogTheme" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackground">@android:color/transparent</item>
+        <item name="android:windowElevation">0dp</item>
     </style>
 
     <style name="Theme.Petal.StandaloneViewer" parent="Theme.Material3.DayNight.NoActionBar">

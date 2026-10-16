@@ -99,18 +99,24 @@ fun PetalFeatureExplainerDialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
-            shape = dialogShape,
-            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = if (isGlass) 0.dp else 6.dp,
-            shadowElevation = 12.dp,
-            border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)) else null,
+        com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight()
-                .padding(vertical = 24.dp)
-                .liquidGlassChrome(dialogShape, enabled = isGlass)
+                .padding(vertical = 24.dp),
+            enabled = isGlass
         ) {
+            Surface(
+                shape = dialogShape,
+                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = if (isGlass) 0.dp else 6.dp,
+                shadowElevation = if (isGlass) 0.dp else 12.dp,
+                border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)) else null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .liquidGlassChrome(dialogShape, enabled = isGlass)
+            ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,35 +150,30 @@ fun PetalFeatureExplainerDialog(
                             }
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = feature.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                                feature.badge?.let { b ->
-                                    val badgeColor = feature.iconTint ?: MaterialTheme.colorScheme.primary
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = badgeColor.copy(alpha = 0.16f),
-                                        border = BorderStroke(0.5.dp, badgeColor.copy(alpha = 0.4f))
-                                    ) {
-                                        Text(
-                                            text = b,
-                                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color = badgeColor,
-                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
-                                        )
-                                    }
+                            feature.badge?.let { b ->
+                                val badgeColor = feature.iconTint ?: MaterialTheme.colorScheme.primary
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = badgeColor.copy(alpha = 0.16f),
+                                    border = BorderStroke(0.5.dp, badgeColor.copy(alpha = 0.4f))
+                                ) {
+                                    Text(
+                                        text = b,
+                                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = badgeColor,
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
+                                    )
                                 }
+                                Spacer(Modifier.height(4.dp))
                             }
+                            Text(
+                                text = feature.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                             Spacer(Modifier.height(2.dp))
                             Text(
                                 text = feature.subtitle,
@@ -279,6 +280,7 @@ fun PetalFeatureExplainerDialog(
             }
         }
     }
+}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
