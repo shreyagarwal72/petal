@@ -722,6 +722,7 @@ fun PetalGroupListRow(
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
     val haptics = LocalHapticFeedback.current
+    val selectedColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }

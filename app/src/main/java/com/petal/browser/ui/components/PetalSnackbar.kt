@@ -285,10 +285,10 @@ fun PetalSnackbar(
         PetalSnackbarType.SUCCESS -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.tertiaryContainer
         PetalSnackbarType.WARNING -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.errorContainer
     }
-    val badgeIcon = when (data.type) {
-        PetalSnackbarType.INFO -> androidx.compose.material.icons.Icons.Filled.Info
-        PetalSnackbarType.SUCCESS -> androidx.compose.material.icons.Icons.Filled.Check
-        PetalSnackbarType.WARNING -> androidx.compose.material.icons.Icons.Filled.Warning
+    val badgeIconRes = when (data.type) {
+        PetalSnackbarType.INFO -> com.petal.browser.R.drawable.info_filled
+        PetalSnackbarType.SUCCESS -> com.petal.browser.R.drawable.check_rounded
+        PetalSnackbarType.WARNING -> com.petal.browser.R.drawable.icon_alert
     }
 
     Surface(
@@ -329,7 +329,7 @@ fun PetalSnackbar(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             com.petal.browser.ui.containment.PetalGroupIconBadge(
-                badgeIcon,
+                painter = painterResource(badgeIconRes),
                 container = badgeContainer,
                 tint = accent,
                 size = 36.dp,
