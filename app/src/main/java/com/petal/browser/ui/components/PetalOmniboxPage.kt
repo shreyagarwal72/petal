@@ -215,6 +215,10 @@ fun PetalOmniboxPage(
     onBackPress: () -> Unit
 ) {
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        com.petal.browser.profile.PetalProfileManager.init(context)
+        com.petal.browser.wallpaper.PetalWallpaperManager.init(context)
+    }
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -475,19 +479,15 @@ fun PetalOmniboxPage(
                             onBackPress()
                         }
                 ) {
-                    // Background drawn first
+                    // Background drawn first and captures LocalPetalGlassWallpaper
                     M3ExpressiveVariableBackground(
                         modifier = Modifier.matchParentSize(),
                         pageSeed = "omnibox_page"
                     )
 
-                    com.petal.browser.ui.glass.PetalGlassContainer(
-                        modifier = Modifier.fillMaxSize(),
-                        enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    Column(
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize()
-                        ) {
                         // Chrome-style search field row pinned to top with status bar padding
                         Row(
                             modifier = Modifier
@@ -990,9 +990,10 @@ fun PetalOmniboxPage(
 
                         // Suggestions List - fills the remaining space above the keyboard with Material 3 Expressive containment
                         if (suggestions.isNotEmpty()) {
-                            com.petal.browser.ui.containment.PetalHeroCard(
-                                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            val heroShape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero
+                            Surface(
+                                shape = heroShape,
+                                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor().copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerLow,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f, fill = false)
@@ -1003,6 +1004,7 @@ fun PetalOmniboxPage(
                                             stiffness = Spring.StiffnessMediumLow
                                         )
                                     )
+                                    .com.petal.browser.ui.containment.liquidGlassChrome(shape = heroShape, enabled = isGlass, sheenIntensity = sheen)
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -1154,7 +1156,6 @@ fun PetalOmniboxPage(
                 }
             }
         }
-    }
     }
 
     if (suggestionToRemove != null) {

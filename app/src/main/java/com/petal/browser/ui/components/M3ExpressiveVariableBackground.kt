@@ -252,60 +252,38 @@ fun M3ExpressiveVariableBackground(
         return
     }
 
-    if (wallpaper != null && (liquidGlassBgMode == "STRIDE" || (liquidGlassBgMode == "IMAGE" && liquidGlassImageUri.isEmpty()))) {
+    val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
+    val effectiveWallpaperUri = when {
+        !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
+        isLiquidGlass && liquidGlassBgMode == "IMAGE" && liquidGlassImageUri.isNotBlank() -> liquidGlassImageUri
+        else -> null
+    }
+
+    if (effectiveWallpaperUri.isNullOrBlank() && wallpaper != null && (liquidGlassBgMode == "STRIDE" || (liquidGlassBgMode == "IMAGE" && liquidGlassImageUri.isEmpty()))) {
         PetalGlassPattern(modifier.captureGlassWallpaper(wallpaper))
         return
     }
 
-    if (isLiquidGlass && liquidGlassBgMode == "IMAGE" && liquidGlassImageUri.isNotEmpty()) {
-        val dim = liquidGlassBgDim.coerceIn(0f, 0.9f)
-        val blur = liquidGlassBgBlur.coerceIn(0f, 40f)
-
-        val imageModel = remember(liquidGlassImageUri) {
-            when {
-                liquidGlassImageUri.startsWith("android.resource://") -> android.net.Uri.parse(liquidGlassImageUri)
-                liquidGlassImageUri.startsWith("file://") -> java.io.File(liquidGlassImageUri.removePrefix("file://"))
-                liquidGlassImageUri.startsWith("/") -> java.io.File(liquidGlassImageUri)
-                liquidGlassImageUri.startsWith("content://") -> android.net.Uri.parse(liquidGlassImageUri)
-                else -> liquidGlassImageUri
-            }
+    if (!effectiveWallpaperUri.isNullOrBlank()) {
+        val effDim = if (!activeWallpaperUri.isNullOrBlank()) {
+            com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim
+        } else {
+            liquidGlassBgDim.coerceIn(0f, 0.9f)
         }
-        val imageRequest = remember(imageModel) {
-            coil.request.ImageRequest.Builder(context)
-                .data(imageModel)
-                .crossfade(true)
-                .allowHardware(true)
-                .build()
+        val effBlur = if (!activeWallpaperUri.isNullOrBlank()) {
+            com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur
+        } else {
+            liquidGlassBgBlur.coerceIn(0f, 40f)
         }
 
-        val density = androidx.compose.ui.platform.LocalDensity.current
-        androidx.compose.foundation.layout.Box(modifier = modifier.fillMaxSize()
-            .then(if (wallpaper != null) Modifier.captureGlassWallpaper(wallpaper) else Modifier)
-            .background(MaterialTheme.colorScheme.background)) {
-            coil.compose.AsyncImage(
-                model = imageRequest,
-                contentDescription = null,
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(
-                        if (blur > 0.5f && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                            Modifier.graphicsLayer {
-                                renderEffect = android.graphics.RenderEffect
-                                    .createBlurEffect(with(density) { blur.dp.toPx() }, with(density) { blur.dp.toPx() }, android.graphics.Shader.TileMode.CLAMP)
-                                    .asComposeRenderEffect()
-                            }
-                        } else Modifier
-                    )
+        com.petal.browser.wallpaper.PetalAnimatedWallpaperBackground(
+            wallpaperUri = effectiveWallpaperUri,
+            dim = effDim,
+            blur = effBlur,
+            modifier = modifier.fillMaxSize().then(
+                if (wallpaper != null) Modifier.captureGlassWallpaper(wallpaper) else Modifier
             )
-            if (dim > 0f) {
-                androidx.compose.foundation.layout.Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = dim))
-                )
-            }
-        }
+        )
         return
     }
 
