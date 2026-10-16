@@ -364,6 +364,8 @@ fun AppearanceSettingsScreenContent(
                     )
 
                     // Containment Group: Quick Languages & Website Language Setting
+                    val isGlass = liquidGlassEnabled && liquidGlassContainments
+                    val glassSheen = if (isGlass) liquidGlassSheen.coerceIn(0f, 1f) else 0.60f
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
@@ -378,7 +380,8 @@ fun AppearanceSettingsScreenContent(
                                 .fillMaxWidth()
                                 .liquidGlassChrome(
                                     shape = quickLangShape,
-                                    enabled = liquidGlassContainments
+                                    enabled = isGlass,
+                                    sheenIntensity = glassSheen
                                 )
                         ) {
                             Column(
@@ -427,7 +430,7 @@ fun AppearanceSettingsScreenContent(
                                 val quickLangScrollState = rememberScrollState()
                                 ScrollFadeRow(
                                     scrollState = quickLangScrollState,
-                                    edgeColor = if (liquidGlassContainments) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
+                                    edgeColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -448,7 +451,7 @@ fun AppearanceSettingsScreenContent(
                                                     }
                                                 },
                                                 shape = chipShape,
-                                                modifier = if (liquidGlassContainments) {
+                                                modifier = if (isGlass) {
                                                     Modifier.liquidGlassChrome(
                                                         shape = chipShape,
                                                         enabled = true,
@@ -456,10 +459,10 @@ fun AppearanceSettingsScreenContent(
                                                     )
                                                 } else Modifier,
                                                 colors = FilterChipDefaults.filterChipColors(
-                                                    containerColor = if (liquidGlassContainments) {
+                                                    containerColor = if (isGlass) {
                                                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f)
                                                     } else MaterialTheme.colorScheme.surfaceContainerLow,
-                                                    selectedContainerColor = if (liquidGlassContainments) {
+                                                    selectedContainerColor = if (isGlass) {
                                                         MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
                                                     } else MaterialTheme.colorScheme.secondaryContainer
                                                 ),
@@ -1488,12 +1491,13 @@ fun AppearanceSettingsScreenContent(
                     Spacer(Modifier.height(12.dp))
 
                     val langSearchShape = RoundedCornerShape(16.dp)
+                    val isSheetGlass = liquidGlassEnabled && liquidGlassContainments
                     OutlinedTextField(
                         value = languageSearchQuery,
                         onValueChange = { languageSearchQuery = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .liquidGlassChrome(shape = langSearchShape, enabled = liquidGlassContainments, sheenIntensity = 0.45f),
+                            .liquidGlassChrome(shape = langSearchShape, enabled = isSheetGlass, sheenIntensity = 0.45f),
                         placeholder = { Text("Search language...") },
                         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                         trailingIcon = {
@@ -1506,10 +1510,10 @@ fun AppearanceSettingsScreenContent(
                         singleLine = true,
                         shape = langSearchShape,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = if (liquidGlassContainments) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                            unfocusedContainerColor = if (liquidGlassContainments) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                            focusedBorderColor = if (liquidGlassContainments) Color.Transparent else MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = if (liquidGlassContainments) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                            focusedContainerColor = if (isSheetGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                            unfocusedContainerColor = if (isSheetGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                            focusedBorderColor = if (isSheetGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = if (isSheetGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
                         )
                     )
 

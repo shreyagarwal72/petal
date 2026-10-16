@@ -133,10 +133,12 @@ fun Modifier.liquidGlassChrome(
     alphaOverride: Float? = null,
     sheenOverride: Float? = null
 ): Modifier {
-    if (!enabled) return this
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val masterGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+    if (!enabled || !masterGlass) return this
     if (backdrop == null && LocalPetalGlassWallpaper.current?.ready == true) {
         LocalPetalGlassRevision.current
-        val sp = PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
         val dark = MaterialTheme.colorScheme.background.luminance() < .5f
         val opacity = (alphaOverride ?: sp.getFloat("sp_liquid_glass_alpha", .70f)).coerceIn(.10f, .95f)
         val tint = if (tintColor != Color.Unspecified) tintColor else MaterialTheme.colorScheme.surfaceContainerHigh
