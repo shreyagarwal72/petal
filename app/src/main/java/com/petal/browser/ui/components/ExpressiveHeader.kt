@@ -316,13 +316,23 @@ fun HeaderActionIcon(
     icon: ImageVector,
     contentDescription: String?,
     onClick: () -> Unit,
+    enableLiquidGlass: Boolean = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments"),
 ) {
     FilledTonalIconButton(
         onClick = onClick,
         colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            containerColor = if (enableLiquidGlass) {
+                com.petal.browser.ui.containment.petalGroupSurfaceColor()
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerHighest
+            },
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ),
+        modifier = if (enableLiquidGlass) {
+            Modifier.liquidGlassChrome(CircleShape, enabled = true)
+        } else Modifier,
     ) {
         Icon(icon, contentDescription = contentDescription)
     }
 }
+
