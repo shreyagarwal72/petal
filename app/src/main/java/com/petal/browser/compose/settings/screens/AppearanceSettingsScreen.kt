@@ -378,7 +378,7 @@ fun AppearanceSettingsScreenContent(
                                 .fillMaxWidth()
                                 .liquidGlassChrome(
                                     shape = quickLangShape,
-                                    enabled = isLiquidGlassContainmentsEnabled
+                                    enabled = liquidGlassContainments
                                 )
                         ) {
                             Column(
@@ -427,7 +427,7 @@ fun AppearanceSettingsScreenContent(
                                 val quickLangScrollState = rememberScrollState()
                                 ScrollFadeRow(
                                     scrollState = quickLangScrollState,
-                                    edgeColor = if (isLiquidGlassContainmentsEnabled) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
+                                    edgeColor = if (liquidGlassContainments) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -448,7 +448,7 @@ fun AppearanceSettingsScreenContent(
                                                     }
                                                 },
                                                 shape = chipShape,
-                                                modifier = if (isLiquidGlassContainmentsEnabled) {
+                                                modifier = if (liquidGlassContainments) {
                                                     Modifier.liquidGlassChrome(
                                                         shape = chipShape,
                                                         enabled = true,
@@ -456,10 +456,10 @@ fun AppearanceSettingsScreenContent(
                                                     )
                                                 } else Modifier,
                                                 colors = FilterChipDefaults.filterChipColors(
-                                                    containerColor = if (isLiquidGlassContainmentsEnabled) {
+                                                    containerColor = if (liquidGlassContainments) {
                                                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f)
                                                     } else MaterialTheme.colorScheme.surfaceContainerLow,
-                                                    selectedContainerColor = if (isLiquidGlassContainmentsEnabled) {
+                                                    selectedContainerColor = if (liquidGlassContainments) {
                                                         MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
                                                     } else MaterialTheme.colorScheme.secondaryContainer
                                                 ),
