@@ -116,7 +116,7 @@ fun SettingsHubScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 6.dp)
-                        .com.petal.browser.ui.glass.liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                        .com.petal.browser.ui.containment.liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f)
                         .focusRequester(focusRequester),
                     placeholder = { Text(stringResource(R.string.ui_search_settings)) },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },

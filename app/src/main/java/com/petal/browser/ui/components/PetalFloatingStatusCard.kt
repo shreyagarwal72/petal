@@ -84,7 +84,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.glass.liquidGlassChrome
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 /**
  * Data specification for configuring a [PetalFloatingStatusCard].

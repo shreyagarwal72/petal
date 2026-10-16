@@ -47,7 +47,7 @@ fun ExpressiveButtonGroup(
     Surface(
         modifier = modifier
             .height(height)
-            .com.petal.browser.ui.glass.liquidGlassChrome(shape = buttonGroupShape, enabled = isGlass, sheenIntensity = 0.35f),
+            .com.petal.browser.ui.containment.liquidGlassChrome(shape = buttonGroupShape, enabled = isGlass, sheenIntensity = 0.35f),
         shape = buttonGroupShape,
         color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = if (isGlass) 0.dp else 2.dp
