@@ -830,15 +830,11 @@ fun PetalSheet(
         sheetState = sheetState,
         shape = sheetShape,
         containerColor = if (isGlass) {
-            val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-            val baseColor = MaterialTheme.colorScheme.surfaceContainerLow
-            baseColor.copy(alpha = if (dark) 0.35f else 0.45f)
+            petalGroupSurfaceColor()
         } else MaterialTheme.colorScheme.surfaceContainerLow,
         dragHandle = dragHandle,
         content = {
-            CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides null) {
-                content()
-            }
+            content()
         }
     )
 }

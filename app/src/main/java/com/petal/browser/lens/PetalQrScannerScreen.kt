@@ -109,10 +109,12 @@ fun PetalQrScannerScreen(
         }
     }
 
+    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0F0F12))
+            .background(if (isLiquidGlass) Color(0xEB0F0F12) else Color(0xFF0F0F12))
             .windowInsetsPadding(WindowInsets.statusBars)
             .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
@@ -131,9 +133,10 @@ fun PetalQrScannerScreen(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+                    color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
                     modifier = Modifier
                         .size(44.dp)
+                        .then(if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
                         .bouncyClickable {
                             PetalHapticEngine.getInstance(context).playClick(context)
                             onDismiss()
@@ -143,7 +146,7 @@ fun PetalQrScannerScreen(
                         Icon(
                             imageVector = Icons.Rounded.Close,
                             contentDescription = stringResource(R.string.ui_cancel_scanning),
-                            tint = MaterialTheme.colorScheme.onSurface,
+                            tint = Color.White,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -166,8 +169,10 @@ fun PetalQrScannerScreen(
 
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
-                    modifier = Modifier.size(44.dp)
+                    color = if (isLiquidGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                    modifier = Modifier
+                        .size(44.dp)
+                        .then(if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -344,13 +349,15 @@ fun PetalQrScannerScreen(
             Spacer(Modifier.weight(1f))
 
             // ── Bottom Action Controls ───────────────────────────────────────
+            val bottomBarShape = RoundedCornerShape(32.dp)
             Surface(
-                shape = RoundedCornerShape(32.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
+                shape = bottomBarShape,
+                color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
+                    .then(if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(bottomBarShape, enabled = true) else Modifier)
             ) {
                 Row(
                     modifier = Modifier
@@ -362,9 +369,10 @@ fun PetalQrScannerScreen(
                     // Switch camera (front/back)
                     Surface(
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         modifier = Modifier
                             .size(54.dp)
+                            .then(if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
                             .bouncyClickable {
                                 PetalHapticEngine.getInstance(context).playClick(context)
                                 lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
@@ -378,7 +386,7 @@ fun PetalQrScannerScreen(
                             Icon(
                                 imageVector = Icons.Rounded.Cameraswitch,
                                 contentDescription = stringResource(R.string.ui_switch_camera),
-                                tint = MaterialTheme.colorScheme.onSurface,
+                                tint = Color.White,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -391,6 +399,7 @@ fun PetalQrScannerScreen(
                         shadowElevation = 6.dp,
                         modifier = Modifier
                             .size(68.dp)
+                            .then(if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
                             .bouncyClickable(enabled = !isCapturing) {
                                 PetalHapticEngine.getInstance(context).playClick(context)
                                 val capture = imageCapture
@@ -457,9 +466,10 @@ fun PetalQrScannerScreen(
                     // Torch Toggle Button
                     Surface(
                         shape = CircleShape,
-                        color = if (torchEnabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        color = if (torchEnabled) MaterialTheme.colorScheme.primaryContainer else if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         modifier = Modifier
                             .size(54.dp)
+                            .then(if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
                             .bouncyClickable {
                                 PetalHapticEngine.getInstance(context).playClick(context)
                                 torchEnabled = !torchEnabled
@@ -470,7 +480,7 @@ fun PetalQrScannerScreen(
                             Icon(
                                 imageVector = if (torchEnabled) Icons.Rounded.FlashOn else Icons.Rounded.FlashOff,
                                 contentDescription = stringResource(R.string.ui_toggle_torch),
-                                tint = if (torchEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                tint = if (torchEnabled) MaterialTheme.colorScheme.primary else Color.White,
                                 modifier = Modifier.size(24.dp)
                             )
                         }

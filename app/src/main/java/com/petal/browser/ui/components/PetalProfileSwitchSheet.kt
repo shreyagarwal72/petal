@@ -163,6 +163,7 @@ fun PetalProfileSwitchSheet(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .then(if (isGlass) Modifier.liquidGlassChrome(profileShape, enabled = true) else Modifier)
                                 .clickable {
                                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     onDismissRequest()
@@ -257,6 +258,7 @@ fun PetalProfileSwitchSheet(
                 Spacer(Modifier.height(16.dp))
 
                 // Add Profile Button
+                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                 FilledTonalButton(
                     onClick = {
                         isCreatingNew = true
@@ -265,7 +267,13 @@ fun PetalProfileSwitchSheet(
                         pendingCustomAvatarUri = null
                         pendingAvatarTargetProfileId = null
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().then(
+                        if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(14.dp), enabled = true) else Modifier
+                    ),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))

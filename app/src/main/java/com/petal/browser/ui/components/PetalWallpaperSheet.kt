@@ -622,15 +622,22 @@ fun PetalWallpaperSheet(
                 }
 
                 if (activeUri != null) {
-                    TextButton(
+                    FilledTonalButton(
                         onClick = {
                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                             PetalWallpaperManager.clearWallpaper(context)
-                        }
+                        },
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(12.dp), enabled = true) else Modifier
                     ) {
-                        Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.ui_reset))
+                        Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.ui_reset), maxLines = 1, softWrap = false)
                     }
                 }
             }
@@ -644,7 +651,13 @@ fun PetalWallpaperSheet(
             ) {
                 FilledTonalButton(
                     onClick = { openDevicePicker() },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).then(
+                        if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(14.dp), enabled = true) else Modifier
+                    ),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Icon(Icons.Rounded.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -669,7 +682,12 @@ fun PetalWallpaperSheet(
                             selectedCategory = cat
                         },
                         label = { Text(cat, fontSize = 12.sp) },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primaryContainer,
+                            containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(12.dp), enabled = true) else Modifier
                     )
                 }
             }

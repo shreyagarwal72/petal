@@ -238,10 +238,20 @@ fun PetalLensBottomSheet(
         }
     }
 
+    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
     Surface(
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth()
+        shape = sheetShape,
+        color = if (isLiquidGlass) {
+            com.petal.browser.ui.containment.petalGroupSurfaceColor()
+        } else MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(sheetShape, enabled = true)
+                else Modifier
+            )
     ) {
         Column(
             modifier = Modifier
@@ -323,7 +333,7 @@ fun PetalLensBottomSheet(
                         beginSnap()
                     },
                     shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
@@ -372,7 +382,7 @@ fun PetalLensBottomSheet(
                         }
                     },
                     shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
@@ -416,7 +426,12 @@ fun PetalLensBottomSheet(
                     try { galleryChooserLauncher.launch("image/*") }
                     catch (_: Exception) { PetalLensManager.launchGoogleLensApp(context); onDismissRequest() }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().then(
+                    if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true) else Modifier
+                ),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else Color.Transparent
+                ),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -426,10 +441,13 @@ fun PetalLensBottomSheet(
 
             // Builtin Photos Gallery Grid
             if (!hasPermission) {
+                val permShape = RoundedCornerShape(20.dp)
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier.fillMaxWidth()
+                    shape = permShape,
+                    color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth().then(
+                        if (isLiquidGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(permShape, enabled = true) else Modifier
+                    )
                 ) {
                     Column(
                         modifier = Modifier
