@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.petal.browser.ui.glass.recordGlassWallpaper
+import com.petal.browser.ui.glass.liveGlassWallpaper
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -208,12 +209,27 @@ fun PetalAiSearchResultSheet(
     // of the screen instead. It is only recorded (never drawn) and aligned to screen position.
     val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val glassSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
-    val useSnapshotGlass = isGlass && glassSnapshot != null && !glassSnapshot.isRecycled
+    val liveContext = androidx.compose.ui.platform.LocalContext.current
+    val liveSource = remember(liveContext) {
+        var c: android.content.Context? = liveContext
+        while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+        (c as? android.app.Activity)?.let {
+            it.findViewById<android.view.View>(R.id.main) ?: it.findViewById<android.view.View>(android.R.id.content)
+        }
+    }
+    val frameTick = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(isGlass, liveSource) {
+        if (isGlass && liveSource != null) {
+            while (true) { withFrameNanos { frameTick.longValue = it } }
+        }
+    }
+    val useLiveGlass = isGlass && liveSource != null
+    val useSnapshotGlass = !useLiveGlass && isGlass && glassSnapshot != null && !glassSnapshot.isRecycled
     var sheetScreenPos by remember { mutableStateOf(androidx.compose.ui.unit.IntOffset.Zero) }
     val glassDensity = androidx.compose.ui.platform.LocalDensity.current
 
     CompositionLocalProvider(
-        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides (if (useSnapshotGlass) glassWallpaper else null)
+        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides (if (useLiveGlass || useSnapshotGlass) glassWallpaper else null)
     ) {
     Box(
         modifier = Modifier
@@ -223,7 +239,14 @@ fun PetalAiSearchResultSheet(
                 sheetScreenPos = androidx.compose.ui.unit.IntOffset(pos.x.toInt(), pos.y.toInt())
             }
     ) {
-    if (useSnapshotGlass && glassSnapshot != null) {
+    if (useLiveGlass && liveSource != null) {
+        // Live: re-record the real app window behind the sheet every frame.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .liveGlassWallpaper(glassWallpaper, liveSource) { frameTick.longValue }
+        )
+    } else if (useSnapshotGlass && glassSnapshot != null) {
         Box(
             modifier = Modifier
                 .matchParentSize()

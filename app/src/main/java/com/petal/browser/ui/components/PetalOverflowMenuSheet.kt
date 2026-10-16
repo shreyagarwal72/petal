@@ -50,6 +50,7 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.recordGlassWallpaper
+import com.petal.browser.ui.glass.liveGlassWallpaper
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -409,6 +410,20 @@ fun PetalOverflowMenuSheet(
     val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val wallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
+    val liveContext = androidx.compose.ui.platform.LocalContext.current
+    val liveSource = remember(liveContext) {
+        var c: android.content.Context? = liveContext
+        while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+        (c as? android.app.Activity)?.let {
+            it.findViewById<android.view.View>(R.id.main) ?: it.findViewById<android.view.View>(android.R.id.content)
+        }
+    }
+    val frameTick = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(isLiquidGlass, liveSource) {
+        if (isLiquidGlass && liveSource != null) {
+            while (true) { withFrameNanos { frameTick.longValue = it } }
+        }
+    }
 
     CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper) {
       Box(
@@ -422,7 +437,14 @@ fun PetalOverflowMenuSheet(
       ) {
         // Record-only source: feeds the frosted + refracted glass, never drawn itself,
         // so the live page stays visible behind the menu.
-        if (isLiquidGlass) {
+        if (isLiquidGlass && liveSource != null) {
+            // Live: re-record the real app window behind the menu every frame.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .liveGlassWallpaper(wallpaper, liveSource) { frameTick.longValue }
+            )
+        } else if (isLiquidGlass) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

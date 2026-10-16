@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -96,6 +97,58 @@ fun Modifier.recordGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
         onDrawWithContent {
             wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
             wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+        }
+    }
+
+/**
+ * Live, dynamic variant for popups that live in their own window (the overflow menu).
+ * Every frame it re-records [source] (a view of the app window behind the popup) into the
+ * wallpaper layers, so the frosted/refracted glass follows animations, scrolling, video and
+ * page changes behind the menu exactly like the in-window home screen containments do.
+ * Draws nothing itself. [tick] must read a per-frame state so this redraws each frame.
+ */
+fun Modifier.liveGlassWallpaper(
+    wallpaper: PetalGlassWallpaper,
+    source: android.view.View,
+    tick: () -> Long
+): Modifier = liveGlassWallpaperImpl(wallpaper, source, tick, FloatArray(2))
+
+private fun Modifier.liveGlassWallpaperImpl(
+    wallpaper: PetalGlassWallpaper,
+    source: android.view.View,
+    tick: () -> Long,
+    boxOnScreen: FloatArray
+): Modifier =
+    onGloballyPositioned {
+        wallpaper.origin = it.positionInRoot()
+        wallpaper.ready = it.size.width > 0 && it.size.height > 0
+        val pos = it.positionOnScreen()
+        boxOnScreen[0] = pos.x
+        boxOnScreen[1] = pos.y
+    }.drawWithCache {
+        wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
+            android.graphics.RenderEffect.createBlurEffect(
+                20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
+            ).asComposeRenderEffect()
+        } else null
+        val srcLoc = IntArray(2)
+        onDrawWithContent {
+            tick() // reading per-frame state redraws (and re-records) every frame
+            if (source.isAttachedToWindow && source.width > 0 && source.height > 0) {
+                source.getLocationOnScreen(srcLoc)
+                val dx = srcLoc[0] - boxOnScreen[0]
+                val dy = srcLoc[1] - boxOnScreen[1]
+                wallpaper.sharp.record {
+                    drawIntoCanvas { c ->
+                        val nc = c.nativeCanvas
+                        val save = nc.save()
+                        nc.translate(dx, dy)
+                        try { source.draw(nc) } catch (_: Throwable) {}
+                        nc.restoreToCount(save)
+                    }
+                }
+                wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+            }
         }
     }
 
