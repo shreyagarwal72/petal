@@ -69,7 +69,9 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     val alphaPref = prefs.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.10f, .95f)
     val opacity = if (themeGlass) (0.25f + alphaPref * 1.05f) else 1f
     val baseEdge = if (themeGlass) (prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f) else 1f
-    val baseTintAlpha = ((if (dark) 0.12f else 0.16f) * opacity).coerceIn(0f, 0.94f)
+    // Frost level matched to the settings containments (~0.4 alpha), so the bar reads as
+    // frosted glass even where the live page cannot be sampled.
+    val baseTintAlpha = ((if (dark) 0.30f else 0.38f) * opacity).coerceIn(0f, 0.9f)
     if (bar == null) {
         if (wallpaper != null && wallpaper.ready) {
             return this.petalGlassPanel(shape, tint.copy(alpha = baseTintAlpha), baseEdge)

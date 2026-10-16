@@ -2845,6 +2845,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     : 0;
             mainContent.setPadding(0, topInset, 0, bottomInset);
 
+            // The strip above the page (status bar + top address bar) has no page content, so
+            // the window's black showed behind the glass bar. Give it the theme surface colour.
+            boolean topBarGlass = !isBottom
+                    && sp.getBoolean("sp_liquid_glass_enabled", false)
+                    && sp.getBoolean("sp_liquid_glass_address_bar", true);
+            View rootForStrip = findViewById(R.id.main);
+            if (rootForStrip != null) {
+                if (topBarGlass) {
+                    rootForStrip.setBackgroundColor(com.google.android.material.color.MaterialColors.getColor(
+                            rootForStrip, com.google.android.material.R.attr.colorSurface));
+                } else {
+                    rootForStrip.setBackground(null);
+                }
+            }
+
 
             if (progressBarCompose != null && progressBarCompose.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) progressBarCompose.getLayoutParams();

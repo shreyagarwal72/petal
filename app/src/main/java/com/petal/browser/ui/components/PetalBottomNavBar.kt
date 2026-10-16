@@ -152,6 +152,11 @@ fun PetalBottomNavBar(
     val newTabLabel = "New"
 
     val effectiveFloating = isFloatingStyle && !isBottomAddressBar
+    val flatGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+    // Glass on the docked bar runs through the gesture-bar area, so no page shows unblurred under it.
+    val flatNavInset = if (flatGlass && !effectiveFloating) {
+        with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
+    } else 0.dp
     if (effectiveFloating) {
         // Stride's floating glass nav bar (see PetalStrideNavBar).
         Box(
@@ -187,7 +192,7 @@ fun PetalBottomNavBar(
                     alpha = entrance.value.coerceIn(0f, 1f)
                 }
                 .fillMaxWidth()
-                .navigationBarsPadding(),
+                .then(if (flatGlass) Modifier else Modifier.navigationBarsPadding()),
             contentAlignment = Alignment.BottomCenter
         ) {
             val navBarShape = if (isBottomAddressBar) {
@@ -209,7 +214,7 @@ fun PetalBottomNavBar(
                 shadowElevation = if (isLiquidGlass || isBottomAddressBar) 0.dp else 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
+                    .height(64.dp + flatNavInset)
                     .then(
                         if (isLiquidGlass) {
                             Modifier.liquidGlass(navBarShape, baseContainer, glassBar)
@@ -219,7 +224,8 @@ fun PetalBottomNavBar(
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 8.dp),
+                        .padding(horizontal = 8.dp)
+                        .padding(bottom = flatNavInset),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {

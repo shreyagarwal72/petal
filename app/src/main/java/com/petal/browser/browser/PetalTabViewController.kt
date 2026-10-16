@@ -260,6 +260,14 @@ class PetalTabViewController private constructor(
         if (isHostedByBrowserActivity()) {
             isEnabled = false
         }
+        // Tab pages are drawn by android-components' GeckoEngineView, whose inner GeckoView
+        // defaults to a SurfaceView. A SurfaceView cannot be recorded, so the bars' glass saw a
+        // hole and showed the live page through unblurred. Switch it to the TextureView backend.
+        if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            findGeckoView(engineView.asView())?.let {
+                try { com.petal.browser.ui.glass.GeckoGlassBackend.useTextureView(it) } catch (_: Throwable) {}
+            }
+        }
         mediaBridge = com.petal.browser.media.PetalMediaBridge(
             context,
             object : com.petal.browser.media.PetalMediaBridge.MediaStateListener {

@@ -95,6 +95,18 @@ class GlassBackdrop internal constructor(private val source: View) {
         try {
             // Background plus each child's display list, by reference.
             source.draw(canvas)
+            // A top bar sits over the strip main_content reserves above the page, which is
+            // empty (the window shows black there). Fill it with the page's first rows,
+            // mirrored about the strip's lower edge, so the glass has real content to bend.
+            val strip = source.paddingTop
+            if (strip in 1 until h) {
+                val save = canvas.save()
+                canvas.clipRect(0, 0, w, strip)
+                canvas.translate(0f, 2f * strip)
+                canvas.scale(1f, -1f)
+                source.draw(canvas)
+                canvas.restoreToCount(save)
+            }
         } catch (_: Throwable) {
             // A child that cannot be drawn twice must not take the bar down with it.
         } finally {

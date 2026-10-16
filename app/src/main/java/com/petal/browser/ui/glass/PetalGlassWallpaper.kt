@@ -76,6 +76,27 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
         }
     }
 
+/**
+ * Like [captureGlassWallpaper] but draws nothing: it only records the content into the
+ * wallpaper layers. Use it for dialogs and popups, where the live screen already shows
+ * behind the window and the recorded copy exists only to be frosted and refracted.
+ */
+fun Modifier.recordGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
+    onGloballyPositioned {
+        wallpaper.origin = it.positionInRoot()
+        wallpaper.ready = it.size.width > 0 && it.size.height > 0
+    }.drawWithCache {
+        wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
+            android.graphics.RenderEffect.createBlurEffect(
+                7.dp.toPx(), 7.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
+            ).asComposeRenderEffect()
+        } else null
+        onDrawWithContent {
+            wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
+            wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+        }
+    }
+
 /** Fixed palette pools and contours, matching Stride's default glass wallpaper. */
 @Composable
 fun PetalGlassPattern(modifier: Modifier = Modifier) {
@@ -198,7 +219,7 @@ fun PetalGlassContainer(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .captureGlassWallpaper(wallpaper)
+                    .recordGlassWallpaper(wallpaper)
             ) {
                 if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
                     androidx.compose.foundation.Image(
