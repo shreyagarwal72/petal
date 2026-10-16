@@ -37,6 +37,8 @@ import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -212,23 +214,60 @@ fun PetalGlassContainer(
         return
     }
     val wallpaper = rememberPetalGlassWallpaper()
-    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // Take a fresh screenshot of the screen behind this popup. The shared "current" snapshot
+    // can be stale (from an earlier menu or the home page), which showed wrong content.
+    val rootView = remember(context) {
+        var c: android.content.Context? = context
+        while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+        (c as? android.app.Activity)?.findViewById<android.view.View>(android.R.id.content)
+    }
+    val snapshot = remember {
+        val fresh = try {
+            if (rootView != null && rootView.width > 0 && rootView.height > 0)
+                com.petal.browser.predictive.PetalContentSnapshot.capture(rootView) else null
+        } catch (_: Throwable) { null }
+        fresh ?: com.petal.browser.predictive.PetalContentSnapshot.current
+    }
+    var screenPos by remember { mutableStateOf(androidx.compose.ui.unit.IntOffset.Zero) }
 
     CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
-        Box(modifier) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .recordGlassWallpaper(wallpaper)
-            ) {
-                if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
-                    androidx.compose.foundation.Image(
-                        bitmap = snapshotBitmap.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                    )
-                } else {
+        Box(
+            modifier.onGloballyPositioned {
+                val pos = it.positionOnScreen()
+                screenPos = androidx.compose.ui.unit.IntOffset(
+                    kotlin.math.round(pos.x).toInt(), kotlin.math.round(pos.y).toInt()
+                )
+            }
+        ) {
+            if (snapshot != null && !snapshot.isRecycled) {
+                // Full-screen-sized backdrop placed so it lines up with the real screen
+                // behind the popup; recorded only, never drawn.
+                Box(modifier = Modifier.matchParentSize()) {
+                    Box(
+                        modifier = Modifier
+                            .layout { measurable, _ ->
+                                val placeable = measurable.measure(
+                                    androidx.compose.ui.unit.Constraints.fixed(snapshot.width, snapshot.height)
+                                )
+                                val rootLoc = IntArray(2)
+                                rootView?.getLocationOnScreen(rootLoc)
+                                layout(0, 0) {
+                                    placeable.place(-(screenPos.x - rootLoc[0]), -(screenPos.y - rootLoc[1]))
+                                }
+                            }
+                            .recordGlassWallpaper(wallpaper)
+                    ) {
+                        androidx.compose.foundation.Image(
+                            bitmap = snapshot.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.FillBounds
+                        )
+                    }
+                }
+            } else {
+                Box(modifier = Modifier.matchParentSize().recordGlassWallpaper(wallpaper)) {
                     PetalGlassPattern(Modifier.fillMaxSize())
                 }
             }
@@ -236,4 +275,3 @@ fun PetalGlassContainer(
         }
     }
 }
-

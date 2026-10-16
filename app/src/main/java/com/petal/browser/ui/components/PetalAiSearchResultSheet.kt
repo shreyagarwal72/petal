@@ -22,6 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.petal.browser.ui.glass.recordGlassWallpaper
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.foundation.Image
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,6 +69,10 @@ object PetalAiSearchBridge {
         query: String
     ) {
         activity.runOnUiThread {
+            try {
+                val rootForSnapshot = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+                com.petal.browser.predictive.PetalContentSnapshot.capture(rootForSnapshot)
+            } catch (_: Throwable) {}
             val dialog = BottomSheetDialog(activity)
             dialog.behavior.apply {
                 state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
@@ -195,6 +204,44 @@ fun PetalAiSearchResultSheet(
     val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     val pillShape = RoundedCornerShape(28.dp)
 
+    // The dialog window cannot blur what is behind it on every device, so frost a screenshot
+    // of the screen instead. It is only recorded (never drawn) and aligned to screen position.
+    val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val glassSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
+    val useSnapshotGlass = isGlass && glassSnapshot != null && !glassSnapshot.isRecycled
+    var sheetScreenPos by remember { mutableStateOf(androidx.compose.ui.unit.IntOffset.Zero) }
+    val glassDensity = androidx.compose.ui.platform.LocalDensity.current
+
+    CompositionLocalProvider(
+        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides (if (useSnapshotGlass) glassWallpaper else null)
+    ) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned {
+                val pos = it.positionOnScreen()
+                sheetScreenPos = androidx.compose.ui.unit.IntOffset(pos.x.toInt(), pos.y.toInt())
+            }
+    ) {
+    if (useSnapshotGlass && glassSnapshot != null) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .recordGlassWallpaper(glassWallpaper)
+        ) {
+            Image(
+                bitmap = glassSnapshot.asImageBitmap(),
+                contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.FillBounds,
+                modifier = Modifier
+                    .requiredSize(
+                        with(glassDensity) { glassSnapshot.width.toDp() },
+                        with(glassDensity) { glassSnapshot.height.toDp() }
+                    )
+                    .offset { androidx.compose.ui.unit.IntOffset(-sheetScreenPos.x, -sheetScreenPos.y) }
+            )
+        }
+    }
     Surface(
         shape = sheetShape,
         color = if (isGlass) {
@@ -205,7 +252,7 @@ fun PetalAiSearchResultSheet(
             .fillMaxWidth()
             .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = 0.65f)
     ) {
-        CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides null) {
+        run {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -784,6 +831,8 @@ fun PetalAiSearchResultSheet(
                 }
             }
         }
+    }
+    }
     }
 }
 }

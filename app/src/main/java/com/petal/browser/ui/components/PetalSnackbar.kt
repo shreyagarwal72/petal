@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.petal.browser.ui.glass.liquidGlass
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -269,10 +270,25 @@ fun PetalSnackbar(
     shape: Shape = RoundedCornerShape(percent = 50)
 ) {
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val (iconRes, iconTint) = when (data.type) {
-        PetalSnackbarType.INFO -> Pair(R.drawable.icon_info, MaterialTheme.colorScheme.primary)
-        PetalSnackbarType.SUCCESS -> Pair(R.drawable.icon_check, MaterialTheme.colorScheme.tertiary)
-        PetalSnackbarType.WARNING -> Pair(R.drawable.icon_alert, MaterialTheme.colorScheme.error)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // Live glass over the page, same recipe as the bars: blur + edge refraction + tint.
+    val glassSource = remember(context) {
+        var c: Context? = context
+        while (c is android.content.ContextWrapper && c !is Activity) c = c.baseContext
+        (c as? Activity)?.findViewById<android.view.View>(R.id.main_content)
+    }
+    val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isGlass) glassSource else null)
+    val liveGlass = isGlass && glassBar != null
+
+    val (accent, badgeContainer) = when (data.type) {
+        PetalSnackbarType.INFO -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.primaryContainer
+        PetalSnackbarType.SUCCESS -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.tertiaryContainer
+        PetalSnackbarType.WARNING -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.errorContainer
+    }
+    val badgeIcon = when (data.type) {
+        PetalSnackbarType.INFO -> androidx.compose.material.icons.Icons.Filled.Info
+        PetalSnackbarType.SUCCESS -> androidx.compose.material.icons.Icons.Filled.Check
+        PetalSnackbarType.WARNING -> androidx.compose.material.icons.Icons.Filled.Warning
     }
 
     Surface(
@@ -285,19 +301,22 @@ fun PetalSnackbar(
                 }
             }
             .then(
-                if (isGlass) {
-                    Modifier.liquidGlassChrome(
-                        shape = shape,
-                        enabled = true,
-                        sheenIntensity = 0.65f
-                    )
-                } else Modifier
+                when {
+                    liveGlass -> Modifier.liquidGlass(shape, MaterialTheme.colorScheme.surfaceContainerHigh, glassBar)
+                    isGlass -> Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = 0.65f)
+                    else -> Modifier
+                }
             ),
         shape = shape,
-        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+        color = when {
+            liveGlass -> androidx.compose.ui.graphics.Color.Transparent
+            isGlass -> petalGroupSurfaceColor()
+            else -> MaterialTheme.colorScheme.surfaceContainerHighest
+        },
         contentColor = MaterialTheme.colorScheme.onSurface,
         tonalElevation = if (isGlass) 0.dp else 6.dp,
-        shadowElevation = 8.dp,
+        // A shadow under translucent glass shows through as a dark smear.
+        shadowElevation = if (isGlass) 0.dp else 8.dp,
         border = if (isGlass) null else androidx.compose.foundation.BorderStroke(
             width = 1.dp,
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
@@ -305,15 +324,16 @@ fun PetalSnackbar(
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = data.type.name,
-                tint = iconTint,
-                modifier = Modifier.size(20.dp)
+            com.petal.browser.ui.containment.PetalGroupIconBadge(
+                badgeIcon,
+                container = badgeContainer,
+                tint = accent,
+                size = 36.dp,
+                iconSize = 18.dp
             )
 
             Text(
@@ -347,3 +367,4 @@ fun PetalSnackbar(
         }
     }
 }
+
