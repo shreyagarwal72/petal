@@ -43,6 +43,15 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.PetalGlassPattern
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.liquidGlassChrome
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.Image
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -277,89 +286,136 @@ fun PetalVoiceSearchSheet(
         }
     }
 
-    com.petal.browser.ui.containment.PetalSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 36.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+    val isLiquidGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val wallpaper = rememberPetalGlassWallpaper()
+    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
+    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
+    CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
+        com.petal.browser.ui.containment.PetalSheet(
+            onDismissRequest = onDismiss,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // Animated Mic Container with Material 3 Expressive Primary Colors
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(100.dp)
-                    .scale(pulseScale)
-                    .clip(CircleShape)
-                    .background(
-                        if (isListening) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainer
-                    )
-                    .clickable {
-                        if (!isListening) {
-                            if (hasAudioPermission()) {
-                                startOrRestartListening()
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            }
+            Box(modifier = Modifier.fillMaxWidth()) {
+                if (isLiquidGlass) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .captureGlassWallpaper(wallpaper)
+                    ) {
+                        if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
+                            Image(
+                                bitmap = snapshotBitmap.asImageBitmap(),
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                        } else {
+                            PetalGlassPattern(Modifier.fillMaxSize())
                         }
                     }
-            ) {
-                Icon(
-                    imageVector = if (isListening) Icons.Rounded.Mic else Icons.Rounded.MicOff,
-                    contentDescription = stringResource(R.string.ui_voice_search_mic),
-                    tint = if (isListening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(44.dp)
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            Text(
-                text = statusText,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            if (spokenText.isNotBlank()) {
-                com.petal.browser.ui.containment.PetalHeroCard(
-                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-                ) {
-                    Text(
-                        text = spokenText,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(16.dp)
-                    )
                 }
-            } else {
-                Text(
-                    text = stringResource(R.string.ui_try_saying_weather_in_india),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 36.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Animated Mic Container with Material 3 Expressive Primary Colors & Liquid Glass
+                    val micShape = CircleShape
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .scale(pulseScale)
+                            .clip(micShape)
+                            .background(
+                                if (isListening) {
+                                    if (isLiquidGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+                                    else MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    if (isLiquidGlass) petalGroupSurfaceColor()
+                                    else MaterialTheme.colorScheme.surfaceContainer
+                                }
+                            )
+                            .liquidGlassChrome(shape = micShape, enabled = isLiquidGlass, sheenIntensity = sheen)
+                            .clickable {
+                                if (!isListening) {
+                                    if (hasAudioPermission()) {
+                                        startOrRestartListening()
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                }
+                            }
+                    ) {
+                        Icon(
+                            imageVector = if (isListening) Icons.Rounded.Mic else Icons.Rounded.MicOff,
+                            contentDescription = stringResource(R.string.ui_voice_search_mic),
+                            tint = if (isListening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(44.dp)
+                        )
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    if (spokenText.isNotBlank()) {
+                        com.petal.browser.ui.containment.PetalHeroCard(
+                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = spokenText,
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.primary,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                    } else {
+                        val hintShape = RoundedCornerShape(20.dp)
+                        Surface(
+                            shape = hintShape,
+                            color = if (isLiquidGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                                .liquidGlassChrome(shape = hintShape, enabled = isLiquidGlass, sheenIntensity = sheen)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.ui_try_saying_weather_in_india),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
