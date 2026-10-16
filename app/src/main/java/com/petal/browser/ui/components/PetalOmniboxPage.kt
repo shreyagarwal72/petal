@@ -1004,7 +1004,7 @@ fun PetalOmniboxPage(
                                             stiffness = Spring.StiffnessMediumLow
                                         )
                                     )
-                                    .com.petal.browser.ui.containment.liquidGlassChrome(shape = heroShape, enabled = isGlass, sheenIntensity = sheen)
+                                    .liquidGlassChrome(shape = heroShape, enabled = isGlass, sheenIntensity = sheen)
                             ) {
                                 Column(
                                     modifier = Modifier

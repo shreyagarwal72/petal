@@ -21,6 +21,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 
 data class ExpressiveSegmentItem(
     val id: String,
@@ -41,15 +44,15 @@ fun ExpressiveButtonGroup(
     height: Dp = 44.dp
 ) {
     val outerRadius = height / 2
-    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val buttonGroupShape = RoundedCornerShape(outerRadius)
 
     Surface(
         modifier = modifier
             .height(height)
-            .com.petal.browser.ui.containment.liquidGlassChrome(shape = buttonGroupShape, enabled = isGlass, sheenIntensity = 0.35f),
+            .liquidGlassChrome(shape = buttonGroupShape, enabled = isGlass, sheenIntensity = 0.35f),
         shape = buttonGroupShape,
-        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = if (isGlass) 0.dp else 2.dp
     ) {
         Row(

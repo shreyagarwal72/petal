@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,6 +36,9 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.containment.petalGroupPositionFor
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -108,7 +112,7 @@ fun SettingsHubScreen(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") || com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val searchShape = RoundedCornerShape(16.dp)
                 OutlinedTextField(
                     value = searchQuery,
@@ -116,7 +120,7 @@ fun SettingsHubScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 6.dp)
-                        .com.petal.browser.ui.containment.liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                        .liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f)
                         .focusRequester(focusRequester),
                     placeholder = { Text(stringResource(R.string.ui_search_settings)) },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
@@ -130,8 +134,8 @@ fun SettingsHubScreen(
                     singleLine = true,
                     shape = searchShape,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                        unfocusedContainerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
                         focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
                     )
