@@ -471,8 +471,15 @@ private fun RowScope.FeaturedStepCard(
     modifier: Modifier = Modifier,
     motionSpec: SpringSpec<Float>
 ) {
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val isFocused = dist < 0.6f
-    val contentColor = if (item.isTertiary) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+    val contentColor = if (isGlass) {
+        MaterialTheme.colorScheme.onSurface
+    } else if (item.isTertiary) {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    } else {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    }
 
     PetalHeroCard(
         modifier = modifier.fillMaxHeight().clickable(

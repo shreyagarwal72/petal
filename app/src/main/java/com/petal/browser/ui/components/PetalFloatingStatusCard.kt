@@ -84,6 +84,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.glass.liquidGlassChrome
 
 /**
  * Data specification for configuring a [PetalFloatingStatusCard].
@@ -201,19 +202,21 @@ fun PetalFloatingStatusCard(
                 .padding(horizontal = 16.dp, vertical = bottomPadding)
         ) {
             val cardShape = RoundedCornerShape(24.dp)
+            val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
             val effectiveContainerColor = data.containerColor
-                ?: MaterialTheme.colorScheme.surfaceContainerHigh
+                ?: if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
             val effectiveContentColor = data.contentColor
                 ?: MaterialTheme.colorScheme.onSurface
 
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .liquidGlassChrome(shape = cardShape, enabled = isGlass)
                     .shadow(
-                        elevation = 10.dp,
+                        elevation = if (isGlass) 4.dp else 10.dp,
                         shape = cardShape,
-                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                        ambientColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = if (isGlass) 0.08f else 0.18f),
+                        ambientColor = MaterialTheme.colorScheme.outline.copy(alpha = if (isGlass) 0.05f else 0.12f)
                     )
                     .clip(cardShape)
                     .then(
@@ -224,7 +227,7 @@ fun PetalFloatingStatusCard(
                 shape = cardShape,
                 color = effectiveContainerColor,
                 contentColor = effectiveContentColor,
-                tonalElevation = 6.dp
+                tonalElevation = if (isGlass) 0.dp else 6.dp
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -301,12 +304,14 @@ fun PetalFloatingStatusCard(
 
                         // Secondary Action Button (if provided)
                         if (data.secondaryActionLabel != null && data.onSecondaryAction != null) {
+                            val secShape = RoundedCornerShape(50)
                             Button(
                                 onClick = data.onSecondaryAction,
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                shape = RoundedCornerShape(50),
+                                shape = secShape,
+                                modifier = if (isGlass) Modifier.liquidGlassChrome(shape = secShape, enabled = true, sheenIntensity = 0.4f) else Modifier,
                                 colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    containerColor = if (isGlass) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             ) {
@@ -322,12 +327,14 @@ fun PetalFloatingStatusCard(
 
                         // Primary Action Button
                         if (data.primaryActionLabel != null && data.onPrimaryAction != null) {
+                            val primShape = RoundedCornerShape(50)
                             Button(
                                 onClick = data.onPrimaryAction,
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                                shape = RoundedCornerShape(50),
+                                shape = primShape,
+                                modifier = if (isGlass) Modifier.liquidGlassChrome(shape = primShape, enabled = true, sheenIntensity = 0.5f) else Modifier,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    containerColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary
                                 )
                             ) {

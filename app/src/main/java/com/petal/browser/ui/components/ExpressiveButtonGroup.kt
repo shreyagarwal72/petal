@@ -41,12 +41,16 @@ fun ExpressiveButtonGroup(
     height: Dp = 44.dp
 ) {
     val outerRadius = height / 2
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val buttonGroupShape = RoundedCornerShape(outerRadius)
 
     Surface(
-        modifier = modifier.height(height),
-        shape = RoundedCornerShape(outerRadius),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 2.dp
+        modifier = modifier
+            .height(height)
+            .com.petal.browser.ui.glass.liquidGlassChrome(shape = buttonGroupShape, enabled = isGlass, sheenIntensity = 0.35f),
+        shape = buttonGroupShape,
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = if (isGlass) 0.dp else 2.dp
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

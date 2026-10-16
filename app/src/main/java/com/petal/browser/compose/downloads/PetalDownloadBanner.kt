@@ -191,13 +191,18 @@ object PetalDownloadBannerBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    PetalDownloadBanner(
-                        bannerData = currentBannerData.value,
-                        onOpenDownloads = { onOpenDownloads.run() },
-                        onDismiss = {
-                            dismissCurrentBanner(currentBannerData.value)
-                        }
-                    )
+                    com.petal.browser.ui.glass.PetalGlassContainer(
+                        modifier = Modifier,
+                        enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    ) {
+                        PetalDownloadBanner(
+                            bannerData = currentBannerData.value,
+                            onOpenDownloads = { onOpenDownloads.run() },
+                            onDismiss = {
+                                dismissCurrentBanner(currentBannerData.value)
+                            }
+                        )
+                    }
                 }
             }
         }

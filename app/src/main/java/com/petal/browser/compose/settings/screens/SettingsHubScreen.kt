@@ -108,12 +108,15 @@ fun SettingsHubScreen(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
+                val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") || com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val searchShape = RoundedCornerShape(16.dp)
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 6.dp)
+                        .com.petal.browser.ui.glass.liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f)
                         .focusRequester(focusRequester),
                     placeholder = { Text(stringResource(R.string.ui_search_settings)) },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
@@ -125,10 +128,12 @@ fun SettingsHubScreen(
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = searchShape,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                        focusedContainerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedContainerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                        focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
                     )
                 )
             }

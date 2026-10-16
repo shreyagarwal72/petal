@@ -369,11 +369,17 @@ fun AppearanceSettingsScreenContent(
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         // Top item: Quick languages horizontal row
+                        val quickLangShape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.TOP)
                         Card(
-                            shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.TOP),
+                            shape = quickLangShape,
                             colors = CardDefaults.cardColors(containerColor = com.petal.browser.ui.containment.petalGroupSurfaceColor()),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .liquidGlassChrome(
+                                    shape = quickLangShape,
+                                    enabled = isLiquidGlassContainmentsEnabled
+                                )
                         ) {
                             Column(
                                 modifier = Modifier
@@ -421,7 +427,7 @@ fun AppearanceSettingsScreenContent(
                                 val quickLangScrollState = rememberScrollState()
                                 ScrollFadeRow(
                                     scrollState = quickLangScrollState,
-                                    edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    edgeColor = if (isLiquidGlassContainmentsEnabled) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -432,6 +438,7 @@ fun AppearanceSettingsScreenContent(
                                     ) {
                                         quickLanguages.forEach { lang ->
                                             val isSelected = appLanguage == lang.tag
+                                            val chipShape = RoundedCornerShape(12.dp)
                                             FilterChip(
                                                 selected = isSelected,
                                                 onClick = {
@@ -440,6 +447,22 @@ fun AppearanceSettingsScreenContent(
                                                         HelperUnit.setAppLanguage(context, lang.tag)
                                                     }
                                                 },
+                                                shape = chipShape,
+                                                modifier = if (isLiquidGlassContainmentsEnabled) {
+                                                    Modifier.liquidGlassChrome(
+                                                        shape = chipShape,
+                                                        enabled = true,
+                                                        sheenIntensity = if (isSelected) 0.5f else 0.25f
+                                                    )
+                                                } else Modifier,
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    containerColor = if (isLiquidGlassContainmentsEnabled) {
+                                                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f)
+                                                    } else MaterialTheme.colorScheme.surfaceContainerLow,
+                                                    selectedContainerColor = if (isLiquidGlassContainmentsEnabled) {
+                                                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
+                                                    } else MaterialTheme.colorScheme.secondaryContainer
+                                                ),
                                                 label = { Text(lang.nativeName) },
                                                 leadingIcon = if (isSelected) {
                                                     { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }

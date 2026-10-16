@@ -168,21 +168,29 @@ fun PetalDeveloperHeroSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
+                    val pillContainerColor = if (isGlass) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    }
+
                     // Petal Official Website Pill
+                    val webShape = RoundedCornerShape(
+                        topStart = 20.dp,
+                        bottomStart = 20.dp,
+                        topEnd = 6.dp,
+                        bottomEnd = 6.dp
+                    )
                     Button(
                         onClick = {
                             haptics.playClick(context)
                             onOpenUrl("https://my-petal-browser.vercel.app/")
                         },
-                        shape = RoundedCornerShape(
-                            topStart = 20.dp,
-                            bottomStart = 20.dp,
-                            topEnd = 6.dp,
-                            bottomEnd = 6.dp
-                        ),
+                        shape = webShape,
                         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = webShape, enabled = true, sheenIntensity = 0.4f) else Modifier,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            containerColor = pillContainerColor,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     ) {
@@ -194,6 +202,7 @@ fun PetalDeveloperHeroSection(
                     }
 
                     // Contact Email Pill (hereyourchampion@gmail.com)
+                    val emailShape = RoundedCornerShape(6.dp)
                     Button(
                         onClick = {
                             haptics.playClick(context)
@@ -207,10 +216,11 @@ fun PetalDeveloperHeroSection(
                                 Toast.makeText(context, "No email client installed", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        shape = RoundedCornerShape(6.dp),
+                        shape = emailShape,
                         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = emailShape, enabled = true, sheenIntensity = 0.4f) else Modifier,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            containerColor = pillContainerColor,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     ) {
@@ -222,20 +232,22 @@ fun PetalDeveloperHeroSection(
                     }
 
                     // Telegram Pill (t.me/hereyourchampion)
+                    val tgShape = RoundedCornerShape(
+                        topStart = 6.dp,
+                        bottomStart = 6.dp,
+                        topEnd = 20.dp,
+                        bottomEnd = 20.dp
+                    )
                     Button(
                         onClick = {
                             haptics.playClick(context)
                             onOpenUrl("https://t.me/hereyourchampion")
                         },
-                        shape = RoundedCornerShape(
-                            topStart = 6.dp,
-                            bottomStart = 6.dp,
-                            topEnd = 20.dp,
-                            bottomEnd = 20.dp
-                        ),
+                        shape = tgShape,
                         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = tgShape, enabled = true, sheenIntensity = 0.4f) else Modifier,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            containerColor = pillContainerColor,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     ) {
