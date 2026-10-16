@@ -76,6 +76,36 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
         if (wallpaper != null && wallpaper.ready) {
             return this.petalGlassPanel(shape, tint.copy(alpha = baseTintAlpha), baseEdge)
         }
+        if (themeGlass) {
+            val fallbackAlpha = if (dark) 0.38f else 0.45f
+            val rimBrush = Brush.linearGradient(
+                listOf(
+                    Color.White.copy(alpha = ((if (dark) 0.55f else 0.85f) * baseEdge).coerceIn(0f, 1f)),
+                    tint.copy(alpha = ((if (dark) 0.35f else 0.50f) * baseEdge).coerceIn(0f, 1f)),
+                    Color.White.copy(alpha = ((if (dark) 0.10f else 0.20f) * baseEdge).coerceIn(0f, 1f)),
+                    Color.White.copy(alpha = ((if (dark) 0.25f else 0.40f) * baseEdge).coerceIn(0f, 1f))
+                ),
+                start = androidx.compose.ui.geometry.Offset.Zero,
+                end = androidx.compose.ui.geometry.Offset(1000f, 1000f)
+            )
+            val specBrush = Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = (0.28f * baseEdge).coerceIn(0f, 1f)),
+                    Color.Transparent
+                ),
+                endY = 4.dp.toPx()
+            )
+            return this
+                .clip(shape)
+                .drawWithCache {
+                    val outline = shape.createOutline(size, layoutDirection, this)
+                    onDrawBehind {
+                        drawOutline(outline, tint.copy(alpha = (fallbackAlpha * opacity).coerceIn(0.15f, 0.85f)))
+                        drawRect(specBrush)
+                        drawOutline(outline, rimBrush, style = Stroke((1.25.dp * (0.8f + baseEdge * 0.4f)).toPx()))
+                    }
+                }
+        }
         return this.clip(shape).background(tint.copy(alpha = 0.94f))
     }
     // Liquid glass tint: authentic physical glass with pure light bending refraction,
@@ -151,7 +181,8 @@ fun Modifier.glassTile(target: () -> Rect?, shape: Shape, tint: Color, bar: Glas
     }
     if (bar == null) {
         val wallpaper = LocalPetalGlassWallpaper.current
-        val isGlass = wallpaper != null && wallpaper.ready
+        val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+        val isGlass = (wallpaper != null && wallpaper.ready) || themeGlass
         val solid = if (isGlass) tint.copy(alpha = 0.28f) else tint.copy(alpha = 0.16f)
         val place = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
         return this

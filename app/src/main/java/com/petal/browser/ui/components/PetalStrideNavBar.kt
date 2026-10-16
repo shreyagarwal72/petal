@@ -91,8 +91,7 @@ internal fun PetalStrideNavBar(
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
     val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
     val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
-    val glassOn = StrideGlassPrefs.isEnabled(context) &&
-        (!prefs.contains("sp_liquid_glass_enabled") || themeGlass)
+    val glassOn = themeGlass || (StrideGlassPrefs.isEnabled(context) && !prefs.contains("sp_liquid_glass_enabled"))
     val glassBar = rememberGlassBar(if (glassOn) glassSource else null)
 
     // Swiping along the bar switches tabs; the bar follows the finger with resistance.
