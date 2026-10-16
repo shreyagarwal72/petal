@@ -26,6 +26,9 @@ import com.petal.browser.lens.PetalLensManager
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.petalGroupShape
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -114,18 +117,30 @@ fun MiscSettingsScreenContent(
                         Triple(PetalLensManager.SnapProvider.PETAL_SCANNER, stringResource(R.string.ui_snap_provider_petal_scanner), Icons.Rounded.QrCodeScanner)
                     )
 
+                    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+                    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+
                     PetalGroup(rowCount = snapOptions.size) { index, position ->
                         val (provider, label, icon) = snapOptions[index]
                         val isSelected = snapProvider == provider
+                        val rowShape = petalGroupShape(position)
                         Card(
                             onClick = { onSnapProviderChange(provider) },
-                            shape = petalGroupShape(position),
+                            shape = rowShape,
                             colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isGlass) 0.55f else 0.45f)
+                                else if (isGlass) petalGroupSurfaceColor()
                                 else MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .liquidGlassChrome(
+                                    shape = rowShape,
+                                    enabled = isGlass,
+                                    sheenIntensity = sheen
+                                )
                         ) {
                             Row(
                                 modifier = Modifier
@@ -137,7 +152,7 @@ fun MiscSettingsScreenContent(
                             ) {
                                 PetalGroupIconBadge(
                                     icon = icon,
-                                    container = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    container = if (isSelected) MaterialTheme.colorScheme.primaryContainer else if (isGlass) MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                                     tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(

@@ -1487,10 +1487,13 @@ fun AppearanceSettingsScreenContent(
                     )
                     Spacer(Modifier.height(12.dp))
 
+                    val langSearchShape = RoundedCornerShape(16.dp)
                     OutlinedTextField(
                         value = languageSearchQuery,
                         onValueChange = { languageSearchQuery = it },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .liquidGlassChrome(shape = langSearchShape, enabled = liquidGlassContainments, sheenIntensity = 0.45f),
                         placeholder = { Text("Search language...") },
                         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                         trailingIcon = {
@@ -1501,7 +1504,13 @@ fun AppearanceSettingsScreenContent(
                             }
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(16.dp)
+                        shape = langSearchShape,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (liquidGlassContainments) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                            unfocusedContainerColor = if (liquidGlassContainments) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                            focusedBorderColor = if (liquidGlassContainments) Color.Transparent else MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = if (liquidGlassContainments) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                        )
                     )
 
                     Spacer(Modifier.height(12.dp))

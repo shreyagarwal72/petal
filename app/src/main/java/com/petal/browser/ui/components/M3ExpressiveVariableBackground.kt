@@ -252,7 +252,10 @@ fun M3ExpressiveVariableBackground(
         return
     }
 
-    val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
+    // Active homescreen wallpaper must ONLY be used on the homescreen itself.
+    // Other pages respect the Liquid Glass background configured in Appearance Settings.
+    val isHomePage = pageSeed == "home_page"
+    val activeWallpaperUri = if (isHomePage) com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri else null
     val effectiveWallpaperUri = when {
         !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
         isLiquidGlass && liquidGlassBgMode == "IMAGE" && liquidGlassImageUri.isNotBlank() -> liquidGlassImageUri

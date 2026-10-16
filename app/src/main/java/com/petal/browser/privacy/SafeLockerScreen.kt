@@ -59,6 +59,9 @@ import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -307,16 +310,25 @@ fun SafeLockerScreen(
 
                         // Search Bar (Animated visibility)
                         AnimatedVisibility(visible = isSearchActive && isUnlocked) {
+                            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+                            val lockerSearchShape = RoundedCornerShape(20.dp)
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
                                 placeholder = { Text(stringResource(R.string.ui_search_encrypted_files)) },
                                 leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                                 singleLine = true,
-                                shape = RoundedCornerShape(20.dp),
+                                shape = lockerSearchShape,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                                    unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                                    focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .liquidGlassChrome(shape = lockerSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
                             )
                         }
 

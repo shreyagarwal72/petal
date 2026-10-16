@@ -197,6 +197,8 @@ fun PetalPasswordsScreen(
 
                 // 2. Search & Filter Bar
                 item {
+                    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val passSearchShape = RoundedCornerShape(20.dp)
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -212,8 +214,16 @@ fun PetalPasswordsScreen(
                             }
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        shape = passSearchShape,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                            unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                            focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .liquidGlassChrome(shape = passSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
                     )
                 }
 

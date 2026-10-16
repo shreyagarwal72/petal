@@ -507,10 +507,15 @@ private fun FilePickerBrowserContent(
 
         // Search Bar Input
         AnimatedVisibility(visible = isSearching) {
+            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+            val pickerSearchShape = RoundedCornerShape(16.dp)
             Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp)
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .liquidGlassChrome(shape = pickerSearchShape, enabled = isGlass, sheenIntensity = 0.45f),
+                shape = pickerSearchShape
             ) {
                 OutlinedTextField(
                     value = searchQuery,
@@ -518,6 +523,8 @@ private fun FilePickerBrowserContent(
                     placeholder = { Text(stringResource(R.string.file_picker_search_hint)) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent
                     ),

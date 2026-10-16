@@ -183,6 +183,8 @@ fun PetalBrowserStoreScreen(
                         }
 
                         // Search Bar
+                        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        val storeSearchShape = RoundedCornerShape(18.dp)
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -196,16 +198,17 @@ fun PetalBrowserStoreScreen(
                                 }
                             },
                             singleLine = true,
-                            shape = RoundedCornerShape(18.dp),
+                            shape = storeSearchShape,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 4.dp)
+                                .liquidGlassChrome(shape = storeSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
                         )
 
                         // Content Pages Area with weight(1f) to ensure full layout reach

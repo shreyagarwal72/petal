@@ -85,8 +85,10 @@ import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalSnackbarHost
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
-import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 
 import com.petal.browser.ui.containment.PetalContainmentShapes
 import com.petal.browser.ui.components.PetalExpressiveMenuItem
@@ -619,6 +621,8 @@ fun PetalTabGridSwitcher(
                     Spacer(Modifier.height(10.dp))
 
                     // ── Real-time tab & group search ─────────────
+                    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val tabSearchShape = RoundedCornerShape(24.dp)
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -649,14 +653,16 @@ fun PetalTabGridSwitcher(
                             }
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(24.dp),
+                        shape = tabSearchShape,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            focusedBorderColor = accentColor,
+                            focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                            unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+                            focusedBorderColor = if (isGlass) Color.Transparent else accentColor,
                             unfocusedBorderColor = Color.Transparent
                         ),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .liquidGlassChrome(shape = tabSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
                     )
 
 

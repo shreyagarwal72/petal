@@ -57,6 +57,9 @@ import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.browser.PlaceholderAlbumController
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -570,6 +573,8 @@ fun PetalTabSwitcherContent(
                 }
 
                 // ── 2. Search Bar: "Search your tabs" ─────────────────────────
+                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val tabSearchPillShape = RoundedCornerShape(50)
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -599,16 +604,17 @@ fun PetalTabSwitcherContent(
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(50),
+                    shape = tabSearchPillShape,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                        focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = Color.Transparent
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
+                        .liquidGlassChrome(shape = tabSearchPillShape, enabled = isGlass, sheenIntensity = 0.45f)
                 )
 
                 Spacer(Modifier.height(4.dp))

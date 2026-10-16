@@ -56,6 +56,9 @@ import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.petalGroupPositionFor
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.components.PetalExpressiveAlertDialog
 import com.petal.browser.ui.components.PetalExpressiveDialog
 import com.petal.browser.ui.components.bouncyClickable
@@ -260,6 +263,8 @@ fun PetalBookmarksScreen(
                 )
 
                 // Search Filter Bar
+                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val searchShape = RoundedCornerShape(24.dp)
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -273,16 +278,17 @@ fun PetalBookmarksScreen(
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(24.dp),
+                    shape = searchShape,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = Color.Transparent
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f)
                 )
 
                 Spacer(Modifier.height(8.dp))
