@@ -68,7 +68,7 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
     }.drawWithCache {
         wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
             android.graphics.RenderEffect.createBlurEffect(
-                7.dp.toPx(), 7.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
+                20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
             ).asComposeRenderEffect()
         } else null
         onDrawWithContent {
@@ -90,7 +90,7 @@ fun Modifier.recordGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
     }.drawWithCache {
         wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
             android.graphics.RenderEffect.createBlurEffect(
-                7.dp.toPx(), 7.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
+                20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
             ).asComposeRenderEffect()
         } else null
         onDrawWithContent {
