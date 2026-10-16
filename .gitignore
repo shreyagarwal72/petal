@@ -20,3 +20,4 @@ scratch/
 *.zip
 app/release.keystore
 .gsd/
+brag-output/
