@@ -723,22 +723,32 @@ fun PetalGroupListRow(
     val scale = rememberPetalGroupPressScale(source)
     val haptics = LocalHapticFeedback.current
     val selectedColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val isGlassSetting = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val hasParentGlass = LocalPetalGlassWallpaper.current?.ready == true
+    // When nested inside an existing glass card (like PetalHeroCard or PetalGlassContainer),
+    // rows should not apply duplicate liquidGlassChrome or full glass panels, preventing murky nested boundaries.
+    val isGlass = isGlassSetting && !hasParentGlass
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
     val shape = petalGroupShape(position)
+    val rowContainerColor = when {
+        LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+        selected -> selectedColor
+        hasParentGlass -> Color.Transparent
+        else -> petalGroupSurfaceColor()
+    }
     Card(
         shape = shape,
         colors = CardDefaults.cardColors(
-            containerColor = if (LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else if (selected) selectedColor else petalGroupSurfaceColor(),
+            containerColor = rowContainerColor,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)
-            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen)
+            .then(if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = sheen) else Modifier)
             .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
