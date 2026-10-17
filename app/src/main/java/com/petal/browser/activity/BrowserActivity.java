@@ -2891,9 +2891,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ABOVE);
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                lp.topMargin = isBottom ? gap : addressHeight + gap;
+                if (isBottom) {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) HelperUnit.convertDpToPixel(8f, context);
+                    lp.topMargin = 0;
+                } else {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    lp.topMargin = addressHeight + gap;
+                    lp.bottomMargin = 0;
+                }
                 downloadBanner.setLayoutParams(lp);
+                downloadBanner.bringToFront();
             }
 
             View networkStatusBanner = findViewById(R.id.network_status_compose);

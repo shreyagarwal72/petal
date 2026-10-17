@@ -260,6 +260,7 @@ private class GlassPanelPlace {
 fun PetalGlassContainer(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    live: Boolean = false,
     content: @Composable () -> Unit
 ) {
     if (!enabled) {
@@ -268,12 +269,22 @@ fun PetalGlassContainer(
     }
     val wallpaper = rememberPetalGlassWallpaper()
     val context = androidx.compose.ui.platform.LocalContext.current
-    // Take a fresh screenshot of the screen behind this popup. The shared "current" snapshot
-    // can be stale (from an earlier menu or the home page), which showed wrong content.
+    // Root view of the app window behind this popup/card
     val rootView = remember(context) {
         var c: android.content.Context? = context
         while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
-        (c as? android.app.Activity)?.findViewById<android.view.View>(android.R.id.content)
+        (c as? android.app.Activity)?.let {
+            it.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                ?: it.findViewById<android.view.View>(android.R.id.content)
+        }
+    }
+    val frameTick = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(enabled, live, rootView) {
+        if (enabled && live && rootView != null) {
+            while (true) {
+                withFrameNanos { frameTick.longValue = it }
+            }
+        }
     }
     val snapshot = remember {
         val fresh = try {
@@ -293,7 +304,13 @@ fun PetalGlassContainer(
                 )
             }
         ) {
-            if (snapshot != null && !snapshot.isRecycled) {
+            if (live && rootView != null) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .liveGlassWallpaper(wallpaper, rootView) { frameTick.longValue }
+                )
+            } else if (snapshot != null && !snapshot.isRecycled) {
                 // Full-screen-sized backdrop placed so it lines up with the real screen
                 // behind the popup; recorded only, never drawn.
                 Box(modifier = Modifier.matchParentSize()) {

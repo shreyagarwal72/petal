@@ -126,103 +126,116 @@ fun PetalAnimatedWallpaperBackground(
         val blurModifier = if (blur > 0.5f) Modifier.blur(blur.dp) else Modifier
 
         val imageModel = remember(wallpaperUri, videoPlaybackFailed) {
-            val effectiveUri = if (isVideo) {
-                PRESET_WALLPAPERS.firstOrNull { it.fullUrl == wallpaperUri }?.thumbUrl ?: wallpaperUri
-            } else {
-                wallpaperUri
-            }
-            when {
-                effectiveUri.startsWith("android.resource://") -> Uri.parse(effectiveUri)
-                effectiveUri.startsWith("file://") -> File(effectiveUri.removePrefix("file://"))
-                effectiveUri.startsWith("/") -> File(effectiveUri)
-                else -> effectiveUri
-            }
+            runCatching {
+                val effectiveUri = if (isVideo) {
+                    PRESET_WALLPAPERS.firstOrNull { it.fullUrl == wallpaperUri }?.thumbUrl ?: wallpaperUri
+                } else {
+                    wallpaperUri
+                }
+                when {
+                    effectiveUri.startsWith("android.resource://") -> Uri.parse(effectiveUri)
+                    effectiveUri.startsWith("file://") -> File(effectiveUri.removePrefix("file://"))
+                    effectiveUri.startsWith("/") -> File(effectiveUri)
+                    effectiveUri.startsWith("content://") -> Uri.parse(effectiveUri)
+                    else -> effectiveUri
+                }
+            }.getOrElse { wallpaperUri }
         }
         val imageRequest = remember(imageModel, isGif) {
-            ImageRequest.Builder(context)
-                .data(imageModel)
-                .crossfade(300)
-                .apply {
-                    if (isGif) {
-                        decoderFactory(
-                            if (Build.VERSION.SDK_INT >= 28) {
-                                ImageDecoderDecoder.Factory()
-                            } else {
-                                GifDecoder.Factory()
-                            }
-                        )
-                    } else {
-                        allowHardware(true)
-                        bitmapConfig(Bitmap.Config.RGB_565)
+            runCatching {
+                ImageRequest.Builder(context)
+                    .data(imageModel)
+                    .crossfade(300)
+                    .apply {
+                        if (isGif) {
+                            decoderFactory(
+                                if (Build.VERSION.SDK_INT >= 28) {
+                                    ImageDecoderDecoder.Factory()
+                                } else {
+                                    GifDecoder.Factory()
+                                }
+                            )
+                        } else {
+                            allowHardware(true)
+                            bitmapConfig(Bitmap.Config.RGB_565)
+                        }
                     }
-                }
-                .build()
+                    .build()
+            }.getOrNull()
         }
 
         // Static thumbnail / preview layer is ALWAYS rendered beneath the video or static image
         // to prevent black screen flickers during live wallpaper initialization.
-        AsyncImage(
-            model = imageRequest,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .then(blurModifier)
-        )
+        if (imageRequest != null) {
+            AsyncImage(
+                model = imageRequest,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(blurModifier)
+            )
+        }
 
         if (isVideo && !videoPlaybackFailed) {
             val exoPlayer = remember(wallpaperUri) {
-                val mediaUri = when {
-                    wallpaperUri.startsWith("android.resource://") -> Uri.parse(wallpaperUri)
-                    wallpaperUri.startsWith("file://") -> Uri.fromFile(File(wallpaperUri.removePrefix("file://")))
-                    wallpaperUri.startsWith("/") -> Uri.fromFile(File(wallpaperUri))
-                    else -> Uri.parse(wallpaperUri)
-                }
+                runCatching {
+                    val mediaUri = when {
+                        wallpaperUri.startsWith("android.resource://") -> Uri.parse(wallpaperUri)
+                        wallpaperUri.startsWith("file://") -> Uri.fromFile(File(wallpaperUri.removePrefix("file://")))
+                        wallpaperUri.startsWith("/") -> Uri.fromFile(File(wallpaperUri))
+                        else -> Uri.parse(wallpaperUri)
+                    }
 
-                val loadControl = DefaultLoadControl.Builder()
-                    .setBufferDurationsMs(
-                        1500, // minBufferMs
-                        4000, // maxBufferMs
-                        500,  // bufferForPlaybackMs
-                        1000  // bufferForPlaybackAfterRebufferMs
-                    )
-                    .setPrioritizeTimeOverSizeThresholds(true)
-                    .build()
+                    val loadControl = DefaultLoadControl.Builder()
+                        .setBufferDurationsMs(
+                            1500, // minBufferMs
+                            4000, // maxBufferMs
+                            500,  // bufferForPlaybackMs
+                            1000  // bufferForPlaybackAfterRebufferMs
+                        )
+                        .setPrioritizeTimeOverSizeThresholds(true)
+                        .build()
 
-                val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                    .setUserAgent("Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36")
-                    .setAllowCrossProtocolRedirects(true)
+                    val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                        .setUserAgent("Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36")
+                        .setAllowCrossProtocolRedirects(true)
 
-                val dataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
-                val mediaSourceFactory = DefaultMediaSourceFactory(context)
-                    .setDataSourceFactory(dataSourceFactory)
+                    val dataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
+                    val mediaSourceFactory = DefaultMediaSourceFactory(context)
+                        .setDataSourceFactory(dataSourceFactory)
 
-                ExoPlayer.Builder(context)
-                    .setLoadControl(loadControl)
-                    .setMediaSourceFactory(mediaSourceFactory)
-                    .build().apply {
-                    val mediaItem = MediaItem.fromUri(mediaUri)
-                    setMediaItem(mediaItem)
-                    repeatMode = Player.REPEAT_MODE_ALL
-                    volume = 0f // Mute background video
-                    playWhenReady = true
-                    addListener(object : Player.Listener {
-                        override fun onPlayerError(error: PlaybackException) {
-                            android.util.Log.e("PetalWallpaper", "ExoPlayer error playing wallpaper: $wallpaperUri", error)
-                            videoPlaybackFailed = true
+                    ExoPlayer.Builder(context)
+                        .setLoadControl(loadControl)
+                        .setMediaSourceFactory(mediaSourceFactory)
+                        .build().apply {
+                            val mediaItem = MediaItem.fromUri(mediaUri)
+                            setMediaItem(mediaItem)
+                            repeatMode = Player.REPEAT_MODE_ALL
+                            volume = 0f // Mute background video
+                            playWhenReady = true
+                            addListener(object : Player.Listener {
+                                override fun onPlayerError(error: PlaybackException) {
+                                    android.util.Log.e("PetalWallpaper", "ExoPlayer error playing wallpaper: $wallpaperUri", error)
+                                    videoPlaybackFailed = true
+                                }
+
+                                override fun onPlaybackStateChanged(playbackState: Int) {
+                                    videoBuffering = playbackState == Player.STATE_BUFFERING
+                                }
+
+                                override fun onRenderedFirstFrame() {
+                                    isFirstFrameRendered = true
+                                    videoBuffering = false
+                                }
+                            })
+                            prepare()
+                            play()
                         }
-
-                        override fun onPlaybackStateChanged(playbackState: Int) {
-                            videoBuffering = playbackState == Player.STATE_BUFFERING
-                        }
-
-                        override fun onRenderedFirstFrame() {
-                            isFirstFrameRendered = true
-                            videoBuffering = false
-                        }
-                    })
-                    prepare()
-                    play()
+                }.getOrElse { e ->
+                    android.util.Log.e("PetalWallpaper", "Failed to build ExoPlayer: $wallpaperUri", e)
+                    videoPlaybackFailed = true
+                    null
                 }
             }
 
@@ -231,12 +244,12 @@ fun PetalAnimatedWallpaperBackground(
                 val observer = LifecycleEventObserver { _, event ->
                     when (event) {
                         Lifecycle.Event.ON_START -> {
-                            if (exoPlayer.playbackState != Player.STATE_ENDED) {
-                                exoPlayer.play()
+                            if (exoPlayer?.playbackState != Player.STATE_ENDED) {
+                                exoPlayer?.play()
                             }
                         }
                         Lifecycle.Event.ON_STOP -> {
-                            exoPlayer.pause()
+                            exoPlayer?.pause()
                         }
                         else -> {}
                     }
@@ -244,8 +257,10 @@ fun PetalAnimatedWallpaperBackground(
                 lifecycleOwner.lifecycle.addObserver(observer)
                 onDispose {
                     lifecycleOwner.lifecycle.removeObserver(observer)
-                    exoPlayer.stop()
-                    exoPlayer.release()
+                    try {
+                        exoPlayer?.stop()
+                        exoPlayer?.release()
+                    } catch (_: Throwable) {}
                 }
             }
 

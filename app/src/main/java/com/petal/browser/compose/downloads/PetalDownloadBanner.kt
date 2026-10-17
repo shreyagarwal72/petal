@@ -193,7 +193,8 @@ object PetalDownloadBannerBridge {
                 ) {
                     com.petal.browser.ui.glass.PetalGlassContainer(
                         modifier = Modifier,
-                        enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments"),
+                        live = true
                     ) {
                         PetalDownloadBanner(
                             bannerData = currentBannerData.value,

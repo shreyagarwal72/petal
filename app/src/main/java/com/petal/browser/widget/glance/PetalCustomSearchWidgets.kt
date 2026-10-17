@@ -195,6 +195,118 @@ private fun widgetActionIntent(context: Context, action: String): Intent =
     }
 
 /**
+ * Samples the current wallpaper (Petal custom wallpaper or system wallpaper)
+ * and generates a frosted liquid glass card bitmap with dual specular highlight rim.
+ */
+private fun createLiquidGlassCardBitmap(
+    widthDp: Int,
+    heightDp: Int,
+    cornerDp: Int,
+    scheme: androidx.compose.material3.ColorScheme,
+    context: Context
+): Bitmap? {
+    val density = context.resources.displayMetrics.density
+    val w = (widthDp * density).toInt().coerceAtLeast(10)
+    val h = (heightDp * density).toInt().coerceAtLeast(10)
+
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val isGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+    val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
+    val glassAlpha = sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f)
+
+    var baseWallpaper: Bitmap? = null
+    try {
+        val profileUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
+            ?: sp.getString("sp_home_wallpaper_uri", null)
+        if (!profileUri.isNullOrBlank()) {
+            val uri = android.net.Uri.parse(profileUri)
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                baseWallpaper = android.graphics.BitmapFactory.decodeStream(stream)
+            }
+        }
+    } catch (_: Throwable) {}
+
+    if (baseWallpaper == null) {
+        try {
+            val wm = android.app.WallpaperManager.getInstance(context)
+            val d = wm.drawable
+            if (d is android.graphics.drawable.BitmapDrawable) {
+                baseWallpaper = d.bitmap
+            } else if (d != null) {
+                val bmp = Bitmap.createBitmap(w.coerceAtLeast(100), h.coerceAtLeast(100), Bitmap.Config.ARGB_8888)
+                val c = Canvas(bmp)
+                d.setBounds(0, 0, c.width, c.height)
+                d.draw(c)
+                baseWallpaper = bmp
+            }
+        } catch (_: Throwable) {}
+    }
+
+    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val rect = android.graphics.RectF(0f, 0f, w.toFloat(), h.toFloat())
+    val cornerPx = cornerDp * density
+
+    val path = android.graphics.Path().apply {
+        addRoundRect(rect, cornerPx, cornerPx, android.graphics.Path.Direction.CW)
+    }
+
+    canvas.save()
+    canvas.clipPath(path)
+
+    if (baseWallpaper != null && !baseWallpaper!!.isRecycled) {
+        val srcW = baseWallpaper!!.width
+        val srcH = baseWallpaper!!.height
+        val srcRect = android.graphics.Rect(0, (srcH * 0.15f).toInt(), srcW, (srcH * 0.85f).toInt())
+        val dstRect = android.graphics.Rect(0, 0, w, h)
+        val filterPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        canvas.drawBitmap(baseWallpaper!!, srcRect, dstRect, filterPaint)
+    }
+
+    // Frosted tint overlay matching the scheme surfaceContainer
+    val surfaceInt = scheme.surfaceContainer.toArgb()
+    val tintAlpha = if (isGlass) (glassAlpha * 0.65f).coerceIn(0.25f, 0.85f) else 1.0f
+    val alphaInt = (tintAlpha * 255).toInt().coerceIn(0, 255)
+    val tintColor = android.graphics.Color.argb(
+        alphaInt,
+        android.graphics.Color.red(surfaceInt),
+        android.graphics.Color.green(surfaceInt),
+        android.graphics.Color.blue(surfaceInt)
+    )
+    val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = tintColor
+        style = Paint.Style.FILL
+    }
+    canvas.drawRect(rect, tintPaint)
+
+    // Liquid Glass Specular Rim Border
+    if (isGlass) {
+        val rimStrokeWidth = 1.8f * density
+        val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = rimStrokeWidth
+            shader = android.graphics.LinearGradient(
+                0f, 0f, w.toFloat(), h.toFloat(),
+                android.graphics.Color.argb((210 * sheen).toInt().coerceIn(40, 255), 255, 255, 255),
+                android.graphics.Color.argb((45 * sheen).toInt().coerceIn(10, 110), 255, 255, 255),
+                Shader.TileMode.CLAMP
+            )
+        }
+        val insetRect = android.graphics.RectF(
+            rimStrokeWidth / 2f,
+            rimStrokeWidth / 2f,
+            w.toFloat() - rimStrokeWidth / 2f,
+            h.toFloat() - rimStrokeWidth / 2f
+        )
+        val rimCorner = (cornerPx - rimStrokeWidth / 2f).coerceAtLeast(0f)
+        canvas.drawRoundRect(insetRect, rimCorner, rimCorner, rimPaint)
+    }
+
+    canvas.restore()
+    return bitmap
+}
+
+/**
  * Generates an anti-aliased bitmap with an expressive radial gradient and bold letter "P".
  * When Liquid Glass is enabled, renders specular reflective rim stroke and translucent gradient.
  */
@@ -413,16 +525,33 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
         )
     }
 
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+
     if (isExpanded) {
+        val glassCardBitmap = remember(scheme, isLiquidGlass) {
+            if (isLiquidGlass) {
+                createLiquidGlassCardBitmap(widthDp = 280, heightDp = 110, cornerDp = 28, scheme = scheme, context = context)
+            } else null
+        }
+
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(28.dp)
-                .background(surfaceContainerLowProvider(scheme))
-                .padding(10.dp)
+                .then(
+                    if (glassCardBitmap != null) GlanceModifier else GlanceModifier.background(surfaceContainerLowProvider(scheme))
+                )
         ) {
+            if (glassCardBitmap != null) {
+                Image(
+                    provider = ImageProvider(glassCardBitmap),
+                    contentDescription = null,
+                    modifier = GlanceModifier.fillMaxSize()
+                )
+            }
             Column(
-                modifier = GlanceModifier.fillMaxSize(),
+                modifier = GlanceModifier.fillMaxSize().padding(10.dp),
                 verticalAlignment = Alignment.Vertical.CenterVertically
             ) {
                 // Top Search Pill Row
@@ -495,18 +624,38 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
         }
     } else {
         // Compact Pill Mode
-        Petal1ExpressiveSearchRow(
+        val glassPillBitmap = remember(scheme, isLiquidGlass) {
+            if (isLiquidGlass) {
+                createLiquidGlassCardBitmap(widthDp = 240, heightDp = 52, cornerDp = 26, scheme = scheme, context = context)
+            } else null
+        }
+
+        Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(28.dp)
-                .background(surfaceContainerHighProvider(scheme))
-                .padding(horizontal = 6.dp),
-            badgeBitmap = pBadgeBitmap,
-            searchAction = searchAction,
-            aiAction = aiAction,
-            voiceAction = voiceAction,
-            snapCameraAction = snapCameraAction
-        )
+                .then(
+                    if (glassPillBitmap != null) GlanceModifier else GlanceModifier.background(surfaceContainerHighProvider(scheme))
+                )
+        ) {
+            if (glassPillBitmap != null) {
+                Image(
+                    provider = ImageProvider(glassPillBitmap),
+                    contentDescription = null,
+                    modifier = GlanceModifier.fillMaxSize()
+                )
+            }
+            Petal1ExpressiveSearchRow(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .padding(horizontal = 6.dp),
+                badgeBitmap = pBadgeBitmap,
+                searchAction = searchAction,
+                aiAction = aiAction,
+                voiceAction = voiceAction,
+                snapCameraAction = snapCameraAction
+            )
+        }
     }
 }
 
@@ -682,16 +831,33 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
     val incognitoAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO))
     val snapCameraAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA))
 
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+
+    val glassCardBitmap = remember(scheme, isLiquidGlass) {
+        if (isLiquidGlass) {
+            createLiquidGlassCardBitmap(widthDp = 280, heightDp = 56, cornerDp = 28, scheme = scheme, context = context)
+        } else null
+    }
+
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
-            .background(surfaceContainerLowProvider(scheme))
-            .padding(6.dp),
+            .then(
+                if (glassCardBitmap != null) GlanceModifier else GlanceModifier.background(surfaceContainerLowProvider(scheme))
+            ),
         contentAlignment = Alignment.Center
     ) {
+        if (glassCardBitmap != null) {
+            Image(
+                provider = ImageProvider(glassCardBitmap),
+                contentDescription = null,
+                modifier = GlanceModifier.fillMaxSize()
+            )
+        }
         Row(
-            modifier = GlanceModifier.fillMaxSize(),
+            modifier = GlanceModifier.fillMaxSize().padding(6.dp),
             verticalAlignment = Alignment.Vertical.CenterVertically
         ) {
             // Left: Nested Search Input Pill
@@ -829,17 +995,36 @@ private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
         )
     }
 
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+
+    val glassPillBitmap = remember(scheme, isLiquidGlass) {
+        if (isLiquidGlass) {
+            createLiquidGlassCardBitmap(widthDp = 280, heightDp = 56, cornerDp = 28, scheme = scheme, context = context)
+        } else null
+    }
+
     // Material 3 Expressive Pill Bar (height 56dp, corner radius 28dp)
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
-            .background(surfaceContainerHighProvider(scheme))
-            .padding(start = 6.dp, end = 12.dp),
+            .then(
+                if (glassPillBitmap != null) GlanceModifier else GlanceModifier.background(surfaceContainerHighProvider(scheme))
+            ),
         contentAlignment = Alignment.Center
     ) {
+        if (glassPillBitmap != null) {
+            Image(
+                provider = ImageProvider(glassPillBitmap),
+                contentDescription = null,
+                modifier = GlanceModifier.fillMaxSize()
+            )
+        }
         Row(
-            modifier = GlanceModifier.fillMaxSize(),
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(start = 6.dp, end = 12.dp),
             verticalAlignment = Alignment.Vertical.CenterVertically
         ) {
             // Anchored Far Left: Expressive Scallop Brand Badge holding "P"
