@@ -142,21 +142,15 @@ fun PetalContainedLoadingIndicator(
                 modifier = modifier,
                 label = "LiquidGlassMorphingCrossfade"
             ) { shape ->
-                try {
-                    androidx.compose.material3.ContainedLoadingIndicator(
-                        modifier = Modifier
-                            .requiredSize(size)
-                            .liquidGlassChrome(shape = shape, enabled = true),
-                        polygons = polygons,
-                        containerColor = glassContainer,
-                        indicatorColor = glassIndicator,
-                        containerShape = shape
-                    )
-                } catch (_: Throwable) {
-                    ZenithContainedLoadingIndicator(
-                        modifier = Modifier.requiredSize(size)
-                    )
-                }
+                androidx.compose.material3.ContainedLoadingIndicator(
+                    modifier = Modifier
+                        .requiredSize(size)
+                        .liquidGlassChrome(shape = shape, enabled = true),
+                    polygons = polygons,
+                    containerColor = glassContainer,
+                    indicatorColor = glassIndicator,
+                    containerShape = shape
+                )
             }
         } else {
             ZenithContainedLoadingIndicator(
