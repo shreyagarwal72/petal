@@ -826,14 +826,20 @@ fun PetalSheet(
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
     val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
+    val sheetContainerColor = if (isGlass) {
+        val dark = MaterialTheme.colorScheme.background.luminance() < .5f
+        if (dark) Color(0xCC1A1C1E) else Color(0xCCF2F4F7)
+    } else MaterialTheme.colorScheme.surfaceContainerLow
+
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        modifier = modifier.liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = sheen),
+        modifier = modifier
+            .navigationBarsPadding()
+            .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = sheen),
         sheetState = sheetState,
         shape = sheetShape,
-        containerColor = if (isGlass) {
-            petalGroupSurfaceColor()
-        } else MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = sheetContainerColor,
+        scrimColor = if (isGlass) Color.Black.copy(alpha = 0.32f) else BottomSheetDefaults.ScrimColor,
         dragHandle = dragHandle,
         content = {
             content()

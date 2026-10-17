@@ -99,6 +99,9 @@ object PetalVoiceSearchBridge {
             dialog.window?.let { window ->
                 window.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
                     ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                // Clear the default Android Dialog dim so ModalBottomSheet provides the single, correct scrim
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                window.setDimAmount(0f)
             }
             activeDialog = dialog
 
@@ -348,8 +351,9 @@ fun PetalVoiceSearchSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(horizontal = 24.dp)
-                        .padding(bottom = 36.dp),
+                        .padding(bottom = 28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(
