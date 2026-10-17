@@ -45,7 +45,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css?v=157.0.3">
-  <link rel="stylesheet" href="/pages.css?v=157.0.3">
+  <link rel="stylesheet" href="/pages.css?v=157.0.4">
 </head>
 <body>
 
@@ -99,7 +99,7 @@
         <span class="brand-tag">GeckoView 157</span>
       </a>
       <nav aria-label="Main">
-        <ul class="nav-links" id="nav-links"><li><a href="/#differentiators">Why Petal</a></li><li><a href="/download">Download</a></li><li><a href="/faq">FAQ</a></li><li><a href="/support">Support</a></li><li><a href="/privacy">Privacy</a></li></ul>
+        <ul class="nav-links" id="nav-links"><li><a href="/#differentiators">Why Petal</a></li><li><a href="/download">Download</a></li><li><a href="/faq">FAQ</a></li><li><a href="/changelog">Changelog</a></li><li><a href="/support">Support</a></li><li><a href="/privacy">Privacy</a></li></ul>
       </nav>
       <div class="nav-actions">
         <button id="theme-toggle-btn" class="icon-btn" type="button" aria-label="Switch to dark theme" data-ripple>
@@ -128,7 +128,7 @@
         <span class="brand"><span>Petal</span></span>
         <button class="icon-btn" id="menu-close" type="button" aria-label="Close menu" data-ripple><svg class="i"><use href="#i-close"/></svg></button>
       </div>
-      <ul class="menu-list" id="menu-list"><li style="--i:0"><a href="/#differentiators">Why Petal <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:1"><a href="/download">Download <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:2"><a href="/faq">FAQ <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:3"><a href="/support">Support <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:4"><a href="/privacy">Privacy <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:5"><a href="/terms" class="active">Terms of Use <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:6"><a href="/licenses">Licenses <svg class="i"><use href="#i-arrow"/></svg></a></li></ul>
+      <ul class="menu-list" id="menu-list"><li style="--i:0"><a href="/#differentiators">Why Petal <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:1"><a href="/download">Download <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:2"><a href="/faq">FAQ <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:3"><a href="/changelog">Changelog <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:4"><a href="/support">Support <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:5"><a href="/privacy">Privacy <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:6"><a href="/terms" class="active">Terms of Use <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:7"><a href="/licenses">Licenses <svg class="i"><use href="#i-arrow"/></svg></a></li></ul>
       <div class="menu-foot">
         <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled btn--lg btn--block" data-ripple>
           <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
@@ -157,7 +157,7 @@
 <p>By installing or using Petal Browser (&ldquo;Petal&rdquo;, &ldquo;the app&rdquo;) you agree to these terms and to our <a href="/privacy">Privacy Policy</a>. If you do not agree, please do not use the app.</p></section>
 
 <section id="license"><h2>License</h2>
-<p>Petal is free and open-source software released under the <a href="https://github.com/shreyagarwal72/petal/blob/main/LICENSE.md" target="_blank" rel="noopener noreferrer">GNU General Public License v3.0</a>. You may use, study, modify and redistribute it under that license. Third-party components keep their own licenses, listed on the <a href="/licenses">licenses page</a>. The Petal name and logo identify the official app; please do not use them in a way that suggests your modified build is the official release.</p></section>
+<p>Petal is free and open-source software released under the <a href="/gpl">GNU General Public License v3.0</a>. You may use, study, modify and redistribute it under that license. Third-party components keep their own licenses, listed on the <a href="/licenses">licenses page</a>. The Petal name and logo identify the official app; please do not use them in a way that suggests your modified build is the official release.</p></section>
 
 <section id="use"><h2>Using Petal</h2>
 <p>You are responsible for how you use the browser. Do not use Petal to break the law, attack or disrupt services, or infringe the rights of others. Features such as the ad blocker, download manager and media tools are provided for lawful personal use; make sure you have the right to download, save or share the content you handle.</p></section>
@@ -208,7 +208,7 @@
             <ul class="footer-links">
               <li><a href="/faq">FAQ</a></li>
               <li><a href="/support">Support &amp; contact</a></li>
-              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">Changelog</a></li>
+              <li><a href="/changelog">Changelog</a></li>
               <li><a href="https://github.com/shreyagarwal72/petal/issues" target="_blank" rel="noopener noreferrer">Issue tracker</a></li>
             </ul>
           </div>
@@ -218,15 +218,17 @@
               <li><a href="/privacy">Privacy Policy</a></li>
               <li><a href="/terms">Terms of Use</a></li>
               <li><a href="/licenses">Open-source licenses</a></li>
+              <li><a href="/gpl">GNU GPL v3.0 (full text)</a></li>
+              <li><a href="/code-of-conduct">Code of conduct</a></li>
               <li><a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer">Source repository</a></li>
             </ul>
           </div>
           <div>
             <h4>Architecture</h4>
             <ul class="footer-links">
-              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/PRD.md" target="_blank" rel="noopener noreferrer">PRD.md</a></li>
-              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/design.md" target="_blank" rel="noopener noreferrer">Design system</a></li>
-              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/architecture.md" target="_blank" rel="noopener noreferrer">GeckoView pipeline</a></li>
+              <li><a href="/prd">Product requirements</a></li>
+              <li><a href="/design">Design system</a></li>
+              <li><a href="/architecture">GeckoView pipeline</a></li>
             </ul>
           </div>
         </div>

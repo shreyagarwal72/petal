@@ -81,3 +81,26 @@
 .steps { list-style: none; margin-left: 0; counter-reset: s; }
 .steps li { counter-increment: s; position: relative; padding: 14px 18px 14px 60px; border-radius: 20px; background: var(--surface-container); color: var(--on-surface); }
 .steps li::before { content: counter(s); position: absolute; left: 14px; top: 12px; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--primary); color: var(--on-primary); font-weight: 800; }
+
+/* Changelog & documentation pages */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.changelog-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 24px; }
+.changelog-tools input { flex: 1 1 260px; min-height: 52px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--surface-container); color: var(--on-surface); font: inherit; box-shadow: inset 0 0 0 1px var(--outline-variant); }
+.changelog-tools input:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.no-results { padding: 24px; border-radius: 24px; background: var(--surface-container); text-align: center; }
+.prose .release { margin-bottom: 16px; padding: clamp(18px, 3vw, 28px); border-radius: 28px; background: var(--surface-container); scroll-margin-top: 96px; }
+.prose .release[hidden], .toc li[hidden] { display: none; }
+.prose .release h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: clamp(1.25rem, 1.4vw + .95rem, 1.625rem); margin-bottom: 12px; }
+.prose .release h3 { margin: 18px 0 8px; font-size: 1.0625rem; }
+.prose .release ul ul { margin-top: 8px; margin-bottom: 0; }
+.prose .release p:last-child, .prose .release ul:last-child { margin-bottom: 0; }
+.prose .release blockquote { margin: 0 0 14px; padding: 2px 0 2px 16px; border-left: 4px solid var(--primary); color: var(--on-surface-variant); }
+.prose .release blockquote p { margin: 0; }
+.prose .release .rel-ver { padding: 4px 14px; border-radius: 999px; background: var(--primary); color: var(--on-primary); font-size: .9375rem; font-weight: 750; text-decoration: none; }
+.rel-badge { padding: 4px 12px; border-radius: 999px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: .8125rem; font-weight: 700; }
+.rel-title { flex: 1 1 100%; }
+.toc--versions ol { max-height: min(62vh, 560px); overflow-y: auto; overscroll-behavior: contain; }
+.prose .upstream details.faq .faq-a { padding: 8px 12px 16px; }
+.prose .upstream details.faq .release { background: var(--surface); }
+.table-wrap { overflow-x: auto; margin: 0 0 16px; border-radius: 20px; background: var(--surface-container); }
+.license-text { max-height: 70vh; overflow: auto; padding: 20px; border-radius: 20px; background: var(--surface-container); font-family: var(--font-code); font-size: .8125rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--on-surface); }

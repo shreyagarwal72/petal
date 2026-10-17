@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-mode="light" data-palette="petal" data-amoled="false">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Changelog — Petal Browser</title>
+  <meta name="description" content="Every Petal Browser release, newest first. Latest: v4.4. Full release notes for the privacy-focused GeckoView Android browser.">
+  <link rel="canonical" href="https://my-petal-browser.vercel.app/changelog">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#fff7f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1013" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Petal Browser">
+  <meta property="og:url" content="https://my-petal-browser.vercel.app/changelog">
+  <meta property="og:title" content="Changelog — Petal Browser">
+  <meta property="og:description" content="Every Petal Browser release, newest first. Latest: v4.4. Full release notes for the privacy-focused GeckoView Android browser.">
+  <meta property="og:image" content="https://my-petal-browser.vercel.app/assets/banner.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Changelog — Petal Browser">
+  <meta name="twitter:description" content="Every Petal Browser release, newest first. Latest: v4.4. Full release notes for the privacy-focused GeckoView Android browser.">
+  <meta name="twitter:image" content="https://my-petal-browser.vercel.app/assets/banner.jpg">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicons/favicon-48.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Petal Browser", "item": "https://my-petal-browser.vercel.app/"}, {"@type": "ListItem", "position": 2, "name": "Changelog", "item": "https://my-petal-browser.vercel.app/changelog"}]}
+  </script>
+  <script>
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      try {
+        var s = JSON.parse(localStorage.getItem('petal-theme') || 'null') || {};
+        var dark = s.mode ? s.mode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        d.setAttribute('data-theme-mode', dark ? 'dark' : 'light');
+        if (s.palette) d.setAttribute('data-palette', s.palette);
+        if (s.amoled && dark) d.setAttribute('data-amoled', 'true');
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=157.0.3">
+  <link rel="stylesheet" href="/pages.css?v=157.0.4">
+</head>
+<body>
+
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></symbol>
+      <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-tabs" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.5" height="15" rx="1.6"/><rect x="13.5" y="4.5" width="4.5" height="15" rx="1.6"/></symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.9-6.4M3.5 4v4.6H8"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V7a2 2 0 0 1 2-2h8"/></symbol>
+      <symbol id="i-engine" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.6 0 2.2-1 2.2-2s-1-1.6-.5-2.6S15.2 15 17 15h1a3 3 0 0 0 3-3 9 9 0 0 0-9-9z"/><circle cx="7.5" cy="11" r="1" fill="currentColor"/><circle cx="10.5" cy="7" r="1" fill="currentColor"/><circle cx="15.5" cy="7.5" r="1" fill="currentColor"/></symbol>
+      <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 7h3.5c5 0 6 10 11 10H21M3 17h3.5c1.6 0 2.8-.7 3.8-1.8M14 8.8C15 7.7 16.2 7 17.5 7H21M18.5 4.5L21 7l-2.5 2.5M18.5 14.5L21 17l-2.5 2.5"/></symbol>
+    </defs>
+  </svg>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="appbar scrolled" id="appbar">
+    <div class="appbar-inner">
+      <a href="/" class="brand" aria-label="Petal home">
+        <svg class="brand-mark" viewBox="0 0 512 512" fill="none" aria-hidden="true">
+          <defs>
+            <clip-path id="headerSwirlClip">
+              <path d="M220.6,291.4 C234.0,256.2 230.3,200.8 262.6,171.7 C286.7,150.6 332.5,160.8 362.1,149.9 C351.2,179.5 361.4,225.3 340.3,249.4 C311.2,281.7 255.8,278.0 220.6,291.4 Z M291.4,220.6 C278.0,255.8 281.7,311.2 249.4,340.3 C225.3,361.4 179.5,351.2 149.9,362.1 C160.8,332.5 150.6,286.7 171.7,262.6 C200.8,230.3 256.2,234.0 291.4,220.6 Z" />
+            </clip-path>
+          </defs>
+          <path fill="#026065" d="M220.6,291.4 C234.0,256.2 230.3,200.8 262.6,171.7 C286.7,150.6 332.5,160.8 362.1,149.9 C351.2,179.5 361.4,225.3 340.3,249.4 C311.2,281.7 255.8,278.0 220.6,291.4 Z M291.4,220.6 C278.0,255.8 281.7,311.2 249.4,340.3 C225.3,361.4 179.5,351.2 149.9,362.1 C160.8,332.5 150.6,286.7 171.7,262.6 C200.8,230.3 256.2,234.0 291.4,220.6 Z" />
+          <path fill="#A04106" d="M291.4,291.4 C256.2,278.0 200.8,281.7 171.7,249.4 C150.6,225.3 160.8,179.5 149.9,149.9 C179.5,160.8 225.3,150.6 249.4,171.7 C281.7,200.8 278.0,256.2 291.4,291.4 Z M220.6,220.6 C255.8,234.0 311.2,230.3 340.3,262.6 C361.4,286.7 351.2,332.5 362.1,362.1 C332.5,351.2 286.7,361.4 262.6,340.3 C230.3,311.2 234.0,255.8 220.6,220.6 Z" />
+          <g clip-path="url(#headerSwirlClip)">
+            <path fill="#E45B24" d="M291.4,291.4 C256.2,278.0 200.8,281.7 171.7,249.4 C150.6,225.3 160.8,179.5 149.9,149.9 C179.5,160.8 225.3,150.6 249.4,171.7 C281.7,200.8 278.0,256.2 291.4,291.4 Z M220.6,220.6 C255.8,234.0 311.2,230.3 340.3,262.6 C361.4,286.7 351.2,332.5 362.1,362.1 C332.5,351.2 286.7,361.4 262.6,340.3 C230.3,311.2 234.0,255.8 220.6,220.6 Z" />
+          </g>
+        </svg>
+        <span>Petal</span>
+        <span class="brand-tag">GeckoView 157</span>
+      </a>
+      <nav aria-label="Main">
+        <ul class="nav-links" id="nav-links"><li><a href="/#differentiators">Why Petal</a></li><li><a href="/download">Download</a></li><li><a href="/faq">FAQ</a></li><li><a href="/changelog" class="active" aria-current="page">Changelog</a></li><li><a href="/support">Support</a></li><li><a href="/privacy">Privacy</a></li></ul>
+      </nav>
+      <div class="nav-actions">
+        <button id="theme-toggle-btn" class="icon-btn" type="button" aria-label="Switch to dark theme" data-ripple>
+          <svg class="i i-moon"><use href="#i-moon"/></svg>
+          <svg class="i i-sun" hidden><use href="#i-sun"/></svg>
+        </button>
+        <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="icon-btn nav-github" aria-label="GitHub repository" data-ripple>
+          <svg class="i"><use href="#i-github"/></svg>
+        </a>
+        <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled nav-download" aria-label="Download APK" data-ripple>
+          <svg class="i i--sm"><use href="#i-download"/></svg>
+          <span class="btn-label">Download</span>
+        </a>
+        <button id="menu-btn" class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu" data-ripple>
+          <svg class="i i-menu"><use href="#i-menu"/></svg>
+          <svg class="i i-close"><use href="#i-close"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="menu" id="menu" aria-hidden="true">
+    <div class="menu-scrim" id="menu-scrim"></div>
+    <div class="menu-panel" role="dialog" aria-modal="true" aria-label="Site menu">
+      <div class="menu-head">
+        <span class="brand"><span>Petal</span></span>
+        <button class="icon-btn" id="menu-close" type="button" aria-label="Close menu" data-ripple><svg class="i"><use href="#i-close"/></svg></button>
+      </div>
+      <ul class="menu-list" id="menu-list"><li style="--i:0"><a href="/#differentiators">Why Petal <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:1"><a href="/download">Download <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:2"><a href="/faq">FAQ <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:3"><a href="/changelog" class="active">Changelog <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:4"><a href="/support">Support <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:5"><a href="/privacy">Privacy <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:6"><a href="/terms">Terms of Use <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:7"><a href="/licenses">Licenses <svg class="i"><use href="#i-arrow"/></svg></a></li></ul>
+      <div class="menu-foot">
+        <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled btn--lg btn--block" data-ripple>
+          <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
+        </a>
+        <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="btn btn--tonal btn--block" data-ripple>
+          <svg class="i i--sm"><use href="#i-github"/></svg><span>View on GitHub</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <main id="main-content" class="page">
+    <div class="container">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Changelog</span></nav>
+      <header class="page-hero">
+        <p class="eyebrow">Releases</p>
+        <h1 class="page-title">Changelog</h1>
+        <p class="lead">What changed in every Petal release, newest first.</p>
+        <p class="page-meta">Latest release: v4.4 · 60 Petal releases</p>
+      </header>
+      <div class="page-grid">
+        <aside class="toc toc--versions" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#v4-4">v4.4</a></li><li><a href="#v4-3">v4.3</a></li><li><a href="#v4-0-1">v4.0.1</a></li><li><a href="#v3-9">v3.9</a></li><li><a href="#v3-7">v3.7</a></li><li><a href="#v3-3">v3.3</a></li><li><a href="#v3-1-2">v3.1.2</a></li><li><a href="#v3-1-1">v3.1.1</a></li><li><a href="#v3-1">v3.1</a></li><li><a href="#v3-0">v3.0</a></li><li><a href="#v2-9-9">v2.9.9</a></li><li><a href="#v2-9-8">v2.9.8</a></li><li><a href="#v2-9">v2.9</a></li><li><a href="#v2-8-2">v2.8.2</a></li><li><a href="#v2-8-1">v2.8.1</a></li><li><a href="#v2-8">v2.8</a></li><li><a href="#v2-7-4">v2.7.4</a></li><li><a href="#v2-7-3">v2.7.3</a></li><li><a href="#v2-7-2">v2.7.2</a></li><li><a href="#v2-7-1">v2.7.1</a></li><li><a href="#v2-7">v2.7</a></li><li><a href="#v2-6-8">v2.6.8</a></li><li><a href="#v2-6-7">v2.6.7</a></li><li><a href="#v2-6-6">v2.6.6</a></li><li><a href="#v2-6-5">v2.6.5</a></li><li><a href="#v2-6-4-hotfix">v2.6.4 (Hotfix)</a></li><li><a href="#v2-6-3-hotfix">v2.6.3 (Hotfix)</a></li><li><a href="#v2-6-2-hotfix">v2.6.2 (Hotfix)</a></li><li><a href="#v2-6-1-hotfix">v2.6.1 (Hotfix)</a></li><li><a href="#v2-6-0-official-release">v2.6.0 (Official Release)</a></li><li><a href="#v2-5-1-hotfix">v2.5.1 (Hotfix)</a></li><li><a href="#v2-5-official-release">v2.5 (Official Release)</a></li><li><a href="#v2-4-official-release">v2.4 (Official Release)</a></li><li><a href="#v2-3-official-release">v2.3 (Official Release)</a></li><li><a href="#v2-1-hotfix">v2.1 (Hotfix)</a></li><li><a href="#v2-0-official-release">v2.0 (Official Release)</a></li><li><a href="#v1-9-9">v1.9.9</a></li><li><a href="#v1-9-8">v1.9.8</a></li><li><a href="#v1-9-7">v1.9.7</a></li><li><a href="#v1-9-4">v1.9.4</a></li><li><a href="#v1-9-3">v1.9.3</a></li><li><a href="#v1-7-8">v1.7.8</a></li><li><a href="#v1-7-7">v1.7.7</a></li><li><a href="#v1-7-6">v1.7.6</a></li><li><a href="#v1-7-5">v1.7.5</a></li><li><a href="#v1-7-4">v1.7.4</a></li><li><a href="#v1-7-3">v1.7.3</a></li><li><a href="#v1-7-2">v1.7.2</a></li><li><a href="#v1-7-1">v1.7.1</a></li><li><a href="#v1-7-0">v1.7.0</a></li><li><a href="#v1-6-9">v1.6.9</a></li><li><a href="#v1-6-8">v1.6.8</a></li><li><a href="#v1-6-7">v1.6.7</a></li><li><a href="#v1-6-6">v1.6.6</a></li><li><a href="#v1-6-5">v1.6.5</a></li><li><a href="#v1-6-4">v1.6.4</a></li><li><a href="#v1-5-3">v1.5.3</a></li><li><a href="#v1-5-2">v1.5.2</a></li><li><a href="#v1-5-1">v1.5.1</a></li><li><a href="#v1-5-0">v1.5.0</a></li><li><a href="#foss-browser-history">FOSS Browser history</a></li></ol></aside>
+        <div class="prose">
+<div class="changelog-tools"><label class="sr-only" for="cl-search">Search the changelog</label><input id="cl-search" type="search" placeholder="Search releases, e.g. “PDF”, “extensions”, “GeckoView”" autocomplete="off"><span id="cl-count" class="page-meta" aria-live="polite"></span></div><p id="cl-empty" class="no-results" hidden>No releases match your search.</p><section class="release" id="v4-4"><h2><a class="rel-ver" href="#v4-4">v4.4</a><span class="rel-badge">Latest</span><span class="rel-title">🌸 Material 3 Expressive 3-Dot Menus, Feature Explainers &amp; Smooth Performance</span></h2><blockquote>
+<p><em>&quot;Major UI &amp; UX milestone introducing Material 3 Expressive 3-dot menus with bouncy rotation physics, animated live feature explainer dialogs, Android 14 predictive back with blur across viewers, full Petal Autofill redesign, and zero-allocation anti-jank rendering.&quot;</em></p>
+</blockquote>
+<h3>🎨 Material 3 Expressive 3-Dot Menus &amp; Bouncy Motion</h3>
+<ul>
+<li><strong>Unified Expressive Menus (<code>PetalPopupMenu</code>)</strong>: Redesigned all secondary and item action menus app-wide (Bookmarks, Downloads, Extensions, File Picker, PDF Viewer, Tab Switcher, and Custom Tabs) with:
+<ul>
+<li>28dp rounded container shapes and tonal surface container elevation.</li>
+<li>Interactive squircle icon badges, bold typography, and destructive action tints.</li>
+<li>Tactile bouncy physics: Spring-driven 180° rotation on the 3-dot trigger button (<code>Spring.DampingRatioMediumBouncy</code>) plus scale and fade entrance on menu popup surfaces.</li>
+</ul>
+</li>
+</ul>
+<h3>💡 Interactive Material 3 Expressive Feature Explainers</h3>
+<ul>
+<li><strong>Info Icon System (<code>PetalFeatureInfoButton</code>)</strong>: Embedded tactile info icon buttons beside complex feature sections in Settings.</li>
+<li><strong>Animated Explainer Dialogs (<code>PetalFeatureExplainerDialog</code>)</strong>: Interactive modal dialogs with live animated micro-previews:
+<ul>
+<li><em>Apple Duo (BETA)</em>: Live 3D dual-pane foldable preview with real-time perspective tilt and frosted glass crease blur.</li>
+<li><em>Address Bar Position</em>: Top vs. bottom floating island one-handed reachability demonstration.</li>
+<li><em>Ad &amp; Tracker Shield</em>: Sub-millisecond Trie algorithm firewall visualization routing clean web traffic while intercepting tracking packets.</li>
+<li><em>Morphing Shapes &amp; Scroll Motion Blur</em>: Live continuous ambient polygon morphing and velocity-based directional blur demo.</li>
+</ul>
+</li>
+</ul>
+<h3>🔙 Android 14 Predictive Back Navigation</h3>
+<ul>
+<li><strong>Predictive Back with Live Blur</strong>: Upgraded all full-screen viewers (PDF viewer, Image viewer, File viewer, and Recently Closed Vault) to adhere strictly to Android 14 predictive back guidelines with real-time scaling and frosted background blur snapshots.</li>
+</ul>
+<h3>🔐 Petal Autofill Expressive Redesign</h3>
+<ul>
+<li><strong>Expressive Credential Overhaul</strong>: Full Material 3 Expressive UI and UX redesign of password, credit card, and identity autofill prompts with fluid animations, biometrics, and living color harmony.</li>
+</ul>
+<h3>⚡ Performance &amp; Anti-Jank Optimizations</h3>
+<ul>
+<li><strong>Zero-Allocation Canvas Rendering</strong>: Pre-allocated and reused scratch matrices inside <code>M3ExpressiveVariableBackground</code>, eliminating hundreds of short-lived heap allocations per second and eradicating GC pause stutters.</li>
+<li><strong>Compose Compiler Stability</strong>: Added <code>@Immutable</code> stability annotations across core data models (<code>TabModel</code>, <code>DownloadItem</code>, <code>PetalShortcut</code>, <code>HistoryListItem</code>), allowing Compose to skip recomposition during high-speed fling scrolling.</li>
+<li><strong>Recomposition Pruning</strong>: Wrapped dynamic search queries and filter pipelines in <code>derivedStateOf</code>, and added explicit <code>contentType</code> tags across lazy lists to prevent measure thrashing.</li>
+<li><strong>Calibrated Spring Curves</strong>: Standardized <code>PetalSpring.dialog()</code> and <code>PetalSpring.sheet()</code> curves for crisp, snappy settles without sluggish settle times.</li>
+</ul>
+</section>
+<section class="release" id="v4-3"><h2><a class="rel-ver" href="#v4-3">v4.3</a><span class="rel-title">⚡ Latest GeckoView 157 Engine &amp; Expressive Connected Pickers</span></h2><blockquote>
+<p><em>&quot;Major engine upgrade to Mozilla GeckoView &amp; Android Components 157.0.1, coupled with a full redesign of pick-one selectors to Material 3 Expressive connected button groups.&quot;</em></p>
+</blockquote>
+<h3>🌐 Engine &amp; Core Upgrades</h3>
+<ul>
+<li><strong>Mozilla GeckoView 157.0.1</strong>: Upgraded quantum browser engine to <code>157.0.20261005135250</code> with enhanced web standards compliance, security enhancements, and optimized multi-process rendering.</li>
+<li><strong>Mozilla Android Components 157.0.1</strong>: Bumped all components (<code>browser-engine-gecko</code>, <code>concept-engine</code>, <code>feature-readerview</code>, <code>feature-session</code>, <code>feature-customtabs</code>, <code>feature-pwa</code>, <code>feature-media</code>, etc.) to stable 157.0.1.</li>
+</ul>
+<h3>🎨 Material 3 Expressive UI Modernization</h3>
+<ul>
+<li><strong>Unified Connected Button Groups (<code>PetalChoiceButtonGroup</code>)</strong>: Replaced all segmented buttons and pick-one selectors with Material 3 Expressive connected toggle buttons:
+<ul>
+<li>Full-pill morphing shape transitions with spring dynamics.</li>
+<li>Generous 56dp touch targets, tactile haptic feedback, and accessibility radio button semantics.</li>
+<li>Seamless horizontal scrolling when options exceed 4 or labels are long, eliminating text clipping.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v4-0-1"><h2><a class="rel-ver" href="#v4-0-1">v4.0.1</a><span class="rel-title">🚀 Hotfix: Link Navigation &amp; External App Intent Handling</span></h2><blockquote>
+<p><em>&quot;Hotfix release restoring seamless link opening from external apps and fixing blank page issues on website link taps.&quot;</em></p>
+</blockquote>
+<h3>🐛 Bug Fixes &amp; Improvements</h3>
+<ul>
+<li><strong>External App Link Opening</strong>: Fixed links opened from other apps and browsers (via <code>ACTION_VIEW</code>) failing to load in Petal. Added robust fallback URL extraction from <code>EXTRA_TEXT</code>, added <code>petal://</code> scheme intent support, and prevented duplicate lifecycle dispatch collisions in <code>onNewIntent</code>.</li>
+<li><strong>Website Link Navigation &amp; Blank Pages</strong>: Fixed tapping on links in websites (e.g. <code>target=&quot;_blank&quot;</code>, popups, and JavaScript windows) opening blank pages instead of the target website. Correctly preserved adopted popup window requests and prevented the browser from misclassifying new window sessions as the home page and calling <code>stopLoading()</code>.</li>
+</ul>
+</section>
+<section class="release" id="v3-9"><h2><a class="rel-ver" href="#v3-9">v3.9</a><span class="rel-title">🌸 Material 3 Expressive Extensions &amp; Find in Page Milestone</span></h2><blockquote>
+<p><em>&quot;Material 3 Expressive Extensions Manager with dedicated Built-in &amp; Firefox Add-on tabs, real AMO icons, Petal Dark Webpages with whitelist, and website-exclusive floating Find in Page.&quot;</em></p>
+</blockquote>
+<h3>🧩 Extensions Ecosystem Modernization</h3>
+<ul>
+<li><strong>Expressive Multi-Tab Architecture</strong>: Completely redesigned <code>PetalExtensionsScreen</code> using Material 3 Expressive design tokens, pill tabs, fluid elevation, and responsive container cards.
+<ul>
+<li><strong>Tab 1 — Petal Built-in Extensions</strong>: Dedicated ecosystem for browser-native capabilities:
+<ul>
+<li><em>Dark Webpages</em>: Native CSS/DOM inversion dark mode engine replacing legacy Dark Reader, featuring per-site whitelist controls and real-time contrast adjustment.</li>
+<li><em>Clean Link</em>: Automatic real-time stripping of URL marketing trackers, analytics parameters (<code>utm_*</code>, <code>fbclid</code>, <code>gclid</code>, etc.).</li>
+<li><em>Universal Copy</em>: Enables text selection and copying on sites that aggressively restrict user selection.</li>
+<li><em>AI Overview Blocker</em>: Filters out intrusive search engine AI-generated preview widgets.</li>
+</ul>
+</li>
+<li><strong>Tab 2 — Firefox Add-ons (AMO)</strong>: Combined Installed and Recommended sections on a single unified canvas with real AMO icons fetched live via Mozilla CDN URLs with disk caching.</li>
+</ul>
+</li>
+<li><strong>Dedicated Extension Settings</strong>: Built-in extensions now feature detailed configuration sheets with toggles, domain whitelists, and parameter controls.</li>
+<li><strong>Menu Simplification</strong>: Consolidated disparate tool toggles from the overflow menu into Petal Built-in Extensions.</li>
+</ul>
+<h3>🔍 Material 3 Expressive Find in Page</h3>
+<ul>
+<li><strong>Floating Expressive Pill Bar</strong>: Replaced legacy Android search bar with <code>PetalFindInPageBar</code> built entirely with Material 3 Expressive styling, soft rounded corners, tonal elevation, and smooth slide animations.</li>
+<li><strong>Website-Exclusive Display</strong>: Find in Page is now strictly available only while browsing web content, automatically hidden on homepage, bookmarks, and internal views.</li>
+<li><strong>Fluid Keyboard &amp; Match Traversal</strong>: Instant auto-focus, ime navigation actions, match jumping with directional indicator controls, and responsive dismiss gesture handling.</li>
+</ul>
+<h3>🛠️ Core Stability &amp; GeckoView Integration</h3>
+<ul>
+<li><strong>Legacy WebView Cleanup</strong>: Resolved residual conditional references to legacy components, unifying all browser tabs under Mozilla GeckoView.</li>
+<li><strong>Build &amp; Interop Optimization</strong>: Verified Java/Kotlin Composable SAM conversions and Compose lifecycle bindings.</li>
+</ul>
+</section>
+<section class="release" id="v3-7"><h2><a class="rel-ver" href="#v3-7">v3.7</a><span class="rel-title">GeckoView 156 &amp; Browser Polish</span></h2><blockquote>
+<p><em>Stabilized the Gecko engine dependency and synchronized the latest scanner, popup, tab, diagnostics, and Material You improvements.</em></p>
+</blockquote>
+<h3>Engine</h3>
+<ul>
+<li>Kept the latest published compatible GeckoView <code>155.0.20260903215306</code> and Mozilla Android Components <code>155.0.1</code> coordinates so CI can resolve the release classpath.</li>
+</ul>
+<h3>Improvements</h3>
+<ul>
+<li>Added smoother tab transitions and expressive Material 3 popup/undo surfaces.</li>
+<li>Improved omnibox selection, incognito tab continuity, and tab numbering.</li>
+<li>Fixed extension popup dismissal restoring browser touch/input focus.</li>
+<li>Kept diagnostic capture disabled by default while fixing crash handling.</li>
+<li>Continued the Petal QR Scanner, Google Lens, Quick Settings, and adaptive icon improvements.</li>
+</ul>
+</section>
+<section class="release" id="v3-3"><h2><a class="rel-ver" href="#v3-3">v3.3</a><span class="rel-title">Address Bar &amp; Search Customization</span></h2><blockquote>
+<p><em>Compact address bar, dedicated customization settings, improved bottom positioning, and unlimited custom search engines.</em></p>
+</blockquote>
+</section>
+<section class="release" id="v3-1-2"><h2><a class="rel-ver" href="#v3-1-2">v3.1.2</a><span class="rel-title">🔧 Extensions, Media &amp; Pull-to-Refresh Fixed</span></h2><blockquote>
+<p><em>&quot;Tap an extension, see its popup. Detect media, see the overlay. Pull to refresh, actually refresh.&quot;</em></p>
+</blockquote>
+<h3>🐛 Bug Fixes</h3>
+<ul>
+<li><strong>Extension Popup Not Showing</strong>: Fixed extension browser/page-action popups (uBlock Origin, Bitwarden, AdGuard, 1Password, etc.) never appearing when tapping the extension button. The <code>PopupRequestListener</code> bridge was never registered in <code>BrowserActivity</code>, so popup sessions were created but silently discarded.</li>
+<li><strong>Media Grabber Overlay Missing</strong>: Fixed the media-detected banner (&quot;Media found — X sources on this page&quot;) never appearing even when the media grabber extension correctly detected playable video/audio. The <code>media_sniffer_compose</code> ComposeView existed in the layout but <code>PetalMediaSnifferOverlayBridge.bind()</code> was never called.</li>
+<li><strong>Pull-to-Refresh Permanently Blocked</strong>: Fixed pull-to-refresh being permanently disabled after any GeckoView scroll. GeckoView calls <code>requestDisallowInterceptTouchEvent(true)</code> during scroll which was never reset on the next finger-down, blocking all subsequent refresh attempts. Also reduced the pull trigger distance from an unreachable 300dp to a natural 120dp.</li>
+</ul>
+<h3>⚡ Improvements</h3>
+<ul>
+<li><strong>Extension Popup Responsive Layout</strong>: Extension popup sessions now inject a mobile-responsive CSS + viewport meta tag fix on page load, matching omni's behavior. Extensions that previously overflowed at their desktop fixed-widths (uBlock Origin, Bitwarden, etc.) now render correctly on phone screen widths.</li>
+<li><strong>Direct Popup Sessions</strong>: <code>openDirectPopup</code> (fallback for extensions without a live action delegate) now uses <code>VIEWPORT_MODE_MOBILE</code> + <code>allowJavascript(true)</code> GeckoSession settings and also injects the responsive CSS fix.</li>
+</ul>
+</section>
+<section class="release" id="v3-1-1"><h2><a class="rel-ver" href="#v3-1-1">v3.1.1</a><span class="rel-title">🧭 Address Bar Polish &amp; Navigation Harmony 🪄✨</span></h2><blockquote>
+<p><em>&quot;Pixel-perfect address bar positioning, zero navbar overlap, and seamless scroll dynamics.&quot;</em></p>
+</blockquote>
+<h3>🐛 Bug &amp; UI/UX Fixes</h3>
+<ul>
+<li><strong>Bottom Address Bar Navigation Offset</strong>: Fixed bottom address bar overlapping bottom navigation bars (both floating and non-floating styles). Corrected dynamic margin calculations incorporating system navigation bar insets and scheduled layout settle listeners.</li>
+<li><strong>Address Bar Scroll Visibility</strong>: Fixed address bar not restoring or failing to show after scrolling in web sessions. Synchronized GeckoView and WebView scroll change listeners to properly animate collapse and expansion together with bottom navigation.</li>
+<li><strong>State Reset on Page Load</strong>: Guaranteed address bar visibility and uncollapsed state resets on page navigation, reload, and tab switching, hiding orphaned floating bubble toggles.</li>
+</ul>
+</section>
+<section class="release" id="v3-1"><h2><a class="rel-ver" href="#v3-1">v3.1</a><span class="rel-title">📑 Tab Sorcery &amp; Seamless Flow 🪄✨</span></h2><blockquote>
+<p><em>&quot;Instant previews, persistent tabs, and unbreakable navigation flow.&quot;</em></p>
+</blockquote>
+<h3>🐛 Bug &amp; Stability Fixes</h3>
+<ul>
+<li><strong>Persistent Tab Thumbnails</strong>: Fixed Tab Manager preview thumbnail cache eviction. Thumbnails are no longer wiped on background memory trimming (<code>onTrimMemory</code>), persisting in memory (32-entry LRU) and disk cache until tabs are explicitly closed or cleared.</li>
+<li><strong>Tab Navigation &amp; Site Restore</strong>: Resolved issue where tapping tabs in the Tab Manager unexpectedly navigated to &quot;Petal Home&quot; instead of their intended website. Pre-evaluates target and restored URLs before home page checks.</li>
+<li><strong>Subframe Metadata Isolation</strong>: Prevented invisible <code>about:blank</code> subframes and third-party payment widgets (Stripe, PayPal, Ko-fi) in <code>PetalGeckoView</code> from mutating the parent tab's title or address to the homepage.</li>
+<li><strong>Back Gesture Architecture</strong>: Seamless predictive and system back gesture navigation with robust Gecko session history synchronization.</li>
+</ul>
+<h3>⚡ Performance &amp; Interoperability</h3>
+<ul>
+<li><strong>WebExtension Popup &amp; Delegate Plumbing</strong>: Fixed GeckoView <code>ContentDelegate</code> and <code>NavigationDelegate</code> coordination for Firefox add-on popups, enabling native window close and external link dispatch into foreground tabs.</li>
+<li><strong>PWA &amp; Offline Web App Architecture</strong>: Hardened background thread favicon resolution and domain extraction for Progressive Web Apps.</li>
+<li><strong>Build &amp; CI Pipeline Resilience</strong>: Clean Java/Kotlin interoperability SAM conversions and robust artifact delivery.</li>
+</ul>
+</section>
+<section class="release" id="v3-0"><h2><a class="rel-ver" href="#v3-0">v3.0</a><span class="rel-title">🌸 Petal: The Grand Milestone (v2.0 to v3.0 Evolution) 🚀🦎</span></h2><blockquote>
+<p><em>&quot;Personal Window to the Web — Completely Gecko-Powered, Zero Trackers, Native Viewers &amp; Seamless Custom Tabs.&quot;</em></p>
+</blockquote>
+<p>Welcome to <strong>Petal 3.0</strong>! This monumental milestone celebrates Petal's complete evolutionary journey from a lightweight browser shell into a modern, privacy-first flagship powerhouse powered by Mozilla GeckoView. Here is everything built, perfected, and unified across the entire v2.0 → v3.0 era:</p>
+<hr />
+<h3>🦎 1. The GeckoView Quantum Leap (v2.8 – v3.0)</h3>
+<ul>
+<li><strong>Bye Bye WebView, Hello Gecko 154!</strong>: Full migration from Android System WebView to Mozilla GeckoView 154. True modern web standards compliance, sandboxed multi-process tab architecture, and zero Google WebView tracking.</li>
+<li><strong>Gecko MediaSession &amp; Picture-in-Picture</strong>: Bidirectional HTML5 media session bridge supporting lock-screen controls, notification scrubbers, speed controls, and smooth PiP transitions with dynamic aspect ratio tracking.</li>
+<li><strong>Chrome-Style Session Rehydration</strong>: Bulletproof session restoration preserving open tabs, tab groupings, scroll positions, and navigation history across app restarts.</li>
+<li><strong>Rock-Solid Gestures &amp; Touch Streams</strong>: Clean edge-swipe back navigation, predictive back gesture support, and touch arbitration across pull-to-refresh containers and GeckoView.</li>
+</ul>
+<h3>🚀 2. AndroidX Custom Tabs Provider &amp; Lightweight Shell (New in v3.0)</h3>
+<ul>
+<li><strong>Official Custom Tabs Provider</strong>: Petal now acts as an Android Custom Tabs provider via <code>androidx.browser:browser</code>. External apps (Twitter/X, Reddit, Gmail, etc.) can now launch Petal as their native in-app browser overlay.</li>
+<li><strong>Bound Provider Service (<code>PetalCustomTabsService</code>)</strong>: Implements session negotiation, warm handshakes, and pre-render signals (<code>android.support.customtabs.action.CustomTabsService</code>).</li>
+<li><strong>Dedicated Overlay Activity (<code>PetalCustomTabActivity</code>)</strong>: Lightweight, distraction-free overlay hosting an isolated <code>PetalGeckoView</code> session with full tracking protection, secure HTTPS indicator, and a one-tap <strong>&quot;Open in Petal&quot;</strong> button to promote sessions into full multi-tab browsing.</li>
+</ul>
+<h3>🎨 3. Native Media, File &amp; Document Viewers (v2.7 – v2.9.9)</h3>
+<ul>
+<li><strong>Native Video Player &amp; Wavy Seekbar (v2.7)</strong>: mpvEx-inspired native video overlay featuring an animated squiggly seekbar, vertical gesture HUDs for brightness and volume, 10s skip intervals, and playback speed selectors (with smart bypass for YouTube).</li>
+<li><strong>Material 3 Expressive Image Viewer (v2.9.8)</strong>: Full-screen offline image viewer with pinch-to-zoom (0.8×–5.0×), double-tap spring zoom, gallery mode, wallpaper setter, image info bottom sheet, and web long-press integration (&quot;View in Petal Viewer&quot;).</li>
+<li><strong>Featherweight PDF Engine (v2.9.9)</strong>: Zero-dependency, native <code>PdfRenderer</code>-powered document viewer featuring continuous vertical scrolling, thumbnail skimmer drawer, jump-to-page slider, system printing integration, and metadata inspection.</li>
+<li><strong>Universal File Viewer 60 FPS Engine (v3.0)</strong>: Smooth virtualized text rendering with horizontal single-scroll containment, dynamic <strong>Word Wrap</strong> toggle, and optimized rendering for DOCX and XLSX tables.</li>
+</ul>
+<h3>🕵️ 4. Incognito Stealth &amp; Privacy Redefined (New in v3.0)</h3>
+<ul>
+<li><strong>Material 3 Expressive Incognito Redesign</strong>: Chrome-inspired clean layout featuring an ambient-glowing detective fedora hero badge, bulleted privacy breakdowns, and an interactive privacy safeguards dialog.</li>
+<li><strong>Decoy Omnibox Search Bar</strong>: Pill-shaped search bar with tactile haptic bounce, Google Lens visual search, and voice search integration.</li>
+<li><strong>Isolated Incognito Session Suggester</strong>: Segregated omnibox query suggestions that vanish completely upon closing private tabs.</li>
+<li><strong>Expressive Cookie Shield</strong>: One-tap card toggle for blocking third-party tracking cookies with animated thumb transitions.</li>
+</ul>
+<h3>⚡ 5. Speed, Downloads &amp; Network Privacy (v2.6 – v2.9)</h3>
+<ul>
+<li><strong>High-Speed Segmented Downloader</strong>: 12-thread segmented downloading powered by Fetch2 and OkHttp with auto-resume, RFC 5987 UTF-8 filename decoding, and smart network recovery.</li>
+<li><strong>Instant External Download Dispatch (v2.9)</strong>: Instant URL handoff to 1DM, ADM, AB Download Manager, and Navi without confirmation dialog interruptions.</li>
+<li><strong>Advanced Content Blocker</strong>: High-performance request interceptor equipped with EasyList, HaGeZi, and uAssets host filter engines alongside dynamic cosmetic filters.</li>
+<li><strong>Custom DNS-over-HTTPS (DoH)</strong>: Built-in encrypted DNS support for Cloudflare, NextDNS, and custom user-defined DoH endpoints.</li>
+<li><strong>Smart Background Navigation</strong>: Automatically open intrusive link redirects in background tabs without disrupting active reading sessions.</li>
+</ul>
+<h3>🌸 6. Material 3 Expressive UI, Animations &amp; Shell</h3>
+<ul>
+<li><strong>Interactive Address Bar Pill</strong>: Horizontal swipe gestures to cycle tabs, inline loading indicator, and long-press quick action bottom sheet (clean URL copy, paste &amp; go, bookmark, hard refresh).</li>
+<li><strong>Cinematic Cold-Start Intros</strong>: Optional 3D Prism &amp; Optical Laser Sweep and Blooming Petal splash animations with synchronized micro-haptics.</li>
+<li><strong>Unified Settings Hub</strong>: Cohesive M3 Expressive container cards, rounded position-aware icon badges, and dynamic keyword search indexing across all preference pages.</li>
+<li><strong>Tactile Tab Management</strong>: Long-press bottom bar tab pill for instant tab creation, clean 3-dot overflow menu, and grid/vertical tab manager layouts.</li>
+<li><strong>Zero Data Loss Guarantee</strong>: Strict backward compatibility preserving bookmarks, history, settings, and session tabs across every single release.</li>
+</ul>
+</section>
+<section class="release" id="v2-9-9"><h2><a class="rel-ver" href="#v2-9-9">v2.9.9</a><span class="rel-title">📄 Featherweight PDF Engine &amp; Crystal Security ✨</span></h2><h3>🎨 UI/UX — Pure Material 3 Expressive PDF Viewer (Inspired by ImageToolbox)</h3>
+<ul>
+<li><strong>Built-in Pure M3 Expressive PDF Viewer</strong>: Native, zero-bloat PDF viewing experience powered entirely by Android's native <code>android.graphics.pdf.PdfRenderer</code> — no heavy external binary dependencies or tracking.</li>
+<li><strong>Multi-Page Continuous Scroll &amp; Gestures</strong>: Smooth, hardware-accelerated continuous vertical scrolling with <code>LazyColumn</code>, responsive pinch-to-zoom (0.8× to 5.0×), pan gestures, and double-tap zoom toggle (1× ↔ 2.4×) with spring dynamics.</li>
+<li><strong>Expressive Floating App Bars</strong>: Floating translucent glassmorphism top and bottom action bars with auto-hide timer (4s) and tap-to-toggle gesture.</li>
+<li><strong>Top Bar Controls</strong>: Quick document title, interactive page indicator pill (&quot;Page X of Y • Tap to jump&quot;), one-tap Android <code>PrintManager</code> integration (print to wireless printer or save as PDF), system share sheet, and document info sheet.</li>
+<li><strong>Thumbnail Skimmer Drawer</strong>: Bottom sheet modal grid (<code>GridCells.Fixed(3)</code>) rendering live asynchronous page thumbnails for rapid visual skimming and direct page hopping.</li>
+<li><strong>Jump to Page Modal</strong>: Interactive page navigation dialog featuring an expressive M3 slider alongside direct numerical input.</li>
+<li><strong>Document Metadata Inspector</strong>: Detailed modal bottom sheet displaying file name, page count, formatted file size, modification timestamp, MIME type, and local URI path.</li>
+<li><strong>Integrated System Ingress</strong>:
+<ul>
+<li>Automatically handles <code>application/pdf</code> and <code>.pdf</code> file intents via <code>ACTION_VIEW</code> and <code>ACTION_SEND</code>.</li>
+<li>Downloads page integration: Tapping any downloaded <code>.pdf</code> file opens it instantly in Petal's built-in PDF viewer.</li>
+</ul>
+</li>
+</ul>
+<h3>🔍 Omnibox &amp; Search UX Enhancements</h3>
+<ul>
+<li><strong>Intelligent Start Truncation (<code>...</code>) for Long Queries</strong>: Long search suggestion strings now gracefully hide starting words with a leading ellipsis while preserving trailing query words, ensuring what you are actively typing and searching remains fully visible.</li>
+<li><strong>Incognito Search Privacy Isolation</strong>: Omnibox search suggestions in Incognito tabs are strictly segregated into independent session storage, never exposed to regular browsing tabs, and fully wiped on closing Incognito tabs.</li>
+</ul>
+<h3>🔒 Security &amp; Live Connection Status Fix</h3>
+<ul>
+<li><strong>Live Connection Status</strong>: Fixed the &quot;Connection status unavailable&quot; issue in the site information bottom sheet by resolving <code>currentAlbumController</code> and inspecting GeckoView's real-time <code>SecurityInformation</code> (<code>currentSecurityInfo</code>), HTTPS transport state, and local internal page schemes (<code>petal:</code>, <code>about:</code>).</li>
+<li><strong>CI/CD Build Fix</strong>: Restored missing <code>PreferenceManager</code> import in <code>BackupUnit.java</code>.</li>
+</ul>
+</section>
+<section class="release" id="v2-9-8"><h2><a class="rel-ver" href="#v2-9-8">v2.9.8</a><span class="rel-title">🖼️ Peek-a-Petal: The Image Viewer Arrives!</span></h2><h3>🎨 UI/UX — Built-in Image Viewer</h3>
+<ul>
+<li><strong>Native Material 3 Expressive Image Viewer</strong>: Full-screen offline-capable viewer using <code>HorizontalPager</code>, <code>detectTransformGestures</code>, and Compose animation — zero new dependencies for local images</li>
+<li><strong>Pinch-to-zoom</strong> (0.8×–5×), <strong>pan</strong> when zoomed, <strong>double-tap</strong> toggle zoom (1× ↔ 2.5×) with spring animation</li>
+<li><strong>Gallery mode</strong>: swipe left/right between downloaded images in a session</li>
+<li><strong>Auto-hide controls</strong>: single tap shows/hides top bar + bottom bar with a 3.5s countdown</li>
+<li><strong>Top bar</strong>: back button, filename + &quot;X of Y&quot; counter, Share, Copy URL, Open in external app (⋮ menu)</li>
+<li><strong>Bottom bar</strong>: translucent pill with Rotate (90° CW, animated), Delete (with Undo snackbar), Set as Wallpaper, Info</li>
+<li><strong>Image Info bottom sheet</strong>: dimensions, file size, modified date, full path, source URL</li>
+<li><strong>Predictive back</strong> swipe-to-dismiss via <code>PetalPredictiveBackSurface</code></li>
+</ul>
+<h3>🌐 Web Image Support</h3>
+<ul>
+<li><strong>Long-press any image on a website</strong> → new &quot;View in Petal Viewer&quot; option added as the first item in the image context menu</li>
+<li>Remote images loaded via <strong>Coil</strong> with crossfade — works on any HTTP/HTTPS image URL, with loading/error states</li>
+</ul>
+<h3>📤 External Source Support</h3>
+<ul>
+<li><strong>Open With</strong>: Petal now appears as an image viewer option when opening images from Files, Gallery, or any app (<code>ACTION_VIEW image/*</code>)</li>
+<li><strong>Share to Petal</strong>: receive shared images from any app directly into the viewer (<code>ACTION_SEND image/*</code>)</li>
+<li>Supports <code>content://</code> and <code>file://</code> URIs with proper <code>ContentResolver</code> display name resolution</li>
+</ul>
+<h3>📥 Downloads Page Integration</h3>
+<ul>
+<li><strong>Preview strip tap</strong> → opens full-screen image viewer instead of system opener</li>
+<li><strong>Row item tap</strong> → launches viewer for image file types</li>
+<li><strong>Long-press preview strip</strong> → &quot;View Image&quot; (Petal viewer) + &quot;Open in app&quot; (system) options</li>
+</ul>
+<h3>🐛 Bug Fixes &amp; Stability</h3>
+<ul>
+<li>Merged upstream: progress bar rendering fix, GeckoView touch improvements</li>
+<li>Delete button hidden for remote/external images (can't delete what wasn't downloaded)</li>
+</ul>
+</section>
+<section class="release" id="v2-9"><h2><a class="rel-ver" href="#v2-9">v2.9</a><span class="rel-title">Warp Speed Downloads &amp; Background Magic 🚀⚡</span></h2><ul>
+<li><strong>⚡ Streamlined External Download Dispatch (Issue #6)</strong>:
+<ul>
+<li><strong>Instant External Handoff</strong>: When an external download manager (1DM, ADM, AB Download Manager, Navi) is selected, Petal skips redundant in-app download confirmation prompts and dispatches download URLs, cookies, and headers directly to the external app.</li>
+<li><strong>Untouched Built-in Downloader</strong>: The built-in multi-threaded Fetch2 downloader continues to present the full download confirmation modal dialog as expected.</li>
+</ul>
+</li>
+<li><strong>🔄 Smart Background Redirect Navigation (Issue #6)</strong>:
+<ul>
+<li><strong>Open Redirects in Background Tab</strong>: Added setting in <em>Settings &gt; Privacy &amp; Security</em> to automatically open link redirects in new background tabs without disrupting current reading sessions.</li>
+<li><strong>GeckoView Navigation Routing</strong>: Implemented intelligent cross-origin and window-targeting redirect checks within GeckoView's navigation delegate.</li>
+</ul>
+</li>
+<li><strong>🛡️ Custom DNS-over-HTTPS (DoH) Endpoint</strong>:
+<ul>
+<li><strong>Custom DoH Provider</strong>: Enhanced Private DNS Protection settings to support custom DoH URLs alongside standard Cloudflare and NextDNS providers.</li>
+</ul>
+</li>
+<li><strong>📑 Quick Tab Creation on Long-Press</strong>:
+<ul>
+<li><strong>Tactile Long-Press on Tabs Button</strong>: Long-pressing the Tabs counter pill on the bottom navigation bar instantly spawns a new tab with pleasant haptic feedback.</li>
+</ul>
+</li>
+<li><strong>🔒 Zero Data Loss Guarantee</strong>:
+<ul>
+<li>Strictly preserves existing SQLite bookmarks, browsing history, user preferences, and session state.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-8-2"><h2><a class="rel-ver" href="#v2-8-2">v2.8.2</a></h2><ul>
+<li><strong>🎬 Native GeckoView MediaSession &amp; Picture-in-Picture Engine</strong>:
+<ul>
+<li><strong>Gecko MediaSession Integration</strong>: Wired GeckoView's native <code>GeckoSession.mediaSessionDelegate</code> (<code>MediaSession.Delegate</code>) directly into <code>PetalMediaBridge</code>, detecting HTML5 play, pause, stop, position scrubbing, and track duration events across all Gecko tabs.</li>
+<li><strong>Fluid Picture-in-Picture Control &amp; Dimension Tracking</strong>: Video aspect ratio, resolution updates, and remote PiP actions (Play/Pause, Rewind 10s, Forward 10s) route bi-directionally to active Gecko media sessions with dynamic source rect hints.</li>
+<li><strong>Foreground Media Session Service</strong>: Synchronized notification controls, scrubber progress, speed adjustments, and mute toggles with <code>PetalMediaSessionService</code>.</li>
+</ul>
+</li>
+<li><strong>🐛 Edge Back Gesture Fix (Issue #6)</strong>:
+<ul>
+<li><strong>Resolved False Overlay State</strong>: Fixed back gesture handling in <code>BrowserActivity</code> by properly recognizing <code>PetalGeckoView</code> as a primary browsing surface rather than an overlay screen, restoring edge back-swipe navigation across all tabs.</li>
+</ul>
+</li>
+<li><strong>🔒 Zero Data Loss Guarantee</strong>:
+<ul>
+<li>Full backward compatibility across saved tabs, bookmarks, SQLite history, and user preferences.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-8-1"><h2><a class="rel-ver" href="#v2-8-1">v2.8.1</a></h2><ul>
+<li><strong>🐛 PetalMediaBridge NullPointerException &amp; WebView Deferred Binding Fix</strong>:
+<ul>
+<li><strong>Deferred WebView Binding</strong>: Resolved launch <code>NullPointerException</code> inside <code>PetalMediaBridge</code> by implementing safe deferred binding (<code>attachWebView(WebView)</code>) and null-safe bridge initialization for GeckoView tabs.</li>
+<li><strong>Dynamic Bidirectional Registration</strong>: Ensured <code>NinjaWebView.setMediaBridge</code> automatically registers the Javascript media interface whenever a WebView is attached, maintaining full HTML5 media controls and background media notifications.</li>
+<li><strong>GeckoView Startup Stability</strong>: Guaranteed clean app startup without crash during tab instantiation and session rehydration.</li>
+</ul>
+</li>
+<li><strong>🔒 Zero Data Loss Guarantee</strong>:
+<ul>
+<li>Full backward compatibility across saved tabs, bookmarks, SQLite history, and user preferences.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-8"><h2><a class="rel-ver" href="#v2-8">v2.8</a><span class="rel-title">Bye Bye WebView, Hello Gecko Gecko! 🦎💨</span></h2><ul>
+<li><strong>🦎 Full Mozilla GeckoView 154 Engine Migration</strong>:
+<ul>
+<li><strong>Complete Engine Transition</strong>: Fully transitioned web page rendering, session management, and DOM handling across all tabs and popups to Mozilla GeckoView 154. Zero legacy Android System WebView instances are running for browsing.</li>
+<li><strong>Identified as Gecko / Firefox</strong>: Web standards test suites and browsers accurately identify Petal as powered by modern Gecko 154.</li>
+<li><strong>Chrome-Style Tab Rehydration &amp; Zero Data Loss</strong>: Upgraded session serialization and persistence to save and restore GeckoView tabs, group titles, active indexes, and URLs seamlessly across app restarts.</li>
+</ul>
+</li>
+<li><strong>✨ Material 3 Expressive Context Menu</strong>:
+<ul>
+<li><strong>Next-Gen Bottom Sheet Context Surfaces</strong>: Long-pressing web links, images, video elements, audio streams, and text selection opens a sleek Material 3 Expressive bottom sheet with rounded action cards and fluid micro-interactions.</li>
+<li><strong>Rich Action Suites</strong>: One-tap quick actions for Tab Groups, Incognito tabs, Lens visual search, Petal Scanner, media downloads, copy URL/text, and web search.</li>
+</ul>
+</li>
+<li><strong>🎯 Dynamic Address Bar &amp; Gesture Integration</strong>:
+<ul>
+<li>Bound omnibox status, SSL indicators, favicons, and page progress directly to GeckoView session delegates.</li>
+<li>Smooth nested scrolling physics for automatic address bar collapse/expand.</li>
+</ul>
+</li>
+<li><strong>🔒 Zero Data Loss Guarantee</strong>:
+<ul>
+<li>Full backward compatibility across saved tabs, bookmarks, SQLite history, and user preferences.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-7-4"><h2><a class="rel-ver" href="#v2-7-4">v2.7.4</a></h2><ul>
+<li><strong>🔍 Gesture Diagnostics &amp; Stability</strong>:
+<ul>
+<li><strong>Back Navigation Trace Telemetry</strong>: Integrated lightweight diagnostic logging (<code>PETAL_BACK_DEBUG</code>) to accurately monitor system edge swipe dispatching and <code>OnBackPressedCallback</code> invocation states without altering native navigation flows.</li>
+</ul>
+</li>
+<li><strong>📜 Compliance &amp; Documentation</strong>:
+<ul>
+<li><strong>Privacy Policy Documentation</strong>: Added official repository Privacy Policy documentation covering zero data collection, sandboxed internal storage, and strict on-device data isolation.</li>
+</ul>
+</li>
+<li><strong>🔒 Zero Data Loss</strong>:
+<ul>
+<li>Full backward compatibility guaranteed across bookmarks, browsing history, saved tabs, and user preferences.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-7-3"><h2><a class="rel-ver" href="#v2-7-3">v2.7.3</a></h2><ul>
+<li><strong>📦 Build &amp; App Bundle Language Compliance</strong>:
+<ul>
+<li><strong>Resolved Deprecated Language Qualifier</strong>: Migrated deprecated legacy <code>values-sh</code> resource folder to BCP-47 compliant <code>values-b+sr+Latn</code> (Serbian Latin), resolving Google Play App Bundle submission errors regarding unrecognized language <code>sh</code>.</li>
+<li><strong>Explicit Resource Configurations</strong>: Configured explicit Gradle <code>resConfigs</code> to whitelist all supported locales and strip any unrecognized or invalid third-party library language resources from final AAB / APK packages.</li>
+</ul>
+</li>
+<li><strong>🔒 Zero Data Loss</strong>:
+<ul>
+<li>All existing user settings, bookmarks, tabs, and history remain strictly intact.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-7-2"><h2><a class="rel-ver" href="#v2-7-2">v2.7.2</a></h2><ul>
+<li><strong>🐛 Default Search Provider &amp; Settings Sheet Fix</strong>:
+<ul>
+<li><strong>Fluid Search Provider Selection</strong>: Resolved touch event interception where the Default Search Provider bottom sheet became unresponsive by removing conflicting nested surface wrappers and nested radio click handlers.</li>
+<li><strong>Accurate Selection State</strong>: Correctly synchronizes the initial and updated search engine index state between Settings and the modal sheet.</li>
+</ul>
+</li>
+<li><strong>⚡ Performance &amp; Package Optimization</strong>:
+<ul>
+<li><strong>APK Footprint Reduction</strong>: Removed duplicate drawable resources and redundant raw filter asset sources (<code>~2.8 MB</code> reduction in repository assets).</li>
+</ul>
+</li>
+<li><strong>🔒 Build &amp; Platform Stability</strong>:
+<ul>
+<li><strong>Zero Data Loss</strong>: User preferences, bookmarks, history, and search engine selections are strictly preserved.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-7-1"><h2><a class="rel-ver" href="#v2-7-1">v2.7.1</a></h2><ul>
+<li><strong>🐛 Edge Back Gesture Navigation &amp; WebView Touch Fixes</strong>:
+<ul>
+<li><strong>Unblocked System Back Gestures</strong>: Prevented Chromium / WebView from claiming system gesture exclusion zones along display edges on Android 10+ (API 29+), allowing full system back gestures and predictive back navigation to fire reliably on any website.</li>
+<li><strong>Synchronous Exclusion Reset</strong>: Enforced empty system gesture exclusion rects immediately upon touch interaction (<code>ACTION_DOWN</code>, <code>ACTION_UP</code>, <code>ACTION_CANCEL</code>) and layout recomputation, guaranteeing smooth edge back-swipes without gesture trapping.</li>
+<li><strong>Zero Data Loss</strong>: User session tabs, bookmarks, history, and customized settings are strictly preserved.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-7"><h2><a class="rel-ver" href="#v2-7">v2.7</a><span class="rel-title">New Webview &amp; Video Player update</span></h2><ul>
+<li><strong>🎨 Native Video Player &amp; Fancy Wavy Seekbar</strong>:
+<ul>
+<li><strong>Fluid Overlay Controls</strong>: Implemented modern native fullscreen video overlay controls featuring auto-hiding navigation, quick 10s rewind and forward skip, center play/pause toggle, and playback speed adjustment menu (0.5x to 2.0x).</li>
+<li><strong>Fancy Squiggly Wavy Seekbar</strong>: Integrated animated sine wave propagation seekbar inspired by mpvEx, with smooth flattening dynamics during pause/scrubbing and dual interactive time readouts.</li>
+<li><strong>Vertical Gesture HUD</strong>: Slide vertically on the left side of the player to adjust screen brightness with live percentage HUD, and on the right side to adjust audio volume.</li>
+<li><strong>YouTube Compatibility Protection</strong>: Automatically bypasses custom overlay controls on YouTube (<code>youtube.com</code>, <code>youtu.be</code>, embedded YouTube frames) to preserve YouTube's native player features and UI.</li>
+</ul>
+</li>
+<li><strong>📺 Rebuilt Dynamic Picture-in-Picture (PiP)</strong>:
+<ul>
+<li>Upgraded Android Picture-in-Picture geometry engine using mpvEx-inspired aspect ratio calculations and letterbox/pillarbox source rect hint for fluid, seamless window transitions.</li>
+<li>Added remote PiP action buttons: 10s skip backward, dynamic play/pause toggle, and 10s skip forward.</li>
+</ul>
+</li>
+<li><strong>⚡ High-Performance Core Web Engine &amp; AdBlocker</strong>:
+<ul>
+<li>Re-architected WebView touch stream dispatch, smooth physics momentum scrolling, and rapid rendering pipeline.</li>
+<li>Enhanced content blocking and ad filtering engines for swift, tracker-free web browsing while strictly preserving address bar collapse, context menus, and download confirmations.</li>
+</ul>
+</li>
+<li><strong>🌟 Open Source Credits</strong>:
+<ul>
+<li>Added <strong>mpvEx</strong> (by marlboro-advance) to the Credits section in recognition of video player UI/UX and wavy seekbar design.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-6-8"><h2><a class="rel-ver" href="#v2-6-8">v2.6.8</a></h2><ul>
+<li><strong>🎨 Interactive Address Bar &amp; Expressive Gestures</strong>:
+<ul>
+<li><strong>Horizontal Tab Swiping</strong>: Swipe left or right directly across the address bar pill to switch between tabs with tactile micro-haptic feedback.</li>
+<li><strong>Long-Press Quick Actions</strong>: Press and hold the address bar to open a Material 3 bottom sheet with high-value actions:
+<ul>
+<li>📋 <strong>Copy Clean URL</strong>: Automatically strips tracking and telemetry query parameters (<code>utm_*</code>, <code>fbclid</code>, <code>gclid</code>, etc.) before copying to clipboard.</li>
+<li>🔗 <strong>Paste &amp; Go</strong>: One-tap search or navigation directly from your clipboard content.</li>
+<li>⭐️ <strong>Quick Bookmark</strong>: Instantly add or remove the current page from bookmarks with live state feedback.</li>
+<li>🔄 <strong>Hard Refresh</strong>: Reload the current page and bypass cache.</li>
+</ul>
+</li>
+<li><strong>Smart Dynamic Visuals</strong>:
+<ul>
+<li>Embedded site favicon capsule chip with SSL security status icon (Tune / Lock / Incognito).</li>
+<li>Subtle animated inline loading progress indicator integrated directly into the bottom curve of the address bar pill.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>♿ Accessibility Preferences</strong>:
+<ul>
+<li>Added dedicated toggles in <strong>Accessibility Settings</strong> for horizontal tab swiping and long-press quick actions (enabled by default).</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-6-7"><h2><a class="rel-ver" href="#v2-6-7">v2.6.7</a></h2><ul>
+<li><strong>🎨 Unified Settings Subpages Containment &amp; Expressive Theming</strong>:
+<ul>
+<li>Harmonized visual containment across all sub-settings screens (<strong>Appearance &amp; Theme</strong>, <strong>Privacy &amp; Security</strong>, <strong>Search Engine &amp; Home</strong>, <strong>Accessibility</strong>, <strong>Miscellaneous</strong>, <strong>Experimental</strong>, and <strong>API &amp; Integrations</strong>) to match the design rhythm of the main Settings Hub overview.</li>
+<li>Upgraded section cards to full-width elevated containers (<code>surfaceVariant</code> with 70% alpha, 24dp rounded corners, and zero shadow elevation) featuring integrated top headers with signature 48dp <code>primary</code>-accent rounded badges (12dp corner radius), crisp <code>onPrimary</code> icons, and semi-bold title typography separated by soft outline dividers.</li>
+<li>Enhanced all toggle rows with 40dp position-aware rounded icon badges, accent primary container fills when enabled, and refined <code>surfaceContainerHigh</code> background surfaces.</li>
+<li>Standardized slider and selection surfaces with consistent 16dp corner geometry for full visual consistency across the entire application.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-6-6"><h2><a class="rel-ver" href="#v2-6-6">v2.6.6</a></h2><ul>
+<li><strong>🎨 Multi-Style Cold-Start Intro Animations &amp; Experimental Settings</strong>:
+<ul>
+<li>Added preference option in <strong>Experimental Settings</strong> to customize the cold-start intro animation:
+<ul>
+<li><code>Off (Default)</code>: Instant entrance with zero splash or intro delays.</li>
+<li><code>3D Prism &amp; Optical Beam</code>: High-precision crystalline 3D isometric prism with optical laser sweep and chromatic spectral refraction waves.</li>
+<li><code>The Blooming Petal</code>: Organic fluid blossoming unfolding into 5 glassmorphic 3D petals with concentric harmonic light ripples.</li>
+</ul>
+</li>
+<li>Resolved Android splash screen occlusion: lengthened intro duration to ~950ms and introduced grace buffers so the entire cinematic sequence remains fully visible after the app icon splash dismisses.</li>
+<li>Integrated dynamic search keyword indexing across Settings Hub for all intro animation terms.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-6-5"><h2><a class="rel-ver" href="#v2-6-5">v2.6.5</a></h2><ul>
+<li><strong>⚡ 3D Prism &amp; Optical Beam Cold-Start Intro</strong>:
+<ul>
+<li>Integrated ultra-smooth 3D isometric crystal glass prism intro powered by hardware-accelerated Compose Canvas shader passes.</li>
+<li>Features real-time optical coherent laser sweep and chromatic spectral refraction across Petal's module palette (Cyan Speed, Violet Privacy, Emerald Engine).</li>
+<li>Blooming 3D petal emblem transition accompanied by synchronized dual-stage micro-haptic tactile feedback.</li>
+<li>Seamlessly blends into the Material 3 Expressive Home layout on cold start, skipping on warm returns for 0ms overhead.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-6-4-hotfix"><h2><a class="rel-ver" href="#v2-6-4-hotfix">v2.6.4 (Hotfix)</a></h2><ul>
+<li><strong>🐛 Custom Scheme Handling &amp; Home Page Resolution</strong>:
+<ul>
+<li>Resolved <code>net::ERR_UNKNOWN_URL_SCHEME</code> when opening or restoring the home page after browser restart.</li>
+<li>Automatically intercepted <code>petal://</code> and custom home URLs in <code>NinjaWebView.loadUrl()</code>, loading a clean blank canvas while retaining complete Compose Home UI state.</li>
+<li>Added internal protocol routing in <code>NinjaWebViewClient.shouldOverrideUrlLoading()</code> and safeguarded session restoration in <code>BrowserActivity.java</code>.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-6-3-hotfix"><h2><a class="rel-ver" href="#v2-6-3-hotfix">v2.6.3 (Hotfix)</a></h2><ul>
+<li><strong>⚡ Unified High-Speed Download Architecture</strong>:
+<ul>
+<li>Unified best-in-class multi-threaded segmented downloading powered by Fetch2 and OkHttp (12 concurrent threads, transparent retry on network change, pause/resume/cancel).</li>
+<li>Integrated robust RFC 5987 / UTF-8 filename decoding, control-character stripping, and safe HTTP header sanitization.</li>
+<li>Automatic P2P and torrent link routing to 1DM when installed, with seamless in-app streaming fallback.</li>
+</ul>
+</li>
+<li><strong>🎨 Streamlined Settings &amp; Frictionless Downloads</strong>:
+<ul>
+<li>Removed manual download engine tweak settings from Miscellaneous Settings to streamline preferences.</li>
+<li>Removed first-time download engine prompt dialog, allowing downloads to begin directly and smoothly without interruptions.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-6-2-hotfix"><h2><a class="rel-ver" href="#v2-6-2-hotfix">v2.6.2 (Hotfix)</a></h2><ul>
+<li><strong>🛡️ Advanced Content Blocker &amp; Multi-Layer Ad Protection Engine</strong>:
+<ul>
+<li>Integrated high-performance request interceptor with bundled EasyList, HaGeZi, and uAssets host binary indices.</li>
+<li>Added procedural cosmetic rules engine (<code>:has()</code>, <code>:has-text()</code>, <code>:matches-path()</code>) running at document start via MutationObserver.</li>
+<li>Added EasyList and overrides cookie banner removal stylesheet injected directly at page commit.</li>
+</ul>
+</li>
+<li><strong>🎥 Web Media &amp; Playback Engine</strong>:
+<ul>
+<li>Added robust HTML5 video and audio media bridge tracking playback, mute states, and Picture-in-Picture sessions seamlessly.</li>
+<li>Added video autoplay suppression controls and background media playback coordination.</li>
+</ul>
+</li>
+<li><strong>🔐 Native Passkeys &amp; System Credentials Integration</strong>:
+<ul>
+<li>Configured native <code>WebAuthentication</code> (passkeys) and system autofill compatibility directly via <code>WebSettingsCompat</code>.</li>
+</ul>
+</li>
+<li><strong>⚡ Smooth Momentum Recovery &amp; Navigation Stability</strong>:
+<ul>
+<li>Added compositor momentum recovery watchdog preventing scroll freezes on high refresh-rate displays.</li>
+<li>Intelligent cross-site popup and popunder navigation arbitration defusing intrusive redirects.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-6-1-hotfix"><h2><a class="rel-ver" href="#v2-6-1-hotfix">v2.6.1 (Hotfix)</a></h2><ul>
+<li><strong>🔄 Universal Release Inbuilt Updater</strong>:
+<ul>
+<li>Inbuilt app updater now prioritizes downloading universal APK releases across all device types and ABIs.</li>
+</ul>
+</li>
+<li><strong>📜 Seamless ModalBottomSheet Scrolling Physics</strong>:
+<ul>
+<li>Migrated update and changelog dialogs to pure Compose <code>ModalBottomSheet</code> with nested scrolling support, matching <code>Essentials</code> scrolling physics seamlessly without touch gesture conflicts.</li>
+</ul>
+</li>
+<li><strong>🏗️ Multi-Architecture Release Builds</strong>:
+<ul>
+<li>GitHub Actions and Gradle now build and release individual APKs for <code>arm64-v8a</code>, <code>armeabi-v7a</code>, <code>x86_64</code>, and <code>x86</code>, alongside the universal APK.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-6-0-official-release"><h2><a class="rel-ver" href="#v2-6-0-official-release">v2.6.0 (Official Release)</a></h2><ul>
+<li><strong>🚀 Complete Removal of Gecko Engine &amp; Extensions</strong>:
+<ul>
+<li>Completely stripped out Mozilla GeckoView (<code>geckoview-omni:150</code>) and all associated runtime holders, sessions, installer, and UI settings.</li>
+<li>APK size drastically reduced (~100 MB lighter) with lower idle memory footprint.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-5-1-hotfix"><h2><a class="rel-ver" href="#v2-5-1-hotfix">v2.5.1 (Hotfix)</a></h2><ul>
+<li><strong>🐛 Predictive Back Shutter Eliminated — App Lock &amp; About Developer Screens</strong>:
+<ul>
+<li>Fixed: App Lock overlay and App Lock Config screen caused a single-frame white/black flash (shutter) when a predictive back gesture committed. Root cause: <code>decor.removeView(composeView)</code> was called immediately, tearing the View out while Compose's spring exit animation was still in its 200ms settle window.</li>
+<li>Fix: Added a 160ms <code>ViewPropertyAnimator</code> alpha fade (<code>0f</code>) before the <code>removeView</code> call, so the composable has time to finish its exit choreography before the View is detached.</li>
+<li>Fixed: About Developer screen was using a raw <code>BackHandler</code> call with no <code>PetalPredictiveBackSurface</code> / <code>PetalScreenWrapper</code> wrapper — predictive back showed a harsh tear. Now properly wrapped matching the Credits screen pattern.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-5-official-release"><h2><a class="rel-ver" href="#v2-5-official-release">v2.5 (Official Release)</a></h2><ul>
+<li>
+<p><strong>🔖 HTML Bookmark Import &amp; Export (Standard Netscape Format)</strong>:</p>
+<ul>
+<li>Added full support for importing and exporting bookmarks using the industry-standard Netscape Bookmark File format (<code>bookmarks.html</code>), fully compatible with Google Chrome, Mozilla Firefox, Apple Safari, Microsoft Edge, and Brave.</li>
+<li>Added one-tap <strong>Import (FileUpload)</strong> and <strong>Export (FileDownload)</strong> header action icons directly on the Material 3 Bookmarks screen.</li>
+<li>Integrated with Storage Access Framework (<code>CreateDocument</code> and <code>OpenDocument</code>) for seamless folder and file selection across all Android versions.</li>
+<li>Added dedicated HTML Bookmarks import and export controls under <strong>Settings → Data &amp; Storage → Backup &amp; Restore</strong>.</li>
+<li>Built-in duplicate detection, timestamp parsing (<code>ADD_DATE</code>), and transactional database integrity guarantees.</li>
+</ul>
+</li>
+<li>
+<p><strong>✨ Live Dynamic Predictive Back Previews &amp; Depth Blur</strong>:</p>
+<ul>
+<li>Replaced static/stale initial screen captures with a reactive <code>liveSnapshotFlow</code> stream in <code>PetalContentSnapshot</code>, delivering real-time underlays during active predictive back gestures.</li>
+<li>Synchronized gesture spring physics with <code>RvSystem-Monitor</code> and <code>PixelPlayer</code> specs (<code>Spring.StiffnessMedium</code>, no bounce on commit, low bounce on cancel).</li>
+</ul>
+</li>
+<li>
+<p><strong>⚡ Stutter-Free Website Back Navigation</strong>:</p>
+<ul>
+<li>Removed synchronous preference re-initialization churn inside <code>NinjaWebView.goBack()</code> and <code>goBackOrForward()</code>.</li>
+<li>Replaced heavy web settings resets with clean domain-aware navigation with specialized domain-aware rules, ensuring smooth 60/120fps back navigation without frame drops.</li>
+</ul>
+</li>
+<li>
+<p><strong>🧩 WebExtensions Management &amp; Runtime Fixes</strong>:</p>
+<ul>
+<li>Stabilized Gecko extension management, add-on discovery prompt delegation, and dynamic counter badges.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-4-official-release"><h2><a class="rel-ver" href="#v2-4-official-release">v2.4 (Official Release)</a></h2><ul>
+<li>
+<p><strong>🎨 Settings Inner Categories Containment Harmonization</strong>:</p>
+<ul>
+<li>Unified all inner settings category page cards (<code>SettingsCategoryCard</code>) across Appearance, Privacy &amp; Security, Accessibility, and Experimental to match the exact Material 3 <code>surfaceContainerLow</code> elevation, <code>1.dp</code> outline borders, and <code>24.dp</code> rounded shapes of the main settings overview screen.</li>
+<li>Added the <strong>API &amp; Integrations Hub</strong> directly into the main Overview categories list for seamless navigation.</li>
+</ul>
+</li>
+<li>
+<p><strong>🌐 Dedicated Direct Web Back Navigation</strong>:</p>
+<ul>
+<li>Replaced predictive back root-view scaling on web pages with a clean, direct web back handler, ensuring zero glitching or displacement during website browsing while strictly preserving predictive back transitions on overlay and sheet screens.</li>
+</ul>
+</li>
+<li>
+<p><strong>🏷️ Bottom Navbar Tab Count Badge Optimization</strong>:</p>
+<ul>
+<li>Shortened incognito tab counter text to <code>&quot;Tabs ($count)&quot;</code> to guarantee crisp visibility inside the floating navigation pill without text truncation.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-3-official-release"><h2><a class="rel-ver" href="#v2-3-official-release">v2.3 (Official Release)</a></h2><ul>
+<li>
+<p><strong>🎨 Settings &amp; Account Containments &amp; RvSystem-Monitor Icon Overhaul</strong>:</p>
+<ul>
+<li>Replaced flat and inconsistent card backgrounds across all Settings categories, Account &amp; Profile pages, and UI components with unified Material 3 <code>surfaceContainerLow</code> containers, subtle <code>1.dp</code> outline borders, and <code>24.dp</code> rounded shapes.</li>
+<li>Replaced legacy settings category and sub-card drawables with the cohesive, expressive vector icon set from <code>RvSystem-Monitor</code> (<code>settings_filled</code>, <code>brightness_medium_filled</code>, <code>layers_filled</code>, <code>home_filled</code>, <code>mobile_vibrate_filled</code>, <code>build_filled</code>, <code>translate</code>, <code>download_2_filled</code>, <code>backup_filled</code>, <code>update_rounded</code>, <code>info_filled</code>).</li>
+</ul>
+</li>
+<li>
+<p><strong>⚡ Buttery Smooth Floating Bottom Navigation Bar</strong>:</p>
+<ul>
+<li>Fixed stutter and jank in the floating bottom navigation bar by eliminating recomposition tree teardown, switching to stable hoisted state holders, and tuning physics animations.</li>
+</ul>
+</li>
+<li>
+<p><strong>🖼️ Persistent Tab Manager Thumbnail Cache</strong>:</p>
+<ul>
+<li>Fixed tab thumbnail cache persistence across cold restarts by keying previews with unique persistent tab IDs with URL fallback lookup.</li>
+</ul>
+</li>
+<li>
+<p><strong>🚀 High-Speed Multi-Chunk Download Engine</strong>:</p>
+<ul>
+<li>Optimized download buffering and concurrency limits up to 12 parallel channels with instant 100ms progress dispatching and aggressive network gain retry resilience.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-1-hotfix"><h2><a class="rel-ver" href="#v2-1-hotfix">v2.1 (Hotfix)</a></h2><ul>
+<li>
+<p><strong>🎨 Compose Ripple Modernization &amp; Compilation Hotfix</strong>:</p>
+<ul>
+<li>Migrated deprecated <code>rememberRipple</code> indication in <code>PetalBottomNavBar.kt</code> to the official Material 3 <code>ripple()</code> API, resolving Kotlin compiler deprecation errors and improving touch indication performance.</li>
+<li>Seamlessly unified interaction source ripple feedback across floating navigation bar items and gesture elements.</li>
+</ul>
+</li>
+<li>
+<p><strong>📢 First-Launch Update Changelog Showcase</strong>:</p>
+<ul>
+<li>Added a dedicated one-time &quot;What's New in Petal&quot; interactive bottom sheet popup displayed immediately when the browser is updated from a previous version.</li>
+<li>Highlights full categorized release notes and improvements, ensuring users never miss new features.</li>
+</ul>
+</li>
+<li>
+<p><strong>📜 Full Changelog History from Official v2.0</strong>:</p>
+<ul>
+<li>Enriched offline fallback changelog history with complete breakdown of all major v2.0 features (Real-Time Vector Shape Morphing Background, Floating Bottom Nav, PixelPlayer Containment System, Avatar Cropper, Settings Categorization, and 100% Kotlin Modernization).</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v2-0-official-release"><h2><a class="rel-ver" href="#v2-0-official-release">v2.0 (Official Release)</a></h2><ul>
+<li>
+<p><strong>✨ Real-Time Vector Shape Morphing Background (<code>androidx.graphics.shapes.Morph</code>)</strong>:</p>
+<ul>
+<li>Implemented organic, continuous vector shape morphing between all 35 official Material 3 Expressive shapes (<code>Sunny</code>, <code>Cookie9Sided</code>, <code>Flower</code>, <code>Clover4Leaf</code>, <code>SoftBurst</code>, etc.).</li>
+<li>Added luminous multi-stop radial gradient halos across M3 tonal color roles (<code>primary</code>, <code>primaryContainer</code>, <code>tertiary</code>) with gentle kinetic breathing.</li>
+</ul>
+</li>
+<li>
+<p><strong>🎨 Floating Bottom Navigation Bar (Zenith Parity)</strong>:</p>
+<ul>
+<li>Matched Zenith's floating navigation bar dimensions: <code>68.dp</code> height, <code>RoundedCornerShape(100)</code> stadium pill, <code>36.dp</code> bottom offset, <code>26.dp</code> icons, and dynamic indicator selection height.</li>
+</ul>
+</li>
+<li>
+<p><strong>📦 PixelPlayer Expressive Containment System Integration</strong>:</p>
+<ul>
+<li>Integrated proper Material 3 Expressive containments (<code>SettingsSection</code>, <code>SettingsItem</code>, <code>SwitchSettingItem</code>, <code>SettingsCardContainer</code>, <code>ContainedSelectionCard</code>).</li>
+<li>Replaced uncontained / flat toggle rows with elevated <code>Surface</code> container cards with <code>16.dp</code> rounded shapes and animated switch thumbs.</li>
+</ul>
+</li>
+<li>
+<p><strong>🖼️ Profile Picture &amp; Interactive Cropper Overhaul</strong>:</p>
+<ul>
+<li>Fixed profile picture custom avatar loading and caching: updated Coil image loader with explicit write-only cache policies and fallback handling across <code>filesDir</code> and content URIs so custom avatars update immediately on Home screen and Account profile screen.</li>
+<li>Interactive Crop Viewport: Added precision circular crop dialog with real-time pinch-to-zoom, drag-to-align viewport, 90° rotation controls, reset button, and live preview.</li>
+<li>Direct Crop &amp; Media Picker Integration: Tapping the avatar hero card or gallery button immediately opens the photo picker and circular crop editor with instant image saving.</li>
+</ul>
+</li>
+<li>
+<p><strong>🗂️ Clean Settings Categorization &amp; New Miscellaneous Hub</strong>:</p>
+<ul>
+<li>Reorganized <code>PetalSettingsScreen.kt</code> into dedicated, intuitive categories: <strong>Appearance &amp; Theme</strong>, <strong>Accessibility</strong>, <strong>Privacy &amp; Security</strong>, <strong>Experimental</strong>, and newly added <strong>Miscellaneous</strong>.</li>
+<li>Moved Download Engine (1DM Integration / Embedded Native Downloader) and Auto Open External Apps into the dedicated <strong>Miscellaneous</strong> category.</li>
+<li>Kept Experimental Flags and advanced developer features strictly isolated under the <strong>Experimental</strong> category.</li>
+</ul>
+</li>
+<li>
+<p><strong>⚡ Complete Kotlin &amp; Jetpack Compose Modernization (100% Kotlin)</strong>:</p>
+<ul>
+<li>100% Kotlin codebase with complete Java decoupling across all 8 modular browser subsystem delegates and 42 core background managers.</li>
+<li>Pure Material 3 Expressive UI design system featuring 35 customizable container shapes, fluid predictive back navigation gestures with 24.dp background depth blur, and adaptive dynamic color theming.</li>
+</ul>
+</li>
+<li>
+<p><strong>🌐 Google Lens &amp; In-App Multi-Volume Media Picker</strong>:</p>
+<ul>
+<li>Full Google Lens search integration across Omnibox search bar, context menus, and home widgets.</li>
+<li>Multi-volume device storage indexing supporting <code>VOLUME_EXTERNAL_PRIMARY</code>, <code>VOLUME_EXTERNAL</code>, and fallback to System Photo Picker.</li>
+</ul>
+</li>
+<li>
+<p><strong>🔒 Advanced Privacy, Passkeys &amp; High-Performance Web Engine</strong>:</p>
+<ul>
+<li>Full WebAuthn &amp; biometric passkey sign-in support via Android Credential Manager.</li>
+<li>Built-in AdBlock Trie filtering engine with domain whitelist management, WebRTC IP leak protection, Canvas/Audio fingerprint shield, and strict referrer header trimming.</li>
+<li>Native 120Hz/144Hz high refresh rate hardware pacing and kinetic scrolling.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v1-9-9"><h2><a class="rel-ver" href="#v1-9-9">v1.9.9</a></h2><ul>
+<li>
+<p><strong>🎨 Material 3 Expressive Color Container System (Zenith Parity)</strong>:</p>
+<ul>
+<li>Aligned Expressive Container Colors with Zenith's high-contrast container elevation model: toned-down soft background (<code>surfaceContainerLow</code>) with crisp floating white containers (<code>Color.White</code>) in Light mode, and elevated container tones (<code>surfaceContainerHigh</code> / AMOLED contrast ladder) in Dark mode.</li>
+<li>Bound <code>expressiveColors</code> dynamically to SharedPreferences <code>sp_expressive_colors</code> default in <code>PetalTheme.kt</code> and reactive listeners across <code>PetalHomeScreen.kt</code>, <code>PetalSettingsScreen.kt</code>, <code>PetalBottomNavBridge.kt</code>, and <code>PetalAddressBarBridge.kt</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>📳 Universal Touch Haptics Engine Fix</strong>:</p>
+<ul>
+<li>Removed restrictive OS-level <code>HAPTIC_FEEDBACK_ENABLED</code> blocking from <code>PetalHapticEngine.java</code> that was disabling app haptics when system touch sounds were off.</li>
+<li>Switched to direct, multi-tiered vibration execution for reliable tactile feedback on all Android devices.</li>
+<li>Made <code>LocalHapticEnabled</code> and <code>PetalHapticFeedback</code> in <code>PetalTheme.kt</code> fully reactive to real-time <code>sp_touch_haptics</code> preference changes.</li>
+</ul>
+</li>
+<li>
+<p><strong>🌐 Dynamic Per-App Language &amp; Natural Hinglish Support (GRAMLY Inspired)</strong>:</p>
+<ul>
+<li>Added Android 13+ <code>res/xml/locales_config.xml</code> declaring supported in-app locales and registered <code>AppLocalesMetadataHolderService</code> in <code>AndroidManifest.xml</code>.</li>
+<li>Added <code>attachBaseContext</code> in <code>PetalApplication.kt</code> and improved <code>HelperUnit.applyLanguage()</code> with <code>Locale.Builder</code> script configuration and <code>LocaleList</code> support.</li>
+<li>Added full, conversational Hinglish (Hindi in English) translations across all 174 string resources in <code>res/values-b+hi+Latn/strings.xml</code> following GRAMLY's natural phrasing.</li>
+</ul>
+</li>
+<li>
+<p><strong>📑 Tab Manager Thumbnail Isolation &amp; Auto-Scroll</strong>:</p>
+<ul>
+<li>Fixed tab preview thumbnails getting stuck on a single screenshot: scoped thumbnail cache keys strictly per tab instance (<code>hashCode()</code>) and prevented background tabs from capturing the parent container.</li>
+<li>Added real-time snapshot capture of outgoing tabs before switching away in <code>BrowserActivity.java</code>.</li>
+<li>Added automatic smooth scrolling in <code>PetalTabGridSwitcher.kt</code> (<code>LazyVerticalGrid</code> and <code>LazyColumn</code>) to jump straight to the active tab upon opening the tab manager.</li>
+</ul>
+</li>
+<li>
+<p><strong>⚡ High Refresh Rate (120Hz/144Hz+) Native Hardware Synchronization</strong>:</p>
+<ul>
+<li>Added [PetalHighRefreshRateManager.kt](file:///data/data/com.termux/files/home/petal/app/src/main/java/com/petal/browser/unit/PetalHighRefreshRateManager.kt) to lock the highest available hardware display mode (<code>Display.Mode</code>), preferred refresh rate bounds (<code>preferredMinDisplayRefreshRate</code> &amp; <code>preferredMaxDisplayRefreshRate</code>), and <code>Surface.setFrameRate()</code> on supported devices.</li>
+<li>Device refresh rate overlays (Developer Options &quot;Show refresh rate&quot;, FPS meters, OEM gaming overlays) now immediately detect and sustain a solid 120Hz/144Hz during browsing, scrolling, and tab switching.</li>
+<li>Added <strong>&quot;High Refresh Rate (120Hz+)&quot;</strong> preference toggle with real-time detected peak hardware refresh rate readout in <em>Settings -&gt; Display &amp; Themes</em>.</li>
+<li>Synchronized <code>NestedScrollWebView</code> and decor surfaces with SurfaceFlinger for zero-jitter, fluid 120 FPS kinetic scrolling.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v1-9-8"><h2><a class="rel-ver" href="#v1-9-8">v1.9.8</a></h2><ul>
+<li>
+<p><strong>⚡ 100% Complete Java-to-Kotlin Migration</strong>:</p>
+<ul>
+<li>Full, seamless conversion of the entire codebase from Java to Kotlin with 0 remaining <code>.java</code> files in <code>com.petal.browser</code>.</li>
+<li>Converted core browser engines and web clients: <code>NinjaWebViewClient.kt</code>, <code>NinjaWebChromeClient.kt</code>, <code>BrowserContainer.kt</code>, <code>BrowserController.kt</code>, <code>AlbumController.kt</code>, <code>WebAppInterface.kt</code>, <code>AdBlock.kt</code>, <code>BannerBlock.kt</code>, and <code>NinjaDownloadListener.kt</code>.</li>
+<li>Converted all Settings Activities, Fragments, and Preference widgets: <code>Settings_Activity.kt</code>, <code>Settings_Backup.kt</code>, <code>Settings_Delete.kt</code>, <code>Settings_Filter.kt</code>, <code>Settings_Gesture.kt</code>, <code>Settings_Menu.kt</code>, <code>Settings_Profile.kt</code>, <code>Settings_ProfileList.kt</code>, <code>Fragment_settings*.kt</code>, <code>BasePreferenceFragment.kt</code>, <code>EditTextSwitchPreference.kt</code>, and <code>ListSwitchPreference.kt</code>.</li>
+<li>Converted all 42 Utility, Network, DNS, and Security Managers (<code>BrowsingDataManager</code>, <code>CacheManager</code>, <code>TabSessionManager</code>, <code>TabThumbnailCache</code>, <code>SearchSuggestionsManager</code>, <code>ReaderModeManager</code>, <code>WikipediaSummaryManager</code>, <code>CloudflareDnssecManager</code>, <code>NextDnsManager</code>, <code>OpenDnsDoHManager</code>, <code>Quad9DnsManager</code>, <code>NetworkBenchmarkManager</code>, <code>DuckAssistManager</code>, <code>UrlScanSecurityManager</code>, <code>WhoisRdapManager</code>, <code>IpGeoAuditManager</code>, <code>SslHealthAuditManager</code>, etc.).</li>
+<li>Converted custom UI views: <code>NestedScrollWebView.kt</code>, <code>NinjaWebView.kt</code>, and <code>PetalSearchWidgetProvider.kt</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>🎨 Material 3 Expressive UI/UX &amp; 35 Expressive Shapes</strong>:</p>
+<ul>
+<li>Full system-wide integration with all 35 official Material 3 Expressive Shapes catalog from <code>PetalMaterialShapes.kt</code> (<code>RoundedSquare</code>, <code>Cookie4/6/7/9/12Sided</code>, <code>Arch</code>, <code>Hexagon</code>, <code>Octagon</code>, <code>Pill</code>, <code>SoftScallop</code>, <code>Clover4/8Leaf</code>, <code>Sunny</code>, <code>Flower</code>, <code>Star</code>, <code>Gem</code>).</li>
+<li>Native Edge-to-Edge window inset control and dynamic color extraction across all settings and browser sheets.</li>
+</ul>
+</li>
+<li>
+<p><strong>🚀 Performance &amp; Architecture</strong>:</p>
+<ul>
+<li>120Hz smooth scrolling physics with <code>NestedScrollingChild3</code> and hardware-accelerated rendering.</li>
+<li>Robust runtime type-safety and null-safety across all network requests and background tasks.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v1-9-7"><h2><a class="rel-ver" href="#v1-9-7">v1.9.7</a></h2><ul>
+<li>
+<p><strong>⚡ Complete Kotlin Migration &amp; Subsystem Decoupling</strong>:</p>
+<ul>
+<li>Fully converted <code>BrowserActivity.java</code>, <code>PetalApplication.java</code>, and <code>ActivityShare.java</code> to Kotlin.</li>
+<li>Extracted 8 modular Kotlin subsystem delegates (<code>BrowserContextMenuManager</code>, <code>BrowserNavigationDelegate</code>, <code>BrowserWebViewController</code>, <code>BrowserIntentHandler</code>, <code>BrowserMediaDelegate</code>, <code>BrowserDialogManager</code>, <code>BrowserGestureHandler</code>, <code>BrowserActivityExtensions</code>), reducing core activity boilerplate by over 830 lines.</li>
+</ul>
+</li>
+<li>
+<p><strong>🎨 35 Material 3 Expressive Shapes Catalog Integration</strong>:</p>
+<ul>
+<li>Integrated the complete <strong>35 Material 3 Expressive Shapes Catalog</strong> (<code>RoundedSquare</code>, <code>Cookie6Sided</code>, <code>Arch</code>, <code>Hexagon</code>, <code>Octagon</code>, <code>Pill</code>, <code>SoftScallop</code>, <code>Clover4Leaf</code>) from <code>PetalMaterialShapes.kt</code> across Jetpack Compose UI sheets and icon containers (<code>PetalLinkContextMenuSheet.kt</code>).</li>
+<li>Saved workspace rule <code>~/.gemini/config/rules/material3_expressive.md</code> enforcing Pure Material 3 Expressive components, dynamic colors, motion, and container shapes.</li>
+</ul>
+</li>
+<li>
+<p><strong>🐛 Bug &amp; Compilation Fixes</strong>:</p>
+<ul>
+<li>Fixed <code>PetalLinkContextMenuHandler</code> interface compilation and missing method overrides (<code>onDownloadVideo</code>, <code>onOpenImageInNewTab</code>, <code>onCopyImage</code>, <code>onSearchWithGoogleLens</code>) across Web context menu handlers.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v1-9-4"><h2><a class="rel-ver" href="#v1-9-4">v1.9.4</a></h2><ul>
+<li>
+<p><strong>✨ Google Lens Integration</strong>:</p>
+<ul>
+<li>Integrated <strong>Google Lens</strong> across Petal Browser with Camera Capture, Gallery Photo Picker, and Google Lens Search Intent.</li>
+<li>Added dedicated Lens search button (<code>CenterFocusWeak</code> icon) to the search input field in <code>PetalOmniboxPage.kt</code>.</li>
+<li>Added <em>&quot;Search image with Google Lens&quot;</em> option to webpage image long-press context menus (<code>PetalLinkContextMenuSheet.kt</code> &amp; <code>BrowserActivity.java</code>).</li>
+<li>Wired Lens shortcut button in Material 3 Expressive <code>PetalExpressiveGlanceWidget.kt</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>⚡ High-Speed Torrent &amp; Magnet Engines</strong>:</p>
+<ul>
+<li>Built multi-engine Torrent &amp; Magnet downloader supporting <strong>1DM High-Speed P2P Engine (Official)</strong>, <strong>In-App Native WebSeed &amp; Magnet Streamer</strong>, and <strong>System Downloader</strong>.</li>
+<li>Added real-time Torrent Engine switcher in <code>PetalSettingsScreen.kt</code> under <em>Data &amp; Storage</em>.</li>
+<li>Automated interception of <code>magnet:</code> links and <code>.torrent</code> files across all webpage downloads.</li>
+</ul>
+</li>
+<li>
+<p><strong>🎨 Dynamic Morphing Background &amp; PetalSlider</strong>:</p>
+<ul>
+<li>Added periodic ambient background shape rotation with user-controlled timer loop (<code>0 min</code> to <code>60 min</code>).</li>
+<li>Integrated rolling scalloped <code>PetalSlider</code> for shape change intervals in <code>PetalSettingsScreen.kt</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>🔊 System-Wide Haptics (RvSystem-Monitor &amp; Ever-Haptics Inspired)</strong>:</p>
+<ul>
+<li>Integrated tactile haptic feedback across WebView scrolling (<code>Pattern.TICK</code>), bottom navigation, address bar actions, site controls, and predictive back gestures (<code>PetalHapticEngine.java</code>).</li>
+</ul>
+</li>
+<li>
+<p><strong>🔤 Custom Font Tweaker Real-Time Variations</strong>:</p>
+<ul>
+<li>Fixed font variation settings (<code>toVariationSettings()</code>) in <code>Type.kt</code> so custom <code>.ttf</code>/<code>.otf</code> font files respond immediately to Weight, Width, Optical Size, Slant, and Roundness sliders in real-time.</li>
+</ul>
+</li>
+<li>
+<p><strong>🔐 App Lock &amp; Profile Security Dialogs</strong>:</p>
+<ul>
+<li>Added Material 3 Expressive Biometric &amp; Passcode choice dialogs for App Lock and Profile Lock pages matching app-wide predictive back gesture transitions.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v1-9-3"><h2><a class="rel-ver" href="#v1-9-3">v1.9.3</a></h2><ul>
+<li>
+<p><strong>🎨 UI/UX &amp; Predictive Back Polish</strong>:</p>
+<ul>
+<li>Aligned Predictive Back animations and Depth Blur 1:1 with <code>RvSystem-Monitor</code> and <code>PixelPlayer</code>.</li>
+<li>Applied 24.dp depth blur exclusively to background screen (<code>isBehind = true</code>) while keeping foreground card crisp (<code>blur = 0.dp</code>) with Material 3 Emphasized scaling (<code>1.0 → 0.85</code>), 32.dp corner clipping, 16.dp drop shadow, and horizontal slide offset.</li>
+<li>Rendered real live <code>PetalHomeScreen</code> in background with 24.dp depth blur during in-flight back gestures (zero synthetic previews).</li>
+<li>Added user settings toggles for Predictive Back Animations and Depth Blur Effects in <em>Accessibility &amp; Display Options</em>.</li>
+</ul>
+</li>
+<li>
+<p><strong>🐛 Bug &amp; Layout Fixes</strong>:</p>
+<ul>
+<li>Refactored legacy Java <code>CustomRedirectsDialog.java</code> to pure Kotlin Compose Material 3 Expressive implementation in <code>CustomRedirectsDialog.kt</code>.</li>
+<li>Fixed <strong>Auto Clear Data on Exit</strong> to execute reliably on activity finish/stop and default to clearing Browsing History, Cache, and Cookies if no individual sub-filters are checked.</li>
+<li>Enabled <strong>Force Dark Webpages</strong> dynamically with AndroidX <code>setAlgorithmicDarkeningAllowed</code>, <code>setForceDark</code>, and <code>DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>⚡ Media &amp; Picture-in-Picture Enhancements</strong>:</p>
+<ul>
+<li>Fixed background audio &amp; video playback by injecting <code>PetalMediaBridge.MEDIA_JS_INJECTION</code> to override Page Visibility API (<code>hidden: false</code>, <code>visibilityState: 'visible'</code>).</li>
+<li>Enabled native OS Auto-PiP mode transition on Android 12+ (API 31+) with <code>setPictureInPictureParams(setAutoEnterEnabled(true))</code> on media play.</li>
+</ul>
+</li>
+<li>
+<p><strong>📦 Build &amp; Infrastructure</strong>:</p>
+<ul>
+<li>Added <code>androidx.webkit:webkit:1.12.0</code>, <code>androidx.media:media:1.7.0</code>, <code>androidx.media3:media3-session:1.4.1</code>, and <code>androidx.media3:media3-exoplayer:1.4.1</code> dependencies to <code>build.gradle</code>.</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="release" id="v1-7-8"><h2><a class="rel-ver" href="#v1-7-8">v1.7.8</a></h2><ul>
+<li>fix: Refactored website link &amp; image context menus into Material 3 <code>BottomSheetDialog</code> (<code>PetalLinkContextMenuSheet.kt</code>) to resolve invisible touch interception overlays and wired all actions.</li>
+<li>fix: Resolved ML Kit image recognition background thread state mutation issues by posting callbacks to main thread (<code>PetalImageScanResultSheet.kt</code>).</li>
+<li>new: Integrated <code>RvSystem-Monitor</code> haptic feedback framework (<code>LocalHapticEnabled</code>, <code>LocalVibrationIntensity</code>, <code>rememberHapticOnClick</code>, <code>hapticClickable</code>).</li>
+<li>ui: Aligned icons on Clear Browsing Data screen (<code>PetalDeleteScreen.kt</code>) with primary category icons in Settings.</li>
+<li>fix: Bound <code>TabThumbnailCache</code> eviction strictly to tab closure and ensured faithful home screen snapshot rendering in tab manager.</li>
+<li>fix: Audited Compose layout braces and fixed Kotlin compiler errors in <code>ChromeAccountSyncScreen.kt</code> and <code>PetalTheme.kt</code>.</li>
+</ul>
+</section>
+<section class="release" id="v1-7-7"><h2><a class="rel-ver" href="#v1-7-7">v1.7.7</a></h2><ul>
+<li>new: Made Google Sans Flex permanent as <strong>Petal Signature</strong> font and added support for loading custom <code>.ttf</code>/<code>.otf</code> font files directly from device storage.</li>
+<li>new: Introduced custom font tier customizer with independent <strong>Display</strong>, <strong>Headline</strong>, and <strong>Body</strong> level tabs and expressive <code>PetalSlider</code> controls for Weight, Width, Optical Size, Slant, and Roundness.</li>
+<li>fix: Updated search bar hint to <em>&quot;Search or type URL&quot;</em> across homepage searchbar, omnibox, and widgets.</li>
+<li>fix: Hidden frequently visited shortcuts row on blank home tabs, displaying them only when opening the omnibox from an active website.</li>
+<li>fix: Fixed Java-Kotlin SAM interop for <code>onDeny</code> callback in <code>PetalPermissionDialogBridge</code> site permission prompts.</li>
+</ul>
+</section>
+<section class="release" id="v1-7-6"><h2><a class="rel-ver" href="#v1-7-6">v1.7.6</a></h2><ul>
+<li>new: Reimagined <code>PetalSearchGlanceWidget.kt</code> with Material 3 Expressive morphing shape containers (Clover, Scallop, Burst, Cookie) rendered dynamically using <code>RoundedPolygon</code> and canvas bitmap drawing.</li>
+<li>new: Integrated <code>PetalAboutDeveloperSheet.kt</code> and <code>PetalAboutDeveloperBridge</code> featuring expressive hero cards, developer metric badges, tech stack chips, and community hub links.</li>
+<li>fix: Fixed window inset propagation in <code>PetalTabSwitcherSheet.kt</code> and <code>PetalTabGridSwitcher.kt</code> so <code>ExpressiveHeader</code> seamlessly includes status bar top padding.</li>
+</ul>
+</section>
+<section class="release" id="v1-7-5"><h2><a class="rel-ver" href="#v1-7-5">v1.7.5</a></h2><ul>
+<li>new: Integrated <code>Util1DM</code> utility class to automatically detect 1DM / 1DM+ / 1DM Lite download managers and hand off downloads, headers, cookies, and user-agent without UI changes.</li>
+<li>fix: Resolved Kotlin build errors in <code>PetalAiHubBridge.kt</code>, <code>PetalAiHubScreen.kt</code>, and <code>PetalTabGridSwitcher.kt</code>.</li>
+</ul>
+</section>
+<section class="release" id="v1-7-4"><h2><a class="rel-ver" href="#v1-7-4">v1.7.4</a></h2><ul>
+<li>fix: Audited and balanced Compose layout braces in <code>PetalTabGridSwitcher.kt</code>, resolving outer <code>BoxScope.align</code> and syntax parser cascade errors.</li>
+<li>fix: Created <code>PetalAiHubBridge.kt</code>, corrected <code>Settings_Activity</code> references in <code>PetalAiHubScreen.kt</code>, and aligned <code>performResearch</code> callback signature in <code>PetalSettingsScreen.kt</code>.</li>
+</ul>
+</section>
+<section class="release" id="v1-7-3"><h2><a class="rel-ver" href="#v1-7-3">v1.7.3</a></h2><ul>
+<li>new: Added dedicated <strong>Petal AI &amp; API Keys Hub</strong> category in <code>PetalSettingsScreen.kt</code> for configuring Gemini, OpenRouter, OpenAI, Grok, and Groq API keys, model selections, and live connection testing.</li>
+<li>new: Reimagined <code>PetalAiHubScreen.kt</code> as the unified home for Petal Native AI (Deep Research, AI search) and web AI tools directory, complete with API key status and 1-tap quick launchers.</li>
+</ul>
+</section>
+<section class="release" id="v1-7-2"><h2><a class="rel-ver" href="#v1-7-2">v1.7.2</a></h2><ul>
+<li>new: Upgraded Tab Manager (<code>PetalTabGridSwitcher.kt</code>), Chrome Flags (<code>PetalChromeFlagsScreen.kt</code>), and Extensions (<code>PetalExtensionsScreen.kt</code>) to support Material 3 <code>ExpressiveHeader</code>.</li>
+<li>fix: Fixed double status-bar top padding issue on Bookmarks screen (<code>PetalBookmarksScreen.kt</code>).</li>
+</ul>
+</section>
+<section class="release" id="v1-7-1"><h2><a class="rel-ver" href="#v1-7-1">v1.7.1</a></h2><ul>
+<li>fix: Stored user custom profile picture permanently in <code>context.filesDir</code> to prevent deletion when clearing app cache or background tasks (<code>GoogleAccountManager.kt</code>).</li>
+<li>new: Built interactive profile picture cropping modal sheet <code>PetalAvatarCropSheet.kt</code> with pinch-to-zoom, pan, rotation, and live circular mask preview.</li>
+</ul>
+</section>
+<section class="release" id="v1-7-0"><h2><a class="rel-ver" href="#v1-7-0">v1.7.0</a></h2><ul>
+<li>new: Bound <code>PetalHapticFeedback</code> to Compose <code>LocalHapticFeedback</code> in <code>PetalTheme.kt</code> for universal tap feedback across all components.</li>
+<li>fix: Connected <code>PetalHapticEngine</code> with Android Accessibility (<code>TalkBack</code> Touch Exploration) and OS system haptic settings.</li>
+<li>fix: Added instant vibrator cancellation before triggering new patterns so pattern testing in Settings switches immediately.</li>
+<li>fix: Expanded multi-tiered waveform fallbacks for all haptic patterns on devices lacking hardware primitive composition.</li>
+</ul>
+</section>
+<section class="release" id="v1-6-9"><h2><a class="rel-ver" href="#v1-6-9">v1.6.9</a></h2><ul>
+<li>fix: Increased homepage greeting tagline <code>maxLines</code> to 4, set <code>fontSize = 15.sp</code>, and pruned taglines to prevent ellipsis (<code>...</code>) truncation on all screen sizes (<code>PetalHomeScreen.kt</code>).</li>
+</ul>
+</section>
+<section class="release" id="v1-6-8"><h2><a class="rel-ver" href="#v1-6-8">v1.6.8</a></h2><ul>
+<li>fix: Added <code>androidx.compose.ui.unit.sp</code> import to <code>ExpressiveHeader.kt</code> for proper <code>TextUnit</code> extension resolution.</li>
+</ul>
+</section>
+<section class="release" id="v1-6-7"><h2><a class="rel-ver" href="#v1-6-7">v1.6.7</a></h2><ul>
+<li>fix: Resolved Settings unresponsiveness by removing legacy <code>nestedScroll</code> connection from <code>PetalSettingsScreen.kt</code>.</li>
+<li>fix: Fitted User Accounts header title cleanly onto a single line without truncation across all screen widths (<code>ExpressiveHeader.kt</code> &amp; <code>ChromeAccountSyncScreen.kt</code>).</li>
+</ul>
+</section>
+<section class="release" id="v1-6-6"><h2><a class="rel-ver" href="#v1-6-6">v1.6.6</a></h2><ul>
+<li>fix: Restored synchronous initialization of user profile avatar, name, and preferences on app restart (<code>BrowserActivity.java</code> &amp; <code>AccountViewModel.kt</code>).</li>
+</ul>
+</section>
+<section class="release" id="v1-6-5"><h2><a class="rel-ver" href="#v1-6-5">v1.6.5</a></h2><ul>
+<li>new: Integrated <code>ExpressiveHeader</code> across Settings overview and subpages with dynamic category titles and subtitles.</li>
+<li>fix: Resolved double-padding layout issue on Clear Browsing Data page (<code>PetalDeleteScreen.kt</code>).</li>
+<li>new: Enforced 1 single line for title and 1 single line for subheading on User Profile &amp; Accounts page.</li>
+</ul>
+</section>
+<section class="release" id="v1-6-4"><h2><a class="rel-ver" href="#v1-6-4">v1.6.4</a></h2><ul>
+<li>new: Uniform Material 3 ExpressiveHeader alignment across History, Bookmarks, and Downloads pages.</li>
+<li>new: Chrome-style tab card UI (0.68 aspect ratio, 18dp rounded corners, circular close X button, active accent outline).</li>
+<li>new: Disk-persistent tab preview thumbnails (<code>petal_tab_thumbnails/{tabId}.png</code>) that restore on app relaunch.</li>
+<li>fix: Restored OS predictive back edge swipe navigation on web pages via 24dp system gesture exclusion margins.</li>
+<li>new: One-time version update welcome greeting tagline (&quot;Welcome to Petal v1.6.4! 🎉&quot;) on home screen after updating.</li>
+</ul>
+</section>
+<section class="release" id="v1-5-3"><h2><a class="rel-ver" href="#v1-5-3">v1.5.3</a></h2><ul>
+<li>fix: Improved tab preview thumbnail cache management with safe memory recycling and disk persistence.</li>
+<li>improved: Replaced image cropping with proportional fit scaling to display full uncropped web page previews.</li>
+<li>new: Added Chrome-style bouncy zoom scale-up animation when tapping on tab grid cards.</li>
+</ul>
+</section>
+<section class="release" id="v1-5-2"><h2><a class="rel-ver" href="#v1-5-2">v1.5.2</a></h2><ul>
+<li>removed: Removed sync encryption password option from User Profile &amp; Accounts page.</li>
+<li>new: Added support for dedicated app password lock alongside biometric fingerprint authentication options.</li>
+<li>new: Integrated Material 3 Expressive masked shape icons and animations (inspired by Monogram Android &amp; Zenith) for custom app password security.</li>
+</ul>
+</section>
+<section class="release" id="v1-5-1"><h2><a class="rel-ver" href="#v1-5-1">v1.5.1</a></h2><ul>
+<li>fix: Solved WebView modal, popup, and carousel black overlay misrendering by explicitly disabling force dark mode &amp; algorithmic darkening.</li>
+<li>new: Added &quot;View All Changelogs&quot; history sheet in App Updates settings (ported from Zenith).</li>
+<li>improved: Upgraded UI containment styling across settings screens to pure Material 3 Expressive UI specifications.</li>
+</ul>
+</section>
+<section class="release" id="v1-5-0"><h2><a class="rel-ver" href="#v1-5-0">v1.5.0</a></h2><ul>
+<li>imported: Updated PetalTabGridSwitcher with BackHandler context resolution.</li>
+<li>new: Full Material 3 Expressive UI containment redesign.</li>
+</ul>
+</section>
+<section id="foss-browser-history" class="upstream"><h2>Before the fork: FOSS Browser history</h2><p>Petal began as a fork of FOSS Browser. These are that project&rsquo;s own release notes, kept for attribution and completeness. Version numbers here belong to FOSS Browser, not Petal.</p><details class="faq" id="fb-details"><summary>Show 89 earlier FOSS Browser releases</summary><div class="faq-a"><section class="release" id="fb-v-24-wip"><h2><a class="rel-ver" href="#fb-v-24-wip">v 24 (WIP)</a></h2><ul>
+<li>improved: default standard profile settings</li>
+<li>improved: AdBlock download</li>
+<li>improved: snackbar with clickable link</li>
+<li>improved: download of blob:/data:-files</li>
+<li>improved: app bar</li>
+<li>improved: search bar</li>
+<li>improved: gesture settings</li>
+<li>improved: menu settings</li>
+<li>improved: search providers</li>
+<li>updated: WIKI + help links in app</li>
+<li>updated: translations</li>
+</ul>
+</section><section class="release" id="fb-v-23-harriet-tubman"><h2><a class="rel-ver" href="#fb-v-23-harriet-tubman">v 23 Harriet Tubman</a></h2><p><em>Harriet &quot;Moses&quot; Tubman (1822 – 1913) was an American abolitionist and social activist.</em></p>
+<ul>
+<li>fix: Unable to access full tab list #1282</li>
+<li>fix: Hide URL-Bar/Status Bar when Scrolling #1278</li>
+<li>fix: auto hide/show control bar when scrolled up/down #1283</li>
+<li>fix: Highlight entire URL #1269</li>
+<li>fix: Day Mode hides clock, battery and notifications #1270</li>
+<li>fix: Behavior/UI settings crashing #1265</li>
+<li>fix: Update JavaScript alert dialogs #1279</li>
+<li>fix: go back not work when redirect happens #1281</li>
+<li>fix: Cookies Getting Disabled #1273</li>
+<li>fix: Tracking protection needs improvment #1266</li>
+<li>fix: Add ability to view image alt text #1000</li>
+<li>fix: toasts not showing entire URL</li>
+<li>updated: translations</li>
+<li>improved: input of search layouts</li>
+<li>improved: more snackbars instead of dialogs</li>
+<li>removed: redundant settings (autofill, custom javascript)</li>
+<li>removed: StartSite</li>
+<li>new: menu settings</li>
+</ul>
+</section><section class="release" id="fb-v-22-die-edelwei-piraten"><h2><a class="rel-ver" href="#fb-v-22-die-edelwei-piraten">v 22 Die Edelweißpiraten</a></h2><ul>
+<li>fix: opening UI-settings crashing</li>
+<li>fix: some dialogs closing when clicking profile icon</li>
+<li>fix: profile-icon showing wrong icon</li>
+<li>fix: profile settings</li>
+<li>improved: using of profile button</li>
+<li>improved: redirects control from FastToggleDialog</li>
+<li>improved: layout -&gt; removed tab-button -&gt; opened tabs now in overview</li>
+<li>improved: layout -&gt; using outlined style where possible for better contrast</li>
+<li>new: snackbar instead of dialog on some places</li>
+<li>new: gestures -&gt; open startsite,bookmark, history</li>
+<li>new: option to load default profile on start/always/never (via FastToggleDialog)</li>
+</ul>
+</section><section class="release" id="fb-v-21-astrid-lindgren"><h2><a class="rel-ver" href="#fb-v-21-astrid-lindgren">v 21 Astrid Lindgren</a></h2><ul>
+<li>fix: edit text dialogs</li>
+<li>fix: userAgent</li>
+<li>fix: not detecting saved websites in some cases</li>
+<li>fix: not switching to default profile, when going back in history</li>
+<li>fix: Themed icon issue #1251</li>
+<li>improved: moved enable/disable switching to standard profile to top of FastToggleDialog</li>
+<li>improved: theme declaration in manifest</li>
+<li>new: snackbar on download complete</li>
+</ul>
+</section><section class="release" id="fb-v-20-rudi-dutschke"><h2><a class="rel-ver" href="#fb-v-20-rudi-dutschke">v 20 Rudi Dutschke</a></h2><ul>
+<li>new: disable webview diagnostic data</li>
+<li>new: set render priority to high</li>
+<li>new: enabling/disabling switching always to standard profile (also in in FastToggleDialog)</li>
+<li>new: enabling/disabling redirects in FastToggleDialog</li>
+<li>new: sort FastSearchDialog alphabetically</li>
+<li>new: some app settings in FastToggleDialog</li>
+<li>fix: removed unused code</li>
+<li>fix: third Party Cookies</li>
+<li>fix: tracking-URL-dialog</li>
+<li>fix: HTTP-dialog</li>
+<li>fix: removed unused strings</li>
+<li>fix: (workaround): Codeberg JavaScript error only on FOSS Browser #1231</li>
+</ul>
+</section><section class="release" id="fb-v-19-1-henry-david-thoreau"><h2><a class="rel-ver" href="#fb-v-19-1-henry-david-thoreau">v 19.1 Henry David Thoreau</a></h2><p>With this release, it is possible to save settings separate for each website. Look at the WIKI for more Infos: https://codeberg.org/Gaukler_Faun/FOSS_Browser/wiki</p>
+<ul>
+<li>new: save settings per website</li>
+<li>new: Error-dialog, when downloading Blob-files</li>
+<li>new: gestures -&gt; toggle redirects, switch to standard profile, open downloads</li>
+<li>fix: not showing most recent entries in overview in some cases</li>
+<li>fix: removed a lot of old code</li>
+<li>fix: Sequences of Java Session Id's appears in URL #1187</li>
+<li>fix: &quot;show on start&quot; doesn't show start #1206</li>
+<li>fix: f-droid information shows old link to github #1204</li>
+<li>fix: Navigation bar not hidden in fullscreen #1099</li>
+<li>fix: Opening URL using window.open() uses default browser instead of Foss Browser #1165</li>
+<li>fix: Input box blocked by the keyboard in the screen #1207</li>
+<li>fix: Themed Icon Missing #1157</li>
+<li>fix: custom search, when containing &quot;#&quot;</li>
+<li>fix: Update Screenshots On F-Droid #1214</li>
+<li>updated: WIKI</li>
+<li>updated: layout</li>
+<li>updated: settings</li>
+<li>updated: translations</li>
+<li>updated: build libraries</li>
+<li>removed: &quot;Open downloads&quot; popup dialog is annoying #1196</li>
+<li>removed: play audio in background, due to Android limitations</li>
+<li>removed: OLED-theme</li>
+</ul>
+</section><section class="release" id="fb-v-18-1-die-rote-zora"><h2><a class="rel-ver" href="#fb-v-18-1-die-rote-zora">v 18.1 &quot;Die rote Zora&quot;</a></h2><p>With the release of Android 15 Google introduced a feature called &quot;window insets&quot;. Because of that feature there were many layout issues, mainly concerning the system navigation bar. I had to rewrite some layouts. The list of opened tabs, the overview and the search are moved in sidebars.</p>
+<ul>
+<li>layout changes</li>
+<li>updated translations</li>
+<li>some minor code improvements</li>
+<li>fix: tab issues</li>
+</ul>
+</section><section class="release" id="fb-v-17-michail-alexandrowitsch-bakunin"><h2><a class="rel-ver" href="#fb-v-17-michail-alexandrowitsch-bakunin">v 17 &quot;Michail Alexandrowitsch Bakunin&quot;</a></h2><ul>
+<li>upgrade: Android target SDK</li>
+<li>upgrade: dependencies</li>
+<li>update: translations</li>
+<li>fix: redirecting urls</li>
+<li>fix: minor layout issues</li>
+<li>fix: open links in background #1184</li>
+<li>fix: link on readme.md (thanks to @<a href="https://codeberg.org/Artem13327">Artemka</a>)</li>
+<li>fix: wrong menu contents in landscape orientation #1186</li>
+<li>fix: rename Disable Profiles -&gt; Custom #1178</li>
+<li>fix: Update README #1176</li>
+<li>fix: “Close Tab” icon too small #1156</li>
+<li>fix: crash when clicking overflow with empty URL</li>
+<li>fix: crash with missing notification permission</li>
+<li>fix: Themed Icon Missing #1157</li>
+<li>new: switched from deepl to fairtranslate</li>
+<li>new: edit custom redirects</li>
+</ul>
+</section><section class="release" id="fb-v-16-alexander-berkmann"><h2><a class="rel-ver" href="#fb-v-16-alexander-berkmann">v 16 &quot;Alexander Berkmann&quot;</a></h2><ul>
+<li>new: tracking-URL-popup</li>
+<li>fix: context menu in tab overview</li>
+<li>fix: onRenderProcessGone</li>
+<li>fix: http-dialog</li>
+<li>fix: dialogs with long file names</li>
+<li>fix: tab-layout in overflow menu</li>
+<li>updated: translations</li>
+</ul>
+</section><section class="release" id="fb-v-15-kabale-und-liebe"><h2><a class="rel-ver" href="#fb-v-15-kabale-und-liebe">v 15 &quot;Kabale und Liebe&quot;</a></h2><ul>
+<li>new: auto deny cookie-banners (@https://github.com/woheller69/browser)</li>
+<li>new: sort startsite and history by domain</li>
+<li>new: highlight domains in lists and menus</li>
+<li>new: highlight search term</li>
+<li>fix: layout and colors</li>
+<li>fix: Error downloading blob-files (@https://github.com/woheller69/browser)</li>
+<li>fix: Downloading files that requires Referer header #950</li>
+<li>fix: Display errors in dark theme? #1143</li>
+</ul>
+</section><section class="release" id="fb-v-14-katjuscha-protagonistin-in-leo-tolstois-auferstehung"><h2><a class="rel-ver" href="#fb-v-14-katjuscha-protagonistin-in-leo-tolstois-auferstehung">v 14 &quot;Katjuscha&quot; (Protagonistin in Leo Tolstois Auferstehung)</a></h2><ul>
+<li>fix: redirect custom urls</li>
+<li>fix: Back navigation is flawed #1121</li>
+<li>fix: Open in default app #1134</li>
+<li>fix: App crashes when opening settings #1128</li>
+<li>fix: layout/UI improvements</li>
+<li>fix: Deleting duplicated bookmark deletes both #1130</li>
+<li>fix: v13 system theme - colors [re: 1105; 1119] #1126</li>
+<li>fix: profiles -&gt; wildcard support #1133</li>
+<li>fix: Suggestion: Long-press on bookmark icon to save #1140</li>
+<li>fix: Add initial intro #1129</li>
+<li>fix: Splash screen should adapt to theme #1142</li>
+<li>new: simplified receiving text dialog</li>
+<li>updated: translations</li>
+<li>updated: libraries</li>
+</ul>
+</section><section class="release" id="fb-v-13-friedrich-hecker"><h2><a class="rel-ver" href="#fb-v-13-friedrich-hecker">v 13 &quot;Friedrich Hecker&quot;</a></h2><ul>
+<li>switched to Google rounded Material You Icons</li>
+<li>fix: improvements in backup/restore</li>
+<li>fix: improvements in custom redirects</li>
+<li>fix: layout improvements</li>
+<li>fix: open deepl.com in normal tab</li>
+<li>fix: lint issues</li>
+<li>fix: theme issues #1105</li>
+<li>fix: WIKI-links</li>
+<li>fix: cleanup strings</li>
+<li>fix: updated translations</li>
+<li>fix: backup on exit</li>
+<li>fix: crashes related to cookie manager #1118 #1111 #1115</li>
+<li>fix: tabs gets multiplied #1117</li>
+<li>fix: Add Initial intro screen #1129</li>
+<li>new: icons in overview menus</li>
+<li>new: fast search on websites (long press search icon in toolbar)</li>
+<li>new: AdBlock -&gt; add custom domains</li>
+</ul>
+</section><section class="release" id="fb-v-12-gandhi"><h2><a class="rel-ver" href="#fb-v-12-gandhi">v 12 &quot;Gandhi&quot;</a></h2><ul>
+<li>fix: Open Downloads after download complete</li>
+<li>fix: Custom search engine UI/UX #1113</li>
+<li>fix: Cannot import custom Bookmarks #1109</li>
+<li>fix: open links in background</li>
+<li>fix: notification permissions</li>
+<li>fix: infinite loop verification on gitlab.com #1100</li>
+<li>new: backup on exit (optional)</li>
+<li>new: fast search on websites (long press search icon in toolbar)</li>
+</ul>
+</section><section class="release" id="fb-v-11-bertha-von-suttner"><h2><a class="rel-ver" href="#fb-v-11-bertha-von-suttner">v 11 &quot;Bertha von Suttner&quot;</a></h2><ul>
+<li>new: third party cookies control</li>
+<li>new: stop-loading on progress indicator click</li>
+<li>fix: Writing to clipboard from JavaScript doesn't work #853</li>
+<li>fix: recreation of activity on ui-mode change</li>
+<li>fix: translate text from context menu with deepL</li>
+<li>fix: crash on start (A14)</li>
+<li>updated: translation</li>
+<li>updated: layout</li>
+<li>updated: build libraries</li>
+</ul>
+</section><section class="release" id="fb-v-10-0-clara-zetkin"><h2><a class="rel-ver" href="#fb-v-10-0-clara-zetkin">v 10.0 &quot;Clara Zetkin&quot;</a></h2><ul>
+<li>moved repo from Github zu Codeberg</li>
+<li>moved from crowdin to weblate</li>
+<li>fix: cookie/profile settings lost on tab change #1095</li>
+<li>fix: profile settings lost, when going back in history</li>
+<li>fix: Not really a bug... #1075</li>
+<li>fix: Menu Dialog tweaks #1086</li>
+<li>fix: error warnings #1092 and #1082</li>
+<li>fix: removed &quot;open link with&quot; from menus, since it does the same like sharing #1089</li>
+<li>fix: HTTPS or HTTP dialog only asked one time per session #1083</li>
+<li>fix: Gestures: added gestures for &quot;Open Settings&quot; and &quot;Quit app&quot; #1087</li>
+<li>fix: Custom Redirects to sites that don't start with &quot;www.&quot; #1097</li>
+<li>fix: lint issues</li>
+<li>new: translate text from context menu with deepL</li>
+<li>updated translations</li>
+</ul>
+</section><section class="release" id="fb-v-9-11-traven"><h2><a class="rel-ver" href="#fb-v-9-11-traven">v 9.11 &quot;Traven&quot;</a></h2><ul>
+<li>new: context menu in tab overview</li>
+<li>new: icons in menus</li>
+<li>new: delete entries from search</li>
+<li>new: http-warning before loading</li>
+<li>fix: layout in menus</li>
+<li>fix: menus</li>
+<li>fix: onReceivedHttpAuthRequest password showing #1069</li>
+<li>fix: download names #1071</li>
+</ul>
+</section><section class="release" id="fb-v-9-10-durruti"><h2><a class="rel-ver" href="#fb-v-9-10-durruti">v 9.10 &quot;Durruti&quot;</a></h2><ul>
+<li>new: Clipboard record preference thanks to @Bnyro</li>
+<li>new: show url on link menus or when clicking menu title</li>
+<li>new: show urls in lists</li>
+<li>new: tab number in overview</li>
+<li>fix: refactored settings</li>
+<li>fix: layout issues on small devices #976</li>
+<li>fix: Password field for protected sites shows entries #1039</li>
+<li>fix: youtube redirects</li>
+<li>fix: onReceivedError</li>
+<li>fix: Settings refactor thanks to @Bnyro</li>
+<li>fix: OLED theme issues #1052</li>
+</ul>
+</section><section class="release" id="fb-v-9-6"><h2><a class="rel-ver" href="#fb-v-9-6">v 9.6</a></h2><ul>
+<li>removed: redirection for Instagram</li>
+<li>fix: Redirect error from YouTube #991</li>
+<li>fix: loading images fit screen width</li>
+<li>fix: cookie manager, when going back in history</li>
+<li>fix: buttons not reachable on some dialogs</li>
+<li>fix: Auth-request dialog</li>
+<li>fix: download dialog</li>
+<li>fix: startsite is now the wiki #997</li>
+<li>fix: crash when open downloads, while default file manager not installed</li>
+<li>fix: issues with the file name when downloading thanks to @Bnyro</li>
+<li>fix: kill the app on pressing quit thanks to @Bnyro</li>
+<li>fix: theme settings</li>
+<li>fix: suppress DRM notice #1019</li>
+<li>fix: profile icons - red for attached profiles #999</li>
+<li>fix: Youtube videos in full screen mode cropped #1015</li>
+<li>fix: Twitter-to-Nitter redirector matches some unrelated urls #1022</li>
+<li>fix: &amp; not escaped in search URL #959</li>
+<li>fix: lint issues</li>
+<li>new: circular progress - press to stop loading</li>
+<li>new: Swedish translation</li>
+<li>new: material dialogs in the preferences thanks to @Bnyro</li>
+<li>new: monochrome icon for Android 13+ thanks to @Bnyro</li>
+<li>new: custom redirects thanks to @Bnyro</li>
+<li>new: Custom error pages  thanks to @Bnyro</li>
+</ul>
+</section><section class="release" id="fb-v-9-5"><h2><a class="rel-ver" href="#fb-v-9-5">v 9.5</a></h2><ul>
+<li>fix: can't open URL from outside, if it was closed before</li>
+<li>fix: Active button colors on OLED theme #1006</li>
+<li>new: hebrew translation</li>
+</ul>
+</section><section class="release" id="fb-v-9-4"><h2><a class="rel-ver" href="#fb-v-9-4">v 9.4</a></h2><ul>
+<li>new: &quot;post on website&quot; in sharing menu</li>
+<li>new: Serbo-Croation translation</li>
+<li>new: Support app split screen #937</li>
+<li>fix: Restored functionality to proceed according to user selection #941</li>
+<li>updated: translations</li>
+<li>updated: build libraries</li>
+<li>removed: swipe to reload -&gt; use gestures instead</li>
+</ul>
+</section><section class="release" id="fb-v-9-3-1"><h2><a class="rel-ver" href="#fb-v-9-3-1">v 9.3.1</a></h2><ul>
+<li>fix: Half screen after orientation change #919</li>
+<li>fix: not all menu items accessible in landscape orientation</li>
+<li>fix: Download dialog does not decode multibyte file name #917</li>
+<li>fix: File name is not shown in the download prompt #916</li>
+<li>fix: Browser crashes when switching embedded video to full screen #925</li>
+<li>fix: Persistent swipe issues #924</li>
+</ul>
+</section><section class="release" id="fb-v-9-2"><h2><a class="rel-ver" href="#fb-v-9-2">v 9.2</a></h2><ul>
+<li>fix: crash when sharing links #883</li>
+<li>fix: no password field on webserver authentication #891</li>
+<li>fix: some swiping issues #899 by Lakjdf</li>
+<li>fix: support for intent scheme URLs again #898 by Lakjdf</li>
+<li>fix: refactored code to make it much more readable #896 by T8RIN</li>
+<li>fix: share link</li>
+<li>fix: Home-screen links improvment #906</li>
+<li>fix: no password field on authentication dialog #891</li>
+<li>updated: layout and user experience</li>
+<li>updated: settings for night view</li>
+<li>updated: settings for gestures</li>
+<li>updated: settings for editing profiles #909</li>
+<li>updated translations: <em>Now 21 languages are fully supported!</em></li>
+</ul>
+</section><section class="release" id="fb-v-9-1"><h2><a class="rel-ver" href="#fb-v-9-1">v 9.1</a></h2><ul>
+<li>fix: removed unnecessary toasts in fastToggle</li>
+<li>fix: Browser crash on search with &quot;%&quot; #861</li>
+<li>fix: progressbar visible when searching</li>
+<li>fix: UI of FastToggleDialog #872</li>
+<li>fix: UI of edit/save as dialog #873</li>
+<li>fix: https warning #863</li>
+<li>fix: Images not displayed #881</li>
+<li>new: gesture to copy link to clipboard #868</li>
+<li>new: copy link to clipboard in context menu #878</li>
+<li>new: switched license to APGL</li>
+<li>new: redirect YouTube/Instagram/Twitter links</li>
+<li>new: show number of tabs in overview</li>
+</ul>
+</section><section class="release" id="fb-v-9-0"><h2><a class="rel-ver" href="#fb-v-9-0">v 9.0</a></h2><ul>
+<li>fix: popup menu in Overview</li>
+<li>fix: searchbar not hiding in back pressing #852</li>
+<li>fix: edit favorites layout not scrolling #854</li>
+<li>fix: open external link shows Overview #858</li>
+<li>updated: translations</li>
+</ul>
+</section><section class="release" id="fb-v-8-9"><h2><a class="rel-ver" href="#fb-v-8-9">v 8.9</a></h2><ul>
+<li>fix: some webpages show half the screen #817</li>
+<li>fix: Shortcut on the home screen #830</li>
+<li>fix: crash on first start #829 #820</li>
+<li>fix: Settings button does not open settings #823</li>
+<li>fix: cannot connect to some webservices #818</li>
+<li>fix: default user-agent is now received from installed webview</li>
+<li>fix: long press actions on toolbar buttons #866</li>
+<li>fix: https warning #863</li>
+<li>fix: Images not displayed #881</li>
+<li>updated: translations</li>
+<li>new: moved tab-dialog in overview</li>
+<li>new: permanent night mode (optional) #825</li>
+<li>new: help buttons in most important UI-elements</li>
+</ul>
+</section><section class="release" id="fb-v-8-8"><h2><a class="rel-ver" href="#fb-v-8-8">v 8.8</a></h2><ul>
+<li>new: Wiki integrated in settings and menus</li>
+<li>new: notification when playing audio on background #800</li>
+<li>new: gestures</li>
+<li>fix: mailto and other intents not working</li>
+<li>fix: button &quot;reload &quot; is hidden #803</li>
+<li>fix: play audio in background #800</li>
+</ul>
+</section><section class="release" id="fb-v-8-7"><h2><a class="rel-ver" href="#fb-v-8-7">v 8.7</a></h2><ul>
+<li>fix: dark theme in settings activities</li>
+<li>fix: night mode (webView)</li>
+<li>new: play audio on background</li>
+<li>new: Quick toggle to keep screen on</li>
+<li>new: gesture settings for long pressing</li>
+<li>new: open links in background</li>
+<li>new: swipe through menu</li>
+<li>updated: F-Droid (screenshots, description)</li>
+<li>updated: Privacy Policy</li>
+<li>updated: translations (17 languages supported!)</li>
+<li>improved: MaterialYou theme</li>
+<li>improved: search in history, bookmarks, ...</li>
+<li>improved: close open tabs dialog after making selection</li>
+</ul>
+</section><section class="release" id="fb-v-8-6"><h2><a class="rel-ver" href="#fb-v-8-6">v 8.6</a></h2><ul>
+<li>skipped -</li>
+</ul>
+</section><section class="release" id="fb-v-8-5-1"><h2><a class="rel-ver" href="#fb-v-8-5-1">v 8.5.1</a></h2><ul>
+<li>fix: camera issue #729</li>
+<li>fix: profile icon in toolbar #728</li>
+<li>fix: cookie settings when switching tab</li>
+<li>fix: stay at night mode, when openeing bookmark</li>
+<li>fix: close open tabs window after making selection #746</li>
+<li>new: restart and reload tabs</li>
+<li>new: Material You Design #726</li>
+<li>new: OLED dark theme Feature #742</li>
+<li>new: FOSS Browser in context menu of marked text #723</li>
+<li>new: remember night mode per site #669</li>
+<li>new: adding &quot;copy link&quot; button to download dialog #733</li>
+<li>new: remember night mode, when opening new tabs</li>
+<li>new: gesture: open start site</li>
+<li>new: keep screen on</li>
+<li>improved: set favicons (thanks to @woheller69)</li>
+<li>updated: translations</li>
+<li>updated: build libraries</li>
+</ul>
+</section><section class="release" id="fb-v-8-4"><h2><a class="rel-ver" href="#fb-v-8-4">v 8.4</a></h2><ul>
+<li>new: camera use (thanks to @woheller69)</li>
+<li>new: microphone use</li>
+<li>new: webRTC support</li>
+<li>new: DRM protected video playback (thanks to @woheller69)</li>
+<li>new: support of encrypted backups (thanks to @woheller69)</li>
+<li>new: profiles instead of whitelists</li>
+<li>new: restore tabs on restart (optional)</li>
+<li>new: restore tabs when killed by system (optional) (thanks to @woheller69)</li>
+<li>fix: AutoComplete TextView (thanks to @woheller69)</li>
+<li>updated: setting screens</li>
+</ul>
+</section><section class="release" id="fb-v-8-3"><h2><a class="rel-ver" href="#fb-v-8-3">v 8.3</a></h2><ul>
+<li>fix: Swipe to reload not working sometimes #654</li>
+<li>fix: Restoring bookmarks does not work properly #653</li>
+<li>fix: some force closes #642 #643</li>
+<li>fix: gestures and text-edit-scrolling collide #633</li>
+<li>fix: Toolbar hides, but reappears if page is refreshed #660</li>
+<li>fix: minor fixes and UIredirects webview</li>
+<li>new: save dektopMode, Javascript, domStorage also for history items</li>
+<li>removed: PlayStore support</li>
+<li>updated: translations</li>
+</ul>
+</section><section class="release" id="fb-v-8-2"><h2><a class="rel-ver" href="#fb-v-8-2">v 8.2</a></h2><ul>
+<li>fix: chip desktop, javascript, DOM should not be visible in settings when editing filter names (thanks to @woheller69)</li>
+<li>fix: Sometimes Favicon is stored several times in database (thanks to @woheller69)</li>
+<li>fix: permission problems</li>
+<li>fix: download problems</li>
+<li>new: edit startSite and history items</li>
+<li>new: Privacy Enhancement #602 (thanks to @woheller69)</li>
+<li>new: choose preferred theme</li>
+<li>updated: Edit filter names (thanks to @woheller69)</li>
+<li>updated: backup preference</li>
+</ul>
+</section><section class="release" id="fb-v-8-1"><h2><a class="rel-ver" href="#fb-v-8-1">v 8.1</a></h2><ul>
+<li>new: edit bookmark-url (thanks to @woheller69)</li>
+<li>new: Reload on swipeDown when at top of webpage (thanks to @woheller69)</li>
+<li>new: Added GlobalPrivacyControl (thanks to @woheller69)</li>
+<li>new: Remove device info from useragent, use prefixes like DuckDuckGo browser (thanks to @woheller69)</li>
+<li>new: favicons in bookmarklist (thanks to @woheller69)</li>
+<li>new: option to select blocked content</li>
+<li>updated: do not track (thanks to @woheller69)</li>
+<li>updated: translations</li>
+<li>fix: sorting of tabs in overview</li>
+<li>fix: DOM-storage description in settings</li>
+<li>fix: apply settings on back/forward navigation</li>
+<li>fix: Ad-Blocking also blocks &quot;social&quot; media</li>
+<li>fix: open link externally</li>
+</ul>
+</section><section class="release" id="fb-v-8-0"><h2><a class="rel-ver" href="#fb-v-8-0">v 8.0</a></h2><ul>
+<li>new: toggle mobile/desktop mode (thanks to @woheller69)</li>
+<li>new: auto update of AdBlock-hosts (thanks to @woheller69)</li>
+<li>new: save desktop mode/javascript/DOM content settings in bookmarks (thanks to @woheller69)</li>
+<li>new: show colored bookmark icon when editing bookmark category (thanks to @woheller69)</li>
+<li>new: Use settings stored in bookmark when a bookmark is found in search (thanks to @woheller69)</li>
+<li>new: Show icon source of item (start page, bookmarks, history) in search (thanks to @woheller69)</li>
+<li>new: save form data/use autofill service in settings</li>
+<li>fix: correct icon colors when importing bookmarks (thanks to @woheller69)</li>
+<li>fix: content hidden by toolbar</li>
+<li>fix: opening new tabs on older Android versions</li>
+<li>fix: Dark mode not applied to all tabs</li>
+<li>fix: toolbar input handling</li>
+</ul>
+</section><section class="release" id="fb-v-7-5"><h2><a class="rel-ver" href="#fb-v-7-5">v 7.5</a></h2><ul>
+<li>new: right to left layout support (thanks to @M3hdiRostami)</li>
+<li>new: Farsi (Persian) language support (thanks to @M3hdiRostami)</li>
+<li>updated: AdBlock</li>
+<li>updated: AppIcon</li>
+<li>fix: New bookmarks are not shown in red-filtered bookmark view</li>
+<li>fix: Application crash when trying to watch video in full screen mode</li>
+<li>fix: showing keyboard when leaving fullscreen mode</li>
+<li>fix: interaction with url in address line</li>
+<li>fix: tab handling</li>
+<li>fix: toolbar input handling</li>
+<li>even more fixes</li>
+</ul>
+</section><section class="release" id="fb-v-7-4"><h2><a class="rel-ver" href="#fb-v-7-4">v 7.4</a></h2><ul>
+<li>removed: app shortcuts</li>
+<li>fix: keyboard not showing on large input fields</li>
+<li>fix: app crash when displaying overview on start</li>
+<li>fix: app crash when showing some dialogs</li>
+<li>fix: clearing data</li>
+<li>fix: open fallback urls</li>
+<li>fix: crashing on fullscreen on older Android versions</li>
+</ul>
+</section><section class="release" id="fb-v-7-3"><h2><a class="rel-ver" href="#fb-v-7-3">v 7.3</a></h2><ul>
+<li>updated: translations (now 16 languages are supported!)</li>
+<li>updated: build and theme libraries</li>
+<li>updated: AdBlock-hosts</li>
+<li>updated: Material Components</li>
+<li>updated: settings activities</li>
+<li>updated: tab handling</li>
+<li>removed: multi-window support</li>
+<li>removed: theme settings</li>
+<li>new: support of: open target=&quot;_blank&quot;</li>
+<li>fix: Opting out of metrics collection</li>
+<li>fix: export bookmarks</li>
+<li>fix: tab handling</li>
+<li>fix: apply javaScript, cookies and DOM content whitelists</li>
+<li>fix: switching between system day/night mode</li>
+<li>fix: dialogs in landscape</li>
+<li>fix: alphabetical sorting of overview entries</li>
+<li>fix: search in toolbar</li>
+<li>fix: many other small fixes</li>
+</ul>
+</section><section class="release" id="fb-v-7-2"><h2><a class="rel-ver" href="#fb-v-7-2">v 7.2</a></h2><ul>
+<li>fix: zooming on websites</li>
+<li>fix: opening new tab when restarting</li>
+<li>new: close search on site by back pressing</li>
+</ul>
+</section><section class="release" id="fb-v-7-1"><h2><a class="rel-ver" href="#fb-v-7-1">v 7.1</a></h2><ul>
+<li>removed: ability to save password within bookmark</li>
+<li>updated: AdBlock hosts</li>
+<li>updated: translations</li>
+<li>updated: bookmark management (sorry for removing password saving)</li>
+<li>updated: overview, menus and dialogs</li>
+<li>fix: searx.me search</li>
+<li>new: hide overflow button</li>
+<li>new: whitelist for DOM content</li>
+<li>new: backup/restore bookmarks as html</li>
+<li>many stability improvements -&gt; removed ca. 5000 lines of unnecessary code!)</li>
+</ul>
+</section><section class="release" id="fb-v-7-0"><h2><a class="rel-ver" href="#fb-v-7-0">v 7.0</a></h2><ul>
+<li>new: F-Droid description</li>
+<li>updated: many translations (BIG THANKS TO ALL CROWDIN translators)</li>
+<li>fix: leave video fullscreen with back key</li>
+<li>fix: create windows inside webView</li>
+</ul>
+</section><section class="release" id="fb-v-6-9"><h2><a class="rel-ver" href="#fb-v-6-9">v 6.9</a></h2><ul>
+<li>fix: custom search engine</li>
+<li>new: Italian translation</li>
+<li>new: custom user agent</li>
+<li>new: removed storage permission for Android 10+</li>
+<li>updated: some translations</li>
+<li>updated: Android libraries</li>
+</ul>
+</section><section class="release" id="fb-v-6-8"><h2><a class="rel-ver" href="#fb-v-6-8">v 6.8</a></h2><ul>
+<li>new: search in all overview entries</li>
+<li>new: Blank target href open a new tab</li>
+<li>new: removed device model and build number from user agent string</li>
+<li>new: follow system theme</li>
+<li>new: Amoled theme</li>
+<li>new: moving to AndroidX libraries</li>
+<li>new: favorite settings</li>
+<li>updated: handling of ssl-errors</li>
+<li>updated: adblock hosts</li>
+<li>updated: themes</li>
+<li>updated: Turkish translation</li>
+<li>updated: Czech translation</li>
+<li>updated: Brazilian translation</li>
+<li>updated: Russian translation</li>
+<li>updated: settings (especially filter settings)</li>
+<li>updated: saving locations of backups and screenshots</li>
+<li>removed: tinting of toolbar</li>
+<li>removed: open links in background</li>
+</ul>
+</section><section class="release" id="fb-v-6-7"><h2><a class="rel-ver" href="#fb-v-6-7">v 6.7</a></h2><ul>
+<li>new: backup and restore settings</li>
+<li>fix: saving on startsite</li>
+<li>fix: toolbar not showing title</li>
+<li>fix: making backups</li>
+</ul>
+</section><section class="release" id="fb-v-6-6"><h2><a class="rel-ver" href="#fb-v-6-6">v 6.6</a></h2><ul>
+<li>fix: storage permission problems</li>
+<li>fix: location permission problems</li>
+<li>fix: lint issues</li>
+<li>fix: sort startsite by time</li>
+<li>fix: favorite site not loading on start</li>
+<li>fix: inputs not loading</li>
+<li>new: add to startsite from link context menu</li>
+</ul>
+</section><section class="release" id="fb-v-6-5"><h2><a class="rel-ver" href="#fb-v-6-5">v 6.5</a></h2><ul>
+<li>new: more font sizes (thanks @pbui)</li>
+<li>new: ECOSIA search engine</li>
+<li>new: open dialogs always expanded</li>
+<li>fix: exclude notifications from recent apps</li>
+<li>fix: some popup dialogs not opening</li>
+<li>fix: hide nav button</li>
+</ul>
+</section><section class="release" id="fb-v-6-4"><h2><a class="rel-ver" href="#fb-v-6-4">v 6.4</a></h2><ul>
+<li>new: FAQ site (thanks @HarryHeights)</li>
+<li>new: long click on tab preview to close</li>
+<li>new: add shortcuts to home screen (long press overview entry)</li>
+<li>new: dynamic shortcuts: two last opened websites</li>
+<li>updated: help dialog</li>
+<li>updated: Portuguese translation (thanks @smarquespt)</li>
+<li>updated: French translation (thanks @franco27)</li>
+<li>updated: adblock domain list</li>
+<li>improved: Overview</li>
+<li>improved: rendering speed</li>
+<li>fix: file upload</li>
+<li>fix: input box not showing on some devices</li>
+<li>fix: hide navigation bar in fullscreen mode</li>
+<li>fix: can't go back in history in some cases</li>
+</ul>
+</section><section class="release" id="fb-v-6-3"><h2><a class="rel-ver" href="#fb-v-6-3">v 6.3</a></h2><ul>
+<li>new: Add Cookies support for download function</li>
+<li>new: option to enable Save-Data header (thanks @SkewedZeppelin)</li>
+<li>new: set blank start site</li>
+<li>new: fast scroll on long lists</li>
+<li>new: show/hide tab preview</li>
+<li>new: animations when showing/hiding views</li>
+<li>new: Qwant search engine (thanks @Tobiplayer3)</li>
+<li>new: option to open new tab instead of exiting app</li>
+<li>new: Ukrainian translation (thanks @Roman Babiy)</li>
+<li>new: Turkish translation (thanks @ali-demirtas)</li>
+<li>fix: UI and minor issues</li>
+<li>updated: long press menu on websites</li>
+<li>updated: Help dialog</li>
+<li>updated: Polish translation (thanks @gh-pmjm)</li>
+<li>updated: Dutch translation (thanks @Vistaus)</li>
+<li>updated: Taiwan Trad. Chinese translation (thanks @elmru)</li>
+<li>updated: Portuguese translation (thanks @smarquespt)</li>
+<li>updated: Overview dialog</li>
+<li>updated: FastToggle dialog</li>
+</ul>
+</section><section class="release" id="fb-v-6-2"><h2><a class="rel-ver" href="#fb-v-6-2">v 6.2</a></h2><ul>
+<li>new: advanced gesture settings</li>
+<li>new: show overview on start</li>
+<li>fix: light settings theme</li>
+</ul>
+</section><section class="release" id="fb-v-6-1"><h2><a class="rel-ver" href="#fb-v-6-1">v 6.1</a></h2><ul>
+<li>new: overview instead of startPage</li>
+<li>new: order and filter bookmarks</li>
+<li>new: edit url of bookmark</li>
+<li>new: open favorite website on start</li>
+<li>new: Code of conduct site (thanks @HarryHeights)</li>
+<li>new: Privacy declaration (thanks @HarryHeights)</li>
+<li>updated: adBlock hosts list</li>
+<li>updated: help dialog</li>
+<li>updated: French translation (thanks @Hellohat)</li>
+<li>updated: Portuguese translation (thanks @smarquespt)</li>
+<li>removed: loginData (use bookmarks instead)</li>
+<li>fix: upload files</li>
+<li>fix: not clearing indexed databases on exit</li>
+<li>many more fixes and improvements</li>
+</ul>
+</section><section class="release" id="fb-v-6-0"><h2><a class="rel-ver" href="#fb-v-6-0">v 6.0</a></h2><ul>
+<li>updated: adBlock hosts list</li>
+<li>updated: Polish translation (thanks @gh-pmjm)</li>
+<li>fix: problems with characters like ä, ü, ö</li>
+<li>new: Taiwan Trad. Chinese translation (thanks @elmru)</li>
+<li>new: Italian translation (thanks @EnricoMonese)</li>
+<li>new: Portuguese translation (thanks @Sérgio Marques)</li>
+<li>many more fixes and improvements (thanks @BO41)</li>
+</ul>
+</section><section class="release" id="fb-v-5-9"><h2><a class="rel-ver" href="#fb-v-5-9">v 5.9</a></h2><ul>
+<li>updated: Chinese translation (thanks @YC L)</li>
+<li>updated: Russian translation (thanks @Vladimir Kosolapov)</li>
+<li>new: Polish translation (thanks @gh-pmjm)</li>
+<li>new: Dutch translation (thanks @gHeimen Stoffels)</li>
+<li>new: adaptive icon</li>
+</ul>
+</section><section class="release" id="fb-v-5-8"><h2><a class="rel-ver" href="#fb-v-5-8">v 5.8</a></h2><ul>
+<li>new: &quot;do not track&quot; header</li>
+<li>new: + button in tab preview</li>
+<li>new: save websites as PDF</li>
+<li>new: show link in context menu</li>
+<li>fix: not applying cookie whitelist when switching tabs</li>
+<li>fix: scrolling issue</li>
+<li>fix: screen rotation issues</li>
+<li>updated: UI + dialogs</li>
+<li>updated: Spanish translation (thanks to @Herman Nuñez)</li>
+<li>updated: Chinese translation (thanks to @smallg0at)</li>
+</ul>
+</section><section class="release" id="fb-v-5-7"><h2><a class="rel-ver" href="#fb-v-5-7">v 5.7</a></h2><ul>
+<li>new: delete indexed databases and local web storage</li>
+<li>new: Spanish translation (thanks to Herman Nunez)</li>
+<li>new: confirmation dialog before making backup</li>
+<li>new: delete separate lists (Startpage, history, ...)</li>
+<li>new: show unsecured connections and try reloading secure</li>
+<li>new: search engines (Startpage DE, Searx)</li>
+<li>new: notification when download or screenshot complete</li>
+<li>new: block DOM content</li>
+<li>improved Chinese translation (thanks: lishoujun)</li>
+<li>removed: Snackbar (replaced with toasts)</li>
+<li>removed: request desktop site</li>
+<li>removed: build in file manager</li>
+<li>fix: some strings (thanks: gr1sh)</li>
+<li>fix: some urls opening search results</li>
+</ul>
+</section><section class="release" id="fb-v-5-6"><h2><a class="rel-ver" href="#fb-v-5-6">v 5.6</a></h2><ul>
+<li>new: increase font size</li>
+<li>new: close all websites from notification</li>
+<li>new: desktop mode in &quot;Fast toggle dialog&quot;</li>
+<li>improved: link sharing</li>
+<li>improved: light theme</li>
+<li>improved: UI</li>
+<li>fix: some force closes</li>
+</ul>
+</section><section class="release" id="fb-v-5-5"><h2><a class="rel-ver" href="#fb-v-5-5">v 5.5</a></h2><ul>
+<li>new: option to disable confirmation dialogs on exit (thanks: element54)</li>
+<li>improved: light theme</li>
+<li>improved: startpage</li>
+<li>fix: dark background on some websites</li>
+<li>fix: ok button on &quot;Fast toggle dialog&quot;</li>
+<li>fix: toolbar not showing title</li>
+<li>fix: back handling</li>
+</ul>
+</section><section class="release" id="fb-v-5-4"><h2><a class="rel-ver" href="#fb-v-5-4">v 5.4</a></h2><ul>
+<li>new: new app name &quot;F|L|OSS Browser&quot;</li>
+<li>new: dark and light theme</li>
+<li>new: startpage with all contents</li>
+<li>new: full support for cookie whitelist</li>
+<li>new: more options for fullscreen browsing</li>
+<li>new: more options visibility Navigation Button</li>
+<li>new: night mode only while browsing</li>
+<li>updated: help dialog</li>
+<li>removed: different light themes</li>
+<li>fix: double entries in history</li>
+<li>fix: toolbar does not work on start</li>
+<li>fix: keyboard issues in some cases (thanks: element54)</li>
+</ul>
+</section><section class="release" id="fb-v-5-3-1"><h2><a class="rel-ver" href="#fb-v-5-3-1">v 5.3.1</a></h2><ul>
+<li>new: initial support for cookie whitelist (fast toggle)</li>
+</ul>
+</section><section class="release" id="fb-v-5-3"><h2><a class="rel-ver" href="#fb-v-5-3">v 5.3</a></h2><ul>
+<li>improved: tab opening/removing</li>
+<li>improved: back handling</li>
+<li>improved: enter/exit fullscreen</li>
+<li>other improvements and bug fixes</li>
+</ul>
+</section><section class="release" id="fb-v-5-2"><h2><a class="rel-ver" href="#fb-v-5-2">v 5.2</a></h2><ul>
+<li>new: decide which tab to open on start</li>
+<li>new: backup complete data and settings</li>
+<li>new: double tap &quot;Navigation Button&quot; to hide</li>
+<li>new: option to disable history (settings and fast toggle)</li>
+<li>new: option to hide/show &quot;Navigation Button&quot;</li>
+<li>new: change position of &quot;Navigation Button&quot;</li>
+<li>new: moved menus in bottom dialog</li>
+<li>new: Baidu as default search engine for Chinese users</li>
+<li>new: Indonesian translation (thanks: Secangkir Kopi)</li>
+<li>changed: backups on root of sd-card</li>
+<li>updated: Help dialog (ENG, DE)</li>
+<li>improved: applying settings from fast toggle dialog</li>
+<li>improved: Chinese translation (thanks: lishoujun)</li>
+</ul>
+</section><section class="release" id="fb-v-5-1"><h2><a class="rel-ver" href="#fb-v-5-1">v 5.1</a></h2><ul>
+<li>new: Chinese translation (thanks: lishoujun)</li>
+<li>new: close current tab in menu</li>
+<li>new: share text to browser</li>
+<li>improved: hide/show toolbar</li>
+<li>fix: night mode (now in UI settings)</li>
+<li>fix: force close when clicking direct download link</li>
+<li>fix: screenshot, when started via holder service</li>
+<li>fix: some strings</li>
+<li>fix: possible force close on Android &gt; Nougat</li>
+</ul>
+</section><section class="release" id="fb-v-5-0"><h2><a class="rel-ver" href="#fb-v-5-0">v 5.0</a></h2><p>With this update &quot;Ninja Browser&quot; is used as base for &quot;Browser&quot;. The
+concept remains the old: simple but powerful with a nice looking user interface.
+Main advantage of this step are a better implementation of tabs. Now you can open
+as many tabs as you wish. Also you have a new startpage. Please read the new &quot;Help dialog&quot;
+for more information.</p>
+<ul>
+<li>full oreo support</li>
+</ul>
+</section><section class="release" id="fb-v-4-5"><h2><a class="rel-ver" href="#fb-v-4-5">v 4.5</a></h2><ul>
+<li>new: Chinese translation (Thanks: Jumping Yang)</li>
+<li>new: keyboard go button actions</li>
+<li>new: settings icon in toolbar (click for toggle/long click for main settings)</li>
+<li>new: possibility to temporally hide navigation arrows</li>
+<li>new: auto fill (authentication dialog)</li>
+<li>improved: tab behavior</li>
+<li>fix: load default settings on start</li>
+<li>fix: force close when sharing screenshot</li>
+<li>fix: not showing website title</li>
+</ul>
+</section><section class="release" id="fb-v-4-4"><h2><a class="rel-ver" href="#fb-v-4-4">v 4.4</a></h2><ul>
+<li>fix: save screenshot</li>
+<li>fix: saving entries containing an apostrophe</li>
+<li>fix: option to restart app to apply swipe gesture</li>
+<li>new: http basic authentication</li>
+<li>improved: behavior of tab preview/behavior</li>
+</ul>
+</section><section class="release" id="fb-v-4-3"><h2><a class="rel-ver" href="#fb-v-4-3">v 4.3</a></h2><ul>
+<li>fix: title of setting subpages</li>
+<li>fix: crash when selected list at startup</li>
+<li>new: swipe to switch tabs optional (settings/popup settings)</li>
+</ul>
+</section><section class="release" id="fb-v-4-2"><h2><a class="rel-ver" href="#fb-v-4-2">v 4.2</a></h2><ul>
+<li>removed: backup/restore of passStorage</li>
+<li>fix: hiding keyboard after searching in lists</li>
+<li>fix: history - scroll to latest entry</li>
+<li>improved: code and UI</li>
+<li>new: swipe to switch tabs</li>
+<li>new: settings on different subpages</li>
+<li>new: auto orientation (sensor/device)</li>
+<li>new: offer restart to apply some settings</li>
+<li>new: theme support</li>
+</ul>
+</section><section class="release" id="fb-v-4-1"><h2><a class="rel-ver" href="#fb-v-4-1">v 4.1</a></h2><ul>
+<li>removed: offline support (use screenshot for saving)</li>
+<li>removed: unnecessary permissions</li>
+<li>fix: reset menu after editing file name</li>
+<li>fix: overwriting of files while renaming</li>
+<li>fix: several code improvements</li>
+<li>fix: delete passStorage</li>
+<li>improved: layout close button</li>
+<li>improved: bundled Notifications</li>
+<li>new: Google encrypted search (override AMP-links)</li>
+<li>new: advanced backup/restore data</li>
+</ul>
+</section><section class="release" id="fb-v-4-0"><h2><a class="rel-ver" href="#fb-v-4-0">v 4.0</a></h2><ul>
+<li>removed: donation link on Github</li>
+<li>removed: video thumbnail</li>
+<li>improved: file manager (icons, image preview)</li>
+<li>new: scroll to end of website arrow</li>
+</ul>
+</section><section class="release" id="fb-v-3-9"><h2><a class="rel-ver" href="#fb-v-3-9">v 3.9</a></h2><ul>
+<li>removed: notification actions (to buggy)</li>
+<li>removed: direct opening a donation website&lt;br&gt;</li>
+<li>fix: notification behavior (open multiple links)</li>
+<li>fix: force close on toolbar click</li>
+<li>fix: website partially not visible</li>
+<li>improved: refresh website (long click &quot;history icon&quot;)</li>
+<li>improved: help dialog (menu -&gt; more -&gt; Help)</li>
+<li>new: switched to Picasso library to load images</li>
+<li>new: homepage setup (bookmark list)</li>
+<li>new: open links directly (optional)</li>
+<li>new: moved from activities to fragments</li>
+<li>new: bookmarks, readLater, history as startpage (settings)</li>
+</ul>
+</section><section class="release" id="fb-v-3-8"><h2><a class="rel-ver" href="#fb-v-3-8">v 3.8</a></h2><ul>
+<li>removed: swipe to refresh</li>
+<li>fix: some random force closes</li>
+<li>fix: notifications on Lollipop/Marshmallow devices</li>
+<li>fix: do not scroll to list end after editing entry</li>
+<li>improved: taking screenshots</li>
+<li>improved: long click menu in lists</li>
+<li>new: menu -&gt; reload website</li>
+<li>new: Russian translation</li>
+<li>new: show current url when starting editing mode in toolbar</li>
+<li>new: close tabs from tab preview</li>
+<li>new: set empty page as favorite</li>
+</ul>
+</section><section class="release" id="fb-v-3-7"><h2><a class="rel-ver" href="#fb-v-3-7">v 3.7</a></h2><ul>
+<li>new: changelog after update</li>
+<li>new: long click on toolbar opens tab overview</li>
+<li>new: click on toolbar opens search/enter URL</li>
+<li>fix: toolbar swipe (lists)</li>
+<li>fix: hide navigation buttons</li>
+<li>fix: contributor title</li>
+<li>fix: always loading homepage when closing settings</li>
+<li>fix: cancel search on site</li>
+<li>improved: cookie settings</li>
+<li>improved: open links in new tab</li>
+</ul>
+</section><section class="release" id="fb-v-3-6"><h2><a class="rel-ver" href="#fb-v-3-6">v 3.6</a></h2><ul>
+<li>new: always hide statusbar on fullscreen videos</li>
+<li>new: five tabs (@CGSLURP LLC)</li>
+<li>new: toolbar and button animations</li>
+<li>new: toolbar gestures in lists</li>
+<li>new: save link destination</li>
+<li>fix: download pictures</li>
+<li>fix: startpage on javascript whitelist</li>
+<li>improved: portrait layout</li>
+<li>improved: Adblock integration</li>
+<li>improved: Desktop site request</li>
+<li>improved: sorting of lists</li>
+<li>improved: code simplified</li>
+<li>improved: UI (colors, strings, layouts)</li>
+<li>updated: help dialog, introscreen</li>
+</ul>
+</section><section class="release" id="fb-v-3-5"><h2><a class="rel-ver" href="#fb-v-3-5">v 3.5</a></h2><ul>
+<li>fix: keyboard issue</li>
+<li>new: request desktop site (@CGSLURP LLC)</li>
+<li>new: adblocker (@CGSLURP LLC)</li>
+</ul>
+</section><section class="release" id="fb-v-3-4"><h2><a class="rel-ver" href="#fb-v-3-4">v 3.4</a></h2><ul>
+<li>improved: sorting of list entries</li>
+<li>fix: keyboard not open (landscape)</li>
+</ul>
+</section><section class="release" id="fb-v-3-3"><h2><a class="rel-ver" href="#fb-v-3-3">v 3.3</a></h2><ul>
+<li>removed: swipe to navigate</li>
+<li>improved:opening urls</li>
+<li>fixed: pin screen not showing</li>
+</ul>
+</section><section class="release" id="fb-v3-1"><h2><a class="rel-ver" href="#fb-v3-1">v3.1</a><span class="rel-title">v 3.2</span></h2><ul>
+<li>fix: possible crash an Android &lt; Lollipop when opening settings</li>
+<li>fix: search from toolbar</li>
+<li>fix: crash when website title contains apostrophe</li>
+</ul>
+</section><section class="release" id="fb-v-3-0"><h2><a class="rel-ver" href="#fb-v-3-0">v 3.0</a></h2><ul>
+<li>fix: F-Droid build error</li>
+<li>lint: disable missing translation</li>
+<li>updated: support libraries</li>
+</ul>
+</section><section class="release" id="fb-v2-8"><h2><a class="rel-ver" href="#fb-v2-8">v2.8</a><span class="rel-title">2.9</span></h2><ul>
+<li>new: video thumbnails</li>
+<li>fix: open links from readLater list (opened from notifications)</li>
+<li>fix: error message on start</li>
+</ul>
+</section><section class="release" id="fb-v-2-7"><h2><a class="rel-ver" href="#fb-v-2-7">v 2.7</a></h2><ul>
+<li>fix: directory up icon</li>
+<li>fix: saving all entries lowercase</li>
+</ul>
+</section><section class="release" id="fb-v2-4"><h2><a class="rel-ver" href="#fb-v2-4">v2.4</a><span class="rel-title">2.6</span></h2><ul>
+<li>new: new file manager</li>
+<li>new: sub menus</li>
+<li>removed: toolbar long click</li>
+<li>improved: toolbar in lists</li>
+<li>improved: removed unnecessary code</li>
+<li>fix: sort readLater by date</li>
+<li>fix: sort by title (needs uppercase on first letter in the entries)</li>
+<li>fix: double entries in history</li>
+<li>fix: app icon color</li>
+<li>fix: open shortcuts</li>
+<li>fix: open links from notification</li>
+<li>fix: delete data on exit</li>
+</ul>
+</section><section class="release" id="fb-v-2-3"><h2><a class="rel-ver" href="#fb-v-2-3">v 2.3</a></h2><ul>
+<li>new: search in lists</li>
+<li>new: no duplicate bookmarks</li>
+<li>improved: UI (lists, colors, buttons)</li>
+<li>improved: database model</li>
+</ul>
+</section><section class="release" id="fb-v-2-2"><h2><a class="rel-ver" href="#fb-v-2-2">v 2.2</a></h2><ul>
+<li>new: about screen</li>
+<li>new: intro screen</li>
+<li>fixed: save website (passStorage): set title</li>
+<li>fixed: notification not dismissed</li>
+</ul>
+</section><section class="release" id="fb-v-2-1"><h2><a class="rel-ver" href="#fb-v-2-1">v 2.1</a></h2><ul>
+<li>new: bundled notifications</li>
+</ul>
+</section><section class="release" id="fb-v-2-0"><h2><a class="rel-ver" href="#fb-v-2-0">v 2.0</a></h2><ul>
+<li>improved: encryption of passStore databases</li>
+<li>fixed: F-Droid build error</li>
+</ul>
+</section><section class="release" id="fb-v-1-9"><h2><a class="rel-ver" href="#fb-v-1-9">v 1.9</a></h2><ul>
+<li>new: encryption of passStore databases</li>
+</ul>
+</section><section class="release" id="fb-v-1-8-1"><h2><a class="rel-ver" href="#fb-v-1-8-1">v 1.8.1</a></h2><ul>
+<li>fixed: f-droid build failure</li>
+</ul>
+</section><section class="release" id="fb-v-1-8"><h2><a class="rel-ver" href="#fb-v-1-8">v 1.8</a></h2><ul>
+<li>improved: pin screen layout</li>
+<li>improved: sort dialog behavior</li>
+<li>improved: wsitched to xml icons</li>
+<li>removed: bookmark screen</li>
+<li>new: second tab</li>
+<li>new: set bookmark as start site (long click)</li>
+<li>new: cancel button on some dialogs</li>
+<li>new: cancel dialog when clearing whitelist</li>
+<li>fixed: force close (links without &quot;/&quot;)</li>
+</ul>
+</section><section class="release" id="fb-v-1-7"><h2><a class="rel-ver" href="#fb-v-1-7">v 1.7</a></h2><ul>
+<li>fixed: F-Droid build error</li>
+</ul>
+</section><section class="release" id="fb-v-1-6"><h2><a class="rel-ver" href="#fb-v-1-6">v 1.6</a></h2><ul>
+<li>fixed: some strings</li>
+<li>improved: backup and restore databases</li>
+</ul>
+</section><section class="release" id="fb-v-1-0-first-public-release"><h2><a class="rel-ver" href="#fb-v-1-0-first-public-release">v 1.0+ (first public release)</a></h2><ul>
+<li>improved: readLater notification (v1.1)</li>
+<li>improved: search results in German</li>
+<li>improved: settings screen</li>
+<li>improved: license dialog</li>
+<li>improved: minor ui/code tweaks</li>
+<li>new: websearch (from shared text)</li>
+<li>new: donate (settings)</li>
+<li>new: changelog (settings) (v1.4)</li>
+<li>new: sort lists by title and date (v1.5)</li>
+<li>fixed: navigation settings (v1.2)</li>
+<li>fixed: screenshot (v1.3)</li>
+</ul>
+</section></div></details></section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="brand"><span>Petal Browser</span></span>
+          <p>A browser that respects your attention, privacy, and device. Powered by Mozilla GeckoView 157 and Material 3 Expressive.</p>
+          <div class="badges">
+            <img src="/assets/badges/android.svg" height="28" alt="Android 8.0+">
+            <img src="/assets/badges/license.svg" height="28" alt="GPLv3 License">
+          </div>
+        </div>
+        <div class="footer-links-wrap">
+          <div>
+            <h4>Product</h4>
+            <ul class="footer-links">
+              <li><a href="/">Overview</a></li>
+              <li><a href="/#differentiators">Why Petal</a></li>
+              <li><a href="/download">Download &amp; install</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer">Releases</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Help</h4>
+            <ul class="footer-links">
+              <li><a href="/faq">FAQ</a></li>
+              <li><a href="/support">Support &amp; contact</a></li>
+              <li><a href="/changelog">Changelog</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/issues" target="_blank" rel="noopener noreferrer">Issue tracker</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Legal</h4>
+            <ul class="footer-links">
+              <li><a href="/privacy">Privacy Policy</a></li>
+              <li><a href="/terms">Terms of Use</a></li>
+              <li><a href="/licenses">Open-source licenses</a></li>
+              <li><a href="/gpl">GNU GPL v3.0 (full text)</a></li>
+              <li><a href="/code-of-conduct">Code of conduct</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer">Source repository</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Architecture</h4>
+            <ul class="footer-links">
+              <li><a href="/prd">Product requirements</a></li>
+              <li><a href="/design">Design system</a></li>
+              <li><a href="/architecture">GeckoView pipeline</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2024–2026 Vanshu Agarwal and contributors. Distributed under the GNU General Public License v3.0.</span>
+        <span>GeckoView 157.0 · Jetpack Compose M3</span>
+      </div>
+    </div>
+  </footer>
+
+    <script src="/changelog.js?v=1" defer></script>
+  <script src="/page.js?v=157.0.3" defer></script>
+</body>
+</html>
