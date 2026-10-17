@@ -379,7 +379,7 @@ private object Api33ScrollBlur {
 
         return modifier.graphicsLayer {
             val vel = animatedVelocity.value
-            if (abs(vel) > 0.05f && shader != null) {
+            if (abs(vel) > 0.05f && shader != null && size.width > 0f && size.height > 0f) {
                 try {
                     shader.setFloatUniform("resolution", size.width, size.height)
                     shader.setFloatUniform("scrollVelocity", vel)
