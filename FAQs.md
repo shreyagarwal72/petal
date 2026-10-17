@@ -83,7 +83,7 @@ Yes. Information sent between your phone and websites is encrypted via HTTPS wit
 
 Petal Browser enforces strict Mozilla Enhanced Tracking Protection (ETP), Total Cookie Protection, and native Cookie Banner Blocking to isolate cookies and block tracking beacons across all sites.
 
-You can read the Petal Browser [Privacy Policy](file:///data/data/com.termux/files/home/petal/PRIVACY_POLICY.md).
+You can read the Petal Browser [Privacy Policy](https://my-petal-browser.vercel.app/privacy).
 
 ---
 

@@ -683,6 +683,91 @@ fun ProjectSourceGroup(
 }
 
 /**
+ * Help & Legal containment group: website, FAQ, support, privacy policy, terms and licenses.
+ * All URLs come from [com.petal.browser.util.PetalWebLinks].
+ */
+private data class HelpLegalItem(
+    val title: String,
+    val subtitle: String,
+    val url: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val variant: com.petal.browser.ui.containment.PetalBadgeVariant
+)
+
+@Composable
+fun HelpLegalGroup(
+    onOpenUrl: (String) -> Unit
+) {
+    val items = remember {
+        listOf(
+            HelpLegalItem(
+                "Website", "Features, downloads and release news",
+                com.petal.browser.util.PetalWebLinks.WEBSITE,
+                Icons.Rounded.Language, com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+            ),
+            HelpLegalItem(
+                "FAQ", "Answers to common questions",
+                com.petal.browser.util.PetalWebLinks.FAQ,
+                Icons.Rounded.Help, com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY
+            ),
+            HelpLegalItem(
+                "Support & Contact", "Report a bug, request a feature, get help",
+                com.petal.browser.util.PetalWebLinks.SUPPORT,
+                Icons.Rounded.SupportAgent, com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY
+            ),
+            HelpLegalItem(
+                "Privacy Policy", "How Petal handles your data",
+                com.petal.browser.util.PetalWebLinks.PRIVACY_POLICY,
+                Icons.Rounded.PrivacyTip, com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+            ),
+            HelpLegalItem(
+                "Terms of Use", "The rules for using Petal",
+                com.petal.browser.util.PetalWebLinks.TERMS,
+                Icons.Rounded.Description, com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+            ),
+            HelpLegalItem(
+                "Open-Source Licenses", "GPL-3.0, GeckoView and third-party credits",
+                com.petal.browser.util.PetalWebLinks.LICENSES,
+                Icons.Rounded.Gavel, com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+            )
+        )
+    }
+    PetalGroup(rowCount = items.size, modifier = Modifier.fillMaxWidth()) { index, position ->
+        val item = items[index]
+        PetalGroupListRow(
+            position = position,
+            onClick = { onOpenUrl(item.url) },
+            leading = {
+                PetalGroupIconBadge(
+                    icon = item.icon,
+                    variant = item.variant
+                )
+            },
+            content = {
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = item.subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            trailing = {
+                Icon(
+                    Icons.Rounded.OpenInNew,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        )
+    }
+}
+
+/**
  * Clean Community & Ecosystem containment group.
  */
 @Composable

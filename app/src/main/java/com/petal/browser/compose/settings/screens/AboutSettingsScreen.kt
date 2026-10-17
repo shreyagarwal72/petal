@@ -110,6 +110,17 @@ fun AboutSettingsScreen(
                     )
                 }
 
+                // Section 3b: Help & Legal (website, FAQ, support, privacy policy, terms, licenses)
+                PetalSettingsSection(
+                    title = "Help & Legal",
+                    icon = Icons.Rounded.Policy,
+                    cardId = "about_help_legal"
+                ) {
+                    HelpLegalGroup(
+                        onOpenUrl = { openUrl(it) }
+                    )
+                }
+
                 // Section 4: Ecosystem & Community
                 PetalSettingsSection(
                     title = "Ecosystem & Community",

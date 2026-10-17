@@ -570,3 +570,17 @@ code.inline { padding: 2px 8px; border-radius: 8px; background: var(--surface-hi
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
   .js [data-reveal], .js .enter, .js .stage-blob { opacity: 1; transform: none; }
 }
+
+
+/* ---- Site pages: footer with four link columns, compact header nav, CTA links ---- */
+@media (min-width: 900px) {
+  .footer-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 2.4fr); }
+  .footer-links-wrap { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 960px) and (max-width: 1239px) {
+  .nav-links a { padding: 10px 11px; font-size: .875rem; }
+  .brand-tag, .nav-github { display: none; }
+}
+.cta-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 18px; font-size: .9375rem; font-weight: 600; }
+.cta-links a { color: inherit; text-decoration: underline; text-underline-offset: 3px; opacity: .9; }
+.cta-links span { opacity: .6; }

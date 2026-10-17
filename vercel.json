@@ -6,8 +6,12 @@
       "destination": "/site/index.html"
     },
     {
-      "source": "/(styles\\.css|app\\.js|robots\\.txt|sitemap\\.xml|site\\.webmanifest|favicon\\.ico|google[a-zA-Z0-9]+\\.html)",
+      "source": "/(styles\\.css|pages\\.css|app\\.js|page\\.js|robots\\.txt|sitemap\\.xml|site\\.webmanifest|favicon\\.ico|google[a-zA-Z0-9]+\\.html)",
       "destination": "/site/$1"
+    },
+    {
+      "source": "/(privacy|terms|faq|support|download|licenses)",
+      "destination": "/site/$1.html"
     },
     {
       "source": "/assets/(.*)",

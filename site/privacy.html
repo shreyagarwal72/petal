@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-mode="light" data-palette="petal" data-amoled="false">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Privacy Policy — Petal Browser</title>
+  <meta name="description" content="Petal Browser privacy policy: no first-party data collection, everything stored on your device, plus the permissions and optional third-party services explained.">
+  <link rel="canonical" href="https://my-petal-browser.vercel.app/privacy">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#fff7f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1013" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Petal Browser">
+  <meta property="og:url" content="https://my-petal-browser.vercel.app/privacy">
+  <meta property="og:title" content="Privacy Policy — Petal Browser">
+  <meta property="og:description" content="Petal Browser privacy policy: no first-party data collection, everything stored on your device, plus the permissions and optional third-party services explained.">
+  <meta property="og:image" content="https://my-petal-browser.vercel.app/assets/banner.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Privacy Policy — Petal Browser">
+  <meta name="twitter:description" content="Petal Browser privacy policy: no first-party data collection, everything stored on your device, plus the permissions and optional third-party services explained.">
+  <meta name="twitter:image" content="https://my-petal-browser.vercel.app/assets/banner.jpg">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicons/favicon-48.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Petal Browser", "item": "https://my-petal-browser.vercel.app/"}, {"@type": "ListItem", "position": 2, "name": "Privacy Policy", "item": "https://my-petal-browser.vercel.app/privacy"}]}
+  </script>
+  <script>
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      try {
+        var s = JSON.parse(localStorage.getItem('petal-theme') || 'null') || {};
+        var dark = s.mode ? s.mode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        d.setAttribute('data-theme-mode', dark ? 'dark' : 'light');
+        if (s.palette) d.setAttribute('data-palette', s.palette);
+        if (s.amoled && dark) d.setAttribute('data-amoled', 'true');
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=157.0.3">
+  <link rel="stylesheet" href="/pages.css?v=157.0.3">
+</head>
+<body>
+
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></symbol>
+      <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-tabs" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.5" height="15" rx="1.6"/><rect x="13.5" y="4.5" width="4.5" height="15" rx="1.6"/></symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.9-6.4M3.5 4v4.6H8"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V7a2 2 0 0 1 2-2h8"/></symbol>
+      <symbol id="i-engine" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.6 0 2.2-1 2.2-2s-1-1.6-.5-2.6S15.2 15 17 15h1a3 3 0 0 0 3-3 9 9 0 0 0-9-9z"/><circle cx="7.5" cy="11" r="1" fill="currentColor"/><circle cx="10.5" cy="7" r="1" fill="currentColor"/><circle cx="15.5" cy="7.5" r="1" fill="currentColor"/></symbol>
+      <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 7h3.5c5 0 6 10 11 10H21M3 17h3.5c1.6 0 2.8-.7 3.8-1.8M14 8.8C15 7.7 16.2 7 17.5 7H21M18.5 4.5L21 7l-2.5 2.5M18.5 14.5L21 17l-2.5 2.5"/></symbol>
+    </defs>
+  </svg>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="appbar scrolled" id="appbar">
+    <div class="appbar-inner">
+      <a href="/" class="brand" aria-label="Petal home">
+        <svg class="brand-mark" viewBox="0 0 512 512" fill="none" aria-hidden="true">
+          <defs>
+            <clip-path id="headerSwirlClip">
+              <path d="M220.6,291.4 C234.0,256.2 230.3,200.8 262.6,171.7 C286.7,150.6 332.5,160.8 362.1,149.9 C351.2,179.5 361.4,225.3 340.3,249.4 C311.2,281.7 255.8,278.0 220.6,291.4 Z M291.4,220.6 C278.0,255.8 281.7,311.2 249.4,340.3 C225.3,361.4 179.5,351.2 149.9,362.1 C160.8,332.5 150.6,286.7 171.7,262.6 C200.8,230.3 256.2,234.0 291.4,220.6 Z" />
+            </clip-path>
+          </defs>
+          <path fill="#026065" d="M220.6,291.4 C234.0,256.2 230.3,200.8 262.6,171.7 C286.7,150.6 332.5,160.8 362.1,149.9 C351.2,179.5 361.4,225.3 340.3,249.4 C311.2,281.7 255.8,278.0 220.6,291.4 Z M291.4,220.6 C278.0,255.8 281.7,311.2 249.4,340.3 C225.3,361.4 179.5,351.2 149.9,362.1 C160.8,332.5 150.6,286.7 171.7,262.6 C200.8,230.3 256.2,234.0 291.4,220.6 Z" />
+          <path fill="#A04106" d="M291.4,291.4 C256.2,278.0 200.8,281.7 171.7,249.4 C150.6,225.3 160.8,179.5 149.9,149.9 C179.5,160.8 225.3,150.6 249.4,171.7 C281.7,200.8 278.0,256.2 291.4,291.4 Z M220.6,220.6 C255.8,234.0 311.2,230.3 340.3,262.6 C361.4,286.7 351.2,332.5 362.1,362.1 C332.5,351.2 286.7,361.4 262.6,340.3 C230.3,311.2 234.0,255.8 220.6,220.6 Z" />
+          <g clip-path="url(#headerSwirlClip)">
+            <path fill="#E45B24" d="M291.4,291.4 C256.2,278.0 200.8,281.7 171.7,249.4 C150.6,225.3 160.8,179.5 149.9,149.9 C179.5,160.8 225.3,150.6 249.4,171.7 C281.7,200.8 278.0,256.2 291.4,291.4 Z M220.6,220.6 C255.8,234.0 311.2,230.3 340.3,262.6 C361.4,286.7 351.2,332.5 362.1,362.1 C332.5,351.2 286.7,361.4 262.6,340.3 C230.3,311.2 234.0,255.8 220.6,220.6 Z" />
+          </g>
+        </svg>
+        <span>Petal</span>
+        <span class="brand-tag">GeckoView 157</span>
+      </a>
+      <nav aria-label="Main">
+        <ul class="nav-links" id="nav-links"><li><a href="/#differentiators">Why Petal</a></li><li><a href="/download">Download</a></li><li><a href="/faq">FAQ</a></li><li><a href="/support">Support</a></li><li><a href="/privacy" class="active" aria-current="page">Privacy</a></li></ul>
+      </nav>
+      <div class="nav-actions">
+        <button id="theme-toggle-btn" class="icon-btn" type="button" aria-label="Switch to dark theme" data-ripple>
+          <svg class="i i-moon"><use href="#i-moon"/></svg>
+          <svg class="i i-sun" hidden><use href="#i-sun"/></svg>
+        </button>
+        <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="icon-btn nav-github" aria-label="GitHub repository" data-ripple>
+          <svg class="i"><use href="#i-github"/></svg>
+        </a>
+        <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled nav-download" aria-label="Download APK" data-ripple>
+          <svg class="i i--sm"><use href="#i-download"/></svg>
+          <span class="btn-label">Download</span>
+        </a>
+        <button id="menu-btn" class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu" data-ripple>
+          <svg class="i i-menu"><use href="#i-menu"/></svg>
+          <svg class="i i-close"><use href="#i-close"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="menu" id="menu" aria-hidden="true">
+    <div class="menu-scrim" id="menu-scrim"></div>
+    <div class="menu-panel" role="dialog" aria-modal="true" aria-label="Site menu">
+      <div class="menu-head">
+        <span class="brand"><span>Petal</span></span>
+        <button class="icon-btn" id="menu-close" type="button" aria-label="Close menu" data-ripple><svg class="i"><use href="#i-close"/></svg></button>
+      </div>
+      <ul class="menu-list" id="menu-list"><li style="--i:0"><a href="/#differentiators">Why Petal <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:1"><a href="/download">Download <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:2"><a href="/faq">FAQ <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:3"><a href="/support">Support <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:4"><a href="/privacy" class="active">Privacy <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:5"><a href="/terms">Terms of Use <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:6"><a href="/licenses">Licenses <svg class="i"><use href="#i-arrow"/></svg></a></li></ul>
+      <div class="menu-foot">
+        <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled btn--lg btn--block" data-ripple>
+          <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
+        </a>
+        <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="btn btn--tonal btn--block" data-ripple>
+          <svg class="i i--sm"><use href="#i-github"/></svg><span>View on GitHub</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <main id="main-content" class="page">
+    <div class="container">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Privacy Policy</span></nav>
+      <header class="page-hero">
+        <p class="eyebrow">Legal</p>
+        <h1 class="page-title">Privacy Policy</h1>
+        <p class="lead">How Petal handles your data: on your device, under your control.</p>
+        <p class="page-meta">Last updated October 17, 2026</p>
+      </header>
+      <div class="page-grid">
+        <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#summary">Summary</a></li><li><a href="#collect">What we collect</a></li><li><a href="#local">Data stored on your device</a></li><li><a href="#permissions">Permissions</a></li><li><a href="#third-party">Optional features that contact other services</a></li><li><a href="#ads">Advertising</a></li><li><a href="#accounts">Sync and sign-in</a></li><li><a href="#engine">Web engine and cookies</a></li><li><a href="#security">Security</a></li><li><a href="#delete-data">Your choices and deleting data</a></li><li><a href="#children">Children</a></li><li><a href="#changes">Changes</a></li><li><a href="#contact">Contact</a></li></ol></aside>
+        <div class="prose">
+
+<section id="summary"><h2>Summary</h2>
+<p>Petal Browser does not run servers that collect your browsing data. We do not have user accounts, we do not sell data, and Petal does not send your history, bookmarks, passwords or searches to us. Your browsing data stays on your device unless <em>you</em> turn on a feature that talks to a third-party service, and this page lists those features.</p>
+<div class="callout tip"><strong>Short version:</strong> no first-party tracking, no analytics of your browsing, everything stored locally. Optional features and some distribution builds involve third parties, described below.</div>
+</section>
+
+<section id="collect"><h2>What we collect</h2>
+<p>The developers of Petal do not collect, store, transmit, sell or rent your personal data to any server we operate. In particular:</p>
+<ul>
+<li><strong>Browsing history, tabs and bookmarks</strong> are stored only on your device.</li>
+<li><strong>Search queries</strong> go directly from your device to the search engine you choose (for example Google, DuckDuckGo, Brave Search, Bing, Startpage or Ecosia). We do not see or record them.</li>
+<li><strong>Downloads</strong> are saved to your device&rsquo;s storage.</li>
+<li><strong>Saved passwords and credentials</strong> are handled by Android&rsquo;s credential facilities or stored in the app&rsquo;s private storage on your device.</li>
+</ul></section>
+
+<section id="local"><h2>Data stored on your device</h2>
+<p>Settings, history, bookmarks, tabs, cookies, site permissions, downloads and saved logins live in Petal&rsquo;s private app storage (<code>/data/data/com.petal.browser/</code>), which other apps cannot read on a non-rooted device. Backups you create from Settings are files you control and store where you choose.</p></section>
+
+<section id="permissions"><h2>Permissions</h2>
+<p>Petal asks Android for the permissions below. Sensitive ones (camera, microphone, location) are used only for a feature you start, or for a website you explicitly allow.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Permission</th><th>Why Petal needs it</th></tr></thead>
+<tbody>
+<tr><td>Internet, network and Wi-Fi state</td><td>Load websites and adapt to connectivity changes.</td></tr>
+<tr><td>Camera</td><td>QR/barcode scanning and camera access for web pages you allow.</td></tr>
+<tr><td>Microphone</td><td>Voice search and microphone access for web pages you allow. Audio is not recorded or stored by Petal.</td></tr>
+<tr><td>Location (coarse and fine)</td><td>Only when a website asks for your location and you approve.</td></tr>
+<tr><td>Storage and media access</td><td>Save downloads and let you pick files, photos or videos to upload.</td></tr>
+<tr><td>Notifications, foreground services</td><td>Download progress and background media playback controls.</td></tr>
+<tr><td>Biometrics</td><td>Unlock Petal with App Lock. Authentication is performed by Android; Petal never receives your biometric data.</td></tr>
+<tr><td>Bluetooth and NFC</td><td>Audio devices and web features that request them.</td></tr>
+<tr><td>Run at startup, wake lock, vibrate</td><td>Restore background tasks, keep downloads and playback running, and haptic feedback.</td></tr>
+<tr><td>Install packages</td><td>Used by the in-app updater in builds distributed outside an app store, to install an update you approve.</td></tr>
+</tbody></table></div></section>
+
+<section id="third-party"><h2>Optional features that contact other services</h2>
+<p>Some features need to contact a third-party service to work. Petal contacts these only when the feature is enabled or when you use it, and the service receives the data shown. Each service&rsquo;s own privacy policy applies to what it does with that data.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Feature</th><th>Service</th><th>What is sent</th></tr></thead>
+<tbody>
+<tr><td>Search and address-bar suggestions</td><td>Your chosen search engine; Google Suggest for suggestions</td><td>The text you type</td></tr>
+<tr><td>Extensions</td><td>Mozilla Add-ons (addons.mozilla.org)</td><td>Add-on browsing and download requests</td></tr>
+<tr><td>Ad and tracker filter lists</td><td>EasyList, uBlock Origin uAssets, HaGeZi (hosted on GitHub and easylist.to)</td><td>A download request; no personal data, but your IP address is visible to the host</td></tr>
+<tr><td>App update check (non-store builds)</td><td>GitHub</td><td>A request for the latest release information</td></tr>
+<tr><td>Firefox Account sync</td><td>Mozilla</td><td>Synced data, protected by Mozilla&rsquo;s sync encryption</td></tr>
+<tr><td>DNS-over-HTTPS</td><td>The provider you pick (for example Cloudflare, Google, Quad9, NextDNS or OpenDNS)</td><td>The domain names you visit</td></tr>
+<tr><td>Translate and visual search</td><td>Google Translate, Google Lens</td><td>The page text or image you choose to translate or search</td></tr>
+<tr><td>Link tools</td><td>URL unshortener, urlscan.io security check, QR code generator, HTML-to-Markdown converter, favicon fetcher</td><td>The URL, domain or content you run the tool on</td></tr>
+<tr><td>Home screen extras</td><td>wttr.in (weather), Hacker News (feed), Unsplash (wallpapers)</td><td>A request from your device, which can include an approximate location for weather</td></tr>
+<tr><td>AI research</td><td>The AI provider you configure, using your own API key</td><td>The prompts and page content you submit</td></tr>
+</tbody></table></div>
+<p>Websites you visit can of course collect data under their own policies. Petal&rsquo;s tracking protection, content blocker and cookie controls reduce this but cannot control what a site does with information you give it.</p></section>
+
+<section id="ads"><h2>Advertising</h2>
+<p>Some distribution builds of Petal, such as the Google Play build, can show optional, non-intrusive supportive ads using the Google Mobile Ads SDK (AdMob). Where ads are present, Google may process pseudonymous identifiers (such as the advertising ID), device information, IP address and ad-interaction data to serve ads and prevent fraud, under <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">Google&rsquo;s advertising policies</a> and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">privacy policy</a>.</p>
+<p>You can reset your advertising ID or opt out of personalized ads in Android&rsquo;s settings (<strong>Settings &gt; Google &gt; Ads</strong>). Petal does not share your browsing history, bookmarks or search queries with advertisers.</p></section>
+
+<section id="accounts"><h2>Sync and sign-in</h2>
+<p>Sign-in and sync are optional. If you connect a Firefox Account or a Google account, authentication and any synced data are handled by Mozilla or Google under their own terms and privacy policies. Petal does not operate a sync server and cannot read your synced data.</p></section>
+
+<section id="engine"><h2>Web engine and cookies</h2>
+<p>Petal is built on Mozilla&rsquo;s GeckoView engine, not the Android system WebView. Enhanced Tracking Protection and Total Cookie Protection keep cookies separated per site, and you can manage cookies, clear browsing data and use private browsing at any time from the Privacy settings.</p></section>
+
+<section id="security"><h2>Security</h2>
+<p>Browser data is kept in the app&rsquo;s private storage. Petal supports HTTPS-first browsing, DNS-over-HTTPS, per-site permissions and App Lock. No system is perfectly secure, so keep Petal and Android up to date.</p></section>
+
+<section id="delete-data"><h2>Your choices and deleting data</h2>
+<p>Because Petal keeps your data on your device, you are in control of it:</p>
+<ul>
+<li><strong>Clear browsing data</strong> (history, cookies, cache, site data) from the Privacy and Delete settings.</li>
+<li><strong>Delete everything</strong> by clearing the app&rsquo;s storage in Android settings or uninstalling Petal.</li>
+<li><strong>Sync data</strong>: manage or delete it through your Mozilla or Google account.</li>
+</ul>
+<p>We hold no personal data about you on our servers, so there is nothing for us to delete, access or export. If you believe we are wrong about that, contact us and we will investigate. Depending on where you live you may have rights under laws such as the GDPR or CCPA, and we will respect them.</p></section>
+
+<section id="children"><h2>Children</h2>
+<p>Petal does not knowingly collect personal information from children under 13 (or the applicable age in your country).</p></section>
+
+<section id="changes"><h2>Changes to this policy</h2>
+<p>We may update this policy when Petal&rsquo;s features change. The date at the top shows the latest revision, and earlier versions are available in the <a href="https://github.com/shreyagarwal72/petal/commits/main/PRIVACY_POLICY.md" target="_blank" rel="noopener noreferrer">repository history</a>.</p></section>
+
+<section id="contact"><h2>Contact</h2>
+<p>Questions about privacy? Open an issue on <a href="https://github.com/shreyagarwal72/petal/issues" target="_blank" rel="noopener noreferrer">GitHub</a> or visit our <a href="/support">Support page</a>.</p></section>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="brand"><span>Petal Browser</span></span>
+          <p>A browser that respects your attention, privacy, and device. Powered by Mozilla GeckoView 157 and Material 3 Expressive.</p>
+          <div class="badges">
+            <img src="/assets/badges/android.svg" height="28" alt="Android 8.0+">
+            <img src="/assets/badges/license.svg" height="28" alt="GPLv3 License">
+          </div>
+        </div>
+        <div class="footer-links-wrap">
+          <div>
+            <h4>Product</h4>
+            <ul class="footer-links">
+              <li><a href="/">Overview</a></li>
+              <li><a href="/#differentiators">Why Petal</a></li>
+              <li><a href="/download">Download &amp; install</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer">Releases</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Help</h4>
+            <ul class="footer-links">
+              <li><a href="/faq">FAQ</a></li>
+              <li><a href="/support">Support &amp; contact</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">Changelog</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/issues" target="_blank" rel="noopener noreferrer">Issue tracker</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Legal</h4>
+            <ul class="footer-links">
+              <li><a href="/privacy">Privacy Policy</a></li>
+              <li><a href="/terms">Terms of Use</a></li>
+              <li><a href="/licenses">Open-source licenses</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer">Source repository</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Architecture</h4>
+            <ul class="footer-links">
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/PRD.md" target="_blank" rel="noopener noreferrer">PRD.md</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/design.md" target="_blank" rel="noopener noreferrer">Design system</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/blob/main/architecture.md" target="_blank" rel="noopener noreferrer">GeckoView pipeline</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2024–2026 Vanshu Agarwal and contributors. Distributed under the GNU General Public License v3.0.</span>
+        <span>GeckoView 157.0 · Jetpack Compose M3</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/page.js?v=157.0.3" defer></script>
+</body>
+</html>
