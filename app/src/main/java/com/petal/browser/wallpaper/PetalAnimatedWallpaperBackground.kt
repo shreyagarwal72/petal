@@ -289,26 +289,9 @@ fun PetalAnimatedWallpaperBackground(
                     if (view.player != exoPlayer) {
                         view.player = exoPlayer
                     }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        if (blur > 0.5f) {
-                            try {
-                                val effect = android.graphics.RenderEffect.createBlurEffect(
-                                    blur * 2.5f,
-                                    blur * 2.5f,
-                                    android.graphics.Shader.TileMode.CLAMP
-                                )
-                                view.setRenderEffect(effect)
-                            } catch (_: Throwable) {}
-                        } else {
-                            try {
-                                view.setRenderEffect(null)
-                            } catch (_: Throwable) {}
-                        }
-                    }
                 },
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(blurModifier)
                     .graphicsLayer {
                         alpha = videoEntranceAlpha
                     }

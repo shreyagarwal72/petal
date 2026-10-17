@@ -522,11 +522,13 @@ fun PetalHomeScreen(
         com.petal.browser.collections.PetalCollectionManager.init(context)
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+    val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides glassWallpaper) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
                     // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
                     val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
                     val homeSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
@@ -934,6 +936,7 @@ fun PetalHomeScreen(
 
                     // ── Built-in Crash Recovery Dialog Host (Auto / Off) ──
                     com.petal.browser.ui.components.PetalCrashRecoveryHost()
+            }
         }
     }
 }
