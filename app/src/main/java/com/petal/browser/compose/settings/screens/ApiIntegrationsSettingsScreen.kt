@@ -91,50 +91,65 @@ fun ApiIntegrationsSettingsScreenContent(
             ) {
                 // Dedicated Petal AI & API Keys Hub Card
                 PetalSettingsSection(title = stringResource(R.string.ui_petal_ai_api_keys_hub), iconRes = com.petal.browser.R.drawable.ic_ai_stars, cardId = "ai_provider", targetHighlightId = targetHighlightItemId) {
-                    Text(
-                        stringResource(R.string.ui_configure_ai_providers_api_keys),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Text(
-                        text = stringResource(R.string.ui_active_ai_provider),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
                     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-                    val fadeEdgeColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow
-                    val aiProviderScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = aiProviderScrollState,
-                        edgeColor = fadeEdgeColor
+                    val cardShape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.SINGLE)
+
+                    Surface(
+                        shape = cardShape,
+                        color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(cardShape, enabled = true) else Modifier)
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .horizontalScroll(aiProviderScrollState),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            AiProvider.entries.forEach { provider ->
-                                val isSelected = selectedProvider == provider
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = {
-                                        selectedProvider = provider
-                                        PetalAiResearchEngine.setSelectedProvider(context, provider)
-                                        currentKey = PetalAiResearchEngine.getApiKey(context, provider)
-                                        selectedModel = PetalAiResearchEngine.getSelectedModel(context, provider)
-                                        testResultMsg = null
-                                    },
-                                    label = { Text(provider.displayName) },
-                                    leadingIcon = if (isSelected) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
+                            Text(
+                                stringResource(R.string.ui_configure_ai_providers_api_keys),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Text(
+                                text = stringResource(R.string.ui_active_ai_provider),
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+
+                            val fadeEdgeColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow
+                            val aiProviderScrollState = rememberScrollState()
+                            ScrollFadeRow(
+                                scrollState = aiProviderScrollState,
+                                edgeColor = fadeEdgeColor
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(aiProviderScrollState),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    AiProvider.entries.forEach { provider ->
+                                        val isSelected = selectedProvider == provider
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = {
+                                                selectedProvider = provider
+                                                PetalAiResearchEngine.setSelectedProvider(context, provider)
+                                                currentKey = PetalAiResearchEngine.getApiKey(context, provider)
+                                                selectedModel = PetalAiResearchEngine.getSelectedModel(context, provider)
+                                                testResultMsg = null
+                                            },
+                                            label = { Text(provider.displayName) },
+                                            leadingIcon = if (isSelected) {
+                                                { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            } else null
+                                        )
+                                    }
+                                }
                             }
-                        }
-                    }
 
                     if (selectedProvider == AiProvider.CUSTOM) {
                         TextButton(onClick = { showCustomAiGuide = true }) {
@@ -362,11 +377,13 @@ fun ApiIntegrationsSettingsScreenContent(
                             }
                         }
                     }
-                    Spacer(Modifier.height(32.dp))
                 }
             }
+
+            Spacer(Modifier.height(32.dp))
         }
     }
+}
 
     if (showCustomAiGuide) {
         com.petal.browser.ui.containment.PetalMaterialAlertDialog(

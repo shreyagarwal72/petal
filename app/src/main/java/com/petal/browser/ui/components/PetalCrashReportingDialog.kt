@@ -339,10 +339,15 @@ fun PetalCrashReportingPicker(
     val options = listOf("auto", "off")
     val labels = listOf("Auto (Default)", "Off")
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val pickerShape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.TOP)
+
     Surface(
-        shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.TOP),
+        shape = pickerShape,
         color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(pickerShape, enabled = true) else Modifier)
     ) {
         Column(
             modifier = Modifier

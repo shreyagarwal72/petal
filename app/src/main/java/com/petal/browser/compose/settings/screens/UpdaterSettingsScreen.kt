@@ -132,10 +132,14 @@ fun UpdaterSettingsScreenContent(
                         onCheckedChange = onCheckUpdateOnLaunchChange
                     )
                     // Channel & Version Hero Card
+                    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val channelCardShape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM)
                     Surface(
-                        shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM),
+                        shape = channelCardShape,
                         color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(channelCardShape, enabled = true) else Modifier)
                     ) {
                         Column(
                             modifier = Modifier
@@ -333,11 +337,12 @@ fun UpdaterSettingsScreenContent(
                                             }
                                         },
                                         modifier = Modifier.weight(1f),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
-                                        Icon(Icons.Rounded.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp))
-                                        Spacer(Modifier.width(6.dp))
-                                        Text(stringResource(R.string.ui_check_now), fontWeight = FontWeight.Bold)
+                                        Icon(Icons.Rounded.CloudSync, contentDescription = null, modifier = Modifier.size(17.dp))
+                                        Spacer(Modifier.width(5.dp))
+                                        Text(stringResource(R.string.ui_check_now), fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                                     }
 
                                     OutlinedButton(
@@ -357,11 +362,12 @@ fun UpdaterSettingsScreenContent(
                                             }
                                         },
                                         modifier = Modifier.weight(1f),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
-                                        Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(18.dp))
-                                        Spacer(Modifier.width(6.dp))
-                                        Text(stringResource(R.string.ui_changelog))
+                                        Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(17.dp))
+                                        Spacer(Modifier.width(5.dp))
+                                        Text(stringResource(R.string.ui_changelog), maxLines = 1, softWrap = false)
                                     }
                                 }
                             }
