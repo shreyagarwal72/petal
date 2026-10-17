@@ -134,7 +134,7 @@ fun PetalContainedLoadingIndicator(
             // with liquid glass chrome, instead of Material You / primary colors
             val glassContainer = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f)
             val glassIndicator = MaterialTheme.colorScheme.onSurfaceVariant
-            val currentShape = try { containerShape.toShape() } catch (_: Throwable) { RoundedCornerShape(12.dp) }
+            val currentShape = containerShape.toShape()
 
             Crossfade(
                 targetState = currentShape,
