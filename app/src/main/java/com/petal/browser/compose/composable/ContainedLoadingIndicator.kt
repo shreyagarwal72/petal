@@ -108,37 +108,59 @@ fun PetalContainedLoadingIndicator(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
 
     if (isGlass) {
-        var containerShape by remember {
-            mutableStateOf(LoadingIndicatorDefaults.IndeterminateIndicatorPolygons.first())
-        }
-
-        LaunchedEffect(Unit) {
-            while (isActive) {
-                containerShape = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons.random()
-                delay(650)
+        val polygons = remember {
+            try {
+                LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+            } catch (_: Throwable) {
+                emptyList()
             }
         }
 
-        // When Liquid Glass is ON: follow SimpMusic's container & indicator colors (surfaceContainerHighest & onSurfaceVariant)
-        // with liquid glass chrome, instead of Material You / primary colors
-        val glassContainer = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f)
-        val glassIndicator = MaterialTheme.colorScheme.onSurfaceVariant
-        val currentShape = containerShape.toShape()
+        if (polygons.isNotEmpty()) {
+            var containerShape by remember {
+                mutableStateOf(polygons.first())
+            }
 
-        Crossfade(
-            targetState = currentShape,
-            animationSpec = tween(400),
-            modifier = modifier,
-            label = "LiquidGlassMorphingCrossfade"
-        ) { shape ->
-            androidx.compose.material3.ContainedLoadingIndicator(
-                modifier = Modifier
-                    .requiredSize(size)
-                    .liquidGlassChrome(shape = shape, enabled = true),
-                polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons,
-                containerColor = glassContainer,
-                indicatorColor = glassIndicator,
-                containerShape = shape
+            LaunchedEffect(Unit) {
+                while (isActive) {
+                    try {
+                        containerShape = polygons.random()
+                    } catch (_: Throwable) {}
+                    delay(650)
+                }
+            }
+
+            // When Liquid Glass is ON: follow SimpMusic's container & indicator colors (surfaceContainerHighest & onSurfaceVariant)
+            // with liquid glass chrome, instead of Material You / primary colors
+            val glassContainer = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f)
+            val glassIndicator = MaterialTheme.colorScheme.onSurfaceVariant
+            val currentShape = try { containerShape.toShape() } catch (_: Throwable) { RoundedCornerShape(12.dp) }
+
+            Crossfade(
+                targetState = currentShape,
+                animationSpec = tween(400),
+                modifier = modifier,
+                label = "LiquidGlassMorphingCrossfade"
+            ) { shape ->
+                try {
+                    androidx.compose.material3.ContainedLoadingIndicator(
+                        modifier = Modifier
+                            .requiredSize(size)
+                            .liquidGlassChrome(shape = shape, enabled = true),
+                        polygons = polygons,
+                        containerColor = glassContainer,
+                        indicatorColor = glassIndicator,
+                        containerShape = shape
+                    )
+                } catch (_: Throwable) {
+                    ZenithContainedLoadingIndicator(
+                        modifier = Modifier.requiredSize(size)
+                    )
+                }
+            }
+        } else {
+            ZenithContainedLoadingIndicator(
+                modifier = modifier.requiredSize(size)
             )
         }
     } else {

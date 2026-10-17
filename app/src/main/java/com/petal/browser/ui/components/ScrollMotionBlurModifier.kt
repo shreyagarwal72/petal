@@ -371,19 +371,27 @@ private object Api33ScrollBlur {
             }
         }
 
-        val shader = remember { RuntimeShader(DIRECTIONAL_BLUR_AGSL) }
+        val shader = remember {
+            try {
+                RuntimeShader(DIRECTIONAL_BLUR_AGSL)
+            } catch (_: Throwable) { null }
+        }
 
         return modifier.graphicsLayer {
             val vel = animatedVelocity.value
-            if (abs(vel) > 0.05f) {
-                shader.setFloatUniform("resolution", size.width, size.height)
-                shader.setFloatUniform("scrollVelocity", vel)
-                shader.setFloatUniform("isHorizontal", if (isHorizontal) 1.0f else 0.0f)
-                shader.setFloatUniform("blurScale", blurScale)
+            if (abs(vel) > 0.05f && shader != null) {
+                try {
+                    shader.setFloatUniform("resolution", size.width, size.height)
+                    shader.setFloatUniform("scrollVelocity", vel)
+                    shader.setFloatUniform("isHorizontal", if (isHorizontal) 1.0f else 0.0f)
+                    shader.setFloatUniform("blurScale", blurScale)
 
-                renderEffect = RenderEffect
-                    .createRuntimeShaderEffect(shader, "composable")
-                    .asComposeRenderEffect()
+                    renderEffect = RenderEffect
+                        .createRuntimeShaderEffect(shader, "composable")
+                        .asComposeRenderEffect()
+                } catch (_: Throwable) {
+                    renderEffect = null
+                }
             } else {
                 renderEffect = null
             }

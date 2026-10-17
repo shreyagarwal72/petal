@@ -64,18 +64,29 @@ fun rememberPetalGlassWallpaper(): PetalGlassWallpaper {
 /** Apply only to the background sibling, never to a container holding glass cards. */
 fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
     onGloballyPositioned {
-        wallpaper.origin = it.positionInRoot()
-        wallpaper.ready = it.size.width > 0 && it.size.height > 0
+        try {
+            wallpaper.origin = it.positionInRoot()
+            wallpaper.ready = it.isAttached && it.size.width > 0 && it.size.height > 0
+        } catch (_: Throwable) {
+            wallpaper.ready = false
+        }
     }.drawWithCache {
         wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
-            android.graphics.RenderEffect.createBlurEffect(
-                20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
-            ).asComposeRenderEffect()
+            try {
+                android.graphics.RenderEffect.createBlurEffect(
+                    20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
+                ).asComposeRenderEffect()
+            } catch (_: Throwable) { null }
         } else null
         onDrawWithContent {
-            wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
-            wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
-            drawLayer(wallpaper.sharp)
+            try {
+                wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
+                wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+                drawLayer(wallpaper.sharp)
+            } catch (_: Throwable) {
+                // Fallback to normal drawing if GraphicsLayer recording fails on hardware canvas
+                this@onDrawWithContent.drawContent()
+            }
         }
     }
 
@@ -86,17 +97,25 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
  */
 fun Modifier.recordGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
     onGloballyPositioned {
-        wallpaper.origin = it.positionInRoot()
-        wallpaper.ready = it.size.width > 0 && it.size.height > 0
+        try {
+            wallpaper.origin = it.positionInRoot()
+            wallpaper.ready = it.isAttached && it.size.width > 0 && it.size.height > 0
+        } catch (_: Throwable) {
+            wallpaper.ready = false
+        }
     }.drawWithCache {
         wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
-            android.graphics.RenderEffect.createBlurEffect(
-                20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
-            ).asComposeRenderEffect()
+            try {
+                android.graphics.RenderEffect.createBlurEffect(
+                    20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
+                ).asComposeRenderEffect()
+            } catch (_: Throwable) { null }
         } else null
         onDrawWithContent {
-            wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
-            wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+            try {
+                wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
+                wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+            } catch (_: Throwable) {}
         }
     }
 
@@ -227,20 +246,24 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
                 endY = 4.dp.toPx()
             )
             onDrawBehind {
-                val stored = place.origin
-                val origin = place.coords?.takeIf { it.isAttached }?.positionInRoot() ?: stored
-                val shift = wallpaper.origin - origin
-                clipPath(outline) {
-                    if (effect != null) {
-                        glass.record(full) { translate(shift.x + pad, shift.y + pad) { drawLayer(wallpaper.frosted) } }
-                        translate(-pad, -pad) { drawLayer(glass) }
-                    } else {
-                        translate(shift.x, shift.y) { drawLayer(wallpaper.frosted) }
+                try {
+                    val stored = place.origin
+                    val origin = place.coords?.takeIf { it.isAttached }?.positionInRoot() ?: stored
+                    val shift = wallpaper.origin - origin
+                    clipPath(outline) {
+                        if (effect != null) {
+                            glass.record(full) { translate(shift.x + pad, shift.y + pad) { drawLayer(wallpaper.frosted) } }
+                            translate(-pad, -pad) { drawLayer(glass) }
+                        } else {
+                            translate(shift.x, shift.y) { drawLayer(wallpaper.frosted) }
+                        }
+                        drawRect(if (Build.VERSION.SDK_INT < 31) tint.copy(alpha = .85f) else tint)
+                        drawRect(spec)
                     }
-                    drawRect(if (Build.VERSION.SDK_INT < 31) tint.copy(alpha = .85f) else tint)
-                    drawRect(spec)
+                    drawPath(outline, rim, style = Stroke((1.25.dp * (0.8f + edge * 0.4f)).toPx()))
+                } catch (_: Throwable) {
+                    drawRect(tint)
                 }
-                drawPath(outline, rim, style = Stroke((1.25.dp * (0.8f + edge * 0.4f)).toPx()))
             }
         }
 }
