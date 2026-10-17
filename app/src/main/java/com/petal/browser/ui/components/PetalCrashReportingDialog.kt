@@ -55,6 +55,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.logger.PetalAppLogger
 import com.petal.browser.view.PetalToast
+import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -347,7 +348,7 @@ fun PetalCrashReportingPicker(
         color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
         modifier = modifier
             .fillMaxWidth()
-            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(pickerShape, enabled = true) else Modifier)
+            .then(if (isGlass) Modifier.liquidGlassChrome(pickerShape, enabled = true) else Modifier)
     ) {
         Column(
             modifier = Modifier

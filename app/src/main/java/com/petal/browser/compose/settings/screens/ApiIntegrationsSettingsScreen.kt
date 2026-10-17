@@ -1,7 +1,7 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.components.scrollMotionBlur
-
 import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 import android.content.Intent
 import android.net.Uri
@@ -99,7 +99,7 @@ fun ApiIntegrationsSettingsScreenContent(
                         color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(cardShape, enabled = true) else Modifier)
+                            .then(if (isGlass) Modifier.liquidGlassChrome(cardShape, enabled = true) else Modifier)
                     ) {
                         Column(
                             modifier = Modifier
@@ -383,7 +383,6 @@ fun ApiIntegrationsSettingsScreenContent(
             Spacer(Modifier.height(32.dp))
         }
     }
-}
 
     if (showCustomAiGuide) {
         com.petal.browser.ui.containment.PetalMaterialAlertDialog(

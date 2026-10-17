@@ -1,7 +1,7 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.components.scrollMotionBlur
-
 import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 import android.app.Activity
 import android.content.Context
@@ -139,7 +139,7 @@ fun UpdaterSettingsScreenContent(
                         color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(channelCardShape, enabled = true) else Modifier)
+                            .then(if (isGlass) Modifier.liquidGlassChrome(channelCardShape, enabled = true) else Modifier)
                     ) {
                         Column(
                             modifier = Modifier
