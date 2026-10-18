@@ -103,19 +103,29 @@ fun PetalPopupMenu(
     val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
 
+    // The glass lives INSIDE the menu content. Putting liquidGlassChrome on DropdownMenu's own
+    // modifier drew the panel outside the popup's real bounds (an offset ghost rectangle).
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = modifier
-            .padding(vertical = 4.dp)
-            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
+        modifier = modifier.padding(vertical = 4.dp),
         shape = shape,
-        containerColor = if (isGlass) petalGroupSurfaceColor() else containerColor,
-        tonalElevation = tonalElevation,
-        shadowElevation = shadowElevation,
+        containerColor = if (isGlass) Color.Transparent else containerColor,
+        tonalElevation = if (isGlass) 0.dp else tonalElevation,
+        shadowElevation = if (isGlass) 0.dp else shadowElevation,
         border = if (isGlass) null else border,
-        content = content,
-    )
+    ) {
+        if (isGlass) {
+            // live = true: re-records the screen behind the popup every frame.
+            com.petal.browser.ui.glass.PetalGlassContainer(enabled = true, live = true) {
+                Column(Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = sheen)) {
+                    content()
+                }
+            }
+        } else {
+            content()
+        }
+    }
 }
 
 @Composable
@@ -145,9 +155,10 @@ fun PetalPopupMenuItem(
     colors: MenuItemColors = MenuDefaults.itemColors(),
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
 ) {
+    val glassMenu = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val defaultIconBg = when {
-        destructive -> MaterialTheme.colorScheme.errorContainer
-        else -> MaterialTheme.colorScheme.surfaceContainerHighest
+        destructive -> MaterialTheme.colorScheme.errorContainer.copy(alpha = if (glassMenu) 0.6f else 1f)
+        else -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = if (glassMenu) 0.55f else 1f)
     }
     val defaultIconFg = when {
         destructive -> MaterialTheme.colorScheme.error

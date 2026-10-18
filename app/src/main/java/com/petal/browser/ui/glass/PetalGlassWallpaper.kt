@@ -55,6 +55,13 @@ class PetalGlassWallpaper(val sharp: GraphicsLayer, val frosted: GraphicsLayer) 
 val LocalPetalGlassWallpaper = staticCompositionLocalOf<PetalGlassWallpaper?> { null }
 val LocalPetalGlassRevision = compositionLocalOf { 0 }
 
+/**
+ * The view that sits *behind* popups, menus and sheets of the current screen. Full-screen
+ * overlays (PDF viewer, file viewer, ...) provide their own host view here so the glass of
+ * the windows opened above them refracts that screen live, instead of the browser underneath.
+ */
+val LocalPetalGlassSource = staticCompositionLocalOf<android.view.View?> { null }
+
 @Composable
 fun rememberPetalGlassWallpaper(): PetalGlassWallpaper {
     val sharp = rememberGraphicsLayer()
@@ -328,7 +335,9 @@ fun PetalGlassContainer(
     val wallpaper = rememberPetalGlassWallpaper()
     val context = androidx.compose.ui.platform.LocalContext.current
     // Root view of the app window behind this popup/card
-    val rootView = remember(context) {
+    val hostSource = LocalPetalGlassSource.current
+    val rootView = remember(context, hostSource) {
+        if (hostSource != null) return@remember hostSource
         var c: android.content.Context? = context
         while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
         (c as? android.app.Activity)?.let {

@@ -827,7 +827,9 @@ internal fun PetalSheetGlassBackdrop(
     modifier: Modifier = Modifier
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val liveSource = remember(context) {
+    val hostSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
+    val liveSource = remember(context, hostSource) {
+        if (hostSource != null) return@remember hostSource
         var c: android.content.Context? = context
         while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
         (c as? android.app.Activity)?.let {
