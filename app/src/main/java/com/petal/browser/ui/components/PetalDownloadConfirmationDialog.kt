@@ -24,6 +24,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.containment.liquidGlassChrome
 import java.io.File
 import java.util.Locale
 import androidx.compose.ui.res.stringResource
@@ -67,7 +68,7 @@ fun PetalDownloadConfirmationDialog(
             shadowElevation = if (isGlass) 0.dp else 8.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .com.petal.browser.ui.containment.liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
+                .liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
             border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
         ) {
             Column(
@@ -230,7 +231,7 @@ fun PetalFirstTimeDownloadEngineDialog(
             shadowElevation = if (isGlass) 0.dp else 8.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .com.petal.browser.ui.containment.liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
+                .liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
             border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
         ) {
             Column(
