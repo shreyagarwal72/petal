@@ -178,7 +178,13 @@ fun PetalMediaSnifferOverlay(
         PetalResourceSnifferSheet(
             onDismiss = { sheetOpen = false },
             onPlayVideo = { videoUrl ->
-                onPlay(MediaInterceptor.MediaPlaybackRequest(url = videoUrl, mimeType = "video/mp4"))
+                onPlay(
+                    MediaInterceptor.MediaPlaybackRequest(
+                        url = videoUrl,
+                        mimeType = "video/mp4",
+                        mediaType = MediaInterceptor.MediaType.MP4
+                    )
+                )
             }
         )
     }
