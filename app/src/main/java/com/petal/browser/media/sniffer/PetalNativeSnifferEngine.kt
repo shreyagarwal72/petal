@@ -102,7 +102,7 @@ object PetalNativeSnifferEngine {
             return
         }
 
-        val category = PetalResourceCategory.fromUrlAndMime(url, mimeType)
+        val category = PetalResourceCategory.fromUrlAndMime(url, mimeType) ?: return
         val resolvedTitle = title?.takeIf { it.isNotBlank() } ?: deriveFilename(url, category)
 
         val resource = SniffedResource(

@@ -133,13 +133,14 @@ fun PetalResourceSnifferSheet(
             }
 
             // Category Filter Pills (Soul-style tabs: All, Video, Audio, Image, Doc)
-            Row(
+            androidx.compose.foundation.lazy.LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                    .padding(vertical = 4.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                PetalResourceCategory.values().forEach { category ->
+                items(PetalResourceCategory.values()) { category ->
                     val count = if (category == PetalResourceCategory.ALL) {
                         resources.size
                     } else {
@@ -153,10 +154,13 @@ fun PetalResourceSnifferSheet(
                             selectedCategory = category
                         },
                         label = {
-                            Text("${category.label} ($count)")
+                            Text(
+                                text = "${category.label} ($count)",
+                                maxLines = 1,
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f)
+                        shape = RoundedCornerShape(12.dp)
                     )
                 }
             }
@@ -191,7 +195,7 @@ fun PetalResourceSnifferSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f, fill = false)
-                        .heightIn(max = 380.dp),
+                        .heightIn(max = 400.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -222,13 +226,24 @@ fun PetalResourceSnifferSheet(
             }
 
             // Bottom Batch Action Bar (Download selected / Copy selected)
-            AnimatedVisibility(visible = selectedIds.isNotEmpty()) {
+            AnimatedVisibility(
+                visible = selectedIds.isNotEmpty(),
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(16.dp),
+                    color = petalGroupSurfaceColor(),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.35f else 0.5f),
+                            RoundedCornerShape(16.dp)
+                        )
                 ) {
                     Row(
                         modifier = Modifier
@@ -238,12 +253,15 @@ fun PetalResourceSnifferSheet(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "${selectedIds.size} items selected",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            text = "${selectedIds.size} selected",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             OutlinedButton(
                                 onClick = {
                                     val urls = filteredResources.filter { selectedIds.contains(it.id) }.joinToString("\n") { it.url }
@@ -251,9 +269,10 @@ fun PetalResourceSnifferSheet(
                                     cb.setPrimaryClip(ClipData.newPlainText("URLs", urls))
                                     PetalToast.show(context, "Copied ${selectedIds.size} links")
                                 },
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                             ) {
-                                Text("Copy Links")
+                                Text("Copy Links", style = MaterialTheme.typography.labelMedium)
                             }
 
                             Button(
@@ -264,11 +283,12 @@ fun PetalResourceSnifferSheet(
                                     selectedIds.clear()
                                     onDismiss()
                                 },
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
                                 Icon(Icons.Rounded.Download, null, Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Download")
+                                Text("Download", style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }
@@ -295,15 +315,18 @@ private fun SniffedResourceRow(
         PetalResourceCategory.ALL -> Icons.Rounded.Attachment
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f),
+        color = petalGroupSurfaceColor(),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggleSelect() }
             .border(
                 1.dp,
-                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.35f else 0.5f),
                 RoundedCornerShape(16.dp)
             )
     ) {

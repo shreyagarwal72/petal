@@ -14,7 +14,7 @@ enum class PetalResourceCategory(val label: String) {
     DOCUMENT("Doc");
 
     companion object {
-        fun fromUrlAndMime(url: String, mimeType: String?): PetalResourceCategory {
+        fun fromUrlAndMime(url: String, mimeType: String?): PetalResourceCategory? {
             val lowerMime = mimeType?.lowercase(Locale.ROOT) ?: ""
             val lowerUrl = url.lowercase(Locale.ROOT)
 
@@ -72,7 +72,7 @@ enum class PetalResourceCategory(val label: String) {
                 return DOCUMENT
             }
 
-            return VIDEO // default fallback for sniffed media
+            return null
         }
     }
 }
