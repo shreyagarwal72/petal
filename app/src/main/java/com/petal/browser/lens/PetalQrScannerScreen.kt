@@ -115,7 +115,7 @@ fun PetalQrScannerScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (isLiquidGlass) Color(0xEB0F0F12) else Color(0xFF0F0F12))
+            .background(if (isLiquidGlass) Color(0xF20B0C10) else Color(0xFF0F0F12))
             .windowInsetsPadding(WindowInsets.statusBars)
             .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
@@ -189,15 +189,20 @@ fun PetalQrScannerScreen(
             Spacer(Modifier.weight(0.5f))
 
             // ── 4:3 Camera Viewport ──────────────────────────────────────────
+            val viewportShape = RoundedCornerShape(32.dp)
             Surface(
-                shape = RoundedCornerShape(32.dp),
+                shape = viewportShape,
                 color = Color.Black,
-                border = androidx.compose.foundation.BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.5.dp,
+                    if (isLiquidGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primary
+                ),
                 shadowElevation = 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(3f / 4f)
-                    .clip(RoundedCornerShape(32.dp))
+                    .clip(viewportShape)
+                    .then(if (isLiquidGlass) Modifier.liquidGlassChrome(viewportShape, enabled = true) else Modifier)
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (hasPermission) {

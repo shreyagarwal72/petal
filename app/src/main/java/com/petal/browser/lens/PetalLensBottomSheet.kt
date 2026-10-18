@@ -214,7 +214,10 @@ fun PetalLensBottomSheet(
 
     if (showPetalScanner) {
         Dialog(
-            onDismissRequest = { showPetalScanner = false },
+            onDismissRequest = {
+                showPetalScanner = false
+                onDismissRequest()
+            },
             properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
             PetalQrScannerScreen(
@@ -234,6 +237,7 @@ fun PetalLensBottomSheet(
                 onDismiss = {
                     showPetalScanner = false
                     (context as? com.petal.browser.activity.BrowserActivity)?.restoreBrowserInputFocus()
+                    onDismissRequest()
                 }
             )
         }
