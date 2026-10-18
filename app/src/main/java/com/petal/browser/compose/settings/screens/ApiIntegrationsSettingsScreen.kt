@@ -382,14 +382,16 @@ fun ApiIntegrationsSettingsScreenContent(
 
             Spacer(Modifier.height(32.dp))
         }
-
-        if (showCustomAiGuide) {
-            com.petal.browser.ui.containment.PetalMaterialAlertDialog(
-                onDismissRequest = { showCustomAiGuide = false },
-                title = { Text(stringResource(R.string.ui_connect_any_openai_compatible_ai)) },
-                text = { Text(stringResource(R.string.ui_1_choose_custom_ai_2)) },
-                confirmButton = { TextButton(onClick = { showCustomAiGuide = false }) { Text(stringResource(R.string.ui_got_it)) } }
-            )
-        }
     }
+
+    if (showCustomAiGuide) {
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+            onDismissRequest = { showCustomAiGuide = false },
+            title = { Text(stringResource(R.string.ui_connect_any_openai_compatible_ai)) },
+            text = { Text(stringResource(R.string.ui_1_choose_custom_ai_2)) },
+            confirmButton = { TextButton(onClick = { showCustomAiGuide = false }) { Text(stringResource(R.string.ui_got_it)) } }
+        )
+    }
+}
+}
 }
