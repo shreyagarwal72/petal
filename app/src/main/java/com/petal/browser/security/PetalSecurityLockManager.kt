@@ -95,14 +95,14 @@ fun PetalPinLockDialog(
             if (enteredPin.length == 4) {
                 if (isSettingPin) {
                     PetalSecurityLockManager.setPin(context, enteredPin)
-                    PetalHapticEngine.getInstance(context).playSuccess(context)
+                    PetalHapticEngine.getInstance(context).playHeavyClick(context)
                     onSuccess(enteredPin)
                 } else {
                     if (PetalSecurityLockManager.verifyPin(context, enteredPin)) {
-                        PetalHapticEngine.getInstance(context).playSuccess(context)
+                        PetalHapticEngine.getInstance(context).playHeavyClick(context)
                         onSuccess(enteredPin)
                     } else {
-                        PetalHapticEngine.getInstance(context).playError(context)
+                        PetalHapticEngine.getInstance(context).playClick(context)
                         errorText = "Incorrect PIN"
                         enteredPin = ""
                     }

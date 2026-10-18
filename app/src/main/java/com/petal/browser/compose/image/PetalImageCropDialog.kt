@@ -158,7 +158,7 @@ fun PetalImageCropDialog(
 
                                     withContext(Dispatchers.Main) {
                                         isSaving = false
-                                        PetalHapticEngine.getInstance(context).playSuccess(context)
+                                        PetalHapticEngine.getInstance(context).playHeavyClick(context)
                                         Toast.makeText(context, "Image saved", Toast.LENGTH_SHORT).show()
                                         onImageSaved(outputFile)
                                     }

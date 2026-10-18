@@ -136,6 +136,7 @@ fun PetalVideoPlayerOverlay(
     var brightnessHudLevel by remember { mutableFloatStateOf(-1f) }
     var doubleTapSeekText by remember { mutableStateOf<String?>(null) }
     var doubleTapIsForward by remember { mutableStateOf(true) }
+    var aspectRatioHudText by remember { mutableStateOf<String?>(null) }
     // Subtitle & 2x Speed Boost State
     var showSubtitleSheet by remember { mutableStateOf(false) }
     var loadedSubtitles by remember { mutableStateOf<List<SubtitleCue>>(emptyList()) }

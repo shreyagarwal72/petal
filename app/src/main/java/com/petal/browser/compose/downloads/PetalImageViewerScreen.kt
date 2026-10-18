@@ -49,8 +49,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import com.petal.browser.haptics.PetalHapticEngine
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.RotateRight
@@ -422,7 +424,7 @@ fun PetalImageViewerScreen(
                             },
                             onScanOcr = {
                                 val entry = currentEntry ?: return@ImageViewerTopBar
-                                val url = entry.downloadItem?.let { "file://${it.destinationPath}" } ?: entry.sourceUrl
+                                val url = entry.downloadItem?.localUri ?: entry.sourceUrl
                                 (context as? androidx.appcompat.app.AppCompatActivity)?.let { act ->
                                     com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(act, url)
                                 }
@@ -490,7 +492,7 @@ fun PetalImageViewerScreen(
     // ── Image Crop Dialog ────────────────────────────────
     if (showCropDialog && currentEntry != null) {
         PetalImageCropDialog(
-            imageUri = currentEntry.downloadItem?.let { Uri.fromFile(java.io.File(it.destinationPath)) },
+            imageUri = currentEntry.downloadItem?.localUri?.let { Uri.parse(it) },
             imageUrl = currentEntry.sourceUrl,
             onDismissRequest = { showCropDialog = false },
             onImageSaved = { savedFile ->
