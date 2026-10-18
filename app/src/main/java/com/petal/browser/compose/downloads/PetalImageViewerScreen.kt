@@ -49,11 +49,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.RotateRight
+import androidx.compose.material.icons.rounded.Crop
+import androidx.compose.material.icons.rounded.AutoStories
+import androidx.compose.material.icons.rounded.ViewCarousel
 import androidx.compose.material.icons.rounded.*
+import com.petal.browser.compose.image.PetalImageCropDialog
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -277,8 +282,13 @@ fun PetalImageViewerScreen(
         }
     }
 
-    // Info sheet
+    // Info sheet & Crop Dialog
     var showInfoSheet by remember { mutableStateOf(false) }
+    var showCropDialog by remember { mutableStateOf(false) }
+
+    // Comic / Webtoon Continuous Vertical Scroll Mode (Soul Browser Style)
+    var isComicMode by remember { mutableStateOf(false) }
+    val comicListState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0)))
 
     // Snackbar for delete undo
     val snackbarHostState = remember { SnackbarHostState() }
@@ -324,19 +334,40 @@ fun PetalImageViewerScreen(
                         .background(Color.Black)
                         .padding(innerPadding)
                 ) {
-                    // ── Gallery Pager ────────────────────────────────
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.fillMaxSize(),
-                        key = { entries[it].sourceUrl },
-                    ) { page ->
-                        val entry   = entries[page]
-                        val rotDeg  = rotationMap[entry.sourceUrl] ?: 0f
-                        ZoomableImagePage(
-                            entry       = entry,
-                            rotationDeg = rotDeg,
-                            onSingleTap = toggleControls,
-                        )
+                    // ── Gallery View (Horizontal Pager or Comic Vertical Strip) ──
+                    if (isComicMode) {
+                        LazyColumn(
+                            state = comicListState,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(0.dp)
+                        ) {
+                            items(
+                                count = entries.size,
+                                key = { entries[it].sourceUrl }
+                            ) { page ->
+                                val entry = entries[page]
+                                val rotDeg = rotationMap[entry.sourceUrl] ?: 0f
+                                ZoomableImagePage(
+                                    entry = entry,
+                                    rotationDeg = rotDeg,
+                                    onSingleTap = toggleControls,
+                                )
+                            }
+                        }
+                    } else {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize(),
+                            key = { entries[it].sourceUrl },
+                        ) { page ->
+                            val entry   = entries[page]
+                            val rotDeg  = rotationMap[entry.sourceUrl] ?: 0f
+                            ZoomableImagePage(
+                                entry       = entry,
+                                rotationDeg = rotDeg,
+                                onSingleTap = toggleControls,
+                            )
+                        }
                     }
 
                     // ── Top Bar ──────────────────────────────────────
@@ -389,6 +420,13 @@ fun PetalImageViewerScreen(
                                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Image URL", url))
                                 com.petal.browser.view.PetalToast.show(context, "URL copied")
                             },
+                            onScanOcr = {
+                                val entry = currentEntry ?: return@ImageViewerTopBar
+                                val url = entry.downloadItem?.let { "file://${it.destinationPath}" } ?: entry.sourceUrl
+                                (context as? androidx.appcompat.app.AppCompatActivity)?.let { act ->
+                                    com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(act, url)
+                                }
+                            }
                         )
                     }
 
@@ -405,6 +443,15 @@ fun PetalImageViewerScreen(
                     ) {
                         ImageViewerBottomBar(
                             entry        = currentEntry,
+                            isComicMode  = isComicMode,
+                            onToggleComic = {
+                                isComicMode = !isComicMode
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                            },
+                            onCrop       = {
+                                showCropDialog = true
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                            },
                             onRotate     = { rotateCurrentEntry() },
                             onDelete     = { performDeleteCurrent() },
                             onWallpaper  = {
@@ -420,7 +467,7 @@ fun PetalImageViewerScreen(
                     }
 
                     // ── Page indicator dots ──────────────────────────
-                    if (entries.size > 1) {
+                    if (entries.size > 1 && !isComicMode) {
                         AnimatedVisibility(
                             visible = controlsVisible,
                             modifier = Modifier
@@ -438,6 +485,18 @@ fun PetalImageViewerScreen(
                 }
             }
         }
+    }
+
+    // ── Image Crop Dialog ────────────────────────────────
+    if (showCropDialog && currentEntry != null) {
+        PetalImageCropDialog(
+            imageUri = currentEntry.downloadItem?.let { Uri.fromFile(java.io.File(it.destinationPath)) },
+            imageUrl = currentEntry.sourceUrl,
+            onDismissRequest = { showCropDialog = false },
+            onImageSaved = { savedFile ->
+                showCropDialog = false
+            }
+        )
     }
 
     // ── Image Info Bottom Sheet ──────────────────────────
@@ -653,6 +712,7 @@ private fun ImageViewerTopBar(
     onShare: () -> Unit,
     onOpenExternal: () -> Unit,
     onCopyUrl: () -> Unit = {},
+    onScanOcr: () -> Unit = {},
 ) {
     var moreMenuExpanded by remember { mutableStateOf(false) }
 
@@ -707,6 +767,11 @@ private fun ImageViewerTopBar(
                 }
             }
 
+            // OCR / Scan Text
+            IconButton(onClick = onScanOcr) {
+                Icon(Icons.Rounded.DocumentScanner, contentDescription = "Scan Text", tint = Color.White)
+            }
+
             // Share
             IconButton(onClick = onShare) {
                 Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.ui_share), tint = Color.White)
@@ -730,6 +795,12 @@ private fun ImageViewerTopBar(
                     onDismissRequest = { moreMenuExpanded = false },
                 ) {
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = "Extract Text (OCR)",
+                        leadingIcon = { Icon(Icons.Rounded.DocumentScanner, null) },
+                        onClick = { moreMenuExpanded = false; onScanOcr() },
+                    )
+                    com.petal.browser.ui.containment.PetalMenuDivider()
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = stringResource(R.string.ui_open_in_external_app),
                         leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) },
                         onClick = { moreMenuExpanded = false; onOpenExternal() },
@@ -751,6 +822,9 @@ private fun ImageViewerTopBar(
 @Composable
 private fun ImageViewerBottomBar(
     entry: PetalViewerImageEntry?,
+    isComicMode: Boolean,
+    onToggleComic: () -> Unit,
+    onCrop: () -> Unit,
     onRotate: () -> Unit,
     onDelete: () -> Unit,
     onWallpaper: () -> Unit,
@@ -787,6 +861,24 @@ private fun ImageViewerBottomBar(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                // Comic Mode Toggle (Soul Browser Style)
+                ViewerActionButton(
+                    icon        = if (isComicMode) Icons.Rounded.ViewCarousel else Icons.Rounded.AutoStories,
+                    label       = if (isComicMode) "Gallery" else "Comic",
+                    tint        = if (isComicMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    containerColor = if (isComicMode) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    onClick     = onToggleComic,
+                )
+
+                // Crop & Edit
+                ViewerActionButton(
+                    icon        = Icons.Rounded.Crop,
+                    label       = "Crop",
+                    tint        = MaterialTheme.colorScheme.onSurface,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    onClick     = onCrop,
+                )
+
                 // Rotate
                 ViewerActionButton(
                     icon        = Icons.Rounded.RotateRight,

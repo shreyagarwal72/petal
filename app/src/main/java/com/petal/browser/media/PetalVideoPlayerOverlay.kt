@@ -42,6 +42,11 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.rounded.Subtitles
+import androidx.compose.material.icons.rounded.FastForward
+import com.petal.browser.media.subtitle.PetalSubtitleEngine
+import com.petal.browser.media.subtitle.SubtitleCue
+import com.petal.browser.media.subtitle.PetalSubtitleConfigSheet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -131,7 +136,15 @@ fun PetalVideoPlayerOverlay(
     var brightnessHudLevel by remember { mutableFloatStateOf(-1f) }
     var doubleTapSeekText by remember { mutableStateOf<String?>(null) }
     var doubleTapIsForward by remember { mutableStateOf(true) }
-    var aspectRatioHudText by remember { mutableStateOf<String?>(null) }
+    // Subtitle & 2x Speed Boost State
+    var showSubtitleSheet by remember { mutableStateOf(false) }
+    var loadedSubtitles by remember { mutableStateOf<List<SubtitleCue>>(emptyList()) }
+    var subtitleFileName by remember { mutableStateOf<String?>(null) }
+    var subtitleDelayMs by remember { mutableStateOf(0L) }
+    var subtitleFontSizeSp by remember { mutableFloatStateOf(18f) }
+    var subtitleTextColor by remember { mutableStateOf(Color.White) }
+    var isLongPressBoostActive by remember { mutableStateOf(false) }
+    var speedBeforeBoost by remember { mutableFloatStateOf(playbackSpeed) }
 
     // Auto-hide controls after 4 seconds of inactivity when playing and not locked
     LaunchedEffect(areControlsVisible, isPlaying, isControlsLocked) {
@@ -171,6 +184,24 @@ fun PetalVideoPlayerOverlay(
                                 PetalHapticEngine.getInstance(context).playClick(context)
                             }
                         },
+                        onLongPress = {
+                            if (!isControlsLocked && isPlaying) {
+                                speedBeforeBoost = currentSpeed
+                                isLongPressBoostActive = true
+                                onSpeedChange(2.0f)
+                                PetalHapticEngine.getInstance(context).playHeavyClick(context)
+                            }
+                        },
+                        onPress = {
+                            try {
+                                awaitRelease()
+                            } finally {
+                                if (isLongPressBoostActive) {
+                                    isLongPressBoostActive = false
+                                    onSpeedChange(speedBeforeBoost)
+                                }
+                            }
+                        }
                     )
                 }
                 .pointerInput(isControlsLocked) {
@@ -243,6 +274,75 @@ fun PetalVideoPlayerOverlay(
                         color = Color.White,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+
+        // ── 3.5. 2x Speed Boost HUD Indicator (Soul / YouTube Style) ────────
+        if (isLongPressBoostActive) {
+            val boostShape = RoundedCornerShape(24.dp)
+            Surface(
+                shape = boostShape,
+                color = Color.Black.copy(alpha = 0.75f),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = topClearance + 20.dp)
+                    .clip(boostShape)
+                    .then(
+                        if (isLiquidGlass) Modifier.liquidGlassChrome(boostShape, enabled = true, sheenIntensity = 0.9f)
+                        else Modifier.border(1.dp, Color.White.copy(alpha = 0.25f), boostShape)
+                    )
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.FastForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "2X SPEED",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+
+        // ── 3.6. Subtitle Overlay Renderer ───────────────────────────────────
+        if (loadedSubtitles.isNotEmpty()) {
+            val activeCue = remember(positionMs, subtitleDelayMs, loadedSubtitles) {
+                PetalSubtitleEngine.getActiveCue(loadedSubtitles, positionMs, subtitleDelayMs)
+            }
+            if (activeCue != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = if (areControlsVisible) bottomClearance + 76.dp else bottomClearance + 24.dp)
+                        .padding(horizontal = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = activeCue.text,
+                        color = subtitleTextColor,
+                        fontSize = subtitleFontSizeSp.sp,
+                        fontWeight = FontWeight.Bold,
+                        style = androidx.compose.ui.text.TextStyle(
+                            shadow = androidx.compose.ui.graphics.Shadow(
+                                color = Color.Black,
+                                offset = androidx.compose.ui.geometry.Offset(2f, 2f),
+                                blurRadius = 4f
+                            )
+                        ),
+                        modifier = Modifier
+                            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     )
                 }
             }
@@ -421,6 +521,16 @@ fun PetalVideoPlayerOverlay(
                                     imageVector = Icons.Default.FitScreen,
                                     contentDescription = stringResource(R.string.ui_aspect_ratio),
                                     tint = Color.White,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                            }
+
+                            // Subtitles & Sync
+                            IconButton(onClick = { showSubtitleSheet = true }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Subtitles,
+                                    contentDescription = "Subtitles",
+                                    tint = if (loadedSubtitles.isNotEmpty()) MaterialTheme.colorScheme.primary else Color.White,
                                     modifier = Modifier.size(22.dp),
                                 )
                             }
@@ -637,6 +747,32 @@ fun PetalVideoPlayerOverlay(
                     showAspectSheet = false
                 },
                 onDismissRequest = { showAspectSheet = false },
+            )
+        }
+
+        // ── Subtitle & Sync Sheet ────────────────────────────────────────────
+        if (showSubtitleSheet) {
+            PetalSubtitleConfigSheet(
+                isLiquidGlass = isLiquidGlass,
+                subtitleDelayMs = subtitleDelayMs,
+                subtitleFontSizeSp = subtitleFontSizeSp,
+                subtitleTextColor = subtitleTextColor,
+                onSubtitleDelayChange = { subtitleDelayMs = it },
+                onSubtitleFontSizeChange = { subtitleFontSizeSp = it },
+                onSubtitleTextColorChange = { subtitleTextColor = it },
+                onSubtitlesLoaded = { cues, name ->
+                    loadedSubtitles = cues
+                    subtitleFileName = name
+                    showSubtitleSheet = false
+                },
+                onClearSubtitles = {
+                    loadedSubtitles = emptyList()
+                    subtitleFileName = null
+                    showSubtitleSheet = false
+                },
+                hasActiveSubtitles = loadedSubtitles.isNotEmpty(),
+                activeSubtitleName = subtitleFileName,
+                onDismissRequest = { showSubtitleSheet = false }
             )
         }
     }
