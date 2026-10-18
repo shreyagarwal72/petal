@@ -25,6 +25,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
@@ -218,8 +219,19 @@ fun PetalFileViewerScreen(
         onBack = onBackPress
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            // Glass backdrop: records the page background so every card and the top bar
+            // frost and refract it live. The Box colour is the plain (non-glass) fallback.
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+            com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                modifier = Modifier.fillMaxSize(),
+                pageSeed = "petal_file_viewer"
+            )
             Scaffold(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = Color.Transparent,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             PetalFileViewerTopBar(
@@ -266,6 +278,7 @@ fun PetalFileViewerScreen(
             }
         }
     }
+            }
         }
     }
 }
@@ -284,20 +297,25 @@ private fun PetalFileViewerTopBar(
     onShare: () -> Unit,
     onOpenExternal: () -> Unit,
 ) {
-    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
-        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val barShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = topClearance),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f),
-        tonalElevation = 3.dp,
-        shadowElevation = 2.dp,
+            .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true) else Modifier),
+        shape = barShape,
+        color = if (isGlass) petalGroupSurfaceColor()
+                else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f),
+        tonalElevation = if (isGlass) 0.dp else 3.dp,
+        shadowElevation = if (isGlass) 0.dp else 2.dp,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                // Status bar / cutout inset goes INSIDE the bar so it paints behind the status
+                // bar instead of leaving a black gap above it.
+                .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
