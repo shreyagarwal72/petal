@@ -1754,14 +1754,12 @@ private fun PdfTextEditTopBar(
         Surface(
             shape = topShape,
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
-            shadowElevation = 8.dp,
+            shadowElevation = if (isGlass) 0.dp else 8.dp,
+            tonalElevation = 0.dp,
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             modifier = Modifier
-                .border(
-                    1.dp,
-                    if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                    topShape
-                )
-                .liquidGlassChrome(topShape, enabled = isGlass)
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.liquidGlassChrome(topShape, enabled = true) else Modifier)
         ) {
             Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                 Row(
@@ -1840,12 +1838,7 @@ private fun PdfViewerTopBar(
             .fillMaxWidth()
             .then(
                 if (isGlass) {
-                    // Full-width glass that paints behind the status bar; the inset goes
-                    // inside so nothing floats detached from the top edge.
-                    Modifier
-                        .liquidGlassChrome(barShape, enabled = true)
-                        .background(petalGroupSurfaceColor(), barShape)
-                        .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
+                    Modifier.windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
                 } else {
                     Modifier
                         .background(
@@ -1863,6 +1856,15 @@ private fun PdfViewerTopBar(
             )
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
+        Surface(
+            shape = barShape,
+            color = if (isGlass) petalGroupSurfaceColor() else Color.Transparent,
+            shadowElevation = 0.dp,
+            tonalElevation = 0.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true) else Modifier)
+        ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -1970,6 +1972,7 @@ private fun PdfViewerTopBar(
                     )
                 }
             }
+        }
         }
     }
 }
@@ -2238,13 +2241,10 @@ private fun PdfViewerBottomBar(
             shape = bottomShape,
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.94f),
             shadowElevation = if (isGlass) 0.dp else 6.dp,
+            tonalElevation = 0.dp,
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
             modifier = Modifier
-                .border(
-                    1.dp,
-                    if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                    bottomShape
-                )
-                .liquidGlassChrome(bottomShape, enabled = isGlass)
+                .then(if (isGlass) Modifier.liquidGlassChrome(bottomShape, enabled = true) else Modifier)
         ) {
             Row(
                 modifier = Modifier

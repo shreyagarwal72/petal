@@ -94,16 +94,21 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
         onDrawWithContent {
             try {
                 if (size.width > 0f && size.height > 0f) {
-                    wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
-                    wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
-                    wallpaper.hasRecorded = true
-                    drawLayer(wallpaper.sharp)
+                    try {
+                        wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
+                        wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+                        wallpaper.hasRecorded = true
+                    } catch (_: Throwable) {
+                        wallpaper.hasRecorded = false
+                    }
+                    this@onDrawWithContent.drawContent()
                 } else {
                     this@onDrawWithContent.drawContent()
                 }
             } catch (_: Throwable) {
-                // Fallback to normal drawing if GraphicsLayer recording fails on hardware canvas
-                this@onDrawWithContent.drawContent()
+                try {
+                    this@onDrawWithContent.drawContent()
+                } catch (_: Throwable) {}
             }
         }
     }
@@ -256,13 +261,25 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
     val glowPref = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
     return onGloballyPositioned { place.coords = it; place.origin = it.positionInRoot() }
         .drawWithCache {
-            val outline = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawWithCache)) }
+            val outline = Path().apply {
+                try {
+                    addOutline(shape.createOutline(size, layoutDirection, this@drawWithCache))
+                } catch (_: Throwable) {
+                    addRect(androidx.compose.ui.geometry.Rect(Offset.Zero, size))
+                }
+            }
             val lensHeight = 14.dp.toPx()
             val lensAmount = 16.dp.toPx()
             val pad = lensAmount + 4.dp.toPx()
-            val radii = cornerRadii(shape, size, layoutDirection, this)
-            val effect = radii?.let { lensEffect(size, pad, it, lensHeight, lensAmount) }
-            glass.renderEffect = effect?.asComposeRenderEffect()
+            val effect = try {
+                val radii = cornerRadii(shape, size, layoutDirection, this)
+                radii?.let { lensEffect(size, pad, it, lensHeight, lensAmount) }
+            } catch (_: Throwable) { null }
+            try {
+                glass.renderEffect = effect?.asComposeRenderEffect()
+            } catch (_: Throwable) {
+                glass.renderEffect = null
+            }
             val full = IntSize(
                 ceil(size.width + 2 * pad).toInt().coerceAtLeast(1),
                 ceil(size.height + 2 * pad).toInt().coerceAtLeast(1)
@@ -292,11 +309,17 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
                     val shift = wallpaper.origin - origin
                     clipPath(outline) {
                         if (wallpaper.hasRecorded) {
-                            if (effect != null) {
-                                glass.record(full) { translate(shift.x + pad, shift.y + pad) { drawLayer(wallpaper.frosted) } }
-                                translate(-pad, -pad) { drawLayer(glass) }
-                            } else {
-                                translate(shift.x, shift.y) { drawLayer(wallpaper.frosted) }
+                            try {
+                                if (effect != null && full.width > 0 && full.height > 0) {
+                                    glass.record(full) { translate(shift.x + pad, shift.y + pad) { drawLayer(wallpaper.frosted) } }
+                                    translate(-pad, -pad) { drawLayer(glass) }
+                                } else {
+                                    translate(shift.x, shift.y) { drawLayer(wallpaper.frosted) }
+                                }
+                            } catch (_: Throwable) {
+                                try {
+                                    translate(shift.x, shift.y) { drawLayer(wallpaper.frosted) }
+                                } catch (_: Throwable) {}
                             }
                         }
                         drawRect(if (Build.VERSION.SDK_INT < 31) tint.copy(alpha = .85f) else tint)
