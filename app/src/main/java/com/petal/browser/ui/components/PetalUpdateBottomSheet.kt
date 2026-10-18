@@ -53,6 +53,7 @@ import com.petal.browser.ui.containment.rememberPetalGroupPressScale
 import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.haptics.PetalHapticEngine
@@ -496,7 +497,7 @@ fun PetalUpdateSheetContent(
                         color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(notesShape, enabled = true) else Modifier)
+                            .then(if (isGlass) Modifier.liquidGlassChrome(notesShape, enabled = true) else Modifier)
                     ) {
                         Box(
                             modifier = Modifier
@@ -840,7 +841,7 @@ fun PetalChangelogHistorySheetContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .scale(pressScale)
-                                .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(petalGroupShape(position), enabled = true) else Modifier)
+                                .then(if (isGlass) Modifier.liquidGlassChrome(petalGroupShape(position), enabled = true) else Modifier)
                                 .animateContentSize()
                         ) {
                             Column(
