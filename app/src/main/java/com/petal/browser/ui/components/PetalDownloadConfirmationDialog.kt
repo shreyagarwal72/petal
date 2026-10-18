@@ -49,18 +49,32 @@ fun PetalDownloadConfirmationDialog(
     onDismiss: () -> Unit,
     onExternalDownload: (() -> Unit)? = null
 ) {
-    Surface(
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 6.dp,
-        shadowElevation = 8.dp,
-        modifier = Modifier.fillMaxWidth()
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val dialogShape = RoundedCornerShape(28.dp)
+
+    com.petal.browser.ui.glass.PetalGlassContainer(
+        modifier = Modifier.fillMaxWidth(),
+        enabled = isGlass,
+        live = true
     ) {
-        Column(
+        Surface(
+            shape = dialogShape,
+            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 0.dp,
+            shadowElevation = if (isGlass) 0.dp else 8.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .com.petal.browser.ui.containment.liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
@@ -188,6 +202,7 @@ fun PetalDownloadConfirmationDialog(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -197,19 +212,32 @@ fun PetalFirstTimeDownloadEngineDialog(
     onDismiss: () -> Unit
 ) {
     var selectedKey by remember { mutableStateOf(initialEngineKey) }
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val dialogShape = RoundedCornerShape(28.dp)
 
-    Surface(
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 6.dp,
-        shadowElevation = 8.dp,
-        modifier = Modifier.fillMaxWidth()
+    com.petal.browser.ui.glass.PetalGlassContainer(
+        modifier = Modifier.fillMaxWidth(),
+        enabled = isGlass,
+        live = true
     ) {
-        Column(
+        Surface(
+            shape = dialogShape,
+            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 0.dp,
+            shadowElevation = if (isGlass) 0.dp else 8.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .com.petal.browser.ui.containment.liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
@@ -350,6 +378,7 @@ fun PetalFirstTimeDownloadEngineDialog(
                 }
             }
         }
+    }
     }
 }
 
