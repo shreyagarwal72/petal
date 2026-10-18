@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.containment.liquidGlassChrome
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -201,11 +202,14 @@ fun PetalAiResearchSheet(
                         )
                     }
                 }
+                val closeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                 FilledTonalIconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .then(if (closeGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.5f) else Modifier),
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        containerColor = if (closeGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
@@ -476,10 +480,14 @@ fun PetalAiResearchSheet(
             // ── Custom question ──
             Column {
                 PetalSectionLabel("Ask your own question")
+                val askGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val askShape = RoundedCornerShape(28.dp)
                 Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.fillMaxWidth()
+                    shape = askShape,
+                    color = if (askGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (askGlass) Modifier.liquidGlassChrome(askShape, enabled = true) else Modifier)
                 ) {
                     Row(
                         modifier = Modifier
@@ -760,11 +768,16 @@ private data class AiModeOption(
 private enum class AiKeyRow { ENDPOINT, KEY, GET_KEY, MANAGE }
 
 @Composable
-private fun aiFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-)
+private fun aiFieldColors(): TextFieldColors {
+    val glass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    // Opaque field fills sit on top of the glass card and look like a flat dark slab.
+    val fill = if (glass) Color.Black.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHighest
+    return OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = fill,
+        unfocusedContainerColor = fill,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    )
+}
 
 /** Grouped-container host for form fields so they line up with the other containment rows. */
 @Composable
@@ -772,11 +785,17 @@ private fun AiFieldRow(
     position: PetalGroupPosition,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val glass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val rowShape = petalGroupShape(position)
     Card(
-        shape = petalGroupShape(position),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = rowShape,
+        colors = CardDefaults.cardColors(
+            containerColor = if (glass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (glass) Modifier.liquidGlassChrome(rowShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
     ) {
         Column(
             modifier = Modifier

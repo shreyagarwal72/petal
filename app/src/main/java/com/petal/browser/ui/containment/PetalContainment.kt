@@ -15,6 +15,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.layout.fillMaxSize
 import com.petal.browser.ui.glass.liveGlassWallpaper
@@ -900,8 +902,21 @@ fun PetalSheet(
         dragHandle = null,
         contentWindowInsets = { androidx.compose.foundation.layout.WindowInsets(0) },
     ) {
+        // contentWindowInsets is 0 (the glass must reach the screen edges), so a sheet that grows
+        // up to the top would put its header under the status bar. Measure how far the sheet
+        // overlaps the status bar and pad by exactly that much.
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val statusTopPx = androidx.compose.foundation.layout.WindowInsets.statusBars.getTop(density)
+        var statusOverlapPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
         CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides activeWallpaper) {
-            Box(Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned {
+                        val top = it.positionInWindow().y
+                        statusOverlapPx = (statusTopPx - top).toInt().coerceIn(0, statusTopPx)
+                    }
+            ) {
                 if (isGlass) {
                     if (ownsGlassBackdrop) PetalSheetGlassBackdrop(ownWallpaper, Modifier.matchParentSize())
                     val ready = activeWallpaper?.ready == true
@@ -912,7 +927,12 @@ fun PetalSheet(
                             .liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen)
                     )
                 }
-                Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = with(density) { statusOverlapPx.toDp() })
+                        .navigationBarsPadding()
+                ) {
                     if (dragHandle != null) {
                         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { dragHandle() }
                     }

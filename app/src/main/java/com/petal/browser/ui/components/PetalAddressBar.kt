@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.containment.liquidGlassChrome
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -678,7 +679,7 @@ fun PetalAddressBar(
                             color = if (rowGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .then(if (rowGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.5f) else Modifier)
+                                .then(if (rowGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.5f) else Modifier)
                                 .clip(shape)
                                 .clickable {
                                     try {

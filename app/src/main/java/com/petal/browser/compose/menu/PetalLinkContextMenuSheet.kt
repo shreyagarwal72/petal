@@ -1,5 +1,6 @@
 package com.petal.browser.compose.menu
 
+import com.petal.browser.ui.containment.liquidGlassChrome
 import android.graphics.Color as AndroidColor
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.animateColorAsState
@@ -410,7 +411,7 @@ fun PetalLinkContextMenuSheet(
             else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(menuShape, enabled = true) else Modifier),
+            .then(if (isGlass) Modifier.liquidGlassChrome(menuShape, enabled = true) else Modifier),
     ) {
         Column(
             modifier = Modifier
@@ -479,7 +480,7 @@ private fun PetalMenuHeader(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (headerGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(headerShape, enabled = true, sheenIntensity = 0.5f) else Modifier),
+            .then(if (headerGlass) Modifier.liquidGlassChrome(headerShape, enabled = true, sheenIntensity = 0.5f) else Modifier),
         shape = headerShape,
         color = if (headerGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
@@ -609,7 +610,7 @@ private fun PetalMenuRow(
             .petalStaggerIn(enterIndex)
             .scale(pressScale)
             .alpha(contentAlpha)
-            .then(if (rowGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.45f) else Modifier),
+            .then(if (rowGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.45f) else Modifier),
     ) {
         Row(
             modifier = Modifier

@@ -36,6 +36,7 @@ import androidx.preference.PreferenceManager
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun PetalSummaryBoxDialog(
     pageTitle: String,
@@ -97,13 +98,14 @@ fun PetalSummaryBoxDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight(),
-            enabled = isGlass
+            enabled = isGlass,
+            live = true
         ) {
             Surface(
                 shape = dialogShape,
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = if (isGlass) 0.dp else 8.dp,
-                shadowElevation = if (isGlass) 4.dp else 12.dp,
+                shadowElevation = if (isGlass) 0.dp else 12.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp)
@@ -122,12 +124,14 @@ fun PetalSummaryBoxDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
+                            modifier = Modifier.weight(1f),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primaryContainer,
+                                color = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                        else MaterialTheme.colorScheme.primaryContainer,
                                 modifier = Modifier.size(40.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -139,7 +143,7 @@ fun PetalSummaryBoxDialog(
                                     )
                                 }
                             }
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.ui_page_summary),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -148,7 +152,9 @@ fun PetalSummaryBoxDialog(
                             Text(
                                 "${selectedProvider.displayName} • $selectedModel",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -193,8 +199,15 @@ fun PetalSummaryBoxDialog(
                         val errorCardShape = RoundedCornerShape(16.dp)
                         Surface(
                             shape = errorCardShape,
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            modifier = Modifier.fillMaxWidth()
+                            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.errorContainer,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(
+                                    if (isGlass) Modifier.liquidGlassChrome(
+                                        errorCardShape, enabled = true, sheenIntensity = sheen,
+                                        tintColor = MaterialTheme.colorScheme.errorContainer
+                                    ) else Modifier
+                                )
                         ) {
                             Column(
                                 modifier = Modifier.padding(14.dp),
@@ -205,36 +218,36 @@ fun PetalSummaryBoxDialog(
                                     Text(stringResource(R.string.ui_summary_failed), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onErrorContainer)
                                 }
                                 Text(errorMessage!!, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
-                                Row(
+                                androidx.compose.foundation.layout.FlowRow(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Button(
                                         onClick = { generateSummary() },
                                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                                         shape = RoundedCornerShape(12.dp),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                                        modifier = Modifier.weight(1f)
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                                     ) {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(Modifier.width(6.dp))
                                         Text(stringResource(R.string.ui_retry), maxLines = 1)
                                     }
+                                    val cfgShape = RoundedCornerShape(12.dp)
                                     OutlinedButton(
                                         onClick = onOpenSettings,
-                                        shape = RoundedCornerShape(12.dp),
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-                                        modifier = Modifier.weight(1.2f)
+                                        shape = cfgShape,
+                                        border = if (isGlass) null
+                                            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                                        modifier = if (isGlass) Modifier.liquidGlassChrome(cfgShape, enabled = true, sheenIntensity = 0.5f) else Modifier
                                     ) {
                                         Icon(Icons.Rounded.Key, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(Modifier.width(4.dp))
                                         Text(
                                             stringResource(R.string.ui_configure_key),
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                            maxLines = 1,
-                                            softWrap = false,
-                                            overflow = TextOverflow.Ellipsis
+                                            maxLines = 1
                                         )
                                     }
                                 }

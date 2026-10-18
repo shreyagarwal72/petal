@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.containment.liquidGlassChrome
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -53,7 +54,6 @@ import com.petal.browser.ui.containment.rememberPetalGroupPressScale
 import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.PetalGroupPosition
-import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.haptics.PetalHapticEngine
