@@ -879,9 +879,9 @@ private fun BuiltInExtensionSettingsDialog(
             )
         }
         "petal_builtin_media_grabber" -> {
-            com.petal.browser.media.sniffer.PetalMediaGrabberPopupDialog(
-                currentPageUrl = com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.currentPageUrl.value,
-                onDismiss = onDismiss
+            com.petal.browser.media.sniffer.PetalResourceSnifferSheet(
+                onDismiss = onDismiss,
+                onPlayVideo = { _ -> onDismiss() }
             )
         }
         else -> {

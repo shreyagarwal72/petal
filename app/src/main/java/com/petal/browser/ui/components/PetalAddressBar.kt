@@ -146,7 +146,8 @@ fun PetalAddressBar(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(l) }
     }
     val hasPlayableMedia by PetalMediaSniffer.interceptor.hasPlayableMedia.collectAsState()
-    val showMediaButton = isMediaButtonPrefEnabled && hasPlayableMedia && !isBlankOrSearch
+    val nativeResources by com.petal.browser.media.sniffer.PetalNativeSnifferEngine.currentTabResources.collectAsState()
+    val showMediaButton = isMediaButtonPrefEnabled && (hasPlayableMedia || nativeResources.isNotEmpty()) && !isBlankOrSearch
 
     val containerColor = if (isIncognito) {
         com.petal.browser.ui.theme.IncognitoSurfaceContainer
@@ -401,29 +402,36 @@ fun PetalAddressBar(
                         enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(initialScale = 0.8f),
                         exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(targetScale = 0.8f)
                     ) {
-                        Box(modifier = Modifier.padding(end = 2.dp)) {
-                            IconButton(
-                                onClick = {
+                        val count = nativeResources.size
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .clickable {
                                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                                     onMediaClick()
-                                },
-                                modifier = Modifier.size(40.dp)
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.SmartDisplay,
-                                    contentDescription = "Media found — tap to grab",
+                                    imageVector = Icons.Rounded.TravelExplore,
+                                    contentDescription = "Sniffer — $count resources found",
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
+                                if (count > 0) {
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = if (count > 99) "99+" else count.toString(),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
-                            // Red dot indicator
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.error)
-                                    .align(Alignment.TopEnd)
-                            )
                         }
                     }
                 }

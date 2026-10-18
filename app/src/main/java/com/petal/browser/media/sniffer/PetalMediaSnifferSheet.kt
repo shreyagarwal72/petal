@@ -175,13 +175,15 @@ fun PetalMediaSnifferOverlay(
     }
 
     if (sheetOpen) {
-        PetalMediaGrabberPopupDialog(
-            currentPageUrl = currentPageUrl,
+        PetalResourceSnifferSheet(
             onDismiss = { sheetOpen = false },
-            onPlayMedia = onPlay
+            onPlayVideo = { videoUrl ->
+                onPlay(MediaInterceptor.MediaPlaybackRequest(url = videoUrl, mimeType = "video/mp4"))
+            }
         )
     }
 }
+
 
 private fun formatMediaSize(bytes: Long?): String? {
     if (bytes == null || bytes <= 0L) return null

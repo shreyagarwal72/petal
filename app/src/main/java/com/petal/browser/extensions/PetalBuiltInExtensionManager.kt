@@ -131,8 +131,8 @@ object PetalBuiltInExtensionManager {
         BuiltInSpec(
             assetPath   = "web_extensions/media_grabber/",
             extensionId = "petal-media-grabber@petalbrowser.app",
-            label       = "Petal Media Grabber",
-            description = "Detects and captures media streams (video/audio) playing on any website for download.",
+            label       = "Petal Resource Sniffer",
+            description = "Native engine-level sniffer capturing videos, audios, high-res images, and documents.",
             prefKey     = "petal_builtin_media_grabber"
         ),
         BuiltInSpec(

@@ -712,6 +712,7 @@ class PetalGeckoView @JvmOverloads constructor(
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
         com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, currentUrl)
+        com.petal.browser.media.sniffer.PetalNativeSnifferEngine.setActiveTab(tabId, currentUrl)
         if (PetalGeckoRuntime.isGeckoAvailable(context)) {
             initGeckoSession()
         }
@@ -764,6 +765,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
 
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
+                com.petal.browser.media.sniffer.PetalNativeSnifferEngine.setActiveTab(tabId, url)
                 updateProgress(10)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, true)
@@ -791,6 +793,17 @@ class PetalGeckoView @JvmOverloads constructor(
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, false)
                     com.petal.browser.engine.gecko.PetalEngineStore.updateProgress(context, tabId, 100)
+                }
+
+                // Native resource DOM scan (extract video, audio, image, and download links)
+                if (success && !currentUrl.isNullOrBlank() && !com.petal.browser.media.sniffer.PetalNativeSnifferEngine.isSearchOrInternalUrl(currentUrl)) {
+                    session.evaluateJavascript(com.petal.browser.media.sniffer.PetalNativeSnifferEngine.DOM_SCAN_JS)
+                        .then({ result ->
+                            com.petal.browser.media.sniffer.PetalNativeSnifferEngine.parseDomScanResult(tabId, currentUrl, result?.toString())
+                            org.mozilla.geckoview.GeckoResult.fromValue(null)
+                        }, {
+                            org.mozilla.geckoview.GeckoResult.fromValue(null)
+                        })
                 }
 
                 val act = getHostActivity()
@@ -968,6 +981,7 @@ class PetalGeckoView @JvmOverloads constructor(
                     persistentUrl = url
                 }
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
+                com.petal.browser.media.sniffer.PetalNativeSnifferEngine.setActiveTab(tabId, url)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateUrlAndTitle(context, tabId, url, currentTitle)
                 }
@@ -1028,6 +1042,15 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<AllowOrDeny>? {
                 val uri = request.uri
+                // Direct native sniffer interception: classify media and document streams
+                if (uri.startsWith("http://", ignoreCase = true) || uri.startsWith("https://", ignoreCase = true)) {
+                    com.petal.browser.media.sniffer.PetalNativeSnifferEngine.registerResource(
+                        tabId = tabId,
+                        url = uri,
+                        pageUrl = currentUrl
+                    )
+                }
+
                 if (BrowserUnit.isHomePage(uri)) {
                     if (uri.equals("about:blank", ignoreCase = true)) {
                         return GeckoResult.fromValue(AllowOrDeny.ALLOW)
