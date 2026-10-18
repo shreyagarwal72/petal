@@ -101,6 +101,11 @@ object PetalAdBlockEngine {
             // Initialize active filter subscriptions
             PetalFilterSubscriptionManager.reloadActiveRules(appContext)
 
+            // Initialize Brave Shields adblock-rust native engine
+            try {
+                com.petal.browser.browser.adblock.PetalBraveShieldEngine.initialize(appContext)
+            } catch (_: Throwable) {}
+
             isInitialized = true
         }
     }
@@ -229,6 +234,15 @@ object PetalAdBlockEngine {
                 }
             } catch (_: Throwable) {
                 // Fall through to Trie matching if engine is still loading
+            }
+        }
+
+        // 1b. Brave Shields native adblock-rust check
+        if (com.petal.browser.browser.adblock.PetalBraveShieldEngine.isNativeActive()) {
+            val braveBlocked = com.petal.browser.browser.adblock.PetalBraveShieldEngine.shouldBlock(requestUrl, pageHost)
+            if (braveBlocked) {
+                recordBlock(pageUrl)
+                return true
             }
         }
 
