@@ -401,8 +401,9 @@ fun PetalUpdateSheetContent(
         }
     }
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -489,10 +490,13 @@ fun PetalUpdateSheetContent(
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
+                    val notesShape = RoundedCornerShape(28.dp)
                     Surface(
-                        shape = RoundedCornerShape(28.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.fillMaxWidth()
+                        shape = notesShape,
+                        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(notesShape, enabled = true) else Modifier)
                     ) {
                         Box(
                             modifier = Modifier
@@ -745,8 +749,9 @@ fun PetalChangelogHistorySheetContent(
 ) {
     val context = LocalContext.current
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
         contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = Modifier.fillMaxWidth()
@@ -829,12 +834,13 @@ fun PetalChangelogHistorySheetContent(
                         Card(
                             shape = petalGroupShape(position),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .scale(pressScale)
+                                .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(petalGroupShape(position), enabled = true) else Modifier)
                                 .animateContentSize()
                         ) {
                             Column(

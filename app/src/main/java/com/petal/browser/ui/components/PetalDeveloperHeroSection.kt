@@ -168,11 +168,17 @@ fun PetalDeveloperHeroSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
+                    // In glass mode the pill is see-through (the glass panel supplies the tint);
+                    // before the backdrop is ready it falls back to a translucent tonal fill.
                     val pillContainerColor = if (isGlass) {
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                        petalGroupSurfaceColor().let { c ->
+                            if (c == Color.Transparent) Color.Transparent
+                            else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                        }
                     } else {
                         MaterialTheme.colorScheme.primaryContainer
                     }
+                    val pillTint = MaterialTheme.colorScheme.primaryContainer
 
                     // Petal Official Website Pill
                     val webShape = RoundedCornerShape(
@@ -188,7 +194,7 @@ fun PetalDeveloperHeroSection(
                         },
                         shape = webShape,
                         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
-                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = webShape, enabled = true, sheenIntensity = 0.4f) else Modifier,
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = webShape, enabled = true, sheenIntensity = 0.4f, tintColor = pillTint) else Modifier,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = pillContainerColor,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -218,7 +224,7 @@ fun PetalDeveloperHeroSection(
                         },
                         shape = emailShape,
                         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
-                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = emailShape, enabled = true, sheenIntensity = 0.4f) else Modifier,
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = emailShape, enabled = true, sheenIntensity = 0.4f, tintColor = pillTint) else Modifier,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = pillContainerColor,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -245,7 +251,7 @@ fun PetalDeveloperHeroSection(
                         },
                         shape = tgShape,
                         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
-                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = tgShape, enabled = true, sheenIntensity = 0.4f) else Modifier,
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = tgShape, enabled = true, sheenIntensity = 0.4f, tintColor = pillTint) else Modifier,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = pillContainerColor,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -261,18 +267,17 @@ fun PetalDeveloperHeroSection(
             }
 
             // Secondary Buttons: Support & Other Apps
-            FlowRow(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedButton(
+                HeroGlassButton(
                     onClick = {
                         haptics.playClick(context)
-                        onOpenUrl("https://github.com/sponsors/shreyagarwal72")
+                        onOpenUrl(com.petal.browser.util.PetalWebLinks.SUPPORT)
                     },
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    isGlass = isGlass,
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Favorite,
@@ -281,25 +286,25 @@ fun PetalDeveloperHeroSection(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Support", fontWeight = FontWeight.SemiBold)
+                    Text("Support", fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
 
-                OutlinedButton(
+                HeroGlassButton(
                     onClick = {
                         haptics.playClick(context)
                         isOtherAppsExpanded = !isOtherAppsExpanded
                     },
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    isGlass = isGlass,
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Apps,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )
-                    Spacer(Modifier.width(8.dp))
-                    Text("Other Projects", fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Projects", fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    Spacer(Modifier.width(2.dp))
                     Icon(
                         imageVector = if (isOtherAppsExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
@@ -308,137 +313,193 @@ fun PetalDeveloperHeroSection(
                 }
             }
 
-            // Expandable Other Apps / Projects Drawer
+            // Expandable Other Apps / Projects Drawer (full-width, same size rows)
             AnimatedVisibility(
                 visible = isOtherAppsExpanded,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                FlowRow(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    maxItemsInEachRow = 3
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedButton(
+                    HeroGlassButton(
                         onClick = {
                             haptics.playClick(context)
-                            onOpenUrl("https://github.com/shreyagarwal72/petal")
+                            onOpenUrl(com.petal.browser.util.PetalWebLinks.WEBSITE)
                         },
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        isGlass = isGlass,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Rounded.Public, null, Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Petal Browser", style = MaterialTheme.typography.labelMedium)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Petal Browser", style = MaterialTheme.typography.labelLarge)
                     }
 
-                    OutlinedButton(
+                    HeroGlassButton(
                         onClick = {
                             haptics.playClick(context)
                             onOpenUrl("https://github.com/shreyagarwal72/switcher5G")
                         },
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        isGlass = isGlass,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Rounded.NetworkCheck, null, Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Switcher5G", style = MaterialTheme.typography.labelMedium)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Switcher5G", style = MaterialTheme.typography.labelLarge)
                     }
 
-                    OutlinedButton(
+                    HeroGlassButton(
                         onClick = {
                             haptics.playClick(context)
                             onOpenUrl("https://nextup-resource.vercel.app/")
                         },
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        isGlass = isGlass,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Rounded.AutoStories, null, Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Nextup Resources", style = MaterialTheme.typography.labelMedium)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Nextup Resources", style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
 
-            // GitHub Repository Live Badge
-            val gitHubShape = RoundedCornerShape(22.dp)
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(gitHubShape)
-                    .clickable {
-                        haptics.playClick(context)
-                        onOpenUrl("https://github.com/shreyagarwal72/petal")
-                    },
-                shape = gitHubShape,
-                color = if (isGlass) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.40f) else MaterialTheme.colorScheme.surfaceContainerLowest
+            // Website badge (live link to the Petal site) + GitHub repository badge
+            HeroLinkBadge(
+                label = "my-petal-browser.vercel.app",
+                chip = "Website",
+                leadingIcon = Icons.Rounded.Language,
+                chipIcon = Icons.Rounded.Public,
+                isGlass = isGlass,
+                onClick = {
+                    haptics.playClick(context)
+                    onOpenUrl(com.petal.browser.util.PetalWebLinks.WEBSITE)
+                }
+            )
+
+            HeroLinkBadge(
+                label = "shreyagarwal72/petal",
+                chip = "GitHub",
+                leadingIcon = Icons.Rounded.Code,
+                chipIcon = Icons.Rounded.Star,
+                isGlass = isGlass,
+                onClick = {
+                    haptics.playClick(context)
+                    onOpenUrl("https://github.com/shreyagarwal72/petal")
+                }
+            )
+        }
+    }
+}
+
+/** Outlined action button that becomes a single-rim glass pill when Liquid Glass is on. */
+@Composable
+private fun HeroGlassButton(
+    onClick: () -> Unit,
+    isGlass: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    val shape = RoundedCornerShape(20.dp)
+    OutlinedButton(
+        onClick = onClick,
+        shape = shape,
+        // The glass panel already draws its own rim, so the outline would double up.
+        border = if (isGlass) null
+            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (isGlass) petalGroupSurfaceColor() else Color.Transparent
+        ),
+        modifier = modifier.then(
+            if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = 0.5f) else Modifier
+        ),
+        content = content
+    )
+}
+
+/** Tappable link row (website / GitHub) rendered as a glass capsule. */
+@Composable
+private fun HeroLinkBadge(
+    label: String,
+    chip: String,
+    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    chipIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    isGlass: Boolean,
+    onClick: () -> Unit
+) {
+    val badgeShape = RoundedCornerShape(22.dp)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(shape = badgeShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
+            .clip(badgeShape)
+            .clickable(onClick = onClick),
+        shape = badgeShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLowest
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Icon(
+                    imageVector = leadingIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(Modifier.width(8.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                            else MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
                     Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.weight(1f, fill = false)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.Code,
+                            imageVector = chipIcon,
                             contentDescription = null,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(13.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "shreyagarwal72/petal",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            modifier = Modifier.basicMarquee()
-                        )
-                    }
-
-                    Spacer(Modifier.width(8.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Star,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(13.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "GitHub",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-
-                        Icon(
-                            imageVector = Icons.Rounded.OpenInNew,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = chip,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
+                Icon(
+                    imageVector = Icons.Rounded.OpenInNew,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

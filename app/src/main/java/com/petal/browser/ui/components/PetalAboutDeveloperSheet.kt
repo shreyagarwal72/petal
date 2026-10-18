@@ -278,6 +278,15 @@ fun PetalAboutDeveloperSheetContent(
                                 )
                             }
 
+                            // Website: pages served from my-petal-browser.vercel.app
+                            PetalSettingsSection(
+                                title = "Petal Website",
+                                icon = Icons.Rounded.Language,
+                                cardId = "about_website"
+                            ) {
+                                PetalWebsiteGroup(onOpenUrl = { openUrl(it) })
+                            }
+
                             // Section 3: Project & Source Code
                             PetalSettingsSection(
                                 title = "Project & Source",
@@ -298,6 +307,15 @@ fun PetalAboutDeveloperSheetContent(
                                 CommunityEcosystemGroup(
                                     onOpenUrl = { openUrl(it) }
                                 )
+                            }
+
+                            // Legal & docs (all from the website)
+                            PetalSettingsSection(
+                                title = "Legal & Docs",
+                                icon = Icons.Rounded.Gavel,
+                                cardId = "about_legal"
+                            ) {
+                                HelpLegalGroup(onOpenUrl = { openUrl(it) })
                             }
 
                             // Section 5: Technologies & Frameworks
@@ -694,16 +712,27 @@ private data class HelpLegalItem(
     val variant: com.petal.browser.ui.containment.PetalBadgeVariant
 )
 
+/** Pages of the Petal website (my-petal-browser.vercel.app) that open inside the app browser. */
 @Composable
-fun HelpLegalGroup(
+fun PetalWebsiteGroup(
     onOpenUrl: (String) -> Unit
 ) {
     val items = remember {
         listOf(
             HelpLegalItem(
-                "Website", "Features, downloads and release news",
+                "Petal Website", "Features, screenshots and release news",
                 com.petal.browser.util.PetalWebLinks.WEBSITE,
                 Icons.Rounded.Language, com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+            ),
+            HelpLegalItem(
+                "Download", "Latest APK and all release channels",
+                com.petal.browser.util.PetalWebLinks.DOWNLOAD,
+                Icons.Rounded.Download, com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+            ),
+            HelpLegalItem(
+                "Changelog", "Every release, searchable, straight from the site",
+                com.petal.browser.util.PetalWebLinks.CHANGELOG,
+                Icons.Rounded.History, com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY
             ),
             HelpLegalItem(
                 "FAQ", "Answers to common questions",
@@ -714,7 +743,18 @@ fun HelpLegalGroup(
                 "Support & Contact", "Report a bug, request a feature, get help",
                 com.petal.browser.util.PetalWebLinks.SUPPORT,
                 Icons.Rounded.SupportAgent, com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY
-            ),
+            )
+        )
+    }
+    WebLinkGroup(items, onOpenUrl)
+}
+
+@Composable
+fun HelpLegalGroup(
+    onOpenUrl: (String) -> Unit
+) {
+    val items = remember {
+        listOf(
             HelpLegalItem(
                 "Privacy Policy", "How Petal handles your data",
                 com.petal.browser.util.PetalWebLinks.PRIVACY_POLICY,
@@ -729,9 +769,42 @@ fun HelpLegalGroup(
                 "Open-Source Licenses", "GPL-3.0, GeckoView and third-party credits",
                 com.petal.browser.util.PetalWebLinks.LICENSES,
                 Icons.Rounded.Gavel, com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+            ),
+            HelpLegalItem(
+                "GNU GPL v3.0", "Full license text",
+                com.petal.browser.util.PetalWebLinks.GPL,
+                Icons.Rounded.Balance, com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+            ),
+            HelpLegalItem(
+                "Code of Conduct", "How the Petal community works together",
+                com.petal.browser.util.PetalWebLinks.CODE_OF_CONDUCT,
+                Icons.Rounded.Handshake, com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+            ),
+            HelpLegalItem(
+                "Design System", "Material 3 Expressive and Liquid Glass spec",
+                com.petal.browser.util.PetalWebLinks.DESIGN,
+                Icons.Rounded.Palette, com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY
+            ),
+            HelpLegalItem(
+                "Architecture", "How Petal is built on GeckoView",
+                com.petal.browser.util.PetalWebLinks.ARCHITECTURE,
+                Icons.Rounded.Layers, com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY
+            ),
+            HelpLegalItem(
+                "Product Requirements", "Roadmap and product goals",
+                com.petal.browser.util.PetalWebLinks.PRD,
+                Icons.Rounded.Article, com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY
             )
         )
     }
+    WebLinkGroup(items, onOpenUrl)
+}
+
+@Composable
+private fun WebLinkGroup(
+    items: List<HelpLegalItem>,
+    onOpenUrl: (String) -> Unit
+) {
     PetalGroup(rowCount = items.size, modifier = Modifier.fillMaxWidth()) { index, position ->
         val item = items[index]
         PetalGroupListRow(
@@ -752,7 +825,9 @@ fun HelpLegalGroup(
                 Text(
                     text = item.subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             },
             trailing = {

@@ -14,4 +14,10 @@ object PetalWebLinks {
     const val PRIVACY_POLICY = "$BASE_URL/privacy"
     const val TERMS = "$BASE_URL/terms"
     const val LICENSES = "$BASE_URL/licenses"
+    const val CHANGELOG = "$BASE_URL/changelog"
+    const val DESIGN = "$BASE_URL/design"
+    const val ARCHITECTURE = "$BASE_URL/architecture"
+    const val PRD = "$BASE_URL/prd"
+    const val CODE_OF_CONDUCT = "$BASE_URL/code-of-conduct"
+    const val GPL = "$BASE_URL/gpl"
 }
