@@ -540,14 +540,17 @@ fun PetalQrScannerScreen(
             exit = fadeOut() + scaleOut(targetScale = 0.9f),
             modifier = Modifier.align(Alignment.Center)
         ) {
+            val dialogShape = RoundedCornerShape(28.dp)
             Surface(
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                shadowElevation = 12.dp,
+                shape = dialogShape,
+                color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                border = if (isLiquidGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                shadowElevation = if (isLiquidGlass) 0.dp else 12.dp,
+                tonalElevation = 0.dp,
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .padding(16.dp)
+                    .then(if (isLiquidGlass) Modifier.liquidGlassChrome(dialogShape, enabled = true) else Modifier)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -585,10 +588,14 @@ fun PetalQrScannerScreen(
                         }
                     }
 
+                    val textShape = RoundedCornerShape(16.dp)
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        modifier = Modifier.fillMaxWidth()
+                        shape = textShape,
+                        color = if (isLiquidGlass) Color.Black.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = if (isLiquidGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(if (isLiquidGlass) Modifier.liquidGlassChrome(textShape, enabled = true, sheenIntensity = 0.3f) else Modifier)
                     ) {
                         Text(
                             text = detectedValue.orEmpty(),

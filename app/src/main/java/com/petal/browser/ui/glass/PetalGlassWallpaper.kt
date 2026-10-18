@@ -200,17 +200,21 @@ private fun Modifier.liveGlassWallpaperImpl(
                     source.getLocationOnScreen(srcLoc)
                     val dx = srcLoc[0] - boxOnScreen[0]
                     val dy = srcLoc[1] - boxOnScreen[1]
-                    wallpaper.sharp.record {
-                        drawIntoCanvas { c ->
-                            val nc = c.nativeCanvas
-                            val save = nc.save()
-                            nc.translate(dx, dy)
-                            try { source.draw(nc) } catch (_: Throwable) {}
-                            nc.restoreToCount(save)
+                    try {
+                        wallpaper.sharp.record {
+                            drawIntoCanvas { c ->
+                                val nc = c.nativeCanvas
+                                val save = nc.save()
+                                nc.translate(dx, dy)
+                                try { source.draw(nc) } catch (_: Throwable) {}
+                                nc.restoreToCount(save)
+                            }
                         }
+                        wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+                        wallpaper.hasRecorded = true
+                    } catch (_: Throwable) {
+                        wallpaper.hasRecorded = false
                     }
-                    wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
-                    wallpaper.hasRecorded = true
                 } catch (_: Throwable) {}
             }
         }
