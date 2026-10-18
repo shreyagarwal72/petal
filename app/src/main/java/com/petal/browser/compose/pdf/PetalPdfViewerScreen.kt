@@ -102,7 +102,7 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
-import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaperLive
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.*
 import com.petal.browser.view.PetalToast
@@ -402,6 +402,23 @@ private fun PetalPdfViewerScreenImpl(
     // PdfRenderer below to reopen the file, since PdfRenderer caches its
     // ParcelFileDescriptor and has no way to detect on-disk changes itself.
     var rendererReloadKey by remember { mutableIntStateOf(0) }
+
+    // Live glass: while pages scroll, zoom or auto-scroll, re-record the wallpaper every frame so
+    // the bars and sheets refract the moving page. Idle = no per-frame work (battery).
+    val glassFrameTick = remember { mutableLongStateOf(0L) }
+    val glassBusy = glassOn && (
+        listState.isScrollInProgress || pagerState.isScrollInProgress ||
+            scaleAnim.isRunning || offsetXAnim.isRunning || offsetYAnim.isRunning ||
+            isAutoScrolling || isLoading
+        )
+    LaunchedEffect(glassBusy, readingTone, viewMode, rendererReloadKey) {
+        if (glassBusy) {
+            while (true) withFrameNanos { glassFrameTick.longValue = it }
+        } else {
+            // a short tail so the last frame and late bitmap loads are captured
+            repeat(20) { withFrameNanos { glassFrameTick.longValue = it } }
+        }
+    }
 
     // Load PDF safely from URI. Prefers `editableFile` (the same File that
     // PdfTextEditEngine reads/writes) when available, so text edits are
@@ -816,7 +833,7 @@ private fun PetalPdfViewerScreenImpl(
                         modifier = gestureModifier.then(
                             if (glassOn) Modifier
                                 .background(MaterialTheme.colorScheme.surface)
-                                .captureGlassWallpaper(pdfWallpaper)
+                                .captureGlassWallpaperLive(pdfWallpaper) { glassFrameTick.longValue }
                             else Modifier
                         )
                     ) {
@@ -1469,27 +1486,34 @@ private fun PdfPageView(
         if (renderer == null) return@LaunchedEffect
         withContext(Dispatchers.IO) {
             try {
-                val page = synchronized(renderer) {
-                    if (pageIndex in 0 until renderer.pageCount) renderer.openPage(pageIndex) else null
-                }
-                if (page != null) {
-                    val w = page.width
-                    val h = page.height
-                    pageAspectRatio = if (w > 0) h.toFloat() / w.toFloat() else 1.414f
-                    pagePointWidth = w.toFloat().coerceAtLeast(1f)
-                    pagePointHeight = h.toFloat().coerceAtLeast(1f)
+                // PdfRenderer allows ONE open page at a time: hold the lock for the whole
+                // open -> render -> close, and always close, or the next page throws.
+                val bmp: Bitmap? = synchronized(renderer) {
+                    if (pageIndex !in 0 until renderer.pageCount) return@synchronized null
+                    val page = renderer.openPage(pageIndex)
+                    try {
+                        val w = page.width
+                        val h = page.height
+                        pageAspectRatio = if (w > 0) h.toFloat() / w.toFloat() else 1.414f
+                        pagePointWidth = w.toFloat().coerceAtLeast(1f)
+                        pagePointHeight = h.toFloat().coerceAtLeast(1f)
 
-                    val renderScale = 2.0f
-                    val bitmapWidth = (w * renderScale).toInt().coerceAtLeast(300)
-                    val bitmapHeight = (h * renderScale).toInt().coerceAtLeast(300)
+                        // 2x for sharpness, but never bigger than the GPU can draw (big-format
+                        // PDFs would otherwise crash with "bitmap too large").
+                        val maxSide = 3072f
+                        val renderScale = (2.0f).coerceAtMost(maxSide / maxOf(w, h).coerceAtLeast(1))
+                        val bitmapWidth = (w * renderScale).toInt().coerceAtLeast(1)
+                        val bitmapHeight = (h * renderScale).toInt().coerceAtLeast(1)
 
-                    val bmp = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
-                    bmp.eraseColor(AndroidColor.WHITE)
-
-                    synchronized(renderer) {
-                        page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        val out = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
+                        out.eraseColor(AndroidColor.WHITE)
+                        page.render(out, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        out
+                    } finally {
                         page.close()
                     }
+                }
+                if (bmp != null) {
                     pageBitmap = bmp
                 }
             } catch (e: Exception) {
@@ -1498,11 +1522,13 @@ private fun PdfPageView(
         }
     }
 
+    // Do NOT recycle() here. Liquid glass records the page content into GraphicsLayers (and the
+    // sheets re-record this whole screen every frame); those recorded draw commands can still
+    // point at this bitmap for a frame or more after the page leaves composition, and drawing a
+    // recycled bitmap kills the app on the render thread. Dropping the reference lets the GC
+    // free it once nothing draws it any more.
     DisposableEffect(pageIndex) {
-        onDispose {
-            pageBitmap?.recycle()
-            pageBitmap = null
-        }
+        onDispose { pageBitmap = null }
     }
 
     val pageColorFilter = remember(readingTone) {
@@ -2554,18 +2580,21 @@ private fun PdfThumbnailItem(
     LaunchedEffect(renderer, pageIndex) {
         withContext(Dispatchers.IO) {
             try {
-                val page = synchronized(renderer) {
-                    if (pageIndex in 0 until renderer.pageCount) renderer.openPage(pageIndex) else null
-                }
-                if (page != null) {
-                    val w = (page.width / 2).coerceAtLeast(120)
-                    val h = (page.height / 2).coerceAtLeast(160)
-                    val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-                    bmp.eraseColor(AndroidColor.WHITE)
-                    synchronized(renderer) {
-                        page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                val bmp: Bitmap? = synchronized(renderer) {
+                    if (pageIndex !in 0 until renderer.pageCount) return@synchronized null
+                    val page = renderer.openPage(pageIndex)
+                    try {
+                        val w = (page.width / 2).coerceIn(120, 1024)
+                        val h = (page.height / 2).coerceIn(160, 1366)
+                        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                        out.eraseColor(AndroidColor.WHITE)
+                        page.render(out, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        out
+                    } finally {
                         page.close()
                     }
+                }
+                if (bmp != null) {
                     thumbBitmap = bmp
                 }
             } catch (e: Exception) {
@@ -2574,11 +2603,9 @@ private fun PdfThumbnailItem(
         }
     }
 
+    // No recycle(): glass sheets re-record the screen and may still reference this bitmap.
     DisposableEffect(pageIndex) {
-        onDispose {
-            thumbBitmap?.recycle()
-            thumbBitmap = null
-        }
+        onDispose { thumbBitmap = null }
     }
 
     Column(

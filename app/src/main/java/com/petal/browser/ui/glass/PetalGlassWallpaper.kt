@@ -114,6 +114,53 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
     }
 
 /**
+ * Same as [captureGlassWallpaper], but re-records every time [tick] changes. Use it on
+ * scrolling/zooming content that glass bars float over (PDF pages): the caller bumps [tick]
+ * once per frame while something moves, so the frosted wallpaper follows the content live.
+ * Draws the content exactly like [captureGlassWallpaper]; only the re-record trigger differs.
+ */
+fun Modifier.captureGlassWallpaperLive(
+    wallpaper: PetalGlassWallpaper,
+    tick: () -> Long
+): Modifier =
+    onGloballyPositioned {
+        try {
+            wallpaper.origin = it.positionInRoot()
+            val isNowReady = it.isAttached && it.size.width > 0 && it.size.height > 0
+            if (!isNowReady) wallpaper.hasRecorded = false
+            wallpaper.ready = isNowReady
+        } catch (_: Throwable) {
+            wallpaper.ready = false
+            wallpaper.hasRecorded = false
+        }
+    }.drawWithCache {
+        wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
+            try {
+                android.graphics.RenderEffect.createBlurEffect(
+                    20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
+                ).asComposeRenderEffect()
+            } catch (_: Throwable) { null }
+        } else null
+        onDrawWithContent {
+            tick() // reading per-frame state makes this block run (and re-record) each frame
+            try {
+                if (size.width > 0f && size.height > 0f) {
+                    try {
+                        wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
+                        wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+                        wallpaper.hasRecorded = true
+                    } catch (_: Throwable) {
+                        wallpaper.hasRecorded = false
+                    }
+                }
+            } catch (_: Throwable) {}
+            try {
+                this@onDrawWithContent.drawContent()
+            } catch (_: Throwable) {}
+        }
+    }
+
+/**
  * Like [captureGlassWallpaper] but draws nothing: it only records the content into the
  * wallpaper layers. Use it for dialogs and popups, where the live screen already shows
  * behind the window and the recorded copy exists only to be frosted and refracted.

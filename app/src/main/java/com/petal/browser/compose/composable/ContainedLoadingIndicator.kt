@@ -194,6 +194,9 @@ private fun ZenithContainedLoadingIndicator(
     )
 }
 
+/** Room for the whole indicator travel: 8 top pad + 40 max pull + 42 circle + bounce/shadow. */
+private val RefreshBarContainerHeight = 120.dp
+
 /**
  * RefreshBar pull-to-refresh loading indicator utilizing [ContainedLoadingIndicator].
  */
@@ -207,11 +210,16 @@ fun RefreshBarLoadingIndicator(
 ) {
     val isVisible = isRefreshing || pullProgress > 0.01f
 
+    // The indicator slides down with graphicsLayer (draw-only, not layout), so the host view
+    // never grows to fit it. The old container was only 66dp tall, but a fast pull sends the
+    // 42dp circle ~48dp down, so about half of it was drawn outside its host and got cut off.
+    // Reserve the full travel (pull + bounce + shadow) up front, even while idle, so the host
+    // is already the right size on the first frame of a quick flick.
+    Box(modifier = modifier.fillMaxWidth().height(RefreshBarContainerHeight)) {
     AnimatedVisibility(
         visible = isVisible,
         enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
         exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
-        modifier = modifier
     ) {
         Box(
             modifier = Modifier
@@ -278,6 +286,7 @@ fun RefreshBarLoadingIndicator(
                 )
             }
         }
+    }
     }
 }
 

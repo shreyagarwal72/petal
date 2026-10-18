@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.browser.PetalAdBlockMode
@@ -35,7 +36,12 @@ import com.petal.browser.browser.PetalFilterSubscriptionManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.components.IconSwitch
+import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalMaterialAlertDialog
@@ -284,6 +290,12 @@ fun PetalAdBlockSettingsScreen(
                 // ── Hero Stats Card ──
                 val totalBlocked = PetalAdBlockEngine.getTotalBlockedCount()
                 val activeListsCount = subscriptions.count { it.isEnabled }
+                // In glass the card is see-through, so text must follow the surface, not the
+                // (light) primaryContainer it would sit on when glass is off.
+                val heroTitleColor = if (isGlass) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimaryContainer
+                val heroBodyColor = if (isGlass) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                val blockedLabel = if (totalBlocked == 1L) "1 ad or tracker blocked" else "$totalBlocked ads & trackers blocked"
+                val listsLabel = if (activeListsCount == 1) "1 filter list" else "$activeListsCount filter lists"
 
                 PetalHeroCard(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -315,13 +327,13 @@ fun PetalAdBlockSettingsScreen(
                                 text = "Petal Shield Active",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = heroTitleColor
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                text = "$totalBlocked ads & trackers blocked across $activeListsCount filter lists",
+                                text = "$blockedLabel across $listsLabel",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                color = heroBodyColor
                             )
                         }
                     }
@@ -337,161 +349,104 @@ fun PetalAdBlockSettingsScreen(
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     PetalAdBlockMode.values().forEach { mode ->
-                        val isSelected = activeMode == mode
-                        val (cardColor, borderColor) = if (isSelected) {
-                            Pair(MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.primary)
-                        } else {
-                            Pair(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), Color.Transparent)
-                        }
-                        val cardShape = RoundedCornerShape(16.dp)
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(cardShape)
-                                .clickable {
-                                    activeMode = mode
-                                    PetalAdBlockEngine.setAdBlockMode(context, mode)
-                                }
-                                .liquidGlassChrome(
-                                    shape = cardShape,
-                                    enabled = isGlass,
-                                    sheenIntensity = sheen
-                                ),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isGlass) petalGroupSurfaceColor() else cardColor
-                            ),
-                            border = if (!isGlass && isSelected) BorderStroke(2.dp, borderColor) else if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
-                            shape = cardShape
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = {
-                                        activeMode = mode
-                                        PetalAdBlockEngine.setAdBlockMode(context, mode)
-                                    }
-                                )
-                                Spacer(Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = mode.title,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        if (mode == PetalAdBlockMode.STANDARD) {
-                                            Spacer(Modifier.width(8.dp))
-                                            Surface(
-                                                shape = CircleShape,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                            ) {
-                                                Text(
-                                                    text = "RECOMMENDED",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onPrimary,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = mode.description,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                        ShieldModeCard(
+                            mode = mode,
+                            selected = activeMode == mode,
+                            isGlass = isGlass,
+                            sheen = sheen,
+                            onClick = {
+                                activeMode = mode
+                                PetalAdBlockEngine.setAdBlockMode(context, mode)
                             }
-                        }
+                        )
                     }
                 }
 
                 // ── Filter Subscriptions Section (Cromite Style) ──
+                val rowTotal = subscriptions.size + 2 // update row + lists + add row
+                val runUpdate: () -> Unit = {
+                    if (!isUpdatingLists) {
+                        isUpdatingLists = true
+                        coroutineScope.launch {
+                            PetalFilterSubscriptionManager.updateAllSubscriptions(
+                                context = context,
+                                force = true,
+                                onProgress = { done, total, name ->
+                                    updateProgressText = "Updating ($done/$total): $name"
+                                }
+                            )
+                            subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
+                            isUpdatingLists = false
+                            updateProgressText = ""
+                        }
+                    }
+                }
                 PetalSettingsSection(
                     title = "Filter List Subscriptions",
                     iconRes = com.petal.browser.R.drawable.layers_filled
                 ) {
                     // Update lists row
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                    PetalGroupListRow(
+                        position = petalGroupPositionFor(0, rowTotal),
+                        onClick = runUpdate,
+                        leading = { PetalGroupIconBadge(Icons.Rounded.Refresh) },
+                        content = {
                             Text(
                                 text = "Auto-Update Lists",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
                             )
                             Text(
                                 text = if (isUpdatingLists) updateProgressText else "Downloads fresh rules with ETag caching",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
-                        }
-                        Button(
-                            onClick = {
-                                if (!isUpdatingLists) {
-                                    isUpdatingLists = true
-                                    coroutineScope.launch {
-                                        PetalFilterSubscriptionManager.updateAllSubscriptions(
-                                            context = context,
-                                            force = true,
-                                            onProgress = { done, total, name ->
-                                                updateProgressText = "Updating ($done/$total): $name"
-                                            }
-                                        )
-                                        subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
-                                        isUpdatingLists = false
-                                        updateProgressText = ""
-                                    }
+                        },
+                        trailing = {
+                            Button(
+                                onClick = runUpdate,
+                                enabled = !isUpdatingLists,
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                if (isUpdatingLists) {
+                                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 18.dp)
+                                } else {
+                                    Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Update")
                                 }
-                            },
-                            enabled = !isUpdatingLists,
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            if (isUpdatingLists) {
-                                com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 18.dp)
-                            } else {
-                                Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Update")
                             }
                         }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    )
 
                     // Individual subscription list items
                     subscriptions.forEachIndexed { index, sub ->
-                        val position = when {
-                            subscriptions.size == 1 -> PetalGroupPosition.SINGLE
-                            index == 0 -> PetalGroupPosition.TOP
-                            index == subscriptions.size - 1 -> PetalGroupPosition.BOTTOM
-                            else -> PetalGroupPosition.MIDDLE
+                        val toggle: (Boolean) -> Unit = { enabled ->
+                            PetalFilterSubscriptionManager.toggleSubscription(context, sub.id, enabled)
+                            subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
                         }
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
+                        PetalGroupListRow(
+                            position = petalGroupPositionFor(index + 1, rowTotal),
+                            onClick = { toggle(!sub.isEnabled) },
+                            leading = {
+                                PetalGroupIconBadge(
+                                    icon = Icons.Rounded.FilterList,
+                                    variant = if (sub.isCustom) PetalBadgeVariant.TERTIARY else PetalBadgeVariant.PRIMARY
+                                )
+                            },
+                            content = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         text = sub.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
                                     )
                                     if (sub.isCustom) {
                                         Spacer(Modifier.width(6.dp))
@@ -503,6 +458,8 @@ fun PetalAdBlockSettingsScreen(
                                                 text = "CUSTOM",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                maxLines = 1,
+                                                softWrap = false,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                             )
                                         }
@@ -523,45 +480,44 @@ fun PetalAdBlockSettingsScreen(
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
-                            }
-                            Switch(
-                                checked = sub.isEnabled,
-                                onCheckedChange = { enabled ->
-                                    PetalFilterSubscriptionManager.toggleSubscription(context, sub.id, enabled)
-                                    subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
-                                }
-                            )
-                            if (sub.isCustom) {
-                                IconButton(
-                                    onClick = {
-                                        PetalFilterSubscriptionManager.removeCustomSubscription(context, sub.id)
-                                        subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
+                            },
+                            trailing = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconSwitch(
+                                        checked = sub.isEnabled,
+                                        icon = Icons.Rounded.Check,
+                                        onCheckedChange = toggle,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                    if (sub.isCustom) {
+                                        IconButton(
+                                            onClick = {
+                                                PetalFilterSubscriptionManager.removeCustomSubscription(context, sub.id)
+                                                subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
+                                            }
+                                        ) {
+                                            Icon(Icons.Rounded.DeleteOutline, contentDescription = "Delete custom list", tint = MaterialTheme.colorScheme.error)
+                                        }
                                     }
-                                ) {
-                                    Icon(Icons.Rounded.DeleteOutline, contentDescription = "Delete custom list", tint = MaterialTheme.colorScheme.error)
                                 }
                             }
-                        }
+                        )
                     }
 
                     // Add Custom List Button
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showAddCustomListDialog = true }
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Rounded.AddCircleOutline, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "Add Custom Subscription URL",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    PetalGroupListRow(
+                        position = petalGroupPositionFor(rowTotal - 1, rowTotal),
+                        onClick = { showAddCustomListDialog = true },
+                        leading = { PetalGroupIconBadge(Icons.Rounded.AddCircleOutline) },
+                        content = {
+                            Text(
+                                text = "Add Custom Subscription URL",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
                 }
 
                 // ── Samsung Internet Content Blockers Bridge ──
@@ -577,60 +533,39 @@ fun PetalAdBlockSettingsScreen(
                             var enabled by remember {
                                 mutableStateOf(com.petal.browser.browser.samsung.SamsungContentBlockerBridge.isBlockerEnabled(context, blocker.packageName))
                             }
-                            val shape = petalGroupShape(
-                                when {
-                                    samsungBlockers.size == 1 -> PetalGroupPosition.SINGLE
-                                    index == 0 -> PetalGroupPosition.TOP
-                                    index == samsungBlockers.lastIndex -> PetalGroupPosition.BOTTOM
-                                    else -> PetalGroupPosition.MIDDLE
-                                }
-                            )
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(shape)
-                                    .liquidGlassChrome(
-                                        shape = shape,
-                                        enabled = isGlass,
-                                        sheenIntensity = sheen
-                                    ),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
-                                ),
-                                shape = shape
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = blocker.appName,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        Text(
-                                            text = "Samsung Content Blocker (${blocker.packageName})",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    Switch(
+                            val setEnabled: (Boolean) -> Unit = { isChecked ->
+                                enabled = isChecked
+                                com.petal.browser.browser.samsung.SamsungContentBlockerBridge.setBlockerEnabled(
+                                    context,
+                                    blocker.packageName,
+                                    isChecked
+                                )
+                            }
+                            PetalGroupListRow(
+                                position = petalGroupPositionFor(index, samsungBlockers.size),
+                                onClick = { setEnabled(!enabled) },
+                                leading = { PetalGroupIconBadge(Icons.Rounded.Security, variant = PetalBadgeVariant.SECONDARY) },
+                                content = {
+                                    Text(
+                                        text = blocker.appName,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "Samsung Content Blocker (${blocker.packageName})",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailing = {
+                                    IconSwitch(
                                         checked = enabled,
-                                        onCheckedChange = { isChecked ->
-                                            enabled = isChecked
-                                            com.petal.browser.browser.samsung.SamsungContentBlockerBridge.setBlockerEnabled(
-                                                context,
-                                                blocker.packageName,
-                                                isChecked
-                                            )
-                                        }
+                                        icon = Icons.Rounded.Check,
+                                        onCheckedChange = setEnabled,
+                                        modifier = Modifier.padding(start = 8.dp)
                                     )
                                 }
-                            }
+                            )
                         }
                     }
                 }
@@ -655,6 +590,92 @@ fun PetalAdBlockSettingsScreen(
                         leadingIcon = { Icon(Icons.Rounded.FilterList, contentDescription = null) }
                     )
                 }
+
+                // keep the last row clear of the gesture/nav bar
+                Spacer(Modifier.navigationBarsPadding().height(8.dp))
+            }
+        }
+    }
+}
+
+
+/**
+ * One protection-level card. Glass: transparent surface + a single rim (no extra border except the
+ * selected outline), text colour set explicitly so it never falls back to black on a see-through
+ * card. Non-glass: normal tonal Material card.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ShieldModeCard(
+    mode: PetalAdBlockMode,
+    selected: Boolean,
+    isGlass: Boolean,
+    sheen: Float,
+    onClick: () -> Unit
+) {
+    val cardShape = RoundedCornerShape(24.dp)
+    val scheme = MaterialTheme.colorScheme
+    Card(
+        onClick = onClick,
+        shape = cardShape,
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                isGlass -> petalGroupSurfaceColor()
+                selected -> scheme.secondaryContainer
+                else -> scheme.surfaceContainerHigh
+            },
+            contentColor = scheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = if (selected) BorderStroke(if (isGlass) 1.5.dp else 2.dp, scheme.primary) else null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .liquidGlassChrome(
+                shape = cardShape,
+                enabled = isGlass,
+                sheenIntensity = sheen,
+                tintColor = if (selected) scheme.primaryContainer else Color.Unspecified
+            )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // The whole card is the click target, so the radio is display-only.
+            RadioButton(selected = selected, onClick = null)
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = mode.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = scheme.onSurface
+                    )
+                    if (mode == PetalAdBlockMode.STANDARD) {
+                        Surface(shape = CircleShape, color = scheme.primary) {
+                            Text(
+                                text = "RECOMMENDED",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = scheme.onPrimary,
+                                maxLines = 1,
+                                softWrap = false,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = mode.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant
+                )
             }
         }
     }
