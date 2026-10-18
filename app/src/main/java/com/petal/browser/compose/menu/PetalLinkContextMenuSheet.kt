@@ -388,15 +388,29 @@ fun PetalLinkContextMenuSheet(
         else -> linkUrl.ifBlank { "about:blank" }
     }
 
-    Surface(
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 2.dp,
-        shadowElevation = 12.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val menuShape = RoundedCornerShape(32.dp)
+
+    // Live backdrop: the dialog is its own window, so it records the browser behind it every
+    // frame. The glass panel lives INSIDE the container, on the Surface, and every row/header
+    // inside is its own refracting panel over the same backdrop.
+    com.petal.browser.ui.glass.PetalGlassContainer(
         modifier = Modifier
             .fillMaxWidth(0.92f)
             .heightIn(max = 560.dp),
+        enabled = isGlass,
+        live = true,
+    ) {
+    Surface(
+        shape = menuShape,
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = if (isGlass) 0.dp else 2.dp,
+        shadowElevation = if (isGlass) 0.dp else 12.dp,
+        border = if (isGlass) null
+            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(menuShape, enabled = true) else Modifier),
     ) {
         Column(
             modifier = Modifier
@@ -444,6 +458,7 @@ fun PetalLinkContextMenuSheet(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -459,10 +474,14 @@ private fun PetalMenuHeader(
     val previewModel = imageUrl ?: faviconUrl
     val isImage = imageUrl != null
 
+    val headerGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val headerShape = RoundedCornerShape(28.dp)
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (headerGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(headerShape, enabled = true, sheenIntensity = 0.5f) else Modifier),
+        shape = headerShape,
+        color = if (headerGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -554,8 +573,10 @@ private fun PetalMenuRow(
         bottomStart = maxOf(bottomRadius, 0.dp),
     )
 
+    val rowGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val idleContainer = if (rowGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
     val container by animateColorAsState(
-        if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+        if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (rowGlass) 0.78f else 1f) else idleContainer,
         PetalMotion.effectsFast(),
         label = "menuRowContainer",
     )
@@ -587,7 +608,8 @@ private fun PetalMenuRow(
             .fillMaxWidth()
             .petalStaggerIn(enterIndex)
             .scale(pressScale)
-            .alpha(contentAlpha),
+            .alpha(contentAlpha)
+            .then(if (rowGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.45f) else Modifier),
     ) {
         Row(
             modifier = Modifier

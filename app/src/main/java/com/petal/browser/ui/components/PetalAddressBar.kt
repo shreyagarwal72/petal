@@ -670,11 +670,15 @@ fun PetalAddressBar(
                         val position = com.petal.browser.ui.containment.petalGroupPositionFor(index, actions.size)
                         val shape = com.petal.browser.ui.containment.petalGroupShape(position)
 
+                        val rowGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                         Surface(
                             shape = shape,
-                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            // Opaque surfaceContainer rows covered the sheet's live glass; in glass mode
+                            // each row is its own refracting panel over the shared backdrop.
+                            color = if (rowGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .then(if (rowGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.5f) else Modifier)
                                 .clip(shape)
                                 .clickable {
                                     try {
