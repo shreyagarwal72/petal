@@ -797,13 +797,9 @@ class PetalGeckoView @JvmOverloads constructor(
 
                 // Native resource DOM scan (extract video, audio, image, and download links)
                 if (success && !currentUrl.isNullOrBlank() && !com.petal.browser.media.sniffer.PetalNativeSnifferEngine.isSearchOrInternalUrl(currentUrl)) {
-                    session.evaluateJavascript(com.petal.browser.media.sniffer.PetalNativeSnifferEngine.DOM_SCAN_JS)
-                        .then({ result ->
-                            com.petal.browser.media.sniffer.PetalNativeSnifferEngine.parseDomScanResult(tabId, currentUrl, result?.toString())
-                            org.mozilla.geckoview.GeckoResult.fromValue(null)
-                        }, {
-                            org.mozilla.geckoview.GeckoResult.fromValue(null)
-                        })
+                    evaluateJavascript(com.petal.browser.media.sniffer.PetalNativeSnifferEngine.DOM_SCAN_JS) { result ->
+                        com.petal.browser.media.sniffer.PetalNativeSnifferEngine.parseDomScanResult(tabId, currentUrl, result)
+                    }
                 }
 
                 val act = getHostActivity()

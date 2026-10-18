@@ -266,13 +266,15 @@ object PetalNativeSnifferEngine {
      * Download a sniffed resource via Petal's native download manager.
      */
     fun downloadResource(context: Context, resource: SniffedResource) {
-        val safeValues = SafeDownloadValues(
+        val fileName = resource.title.ifBlank {
+            resource.url.substringAfterLast('/').substringBefore('?').ifBlank { "download_${System.currentTimeMillis()}" }
+        }
+        PetalFetchDownloadBridge.enqueueGeckoDownload(
+            context = context,
             url = resource.url,
-            contentDisposition = null,
-            mimeType = resource.mimeType ?: "application/octet-stream",
-            suggestedFileName = resource.title
+            fileName = fileName,
+            mimeType = resource.mimeType
         )
-        PetalFetchDownloadBridge.enqueueDownload(context, safeValues)
     }
 
     /**
