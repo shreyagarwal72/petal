@@ -409,6 +409,10 @@ class PetalTabViewController private constructor(
                     val act = (context as? com.petal.browser.activity.BrowserActivity)
                         ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
                         ?: return
+                    val anchorView: View = findGeckoView(engineView.asView()) ?: this@PetalTabViewController
+                    if (com.petal.browser.ui.selection.PetalPageSelectionToolbar.show(act, anchorView, selection)) {
+                        return
+                    }
                     val selectedText = selection.text
                     if (!selectedText.isNullOrBlank()) {
                         act.runOnUiThread {
@@ -417,7 +421,11 @@ class PetalTabViewController private constructor(
                     }
                 }
 
-                override fun onHideAction(session: org.mozilla.geckoview.GeckoSession, reason: Int) {}
+                override fun onHideAction(session: org.mozilla.geckoview.GeckoSession, reason: Int) {
+                    val act = (context as? com.petal.browser.activity.BrowserActivity)
+                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                    if (act != null) com.petal.browser.ui.selection.PetalPageSelectionToolbar.hide(act)
+                }
             }
 
             // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)

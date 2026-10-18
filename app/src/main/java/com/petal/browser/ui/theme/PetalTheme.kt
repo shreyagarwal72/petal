@@ -254,7 +254,7 @@ fun PetalExpressiveTheme(
             colorScheme = colorScheme,
             motionScheme = androidx.compose.material3.MotionScheme.expressive(),
             typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexSettings, customFontPath, customFontSettings),
-            content = content
+            content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
         )
     }
 }

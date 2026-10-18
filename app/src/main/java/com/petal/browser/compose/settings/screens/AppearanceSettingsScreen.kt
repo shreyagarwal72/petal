@@ -1350,6 +1350,9 @@ fun AppearanceSettingsScreenContent(
                     }
                 }
 
+                // Text selection toolbar (Material 3 Expressive / liquid glass), app-wide.
+                com.petal.browser.ui.selection.PetalSelectionToolbarSettingsSection(targetHighlightId = targetHighlightItemId)
+
                 Spacer(Modifier.height(32.dp))
             }
         }

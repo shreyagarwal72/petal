@@ -1353,6 +1353,9 @@ class PetalGeckoView @JvmOverloads constructor(
             ) {
                 currentSelection = selection
                 val act = getHostActivity()
+                if (act != null && com.petal.browser.ui.selection.PetalPageSelectionToolbar.show(act, this@PetalGeckoView, selection)) {
+                    return
+                }
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     val selectedText = selection.text
                     if (!selectedText.isNullOrBlank()) {
@@ -1365,6 +1368,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onHideAction(session: GeckoSession, reason: Int) {
                 currentSelection = null
+                getHostActivity()?.let { com.petal.browser.ui.selection.PetalPageSelectionToolbar.hide(it) }
             }
         }
 
