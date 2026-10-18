@@ -1597,4 +1597,18 @@
     <string name="ui_player_unlocked">Player controls unlocked</string>
     <string name="ui_audio_delay">Audio sync delay</string>
     <string name="ui_subtitle_delay">Subtitle sync delay</string>
+
+    <!-- PDF Reader & Soul Browser Features -->
+    <string name="ui_pdf_view_mode">View mode</string>
+    <string name="ui_pdf_continuous">Continuous scroll</string>
+    <string name="ui_pdf_page_by_page">Page-by-page book</string>
+    <string name="ui_pdf_reading_tone">Color tone</string>
+    <string name="ui_pdf_tone_default">Default</string>
+    <string name="ui_pdf_tone_sepia">Sepia (Eye comfort)</string>
+    <string name="ui_pdf_tone_night">AMOLED Night (Inverted)</string>
+    <string name="ui_pdf_auto_scroll">Auto-scroll</string>
+    <string name="ui_pdf_crop_margins">Crop whitespace margins</string>
+    <string name="ui_pdf_reading_settings">Reading options</string>
+    <string name="ui_pdf_scroll_speed">Scroll speed</string>
 </resources>
+

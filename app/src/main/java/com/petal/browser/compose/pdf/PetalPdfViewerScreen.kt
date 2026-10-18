@@ -71,6 +71,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -79,6 +81,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -116,6 +119,14 @@ import com.petal.browser.R
 
 enum class AnnotationTool {
     NONE, PEN, HIGHLIGHTER, TEXT, ERASER
+}
+
+enum class PdfReadingTone {
+    DEFAULT, SEPIA, DARK_INVERTED
+}
+
+enum class PdfViewMode {
+    CONTINUOUS_VERTICAL, PAGE_PAGER_HORIZONTAL
 }
 
 data class StrokePath(
@@ -229,6 +240,14 @@ fun PetalPdfViewerScreen(
     var showThumbnailSheet by remember { mutableStateOf(false) }
     var showInfoSheet by remember { mutableStateOf(false) }
     var showJumpDialog by remember { mutableStateOf(false) }
+
+    // Soul Browser Reading Features: View Mode, Tone, Auto-Scroll, Crop
+    var readingTone by remember { mutableStateOf(PdfReadingTone.DEFAULT) }
+    var viewMode by remember { mutableStateOf(PdfViewMode.CONTINUOUS_VERTICAL) }
+    var isAutoScrolling by remember { mutableStateOf(false) }
+    var autoScrollSpeed by remember { mutableFloatStateOf(1.0f) }
+    var isCropMarginsEnabled by remember { mutableStateOf(false) }
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState { pageCount.coerceAtLeast(1) }
 
     // Find Text State
     var showFindBar by remember { mutableStateOf(false) }
@@ -417,13 +436,42 @@ fun PetalPdfViewerScreen(
         }
     }
 
-    // Determine currently visible page index from LazyList
+    // Auto-scroll engine
+    LaunchedEffect(isAutoScrolling, autoScrollSpeed, viewMode) {
+        if (isAutoScrolling && viewMode == PdfViewMode.CONTINUOUS_VERTICAL) {
+            while (isActive && isAutoScrolling) {
+                val scrollDelta = (2.5f * autoScrollSpeed).coerceIn(1f, 30f)
+                listState.scrollBy(scrollDelta)
+                delay(16)
+            }
+        }
+    }
+
+    // Synchronize page index between continuous and pager view modes
+    LaunchedEffect(viewMode) {
+        if (viewMode == PdfViewMode.PAGE_PAGER_HORIZONTAL) {
+            val target = listState.firstVisibleItemIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+            if (target != pagerState.currentPage) {
+                pagerState.scrollToPage(target)
+            }
+        } else {
+            val target = pagerState.currentPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+            if (target != listState.firstVisibleItemIndex) {
+                listState.scrollToItem(target)
+            }
+        }
+    }
+
+    var showReadingToneDialog by remember { mutableStateOf(false) }
+
     val currentVisiblePage = remember {
         derivedStateOf {
             if (pageCount == 0) 0
+            else if (viewMode == PdfViewMode.PAGE_PAGER_HORIZONTAL) pagerState.currentPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
             else (listState.firstVisibleItemIndex).coerceIn(0, (pageCount - 1).coerceAtLeast(0))
         }
     }
+
 
     // Save Annotations function
     val saveAnnotatedPdf: () -> Unit = {
@@ -742,52 +790,109 @@ fun PetalPdfViewerScreen(
                     }
 
                     Box(modifier = gestureModifier) {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer {
-                                    scaleX = scaleAnim.value
-                                    scaleY = scaleAnim.value
-                                    translationX = offsetXAnim.value
-                                    translationY = offsetYAnim.value
-                                },
-                            contentPadding = PaddingValues(
-                                top = statusBarInset + 72.dp,
-                                bottom = navBarInset + 104.dp,
-                                start = 12.dp,
-                                end = 12.dp
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(14.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            items(pageCount) { pageIndex ->
-                                val pageAnno = annotationsMap.getOrPut(pageIndex) { PageAnnotations() }
-                                PdfPageView(
-                                    renderer = pdfRenderer,
-                                    pageIndex = pageIndex,
-                                    isEditMode = isEditMode,
-                                    selectedTool = selectedTool,
-                                    selectedColor = selectedColor,
-                                    pageAnnotations = pageAnno,
-                                    onAddTextNoteRequest = {
-                                        pendingNotePage = pageIndex
-                                        showAddNoteDialog = true
+                        if (viewMode == PdfViewMode.CONTINUOUS_VERTICAL) {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        scaleX = scaleAnim.value
+                                        scaleY = scaleAnim.value
+                                        translationX = offsetXAnim.value
+                                        translationY = offsetYAnim.value
                                     },
-                                    onBeforeMutate = { recordUndoSnapshot(pageIndex) },
-                                    bitmapRefreshKey = rendererReloadKey,
-                                    isTextEditMode = isTextEditMode,
-                                    textLines = if (isTextEditMode && pageIndex == currentVisiblePage.value) textEditLines else emptyList(),
-                                    onTextLineTap = { line -> selectedTextLine = line },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .border(
-                                            width = 1.dp,
-                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                )
+                                contentPadding = PaddingValues(
+                                    top = statusBarInset + 72.dp,
+                                    bottom = navBarInset + 104.dp,
+                                    start = if (isCropMarginsEnabled) 0.dp else 12.dp,
+                                    end = if (isCropMarginsEnabled) 0.dp else 12.dp
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(if (isCropMarginsEnabled) 4.dp else 14.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                items(pageCount) { pageIndex ->
+                                    val pageAnno = annotationsMap.getOrPut(pageIndex) { PageAnnotations() }
+                                    PdfPageView(
+                                        renderer = pdfRenderer,
+                                        pageIndex = pageIndex,
+                                        readingTone = readingTone,
+                                        isCropMarginsEnabled = isCropMarginsEnabled,
+                                        isEditMode = isEditMode,
+                                        selectedTool = selectedTool,
+                                        selectedColor = selectedColor,
+                                        pageAnnotations = pageAnno,
+                                        onAddTextNoteRequest = {
+                                            pendingNotePage = pageIndex
+                                            showAddNoteDialog = true
+                                        },
+                                        onBeforeMutate = { recordUndoSnapshot(pageIndex) },
+                                        bitmapRefreshKey = rendererReloadKey,
+                                        isTextEditMode = isTextEditMode,
+                                        textLines = if (isTextEditMode && pageIndex == currentVisiblePage.value) textEditLines else emptyList(),
+                                        onTextLineTap = { line -> selectedTextLine = line },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(if (isCropMarginsEnabled) 0.dp else 12.dp))
+                                            .border(
+                                                width = 1.dp,
+                                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                                shape = RoundedCornerShape(if (isCropMarginsEnabled) 0.dp else 12.dp)
+                                            )
+                                    )
+                                }
+                            }
+                        } else {
+                            androidx.compose.foundation.pager.HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        scaleX = scaleAnim.value
+                                        scaleY = scaleAnim.value
+                                        translationX = offsetXAnim.value
+                                        translationY = offsetYAnim.value
+                                    },
+                                contentPadding = PaddingValues(
+                                    top = statusBarInset + 72.dp,
+                                    bottom = navBarInset + 104.dp,
+                                    start = if (isCropMarginsEnabled) 0.dp else 12.dp,
+                                    end = if (isCropMarginsEnabled) 0.dp else 12.dp
+                                ),
+                                pageSpacing = 12.dp
+                            ) { pageIndex ->
+                                val pageAnno = annotationsMap.getOrPut(pageIndex) { PageAnnotations() }
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    PdfPageView(
+                                        renderer = pdfRenderer,
+                                        pageIndex = pageIndex,
+                                        readingTone = readingTone,
+                                        isCropMarginsEnabled = isCropMarginsEnabled,
+                                        isEditMode = isEditMode,
+                                        selectedTool = selectedTool,
+                                        selectedColor = selectedColor,
+                                        pageAnnotations = pageAnno,
+                                        onAddTextNoteRequest = {
+                                            pendingNotePage = pageIndex
+                                            showAddNoteDialog = true
+                                        },
+                                        onBeforeMutate = { recordUndoSnapshot(pageIndex) },
+                                        bitmapRefreshKey = rendererReloadKey,
+                                        isTextEditMode = isTextEditMode,
+                                        textLines = if (isTextEditMode && pageIndex == currentVisiblePage.value) textEditLines else emptyList(),
+                                        onTextLineTap = { line -> selectedTextLine = line },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(if (isCropMarginsEnabled) 0.dp else 12.dp))
+                                            .border(
+                                                width = 1.dp,
+                                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                                shape = RoundedCornerShape(if (isCropMarginsEnabled) 0.dp else 12.dp)
+                                            )
+                                    )
+                                }
                             }
                         }
                     }
@@ -819,6 +924,7 @@ fun PetalPdfViewerScreen(
                                     controlsVisible = true
                                 }
                             },
+                            onReadingSettings = { showReadingToneDialog = true },
                             onShare = { sharePdfDocument(context, pdfUri, displayName) },
                             onPrint = { printPdfDocument(context, pdfUri, displayName) },
                             onInfo = { showInfoSheet = true }
@@ -940,6 +1046,21 @@ fun PetalPdfViewerScreen(
                             currentPage = currentVisiblePage.value + 1,
                             totalPages = pageCount,
                             scale = scaleAnim.value,
+                            viewMode = viewMode,
+                            isAutoScrolling = isAutoScrolling,
+                            isCropMarginsEnabled = isCropMarginsEnabled,
+                            onToggleAutoScroll = {
+                                isAutoScrolling = !isAutoScrolling
+                                if (isAutoScrolling) scheduleHideControls()
+                            },
+                            onToggleViewMode = {
+                                isAutoScrolling = false
+                                viewMode = if (viewMode == PdfViewMode.CONTINUOUS_VERTICAL) PdfViewMode.PAGE_PAGER_HORIZONTAL else PdfViewMode.CONTINUOUS_VERTICAL
+                            },
+                            onToggleCropMargins = {
+                                isCropMarginsEnabled = !isCropMarginsEnabled
+                            },
+                            onReadingSettings = { showReadingToneDialog = true },
                             onZoomIn = { zoomBy(1.25f) },
                             onZoomOut = { zoomBy(0.8f) },
                             onResetZoom = resetZoom,
@@ -973,10 +1094,143 @@ fun PetalPdfViewerScreen(
             onJump = { targetPage ->
                 showJumpDialog = false
                 coroutineScope.launch {
-                    listState.animateScrollToItem(targetPage - 1)
+                    if (viewMode == PdfViewMode.PAGE_PAGER_HORIZONTAL) {
+                        pagerState.animateScrollToPage(targetPage - 1)
+                    } else {
+                        listState.animateScrollToItem(targetPage - 1)
+                    }
                 }
             }
         )
+    }
+
+    // ── Soul Browser Reading Options Sheet / Dialog ──
+    if (showReadingToneDialog) {
+        com.petal.browser.ui.containment.PetalSheet(
+            onDismissRequest = { showReadingToneDialog = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
+                    .navigationBarsPadding()
+            ) {
+                Text(
+                    text = stringResource(R.string.ui_pdf_reading_settings),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(16.dp))
+
+                // View Mode Section
+                Text(
+                    text = stringResource(R.string.ui_pdf_view_mode),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    FilterChip(
+                        selected = viewMode == PdfViewMode.CONTINUOUS_VERTICAL,
+                        onClick = { viewMode = PdfViewMode.CONTINUOUS_VERTICAL },
+                        label = { Text(stringResource(R.string.ui_pdf_continuous)) },
+                        leadingIcon = { Icon(Icons.Rounded.ViewDay, null, Modifier.size(16.dp)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = viewMode == PdfViewMode.PAGE_PAGER_HORIZONTAL,
+                        onClick = {
+                            isAutoScrolling = false
+                            viewMode = PdfViewMode.PAGE_PAGER_HORIZONTAL
+                        },
+                        label = { Text(stringResource(R.string.ui_pdf_page_by_page)) },
+                        leadingIcon = { Icon(Icons.Rounded.ViewCarousel, null, Modifier.size(16.dp)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Color Tone Section
+                Text(
+                    text = stringResource(R.string.ui_pdf_reading_tone),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = readingTone == PdfReadingTone.DEFAULT,
+                        onClick = { readingTone = PdfReadingTone.DEFAULT },
+                        label = { Text(stringResource(R.string.ui_pdf_tone_default)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = readingTone == PdfReadingTone.SEPIA,
+                        onClick = { readingTone = PdfReadingTone.SEPIA },
+                        label = { Text(stringResource(R.string.ui_pdf_tone_sepia)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = readingTone == PdfReadingTone.DARK_INVERTED,
+                        onClick = { readingTone = PdfReadingTone.DARK_INVERTED },
+                        label = { Text(stringResource(R.string.ui_pdf_tone_night)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Auto Scroll Speed Slider (if continuous mode)
+                if (viewMode == PdfViewMode.CONTINUOUS_VERTICAL) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.ui_pdf_scroll_speed) + ": " + String.format(Locale.getDefault(), "%.1fx", autoScrollSpeed),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Switch(
+                            checked = isAutoScrolling,
+                            onCheckedChange = { isAutoScrolling = it }
+                        )
+                    }
+                    Slider(
+                        value = autoScrollSpeed,
+                        onValueChange = { autoScrollSpeed = it },
+                        valueRange = 0.5f..5.0f,
+                        steps = 8
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+
+                // Crop Margins Toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.ui_pdf_crop_margins),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Switch(
+                        checked = isCropMarginsEnabled,
+                        onCheckedChange = { isCropMarginsEnabled = it }
+                    )
+                }
+            }
+        }
     }
 
     // ── Add Text Note Dialog ──
@@ -1138,6 +1392,8 @@ fun PetalPdfViewerScreen(
 private fun PdfPageView(
     renderer: PdfRenderer?,
     pageIndex: Int,
+    readingTone: PdfReadingTone = PdfReadingTone.DEFAULT,
+    isCropMarginsEnabled: Boolean = false,
     isEditMode: Boolean = false,
     selectedTool: AnnotationTool = AnnotationTool.NONE,
     selectedColor: Color = Color.Red,
@@ -1200,20 +1456,59 @@ private fun PdfPageView(
         }
     }
 
+    val pageColorFilter = remember(readingTone) {
+        when (readingTone) {
+            PdfReadingTone.DEFAULT -> null
+            PdfReadingTone.SEPIA -> {
+                // Sepia eye comfort matrix
+                ColorFilter.colorMatrix(
+                    ColorMatrix(
+                        floatArrayOf(
+                            0.393f * 1.15f, 0.769f * 1.15f, 0.189f * 1.15f, 0f, 0f,
+                            0.349f * 1.05f, 0.686f * 1.05f, 0.168f * 1.05f, 0f, 0f,
+                            0.272f * 0.90f, 0.534f * 0.90f, 0.131f * 0.90f, 0f, 0f,
+                            0f,             0f,             0f,             1f, 0f
+                        )
+                    )
+                )
+            }
+            PdfReadingTone.DARK_INVERTED -> {
+                // High contrast AMOLED inverted night matrix
+                ColorFilter.colorMatrix(
+                    ColorMatrix(
+                        floatArrayOf(
+                            -1f,  0f,  0f, 0f, 255f,
+                             0f, -1f,  0f, 0f, 255f,
+                             0f,  0f, -1f, 0f, 255f,
+                             0f,  0f,  0f, 1f,   0f
+                        )
+                    )
+                )
+            }
+        }
+    }
+
+    val surfaceBgColor = when (readingTone) {
+        PdfReadingTone.DEFAULT -> Color.White
+        PdfReadingTone.SEPIA -> Color(0xFFFBF0D9)
+        PdfReadingTone.DARK_INVERTED -> Color(0xFF121212)
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f / pageAspectRatio),
-        shape = RoundedCornerShape(12.dp),
-        color = Color.White,
-        shadowElevation = 2.dp
+        shape = RoundedCornerShape(if (isCropMarginsEnabled) 0.dp else 12.dp),
+        color = surfaceBgColor,
+        shadowElevation = if (isCropMarginsEnabled) 0.dp else 2.dp
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             if (pageBitmap != null) {
                 Image(
                     bitmap = pageBitmap!!.asImageBitmap(),
                     contentDescription = "PDF Page " + (pageIndex + 1),
-                    contentScale = ContentScale.FillWidth,
+                    contentScale = if (isCropMarginsEnabled) ContentScale.Crop else ContentScale.FillWidth,
+                    colorFilter = pageColorFilter,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -1479,6 +1774,7 @@ private fun PdfViewerTopBar(
     onJumpPage: () -> Unit,
     onFindText: () -> Unit,
     onEditMode: () -> Unit,
+    onReadingSettings: () -> Unit,
     onShare: () -> Unit,
     onPrint: () -> Unit,
     onInfo: () -> Unit,
@@ -1487,20 +1783,35 @@ private fun PdfViewerTopBar(
     val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val barShape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.80f),
-                        Color.Transparent
-                    )
-                )
+            .then(
+                if (isGlass) {
+                    Modifier
+                        .padding(horizontal = 12.dp)
+                        .padding(top = topClearance + 6.dp)
+                        .liquidGlassChrome(barShape, enabled = true)
+                        .background(petalGroupSurfaceColor(), barShape)
+                } else {
+                    Modifier
+                        .background(
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.80f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                        .padding(top = topClearance)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                }
             )
-            .padding(top = topClearance)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1539,6 +1850,14 @@ private fun PdfViewerTopBar(
                 }
             }
 
+            IconButton(onClick = onReadingSettings) {
+                Icon(
+                    imageVector = Icons.Rounded.Tune,
+                    contentDescription = stringResource(R.string.ui_pdf_reading_settings),
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
             IconButton(onClick = onFindText) {
                 Icon(
                     imageVector = Icons.Rounded.Search,
@@ -1567,6 +1886,11 @@ private fun PdfViewerTopBar(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                 ) {
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = stringResource(R.string.ui_pdf_reading_settings),
+                        leadingIcon = { Icon(Icons.Rounded.Tune, null) },
+                        onClick = { menuExpanded = false; onReadingSettings() }
+                    )
                     com.petal.browser.ui.containment.PetalPopupMenuItem(
                         text = stringResource(R.string.ui_edit_annotate),
                         leadingIcon = { Icon(Icons.Rounded.Edit, null) },
@@ -1834,6 +2158,13 @@ private fun PdfViewerBottomBar(
     currentPage: Int,
     totalPages: Int,
     scale: Float,
+    viewMode: PdfViewMode,
+    isAutoScrolling: Boolean,
+    isCropMarginsEnabled: Boolean,
+    onToggleAutoScroll: () -> Unit,
+    onToggleViewMode: () -> Unit,
+    onToggleCropMargins: () -> Unit,
+    onReadingSettings: () -> Unit,
     onZoomIn: () -> Unit,
     onZoomOut: () -> Unit,
     onResetZoom: () -> Unit,
@@ -1850,7 +2181,7 @@ private fun PdfViewerBottomBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = bottomClearance)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
@@ -1866,9 +2197,9 @@ private fun PdfViewerBottomBar(
                 .liquidGlassChrome(bottomShape, enabled = isGlass)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 // Page Number Tag
                 Surface(
@@ -1877,16 +2208,16 @@ private fun PdfViewerBottomBar(
                     modifier = Modifier.clickable { onJumpPage() }
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.PictureAsPdf,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text(
                             text = "$currentPage / $totalPages",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
@@ -1895,43 +2226,91 @@ private fun PdfViewerBottomBar(
                     }
                 }
 
+                // View Mode Toggle (Continuous vs Page Pager)
+                IconButton(onClick = onToggleViewMode, modifier = Modifier.size(34.dp)) {
+                    Icon(
+                        imageVector = if (viewMode == PdfViewMode.CONTINUOUS_VERTICAL) Icons.Rounded.ViewDay else Icons.Rounded.ViewCarousel,
+                        contentDescription = stringResource(R.string.ui_pdf_view_mode),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(19.dp)
+                    )
+                }
+
+                // Auto Scroll Toggle (Only in continuous mode)
+                if (viewMode == PdfViewMode.CONTINUOUS_VERTICAL) {
+                    IconButton(
+                        onClick = onToggleAutoScroll,
+                        modifier = Modifier.size(34.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isAutoScrolling) Icons.Rounded.PauseCircle else Icons.Rounded.PlayCircle,
+                            contentDescription = stringResource(R.string.ui_pdf_auto_scroll),
+                            tint = if (isAutoScrolling) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                // Margin Crop Whitespace Toggle
+                IconButton(
+                    onClick = onToggleCropMargins,
+                    modifier = Modifier.size(34.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.CropFree,
+                        contentDescription = stringResource(R.string.ui_pdf_crop_margins),
+                        tint = if (isCropMarginsEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(19.dp)
+                    )
+                }
+
+                // Reading Tone / Options Dialog Trigger
+                IconButton(onClick = onReadingSettings, modifier = Modifier.size(34.dp)) {
+                    Icon(
+                        imageVector = Icons.Rounded.Palette,
+                        contentDescription = stringResource(R.string.ui_pdf_reading_tone),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(19.dp)
+                    )
+                }
+
                 // Thumbnail Grid
-                IconButton(onClick = onShowThumbnails, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = onShowThumbnails, modifier = Modifier.size(34.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.GridView,
                         contentDescription = stringResource(R.string.ui_thumbnails),
                         tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                 }
 
-                // Edit PDF's real text (extract/rewrite via PDFBox)
-                IconButton(onClick = onEditText, modifier = Modifier.size(36.dp)) {
+                // Edit PDF's real text
+                IconButton(onClick = onEditText, modifier = Modifier.size(34.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.TextFields,
                         contentDescription = stringResource(R.string.ui_edit_document_text),
                         tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                 }
 
                 // Zoom Out Button
-                IconButton(onClick = onZoomOut, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = onZoomOut, modifier = Modifier.size(32.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.Remove,
                         contentDescription = stringResource(R.string.ui_zoom_out_2),
                         tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
                 // Zoom In Button
-                IconButton(onClick = onZoomIn, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = onZoomIn, modifier = Modifier.size(32.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.Add,
                         contentDescription = stringResource(R.string.ui_zoom_in_2),
                         tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
@@ -1943,16 +2322,16 @@ private fun PdfViewerBottomBar(
                         modifier = Modifier.clickable { onResetZoom() }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.ZoomOutMap,
                                 contentDescription = stringResource(R.string.ui_reset_zoom),
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(12.dp)
                             )
-                            Spacer(Modifier.width(4.dp))
+                            Spacer(Modifier.width(3.dp))
                             Text(
                                 text = "${(scale * 100).toInt()}%",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
