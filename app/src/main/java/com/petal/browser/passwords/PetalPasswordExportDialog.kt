@@ -13,9 +13,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.components.PetalExpressiveDialog
 import com.petal.browser.view.PetalToast
 import java.io.File
@@ -51,16 +55,16 @@ fun PetalPasswordExportDialog(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
         val optionShape = RoundedCornerShape(20.dp)
         Surface(
             shape = optionShape,
-            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor()
+            color = if (isGlass) petalGroupSurfaceColor()
                     else if (exportEncrypted) MaterialTheme.colorScheme.primaryContainer
                     else MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(optionShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
+                .then(if (isGlass) Modifier.liquidGlassChrome(optionShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
                 .clip(optionShape)
                 .clickable { exportEncrypted = !exportEncrypted }
         ) {

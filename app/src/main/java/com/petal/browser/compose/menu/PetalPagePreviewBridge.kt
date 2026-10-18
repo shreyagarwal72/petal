@@ -21,7 +21,11 @@ import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -134,13 +138,13 @@ private fun PetalPagePreviewSheet(
     ) {
         Surface(
             shape = sheetShape,
-            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = if (isGlass) 0.dp else 2.dp,
             shadowElevation = if (isGlass) 0.dp else 12.dp,
             border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(sheetShape, enabled = true) else Modifier)
+                .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true) else Modifier)
         ) {
             Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
                 Spacer(Modifier.height(10.dp))

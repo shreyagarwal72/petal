@@ -23,6 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
 import com.petal.browser.ui.components.PetalExpressiveDialog
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -148,14 +151,14 @@ private fun TermsBulletPoint(
     title: String,
     description: String
 ) {
-    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val cardShape = RoundedCornerShape(18.dp)
     Surface(
         shape = cardShape,
-        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(cardShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
+            .then(if (isGlass) Modifier.liquidGlassChrome(cardShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
