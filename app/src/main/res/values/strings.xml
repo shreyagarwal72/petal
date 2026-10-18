@@ -1595,8 +1595,6 @@
     <string name="ui_slide_to_unlock">Slide to unlock</string>
     <string name="ui_player_locked">Player controls locked</string>
     <string name="ui_player_unlocked">Player controls unlocked</string>
-    <string name="ui_aspect_ratio">Aspect ratio</string>
-    <string name="ui_playback_speed">Playback speed</string>
     <string name="ui_audio_delay">Audio sync delay</string>
     <string name="ui_subtitle_delay">Subtitle sync delay</string>
 </resources>
