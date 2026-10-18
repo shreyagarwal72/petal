@@ -15,6 +15,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.asImageBitmap
@@ -906,7 +908,7 @@ fun PetalSheet(
         // up to the top would put its header under the status bar. Measure how far the sheet
         // overlaps the status bar and pad by exactly that much.
         val density = androidx.compose.ui.platform.LocalDensity.current
-        val statusTopPx = androidx.compose.foundation.layout.WindowInsets.statusBars.getTop(density)
+        val statusTopPx = WindowInsets.statusBars.getTop(density)
         var statusOverlapPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
         CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides activeWallpaper) {
             Box(
