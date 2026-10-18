@@ -98,6 +98,23 @@ fun MediaSettingsScreen(
                         }
                     )
 
+                    // Media Player Style (M3 Expressive vs Liquid Glass)
+                    var playerStyle by remember { mutableStateOf(sp.getString("sp_native_player_style", "LIQUID_GLASS") ?: "LIQUID_GLASS") }
+                    val isLiquidGlass = playerStyle == "LIQUID_GLASS"
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        title = stringResource(R.string.ui_media_player_style),
+                        subtitle = if (isLiquidGlass) stringResource(R.string.ui_style_liquid_glass) else stringResource(R.string.ui_style_material_expressive),
+                        icon = if (isLiquidGlass) Icons.Rounded.BlurOn else Icons.Rounded.Palette,
+                        checked = isLiquidGlass,
+                        onCheckedChange = { checked ->
+                            val newStyle = if (checked) "LIQUID_GLASS" else "EXPRESSIVE"
+                            playerStyle = newStyle
+                            sp.edit().putString("sp_native_player_style", newStyle).apply()
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                        }
+                    )
+
                     // Media Sniffer / Fetcher
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,

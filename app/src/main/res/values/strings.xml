@@ -1586,4 +1586,17 @@
     <string name="ui_store_scripts_catalog_desc">Lightweight client enhancements and userscripts with SHA-256 integrity verification.</string>
     <string name="ui_store_filter_catalog_desc">Subscribe to curated AdBlock and tracker-prevention lists for Petal Shield.</string>
     <string name="ui_store_search_catalog_desc">Install independent, privacy-respecting search engines with one tap.</string>
+
+    <!-- Website Media Player UI & REX Controls -->
+    <string name="ui_media_player_style">Media player style</string>
+    <string name="ui_media_player_style_desc">Switch between Material 3 Expressive and Liquid Glass player UI</string>
+    <string name="ui_style_material_expressive">Material 3 Expressive</string>
+    <string name="ui_style_liquid_glass">Liquid Glass</string>
+    <string name="ui_slide_to_unlock">Slide to unlock</string>
+    <string name="ui_player_locked">Player controls locked</string>
+    <string name="ui_player_unlocked">Player controls unlocked</string>
+    <string name="ui_aspect_ratio">Aspect ratio</string>
+    <string name="ui_playback_speed">Playback speed</string>
+    <string name="ui_audio_delay">Audio sync delay</string>
+    <string name="ui_subtitle_delay">Subtitle sync delay</string>
 </resources>
