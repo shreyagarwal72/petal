@@ -51,11 +51,17 @@ fun PetalPasswordExportDialog(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val optionShape = RoundedCornerShape(20.dp)
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = if (exportEncrypted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = optionShape,
+            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor()
+                    else if (exportEncrypted) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier
                 .fillMaxWidth()
+                .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(optionShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
+                .clip(optionShape)
                 .clickable { exportEncrypted = !exportEncrypted }
         ) {
             Row(
@@ -72,7 +78,7 @@ fun PetalPasswordExportDialog(
                     Icon(
                         if (exportEncrypted) Icons.Rounded.EnhancedEncryption else Icons.Rounded.Lock,
                         contentDescription = null,
-                        tint = if (exportEncrypted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (exportEncrypted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(Modifier.width(12.dp))
@@ -81,17 +87,18 @@ fun PetalPasswordExportDialog(
                             text = "Password-protected backup",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (exportEncrypted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = if (exportEncrypted) "Opens only with your password (*.petal)" else "Standard JSON format (*.json)",
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (exportEncrypted) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-                Switch(
+                com.petal.browser.ui.components.IconSwitch(
                     checked = exportEncrypted,
+                    icon = if (exportEncrypted) Icons.Rounded.EnhancedEncryption else Icons.Rounded.Lock,
                     onCheckedChange = { exportEncrypted = it }
                 )
             }

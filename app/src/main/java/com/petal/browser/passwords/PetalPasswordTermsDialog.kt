@@ -148,10 +148,14 @@ private fun TermsBulletPoint(
     title: String,
     description: String
 ) {
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val cardShape = RoundedCornerShape(18.dp)
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth()
+        shape = cardShape,
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(cardShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),

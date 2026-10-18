@@ -336,7 +336,8 @@ fun PetalDialog(
             modifier = modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight(),
-            enabled = isGlass
+            enabled = isGlass,
+            live = true
         ) {
             Surface(
                 modifier = Modifier

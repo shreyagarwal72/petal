@@ -70,7 +70,9 @@ fun PetalAnimatedWallpaperBackground(
     blur: Float = 0f,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
+    // ExoPlayer and the AndroidView can outlive the Activity context through Compose
+    // effects. Keep the player bound to the application context instead.
+    val context = LocalContext.current.applicationContext
     val lifecycleOwner = LocalLifecycleOwner.current
     val isVideo = remember(wallpaperUri) {
         val lower = wallpaperUri.lowercase()
@@ -182,7 +184,7 @@ fun PetalAnimatedWallpaperBackground(
                 runCatching {
                     val mediaUri = when {
                         wallpaperUri.startsWith("android.resource://") -> Uri.parse(wallpaperUri)
-                        wallpaperUri.startsWith("file://") -> Uri.fromFile(File(wallpaperUri.removePrefix("file://")))
+                        wallpaperUri.startsWith("file://") -> Uri.parse(wallpaperUri)
                         wallpaperUri.startsWith("/") -> Uri.fromFile(File(wallpaperUri))
                         else -> Uri.parse(wallpaperUri)
                     }
@@ -239,6 +241,15 @@ fun PetalAnimatedWallpaperBackground(
                 }
             }
 
+            DisposableEffect(exoPlayer) {
+                onDispose {
+                    try {
+                        exoPlayer?.stop()
+                        exoPlayer?.release()
+                    } catch (_: Throwable) {}
+                }
+            }
+
             // Lifecycle-aware playback: pause decoding when activity or home screen is stopped/paused
             DisposableEffect(exoPlayer, lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
@@ -257,10 +268,6 @@ fun PetalAnimatedWallpaperBackground(
                 lifecycleOwner.lifecycle.addObserver(observer)
                 onDispose {
                     lifecycleOwner.lifecycle.removeObserver(observer)
-                    try {
-                        exoPlayer?.stop()
-                        exoPlayer?.release()
-                    } catch (_: Throwable) {}
                 }
             }
 

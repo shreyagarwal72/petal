@@ -70,6 +70,12 @@ object PetalPagePreviewBridge {
         activity.runOnUiThread {
             try {
                 val dialog = BottomSheetDialog(activity)
+                dialog.setOnShowListener {
+                    try {
+                        val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                        bottomSheet?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    } catch (_: Throwable) {}
+                }
                 val composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
@@ -106,6 +112,8 @@ private fun PetalPagePreviewSheet(
 ) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
 
     // Bare PetalGeckoView, not routed through BrowserWebViewController - never
     // added to BrowserContainer, never made the activity's currentAlbumController,
@@ -119,29 +127,39 @@ private fun PetalPagePreviewSheet(
         }
     }
 
-    Surface(
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth()
+    com.petal.browser.ui.glass.PetalGlassContainer(
+        modifier = Modifier.fillMaxWidth(),
+        enabled = isGlass,
+        live = true
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Spacer(Modifier.height(10.dp))
-            Box(
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                    .align(Alignment.CenterHorizontally)
-            )
-            Spacer(Modifier.height(12.dp))
+        Surface(
+            shape = sheetShape,
+            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = if (isGlass) 0.dp else 2.dp,
+            shadowElevation = if (isGlass) 0.dp else 12.dp,
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.com.petal.browser.ui.containment.liquidGlassChrome(sheetShape, enabled = true) else Modifier)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                        .align(Alignment.CenterHorizontally)
+                )
+                Spacer(Modifier.height(12.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 Icon(
                     Icons.Rounded.Language,
                     contentDescription = null,
@@ -214,5 +232,6 @@ private fun PetalPagePreviewSheet(
 
             Spacer(Modifier.height(16.dp))
         }
+    }
     }
 }

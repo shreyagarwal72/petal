@@ -147,8 +147,8 @@ fun PetalPasswordsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
     ) {
+        val glassOn = isLiquidGlassEnabled("sp_liquid_glass_containments")
         M3ExpressiveVariableBackground(pageSeed = "petal_passwords_screen")
 
         Column(modifier = Modifier.fillMaxSize()) {
@@ -442,10 +442,14 @@ private fun PasswordDetailsDialog(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Username row
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val fieldShape = RoundedCornerShape(16.dp)
         Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            modifier = Modifier.fillMaxWidth()
+            shape = fieldShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
         ) {
             Row(
                 modifier = Modifier.padding(12.dp),
@@ -470,9 +474,11 @@ private fun PasswordDetailsDialog(
 
         // Password row
         Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            modifier = Modifier.fillMaxWidth()
+            shape = fieldShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
         ) {
             Row(
                 modifier = Modifier.padding(12.dp),
@@ -509,6 +515,7 @@ private fun PasswordDetailsDialog(
         }
 
         // Breach check button
+        val checkBtnShape = RoundedCornerShape(16.dp)
         OutlinedButton(
             onClick = {
                 isCheckingBreach = true
@@ -522,8 +529,11 @@ private fun PasswordDetailsDialog(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.liquidGlassChrome(checkBtnShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+            shape = checkBtnShape,
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             if (isCheckingBreach) {
                 PetalContainedLoadingIndicator(size = 16.dp)
@@ -550,18 +560,22 @@ private fun PasswordDetailsDialog(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val actionShape = RoundedCornerShape(16.dp)
             OutlinedButton(
                 onClick = onDelete,
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .then(if (isGlass) Modifier.liquidGlassChrome(actionShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+                shape = actionShape,
+                border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
             ) {
                 Text("Delete")
             }
             Button(
                 onClick = onEdit,
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp)
+                shape = actionShape
             ) {
                 Text("Edit")
             }
@@ -589,14 +603,26 @@ private fun PasswordEditDialog(
             color = MaterialTheme.colorScheme.onSurface
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val fieldShape = RoundedCornerShape(16.dp)
+        val fieldColors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = if (isGlass) Color.Black.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainer,
+            unfocusedContainerColor = if (isGlass) Color.Black.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainer,
+            focusedBorderColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = if (isGlass) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedTextField(
                 value = domain,
                 onValueChange = { domain = it },
                 label = { Text("Website Domain (e.g. google.com)") },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
+                shape = fieldShape,
+                colors = fieldColors,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
             )
 
             OutlinedTextField(
@@ -604,15 +630,21 @@ private fun PasswordEditDialog(
                 onValueChange = { username = it },
                 label = { Text("Username or Email") },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
+                shape = fieldShape,
+                colors = fieldColors,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
             )
 
             PetalShapedPasswordInput(
                 value = password,
                 onValueChange = { password = it },
                 hintText = "Password",
-                modifier = Modifier.fillMaxWidth()
+                containerColor = if (isGlass) Color.Black.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHighest,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(20.dp), enabled = true, sheenIntensity = 0.45f) else Modifier)
             )
 
             OutlinedTextField(
@@ -621,8 +653,11 @@ private fun PasswordEditDialog(
                 label = { Text("Notes (optional)") },
                 singleLine = false,
                 maxLines = 3,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
+                shape = fieldShape,
+                colors = fieldColors,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
             )
         }
 
@@ -630,10 +665,14 @@ private fun PasswordEditDialog(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val btnShape = RoundedCornerShape(16.dp)
             OutlinedButton(
                 onClick = onDismiss,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .then(if (isGlass) Modifier.liquidGlassChrome(btnShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+                shape = btnShape,
+                border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Text("Cancel")
             }
