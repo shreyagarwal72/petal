@@ -63,15 +63,18 @@ object PetalPageSelectionToolbar {
     @JvmStatic
     fun show(activity: Activity, anchor: View, selection: Sel.Selection): Boolean {
         if (!PetalSelectionToolbarPrefs.isEnabled(activity)) return false
-        val rect: RectF = (try { selection.clientRect } catch (_: Throwable) { null }) ?: return false
+        val screenRect: RectF = (try { selection.screenRect } catch (_: Throwable) { null }) ?: return false
         val actions = buildActions(activity, selection)
         if (actions.isEmpty()) return false
 
-        val loc = IntArray(2)
-        anchor.getLocationInWindow(loc)
+        val decor = activity.window.decorView
+        val locOnScreen = IntArray(2)
+        decor.getLocationOnScreen(locOnScreen)
         val inWindow = RectF(
-            rect.left + loc[0], rect.top + loc[1],
-            rect.right + loc[0], rect.bottom + loc[1]
+            screenRect.left - locOnScreen[0],
+            screenRect.top - locOnScreen[1],
+            screenRect.right - locOnScreen[0],
+            screenRect.bottom - locOnScreen[1]
         )
         holderFor(activity).state.value = PageSelection(inWindow, actions)
         return true
