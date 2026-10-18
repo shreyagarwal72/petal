@@ -292,62 +292,15 @@ fun PetalVoiceSearchSheet(
     }
 
     val isLiquidGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val wallpaper = rememberPetalGlassWallpaper()
-    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
     val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isLiquidGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
 
-    val liveSource = remember(context) {
-        var c: android.content.Context? = context
-        while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
-        (c as? android.app.Activity)?.let {
-            it.findViewById<android.view.View>(R.id.main) ?: it.findViewById<android.view.View>(android.R.id.content)
-        }
-    }
-    val frameTick = remember { mutableLongStateOf(0L) }
-    LaunchedEffect(isLiquidGlass, liveSource) {
-        if (isLiquidGlass && liveSource != null) {
-            while (true) { withFrameNanos { frameTick.longValue = it } }
-        }
-    }
-
-    CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
+    run {
         com.petal.browser.ui.containment.PetalSheet(
             onDismissRequest = onDismiss,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
-                if (isLiquidGlass) {
-                    if (liveSource != null) {
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .liveGlassWallpaper(wallpaper, liveSource) { frameTick.longValue }
-                        )
-                    } else if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .recordGlassWallpaper(wallpaper)
-                        ) {
-                            Image(
-                                bitmap = snapshotBitmap.asImageBitmap(),
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                            )
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .captureGlassWallpaper(wallpaper)
-                        ) {
-                            PetalGlassPattern(Modifier.fillMaxSize())
-                        }
-                    }
-                }
-
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

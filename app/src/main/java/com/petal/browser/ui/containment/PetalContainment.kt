@@ -15,6 +15,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.layout.fillMaxSize
+import com.petal.browser.ui.glass.liveGlassWallpaper
+import com.petal.browser.ui.glass.recordGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaper
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -812,11 +817,61 @@ fun PetalFloatingToolbar(modifier: Modifier = Modifier, elevation: Dp = 6.dp, co
 }
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+/**
+ * Backdrop recorder for sheets: records the live app window (or a snapshot / pattern fallback)
+ * into [wallpaper] so every glass panel inside the sheet can frost + refract it. Draws nothing.
+ */
+@Composable
+internal fun PetalSheetGlassBackdrop(
+    wallpaper: com.petal.browser.ui.glass.PetalGlassWallpaper,
+    modifier: Modifier = Modifier
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val liveSource = remember(context) {
+        var c: android.content.Context? = context
+        while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+        (c as? android.app.Activity)?.let {
+            it.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                ?: it.findViewById<android.view.View>(android.R.id.content)
+        }
+    }
+    val frameTick = remember { androidx.compose.runtime.mutableLongStateOf(0L) }
+    androidx.compose.runtime.LaunchedEffect(liveSource) {
+        if (liveSource != null) {
+            while (true) { androidx.compose.runtime.withFrameNanos { frameTick.longValue = it } }
+        }
+    }
+    val snapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
+    if (liveSource != null) {
+        Box(modifier.liveGlassWallpaper(wallpaper, liveSource) { frameTick.longValue })
+    } else if (snapshot != null && !snapshot.isRecycled) {
+        Box(modifier.recordGlassWallpaper(wallpaper)) {
+            androidx.compose.foundation.Image(
+                bitmap = snapshot.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
+        }
+    } else {
+        Box(modifier.captureGlassWallpaper(wallpaper)) {
+            com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
+        }
+    }
+}
+
+/**
+ * Glass bottom sheet. The glass panel lives INSIDE the sheet content (not on the outer modifier,
+ * which sits outside the sheet's slide offset and drew a ghost panel at the top of the screen).
+ * The sheet owns a live backdrop so every card inside refracts the app window in real time.
+ * Set [ownsGlassBackdrop] = false only if the caller provides its own LocalPetalGlassWallpaper.
+ */
 @Composable
 fun PetalSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ownsGlassBackdrop: Boolean = true,
     dragHandle: (@Composable () -> Unit)? = {
         Box(Modifier.padding(vertical = 12.dp).size(width = 36.dp, height = 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)))
     },
@@ -827,26 +882,43 @@ fun PetalSheet(
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
     val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val dark = MaterialTheme.colorScheme.background.luminance() < .5f
+    val fallbackColor = if (dark) Color(0xE61A1C1E) else Color(0xE6F2F4F7)
 
-    val sheetContainerColor = if (isGlass) {
-        val dark = MaterialTheme.colorScheme.background.luminance() < .5f
-        if (dark) Color(0xCC1A1C1E) else Color(0xCCF2F4F7)
-    } else MaterialTheme.colorScheme.surfaceContainerLow
+    val ownWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val activeWallpaper = if (isGlass && ownsGlassBackdrop) ownWallpaper else com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        modifier = modifier
-            .navigationBarsPadding()
-            .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = sheen),
+        modifier = modifier,
         sheetState = sheetState,
         shape = sheetShape,
-        containerColor = sheetContainerColor,
+        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
         scrimColor = if (isGlass) Color.Black.copy(alpha = 0.32f) else BottomSheetDefaults.ScrimColor,
-        dragHandle = dragHandle,
-        content = {
-            content()
+        dragHandle = null,
+        contentWindowInsets = { androidx.compose.foundation.layout.WindowInsets(0) },
+    ) {
+        CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides activeWallpaper) {
+            Box(Modifier.fillMaxWidth()) {
+                if (isGlass) {
+                    if (ownsGlassBackdrop) PetalSheetGlassBackdrop(ownWallpaper, Modifier.matchParentSize())
+                    val ready = activeWallpaper?.ready == true
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .then(if (!ready) Modifier.background(fallbackColor, sheetShape) else Modifier)
+                            .liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen)
+                    )
+                }
+                Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
+                    if (dragHandle != null) {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { dragHandle() }
+                    }
+                    content()
+                }
+            }
         }
-    )
+    }
 }
 
 @Composable

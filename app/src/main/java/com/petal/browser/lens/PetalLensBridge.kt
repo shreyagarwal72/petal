@@ -39,9 +39,13 @@ object PetalLensBridge {
             activeDialog = null
 
             val dialog = BottomSheetDialog(activity)
-            dialog.window?.let { window ->
-                window.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+            // The sheet container only exists after the content is attached, so clear its
+            // default opaque background once the dialog is shown (doing it earlier was a no-op).
+            dialog.setOnShowListener {
+                dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
                     ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                dialog.behavior.skipCollapsed = true
+                dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             }
             activeDialog = dialog
 

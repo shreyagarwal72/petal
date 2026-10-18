@@ -33,6 +33,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInRoot
+import com.petal.browser.ui.glass.liveGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -111,106 +116,51 @@ fun PetalQrScannerScreen(
     }
 
     val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    var previewRef by remember { mutableStateOf<PreviewView?>(null) }
+    var viewportRect by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    val frameTick = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(isLiquidGlass, previewRef, cameraReady) {
+        if (isLiquidGlass && previewRef != null && cameraReady) {
+            while (true) { withFrameNanos { frameTick.longValue = it } }
+        }
+    }
 
+    CompositionLocalProvider(
+        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides (if (isLiquidGlass) glassWallpaper else null)
+    ) {
+    // Fully opaque root: the old 95% alpha let the sheet/home underneath ghost through.
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (isLiquidGlass) Color(0xF20B0C10) else Color(0xFF0F0F12))
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .windowInsetsPadding(WindowInsets.navigationBars)
+            .background(Color(0xFF0B0C10))
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // ── Top Bar with Status Bar spacing ──────────────────────────────
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp, bottom = 12.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
-                    modifier = Modifier
-                        .size(44.dp)
-                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
-                        .bouncyClickable {
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                            onDismiss()
-                        }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.ui_cancel_scanning),
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-
-                Spacer(Modifier.width(16.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.ui_petal_qr_scanner),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White
-                    )
-                    Text(
-                        text = if (scanLocked) "Code identified" else "Point camera at any code",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.72f)
-                    )
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = if (isLiquidGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
-                    modifier = Modifier
-                        .size(44.dp)
-                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.QrCodeScanner,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
+        // ── Glass backdrop: the live camera feed (or a pattern before it is ready) ──
+        if (isLiquidGlass) {
+            val pv = previewRef
+            if (pv != null && hasPermission && cameraReady) {
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .liveGlassWallpaper(glassWallpaper, pv) { frameTick.longValue }
+                )
+            } else {
+                Box(Modifier.matchParentSize().captureGlassWallpaper(glassWallpaper)) {
+                    com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
                 }
             }
+        }
 
-            Spacer(Modifier.weight(0.5f))
-
-            // ── 4:3 Camera Viewport ──────────────────────────────────────────
-            val viewportShape = RoundedCornerShape(32.dp)
-            Surface(
-                shape = viewportShape,
-                color = Color.Black,
-                border = androidx.compose.foundation.BorderStroke(
-                    1.5.dp,
-                    if (isLiquidGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primary
-                ),
-                shadowElevation = 8.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(3f / 4f)
-                    .clip(viewportShape)
-                    .then(if (isLiquidGlass) Modifier.liquidGlassChrome(viewportShape, enabled = true) else Modifier)
-            ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    if (hasPermission) {
-                        key(lensFacing) {
-                            AndroidView(
-                                factory = { ctx ->
-                                    PreviewView(ctx).apply {
-                                        scaleType = PreviewView.ScaleType.FILL_CENTER
+        // ── Full-bleed camera (TextureView so it can be recorded for glass) ──
+        if (hasPermission) {
+            key(lensFacing) {
+                AndroidView(
+                    factory = { ctx ->
+                        PreviewView(ctx).apply {
+                            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                            scaleType = PreviewView.ScaleType.FILL_CENTER
+                            val previewView = this
+                            post { previewRef = previewView }
                                         val future = ProcessCameraProvider.getInstance(ctx)
                                         future.addListener({
                                             val provider = future.get()
@@ -284,73 +234,163 @@ fun PetalQrScannerScreen(
                                                 e.printStackTrace()
                                             }
                                         }, ContextCompat.getMainExecutor(ctx))
-                                    }
-                                },
-                                modifier = Modifier.fillMaxSize()
-                            )
                         }
-                    } else {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(24.dp)
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // ── Dim everything outside the scan frame ──
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+            if (viewportRect.width > 0f) {
+                val scrim = androidx.compose.ui.graphics.Path().apply {
+                    fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+                    addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
+                    addRoundRect(androidx.compose.ui.geometry.RoundRect(viewportRect, androidx.compose.ui.geometry.CornerRadius(32.dp.toPx())))
+                }
+                drawPath(scrim, Color.Black.copy(alpha = if (hasPermission) 0.52f else 0f))
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // ── Top Bar with Status Bar spacing ──────────────────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 12.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+                    modifier = Modifier
+                        .size(44.dp)
+                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
+                        .bouncyClickable {
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                            onDismiss()
+                        }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = stringResource(R.string.ui_cancel_scanning),
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.ui_petal_qr_scanner),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                    Text(
+                        text = if (scanLocked) "Code identified" else "Point camera at any code",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.72f)
+                    )
+                }
+
+                Surface(
+                    shape = CircleShape,
+                    color = if (isLiquidGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                    modifier = Modifier
+                        .size(44.dp)
+                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.QrCodeScanner,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.weight(0.5f))
+
+            // ── 3:4 scan frame (transparent window onto the full-bleed camera) ──
+            val viewportShape = RoundedCornerShape(32.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(3f / 4f)
+                    .onGloballyPositioned { viewportRect = it.boundsInRoot() }
+                    .border(
+                        1.5.dp,
+                        MaterialTheme.colorScheme.primary.copy(alpha = if (isLiquidGlass) 0.75f else 1f),
+                        viewportShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!hasPermission) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.CameraAlt,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.ui_camera_permission_is_required_to),
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Button(
+                            onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.CameraAlt,
-                                    contentDescription = null,
-                                    tint = Color.White.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(48.dp)
-                                )
-                                Text(
-                                    text = stringResource(R.string.ui_camera_permission_is_required_to),
-                                    color = Color.White,
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Button(
-                                    onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Text(stringResource(R.string.ui_grant_permission))
-                                }
-                            }
+                            Text(stringResource(R.string.ui_grant_permission))
                         }
                     }
-
-                    // Viewport framing accent
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .border(
-                                2.dp,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                RoundedCornerShape(32.dp)
-                            )
-                    )
                 }
             }
 
             Spacer(Modifier.height(18.dp))
 
-            // Subtitle Guidance
-            Text(
-                text = stringResource(R.string.ui_align_qr_code_or_barcode),
-                color = Color.White,
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.ui_auto_scan_detects_instantly_or),
-                color = Color.White.copy(alpha = 0.7f),
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center
-            )
+            // Subtitle Guidance (glass pill so it stays readable over the live camera)
+            val hintShape = RoundedCornerShape(20.dp)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .then(if (isLiquidGlass) Modifier.liquidGlassChrome(hintShape, enabled = true)
+                          else Modifier.background(Color.Black.copy(alpha = 0.35f), hintShape))
+                    .padding(horizontal = 18.dp, vertical = 10.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.ui_align_qr_code_or_barcode),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = stringResource(R.string.ui_auto_scan_detects_instantly_or),
+                    color = Color.White.copy(alpha = 0.78f),
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             Spacer(Modifier.weight(1f))
 
@@ -359,7 +399,7 @@ fun PetalQrScannerScreen(
             Surface(
                 shape = bottomBarShape,
                 color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                border = if (isLiquidGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
@@ -595,6 +635,7 @@ fun PetalQrScannerScreen(
                 }
             }
         }
+    }
     }
 }
 

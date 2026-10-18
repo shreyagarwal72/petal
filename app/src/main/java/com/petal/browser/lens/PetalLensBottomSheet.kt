@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -246,21 +247,40 @@ fun PetalLensBottomSheet(
     val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
+    val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val sheetSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sheetSheen = if (isLiquidGlass) sheetSp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheetDark = MaterialTheme.colorScheme.background.luminance() < .5f
+
     Surface(
         shape = sheetShape,
-        color = if (isLiquidGlass) {
-            com.petal.browser.ui.containment.petalGroupSurfaceColor()
-        } else MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (isLiquidGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true)
-                else Modifier
-            )
+        color = if (isLiquidGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth()
     ) {
+        CompositionLocalProvider(
+            com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides
+                (if (isLiquidGlass) glassWallpaper else com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current)
+        ) {
+        Box(Modifier.fillMaxWidth()) {
+        if (isLiquidGlass) {
+            // Live backdrop: records the app window every frame so the whole sheet and every
+            // card inside it frost and refract what is really behind them.
+            com.petal.browser.ui.containment.PetalSheetGlassBackdrop(glassWallpaper, Modifier.matchParentSize())
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .then(
+                        if (!glassWallpaper.ready) Modifier.background(
+                            if (sheetDark) Color(0xE61A1C1E) else Color(0xE6F2F4F7), sheetShape
+                        ) else Modifier
+                    )
+                    .liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheetSheen)
+            )
+        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -339,12 +359,12 @@ fun PetalLensBottomSheet(
                     },
                     shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
                     containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).height(84.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Box(
                             modifier = Modifier
@@ -360,9 +380,10 @@ fun PetalLensBottomSheet(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 text = stringResource(R.string.ui_snap_photo),
+                                maxLines = 2,
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -388,12 +409,12 @@ fun PetalLensBottomSheet(
                     },
                     shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
                     containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).height(84.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Box(
                             modifier = Modifier
@@ -409,9 +430,10 @@ fun PetalLensBottomSheet(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 text = stringResource(R.string.ui_android_system_picker),
+                                maxLines = 2,
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -437,7 +459,9 @@ fun PetalLensBottomSheet(
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else Color.Transparent
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                border = if (isLiquidGlass) null
+                    else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -593,6 +617,8 @@ fun PetalLensBottomSheet(
             }
 
             Spacer(Modifier.height(16.dp))
+        }
+        }
         }
     }
 }

@@ -116,6 +116,7 @@ fun PetalSiteInfoBottomSheet(
     CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper) {
         com.petal.browser.ui.containment.PetalSheet(
             onDismissRequest = onDismissRequest,
+            ownsGlassBackdrop = false,
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 if (isLiquidGlass) {
