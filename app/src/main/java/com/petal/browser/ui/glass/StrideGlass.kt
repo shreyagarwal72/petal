@@ -83,7 +83,11 @@ class GlassBackdrop internal constructor(private val source: View) {
     /** Records the source again, then every bar sampling it. */
     internal fun refresh() {
         if (!recordSource()) return
-        for (bar in bars) bar.record()
+        for (bar in bars) {
+            // A minimized (INVISIBLE) bar draws nothing; skip it until it is shown again.
+            if (bar.host?.isShown == false) continue
+            bar.record()
+        }
     }
 
     internal fun recordSource(): Boolean {

@@ -920,6 +920,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             controller.setAppearanceLightStatusBars(false);
 
             statusBarTopInset = systemBars.top;
+            navigationBarBottomInset = systemBars.bottom;
+            imeVisibleForBars = isKeyboardVisible;
             v.setPadding(systemBars.left, 0, systemBars.right, isKeyboardVisible ? keyboardHeight : 0);
 
             View addressBar = findViewById(R.id.compose_address_bar);
@@ -2485,23 +2487,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     geckoView.onResume();
                 }
 
+                // One place decides: the same call the other listener (BrowserWebViewController) makes.
                 geckoView.setOnScrollChangeListener(new com.petal.browser.view.PetalGeckoView.OnScrollChangeListener() {
                     @Override
                     public void onScrollDown() {
-                        boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
-                        if (!isFloating) return;
-                        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-                        if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
-                            springTranslateY(bottomNavContainer, bottomNavContainer.getHeight(), androidx.dynamicanimation.animation.SpringForce.STIFFNESS_MEDIUM, androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY);
-                        }
+                        animateAddressBarCollapse(true);
                     }
 
                     @Override
                     public void onScrollUp() {
-                        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-                        if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
-                            springTranslateY(bottomNavContainer, 0f, androidx.dynamicanimation.animation.SpringForce.STIFFNESS_MEDIUM, androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY);
-                        }
+                        animateAddressBarCollapse(false);
                     }
                 });
             } else if (activeGeckoView != null) {
@@ -2595,7 +2590,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return;
             }
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-            if (bottomNavContainer != null) {
+            if (bottomNavContainer != null && !isAddressBarCollapsed) {
                 bottomNavContainer.setTranslationY(0f);
             }
             androidx.compose.ui.platform.ComposeView bottomNavCompose = findViewById(R.id.bottom_nav_compose);
@@ -2843,9 +2838,41 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     : 0;
             // When liquid glass is enabled, allow web content to extend all the way to the edges
             // of the viewport so liquid glass can refract and blur the live webpage behind both bars.
-            int bottomInset = (reserveBarSpace && !liquidGlassOn) ? (isBottom ? addressHeight + bottomNavHeight : reservedNavHeight)
+            // Flat (non-floating) liquid glass bars show the set wallpaper, not the page, so the page
+            // must stop above them (same gap the plain Material bar has). Floating glass bars keep
+            // the page running underneath.
+            boolean glassMaster = sp.getBoolean("sp_liquid_glass_enabled", false);
+            boolean flatNavBar = isBottom || !isFloatingNavStyle;
+            boolean navGlassFlat = glassMaster && flatNavBar && sp.getBoolean("sp_liquid_glass_bottom_nav", true);
+            boolean addrGlassFlat = glassMaster && isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true);
+            boolean wallpaperBackdrop = navGlassFlat || addrGlassFlat;
+            View glassBackdropView = findViewById(R.id.glass_wallpaper_backdrop);
+            if (glassBackdropView instanceof androidx.compose.ui.platform.ComposeView) {
+                if (wallpaperBackdrop) {
+                    com.petal.browser.compose.home.PetalGlassBackdropBridge.bind(
+                            (androidx.compose.ui.platform.ComposeView) glassBackdropView, this);
+                    glassBackdropView.setVisibility(VISIBLE);
+                } else {
+                    glassBackdropView.setVisibility(GONE);
+                }
+            }
+            boolean pageRunsUnderBars = liquidGlassOn && !wallpaperBackdrop;
+            int bottomInset = (reserveBarSpace && !pageRunsUnderBars) ? (isBottom ? addressHeight + bottomNavHeight : reservedNavHeight)
                     : 0;
             mainContent.setPadding(0, topInset, 0, bottomInset);
+
+            // Remember where the page area sits with the bars shown and with them minimized.
+            int hiddenTopInset = topInset;
+            int hiddenBottomInset = bottomInset;
+            if (reserveBarSpace) {
+                if (!isBottom) hiddenTopInset = Math.min(topInset, resolvedStatusBarGap);
+                hiddenBottomInset = Math.max(0, bottomInset - (isBottom ? addressHeight : 0) - (flatNavBar ? bottomNavHeight : 0));
+            }
+            barsShownTop = topInset;
+            barsShownBottom = bottomInset;
+            barsHiddenTop = hiddenTopInset;
+            barsHiddenBottom = hiddenBottomInset;
+            barInsetsKnown = true;
 
             // The strip above the page (status bar + top address bar) has no page content, so
             // the window's black showed behind the glass bar. Give it the theme surface colour.
@@ -2998,6 +3025,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (fabBubble != null) fabBubble.bringToFront();
             View refreshBar = findViewById(R.id.refresh_bar_compose);
             if (refreshBar != null) refreshBar.bringToFront();
+            // This pass reset the bars' offsets and margins; if they are minimized, put them back.
+            if (isAddressBarCollapsed) {
+                if (reserveBarSpace) {
+                    applyBarsHiddenState(true, false, true);
+                } else {
+                    isAddressBarCollapsed = false;
+                    barsHiddenUrl = null;
+                }
+            }
             addressBar.requestLayout();
             mainContent.requestLayout();
 
@@ -4116,15 +4152,35 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Scroll-minimized bars (address bar + bottom nav). This is the single owner of the
+    // hide / show state; every scroll listener only calls animateAddressBarCollapse().
+    // ─────────────────────────────────────────────────────────────────────────────
     private boolean isAddressBarCollapsed = false;
+    private String barsHiddenUrl = null;
+    private boolean imeVisibleForBars = false;
+    public int navigationBarBottomInset = 0;
+    private boolean barInsetsKnown = false;
+    private int barsShownTop = 0, barsShownBottom = 0, barsHiddenTop = 0, barsHiddenBottom = 0;
+    private final java.util.WeakHashMap<View, androidx.dynamicanimation.animation.SpringAnimation> barSprings = new java.util.WeakHashMap<>();
+
+    /** Whether the bars may be minimized right now. Showing them again is never blocked. */
+    private boolean canCollapseBars() {
+        if (!sp.getBoolean("sp_hide_bars_on_scroll", true)) return false;
+        if (imeVisibleForBars) return false;
+        View find = findViewById(R.id.find_in_page_compose);
+        if (find != null && find.getVisibility() == VISIBLE) return false;
+        // TalkBack / switch users: bars that move away are hard to find. Keep them put.
+        android.view.accessibility.AccessibilityManager am = (android.view.accessibility.AccessibilityManager)
+                getSystemService(android.content.Context.ACCESSIBILITY_SERVICE);
+        if (am != null && am.isEnabled() && am.isTouchExplorationEnabled()) return false;
+        return true;
+    }
 
     public void animateAddressBarCollapse(boolean collapse) {
         String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
         View fab_bubble = findViewById(R.id.fab_bubble);
         if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
-        View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
-        View progressBar = findViewById(R.id.main_progress_bar);
-        View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
 
         if (getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false)) {
             View bottomNav = findViewById(R.id.bottom_nav_compose);
@@ -4139,150 +4195,220 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 || isOverlayScreenShowing || hasNonTabTopContent()
                 || isCustomFullscreenState || videoOverlayBridge != null || customView != null;
         if (isNonWeb) {
+            if (isAddressBarCollapsed) {
+                // Views only: the layout pass for this surface already set the content insets.
+                applyBarsHiddenState(false, false, false);
+            }
+            isAddressBarCollapsed = false;
+            barsHiddenUrl = null;
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             if (contentFrame != null) contentFrame.setTranslationY(0f);
-            if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
-            if (progressBar != null) progressBar.setTranslationY(0f);
-            if (refreshBarCompose != null) refreshBarCompose.setTranslationY(0f);
-            isAddressBarCollapsed = false;
             return;
         }
-
-        View bottomNav = findViewById(R.id.bottom_nav_compose);
-        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
 
         if (composeAddressBar == null) return;
 
         if (collapse && !isAddressBarCollapsed) {
+            if (!barInsetsKnown || !canCollapseBars()) return;
             isAddressBarCollapsed = true;
-            String pos = sp.getString("sp_address_bar_position", "TOP");
-            boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
-            float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
-
-            View targetNavView = (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) ? bottomNavContainer : bottomNav;
-            float navHeight = (targetNavView != null && targetNavView.getHeight() > 0)
-                    ? targetNavView.getHeight()
-                    : HelperUnit.convertDpToPixel(64f, context);
-
-            if (isBottom) {
-                // Lower bottom address bar and bottom navigation bar completely off screen
-                float bottomTotalOffset = barHeight + navHeight + HelperUnit.convertDpToPixel(16f, context);
-                springTranslateY(composeAddressBar, bottomTotalOffset, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-                if (targetNavView != null) {
-                    springTranslateY(targetNavView, bottomTotalOffset, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-                }
-                if (progressBarCompose != null) {
-                    springTranslateY(progressBarCompose, bottomTotalOffset, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-                }
-                // Seamlessly animate padding down to 0 so website content fills the full bottom viewport
-                animateContentBottomPadding(0);
-            } else {
-                float targetY = -(barHeight + HelperUnit.convertDpToPixel(40f, context));
-                float contentTargetY = -barHeight;
-                springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-
-                boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
-                if (targetNavView != null && isFloating) {
-                    float bottomNavTargetY = navHeight > 0 ? navHeight : HelperUnit.convertDpToPixel(96f, context);
-                    springTranslateY(targetNavView, bottomNavTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-                }
-
-                if (contentFrame != null) {
-                    springTranslateY(contentFrame, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-                }
-                if (progressBarCompose != null) {
-                    springTranslateY(progressBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-                }
-                if (progressBar != null) {
-                    springTranslateY(progressBar, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-                }
-                if (refreshBarCompose != null) {
-                    springTranslateY(refreshBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-                }
-            }
-
-            if (fab_bubble != null) {
-                fab_bubble.setVisibility(VISIBLE);
-                fab_bubble.setScaleX(0f);
-                fab_bubble.setScaleY(0f);
-                fab_bubble.setAlpha(0f);
-                springScale(fab_bubble, 1f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                springAlpha(fab_bubble, 1f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-            }
-
+            barsHiddenUrl = currentUrl;
+            applyBarsHiddenState(true, true, true);
         } else if (!collapse && isAddressBarCollapsed) {
             isAddressBarCollapsed = false;
-            composeAddressBar.setVisibility(VISIBLE);
-
-            String pos = sp.getString("sp_address_bar_position", "TOP");
-            boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
-
-            springTranslateY(composeAddressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-
-            View targetNavView = (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) ? bottomNavContainer : bottomNav;
-            if (targetNavView != null) {
-                springTranslateY(targetNavView, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-            }
-
-            if (isBottom) {
-                if (progressBarCompose != null) {
-                    springTranslateY(progressBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-                }
-                // Restore bottom reserved padding seamlessly matching docked Firefox style
-                float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
-                float navHeight = (targetNavView != null && targetNavView.getVisibility() == VISIBLE && targetNavView.getHeight() > 0)
-                        ? targetNavView.getHeight()
-                        : HelperUnit.convertDpToPixel(64f, context);
-                int restoredBottomInset = (int) (barHeight + navHeight);
-                animateContentBottomPadding(restoredBottomInset);
-            } else {
-                if (contentFrame != null) {
-                    springTranslateY(contentFrame, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                }
-                if (progressBarCompose != null) {
-                    springTranslateY(progressBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                }
-                if (progressBar != null) {
-                    springTranslateY(progressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                }
-                if (refreshBarCompose != null) {
-                    springTranslateY(refreshBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                }
-            }
-
-            if (fab_bubble != null) {
-                springScale(fab_bubble, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                springAlpha(fab_bubble, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                fab_bubble.postDelayed(() -> { if (!isAddressBarCollapsed) fab_bubble.setVisibility(GONE); }, 350);
-            }
+            barsHiddenUrl = null;
+            applyBarsHiddenState(false, true, true);
         }
     }
 
-    private void animateContentBottomPadding(int targetPadding) {
+    /** Brings the bars back right away, e.g. when a new page starts. */
+    private void resetBarsToShown(boolean animate) {
+        if (!isAddressBarCollapsed) return;
+        isAddressBarCollapsed = false;
+        barsHiddenUrl = null;
+        applyBarsHiddenState(false, animate, true);
+    }
+
+    /**
+     * Moves every bar (address bar, bottom nav, progress line, banners, bubble) to the hidden or
+     * shown position, and grows / shrinks the page area to match. The one place that does this.
+     */
+    private void applyBarsHiddenState(boolean hidden, boolean animate, boolean adjustContent) {
+        View addressBar = findViewById(R.id.compose_address_bar);
+        View navContainer = findViewById(R.id.bottom_nav_container);
+        View navCompose = findViewById(R.id.bottom_nav_compose);
+        View bubble = findViewById(R.id.fab_bubble);
         View mainContent = findViewById(R.id.main_content);
+        if (addressBar == null) return;
+
+        boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
+        float dp16 = HelperUnit.convertDpToPixel(16f, context);
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+
+        float addrH = addressBar.getHeight() > 0 ? addressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
+        View navTarget = (navContainer != null && navContainer.getVisibility() != GONE) ? navContainer : null;
+        float navH = 0f;
+        if (navTarget != null) {
+            int h = navTarget.getHeight();
+            // Guard against the container measuring at full-screen height (see applyAddressBarPosition).
+            if (h > screenH / 2 && navCompose != null) h = navCompose.getHeight();
+            navH = h > 0 ? h : HelperUnit.convertDpToPixel(64f, context);
+        }
+
+        float addrOff = 0f, navOff = 0f, dockedOff = 0f;
+        if (hidden) {
+            navOff = navTarget != null ? navH + dp16 : 0f;
+            if (isBottom) {
+                addrOff = addrH + navH + dp16;
+                dockedOff = addrOff;
+            } else {
+                int statusGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this);
+                addrOff = -(addrH + HelperUnit.convertDpToPixel(40f, context));
+                dockedOff = -Math.max(0f, addrH - statusGap);
+            }
+        } else {
+            // Coming back: make sure nothing stays INVISIBLE (see the hide-complete step below).
+            if (addressBar.getVisibility() == INVISIBLE) addressBar.setVisibility(VISIBLE);
+            if (navContainer != null && navContainer.getVisibility() == INVISIBLE) navContainer.setVisibility(VISIBLE);
+        }
+
+        View[] docked = new View[] {
+                findViewById(R.id.main_progress_bar_compose),
+                findViewById(R.id.main_progress_bar),
+                findViewById(R.id.download_banner_compose),
+                findViewById(R.id.network_status_compose),
+                findViewById(R.id.media_sniffer_compose)
+        };
+
+        if (animate) {
+            springTranslateY(addressBar, addrOff, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+            if (navTarget != null) springTranslateY(navTarget, navOff, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+            for (View v : docked) if (v != null) springTranslateY(v, dockedOff, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+        } else {
+            setBarTranslationNow(addressBar, addrOff);
+            if (navTarget != null) setBarTranslationNow(navTarget, navOff);
+            for (View v : docked) if (v != null) setBarTranslationNow(v, dockedOff);
+        }
+
+        if (adjustContent && mainContent != null && barInsetsKnown) {
+            int targetTop = hidden ? barsHiddenTop : barsShownTop;
+            int targetBottom = hidden ? barsHiddenBottom : barsShownBottom;
+            if (animate) {
+                animateContentPadding(targetTop, targetBottom);
+            } else {
+                if (contentPaddingAnimator != null) contentPaddingAnimator.cancel();
+                mainContent.setPadding(mainContent.getPaddingLeft(), targetTop, mainContent.getPaddingRight(), targetBottom);
+            }
+        }
+
+        if (bubble != null) {
+            if (hidden) {
+                placeBubble(bubble, true, addrH, navH);
+                bubble.setVisibility(VISIBLE);
+                if (animate) {
+                    bubble.setScaleX(0f);
+                    bubble.setScaleY(0f);
+                    bubble.setAlpha(0f);
+                    springScale(bubble, 1f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                    springAlpha(bubble, 1f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                } else {
+                    bubble.setScaleX(1f);
+                    bubble.setScaleY(1f);
+                    bubble.setAlpha(1f);
+                }
+            } else if (animate) {
+                final float fAddrH = addrH, fNavH = navH;
+                springScale(bubble, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springAlpha(bubble, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                bubble.postDelayed(() -> {
+                    if (!isAddressBarCollapsed) {
+                        bubble.setVisibility(GONE);
+                        placeBubble(bubble, false, fAddrH, fNavH);
+                    }
+                }, 350);
+            } else {
+                bubble.setVisibility(GONE);
+                placeBubble(bubble, false, addrH, navH);
+            }
+        }
+
+        if (hidden) {
+            // Once the slide is over, take the bars out of drawing. Their glass then stops
+            // re-recording the page every frame (see GlassBackdrop.refresh).
+            addressBar.postDelayed(() -> {
+                if (!isAddressBarCollapsed) return;
+                View a = findViewById(R.id.compose_address_bar);
+                View n = findViewById(R.id.bottom_nav_container);
+                if (a != null && a.getVisibility() == VISIBLE) a.setVisibility(INVISIBLE);
+                if (n != null && n.getVisibility() == VISIBLE) n.setVisibility(INVISIBLE);
+            }, animate ? 520 : 0);
+        }
+    }
+
+    /** The minimized-state bubble sits bottom-right above the gesture bar; shown-state keeps its old spot. */
+    private void placeBubble(View bubble, boolean hiddenState, float addrH, float navH) {
+        if (!(bubble.getLayoutParams() instanceof RelativeLayout.LayoutParams)) return;
+        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) bubble.getLayoutParams();
+        lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+        lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
+        if (hiddenState) {
+            lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+            lp.topMargin = 0;
+            lp.bottomMargin = navigationBarBottomInset + (int) HelperUnit.convertDpToPixel(20f, context);
+        } else if (isBottom) {
+            lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+            lp.topMargin = 0;
+            lp.bottomMargin = (int) (navH + addrH + HelperUnit.convertDpToPixel(12f, context));
+        } else {
+            lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+            lp.bottomMargin = 0;
+            lp.topMargin = (int) (addrH + HelperUnit.convertDpToPixel(16f, context));
+        }
+        bubble.setLayoutParams(lp);
+    }
+
+    private void setBarTranslationNow(View v, float y) {
+        androidx.dynamicanimation.animation.SpringAnimation old = barSprings.get(v);
+        if (old != null && old.isRunning()) old.cancel();
+        v.setTranslationY(y);
+    }
+
+    private void animateContentPadding(int targetTop, int targetBottom) {
+        final View mainContent = findViewById(R.id.main_content);
         if (mainContent == null) return;
         if (contentPaddingAnimator != null) {
             contentPaddingAnimator.cancel();
         }
-        int startPadding = mainContent.getPaddingBottom();
-        if (startPadding == targetPadding) return;
-        contentPaddingAnimator = android.animation.ValueAnimator.ofInt(startPadding, targetPadding);
+        final int startTop = mainContent.getPaddingTop();
+        final int startBottom = mainContent.getPaddingBottom();
+        if (startTop == targetTop && startBottom == targetBottom) return;
+        contentPaddingAnimator = android.animation.ValueAnimator.ofFloat(0f, 1f);
         contentPaddingAnimator.setDuration(240L);
         contentPaddingAnimator.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
         contentPaddingAnimator.addUpdateListener(anim -> {
-            int current = (int) anim.getAnimatedValue();
-            mainContent.setPadding(mainContent.getPaddingLeft(), mainContent.getPaddingTop(), mainContent.getPaddingRight(), current);
+            float f = (float) anim.getAnimatedValue();
+            mainContent.setPadding(
+                    mainContent.getPaddingLeft(),
+                    startTop + (int) ((targetTop - startTop) * f),
+                    mainContent.getPaddingRight(),
+                    startBottom + (int) ((targetBottom - startBottom) * f));
         });
         contentPaddingAnimator.start();
     }
 
+    /** Springs a view's vertical offset. A running spring on the same view is cancelled first, so repeated calls never stack. */
     public void springTranslateY(View view, float endValue, float stiffness, float dampingRatio) {
-        new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.TRANSLATION_Y)
-                .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
-                        .setStiffness(stiffness)
-                        .setDampingRatio(dampingRatio))
-                .start();
+        if (view == null) return;
+        androidx.dynamicanimation.animation.SpringAnimation old = barSprings.get(view);
+        if (old != null && old.isRunning()) old.cancel();
+        androidx.dynamicanimation.animation.SpringAnimation anim =
+                new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.TRANSLATION_Y);
+        anim.setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
+                .setStiffness(stiffness)
+                .setDampingRatio(dampingRatio));
+        barSprings.put(view, anim);
+        anim.start();
     }
 
     public void springScale(View view, float endValue, float stiffness, float dampingRatio) {
@@ -4322,22 +4448,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (isNonWebSurface) {
+            // Leaving a website: bring the bars back (views only, the layout pass sets the insets).
+            if (isAddressBarCollapsed) applyBarsHiddenState(false, false, false);
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
             isAddressBarCollapsed = false;
+            barsHiddenUrl = null;
         } else {
-            if (composeAddressBar != null) {
-                composeAddressBar.setVisibility(VISIBLE);
-                composeAddressBar.setTranslationY(0f);
+            boolean samePageStillMinimized = isAddressBarCollapsed && url != null && url.equals(barsHiddenUrl);
+            if (!samePageStillMinimized) {
+                // New page (or tab): bars come back, like Chrome.
+                if (isAddressBarCollapsed) resetBarsToShown(false);
+                if (composeAddressBar != null) {
+                    composeAddressBar.setVisibility(VISIBLE);
+                    composeAddressBar.setTranslationY(0f);
+                }
+                if (contentFrame != null) contentFrame.setTranslationY(0f);
+                if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
+                View fab_bubble = findViewById(R.id.fab_bubble);
+                if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             }
-            if (contentFrame != null) contentFrame.setTranslationY(0f);
-            if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
-            View fab_bubble = findViewById(R.id.fab_bubble);
-            if (fab_bubble != null) fab_bubble.setVisibility(GONE);
-            isAddressBarCollapsed = false;
         }
 
         if (url != null) {

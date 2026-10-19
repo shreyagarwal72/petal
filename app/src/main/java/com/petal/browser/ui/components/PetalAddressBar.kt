@@ -168,8 +168,12 @@ fun PetalAddressBar(
 
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
     val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") && !isIncognito
+    // A bottom (flat) address bar shows the wallpaper behind it; a top one samples the live page.
     val glassSource = androidx.compose.ui.platform.LocalView.current.rootView
-        .findViewById<android.view.View>(com.petal.browser.R.id.main_content)
+        .findViewById<android.view.View>(
+            if (resolvedIsBottom) com.petal.browser.R.id.glass_wallpaper_backdrop
+            else com.petal.browser.R.id.main_content
+        )
     val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) glassSource else null)
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
 

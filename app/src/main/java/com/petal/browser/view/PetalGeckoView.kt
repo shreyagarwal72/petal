@@ -1313,24 +1313,35 @@ class PetalGeckoView @JvmOverloads constructor(
         // Scroll Delegate for Tactile Haptics and Address Bar Collapsing
         session.scrollDelegate = object : GeckoSession.ScrollDelegate {
             private var lastAddressBarScrollY: Int = 0
+            // Scroll gathered in the current direction. Hiding needs a longer push than showing,
+            // so a small flick back always brings the bars back, but reading never hides them.
+            private var scrollRun: Int = 0
 
             override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
                 currentScrollX = scrollX
                 currentScrollY = scrollY
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
-                    // Smoothly handle address bar collapsing with a comfortable delta threshold
+                    val density = context.resources.displayMetrics.density
+                    val hideAfterPx = 48f * density
+                    val showAfterPx = 16f * density
                     val deltaY = scrollY - lastAddressBarScrollY
+                    lastAddressBarScrollY = scrollY
                     onScrollChangeListener?.onScrollPositionChanged(scrollY, height)
-                    if (Math.abs(deltaY) > 28) {
-                        onScrollChangeListener?.let { listener ->
-                            if (deltaY > 0) {
-                                listener.onScrollDown()
-                            } else {
-                                listener.onScrollUp()
-                            }
+                    if (scrollY <= 2) {
+                        // At the top of the page: bars are always shown.
+                        scrollRun = 0
+                        onScrollChangeListener?.onScrollUp()
+                    } else if (deltaY != 0) {
+                        if ((deltaY > 0) != (scrollRun > 0)) scrollRun = 0
+                        scrollRun += deltaY
+                        if (scrollRun > hideAfterPx) {
+                            scrollRun = 0
+                            onScrollChangeListener?.onScrollDown()
+                        } else if (scrollRun < -showAfterPx) {
+                            scrollRun = 0
+                            onScrollChangeListener?.onScrollUp()
                         }
-                        lastAddressBarScrollY = scrollY
                     }
 
                     // Tactile haptics: only check when enabled, with spaced interval

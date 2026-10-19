@@ -7,6 +7,17 @@
     android:id="@+id/main"
     tools:ignore="ContentDescription">
 
+    <!-- Wallpaper backdrop: sits behind the page. Flat (non-floating) liquid glass bars sample this
+         instead of the page, so they show the set wallpaper / glass background. Hidden unless needed. -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/glass_wallpaper_backdrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone"
+        android:importantForAccessibility="no" />
+
     <!-- Main Web Content Container: fills viewport (top and bottom aligned), and dynamically offset by address bar / bottom bar via paddings and layout rules -->
     <com.petal.browser.ui.components.PullToRefreshFrameLayout
         android:id="@+id/main_content"

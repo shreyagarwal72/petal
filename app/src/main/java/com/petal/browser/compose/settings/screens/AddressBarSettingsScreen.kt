@@ -123,7 +123,9 @@ fun AddressBarSettingsScreen(
                 }
 
                 PetalSettingsSection("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                    val barsSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+                    var hideBarsOnScroll by remember { mutableStateOf(barsSp.getBoolean("sp_hide_bars_on_scroll", true)) }
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
                         when (index) {
                             0 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                 title = stringResource(R.string.ui_address_bar_horizontal_swipe_to),
@@ -140,6 +142,18 @@ fun AddressBarSettingsScreen(
                                 checked = quickActions,
                                 position = position,
                                 onCheckedChange = viewModel::setQuickActions
+                            )
+                            2 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = "Minimize bars on scroll",
+                                subtitle = "Hide the address bar and bottom bar while you scroll down. Scroll up or tap the bubble to bring them back.",
+                                icon = Icons.Rounded.SwapVert,
+                                checked = hideBarsOnScroll,
+                                position = position,
+                                onCheckedChange = { on ->
+                                    hideBarsOnScroll = on
+                                    barsSp.edit().putBoolean("sp_hide_bars_on_scroll", on).apply()
+                                    if (!on) (context as? BrowserActivity)?.animateAddressBarCollapse(false)
+                                }
                             )
                         }
                     }
