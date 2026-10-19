@@ -139,9 +139,9 @@ private fun getWidgetColorScheme(context: Context): androidx.compose.material3.C
     val liquidGlassEnabled = sp.getBoolean("sp_liquid_glass_enabled", false)
     if (liquidGlassEnabled) {
         val glassAlpha = sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f)
-        val outerAlpha = (glassAlpha * 0.72f).coerceIn(0.18f, 0.90f)
-        val innerAlpha = (glassAlpha * 0.88f).coerceIn(0.25f, 0.95f)
-        val pillAlpha = (glassAlpha * 0.58f).coerceIn(0.20f, 0.85f)
+        val outerAlpha = (glassAlpha * 0.45f).coerceIn(0.12f, 0.75f)
+        val innerAlpha = (glassAlpha * 0.38f).coerceIn(0.10f, 0.65f)
+        val pillAlpha = (glassAlpha * 0.35f).coerceIn(0.10f, 0.60f)
 
         scheme = scheme.copy(
             surfaceContainerLow = scheme.surfaceContainerLow.copy(alpha = outerAlpha),
@@ -193,6 +193,110 @@ private fun widgetActionIntent(context: Context, action: String): Intent =
         this.action = action
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
     }
+
+/**
+ * Fast two-pass box blur on ARGB_8888 bitmap.
+ * Runs quickly on downsampled bitmaps to produce a soft frosted glass effect.
+ */
+private fun fastBoxBlur(src: Bitmap, radius: Int): Bitmap {
+    if (radius < 1) return src
+    val w = src.width
+    val h = src.height
+    val pix = IntArray(w * h)
+    src.getPixels(pix, 0, w, 0, 0, w, h)
+
+    val wm = w - 1
+    val hm = h - 1
+    val wh = w * h
+    val div = radius + radius + 1
+
+    val r = IntArray(wh)
+    val g = IntArray(wh)
+    val b = IntArray(wh)
+    var rsum: Int
+    var gsum: Int
+    var bsum: Int
+    var x: Int
+    var y: Int
+    var i: Int
+    var p: Int
+    var yp: Int
+    var yi: Int
+    var yw: Int
+    val vmin = IntArray(maxOf(w, h))
+
+    var divsum = (div + 1) shr 1
+    divsum *= divsum
+    val dv = IntArray(256 * divsum)
+    for (idx in 0 until 256 * divsum) {
+        dv[idx] = idx / divsum
+    }
+
+    yw = 0
+    yi = 0
+
+    for (row in 0 until h) {
+        rsum = 0
+        gsum = 0
+        bsum = 0
+        for (col in -radius..radius) {
+            p = pix[yi + minOf(wm, maxOf(col, 0))]
+            rsum += (p shr 16) and 0xff
+            gsum += (p shr 8) and 0xff
+            bsum += p and 0xff
+        }
+        for (col in 0 until w) {
+            r[yi] = dv[rsum]
+            g[yi] = dv[gsum]
+            b[yi] = dv[bsum]
+
+            if (row == 0) {
+                vmin[col] = minOf(col + radius + 1, wm)
+            }
+            val p1 = pix[yw + vmin[col]]
+            val p2 = pix[yw + maxOf(col - radius, 0)]
+
+            rsum += ((p1 shr 16) and 0xff) - ((p2 shr 16) and 0xff)
+            gsum += ((p1 shr 8) and 0xff) - ((p2 shr 8) and 0xff)
+            bsum += (p1 and 0xff) - (p2 and 0xff)
+            yi++
+        }
+        yw += w
+    }
+
+    for (col in 0 until w) {
+        rsum = 0
+        gsum = 0
+        bsum = 0
+        yp = -radius * w
+        for (row in -radius..radius) {
+            yi = maxOf(0, yp) + col
+            rsum += r[yi]
+            gsum += g[yi]
+            bsum += b[yi]
+            yp += w
+        }
+        yi = col
+        for (row in 0 until h) {
+            pix[yi] = (0xff000000.toInt()) or (dv[rsum] shl 16) or (dv[gsum] shl 8) or dv[bsum]
+            if (col == 0) {
+                vmin[row] = minOf(row + radius + 1, hm) * w
+            }
+            val p1 = col + vmin[row]
+            val p2 = col + maxOf(row - radius, 0) * w
+
+            rsum += r[p1] - r[p2]
+            gsum += g[p1] - g[p2]
+            bsum += b[p1] - b[p2]
+
+            yi += w
+        }
+    }
+
+    val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    out.setPixels(pix, 0, w, 0, 0, w, h)
+    return out
+}
 
 /**
  * Samples the current wallpaper (Petal custom wallpaper or system wallpaper)
@@ -255,17 +359,31 @@ private fun createLiquidGlassCardBitmap(
     canvas.clipPath(path)
 
     if (baseWallpaper != null && !baseWallpaper!!.isRecycled) {
-        val srcW = baseWallpaper!!.width
-        val srcH = baseWallpaper!!.height
-        val srcRect = android.graphics.Rect(0, (srcH * 0.15f).toInt(), srcW, (srcH * 0.85f).toInt())
-        val dstRect = android.graphics.Rect(0, 0, w, h)
-        val filterPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
-        canvas.drawBitmap(baseWallpaper!!, srcRect, dstRect, filterPaint)
+        // Downscale wallpaper to card resolution then apply fast box blur for genuine frosted glass
+        try {
+            val downscaleW = (w / 3).coerceAtLeast(40)
+            val downscaleH = (h / 3).coerceAtLeast(40)
+            val scaledDown = Bitmap.createScaledBitmap(baseWallpaper!!, downscaleW, downscaleH, true)
+            val blurred = fastBoxBlur(scaledDown, radius = 6)
+            val filterPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+            val dstRect = android.graphics.Rect(0, 0, w, h)
+            canvas.drawBitmap(blurred, null, dstRect, filterPaint)
+            if (blurred !== scaledDown && !blurred.isRecycled) blurred.recycle()
+            if (!scaledDown.isRecycled) scaledDown.recycle()
+        } catch (_: Throwable) {
+            // Fallback: draw directly if downscale/blur fails
+            val srcW = baseWallpaper!!.width
+            val srcH = baseWallpaper!!.height
+            val srcRect = android.graphics.Rect(0, (srcH * 0.15f).toInt(), srcW, (srcH * 0.85f).toInt())
+            val dstRect = android.graphics.Rect(0, 0, w, h)
+            val filterPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+            canvas.drawBitmap(baseWallpaper!!, srcRect, dstRect, filterPaint)
+        }
     }
 
     // Frosted tint overlay matching the scheme surfaceContainer
     val surfaceInt = scheme.surfaceContainer.toArgb()
-    val tintAlpha = if (isGlass) (glassAlpha * 0.65f).coerceIn(0.25f, 0.85f) else 1.0f
+    val tintAlpha = if (isGlass) (glassAlpha * 0.55f).coerceIn(0.20f, 0.80f) else 1.0f
     val alphaInt = (tintAlpha * 255).toInt().coerceIn(0, 255)
     val tintColor = android.graphics.Color.argb(
         alphaInt,
@@ -279,16 +397,16 @@ private fun createLiquidGlassCardBitmap(
     }
     canvas.drawRect(rect, tintPaint)
 
-    // Liquid Glass Specular Rim Border
+    // Liquid Glass Specular Rim Border & Sheen Highlight
     if (isGlass) {
-        val rimStrokeWidth = 1.8f * density
+        val rimStrokeWidth = 1.5f * density
         val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = rimStrokeWidth
             shader = android.graphics.LinearGradient(
-                0f, 0f, w.toFloat(), h.toFloat(),
-                android.graphics.Color.argb((210 * sheen).toInt().coerceIn(40, 255), 255, 255, 255),
-                android.graphics.Color.argb((45 * sheen).toInt().coerceIn(10, 110), 255, 255, 255),
+                0f, 0f, w.toFloat() * 0.6f, h.toFloat(),
+                android.graphics.Color.argb((220 * sheen).toInt().coerceIn(40, 255), 255, 255, 255),
+                android.graphics.Color.argb((35 * sheen).toInt().coerceIn(10, 100), 255, 255, 255),
                 Shader.TileMode.CLAMP
             )
         }
