@@ -95,8 +95,16 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
             try {
                 if (size.width > 0f && size.height > 0f) {
                     try {
-                        wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
-                        wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
+                        wallpaper.sharp.record {
+                            try {
+                                this@onDrawWithContent.drawContent()
+                            } catch (_: Throwable) {}
+                        }
+                        wallpaper.frosted.record {
+                            try {
+                                drawLayer(wallpaper.sharp)
+                            } catch (_: Throwable) {}
+                        }
                         wallpaper.hasRecorded = true
                     } catch (_: Throwable) {
                         wallpaper.hasRecorded = false

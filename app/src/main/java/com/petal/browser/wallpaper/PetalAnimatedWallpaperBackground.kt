@@ -275,7 +275,9 @@ fun PetalAnimatedWallpaperBackground(
                 factory = { ctx ->
                     val playerView = try {
                         val inflater = LayoutInflater.from(ctx)
-                        inflater.inflate(R.layout.view_petal_wallpaper_player, null) as PlayerView
+                        (inflater.inflate(R.layout.view_petal_wallpaper_player, null) as PlayerView).apply {
+                            setSafeSurfaceView(this)
+                        }
                     } catch (_: Throwable) {
                         PlayerView(ctx).apply {
                             useController = false
