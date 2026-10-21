@@ -493,7 +493,7 @@ fun PetalOmniboxPage(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .statusBarsPadding()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             var currentEngineIndexStr by remember {
@@ -518,12 +518,15 @@ fun PetalOmniboxPage(
                                 placeholder = {
                                     Text(
                                         text = stringResource(R.string.ui_search_or_type_url, currentEngine.name),
-                                        style = MaterialTheme.typography.bodyLarge,
+                                        style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 },
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
                                 leadingIcon = if (showEngineSelector) {
                                     {
                                         Box {
@@ -632,7 +635,7 @@ fun PetalOmniboxPage(
                                         }
                                     }
                                 },
-                                singleLine = true,
+                                maxLines = 3,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 keyboardActions = KeyboardActions(onSearch = {
                                     if (queryState.text.isNotBlank()) {
@@ -989,7 +992,7 @@ fun PetalOmniboxPage(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f, fill = false)
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                                     .animateContentSize(
                                         animationSpec = spring(
                                             dampingRatio = Spring.DampingRatioNoBouncy,
@@ -1001,13 +1004,13 @@ fun PetalOmniboxPage(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 6.dp)
+                                        .padding(vertical = 4.dp)
                                 ) {
                                     Text(
                                         text = stringResource(R.string.ui_search_suggestions),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                                     )
 
                                     // Build a flat list interleaving section header entries and suggestion row entries.
@@ -1029,8 +1032,8 @@ fun PetalOmniboxPage(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .weight(1f, fill = false),
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                        verticalArrangement = Arrangement.spacedBy(1.5.dp)
                                     ) {
                                         itemsIndexed(
                                             items = listEntries,
@@ -1060,11 +1063,10 @@ fun PetalOmniboxPage(
                                                     // Suggestion row index within `suggestions` for group shape
                                                     val itemIndex = suggestions.indexOf(payload)
 
-                                                    // Smart ellipsis: URLs keep their end (path visible),
-                                                    // plain queries keep their beginning (intent visible) — Firefox pattern.
+                                                    // For URLs, keep end-visible if single line, but allow multi-line wrapped text for long search queries & titles like Brave
                                                     val isUrl = payload.query.startsWith("http") ||
                                                             (payload.query.contains(".") && !payload.query.contains(" "))
-                                                    val displayText = smartEllipsize(payload.query, isUrl)
+                                                    val displayText = if (isUrl) smartEllipsize(payload.query, true, maxChars = 80) else payload.query
 
                                                     // Icon and tint per source group
                                                     val badgeIcon = when (payload.source) {
@@ -1085,6 +1087,8 @@ fun PetalOmniboxPage(
 
                                                     com.petal.browser.ui.containment.PetalGroupListRow(
                                                         position = com.petal.browser.ui.containment.petalGroupPositionFor(itemIndex, suggestions.size),
+                                                        minHeight = 48.dp,
+                                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                                                         onClick = {
                                                             val trimmed = payload.query.trim()
                                                             if (trimmed.isNotEmpty()) submitSearch(trimmed)
@@ -1114,25 +1118,30 @@ fun PetalOmniboxPage(
                                                                 icon = badgeIcon,
                                                                 container = badgeContainer,
                                                                 tint = badgeTint,
+                                                                size = 36.dp,
+                                                                iconSize = 18.dp
                                                             )
                                                         },
                                                         content = {
-                                                            // bodyMedium (14sp) matches Firefox AwesomeBar density
+                                                            // Compact Brave-style bodyMedium (13.5sp) with 2-line wrapped text support
                                                             Text(
                                                                 displayText,
-                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                                    fontSize = 13.5.sp,
+                                                                    lineHeight = 17.sp
+                                                                ),
                                                                 fontWeight = FontWeight.Medium,
                                                                 color = MaterialTheme.colorScheme.onSurface,
-                                                                maxLines = 1,
+                                                                maxLines = 2,
                                                                 overflow = TextOverflow.Ellipsis
                                                             )
                                                         },
                                                         trailing = {
                                                             IconButton(
                                                                 onClick = { queryState = TextFieldValue(text = payload.query, selection = TextRange(payload.query.length)) },
-                                                                modifier = Modifier.size(40.dp),
+                                                                modifier = Modifier.size(36.dp),
                                                             ) {
-                                                                Icon(Icons.Filled.NorthWest, contentDescription = stringResource(R.string.ui_insert_query_into_omnibox), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                                                Icon(Icons.Filled.NorthWest, contentDescription = stringResource(R.string.ui_insert_query_into_omnibox), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                                                             }
                                                         },
                                                     )

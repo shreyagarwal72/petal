@@ -776,6 +776,8 @@ fun PetalGroupListRow(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
     onLongClick: (() -> Unit)? = null,
+    minHeight: Dp = 64.dp,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
     leading: @Composable () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
     trailing: (@Composable () -> Unit)? = null,
@@ -807,8 +809,8 @@ fun PetalGroupListRow(
             .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen)
             .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })
     ) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            leading(); Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f), content = content); trailing?.invoke()
+        Row(Modifier.fillMaxWidth().heightIn(min = minHeight).padding(contentPadding), verticalAlignment = Alignment.CenterVertically) {
+            leading(); Spacer(Modifier.width(10.dp)); Column(Modifier.weight(1f), content = content); trailing?.invoke()
         }
     }
 }
