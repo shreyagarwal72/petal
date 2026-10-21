@@ -917,7 +917,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Retain transparent background on activity root so webpage content and spacing
             // remain visible behind floating navigation bars without any black overlay strip.
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-            boolean isDarkTheme = com.petal.browser.unit.HelperUnit.isDarkTheme(BrowserActivity.this);
+            String themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM");
+            boolean isDarkTheme;
+            if ("DARK".equalsIgnoreCase(themeConfig)) {
+                isDarkTheme = true;
+            } else if ("LIGHT".equalsIgnoreCase(themeConfig)) {
+                isDarkTheme = false;
+            } else {
+                int nightMode = getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+                isDarkTheme = nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            }
             controller.setAppearanceLightStatusBars(!isDarkTheme);
             controller.setAppearanceLightNavigationBars(!isDarkTheme);
 
