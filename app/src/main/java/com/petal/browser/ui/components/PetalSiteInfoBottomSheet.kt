@@ -414,7 +414,7 @@ fun PetalSiteInfoBottomSheet(
                         }
 
                         if (showBlockElementDialog) {
-                            AlertDialog(
+                            com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                                 onDismissRequest = { showBlockElementDialog = false },
                                 title = { Text("Block Element on $domain", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
                                 text = {

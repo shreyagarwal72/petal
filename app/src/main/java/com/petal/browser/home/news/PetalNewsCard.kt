@@ -2,7 +2,7 @@
  * PetalNewsCard.kt
  * ──────────────────────────────────────────────────────────────────────────
  * Brave News-style privacy RSS cards for the Petal home screen.
- * Uses Material 3 Expressive card styles consistent with the rest of Petal UI.
+ * Full Liquid Glass + Material 3 Expressive support.
  */
 package com.petal.browser.home.news
 
@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Newspaper
 import androidx.compose.material3.*
@@ -17,14 +18,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.launch
 
 /**
- * Drop-in composable for the home screen.
- * Shows a horizontally scrollable row of privacy RSS articles.
+ * Drop-in composable for the home screen with Liquid Glass + M3 Expressive styling.
  */
 @Composable
 fun PetalNewsSection(
@@ -47,11 +51,9 @@ fun PetalNewsSection(
         }
     }
 
-    // Don't render anything while loading or if fetch failed completely
     if (isLoading || articles.isEmpty()) return
 
     Column(modifier = modifier) {
-        // Section header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -93,22 +95,24 @@ private fun PetalNewsArticleCard(
     article: NewsArticle,
     onClick: () -> Unit
 ) {
-    Card(
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val shape = RoundedCornerShape(20.dp)
+
+    Surface(
         modifier = Modifier
             .width(220.dp)
-            .clip(MaterialTheme.shapes.large)
+            .clip(shape)
+            .liquidGlassChrome(shape = shape, enabled = isGlass)
             .clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        shape = shape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Source badge
             Text(
                 text = article.source.uppercase(),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
@@ -116,7 +120,6 @@ private fun PetalNewsArticleCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            // Title
             Text(
                 text = article.title,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -124,7 +127,6 @@ private fun PetalNewsArticleCard(
                 overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            // Description snippet
             if (article.description.isNotBlank()) {
                 Text(
                     text = article.description,
