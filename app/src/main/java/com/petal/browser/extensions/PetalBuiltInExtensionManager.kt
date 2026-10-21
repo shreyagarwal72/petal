@@ -96,30 +96,16 @@ object PetalBuiltInExtensionManager {
         BuiltInSpec(
             assetPath   = "web_extensions/petal_dark_webpages/",
             extensionId = "petal-dark-webpages@petalbrowser.app",
-            label       = "Petal Dark Webpages",
-            description = "Smart night mode for all websites with automatic inversion and per-site whitelist.",
+            label       = "Petal Smart Dark Mode",
+            description = "Intelligent website dark mode that inverts bright canvases while preserving images and videos.",
             prefKey     = "petal_builtin_dark_webpages"
         ),
         BuiltInSpec(
             assetPath   = "web_extensions/petal_clean_link/",
             extensionId = "petal-clean-link@petalbrowser.app",
             label       = "Petal Clean Link",
-            description = "Automatically strips tracking tokens (UTM, fbclid, gclid) from links.",
+            description = "Strips tracking parameters (UTM, fbclid, gclid, etc.) from clicked links in real time.",
             prefKey     = "petal_builtin_clean_link"
-        ),
-        BuiltInSpec(
-            assetPath   = "web_extensions/petal_universal_copy/",
-            extensionId = "petal-universal-copy@petalbrowser.app",
-            label       = "Petal Universal Copy",
-            description = "Bypasses copy restrictions and unlocks text selection on all websites.",
-            prefKey     = "petal_builtin_universal_copy"
-        ),
-        BuiltInSpec(
-            assetPath   = "web_extensions/petal_translate/",
-            extensionId = "petal-translate@petalbrowser.app",
-            label       = "Petal Translate",
-            description = "Real-time in-page translation engine powered by Petal on-device models.",
-            prefKey     = "petal_builtin_translate"
         ),
         BuiltInSpec(
             assetPath   = "web_extensions/google_search_fixer/",
@@ -134,13 +120,6 @@ object PetalBuiltInExtensionManager {
             label       = "Petal Resource Sniffer",
             description = "Native engine-level sniffer capturing videos, audios, high-res images, and documents.",
             prefKey     = "petal_builtin_media_grabber"
-        ),
-        BuiltInSpec(
-            assetPath   = "web_extensions/petal_password_autofill/",
-            extensionId = "petal-password-autofill@petalbrowser.app",
-            label       = "Petal Password Manager & Autofill",
-            description = "Detects login forms and integrates with Petal's encrypted local password vault.",
-            prefKey     = "petal_builtin_password_autofill"
         )
     )
 
@@ -179,8 +158,7 @@ object PetalBuiltInExtensionManager {
         val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         val controller = runtime.webExtensionController
         for (spec in builtIns) {
-            val defaultEnabled = spec.prefKey != "petal_builtin_google_search_fixer"
-            val enabled = sp.getBoolean(spec.prefKey, defaultEnabled)
+            val enabled = sp.getBoolean(spec.prefKey, true)
             installAndSync(controller, spec, enabled)
         }
     }

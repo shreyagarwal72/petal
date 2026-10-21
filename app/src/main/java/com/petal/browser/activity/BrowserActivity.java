@@ -3255,6 +3255,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 tabIdToRemove = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabId();
             }
             
+            // Forgetful Browsing: If no remaining open tabs have this domain, purge its data
+            try {
+                String closedHost = HelperUnit.domain(controller.getUrl());
+                if (closedHost != null && !closedHost.isEmpty()) {
+                    boolean stillOpen = false;
+                    for (AlbumController ac : BrowserContainer.list()) {
+                        if (closedHost.equalsIgnoreCase(HelperUnit.domain(ac.getUrl()))) {
+                            stillOpen = true;
+                            break;
+                        }
+                    }
+                    if (!stillOpen) {
+                        com.petal.browser.privacy.ForgetfulBrowsingManager.onDomainTabsClosed(this, closedHost);
+                    }
+                }
+            } catch (Exception ignored) {}
+            
             com.petal.browser.unit.TabThumbnailCache.removeAllIdentifiers(tabIdToRemove, String.valueOf(controller.hashCode()));
             if (isClosingCurrent && BrowserContainer.size() > 0) {
                 AlbumController nextController = BrowserContainer.get(Math.max(0, BrowserContainer.size() - 1));
@@ -3888,23 +3905,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void performSearchWithFixerPrompt(String query, boolean isIncognitoTab, java.util.function.Consumer<String> onReadyToNavigate) {
         if (query == null || query.trim().isEmpty()) return;
         final String trimmed = query.trim();
-        if (com.petal.browser.unit.BrowserUnit.isGoogleSearchQuery(this, trimmed)) {
-            boolean hasDecided = sp.contains("petal_builtin_google_search_fixer");
-            if (!hasDecided) {
-                boolean currentEnabled = sp.getBoolean("petal_builtin_google_search_fixer", false);
-                com.petal.browser.ui.components.PetalConfirmSheetBridge.showGoogleSearchFixerPrompt(
-                    this,
-                    currentEnabled,
-                    choice -> {
-                        sp.edit().putBoolean("petal_builtin_google_search_fixer", choice).apply();
-                        com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(this, "petal_builtin_google_search_fixer", choice);
-                        String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, trimmed);
-                        onReadyToNavigate.accept(targetUrl);
-                    }
-                );
-                return;
-            }
-        }
+        // Google Search Fixer is enabled by default silently without disturbing popups or prompts
         String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, trimmed);
         onReadyToNavigate.accept(targetUrl);
     }
@@ -6011,22 +6012,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
     public void copyLink(String url) {
+        String cleanUrl = com.petal.browser.privacy.PetalUrlCleaner.cleanUrl(url);
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("text", url);
+        ClipData clip = ClipData.newPlainText("text", cleanUrl);
         Objects.requireNonNull(clipboard).setPrimaryClip(clip);
         PetalToast.show(this, getString(R.string.app_done));
     }
 
     public void shareLink(String title, String url) {
-
+        String cleanUrl = com.petal.browser.privacy.PetalUrlCleaner.cleanUrl(url);
         hideOverview();
         List_standard listStandard = new List_standard(context);
         String profile = sp.getString("profile", "profileStandard");
-        if (listStandard.isWhite(url)) profile = HelperUnit.domain(url);
+        if (listStandard.isWhite(cleanUrl)) profile = HelperUnit.domain(cleanUrl);
 
         boolean removeTracking = sp.getBoolean(profile + "_trackingULS", true);
 
-        if (removeTracking && url.contains("?") && url.contains("/")) {
+        if (removeTracking && cleanUrl.contains("?") && cleanUrl.contains("/")) {
 
             String lastIndex = url.substring(url.lastIndexOf("/"));
             String tracking = url.substring(url.lastIndexOf("?"));

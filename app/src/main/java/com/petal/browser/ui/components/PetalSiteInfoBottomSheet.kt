@@ -385,6 +385,22 @@ fun PetalSiteInfoBottomSheet(
                         }
 
                         Spacer(Modifier.height(8.dp))
+                        var isForgetful by remember {
+                            mutableStateOf(com.petal.browser.privacy.ForgetfulBrowsingManager.isDomainForgetful(context, domain))
+                        }
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.SOLO,
+                            title = "Forgetful Browsing",
+                            subtitle = "Clear cookies, storage and cache when tab is closed",
+                            icon = Icons.Rounded.DeleteSweep,
+                            checked = isForgetful,
+                            onCheckedChange = { checked ->
+                                isForgetful = checked
+                                com.petal.browser.privacy.ForgetfulBrowsingManager.setDomainForgetful(context, domain, checked)
+                            }
+                        )
+
+                        Spacer(Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),

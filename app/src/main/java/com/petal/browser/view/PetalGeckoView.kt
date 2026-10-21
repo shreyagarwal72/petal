@@ -967,6 +967,14 @@ class PetalGeckoView @JvmOverloads constructor(
                 hasUserGesture: Boolean
             ) {
                 if (url.isNullOrBlank() || url.equals(currentUrl, ignoreCase = true)) return
+                // Brave De-AMP: Automatically unwrap AMP URLs to publisher canonical URLs
+                val deAmpUrl = com.petal.browser.privacy.PetalDeAmpEngine.unwrapAmpUrl(url)
+                if (deAmpUrl != null && !deAmpUrl.equals(url, ignoreCase = true)) {
+                    Log.i(TAG, "De-AMP triggered: redirecting $url -> $deAmpUrl")
+                    loadUrl(deAmpUrl)
+                    return
+                }
+
                 previewRevision++
                 currentUrl = url
                 // Update persistentUrl for navigations (redirects, SPA pushState) so the
@@ -1010,27 +1018,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
                         // Detect Google anti-bot CAPTCHA redirect page (google.com/sorry)
                         if (url.contains("google.") && url.contains("/sorry")) {
-                            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(act)
-                            val fixerOn = sp.getBoolean("petal_builtin_google_search_fixer", false)
-                            if (fixerOn) {
-                                com.petal.browser.ui.components.PetalConfirmSheetBridge.showGoogleSearchFixerPrompt(
-                                    act,
-                                    true
-                                ) { choice ->
-                                    sp.edit().putBoolean("petal_builtin_google_search_fixer", choice).apply()
-                                    com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(act, "petal_builtin_google_search_fixer", choice)
-                                    if (!choice) {
-                                        // Extract original query if available and reload without spoofed UA
-                                        val uri = android.net.Uri.parse(url)
-                                        val continueUrl = uri.getQueryParameter("continue")
-                                        if (!continueUrl.isNullOrBlank()) {
-                                            loadUrl(continueUrl)
-                                        } else {
-                                            reload()
-                                        }
-                                    }
-                                }
-                            }
+                            Log.w(TAG, "Encountered Google sorry CAPTCHA page: $url")
                         }
                     }
                 }
