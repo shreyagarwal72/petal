@@ -135,6 +135,20 @@ object PetalBuiltInExtensionManager {
             label       = "Auto Cookie Consent",
             description = "Automatically rejects non-essential GDPR cookie consent dialogs (OneTrust, CookieBot, Didomi, TrustArc, Quantcast, and more).",
             prefKey     = "petal_builtin_consent_manager"
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/petal_bionic_reading/",
+            extensionId = "petal-bionic-reading@petalbrowser.app",
+            label       = "Petal Bionic Reader",
+            description = "Guides eyes through reading with artificial fixation points.",
+            prefKey     = "petal_builtin_bionic_reading"
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/petal_boosts/",
+            extensionId = "petal-boosts@petalbrowser.app",
+            label       = "Petal Arc Boosts",
+            description = "Custom webpage themer, font replacer, and interactive element zapper.",
+            prefKey     = "petal_builtin_boosts"
         )
     )
 
