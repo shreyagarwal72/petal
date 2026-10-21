@@ -3897,6 +3897,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fab_bubble != null) {
             HelperUnit.applyBouncyTouchFeedback(fab_bubble);
             fab_bubble.setOnClickListener(v -> animateAddressBarCollapse(false));
+            styleFabBubbleForLiquidGlass(fab_bubble);
         }
 
         updateAddressBar();
@@ -4252,11 +4253,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (!barInsetsKnown || !canCollapseBars()) return;
             isAddressBarCollapsed = true;
             barsHiddenUrl = currentUrl;
-            applyBarsHiddenState(true, true, false);
+            applyBarsHiddenState(true, true, true);
         } else if (!collapse && isAddressBarCollapsed) {
             isAddressBarCollapsed = false;
             barsHiddenUrl = null;
-            applyBarsHiddenState(false, true, false);
+            applyBarsHiddenState(false, true, true);
         }
     }
 
@@ -4340,9 +4341,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
 
-        if (bubble != null) {
-            if (hidden) {
-                placeBubble(bubble, true, addrH, navH);
+        if (hidden) {
+            styleFabBubbleForLiquidGlass(bubble);
+            placeBubble(bubble, true, addrH, navH);
                 bubble.setVisibility(VISIBLE);
                 if (animate) {
                     bubble.setScaleX(0f);
@@ -4405,6 +4406,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             lp.topMargin = (int) (addrH + HelperUnit.convertDpToPixel(16f, context));
         }
         bubble.setLayoutParams(lp);
+    }
+
+    private void styleFabBubbleForLiquidGlass(View bubble) {
+        if (bubble instanceof com.google.android.material.card.MaterialCardView) {
+            com.google.android.material.card.MaterialCardView card = (com.google.android.material.card.MaterialCardView) bubble;
+            boolean isGlass = sp.getBoolean("sp_liquid_glass_enabled", false);
+            if (isGlass) {
+                int surfaceColor = com.google.android.material.color.MaterialColors.getColor(card, com.google.android.material.R.attr.colorSurfaceContainerHigh);
+                int outlineColor = com.google.android.material.color.MaterialColors.getColor(card, com.google.android.material.R.attr.colorOutlineVariant);
+                int alphaSurface = (int) (255 * 0.70f);
+                int alphaOutline = (int) (255 * 0.40f);
+                int glassBg = androidx.core.graphics.ColorUtils.setAlphaComponent(surfaceColor, alphaSurface);
+                int glassStroke = androidx.core.graphics.ColorUtils.setAlphaComponent(outlineColor, alphaOutline);
+                card.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(glassBg));
+                card.setStrokeColor(android.content.res.ColorStateList.valueOf(glassStroke));
+                card.setStrokeWidth((int) HelperUnit.convertDpToPixel(1.2f, context));
+                card.setCardElevation(HelperUnit.convertDpToPixel(8f, context));
+            } else {
+                int surfaceColor = com.google.android.material.color.MaterialColors.getColor(card, com.google.android.material.R.attr.colorSurfaceContainerHighest);
+                int outlineColor = com.google.android.material.color.MaterialColors.getColor(card, com.google.android.material.R.attr.colorOutlineVariant);
+                card.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(surfaceColor));
+                card.setStrokeColor(android.content.res.ColorStateList.valueOf(outlineColor));
+                card.setStrokeWidth((int) HelperUnit.convertDpToPixel(1f, context));
+                card.setCardElevation(HelperUnit.convertDpToPixel(16f, context));
+            }
+        }
     }
 
     private void setBarTranslationNow(View v, float y) {
