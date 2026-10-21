@@ -87,19 +87,20 @@ object PetalGeckoRuntime {
         } catch (_: Throwable) { false }
 
         val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
-        val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", false))
+        val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
         val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-        val defaultCookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || adBlockEnabled) {
+        val etpStrict = sp.getBoolean("sp_etp_strict", true)
+        val defaultCookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || adBlockEnabled || etpStrict) {
             ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
         } else {
             ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
         }
 
         var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
-        if (adBlockEnabled) {
+        if (adBlockEnabled || etpStrict) {
             antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or ContentBlocking.AntiTracking.STP
         }
-        val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
+        val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
 
         val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PrivateDnsUnit.DNS_OFF)
         val dohUri = com.petal.browser.unit.PrivateDnsUnit.getDnsEndpointUrl(sp)
@@ -109,15 +110,21 @@ object PetalGeckoRuntime {
             GeckoRuntimeSettings.TRR_MODE_OFF
         }
 
+        val cookieBannerAutoReject = sp.getBoolean("sp_cookie_banner_auto_reject", true)
+        val httpsOnly = sp.getBoolean("sp_https_only", false)
+        val httpsOnlyMode = if (httpsOnly) GeckoRuntimeSettings.HTTPS_ONLY_MODE_ENABLED else GeckoRuntimeSettings.HTTPS_ONLY_MODE_DISABLED
+
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(true)
             .trustedRecursiveResolverMode(trrMode)
+            .httpsOnlyMode(httpsOnlyMode)
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
                     .antiTracking(antiTrackingFlags)
                     .cookieBehavior(defaultCookieBehavior)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
                     .enhancedTrackingProtectionLevel(etpLevel)
+                    .cookieBanners(if (cookieBannerAutoReject) ContentBlocking.CookieBannersMode.REJECT else ContentBlocking.CookieBannersMode.DISABLED)
                     .build()
             )
             .javaScriptEnabled(sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true)))
@@ -223,23 +230,36 @@ object PetalGeckoRuntime {
 
                 // 2. Enhanced Tracking Protection & AdBlock
                 val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-                val etpLevel = if (adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
+                val etpStrict = sp.getBoolean("sp_etp_strict", true)
+                val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
                 rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)
-                rt.settings.contentBlocking.setStrictSocialTrackingProtection(adBlockEnabled)
+                rt.settings.contentBlocking.setStrictSocialTrackingProtection(adBlockEnabled || etpStrict)
 
-                // 3. Block Third-Party / Tracking Cookies (Firefox ETP Cookie Isolation)
+                // 3. Block Third-Party / Tracking Cookies (Firefox ETP Cookie Isolation & Total Cookie Protection)
                 val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
-                val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", false))
-                val cookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || adBlockEnabled) {
+                val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
+                val cookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || adBlockEnabled || etpStrict) {
                     ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
                 } else {
                     ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
                 }
                 rt.settings.contentBlocking.setCookieBehavior(cookieBehavior)
 
+                // 3b. GDPR Cookie Banner Auto-Reject Mode
+                val cookieBannerAutoReject = sp.getBoolean("sp_cookie_banner_auto_reject", true)
+                rt.settings.contentBlocking.setCookieBanners(
+                    if (cookieBannerAutoReject) ContentBlocking.CookieBannersMode.REJECT else ContentBlocking.CookieBannersMode.DISABLED
+                )
+
+                // 3c. HTTPS-Only Mode
+                val httpsOnly = sp.getBoolean("sp_https_only", false)
+                rt.settings.setHttpsOnlyMode(
+                    if (httpsOnly) GeckoRuntimeSettings.HTTPS_ONLY_MODE_ENABLED else GeckoRuntimeSettings.HTTPS_ONLY_MODE_DISABLED
+                )
+
                 // 4. Anti-Tracking Flags (STP, Social, Cryptominers, Ads)
                 var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
-                if (adBlockEnabled) {
+                if (adBlockEnabled || etpStrict) {
                     antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or ContentBlocking.AntiTracking.STP
                 }
                 rt.settings.contentBlocking.setAntiTracking(antiTrackingFlags)

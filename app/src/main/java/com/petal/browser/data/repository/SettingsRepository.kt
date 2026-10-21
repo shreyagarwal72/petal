@@ -60,6 +60,10 @@ interface SettingsRepository {
     // Privacy & Security
     val adBlockEnabled: Flow<Boolean>
     val blockThirdPartyCookies: Flow<Boolean>
+    val totalCookieProtection: Flow<Boolean>
+    val cookieBannerAutoReject: Flow<Boolean>
+    val etpStrict: Flow<Boolean>
+    val biometricTabLock: Flow<Boolean>
     val fingerprintProtection: Flow<Boolean>
     val webrtcProtection: Flow<Boolean>
     val dntGpc: Flow<Boolean>
@@ -163,6 +167,10 @@ interface SettingsRepository {
 
     suspend fun setAdBlockEnabled(enabled: Boolean)
     suspend fun setBlockThirdPartyCookies(enabled: Boolean)
+    suspend fun setTotalCookieProtection(enabled: Boolean)
+    suspend fun setCookieBannerAutoReject(enabled: Boolean)
+    suspend fun setEtpStrict(enabled: Boolean)
+    suspend fun setBiometricTabLock(enabled: Boolean)
     suspend fun setFingerprintProtection(enabled: Boolean)
     suspend fun setWebrtcProtection(enabled: Boolean)
     suspend fun setDntGpc(enabled: Boolean)

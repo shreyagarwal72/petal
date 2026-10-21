@@ -2078,6 +2078,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    private boolean incognitoBiometricUnlocked = false;
+
     @Override
     public synchronized void showAlbum(AlbumController controller) {
         showAlbum(controller, null);
@@ -2093,6 +2095,31 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
         if (controller == null) return;
+
+        // Biometric Tab Lock: If target is incognito, preference enabled, and session not yet unlocked
+        if (controller.isIncognito() && sp.getBoolean("sp_biometric_incognito_tab_lock", false) && !incognitoBiometricUnlocked) {
+            final AlbumController finalTarget = controller;
+            final String finalOverrideUrl = overrideUrl;
+            com.petal.browser.security.BiometricLockManager.authenticate(
+                this,
+                "Incognito Tabs Locked",
+                "Unlock with your fingerprint or device PIN to access private browsing",
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        incognitoBiometricUnlocked = true;
+                        showAlbum(finalTarget, finalOverrideUrl);
+                    }
+                },
+                new java.util.function.Consumer<String>() {
+                    @Override
+                    public void accept(String error) {
+                        PetalToast.show(BrowserActivity.this, "Authentication required to view private tabs", Toast.LENGTH_SHORT);
+                    }
+                }
+            );
+            return;
+        }
 
         // Fix (Bug 6): reset the flag immediately so concurrent GeckoView callbacks
         // or onTabUrlStarted() callers never read a stale 'true' while a new surface

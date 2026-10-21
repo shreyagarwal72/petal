@@ -234,6 +234,22 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_block_third_party_cookies", false)
     }
 
+    override val totalCookieProtection: Flow<Boolean> = preferenceFlow("sp_total_cookie_protection") {
+        sp.getBoolean("sp_total_cookie_protection", true)
+    }
+
+    override val cookieBannerAutoReject: Flow<Boolean> = preferenceFlow("sp_cookie_banner_auto_reject") {
+        sp.getBoolean("sp_cookie_banner_auto_reject", true)
+    }
+
+    override val etpStrict: Flow<Boolean> = preferenceFlow("sp_etp_strict") {
+        sp.getBoolean("sp_etp_strict", true)
+    }
+
+    override val biometricTabLock: Flow<Boolean> = preferenceFlow("sp_biometric_incognito_tab_lock") {
+        sp.getBoolean("sp_biometric_incognito_tab_lock", false)
+    }
+
     override val fingerprintProtection: Flow<Boolean> = preferenceFlow("sp_fingerprint_protection") {
         sp.getBoolean("sp_fingerprint_protection", true)
     }
@@ -622,6 +638,25 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.edit().putBoolean("sp_block_third_party_cookies", enabled)
             .putBoolean("profileStandard_cookiesThirdParty", !enabled).apply()
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setTotalCookieProtection(enabled: Boolean) {
+        sp.edit().putBoolean("sp_total_cookie_protection", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setCookieBannerAutoReject(enabled: Boolean) {
+        sp.edit().putBoolean("sp_cookie_banner_auto_reject", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setEtpStrict(enabled: Boolean) {
+        sp.edit().putBoolean("sp_etp_strict", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setBiometricTabLock(enabled: Boolean) {
+        sp.edit().putBoolean("sp_biometric_incognito_tab_lock", enabled).apply()
     }
 
     override suspend fun setFingerprintProtection(enabled: Boolean) {

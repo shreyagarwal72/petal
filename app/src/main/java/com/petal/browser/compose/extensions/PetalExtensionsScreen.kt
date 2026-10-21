@@ -968,6 +968,161 @@ private fun AddExtensionSheet(
             }
 
             Spacer(Modifier.height(8.dp))
+            var showCustomCollectionDialog by remember { mutableStateOf(false) }
+            FilledTonalButton(
+                onClick = { showCustomCollectionDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Rounded.CollectionsBookmark, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Custom AMO Collection")
+            }
+
+            if (showCustomCollectionDialog) {
+                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                var userId by remember { mutableStateOf(sp.getString("sp_amo_collection_user_id", "") ?: "") }
+                var collectionName by remember { mutableStateOf(sp.getString("sp_amo_collection_name", "") ?: "") }
+                var isLoadingCollection by remember { mutableStateOf(false) }
+                var collectionError by remember { mutableStateOf<String?>(null) }
+                var fetchedAddons by remember { mutableStateOf<List<PetalExtensionManager.CatalogEntry>?>(null) }
+
+                AlertDialog(
+                    onDismissRequest = { showCustomCollectionDialog = false },
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.CollectionsBookmark, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Custom AMO Add-on Collection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                "Enter your Mozilla Add-ons (AMO) account User ID and collection slug to install your favorite extensions in 1 tap.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            OutlinedTextField(
+                                value = userId,
+                                onValueChange = { userId = it },
+                                label = { Text("User ID (e.g. 12345678)") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            OutlinedTextField(
+                                value = collectionName,
+                                onValueChange = { collectionName = it },
+                                label = { Text("Collection Name (e.g. my-extensions)") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            if (collectionError != null) {
+                                Text(
+                                    collectionError!!,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+
+                            if (isLoadingCollection) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                }
+                            }
+
+                            fetchedAddons?.let { list ->
+                                Text(
+                                    "Found ${list.size} add-ons:",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                list.forEach { addon ->
+                                    Card(
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(10.dp).fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                                Text(addon.name, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                                                if (addon.description.isNotBlank()) {
+                                                    Text(addon.description, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+                                                }
+                                            }
+                                            FilledTonalButton(
+                                                onClick = {
+                                                    onInstall(addon.downloadUrl)
+                                                },
+                                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                                shape = RoundedCornerShape(10.dp)
+                                            ) {
+                                                Text("Install", style = MaterialTheme.typography.labelSmall)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                sp.edit()
+                                    .putString("sp_amo_collection_user_id", userId.trim())
+                                    .putString("sp_amo_collection_name", collectionName.trim())
+                                    .apply()
+
+                                isLoadingCollection = true
+                                collectionError = null
+                                coroutineScope.launch {
+                                    val res = PetalExtensionManager.fetchCustomCollection(userId, collectionName)
+                                    isLoadingCollection = false
+                                    res.fold(
+                                        onSuccess = { list ->
+                                            if (list.isEmpty()) {
+                                                collectionError = "Collection is empty or private."
+                                            } else {
+                                                fetchedAddons = list
+                                            }
+                                        },
+                                        onFailure = { err ->
+                                            collectionError = err.message ?: "Failed to fetch collection"
+                                        }
+                                    )
+                                }
+                            },
+                            enabled = userId.isNotBlank() && collectionName.isNotBlank() && !isLoadingCollection
+                        ) {
+                            Text("Load Collection")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showCustomCollectionDialog = false }) {
+                            Text("Close")
+                        }
+                    }
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
             FilledTonalButton(
                 onClick = { showMozillaCatalogPrompt = true },
                 modifier = Modifier.fillMaxWidth(),

@@ -1280,6 +1280,68 @@ object PetalExtensionManager {
         return popup != null
     }
 
+    /**
+     * Queries AMO (addons.mozilla.org) for a custom user collection by user ID and collection slug.
+     * Returns a list of CatalogEntry items corresponding to the collection's add-ons.
+     */
+    suspend fun fetchCustomCollection(userId: String, collectionSlug: String): Result<List<CatalogEntry>> = withContext(Dispatchers.IO) {
+        try {
+            val uId = userId.trim()
+            val slug = collectionSlug.trim()
+            if (uId.isEmpty() || slug.isEmpty()) {
+                return@withContext Result.failure(IllegalArgumentException("User ID and Collection Name cannot be blank"))
+            }
+
+            val url = "https://addons.mozilla.org/api/v4/accounts/account/$uId/collections/$slug/addons/?page_size=50"
+            val request = okhttp3.Request.Builder()
+                .url(url)
+                .header("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:158.0) Gecko/158.0 Firefox/158.0")
+                .build()
+
+            val client = okhttp3.OkHttpClient.Builder()
+                .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                return@withContext Result.failure(IllegalStateException("HTTP ${response.code}: Collection not found or private"))
+            }
+
+            val body = response.body?.string().orEmpty()
+            val json = org.json.JSONObject(body)
+            val results = json.optJSONArray("results") ?: org.json.JSONArray()
+            val entries = mutableListOf<CatalogEntry>()
+
+            for (i in 0 until results.length()) {
+                val item = results.optJSONObject(i) ?: continue
+                val addon = item.optJSONObject("addon") ?: continue
+                val guid = addon.optString("guid", "")
+                val name = addon.optJSONObject("name")?.optString("en-US", "")?.ifEmpty { null }
+                    ?: addon.optString("name", "")
+                val summary = addon.optJSONObject("summary")?.optString("en-US", "")?.ifEmpty { null }
+                    ?: addon.optString("summary", "")
+                val addonSlug = addon.optString("slug", "")
+
+                if (addonSlug.isNotEmpty()) {
+                    entries.add(
+                        CatalogEntry(
+                            id = if (guid.isNotEmpty()) guid else addonSlug,
+                            name = if (name.isNotEmpty()) name else addonSlug,
+                            description = summary,
+                            amoSlug = addonSlug,
+                            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/$addonSlug/"
+                        )
+                    )
+                }
+            }
+            Result.success(entries)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to load custom AMO collection: ${t.message}")
+            Result.failure(t)
+        }
+    }
+
     private fun normalizeInstallUri(value: String): String? {
         val parsed = try { Uri.parse(value.trim()) } catch (_: Exception) { return null }
 

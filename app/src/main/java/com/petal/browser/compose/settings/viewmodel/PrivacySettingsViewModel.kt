@@ -21,6 +21,18 @@ class PrivacySettingsViewModel @Inject constructor(
     val blockThirdPartyCookies: StateFlow<Boolean> = settingsRepository.blockThirdPartyCookies
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val totalCookieProtection: StateFlow<Boolean> = settingsRepository.totalCookieProtection
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val cookieBannerAutoReject: StateFlow<Boolean> = settingsRepository.cookieBannerAutoReject
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val etpStrict: StateFlow<Boolean> = settingsRepository.etpStrict
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val biometricTabLock: StateFlow<Boolean> = settingsRepository.biometricTabLock
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val fingerprintProtection: StateFlow<Boolean> = settingsRepository.fingerprintProtection
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -60,6 +72,22 @@ class PrivacySettingsViewModel @Inject constructor(
 
     fun setBlockThirdPartyCookies(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setBlockThirdPartyCookies(enabled)
+    }
+
+    fun setTotalCookieProtection(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setTotalCookieProtection(enabled)
+    }
+
+    fun setCookieBannerAutoReject(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setCookieBannerAutoReject(enabled)
+    }
+
+    fun setEtpStrict(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setEtpStrict(enabled)
+    }
+
+    fun setBiometricTabLock(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setBiometricTabLock(enabled)
     }
 
     fun setFingerprintProtection(enabled: Boolean) = viewModelScope.launch {

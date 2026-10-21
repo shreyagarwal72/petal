@@ -50,6 +50,10 @@ fun PrivacySettingsScreen(
 ) {
     val adBlockEnabled by viewModel.adBlockEnabled.collectAsStateWithLifecycle()
     val blockThirdPartyCookies by viewModel.blockThirdPartyCookies.collectAsStateWithLifecycle()
+    val totalCookieProtection by viewModel.totalCookieProtection.collectAsStateWithLifecycle()
+    val cookieBannerAutoReject by viewModel.cookieBannerAutoReject.collectAsStateWithLifecycle()
+    val etpStrict by viewModel.etpStrict.collectAsStateWithLifecycle()
+    val biometricTabLock by viewModel.biometricTabLock.collectAsStateWithLifecycle()
     val fingerprintProtection by viewModel.fingerprintProtection.collectAsStateWithLifecycle()
     val webrtcProtection by viewModel.webrtcProtection.collectAsStateWithLifecycle()
     val dntGpc by viewModel.dntGpc.collectAsStateWithLifecycle()
@@ -65,6 +69,10 @@ fun PrivacySettingsScreen(
     PrivacySettingsScreenContent(
         adBlockEnabled = adBlockEnabled,
         blockThirdPartyCookies = blockThirdPartyCookies,
+        totalCookieProtection = totalCookieProtection,
+        cookieBannerAutoReject = cookieBannerAutoReject,
+        etpStrict = etpStrict,
+        biometricTabLock = biometricTabLock,
         fingerprintProtection = fingerprintProtection,
         webrtcProtection = webrtcProtection,
         dntGpc = dntGpc,
@@ -78,6 +86,10 @@ fun PrivacySettingsScreen(
         customDohUrl = customDohUrl,
         onAdBlockEnabledChange = viewModel::setAdBlockEnabled,
         onBlockThirdPartyCookiesChange = viewModel::setBlockThirdPartyCookies,
+        onTotalCookieProtectionChange = viewModel::setTotalCookieProtection,
+        onCookieBannerAutoRejectChange = viewModel::setCookieBannerAutoReject,
+        onEtpStrictChange = viewModel::setEtpStrict,
+        onBiometricTabLockChange = viewModel::setBiometricTabLock,
         onFingerprintProtectionChange = viewModel::setFingerprintProtection,
         onWebrtcProtectionChange = viewModel::setWebrtcProtection,
         onDntGpcChange = viewModel::setDntGpc,
@@ -100,6 +112,10 @@ fun PrivacySettingsScreen(
 fun PrivacySettingsScreenContent(
     adBlockEnabled: Boolean,
     blockThirdPartyCookies: Boolean,
+    totalCookieProtection: Boolean = true,
+    cookieBannerAutoReject: Boolean = true,
+    etpStrict: Boolean = true,
+    biometricTabLock: Boolean = false,
     fingerprintProtection: Boolean,
     webrtcProtection: Boolean,
     dntGpc: Boolean,
@@ -113,6 +129,10 @@ fun PrivacySettingsScreenContent(
     customDohUrl: String,
     onAdBlockEnabledChange: (Boolean) -> Unit,
     onBlockThirdPartyCookiesChange: (Boolean) -> Unit,
+    onTotalCookieProtectionChange: (Boolean) -> Unit = {},
+    onCookieBannerAutoRejectChange: (Boolean) -> Unit = {},
+    onEtpStrictChange: (Boolean) -> Unit = {},
+    onBiometricTabLockChange: (Boolean) -> Unit = {},
     onFingerprintProtectionChange: (Boolean) -> Unit,
     onWebrtcProtectionChange: (Boolean) -> Unit,
     onDntGpcChange: (Boolean) -> Unit,
@@ -306,6 +326,22 @@ fun PrivacySettingsScreenContent(
                     }
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        title = "ETP Strict & Total Cookie Protection",
+                        subtitle = "Firefox dynamic first-party cookie isolation and tracker partitioning",
+                        icon = Icons.Rounded.Cookie,
+                        checked = totalCookieProtection,
+                        onCheckedChange = onTotalCookieProtectionChange
+                    )
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        title = "Auto-Reject Cookie Banners (GDPR)",
+                        subtitle = "GeckoView automatically declines consent modals & cookie popups",
+                        icon = Icons.Rounded.VerifiedUser,
+                        checked = cookieBannerAutoReject,
+                        onCheckedChange = onCookieBannerAutoRejectChange
+                    )
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_block_third_party_tracking_cookies),
                         subtitle = stringResource(R.string.ui_isolate_and_block_cross_site),
                         icon = Icons.Rounded.Cookie,
@@ -361,6 +397,14 @@ fun PrivacySettingsScreenContent(
                         leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null) },
                     )
 
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        title = "Lock Incognito Tabs with Biometrics",
+                        subtitle = "Require fingerprint or face unlock before displaying private browsing tabs",
+                        icon = Icons.Rounded.Fingerprint,
+                        checked = biometricTabLock,
+                        onCheckedChange = onBiometricTabLockChange
+                    )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_https_security_enforcer),
