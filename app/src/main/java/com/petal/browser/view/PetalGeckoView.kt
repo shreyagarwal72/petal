@@ -967,6 +967,14 @@ class PetalGeckoView @JvmOverloads constructor(
                 hasUserGesture: Boolean
             ) {
                 if (url.isNullOrBlank() || url.equals(currentUrl, ignoreCase = true)) return
+                // Brave Bounce Tracking Defense: skip intermediary tracking redirects directly to destination
+                val unbouncedUrl = com.petal.browser.privacy.PetalBounceTrackingProtection.detectAndUnwrapBounceUrl(url)
+                if (unbouncedUrl != null && !unbouncedUrl.equals(url, ignoreCase = true)) {
+                    Log.i(TAG, "Bounce Tracking detected: bypassing $url -> $unbouncedUrl")
+                    loadUrl(unbouncedUrl)
+                    return
+                }
+
                 // Brave De-AMP: Automatically unwrap AMP URLs to publisher canonical URLs
                 val deAmpUrl = com.petal.browser.privacy.PetalDeAmpEngine.unwrapAmpUrl(url)
                 if (deAmpUrl != null && !deAmpUrl.equals(url, ignoreCase = true)) {
@@ -1015,6 +1023,16 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.updateAddressBar()
                         act.updatePersistentBottomNav()
                         act.updateBackCallbackState()
+
+                        // Inject Brave Custom Cosmetic Element Hide Rules
+                        val currentDomain = getDomain()
+                        if (!currentDomain.isNullOrBlank()) {
+                            val hideCss = com.petal.browser.privacy.PetalElementBlocker.getInjectionCss(act, currentDomain)
+                            if (hideCss.isNotBlank()) {
+                                val escaped = hideCss.replace("'", "\\'").replace("\n", " ")
+                                evaluateJavascript("(function(){let s=document.getElementById('petal-custom-blocker');if(!s){s=document.createElement('style');s.id='petal-custom-blocker';document.head.appendChild(s);}s.textContent='$escaped';})();")
+                            }
+                        }
 
                         // Detect Google anti-bot CAPTCHA redirect page (google.com/sorry)
                         if (url.contains("google.") && url.contains("/sorry")) {

@@ -401,6 +401,62 @@ fun PetalSiteInfoBottomSheet(
                         )
 
                         Spacer(Modifier.height(8.dp))
+                        var showBlockElementDialog by remember { mutableStateOf(false) }
+                        var customCssSelector by remember { mutableStateOf("") }
+                        OutlinedButton(
+                            onClick = { showBlockElementDialog = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Block Page Element (Cosmetic Filter)", fontSize = 12.sp)
+                        }
+
+                        if (showBlockElementDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showBlockElementDialog = false },
+                                title = { Text("Block Element on $domain", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
+                                text = {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(
+                                            "Enter a CSS selector (e.g. '.newsletter-modal', '#paywall-banner') to permanently hide it from this domain.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        OutlinedTextField(
+                                            value = customCssSelector,
+                                            onValueChange = { customCssSelector = it },
+                                            placeholder = { Text("e.g. .popup-overlay") },
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(10.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                },
+                                confirmButton = {
+                                    Button(
+                                        onClick = {
+                                            if (customCssSelector.isNotBlank()) {
+                                                com.petal.browser.privacy.PetalElementBlocker.addSelector(context, domain, customCssSelector.trim())
+                                                geckoView?.reloadWithoutInit()
+                                                showBlockElementDialog = false
+                                            }
+                                        },
+                                        enabled = customCssSelector.isNotBlank()
+                                    ) {
+                                        Text("Block")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showBlockElementDialog = false }) {
+                                        Text("Cancel")
+                                    }
+                                }
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
