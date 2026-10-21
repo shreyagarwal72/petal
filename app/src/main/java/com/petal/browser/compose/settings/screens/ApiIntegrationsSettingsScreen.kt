@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.text.style.TextOverflow
 import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.ResearchMode
@@ -133,6 +134,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 ) {
                                     AiProvider.entries.forEach { provider ->
                                         val isSelected = selectedProvider == provider
+                                        val chipShape = RoundedCornerShape(12.dp)
                                         FilterChip(
                                             selected = isSelected,
                                             onClick = {
@@ -142,7 +144,23 @@ fun ApiIntegrationsSettingsScreenContent(
                                                 selectedModel = PetalAiResearchEngine.getSelectedModel(context, provider)
                                                 testResultMsg = null
                                             },
-                                            label = { Text(provider.displayName) },
+                                            shape = chipShape,
+                                            modifier = if (isGlass) {
+                                                Modifier.liquidGlassChrome(
+                                                    shape = chipShape,
+                                                    enabled = true,
+                                                    sheenIntensity = if (isSelected) 0.5f else 0.25f
+                                                )
+                                            } else Modifier,
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                containerColor = if (isGlass) {
+                                                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f)
+                                                } else MaterialTheme.colorScheme.surfaceContainerLow,
+                                                selectedContainerColor = if (isGlass) {
+                                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
+                                                } else MaterialTheme.colorScheme.secondaryContainer
+                                            ),
+                                            label = { Text(provider.displayName, maxLines = 1) },
                                             leadingIcon = if (isSelected) {
                                                 { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                             } else null
@@ -213,20 +231,36 @@ fun ApiIntegrationsSettingsScreenContent(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val buttonShape = RoundedCornerShape(12.dp)
                         if (selectedProvider.keyUrl.isNotBlank()) {
-                            TextButton(onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(selectedProvider.keyUrl))
-                                context.startActivity(intent)
-                            }) {
+                            FilledTonalButton(
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(selectedProvider.keyUrl))
+                                    context.startActivity(intent)
+                                },
+                                shape = buttonShape,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .then(if (isGlass) Modifier.liquidGlassChrome(buttonShape, enabled = true, sheenIntensity = 0.35f) else Modifier),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = if (isGlass) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f) else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                                ),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                            ) {
                                 Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.ui_get_free_key_2, selectedProvider.displayName), style = MaterialTheme.typography.labelSmall)
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    stringResource(R.string.ui_get_free_key_2, selectedProvider.displayName),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         } else if (selectedProvider == AiProvider.CUSTOM) {
-                            TextButton(
+                            FilledTonalButton(
                                 enabled = customEndpoint.isNotBlank() && !isFetchingModels,
                                 onClick = {
                                     isFetchingModels = true
@@ -244,22 +278,33 @@ fun ApiIntegrationsSettingsScreenContent(
                                             testResultMsg = "✗ Fetch failed: ${err.message}"
                                         }
                                     }
-                                }
+                                },
+                                shape = buttonShape,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .then(if (isGlass) Modifier.liquidGlassChrome(buttonShape, enabled = true, sheenIntensity = 0.35f) else Modifier),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = if (isGlass) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f) else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                                ),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                             ) {
                                 if (isFetchingModels) {
-                                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 16.dp)
+                                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 14.dp)
                                     Spacer(Modifier.width(6.dp))
                                 } else {
                                     Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
+                                    Spacer(Modifier.width(6.dp))
                                 }
-                                Text(stringResource(R.string.ui_fetch_models), style = MaterialTheme.typography.labelSmall)
+                                Text(
+                                    stringResource(R.string.ui_fetch_models),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
-                        } else {
-                            Spacer(Modifier.width(8.dp))
                         }
 
-                        TextButton(
+                        FilledTonalButton(
                             enabled = (currentKey.isNotBlank() || selectedProvider == AiProvider.CUSTOM) && !isTestingKey,
                             onClick = {
                                 isTestingKey = true
@@ -276,16 +321,28 @@ fun ApiIntegrationsSettingsScreenContent(
                                         testResultMsg = if (res.isSuccess) "✓ AI Verified & Connected!" else "✗ Connection Failed: ${res.exceptionOrNull()?.message ?: "Connection Error"}"
                                     }
                                 )
-                            }
+                            },
+                            shape = buttonShape,
+                            modifier = (if (selectedProvider.keyUrl.isNotBlank() || selectedProvider == AiProvider.CUSTOM) Modifier.weight(1f) else Modifier.fillMaxWidth())
+                                .then(if (isGlass) Modifier.liquidGlassChrome(buttonShape, enabled = true, sheenIntensity = 0.45f) else Modifier),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                         ) {
                             if (isTestingKey) {
-                                com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 16.dp)
+                                com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 14.dp)
                                 Spacer(Modifier.width(6.dp))
                             } else {
                                 Icon(Icons.Rounded.NetworkCheck, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
+                                Spacer(Modifier.width(6.dp))
                             }
-                            Text(stringResource(R.string.ui_test_connection), style = MaterialTheme.typography.labelSmall)
+                            Text(
+                                stringResource(R.string.ui_test_connection),
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
 
@@ -333,13 +390,30 @@ fun ApiIntegrationsSettingsScreenContent(
                                 ) {
                                     customModels.forEach { model ->
                                         val isSelected = selectedModel == model
+                                        val chipShape = RoundedCornerShape(12.dp)
                                         FilterChip(
                                             selected = isSelected,
                                             onClick = {
                                                 selectedModel = model
                                                 PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
                                             },
-                                            label = { Text(model) },
+                                            shape = chipShape,
+                                            modifier = if (isGlass) {
+                                                Modifier.liquidGlassChrome(
+                                                    shape = chipShape,
+                                                    enabled = true,
+                                                    sheenIntensity = if (isSelected) 0.5f else 0.25f
+                                                )
+                                            } else Modifier,
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                containerColor = if (isGlass) {
+                                                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f)
+                                                } else MaterialTheme.colorScheme.surfaceContainerLow,
+                                                selectedContainerColor = if (isGlass) {
+                                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
+                                                } else MaterialTheme.colorScheme.secondaryContainer
+                                            ),
+                                            label = { Text(model, maxLines = 1) },
                                             leadingIcon = if (isSelected) {
                                                 { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                             } else null
@@ -362,13 +436,30 @@ fun ApiIntegrationsSettingsScreenContent(
                             ) {
                                 selectedProvider.availableModels.forEach { model ->
                                     val isSelected = selectedModel == model
+                                    val chipShape = RoundedCornerShape(12.dp)
                                     FilterChip(
                                         selected = isSelected,
                                         onClick = {
                                             selectedModel = model
                                             PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
                                         },
-                                        label = { Text(model) },
+                                        shape = chipShape,
+                                        modifier = if (isGlass) {
+                                            Modifier.liquidGlassChrome(
+                                                shape = chipShape,
+                                                enabled = true,
+                                                sheenIntensity = if (isSelected) 0.5f else 0.25f
+                                            )
+                                        } else Modifier,
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            containerColor = if (isGlass) {
+                                                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f)
+                                            } else MaterialTheme.colorScheme.surfaceContainerLow,
+                                            selectedContainerColor = if (isGlass) {
+                                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
+                                            } else MaterialTheme.colorScheme.secondaryContainer
+                                        ),
+                                        label = { Text(model, maxLines = 1) },
                                         leadingIcon = if (isSelected) {
                                             { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                         } else null
