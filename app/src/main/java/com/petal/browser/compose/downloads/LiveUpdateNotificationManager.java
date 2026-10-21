@@ -27,11 +27,10 @@ import java.lang.reflect.Method;
 
 /**
  * LiveUpdateNotificationManager
- * Handles live update notifications for active downloads:
+ * Handles clean, standard live update notifications for active downloads:
  * 1. Follows active browser theming: Material You dynamic color when enabled, or Petal Pink when disabled.
- * 2. Positions animated running doll above the download progress line proportionally across the track.
- * 3. Shows finish Trophy emoji 🏆 at end of track and on download completion.
- * 4. Ensures silent, continuous, unsuppressed live alerts.
+ * 2. Clean, native Android progress presentation with download speed, percentage, ETA, and progress bar.
+ * 3. Ensures silent, continuous, unsuppressed live alerts with Pause, Resume, and Cancel actions.
  */
 public class LiveUpdateNotificationManager {
 
@@ -138,27 +137,7 @@ public class LiveUpdateNotificationManager {
     }
 
     public static int getRunningDollFrameResource(int progressPercent) {
-        int frame = (int) ((System.currentTimeMillis() / 60L) % 16);
-        switch (frame) {
-            case 1: return R.drawable.ic_doll_run_9;
-            case 2: return R.drawable.ic_doll_run_2;
-            case 3: return R.drawable.ic_doll_run_10;
-            case 4: return R.drawable.ic_doll_run_3;
-            case 5: return R.drawable.ic_doll_run_4;
-            case 6: return R.drawable.ic_doll_run_11;
-            case 7: return R.drawable.ic_doll_run_5;
-            case 8: return R.drawable.ic_doll_run_12;
-            case 9: return R.drawable.ic_doll_run_6;
-            case 10: return R.drawable.ic_doll_run_13;
-            case 11: return R.drawable.ic_doll_run_7;
-            case 12: return R.drawable.ic_doll_run_14;
-            case 13: return R.drawable.ic_doll_run_8;
-            case 14: return R.drawable.ic_doll_run_15;
-            case 15: return R.drawable.ic_doll_run_16;
-            case 0:
-            default:
-                return R.drawable.ic_doll_run_1;
-        }
+        return R.drawable.ic_download;
     }
 
     public static Notification buildLiveNotification(
@@ -179,20 +158,20 @@ public class LiveUpdateNotificationManager {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         boolean liveUpdatesPref = sp.getBoolean("sp_live_updates", true);
         int themeAccentColor = getLiveThemeAccentColor(context);
-        int dollFrameRes = isPaused ? R.drawable.ic_doll_run_1 : getRunningDollFrameResource(progressPercent);
+        int iconRes = isPaused ? R.drawable.icon_pause : R.drawable.ic_download;
         int clampedProgress = Math.max(0, Math.min(100, progressPercent));
 
         if (liveUpdatesPref && canPostPromotedNotifications(context)) {
             Notification nativeNotif = buildAndroid16ProgressStyleNotification(
                     context, title, contentText, clampedProgress, isIndeterminate, isPaused, chipText,
                     contentPendingIntent, cancelPendingIntent, togglePendingIntent, liveUpdatesPref,
-                    themeAccentColor, dollFrameRes
+                    themeAccentColor, iconRes
             );
             if (nativeNotif != null) return nativeNotif;
         }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(dollFrameRes)
+                .setSmallIcon(iconRes)
                 .setContentTitle(title)
                 .setContentText(contentText)
                 .setSubText(chipText)
@@ -223,22 +202,13 @@ public class LiveUpdateNotificationManager {
             builder.setProgress(100, clampedProgress, false);
         }
 
-        // Custom heads-up / expanded RemoteViews featuring runner doll above the progress line
+        // Custom heads-up / expanded RemoteViews featuring clean Material You progress
         try {
             RemoteViews customView = new RemoteViews(context.getPackageName(), R.layout.layout_live_download_notification);
             customView.setTextViewText(R.id.notification_title, title);
             customView.setTextViewText(R.id.notification_subtitle, contentText);
             customView.setTextViewText(R.id.notification_speed_chip, chipText != null ? chipText : "");
             customView.setTextColor(R.id.notification_speed_chip, themeAccentColor);
-            customView.setImageViewResource(R.id.notification_doll_runner, dollFrameRes);
-
-            // Dynamically position the doll runner on the track above the progress line.
-            // Screen width minus notification margins (approx 64dp) minus trophy and doll widths (approx 48dp)
-            float density = context.getResources().getDisplayMetrics().density;
-            float screenWidthDp = context.getResources().getConfiguration().screenWidthDp;
-            float availableTrackDp = Math.max(120f, screenWidthDp - 112f);
-            int leftPadding = (int) (density * (availableTrackDp * (clampedProgress / 100f)));
-            customView.setViewPadding(R.id.notification_doll_runner, leftPadding, 0, 0, 0);
 
             if (isIndeterminate) {
                 customView.setProgressBar(R.id.notification_progress_bar, 0, 0, true);
@@ -283,7 +253,7 @@ public class LiveUpdateNotificationManager {
             PendingIntent togglePendingIntent,
             boolean promoteLiveUpdate,
             int accentColor,
-            int dollFrameRes
+            int iconRes
     ) {
         try {
             Notification.ProgressStyle style = new Notification.ProgressStyle()
@@ -292,10 +262,10 @@ public class LiveUpdateNotificationManager {
                     .setProgressSegments(java.util.Collections.singletonList(
                             new Notification.ProgressStyle.Segment(100).setColor(accentColor)
                     ))
-                    .setProgressTrackerIcon(Icon.createWithResource(context, dollFrameRes));
+                    .setProgressTrackerIcon(Icon.createWithResource(context, iconRes));
 
             Notification.Builder builder = new Notification.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(dollFrameRes)
+                    .setSmallIcon(iconRes)
                     .setContentTitle(title)
                     .setContentText(contentText)
                     .setStyle(style)
