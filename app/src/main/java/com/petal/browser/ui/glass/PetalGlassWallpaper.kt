@@ -273,29 +273,45 @@ fun PetalGlassPattern(modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
     val dark = scheme.background.luminance() < 0.5f
     Canvas(modifier.fillMaxSize()) {
-        drawRect(scheme.background)
-        val colors = if (dark) listOf(scheme.primary.copy(alpha = .85f),
-            scheme.tertiary.copy(alpha = .75f), scheme.secondary.copy(alpha = .65f))
-        else listOf(scheme.primary.copy(alpha = .42f), scheme.tertiary.copy(alpha = .36f),
-            scheme.secondaryContainer.copy(alpha = .9f))
-        val centers = listOf(Offset(size.width * .15f, size.height * .12f),
+        drawRect(if (dark) scheme.background else scheme.surface)
+        val colors = if (dark) listOf(
+            scheme.primary.copy(alpha = .85f),
+            scheme.tertiary.copy(alpha = .75f),
+            scheme.secondary.copy(alpha = .65f)
+        ) else listOf(
+            scheme.primary.copy(alpha = .22f),
+            scheme.tertiary.copy(alpha = .18f),
+            scheme.secondaryContainer.copy(alpha = .45f)
+        )
+        val centers = listOf(
+            Offset(size.width * .15f, size.height * .12f),
             Offset(size.width * .95f, size.height * .48f),
-            Offset(size.width * .2f, size.height * .88f))
+            Offset(size.width * .2f, size.height * .88f)
+        )
         centers.forEachIndexed { i, center ->
             val radius = size.width * (.85f + i * .05f)
-            drawCircle(Brush.radialGradient(listOf(colors[i],
-                Color.Transparent), center, radius), radius, center)
+            drawCircle(
+                Brush.radialGradient(listOf(colors[i], Color.Transparent), center, radius),
+                radius,
+                center
+            )
         }
         repeat(12) { i ->
             val y = size.height * (.04f + i * .085f)
             val amp = size.height * .035f * if (i % 2 == 0) 1f else -1f
             val path = Path().apply {
                 moveTo(-size.width * .1f, y)
-                cubicTo(size.width * .25f, y - amp * 2, size.width * .55f,
-                    y + amp * 2, size.width * 1.1f, y - amp)
+                cubicTo(
+                    size.width * .25f, y - amp * 2,
+                    size.width * .55f, y + amp * 2,
+                    size.width * 1.1f, y - amp
+                )
             }
-            drawPath(path, (if (dark) Color.White else scheme.primary).copy(alpha = if (dark) .26f else .32f),
-                style = Stroke(2.dp.toPx(), cap = StrokeCap.Round))
+            drawPath(
+                path,
+                (if (dark) Color.White else scheme.primary).copy(alpha = if (dark) .26f else .14f),
+                style = Stroke(2.dp.toPx(), cap = StrokeCap.Round)
+            )
         }
     }
 }

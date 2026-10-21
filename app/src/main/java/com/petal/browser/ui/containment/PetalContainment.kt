@@ -220,8 +220,13 @@ fun petalGroupSurfaceColor(): Color {
     if (isGlass && LocalPetalGlassWallpaper.current?.ready == true) {
         return if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .45f) else Color.Transparent
     }
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val glassAlpha = if (isGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.10f, 0.95f) else 1f
-    val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = (0.10f + glassAlpha * 0.45f).coerceIn(0f, 0.95f))
+    val baseGlassColor = if (dark) {
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = (0.10f + glassAlpha * 0.45f).coerceIn(0f, 0.95f))
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = (0.45f + glassAlpha * 0.45f).coerceIn(0f, 0.95f))
+    }
 
     val target = when {
         LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
@@ -394,11 +399,20 @@ fun PetalGroupRow(
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
     val shape = petalGroupShape(position)
+    val activeSurfaceColor = petalGroupSurfaceColor()
+    val disabledContainerColor = if (isGlass) {
+        activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+    }
     Card(
         onClick = onClick,
         enabled = enabled,
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
+        colors = CardDefaults.cardColors(
+            containerColor = activeSurfaceColor,
+            disabledContainerColor = disabledContainerColor
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
         modifier = modifier
@@ -453,11 +467,20 @@ fun PetalGroupControlRow(
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
     val shape = petalGroupShape(position)
+    val activeSurfaceColor = petalGroupSurfaceColor()
+    val disabledContainerColor = if (isGlass) {
+        activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+    }
     Card(
         onClick = { if (enabled) onCheckedChange(!checked) },
         enabled = enabled,
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
+        colors = CardDefaults.cardColors(
+            containerColor = activeSurfaceColor,
+            disabledContainerColor = disabledContainerColor
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
         modifier = modifier
@@ -545,11 +568,20 @@ fun PetalGroupToggleRow(
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
     val shape = petalGroupShape(position)
+    val activeSurfaceColor = petalGroupSurfaceColor()
+    val disabledContainerColor = if (isGlass) {
+        activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+    }
     Card(
         onClick = { if (enabled) onCheckedChange(!checked) },
         enabled = enabled,
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
+        colors = CardDefaults.cardColors(
+            containerColor = activeSurfaceColor,
+            disabledContainerColor = disabledContainerColor
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
         modifier = modifier
@@ -594,11 +626,20 @@ fun PetalSettingsToggleRow(
     val shape = petalGroupShape(position)
     val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    val activeSurfaceColor = petalGroupSurfaceColor()
+    val disabledContainerColor = if (isGlass) {
+        activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+    }
     Card(
         onClick = { if (enabled) onCheckedChange(!checked) },
         enabled = enabled,
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
+        colors = CardDefaults.cardColors(
+            containerColor = activeSurfaceColor,
+            disabledContainerColor = disabledContainerColor
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = source,
         modifier = modifier
@@ -661,12 +702,19 @@ fun PetalSettingsToggleRow(
     val shape = petalGroupShape(position)
     val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    val activeSurfaceColor = petalGroupSurfaceColor()
+    val disabledContainerColor = if (isGlass) {
+        activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+    }
     Card(
         onClick = { if (enabled) onCheckedChange(!checked) },
         enabled = enabled,
         shape = shape,
         colors = CardDefaults.cardColors(
-            containerColor = petalGroupSurfaceColor(),
+            containerColor = activeSurfaceColor,
+            disabledContainerColor = disabledContainerColor,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
