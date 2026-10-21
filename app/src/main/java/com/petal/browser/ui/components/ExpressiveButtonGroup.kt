@@ -41,7 +41,7 @@ fun ExpressiveButtonGroup(
     selectedId: String,
     onItemSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
-    height: Dp = 44.dp
+    height: Dp = 48.dp
 ) {
     val outerRadius = height / 2
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -103,7 +103,7 @@ fun ExpressiveButtonGroup(
                         .clip(shape)
                         .background(containerColor)
                         .clickable { onItemSelected(item.id) }
-                        .padding(horizontal = 12.dp)
+                        .padding(horizontal = 6.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -116,13 +116,15 @@ fun ExpressiveButtonGroup(
                                 tint = contentColor,
                                 modifier = Modifier.size(16.dp)
                             )
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.width(4.dp))
                         }
                         Text(
                             text = item.label,
-                            style = MaterialTheme.typography.labelMedium.copy(
+                            style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             color = contentColor
                         )
                     }

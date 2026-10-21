@@ -54,7 +54,10 @@ fun PetalSlider(
         onValueChangeFinished = onValueChangeFinished,
         modifier = modifier.height(TrackHeight),
         // The track draws the thumb too, so it can be positioned inside the pill
-        thumb = {},
+        thumb = {
+            // Empty thumb to avoid default huge circle thumb drawing over custom track
+            Spacer(Modifier.size(0.dp))
+        },
         track = { state ->
             val target = (
                 (state.value - state.valueRange.start) /
@@ -106,7 +109,7 @@ fun PetalSlider(
                         .graphicsLayer { rotationZ = rollDegrees }
                         .clip(MaterialShapes.Cookie12Sided.toShape())
                         .background(
-                            if (enabled) MaterialTheme.colorScheme.primary
+                            if (enabled) MaterialTheme.colorScheme.primaryContainer
                             else MaterialTheme.colorScheme.surfaceContainer
                         )
                 )

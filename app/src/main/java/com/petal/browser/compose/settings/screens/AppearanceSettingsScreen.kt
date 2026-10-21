@@ -1246,7 +1246,7 @@ fun AppearanceSettingsScreenContent(
                                     items = listOf(
                                         ExpressiveSegmentItem(id = "STRIDE", label = "Glass", icon = Icons.Rounded.BlurOn),
                                         ExpressiveSegmentItem(id = "MORPHING", label = "Morphs", icon = Icons.Rounded.BubbleChart),
-                                        ExpressiveSegmentItem(id = "IMAGE", label = "Custom Wallpaper Image", icon = Icons.Rounded.Wallpaper)
+                                        ExpressiveSegmentItem(id = "IMAGE", label = "Wallpaper", icon = Icons.Rounded.Wallpaper)
                                     ),
                                     selectedId = liquidGlassBgMode,
                                     onItemSelected = onLiquidGlassBgModeChange,

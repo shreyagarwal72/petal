@@ -159,14 +159,13 @@ fun PetalDeveloperHeroSection(
             )
 
             // Segmented 3-Pill Contact Row (Website, Email, Telegram)
-            Row(
+            Box(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                contentAlignment = Alignment.Center
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     // In glass mode the pill is see-through (the glass panel supplies the tint);
                     // before the backdrop is ready it falls back to a translucent tonal fill.
@@ -193,7 +192,7 @@ fun PetalDeveloperHeroSection(
                             onOpenUrl("https://my-petal-browser.vercel.app/")
                         },
                         shape = webShape,
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
                         modifier = if (isGlass) Modifier.liquidGlassChrome(shape = webShape, enabled = true, sheenIntensity = 0.4f, tintColor = pillTint) else Modifier,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = pillContainerColor,
@@ -223,7 +222,7 @@ fun PetalDeveloperHeroSection(
                             }
                         },
                         shape = emailShape,
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
                         modifier = if (isGlass) Modifier.liquidGlassChrome(shape = emailShape, enabled = true, sheenIntensity = 0.4f, tintColor = pillTint) else Modifier,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = pillContainerColor,
@@ -250,7 +249,7 @@ fun PetalDeveloperHeroSection(
                             onOpenUrl("https://t.me/hereyourchampion")
                         },
                         shape = tgShape,
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
                         modifier = if (isGlass) Modifier.liquidGlassChrome(shape = tgShape, enabled = true, sheenIntensity = 0.4f, tintColor = pillTint) else Modifier,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = pillContainerColor,
@@ -447,7 +446,7 @@ private fun HeroLinkBadge(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f, fill = false)
             ) {
                 Icon(
                     imageVector = leadingIcon,
@@ -465,7 +464,7 @@ private fun HeroLinkBadge(
                 )
             }
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(12.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -473,11 +472,11 @@ private fun HeroLinkBadge(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                    color = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
                             else MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
