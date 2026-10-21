@@ -432,14 +432,13 @@ class PetalTabViewController private constructor(
             gs.scrollDelegate = object : org.mozilla.geckoview.GeckoSession.ScrollDelegate {
                 private var lastAddressBarScrollY: Int = 0
                 private var scrollRun: Int = 0
-                private var lastScrollHapticY: Int = 0
 
                 override fun onScrollChanged(session: org.mozilla.geckoview.GeckoSession, scrollX: Int, scrollY: Int) {
                     val act = resolveActivity(context) ?: return
                     act.runOnUiThread {
                         val density = context.resources.displayMetrics.density
-                        val hideAfterPx = 48f * density
-                        val showAfterPx = 16f * density
+                        val hideAfterPx = 72f * density
+                        val showAfterPx = 28f * density
                         val deltaY = scrollY - lastAddressBarScrollY
                         lastAddressBarScrollY = scrollY
 
@@ -457,15 +456,6 @@ class PetalTabViewController private constructor(
                                     scrollRun = 0
                                     act.animateAddressBarCollapse(false)
                                 }
-                            }
-                        }
-
-                        // Tactile haptics: only check when enabled, with spaced interval
-                        if (com.petal.browser.haptics.PetalHapticEngine.isScrollHapticsEnabled(context)) {
-                            if (Math.abs(scrollY - lastScrollHapticY) > 64) {
-                                lastScrollHapticY = scrollY
-                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                                    .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.40f, 50L)
                             }
                         }
                     }

@@ -4224,11 +4224,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (!barInsetsKnown || !canCollapseBars()) return;
             isAddressBarCollapsed = true;
             barsHiddenUrl = currentUrl;
-            applyBarsHiddenState(true, true, true);
+            applyBarsHiddenState(true, true, false);
         } else if (!collapse && isAddressBarCollapsed) {
             isAddressBarCollapsed = false;
             barsHiddenUrl = null;
-            applyBarsHiddenState(false, true, true);
+            applyBarsHiddenState(false, true, false);
         }
     }
 
