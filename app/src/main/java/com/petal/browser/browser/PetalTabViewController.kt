@@ -428,6 +428,50 @@ class PetalTabViewController private constructor(
                 }
             }
 
+            // GeckoSession ScrollDelegate for Tactile Haptics and Address Bar Collapsing on scroll
+            gs.scrollDelegate = object : org.mozilla.geckoview.GeckoSession.ScrollDelegate {
+                private var lastAddressBarScrollY: Int = 0
+                private var scrollRun: Int = 0
+                private var lastScrollHapticY: Int = 0
+
+                override fun onScrollChanged(session: org.mozilla.geckoview.GeckoSession, scrollX: Int, scrollY: Int) {
+                    val act = resolveActivity(context) ?: return
+                    act.runOnUiThread {
+                        val density = context.resources.displayMetrics.density
+                        val hideAfterPx = 48f * density
+                        val showAfterPx = 16f * density
+                        val deltaY = scrollY - lastAddressBarScrollY
+                        lastAddressBarScrollY = scrollY
+
+                        if (act is com.petal.browser.activity.BrowserActivity) {
+                            if (scrollY <= 2) {
+                                scrollRun = 0
+                                act.animateAddressBarCollapse(false)
+                            } else if (deltaY != 0) {
+                                if ((deltaY > 0) != (scrollRun > 0)) scrollRun = 0
+                                scrollRun += deltaY
+                                if (scrollRun > hideAfterPx) {
+                                    scrollRun = 0
+                                    act.animateAddressBarCollapse(true)
+                                } else if (scrollRun < -showAfterPx) {
+                                    scrollRun = 0
+                                    act.animateAddressBarCollapse(false)
+                                }
+                            }
+                        }
+
+                        // Tactile haptics: only check when enabled, with spaced interval
+                        if (com.petal.browser.haptics.PetalHapticEngine.isScrollHapticsEnabled(context)) {
+                            if (Math.abs(scrollY - lastScrollHapticY) > 64) {
+                                lastScrollHapticY = scrollY
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                    .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.40f, 50L)
+                            }
+                        }
+                    }
+                }
+            }
+
             // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)
             gs.contentBlockingDelegate = object : org.mozilla.geckoview.ContentBlocking.Delegate {
                 override fun onContentBlocked(
