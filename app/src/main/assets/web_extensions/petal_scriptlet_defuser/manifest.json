@@ -1,0 +1,22 @@
+{
+    "manifest_version": 2,
+    "name": "Petal Scriptlet Defuser",
+    "version": "1.0.0",
+    "description": "Brave-style anti-adblock scriptlets: neutralizes adblock detection, paywall blockers, and anti-copy scripts before page load.",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "petal-scriptlet-defuser@petalbrowser.app"
+        }
+    },
+    "permissions": [
+        "<all_urls>"
+    ],
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["defuser.js"],
+            "run_at": "document_start",
+            "all_frames": false
+        }
+    ]
+}

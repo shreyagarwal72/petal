@@ -115,6 +115,13 @@ object PetalBuiltInExtensionManager {
             prefKey     = "petal_builtin_google_search_fixer"
         ),
         BuiltInSpec(
+            assetPath   = "web_extensions/petal_scriptlet_defuser/",
+            extensionId = "petal-scriptlet-defuser@petalbrowser.app",
+            label       = "Petal Anti-Adblock Defuser",
+            description = "Brave-style scriptlets: neutralizes adblock detection, paywall blockers, and ephemeral iframe storage isolation.",
+            prefKey     = "petal_builtin_scriptlet_defuser"
+        ),
+        BuiltInSpec(
             assetPath   = "web_extensions/media_grabber/",
             extensionId = "petal-media-grabber@petalbrowser.app",
             label       = "Petal Resource Sniffer",

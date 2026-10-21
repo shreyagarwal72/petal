@@ -897,34 +897,65 @@ class PetalGeckoView @JvmOverloads constructor(
                     return result
                 }
 
-                if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION) {
-                    val host = try { android.net.Uri.parse(perm.uri).host ?: perm.uri } catch (_: Exception) { perm.uri }
-                    val prefKey = "perm_location_$host"
-                    val savedRule = sp.getString(prefKey, null)
-                    if ("allow" == savedRule) {
-                        com.petal.browser.unit.HelperUnit.grantPermissionsLoc(activity)
-                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
-                        return result
-                    } else if ("block" == savedRule) {
-                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
-                        return result
-                    }
+                val host = try { android.net.Uri.parse(perm.uri).host ?: perm.uri } catch (_: Exception) { perm.uri }
 
+                // Brave Permission Lifetime: check one-session or always-grant stored decisions
+                val permType = when (perm.permission) {
+                    GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION -> "location"
+                    GeckoSession.PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION -> "notification"
+                    GeckoSession.PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS -> "media_key"
+                    else -> "other_${perm.permission}"
+                }
+                val prefKey = "perm_${permType}_$host"
+                val sessionKey = "perm_session_${permType}_$host"
+                val savedRule = sp.getString(prefKey, null)
+                val sessionRule = sp.getString(sessionKey, null)
+
+                // Honor "this session" ephemeral grants
+                if ("allow" == sessionRule || "allow" == savedRule) {
+                    if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION) {
+                        com.petal.browser.unit.HelperUnit.grantPermissionsLoc(activity)
+                    }
+                    result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                    return result
+                } else if ("block" == savedRule) {
+                    result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                    return result
+                }
+
+                if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION) {
                     activity.runOnUiThread {
-                        com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
-                            activity,
-                            com.petal.browser.ui.components.PetalPermissionType.LOCATION,
-                            perm.uri,
-                            { remember ->
-                                if (remember) sp.edit().putString(prefKey, "allow").apply()
-                                com.petal.browser.unit.HelperUnit.grantPermissionsLoc(activity)
-                                result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
-                            },
-                            { remember ->
-                                if (remember) sp.edit().putString(prefKey, "block").apply()
+                        // Show dialog with Brave-style lifetime options: Once / Session / Always / Block
+                        val options = arrayOf("Allow Once", "Allow This Session", "Always Allow", "Always Block")
+                        android.app.AlertDialog.Builder(activity)
+                            .setTitle("Location Permission Request")
+                            .setMessage("$host wants to access your location")
+                            .setItems(options) { _, which ->
+                                when (which) {
+                                    0 -> { // Once — grant and do NOT save
+                                        com.petal.browser.unit.HelperUnit.grantPermissionsLoc(activity)
+                                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                                    }
+                                    1 -> { // This session
+                                        sp.edit().putString(sessionKey, "allow").apply()
+                                        com.petal.browser.unit.HelperUnit.grantPermissionsLoc(activity)
+                                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                                    }
+                                    2 -> { // Always
+                                        sp.edit().putString(prefKey, "allow").apply()
+                                        com.petal.browser.unit.HelperUnit.grantPermissionsLoc(activity)
+                                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                                    }
+                                    3 -> { // Block
+                                        sp.edit().putString(prefKey, "block").apply()
+                                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                                    }
+                                }
+                            }
+                            .setOnCancelListener {
                                 result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
                             }
-                        )
+                            .show()
                     }
                 } else {
                     result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
@@ -2717,17 +2748,44 @@ class PetalGeckoView @JvmOverloads constructor(
                 """.trimIndent()).append("\n")
             }
             if (fingerprintProtection && !isSearchOrCaptchaDomain) {
+                // Brave-style: randomized per-session noise for Canvas2D, WebGL, AudioContext, Font metrics
                 sb.append("""
                     try {
-                        const shift = Math.floor(Math.random() * 2) - 1;
+                        // Unique session noise seed — rotates each page load
+                        const _pNoise = (function() {
+                            const seed = Math.floor(Math.random() * 32) - 16;
+                            const audioShift = (Math.random() * 0.0002) - 0.0001;
+                            const fontNoise = Math.floor(Math.random() * 2);
+                            return { seed, audioShift, fontNoise };
+                        })();
+
+                        // Canvas 2D noise
                         const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
                         CanvasRenderingContext2D.prototype.getImageData = function(...args) {
-                            const imgData = origGetImageData.apply(this, args);
-                            if (imgData.data.length > 4) {
-                                imgData.data[0] = (imgData.data[0] + shift) & 255;
+                            const d = origGetImageData.apply(this, args);
+                            if (d.data.length > 4) {
+                                d.data[0] = (d.data[0] + _pNoise.seed) & 255;
+                                d.data[1] = (d.data[1] + (_pNoise.seed >> 1)) & 255;
                             }
-                            return imgData;
+                            return d;
                         };
+
+                        // WebGL readPixels noise
+                        const _origReadPixels = WebGLRenderingContext.prototype.readPixels;
+                        WebGLRenderingContext.prototype.readPixels = function(x, y, w, h, fmt, type, buf) {
+                            _origReadPixels.apply(this, arguments);
+                            if (buf && buf.length > 0) buf[0] = (buf[0] ^ 1) & 255;
+                        };
+
+                        // AudioContext noise
+                        if (typeof AudioBuffer !== 'undefined') {
+                            const origGetChannelData = AudioBuffer.prototype.getChannelData;
+                            AudioBuffer.prototype.getChannelData = function(channel) {
+                                const d = origGetChannelData.apply(this, [channel]);
+                                if (d.length > 0) d[0] = d[0] + _pNoise.audioShift;
+                                return d;
+                            };
+                        }
                     } catch(e) {}
                 """.trimIndent()).append("\n")
             }
