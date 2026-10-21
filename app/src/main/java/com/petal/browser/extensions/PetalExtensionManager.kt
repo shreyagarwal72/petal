@@ -23,6 +23,8 @@ import org.mozilla.geckoview.WebExtension
 import org.mozilla.geckoview.WebExtensionController
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.petal.browser.view.PetalGeckoView
 import com.petal.browser.activity.BrowserActivity
 

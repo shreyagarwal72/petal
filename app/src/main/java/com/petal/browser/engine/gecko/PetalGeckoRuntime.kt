@@ -110,21 +110,15 @@ object PetalGeckoRuntime {
             GeckoRuntimeSettings.TRR_MODE_OFF
         }
 
-        val cookieBannerAutoReject = sp.getBoolean("sp_cookie_banner_auto_reject", true)
-        val httpsOnly = sp.getBoolean("sp_https_only", false)
-        val httpsOnlyMode = if (httpsOnly) GeckoRuntimeSettings.HTTPS_ONLY_MODE_ENABLED else GeckoRuntimeSettings.HTTPS_ONLY_MODE_DISABLED
-
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(true)
             .trustedRecursiveResolverMode(trrMode)
-            .httpsOnlyMode(httpsOnlyMode)
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
                     .antiTracking(antiTrackingFlags)
                     .cookieBehavior(defaultCookieBehavior)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
                     .enhancedTrackingProtectionLevel(etpLevel)
-                    .cookieBanners(if (cookieBannerAutoReject) ContentBlocking.CookieBannersMode.REJECT else ContentBlocking.CookieBannersMode.DISABLED)
                     .build()
             )
             .javaScriptEnabled(sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true)))
@@ -245,18 +239,6 @@ object PetalGeckoRuntime {
                     ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
                 }
                 rt.settings.contentBlocking.setCookieBehavior(cookieBehavior)
-
-                // 3b. GDPR Cookie Banner Auto-Reject Mode
-                val cookieBannerAutoReject = sp.getBoolean("sp_cookie_banner_auto_reject", true)
-                rt.settings.contentBlocking.setCookieBanners(
-                    if (cookieBannerAutoReject) ContentBlocking.CookieBannersMode.REJECT else ContentBlocking.CookieBannersMode.DISABLED
-                )
-
-                // 3c. HTTPS-Only Mode
-                val httpsOnly = sp.getBoolean("sp_https_only", false)
-                rt.settings.setHttpsOnlyMode(
-                    if (httpsOnly) GeckoRuntimeSettings.HTTPS_ONLY_MODE_ENABLED else GeckoRuntimeSettings.HTTPS_ONLY_MODE_DISABLED
-                )
 
                 // 4. Anti-Tracking Flags (STP, Social, Cryptominers, Ads)
                 var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT

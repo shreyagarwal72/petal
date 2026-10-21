@@ -1,5 +1,6 @@
 package com.petal.browser.view
 
+import android.util.Log
 import com.petal.browser.view.PetalToast;
 import android.app.Activity
 import android.content.Context
@@ -1056,8 +1057,8 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.updateBackCallbackState()
 
                         // Inject Brave Custom Cosmetic Element Hide Rules
-                        val currentDomain = getDomain()
-                        if (!currentDomain.isNullOrBlank()) {
+                        val currentDomain = try { android.net.Uri.parse(url).host ?: "" } catch (_: Throwable) { "" }
+                        if (currentDomain.isNotBlank()) {
                             val hideCss = com.petal.browser.privacy.PetalElementBlocker.getInjectionCss(act, currentDomain)
                             if (hideCss.isNotBlank()) {
                                 val escaped = hideCss.replace("'", "\\'").replace("\n", " ")

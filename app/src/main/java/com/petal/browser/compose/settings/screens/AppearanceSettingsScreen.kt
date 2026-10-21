@@ -520,7 +520,7 @@ fun AppearanceSettingsScreenContent(
                         mutableStateOf(PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_app_launch_animation", true))
                     }
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.SOLO,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                         title = "Quantum Web Launch Animation",
                         subtitle = "Procedural particle stream of web icons during app startup",
                         icon = Icons.Rounded.AutoAwesome,

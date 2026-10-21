@@ -980,6 +980,7 @@ private fun AddExtensionSheet(
             }
 
             if (showCustomCollectionDialog) {
+                val dialogScope = rememberCoroutineScope()
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
                 var userId by remember { mutableStateOf(sp.getString("sp_amo_collection_user_id", "") ?: "") }
                 var collectionName by remember { mutableStateOf(sp.getString("sp_amo_collection_name", "") ?: "") }
@@ -1092,7 +1093,7 @@ private fun AddExtensionSheet(
 
                                 isLoadingCollection = true
                                 collectionError = null
-                                coroutineScope.launch {
+                                dialogScope.launch {
                                     val res = PetalExtensionManager.fetchCustomCollection(userId, collectionName)
                                     isLoadingCollection = false
                                     res.fold(

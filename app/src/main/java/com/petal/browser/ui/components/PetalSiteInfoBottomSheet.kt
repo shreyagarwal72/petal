@@ -389,7 +389,7 @@ fun PetalSiteInfoBottomSheet(
                             mutableStateOf(com.petal.browser.privacy.ForgetfulBrowsingManager.isDomainForgetful(context, domain))
                         }
                         com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.SOLO,
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                             title = "Forgetful Browsing",
                             subtitle = "Clear cookies, storage and cache when tab is closed",
                             icon = Icons.Rounded.DeleteSweep,
