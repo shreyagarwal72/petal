@@ -4341,9 +4341,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
 
-        if (hidden) {
-            styleFabBubbleForLiquidGlass(bubble);
-            placeBubble(bubble, true, addrH, navH);
+        if (bubble != null) {
+            if (hidden) {
+                styleFabBubbleForLiquidGlass(bubble);
+                placeBubble(bubble, true, addrH, navH);
                 bubble.setVisibility(VISIBLE);
                 if (animate) {
                     bubble.setScaleX(0f);
