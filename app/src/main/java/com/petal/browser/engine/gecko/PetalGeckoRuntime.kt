@@ -238,7 +238,8 @@ object PetalGeckoRuntime {
                 // 3. Block Third-Party / Tracking Cookies (Firefox ETP Cookie Isolation & Total Cookie Protection)
                 val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
                 val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
-                val cookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || adBlockEnabled || etpStrict) {
+                val sessionPartitioning = sp.getBoolean("sp_session_partitioning", true)
+                val cookieBehavior = if (sessionPartitioning || totalCookieProtection || blockThirdPartyCookies || adBlockEnabled || etpStrict) {
                     ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
                 } else {
                     ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS

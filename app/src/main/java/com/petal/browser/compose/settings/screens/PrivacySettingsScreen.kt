@@ -54,6 +54,8 @@ fun PrivacySettingsScreen(
     val cookieBannerAutoReject by viewModel.cookieBannerAutoReject.collectAsStateWithLifecycle()
     val etpStrict by viewModel.etpStrict.collectAsStateWithLifecycle()
     val biometricTabLock by viewModel.biometricTabLock.collectAsStateWithLifecycle()
+    val sessionPartitioning by viewModel.sessionPartitioning.collectAsStateWithLifecycle()
+    val torPrivateWindow by viewModel.torPrivateWindow.collectAsStateWithLifecycle()
     val fingerprintProtection by viewModel.fingerprintProtection.collectAsStateWithLifecycle()
     val webrtcProtection by viewModel.webrtcProtection.collectAsStateWithLifecycle()
     val dntGpc by viewModel.dntGpc.collectAsStateWithLifecycle()
@@ -73,6 +75,8 @@ fun PrivacySettingsScreen(
         cookieBannerAutoReject = cookieBannerAutoReject,
         etpStrict = etpStrict,
         biometricTabLock = biometricTabLock,
+        sessionPartitioning = sessionPartitioning,
+        torPrivateWindow = torPrivateWindow,
         fingerprintProtection = fingerprintProtection,
         webrtcProtection = webrtcProtection,
         dntGpc = dntGpc,
@@ -90,6 +94,8 @@ fun PrivacySettingsScreen(
         onCookieBannerAutoRejectChange = viewModel::setCookieBannerAutoReject,
         onEtpStrictChange = viewModel::setEtpStrict,
         onBiometricTabLockChange = viewModel::setBiometricTabLock,
+        onSessionPartitioningChange = viewModel::setSessionPartitioning,
+        onTorPrivateWindowChange = viewModel::setTorPrivateWindow,
         onFingerprintProtectionChange = viewModel::setFingerprintProtection,
         onWebrtcProtectionChange = viewModel::setWebrtcProtection,
         onDntGpcChange = viewModel::setDntGpc,
@@ -116,6 +122,8 @@ fun PrivacySettingsScreenContent(
     cookieBannerAutoReject: Boolean = true,
     etpStrict: Boolean = true,
     biometricTabLock: Boolean = false,
+    sessionPartitioning: Boolean = true,
+    torPrivateWindow: Boolean = false,
     fingerprintProtection: Boolean,
     webrtcProtection: Boolean,
     dntGpc: Boolean,
@@ -133,6 +141,8 @@ fun PrivacySettingsScreenContent(
     onCookieBannerAutoRejectChange: (Boolean) -> Unit = {},
     onEtpStrictChange: (Boolean) -> Unit = {},
     onBiometricTabLockChange: (Boolean) -> Unit = {},
+    onSessionPartitioningChange: (Boolean) -> Unit = {},
+    onTorPrivateWindowChange: (Boolean) -> Unit = {},
     onFingerprintProtectionChange: (Boolean) -> Unit,
     onWebrtcProtectionChange: (Boolean) -> Unit,
     onDntGpcChange: (Boolean) -> Unit,
@@ -404,6 +414,22 @@ fun PrivacySettingsScreenContent(
                         icon = Icons.Rounded.Fingerprint,
                         checked = biometricTabLock,
                         onCheckedChange = onBiometricTabLockChange
+                    )
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        title = "Unlinkable Session Partitioning",
+                        subtitle = "Isolates client state and cookies per tab session to eliminate bounce tracking",
+                        icon = Icons.Rounded.Shield,
+                        checked = sessionPartitioning,
+                        onCheckedChange = onSessionPartitioningChange
+                    )
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        title = "Tor Private Window (via Orbot)",
+                        subtitle = "Routes private tab network traffic through Tor local SOCKS5 proxy",
+                        icon = Icons.Rounded.VpnLock,
+                        checked = torPrivateWindow,
+                        onCheckedChange = onTorPrivateWindowChange
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,

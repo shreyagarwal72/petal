@@ -1,0 +1,17 @@
+{
+  "manifest_version": 2,
+  "name": "Petal Consent Manager",
+  "version": "1.0",
+  "description": "Automatically rejects non-essential cookies in GDPR consent dialogs",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["consent.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": { "id": "petal-consent-manager@petalbrowser.app" }
+  }
+}

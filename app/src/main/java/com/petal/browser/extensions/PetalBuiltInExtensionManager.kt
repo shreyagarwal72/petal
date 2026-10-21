@@ -79,7 +79,8 @@ object PetalBuiltInExtensionManager {
         val extensionId: String,
         val label: String,
         val description: String,
-        val prefKey: String
+        val prefKey: String,
+        val defaultOn: Boolean = true
     )
 
     val builtIns: List<BuiltInSpec> = listOf(
@@ -127,6 +128,13 @@ object PetalBuiltInExtensionManager {
             label       = "Petal Resource Sniffer",
             description = "Native engine-level sniffer capturing videos, audios, high-res images, and documents.",
             prefKey     = "petal_builtin_media_grabber"
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/petal_consent_manager/",
+            extensionId = "petal-consent-manager@petalbrowser.app",
+            label       = "Auto Cookie Consent",
+            description = "Automatically rejects non-essential GDPR cookie consent dialogs (OneTrust, CookieBot, Didomi, TrustArc, Quantcast, and more).",
+            prefKey     = "petal_builtin_consent_manager"
         )
     )
 
@@ -165,7 +173,7 @@ object PetalBuiltInExtensionManager {
         val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         val controller = runtime.webExtensionController
         for (spec in builtIns) {
-            val enabled = sp.getBoolean(spec.prefKey, true)
+            val enabled = sp.getBoolean(spec.prefKey, spec.defaultOn)
             installAndSync(controller, spec, enabled)
         }
     }

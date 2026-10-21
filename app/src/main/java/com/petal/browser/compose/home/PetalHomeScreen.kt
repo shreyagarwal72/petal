@@ -688,6 +688,13 @@ fun PetalHomeScreen(
                                     onAddShortcutClick = { isAddingNewShortcut = true }
                                 )
 
+                                // ── Brave News: Privacy RSS Top Stories ──────────────
+                                Spacer(Modifier.height(24.dp))
+                                com.petal.browser.home.news.PetalNewsSection(
+                                    onArticleClick = { url -> onOpenShortcutUrl(url) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
                                 // ── Tab Collections Section (Firefox-style persistent groups) ──
                                 LaunchedEffect(Unit) {
                                     com.petal.browser.collections.PetalCollectionManager.init(context)

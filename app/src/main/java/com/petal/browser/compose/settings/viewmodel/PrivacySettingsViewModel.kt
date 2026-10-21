@@ -33,6 +33,12 @@ class PrivacySettingsViewModel @Inject constructor(
     val biometricTabLock: StateFlow<Boolean> = settingsRepository.biometricTabLock
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val sessionPartitioning: StateFlow<Boolean> = settingsRepository.sessionPartitioning
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val torPrivateWindow: StateFlow<Boolean> = settingsRepository.torPrivateWindow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val fingerprintProtection: StateFlow<Boolean> = settingsRepository.fingerprintProtection
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -88,6 +94,14 @@ class PrivacySettingsViewModel @Inject constructor(
 
     fun setBiometricTabLock(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setBiometricTabLock(enabled)
+    }
+
+    fun setSessionPartitioning(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setSessionPartitioning(enabled)
+    }
+
+    fun setTorPrivateWindow(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setTorPrivateWindow(enabled)
     }
 
     fun setFingerprintProtection(enabled: Boolean) = viewModelScope.launch {

@@ -6768,6 +6768,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         String initialUrl = url != null ? url : "about:blank";
         String generatedTabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode());
 
+        if (isIncognito && com.petal.browser.privacy.PetalTorManager.INSTANCE.isTorWindowEnabled(this)) {
+            com.petal.browser.privacy.PetalTorManager.INSTANCE.startTorSession(this);
+        }
+
         // Create the session and TabSessionState inside Mozilla Android Components BrowserStore
         kotlin.Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> sessionPair =
             com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
