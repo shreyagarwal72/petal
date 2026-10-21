@@ -516,6 +516,25 @@ fun AppearanceSettingsScreenContent(
                     cardId = "appearance_theme",
                     targetHighlightId = targetHighlightItemId
                 ) {
+                    var appLaunchAnim by remember {
+                        mutableStateOf(PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_app_launch_animation", true))
+                    }
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.SOLO,
+                        title = "Quantum Web Launch Animation",
+                        subtitle = "Procedural particle stream of web icons during app startup",
+                        icon = Icons.Rounded.AutoAwesome,
+                        checked = appLaunchAnim,
+                        onCheckedChange = { checked ->
+                            appLaunchAnim = checked
+                            PreferenceManager.getDefaultSharedPreferences(context).edit()
+                                .putBoolean("sp_app_launch_animation", checked)
+                                .apply()
+                        }
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
                     Text(
                         stringResource(R.string.ui_customize_app_color_schemes_dynamic),
                         style = MaterialTheme.typography.bodySmall,

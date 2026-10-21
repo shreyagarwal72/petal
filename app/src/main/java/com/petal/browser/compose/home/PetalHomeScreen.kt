@@ -484,6 +484,10 @@ fun PetalHomeScreen(
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var isWelcomeShown by remember { mutableStateOf(sp.getBoolean("sp_welcome_shown", true)) }
 
+    // Launch Animation state (Bypassed if quick startup is enabled)
+    val appLaunchAnimEnabled = remember { sp.getBoolean("sp_app_launch_animation", true) }
+    var showLaunchSplash by rememberSaveable { mutableStateOf(appLaunchAnimEnabled) }
+
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_welcome_shown") {
@@ -943,6 +947,18 @@ fun PetalHomeScreen(
 
                     // ── Built-in Crash Recovery Dialog Host (Auto / Off) ──
                     com.petal.browser.ui.components.PetalCrashRecoveryHost()
+
+                    // ── Procedural Quantum Web Stream Launch Animation ──
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = showLaunchSplash,
+                        enter = androidx.compose.animation.fadeIn(),
+                        exit = androidx.compose.animation.fadeOut(animationSpec = tween(400)) + androidx.compose.animation.scaleOut(targetScale = 1.08f, animationSpec = tween(400))
+                    ) {
+                        com.petal.browser.compose.splash.PetalSplashScreen(
+                            onSplashComplete = { showLaunchSplash = false },
+                            durationMs = 1800L
+                        )
+                    }
             }
         }
     }
