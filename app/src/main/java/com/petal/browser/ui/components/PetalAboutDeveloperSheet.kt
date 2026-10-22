@@ -946,6 +946,7 @@ fun CoreTechStackGroup() {
                 M3TechTag(stringResource(R.string.ui_jetpack_compose), isGlass)
                 M3TechTag(stringResource(R.string.ui_kotlin_coroutines_flow), isGlass)
                 M3TechTag(stringResource(R.string.ui_material_3_expressive), isGlass)
+                M3TechTag("Liquid Glass", isGlass)
                 M3TechTag("GeckoView Quantum", isGlass)
                 M3TechTag(stringResource(R.string.ui_native_webview_bridges), isGlass)
                 M3TechTag(stringResource(R.string.ui_pixelcopy_gpu_snapshots), isGlass)
@@ -1005,7 +1006,7 @@ fun MissionMetricsGroup() {
                 Triple(Icons.Rounded.FolderCopy, "15+ Repositories", R.string.ui_active_open_source_repositories_librar),
                 Triple(Icons.Rounded.Gavel, "GPL-3.0 License", R.string.ui_free_open_source_redistribute_and),
                 Triple(Icons.Rounded.Security, "Zero Telemetry", R.string.ui_100_private_no_trackers_telemetry),
-                Triple(Icons.Rounded.DesignServices, "100% Material 3", R.string.ui_material_3_expressive_design_system)
+                Triple(Icons.Rounded.DesignServices, "Material 3 + Liquid Glass", R.string.ui_material_3_expressive_design_system)
             )
         }
         val variants = listOf(

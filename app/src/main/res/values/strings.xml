@@ -513,7 +513,7 @@
     <string name="ui_crafted_with_for_android_termux">Crafted with ❤ for Android</string>
     <string name="ui_share_profile">Share Profile</string>
     <string name="ui_petal_browser_open_source_project">Petal Browser • Open Source Project</string>
-    <string name="ui_made_with_jetpack_compose_material">Made with Jetpack Compose &amp; Material 3 Expressive UI</string>
+    <string name="ui_made_with_jetpack_compose_material">Made with Jetpack Compose, Material 3 Expressive &amp; Liquid Glass UI</string>
     <string name="ui_va">VA</string>
     <string name="ui_vanshu_agarwal">Vanshu Agarwal</string>
     <string name="ui_shreyagarwal72">\@shreyagarwal72</string>
@@ -526,7 +526,7 @@
     <string name="ui_active_open_source_repositories_librar">Active Open Source Repositories &amp; Libraries</string>
     <string name="ui_free_open_source_redistribute_and">Free &amp; Open Source — Redistribute and Modify Freely</string>
     <string name="ui_100_private_no_trackers_telemetry" formatted="false">100% Private — No Trackers, Telemetry, or Analytics</string>
-    <string name="ui_material_3_expressive_design_system">Material 3 Expressive Design System &amp; Dynamic Palettes</string>
+    <string name="ui_material_3_expressive_design_system">Not just Material 3 Expressive anymore: now with live Liquid Glass UI and dynamic palettes</string>
     <string name="ui_core_tech_stack">Core Tech Stack</string>
     <string name="ui_jetpack_compose">Jetpack Compose</string>
     <string name="ui_kotlin_coroutines_flow">Kotlin Coroutines &amp; Flow</string>

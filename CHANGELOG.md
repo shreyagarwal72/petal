@@ -1,3 +1,27 @@
+### v4.5 — 🫧 Pure & Live Liquid Glass + GeckoView 158
+
+> *"Liquid Glass is now pure and live: one sharp wallpaper, one shared frost, a per-pane edge lens, and live backdrops that refract the page, the camera and the screen behind every sheet and menu. Powered by the latest Mozilla GeckoView 158."*
+
+#### 🌐 Engine & Core Upgrades
+- **Mozilla GeckoView 158.0**: Upgraded the engine to the current stable release (`158.0.20261007201254`), with the matching Mozilla Android Components 158.0 (`browser-engine-gecko` and related modules).
+
+#### 🫧 Pure Liquid Glass
+- **One-switch setup**: Turn on **Settings → Appearance → Liquid Glass UI**, then pick the **Liquid Glass Background Layer**: *Glass* (Stride-style palette pools with a contour wallpaper, the new default), *Morphs* (Petal's animated background) or your own image. Saved background choices are kept.
+- **Sharp by design**: A single sharp wallpaper layer sits behind a single shared 7 dp frosted layer. Cards reuse that frost instead of blurring the screen one by one, and text and icons are drawn after the effect, so they always stay crisp.
+- **Edge-refraction lens**: Each pane gets its own refraction pass at the edge (24/56 dp lens), with a 22% dark / 32% light tint and a white rim light. The wallpaper stays fixed behind each pane while you scroll.
+- **Your controls**: The opacity and sheen sliders change the glass material live.
+- **Wide coverage**: Settings rows, hero and action cards, headers, sheets, dialogs and popup menus all use the same glass. The browser address bar and navigation bar sample the website behind them, with a stronger tint for contrast. The incognito address bar stays solid.
+
+#### ⚡ Live Glass
+- **Live backdrops**: Sheets and popup menus record what is behind them every frame, so the glass refracts the page, the screen or the camera as it moves.
+- **Live camera glass**: The QR scanner refracts the live camera preview.
+- **Per-window backdrops**: Every sheet, dialog and menu owns its own backdrop, so glass never shows a ghost panel or an offset rectangle.
+
+#### 📱 Compatibility
+- **Android 12+**: real backdrop blur. **Android 13+**: runtime lens shader (refraction). **Older versions**: a stronger tint keeps everything readable. No new dependencies were added.
+
+---
+
 ### v4.4 — 🌸 Material 3 Expressive 3-Dot Menus, Feature Explainers & Smooth Performance
 
 > *"Major UI & UX milestone introducing Material 3 Expressive 3-dot menus with bouncy rotation physics, animated live feature explainer dialogs, Android 14 predictive back with blur across viewers, full Petal Autofill redesign, and zero-allocation anti-jank rendering."*

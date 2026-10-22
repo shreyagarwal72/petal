@@ -532,7 +532,7 @@
     var badge = $('#arch-detail-badge'), title = $('#arch-detail-title'), desc = $('#arch-detail-desc'), code = $('#arch-detail-code');
     if (!tabs.length) return;
     var DATA = {
-      geckoview: { badge: 'Independent Quantum Core', title: 'GeckoView 157 Standalone Engine', desc: 'Petal embeds Mozilla GeckoView 157 with an isolated quantum multi-process pipeline. It does not use the OEM Android WebView, preventing vendor delays and third-party tracking hooks.', code: 'GeckoRuntime.create(context, GeckoRuntimeSettings.Builder()\n  .aboutConfigEnabled(true)\n  .contentBlocking(ContentBlocking.STRICT)\n  .build())' },
+      geckoview: { badge: 'Independent Quantum Core', title: 'GeckoView 158 Standalone Engine', desc: 'Petal embeds Mozilla GeckoView 158 with an isolated quantum multi-process pipeline. It does not use the OEM Android WebView, preventing vendor delays and third-party tracking hooks.', code: 'GeckoRuntime.create(context, GeckoRuntimeSettings.Builder()\n  .aboutConfigEnabled(true)\n  .contentBlocking(ContentBlocking.STRICT)\n  .build())' },
       compose: { badge: 'Material 3 Expressive UI', title: 'Jetpack Compose & Spring Motion', desc: 'Constructed strictly using Jetpack Compose with Material 3 Expressive 1.5-alpha components, low bouncy spring physics (0.75f damping), and 35 mathematical shape geometries.', code: 'PetalExpressiveTheme(darkTheme = isDark, dynamicColor = true) {\n  Surface(shape = PetalMaterialShapes.Flower.toShape()) {\n    AddressBarCollapsible()\n  }\n}' },
       etp: { badge: 'Zero-Telemetry Isolation', title: 'Strict Content & Anti-Tracking Shield', desc: 'Enhanced Tracking Protection rejects third-party cookies, tracking beacons, cryptominers, and canvas fingerprinting. Session databases are encrypted locally using Room and SQLCipher.', code: 'settings.contentBlocking = ContentBlocking.STRICT\nsettings.cookieBehavior = GeckoSessionSettings.COOKIE_BEHAVIOR_REJECT_TRACKERS' },
       media: { badge: 'Compose Media Subsystem', title: 'mpvEx Overlay & Wavy Seekbar', desc: 'Custom Compose video player overlay featuring gesture-driven brightness/volume sliders, smart PiP aspect preservation, and mathematical sine wave animation during playback.', code: 'WavySeekbar(progress = playbackTime / duration,\n  waveState = if (isPlaying && !isScrubbing) Wave.ACTIVE else Wave.FLAT)' }
@@ -581,6 +581,38 @@
     }
     btn.addEventListener('click', function () {
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    });
+  })();
+
+  /* ======================================================================
+     10. LIQUID GLASS DEMO
+     Background layer (Glass / Morphs / Image), opacity, sheen and the live backdrop.
+     ====================================================================== */
+  (function () {
+    var stage = $('#lg-stage'); if (!stage) return;
+    var op = $('#lg-opacity'), sh = $('#lg-sheen'), opOut = $('#lg-opacity-out'), shOut = $('#lg-sheen-out');
+    var live = $('#lg-live-switch'), seg = $$('.lg-seg button');
+
+    function apply() {
+      stage.style.setProperty('--lg-op', (op.value / 100).toFixed(2));
+      stage.style.setProperty('--lg-sheen', (sh.value / 100).toFixed(2));
+      opOut.textContent = op.value + '%'; shOut.textContent = sh.value + '%';
+    }
+    op.addEventListener('input', apply);
+    sh.addEventListener('input', apply);
+    apply();
+
+    seg.forEach(function (b) {
+      b.addEventListener('click', function () {
+        seg.forEach(function (x) { x.setAttribute('aria-checked', String(x === b)); });
+        stage.setAttribute('data-bg', b.getAttribute('data-bg'));
+      });
+    });
+
+    live.addEventListener('click', function () {
+      var on = live.getAttribute('aria-checked') !== 'true';
+      live.setAttribute('aria-checked', String(on));
+      stage.setAttribute('data-live', String(on));
     });
   })();
 })();
