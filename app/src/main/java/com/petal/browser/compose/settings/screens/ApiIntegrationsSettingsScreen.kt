@@ -145,6 +145,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                                 testResultMsg = null
                                             },
                                             shape = chipShape,
+                                            border = if (isGlass) null else FilterChipDefaults.filterChipBorder(enabled = true, selected = isSelected),
                                             modifier = if (isGlass) {
                                                 Modifier.liquidGlassChrome(
                                                     shape = chipShape,
@@ -398,6 +399,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                                 PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
                                             },
                                             shape = chipShape,
+                                            border = if (isGlass) null else FilterChipDefaults.filterChipBorder(enabled = true, selected = isSelected),
                                             modifier = if (isGlass) {
                                                 Modifier.liquidGlassChrome(
                                                     shape = chipShape,

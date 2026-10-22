@@ -692,6 +692,7 @@ fun PetalWallpaperSheet(
                         },
                         label = { Text(cat, fontSize = 12.sp) },
                         shape = RoundedCornerShape(12.dp),
+                        border = if (isGlass) null else FilterChipDefaults.filterChipBorder(enabled = true, selected = isCatSelected),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primaryContainer,
                             containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer

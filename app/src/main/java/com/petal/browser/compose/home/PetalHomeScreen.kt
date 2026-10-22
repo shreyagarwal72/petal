@@ -613,7 +613,7 @@ fun PetalHomeScreen(
                                 Surface(
                                     shape = profilePillShape,
                                     color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
-                                    border = BorderStroke(1.dp, currentProfile.getComposeColor().copy(alpha = 0.5f)),
+                                    border = if (isGlass) null else BorderStroke(1.dp, currentProfile.getComposeColor().copy(alpha = 0.5f)),
                                     modifier = Modifier
                                         .height(34.dp)
                                         .liquidGlassChrome(shape = profilePillShape, enabled = isGlass)

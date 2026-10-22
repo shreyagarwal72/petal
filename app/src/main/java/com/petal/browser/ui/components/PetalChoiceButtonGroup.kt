@@ -123,9 +123,10 @@ fun <T> PetalChoiceButtonGroup(
                 else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
             }
 
+            val currentShape = if (isChecked) shapes.checkedShape else shapes.shape
             val buttonModifier = if (isGlass) {
                 baseModifier.liquidGlassChrome(
-                    shape = if (isChecked) androidx.compose.foundation.shape.RoundedCornerShape(24.dp) else androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    shape = currentShape,
                     enabled = true,
                     sheenIntensity = if (isChecked) 0.80f else 0.45f
                 )

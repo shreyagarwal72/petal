@@ -451,6 +451,7 @@ fun AppearanceSettingsScreenContent(
                                                     }
                                                 },
                                                 shape = chipShape,
+                                                border = if (isGlass) null else FilterChipDefaults.filterChipBorder(enabled = true, selected = isSelected),
                                                 modifier = if (isGlass) {
                                                     Modifier.liquidGlassChrome(
                                                         shape = chipShape,
