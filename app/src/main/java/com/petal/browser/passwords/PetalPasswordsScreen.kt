@@ -62,7 +62,7 @@ fun PetalPasswordsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val haptic = remember { PetalHapticEngine.getInstance() }
+    val haptic = remember { PetalHapticEngine.getInstance(context) }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val wallpaper = rememberPetalGlassWallpaper()
 
@@ -540,7 +540,7 @@ private fun PasswordDetailsSheet(
     onDelete: () -> Unit
 ) {
     val context = LocalContext.current
-    val haptic = remember { PetalHapticEngine.getInstance() }
+    val haptic = remember { PetalHapticEngine.getInstance(context) }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     var isPasswordVisible by remember { mutableStateOf(false) }
     var breachStatus by remember { mutableStateOf<String?>(null) }
@@ -768,7 +768,7 @@ private fun PasswordEditSheet(
     onSave: (PetalCredential) -> Unit
 ) {
     val context = LocalContext.current
-    val haptic = remember { PetalHapticEngine.getInstance() }
+    val haptic = remember { PetalHapticEngine.getInstance(context) }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
 
     var domain by remember { mutableStateOf(initial?.domain.orEmpty()) }
