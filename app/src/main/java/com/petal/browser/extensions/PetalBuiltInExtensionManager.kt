@@ -149,6 +149,13 @@ object PetalBuiltInExtensionManager {
             label       = "Petal Arc Boosts",
             description = "Custom webpage themer, font replacer, and interactive element zapper.",
             prefKey     = "petal_builtin_boosts"
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/petal_brave_news/",
+            extensionId = "petal-brave-news@petalbrowser.app",
+            label       = "Petal Feeds & News",
+            description = "Brave-style privacy RSS news aggregator with custom sources and rich thumbnails.",
+            prefKey     = "petal_builtin_brave_news"
         )
     )
 

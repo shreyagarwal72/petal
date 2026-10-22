@@ -475,6 +475,7 @@ private fun BuiltInExtensionsList(
                             "petal_builtin_translate" -> Icons.Filled.Translate
                             "petal_builtin_google_search_fixer" -> Icons.Filled.Search
                             "petal_builtin_media_grabber" -> Icons.Filled.VideoLibrary
+                            "petal_builtin_brave_news" -> Icons.Rounded.Newspaper
                             else -> Icons.Filled.Extension
                         })
                 },
@@ -882,6 +883,11 @@ private fun BuiltInExtensionSettingsDialog(
             com.petal.browser.media.sniffer.PetalResourceSnifferSheet(
                 onDismiss = onDismiss,
                 onPlayVideo = { _ -> onDismiss() }
+            )
+        }
+        "petal_builtin_brave_news" -> {
+            com.petal.browser.home.news.PetalNewsSourceSheet(
+                onDismissRequest = onDismiss
             )
         }
         else -> {
