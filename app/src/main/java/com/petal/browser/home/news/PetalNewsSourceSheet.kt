@@ -171,6 +171,15 @@ fun PetalNewsSourceSheet(
                             PetalNewsManager.setSelectedSourceIds(context, nextSet)
                             onSourcesChanged()
                         },
+                        leading = {
+                            PetalGroupIconBadge(
+                                icon = Icons.Rounded.Public,
+                                container = if (isChecked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                tint = if (isChecked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                size = 36.dp,
+                                iconSize = 18.dp
+                            )
+                        },
                         content = {
                             Text(
                                 text = source.name,
