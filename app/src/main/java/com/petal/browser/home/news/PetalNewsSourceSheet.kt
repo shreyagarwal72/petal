@@ -92,6 +92,13 @@ fun PetalNewsSourceSheet(
             // Master Feed Toggle Row
             PetalGroupListRow(
                 position = PetalGroupPosition.SINGLE,
+                onClick = {
+                    haptic.playClick(context)
+                    val next = !isEnabled
+                    isEnabled = next
+                    PetalNewsManager.setNewsEnabled(context, next)
+                    onSourcesChanged()
+                },
                 leading = {
                     PetalGroupIconBadge(
                         icon = Icons.Rounded.Feed,
