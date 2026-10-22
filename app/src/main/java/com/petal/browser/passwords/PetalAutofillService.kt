@@ -361,6 +361,13 @@ class PetalAutofillService : AutofillService() {
             return
         }
 
+        // Brave-style Never-Save domain checking
+        if (rawDomain != null && PetalCredentialVault.isNeverSave(applicationContext, rawDomain)) {
+            Log.d(TAG, "onSaveRequest: Domain  is in Never-Save list – skip saving")
+            callback.onSuccess()
+            return
+        }
+
         val saveDomain = if (!rawDomain.isNullOrBlank()) {
             normalizeDomain(rawDomain)
         } else if (!pkg.isNullOrBlank()) {

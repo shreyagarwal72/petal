@@ -70,6 +70,12 @@ class PetalAutofillGeckoDelegate(private val context: Context) : Autocomplete.St
             return
         }
 
+        // Brave-style Never-Save check
+        if (PetalCredentialVault.isNeverSave(context, saveDomain)) {
+            Log.d(TAG, "onLoginSave:  is in Never-Save list – skip")
+            return
+        }
+
         val existing = PetalCredentialVault.getAll().firstOrNull {
             normalizeDomain(it.domain) == saveDomain &&
                     it.username.equals(username, ignoreCase = true)

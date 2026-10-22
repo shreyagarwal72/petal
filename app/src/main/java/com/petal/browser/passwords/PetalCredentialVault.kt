@@ -40,6 +40,8 @@ object PetalCredentialVault {
 
     private val gson = Gson()
     private val credentials = mutableListOf<PetalCredential>()
+    private val neverSaveDomains = mutableSetOf<String>()
+    private const val NEVER_SAVE_PREF = "sp_autofill_never_save_domains"
     private var isInitialized = false
     private var vaultFile: File? = null
     // True when the vault file exists but could not be read for a temporary reason.
@@ -177,6 +179,44 @@ object PetalCredentialVault {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to encrypt and persist credentials vault", e)
         }
+    }
+
+    @Synchronized
+    fun getNeverSaveDomains(context: Context): Set<String> {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        val saved = sp.getStringSet(NEVER_SAVE_PREF, emptySet()) ?: emptySet()
+        synchronized(neverSaveDomains) {
+            neverSaveDomains.clear()
+            neverSaveDomains.addAll(saved)
+            return HashSet(neverSaveDomains)
+        }
+    }
+
+    @Synchronized
+    fun addNeverSaveDomain(context: Context, domain: String) {
+        val clean = domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
+        if (clean.isBlank()) return
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        synchronized(neverSaveDomains) {
+            neverSaveDomains.add(clean)
+            sp.edit().putStringSet(NEVER_SAVE_PREF, HashSet(neverSaveDomains)).apply()
+        }
+    }
+
+    @Synchronized
+    fun removeNeverSaveDomain(context: Context, domain: String) {
+        val clean = domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        synchronized(neverSaveDomains) {
+            neverSaveDomains.remove(clean)
+            sp.edit().putStringSet(NEVER_SAVE_PREF, HashSet(neverSaveDomains)).apply()
+        }
+    }
+
+    @Synchronized
+    fun isNeverSave(context: Context, domain: String): Boolean {
+        val clean = domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
+        return getNeverSaveDomains(context).contains(clean)
     }
 
     @Synchronized
