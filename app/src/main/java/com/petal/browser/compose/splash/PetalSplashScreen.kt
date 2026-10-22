@@ -2,27 +2,27 @@
  * PetalSplashScreen.kt
  * ──────────────────────────────────────────────────────────────────────────
  * High-performance, pure procedural code launch animation for Petal Browser.
- * Inspired by Dolphy's particle stream, adapted into a Liquid Glass &
- * Material 3 Expressive "Quantum Web Stream" with falling web & privacy glyphs,
- * 12-sided cookie rotation, radial bloom, and dynamic theme palette sync.
+ * Inspired by Dolphy's particle stream and Material You background theming:
+ * - One-time launch per app process/cold-start.
+ * - Dynamic Material You background gradient & radial glow that harmonizes
+ *   with the system/app MaterialTheme colorScheme (Light / Dark / AMOLED).
+ * - Procedural web, privacy & security glyph stream with glowing headline.
+ * - Clean brand typography without any app icon.
  */
 package com.petal.browser.compose.splash
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -39,6 +39,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlin.random.Random
+
+object PetalSplashState {
+    /**
+     * In-memory process flag ensuring the splash animation plays only once
+     * per cold-start / app process life cycle.
+     */
+    @Volatile
+    var hasShownThisSession: Boolean = false
+}
 
 private data class PetalWebGlyph(
     val iconIndex: Int,
@@ -71,10 +80,11 @@ private val webGlyphIcons = listOf(
 fun PetalSplashScreen(
     onSplashComplete: () -> Unit,
     modifier: Modifier = Modifier,
-    durationMs: Long = 2000L
+    durationMs: Long = 1900L
 ) {
     LaunchedEffect(Unit) {
         delay(durationMs)
+        PetalSplashState.hasShownThisSession = true
         onSplashComplete()
     }
 
@@ -111,7 +121,7 @@ fun PetalWebGlyphField(
                 startFraction = random.nextFloat() * 1.35f,
                 speed = 0.28f + random.nextFloat() * 0.55f,
                 sizeDp = 12 + random.nextInt(12),
-                alpha = 0.08f + random.nextFloat() * 0.32f
+                alpha = 0.10f + random.nextFloat() * 0.35f
             )
         }
     }
@@ -148,29 +158,25 @@ fun PetalWebGlyphField(
 private fun PetalSplashContent(
     modifier: Modifier = Modifier
 ) {
-    val accentColor = MaterialTheme.colorScheme.primary
-    val surfaceColor = MaterialTheme.colorScheme.surface
+    val colorScheme = MaterialTheme.colorScheme
+    val accentColor = colorScheme.primary
+    val backgroundColor = colorScheme.background
+    val isDark = isSystemInDarkTheme() || backgroundColor == Color.Black || (colorScheme.surface.red + colorScheme.surface.green + colorScheme.surface.blue) < 1.5f
 
-    // Subtle scale-up entrance animation
+    // Subtle scale-up and fade-in entrance animation
     val contentScale by animateFloatAsState(
         targetValue = 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
         label = "splash_scale"
     )
-
-    // Ambient 360 degree rotation for the cookie emblem
-    val infiniteTransition = rememberInfiniteTransition(label = "petal_emblem_rotation")
-    val rotationDegrees by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 24000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "emblem_rotation"
+    val titleAlpha by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(durationMillis = 600),
+        label = "splash_title_alpha"
     )
 
     // Breathing pulse for ambient glow
+    val infiniteTransition = rememberInfiniteTransition(label = "petal_ambient_pulse")
     val pulseGlow by infiniteTransition.animateFloat(
         initialValue = 0.45f,
         targetValue = 0.85f,
@@ -181,9 +187,25 @@ private fun PetalSplashContent(
         label = "emblem_glow"
     )
 
-    val backgroundTop = Color(0xFF040609)
-    val backgroundMid = accentColor.copy(alpha = 0.08f)
-    val backgroundBottom = Color(0xFF020304)
+    // Material You background gradient inspired by Dolphy & M3 Dynamic Color
+    val backgroundTop = if (isDark) {
+        if (backgroundColor == Color.Black) Color.Black else backgroundColor
+    } else {
+        colorScheme.surface
+    }
+    val backgroundMid = if (isDark) {
+        accentColor.copy(alpha = 0.12f)
+    } else {
+        accentColor.copy(alpha = 0.08f)
+    }
+    val backgroundBottom = if (isDark) {
+        if (backgroundColor == Color.Black) Color.Black else colorScheme.surfaceContainerLowest
+    } else {
+        colorScheme.surfaceContainerLow
+    }
+
+    val textColor = if (isDark) Color.White else colorScheme.onBackground
+    val subtitleColor = if (isDark) Color.White.copy(alpha = 0.72f) else colorScheme.onSurfaceVariant
 
     BoxWithConstraints(
         modifier = modifier
@@ -200,85 +222,55 @@ private fun PetalSplashContent(
             accentColor = accentColor
         )
 
-        // Radial ambient backdrop glow
+        // Radial ambient backdrop glow using Material You primary color
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            accentColor.copy(alpha = 0.18f * pulseGlow),
+                            accentColor.copy(alpha = if (isDark) 0.18f * pulseGlow else 0.10f * pulseGlow),
                             Color.Transparent
                         ),
-                        radius = 700f
+                        radius = 800f
                     )
                 )
         )
 
-        // Center Brand Emblem & Typography
+        // Center Brand Typography without any app icon
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
                     scaleX = contentScale
                     scaleY = contentScale
+                    alpha = titleAlpha
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Rotating 12-sided scalloped cookie container with central lotus / spa icon
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(92.dp)
-                    .graphicsLayer { rotationZ = rotationDegrees }
-                    .clip(MaterialShapes.Cookie12Sided.toShape())
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                accentColor,
-                                MaterialTheme.colorScheme.tertiary
-                            )
-                        )
-                    )
-            ) {
-                // Counter-rotate the inner icon so it stays upright
-                Box(
-                    modifier = Modifier.graphicsLayer { rotationZ = -rotationDegrees }
-                ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Rounded.Spa,
-                        contentDescription = "Petal",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(46.dp)
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(20.dp))
-
             // Glowing Brand Headline
             Text(
                 text = "Petal",
-                color = Color.White,
-                fontSize = 42.sp,
+                color = textColor,
+                fontSize = 44.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
                 style = TextStyle(
                     shadow = Shadow(
-                        color = accentColor.copy(alpha = 0.85f * pulseGlow),
+                        color = accentColor.copy(alpha = if (isDark) 0.85f * pulseGlow else 0.40f * pulseGlow),
                         offset = Offset(0f, 4f),
                         blurRadius = 32f
                     )
                 )
             )
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Subtitle Tagline
             Text(
                 text = "Personal Window to the Web",
-                color = Color.White.copy(alpha = 0.72f),
+                color = subtitleColor,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 0.5.sp

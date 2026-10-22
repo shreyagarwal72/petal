@@ -484,9 +484,11 @@ fun PetalHomeScreen(
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var isWelcomeShown by remember { mutableStateOf(sp.getBoolean("sp_welcome_shown", true)) }
 
-    // Launch Animation state (Bypassed if quick startup is enabled)
+    // Launch Animation state: shows once per cold-start / app launch
     val appLaunchAnimEnabled = remember { sp.getBoolean("sp_app_launch_animation", true) }
-    var showLaunchSplash by rememberSaveable { mutableStateOf(appLaunchAnimEnabled) }
+    var showLaunchSplash by remember {
+        mutableStateOf(appLaunchAnimEnabled && !com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession)
+    }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
