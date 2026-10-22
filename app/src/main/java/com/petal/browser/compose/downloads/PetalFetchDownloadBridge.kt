@@ -47,7 +47,7 @@ import kotlin.reflect.KClass
 object PetalFetchDownloadBridge {
 
     /** Mozilla's download middleware is registered in PetalEngineStore. */
-    private const val USE_MOZILLA_DOWNLOAD_PIPELINE = true
+    private const val USE_MOZILLA_DOWNLOAD_PIPELINE = false
 
     private val downloadsMap = LinkedHashMap<Int, Download>()
     private val createdAtMap = LinkedHashMap<Int, Long>()
