@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Petal Browser
  *
  * Predictive-back style engine. The AOSP / MIUIX / Scale / Classic geometry is ported from
- * InstallerX Revived's `ui/animation/predictiveback/*` (GPL-3.0-only, (C) InstallerX Revived
+ * InstallerX Revived's predictiveback engine (GPL-3.0-only, (C) InstallerX Revived
  * contributors). "Petal" is the animation Petal shipped with before styles existed.
  */
 
