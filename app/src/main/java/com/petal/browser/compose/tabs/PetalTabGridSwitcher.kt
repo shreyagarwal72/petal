@@ -100,6 +100,8 @@ import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.PetalRecentlyClosedManager
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -466,19 +468,107 @@ fun PetalTabGridSwitcher(
         effectiveOnBack()
     }
 
+    // ── Chrome-style hero transition (page <-> tile) ─────────────────────────────
+    val hero = remember { TabHeroState(startVisible = backgroundSnapshot != null) }
+    fun heroImageFor(tab: PetalTabItem?): androidx.compose.ui.graphics.ImageBitmap? {
+        val thumb = tab?.previewBitmap?.takeIf { !it.isRecycled }?.asImageBitmap()
+        return if (tab?.isSelected == true) (backgroundSnapshot ?: thumb) else (thumb ?: backgroundSnapshot)
+    }
+
+    // Open: the page shrinks into the selected tile.
+    LaunchedEffect(Unit) {
+        if (!hero.visible) return@LaunchedEffect
+        val current = tabs.firstOrNull { it.isSelected }
+        hero.tabId = current?.id
+        hero.image = backgroundSnapshot
+        // Wait (briefly) for the tile to be laid out so we know where to land.
+        kotlinx.coroutines.withTimeoutOrNull(500) {
+            snapshotFlow { hero.tabId?.let { tabCardBounds[it] } }
+                .filter { it != null }
+                .first()
+        }
+        hero.progress.snapTo(0f)
+        hero.progress.animateTo(1f, TabHeroState.spec())
+        hero.visible = false
+    }
+
+    // Select: the tapped tile expands to the full page, then the tab is shown.
+    val heroSelect: (PetalTabItem) -> Unit = { tab ->
+        val image = heroImageFor(tab)
+        if (hero.busy || image == null || tabCardBounds[tab.id] == null) {
+            onTabSelect(tab)
+        } else {
+            coroutineScope.launch {
+                hero.busy = true
+                hero.tabId = tab.id
+                hero.image = image
+                hero.visible = true
+                hero.progress.snapTo(1f)
+                hero.progress.animateTo(0f, TabHeroState.spec())
+                onTabSelect(tab)
+                // Safety net: if the host did not tear this screen down, don't leave the overlay stuck.
+                kotlinx.coroutines.delay(700)
+                hero.dock()
+            }
+        }
+    }
+
+    // Predictive back: the tile grows with the gesture; commit expands fully, cancel docks it back.
+    val predictiveBackOn by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    androidx.activity.compose.PredictiveBackHandler(
+        enabled = tabs.isNotEmpty() && !hero.busy
+    ) { progressFlow ->
+        val target = tabs.firstOrNull { it.isSelected } ?: tabs.first()
+        val image = heroImageFor(target)
+        if (!predictiveBackOn || image == null || tabCardBounds[target.id] == null) {
+            // No hero available: plain back.
+            progressFlow.collect { }
+            effectiveOnBack()
+            return@PredictiveBackHandler
+        }
+        hero.tabId = target.id
+        hero.image = image
+        hero.visible = true
+        hero.progress.snapTo(1f)
+        try {
+            progressFlow.collect { event ->
+                hero.progress.snapTo(1f - 0.45f * event.progress)
+            }
+            hero.busy = true
+            hero.progress.animateTo(0f, TabHeroState.spec())
+            effectiveOnBack()
+            kotlinx.coroutines.delay(700)
+            hero.dock()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            hero.progress.animateTo(1f, TabHeroState.spec())
+            hero.dock()
+            throw e
+        }
+    }
+
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = false, // the grid has its own hero-driven predictive back above
         onBack = effectiveOnBack,
     ) {
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+    Box(Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { PetalSnackbarHost(hostState = snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
-        Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val hp = hero.progress.value
+                    alpha = ((hp - 0.15f) / 0.85f).coerceIn(0f, 1f)
+                }
+                .padding(innerPadding)
+        ) {
             M3ExpressiveVariableBackground(
                 modifier = Modifier.fillMaxSize(),
                 pageSeed = "tabs_page"
@@ -916,6 +1006,10 @@ fun PetalTabGridSwitcher(
                                 Box(
                                     modifier = Modifier
                                         .animateItem()
+                                        .graphicsLayer {
+                                            // Real tile fades in as the hero docks onto it.
+                                            alpha = if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f
+                                        }
                                         .onGloballyPositioned { coordinates ->
                                             tabCardBounds[tab.id] = coordinates.boundsInWindow()
                                         }
@@ -983,7 +1077,7 @@ fun PetalTabGridSwitcher(
                                                     if (selectedTabIds.isEmpty()) selectionMode = false
                                                 } else {
                                                     commitPendingRemovals()
-                                                    onTabSelect(tab)
+                                                    heroSelect(tab)
                                                 }
                                             },
                                             onTabClose = { requestOptimisticClose(tab) },
@@ -1032,6 +1126,10 @@ fun PetalTabGridSwitcher(
                                 Box(
                                     modifier = Modifier
                                         .animateItem()
+                                        .graphicsLayer {
+                                            // Real tile fades in as the hero docks onto it.
+                                            alpha = if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f
+                                        }
                                         .onGloballyPositioned { coordinates ->
                                             tabCardBounds[tab.id] = coordinates.boundsInWindow()
                                         }
@@ -1099,7 +1197,7 @@ fun PetalTabGridSwitcher(
                                                     if (selectedTabIds.isEmpty()) selectionMode = false
                                                 } else {
                                                     commitPendingRemovals()
-                                                    onTabSelect(tab)
+                                                    heroSelect(tab)
                                                 }
                                             },
                                             onTabClose = { requestOptimisticClose(tab) },
@@ -1263,6 +1361,8 @@ fun PetalTabGridSwitcher(
                 )
             }
         }
+    }
+    TabHeroOverlay(hero = hero, tileBounds = { id -> tabCardBounds[id] })
     }
     }
     }
