@@ -127,35 +127,39 @@ fun PetalAnimatedWallpaperBackground(
     ) {
         val blurModifier = if (blur > 0.5f) Modifier.blur(blur.dp) else Modifier
 
-        val imageModel = remember(wallpaperUri, videoPlaybackFailed) {
+        // Resolve a video preview from the preset catalogue. Compare canonical URLs as
+        // providers may append tracking/query parameters or encode characters differently.
+        // Never ask Coil to decode a video URL as an image: that produced blank/wrong previews.
+        val imageModel = remember(wallpaperUri, isVideo) {
             runCatching {
                 val effectiveUri = if (isVideo) {
-                    PRESET_WALLPAPERS.firstOrNull { it.fullUrl == wallpaperUri }?.thumbUrl ?: wallpaperUri
-                } else {
-                    wallpaperUri
-                }
+                    fun canonical(value: String): String = runCatching {
+                        Uri.parse(Uri.decode(value)).buildUpon().clearQuery().fragment(null).build().toString().trimEnd('/')
+                    }.getOrDefault(value.substringBefore('?').substringBefore('#')).trimEnd('/')
+                    PRESET_WALLPAPERS.firstOrNull { preset ->
+                        canonical(preset.fullUrl) == canonical(wallpaperUri)
+                    }?.thumbUrl
+                } else wallpaperUri
                 when {
+                    effectiveUri == null -> null
                     effectiveUri.startsWith("android.resource://") -> Uri.parse(effectiveUri)
-                    effectiveUri.startsWith("file://") -> File(effectiveUri.removePrefix("file://"))
+                    effectiveUri.startsWith("file://") -> Uri.parse(effectiveUri)
                     effectiveUri.startsWith("/") -> File(effectiveUri)
                     effectiveUri.startsWith("content://") -> Uri.parse(effectiveUri)
                     else -> effectiveUri
                 }
-            }.getOrElse { wallpaperUri }
+            }.getOrNull()
         }
         val imageRequest = remember(imageModel, isGif) {
-            runCatching {
+            if (imageModel == null) null else runCatching {
                 ImageRequest.Builder(context)
                     .data(imageModel)
                     .crossfade(300)
                     .apply {
                         if (isGif) {
                             decoderFactory(
-                                if (Build.VERSION.SDK_INT >= 28) {
-                                    ImageDecoderDecoder.Factory()
-                                } else {
-                                    GifDecoder.Factory()
-                                }
+                                if (Build.VERSION.SDK_INT >= 28) ImageDecoderDecoder.Factory()
+                                else GifDecoder.Factory()
                             )
                         } else {
                             allowHardware(true)
@@ -166,9 +170,9 @@ fun PetalAnimatedWallpaperBackground(
             }.getOrNull()
         }
 
-        // Static thumbnail / preview layer is ALWAYS rendered beneath the video or static image
-        // to prevent black screen flickers during live wallpaper initialization.
-        if (imageRequest != null) {
+        // Show a known-good preview only until the video renders its first frame, or when
+        // playback fails. This prevents the thumbnail and live video being visible together.
+        if (imageRequest != null && (!isVideo || videoPlaybackFailed || !isFirstFrameRendered)) {
             AsyncImage(
                 model = imageRequest,
                 contentDescription = null,
