@@ -501,6 +501,83 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      */
     private boolean predictiveBackStartedOnOverlay = false;
 
+
+    // ---------------------------------------------------------------------
+    // Live predictive-back underlay: re-reveal the REAL tab surface behind a dismissing
+    // overlay instead of sliding a PixelCopy screenshot of it.
+    // ---------------------------------------------------------------------
+    private View liveUnderlayView;
+
+    private View resolveLiveUnderlayView() {
+        if (contentFrame == null || !isOverlayScreenShowing || currentAlbumController == null) return null;
+        if (isPetalHomeSurfaceShowing()) return null; // Home is a detached Compose surface: snapshot fallback
+        View av = currentAlbumController.getAlbumView();
+        if (av == null || av.getParent() != contentFrame || !isTabSurface(av)) return null;
+        View top = getTopContentChild();
+        if (top == null || isTabSurface(top)) return null;
+        int avIndex = contentFrame.indexOfChild(av);
+        int topIndex = contentFrame.indexOfChild(top);
+        if (avIndex < 0 || avIndex >= topIndex) return null;
+        for (int i = avIndex + 1; i < topIndex; i++) {
+            View mid = contentFrame.getChildAt(i);
+            if (mid.getVisibility() != GONE && !isTabSurface(mid)) return null; // another overlay is directly behind
+        }
+        return av;
+    }
+
+    private void applyLiveUnderlay(View v, float progress, int swipeEdge) {
+        float eased = predictiveBackEasing.getInterpolation(Math.max(0f, Math.min(1f, progress)));
+        float dir = swipeEdge == BackEventCompat.EDGE_RIGHT ? (1f / 3f) : (-1f / 3f);
+        float scale = 0.94f + 0.06f * eased;
+        v.setScaleX(scale);
+        v.setScaleY(scale);
+        v.setTranslationX(v.getWidth() * dir * (1f - eased));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Depth blur + dim (24dp / 0.40 -> 0). Has no visible effect on a SurfaceView-backed
+            // GeckoView; works when the surface is TextureView-backed (glass backend).
+            float blurPx = 24f * (1f - eased) * getResources().getDisplayMetrics().density;
+            int dim = (int) (255f * 0.40f * (1f - eased));
+            android.graphics.RenderEffect dimFx = android.graphics.RenderEffect.createColorFilterEffect(
+                    new android.graphics.PorterDuffColorFilter(
+                            android.graphics.Color.argb(dim, 0, 0, 0), android.graphics.PorterDuff.Mode.SRC_ATOP));
+            v.setRenderEffect(blurPx > 0.5f
+                    ? android.graphics.RenderEffect.createChainEffect(dimFx,
+                        android.graphics.RenderEffect.createBlurEffect(blurPx, blurPx, android.graphics.Shader.TileMode.CLAMP))
+                    : dimFx);
+        }
+    }
+
+    private final com.petal.browser.predictive.PetalLiveUnderlay.Host liveUnderlayHost =
+            new com.petal.browser.predictive.PetalLiveUnderlay.Host() {
+        @Override public boolean hasLiveUnderlay() { return resolveLiveUnderlayView() != null; }
+
+        @Override public void onGestureStart(int swipeEdge) {
+            View v = resolveLiveUnderlayView();
+            if (v == null) return;
+            liveUnderlayView = v;
+            v.setVisibility(View.VISIBLE);
+            v.setAlpha(1f);
+            applyLiveUnderlay(v, 0f, swipeEdge);
+        }
+
+        @Override public void onGestureProgress(float progress, int swipeEdge) {
+            if (liveUnderlayView != null) applyLiveUnderlay(liveUnderlayView, progress, swipeEdge);
+        }
+
+        @Override public void onGestureEnd(boolean committed) {
+            View v = liveUnderlayView;
+            liveUnderlayView = null;
+            if (v == null) return;
+            v.setScaleX(1f);
+            v.setScaleY(1f);
+            v.setTranslationX(0f);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) v.setRenderEffect(null);
+            // Committed back runs showAlbum(), which makes the surface visible and clears
+            // isOverlayScreenShowing. Cancelled (or nested) back leaves the overlay up: hide again.
+            if (isOverlayScreenShowing) v.setVisibility(GONE);
+        }
+    };
+
     public AlbumController nextAlbumController(boolean next) {
         if (BrowserContainer.size() <= 1) return currentAlbumController;
         List<AlbumController> list = BrowserContainer.list();
@@ -881,6 +958,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
+        com.petal.browser.predictive.PetalLiveUnderlay.attach(liveUnderlayHost);
         // Root cause of "back gesture does nothing on every website":
         // every Compose overlay (omnibox, settings, history, tab switcher, ...) is mounted in
         // contentFrame with ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed and a
@@ -1186,6 +1264,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onDestroy() {
+        com.petal.browser.predictive.PetalLiveUnderlay.detach(liveUnderlayHost);
         try {
             if (isMediaBound) {
                 try {
@@ -1624,6 +1703,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fabBubble != null) fabBubble.setVisibility(GONE);
         hideRefreshAndProgressOverlays();
 
+        screen.setClickable(true); // consume touches so they never reach a surface behind the overlay
         if (animate) {
             screen.setAlpha(0f);
             contentFrame.addView(screen);

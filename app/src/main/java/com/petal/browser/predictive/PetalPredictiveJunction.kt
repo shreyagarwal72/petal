@@ -79,6 +79,7 @@ import kotlinx.coroutines.flow.asStateFlow
 object PetalPredictiveJunction {
     const val KEY_PREDICTIVE_BACK_ENABLED = "sp_predictive_back_junction_enabled"
     const val KEY_DEPTH_BLUR_ENABLED = "sp_depth_blur_junction_enabled"
+    const val KEY_LIVE_UNDERLAY_ENABLED = "sp_live_underlay_junction_enabled"
 
     private val _isPredictiveBackEnabled = MutableStateFlow(true)
     val isPredictiveBackEnabled: StateFlow<Boolean> = _isPredictiveBackEnabled.asStateFlow()
@@ -86,8 +87,18 @@ object PetalPredictiveJunction {
     private val _isDepthBlurEnabled = MutableStateFlow(true)
     val isDepthBlurEnabled: StateFlow<Boolean> = _isDepthBlurEnabled.asStateFlow()
 
+    private val _isLiveUnderlayEnabled = MutableStateFlow(true)
+    val isLiveUnderlayEnabled: StateFlow<Boolean> = _isLiveUnderlayEnabled.asStateFlow()
+
+    @JvmStatic
+    fun setLiveUnderlayEnabled(prefs: SharedPreferences, enabled: Boolean) {
+        _isLiveUnderlayEnabled.value = enabled
+        prefs.edit().putBoolean(KEY_LIVE_UNDERLAY_ENABLED, enabled).apply()
+    }
+
     @JvmStatic
     fun init(prefs: SharedPreferences) {
+        _isLiveUnderlayEnabled.value = prefs.getBoolean(KEY_LIVE_UNDERLAY_ENABLED, true)
         _isPredictiveBackEnabled.value = prefs.getBoolean(KEY_PREDICTIVE_BACK_ENABLED, true)
         _isDepthBlurEnabled.value = prefs.getBoolean(KEY_DEPTH_BLUR_ENABLED, true)
     }
@@ -116,6 +127,8 @@ data class PredictiveBackState(
     val isActive: Boolean = false,
     val progress: Float = 0f,
     val swipeEdge: Int = BackEventCompat.EDGE_LEFT,
+    /** True when the real surface behind the overlay is being animated instead of a snapshot. */
+    val liveUnderlay: Boolean = false,
 ) {
     companion object {
         val Idle = PredictiveBackState()
@@ -146,14 +159,22 @@ fun PetalPredictiveBackSurface(
     if (!isUnderlayPreview && enabled) {
         if (junctionPredictiveEnabled) {
             PredictiveBackHandler(enabled = true) { progressFlow ->
+                var gestureStarted = false
+                var liveUnderlay = false
                 try {
                     progressFlow.collect { backEvent ->
+                        if (!gestureStarted) {
+                            gestureStarted = true
+                            liveUnderlay = PetalLiveUnderlay.begin(backEvent.swipeEdge)
+                        }
                         progressAnim.snapTo(backEvent.progress)
                         backState = PredictiveBackState(
                             isActive = true,
                             progress = backEvent.progress,
                             swipeEdge = backEvent.swipeEdge,
+                            liveUnderlay = liveUnderlay,
                         )
+                        if (liveUnderlay) PetalLiveUnderlay.progress(backEvent.progress, backEvent.swipeEdge)
                     }
                     progressAnim.snapTo(backState.progress)
                     progressAnim.animateTo(
@@ -164,11 +185,14 @@ fun PetalPredictiveBackSurface(
                         )
                     ) {
                         backState = backState.copy(isActive = true, progress = value)
+                        if (liveUnderlay) PetalLiveUnderlay.progress(value, backState.swipeEdge)
                     }
                     backState = backState.copy(isActive = true, progress = 1f)
+                    if (liveUnderlay) PetalLiveUnderlay.progress(1f, backState.swipeEdge)
                     try {
                         onBack()
                     } finally {
+                        if (liveUnderlay) PetalLiveUnderlay.end(true)
                         progressAnim.snapTo(0f)
                         backState = PredictiveBackState.Idle
                     }
@@ -182,7 +206,9 @@ fun PetalPredictiveBackSurface(
                         )
                     ) {
                         backState = backState.copy(isActive = true, progress = value)
+                        if (liveUnderlay) PetalLiveUnderlay.progress(value, backState.swipeEdge)
                     }
+                    if (liveUnderlay) PetalLiveUnderlay.end(false)
                     backState = PredictiveBackState.Idle
                 }
             }
@@ -300,7 +326,7 @@ fun PetalScreenWrapper(
             modifier = modifier.fillMaxSize()
         ) {
             // Layer 0: Background snapshot underlay (rendered when gesture is active or behind top screen)
-            if (backgroundSnapshot != null && (isActive || isBehindTopScreen)) {
+            if (backgroundSnapshot != null && (isActive || isBehindTopScreen) && !(isActive && predictiveBackState.liveUnderlay)) {
                 val snapshotBlurRadius = if (blurEnabled) (24f * (1f - scaleEased)).dp else 0.dp
                 val snapshotDimAlpha = if (!blurEnabled) 0.75f * (1f - scaleEased) else 0.40f * (1f - scaleEased)
                 val snapshotScale = 0.94f + 0.06f * scaleEased
