@@ -1018,27 +1018,29 @@ object PetalExtensionManager {
     }
 
     fun resolveExtensionPopupUrl(extension: WebExtension): String? {
-        val manifest = getManifest(extension) ?: return null
+        val ext = extension ?: return null
+        val manifest = getManifest(ext) ?: return null
         val popupPath = manifest.optJSONObject("browser_action")?.optString("default_popup")?.takeIf { it.isNotBlank() }
             ?: manifest.optJSONObject("action")?.optString("default_popup")?.takeIf { it.isNotBlank() }
             ?: manifest.optJSONObject("page_action")?.optString("default_popup")?.takeIf { it.isNotBlank() }
             ?: return null
 
-        val baseUrl = extension.metaData.baseUrl ?: return null
+        val baseUrl = ext.metaData?.baseUrl ?: return null
         val cleanRel = popupPath.trim().removePrefix("/")
         return if (baseUrl.endsWith("/")) "$baseUrl$cleanRel" else "$baseUrl/$cleanRel"
     }
 
-    fun resolveExtensionOptionsUrl(extension: WebExtension): String? {
-        val metaUrl = extension.metaData.optionsPageUrl
+    fun resolveExtensionOptionsUrl(extension: WebExtension?): String? {
+        val ext = extension ?: return null
+        val metaUrl = ext.metaData?.optionsPageUrl
         if (!metaUrl.isNullOrBlank()) return metaUrl
 
-        val manifest = getManifest(extension) ?: return null
+        val manifest = getManifest(ext) ?: return null
         val optionsPath = manifest.optJSONObject("options_ui")?.optString("page")?.takeIf { it.isNotBlank() }
             ?: manifest.optString("options_page").takeIf { it.isNotBlank() }
             ?: return null
 
-        val baseUrl = extension.metaData.baseUrl ?: return null
+        val baseUrl = ext.metaData?.baseUrl ?: return null
         val cleanRel = optionsPath.trim().removePrefix("/")
         return if (baseUrl.endsWith("/")) "$baseUrl$cleanRel" else "$baseUrl/$cleanRel"
     }
@@ -1248,10 +1250,10 @@ object PetalExtensionManager {
         val ctx = appContext ?: return
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
         controller.list().accept({ list ->
-            list?.forEach { ext ->
+            list?.filterNotNull()?.forEach { ext ->
                 attachActionDelegate(ext)
             }
-            val items = (list ?: emptyList()).map { ext -> toInstalled(ext) }
+            val items = (list ?: emptyList()).mapNotNull { ext -> toInstalled(ext) }
             _extensions.value = items
             synchronized(actionByExtensionId) {
                 actionByExtensionId.keys.retainAll(items.map { it.id }.toSet())
@@ -1259,15 +1261,14 @@ object PetalExtensionManager {
             // Load icons asynchronously and patch them in once ready (best-effort, 96px).
             list?.forEach { ext ->
                 try {
-                    ext.metaData.icon.getBitmap(96).accept({ bmp ->
+                    ext?.metaData?.icon?.getBitmap(96)?.accept({ bmp ->
                         if (bmp != null) {
                             _extensions.value = _extensions.value.map {
                                 if (it.id == ext.id) it.copy(icon = bmp) else it
                             }
                         }
                     }, { /* icon optional */ })
-
-                } catch (ignored: Exception) {}
+                } catch (ignored: Throwable) {}
             }
         }, {
             Log.w(TAG, "Failed to list extensions", it)
@@ -1381,18 +1382,19 @@ object PetalExtensionManager {
         } else null
     }
 
-    private fun toInstalled(ext: WebExtension): InstalledExtension {
+    private fun toInstalled(ext: WebExtension?): InstalledExtension? {
+        if (ext == null) return null
         val meta = ext.metaData
         return InstalledExtension(
             id = ext.id,
-            name = meta.name ?: ext.id,
-            description = meta.description ?: "",
-            version = meta.version,
-            enabled = meta.enabled,
-            temporary = meta.temporary,
-            allowedInPrivateBrowsing = meta.allowedInPrivateBrowsing,
-            homepageUrl = meta.homepageUrl,
-            amoListingUrl = meta.amoListingUrl,
+            name = meta?.name ?: ext.id,
+            description = meta?.description ?: "",
+            version = meta?.version ?: "",
+            enabled = meta?.enabled ?: true,
+            temporary = meta?.temporary ?: false,
+            allowedInPrivateBrowsing = meta?.allowedInPrivateBrowsing ?: false,
+            homepageUrl = meta?.homepageUrl,
+            amoListingUrl = meta?.amoListingUrl,
             optionsPageUrl = resolveExtensionOptionsUrl(ext),
             supportsPopup = resolveExtensionPopupUrl(ext) != null || extensionHasPopup(ext),
             icon = null,

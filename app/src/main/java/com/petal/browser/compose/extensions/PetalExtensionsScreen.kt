@@ -1280,10 +1280,11 @@ private fun DetailLinkRow(icon: ImageVector, title: String, url: String, onOpenL
 @Composable
 private fun InstallPermissionDialog(prompt: PetalExtensionManager.PendingPrompt) {
     val meta = prompt.extension.metaData
+    val displayName = meta?.name ?: prompt.extension.id
     com.petal.browser.ui.containment.PetalMaterialAlertDialog(
         onDismissRequest = { prompt.respond(false) },
         icon = { Icon(Icons.Rounded.Extension, contentDescription = null) },
-        title = { Text(if (prompt.isUpdate) "Update ${meta.name ?: prompt.extension.id}?" else "Add ${meta.name ?: prompt.extension.id}?") },
+        title = { Text(if (prompt.isUpdate) "Update $displayName?" else "Add $displayName?") },
         text = {
             Column {
                 Text(
