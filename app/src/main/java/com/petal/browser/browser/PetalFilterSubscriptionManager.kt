@@ -310,23 +310,7 @@ object PetalFilterSubscriptionManager {
             val file = File(rulesDir, "${sub.id}.txt")
             if (file.exists()) {
                 try {
-                    file.forEachLine { line ->
-                        val trimmed = line.trim()
-                        if (trimmed.isNotEmpty() && !trimmed.startsWith("!") && !trimmed.startsWith("#")) {
-                            // Extract domain or pattern if hosts format
-                            val ws = trimmed.indexOfFirst { it.isWhitespace() }
-                            val first = if (ws > 0) trimmed.substring(0, ws) else ""
-                            val second = if (ws > 0) trimmed.substring(ws).trim().takeWhile { !it.isWhitespace() } else ""
-                            if (second.isNotEmpty() && (first == "0.0.0.0" || first == "127.0.0.1")) {
-                                newSet.add(second.lowercase())
-                            } else {
-                                val clean = trimmed.removePrefix("||").removeSuffix("^")
-                                if (clean.isNotEmpty() && !clean.contains('/')) {
-                                    newSet.add(clean.lowercase())
-                                }
-                            }
-                        }
-                    }
+                    file.forEachLine { line -> parseRuleToDomain(line)?.let { newSet.add(it) } }
                 } catch (_: Exception) {}
             }
         }
@@ -335,16 +319,120 @@ object PetalFilterSubscriptionManager {
         val customRules = getCustomUserRules(context)
         if (customRules.isNotBlank()) {
             customRules.lineSequence().forEach { line ->
-                val trimmed = line.trim()
-                if (trimmed.isNotEmpty() && !trimmed.startsWith("!") && !trimmed.startsWith("#")) {
-                    val clean = trimmed.removePrefix("||").removeSuffix("^")
-                    if (clean.isNotEmpty()) newSet.add(clean.lowercase())
-                }
+                parseRuleToDomain(line)?.let { newSet.add(it) }
             }
         }
 
         compiledRulesCache.clear()
         compiledRulesCache.addAll(newSet)
+    }
+
+    private val DOMAIN_REGEX = Regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$")
+
+    /** Request-type / party options that do not narrow a rule to specific sites. */
+    private val SAFE_RULE_OPTIONS = setOf(
+        "third-party", "3p", "important", "all", "script", "image", "xmlhttprequest", "xhr",
+        "subdocument", "media", "ping", "other", "font", "stylesheet", "popup"
+    )
+
+    /**
+     * Reduces one filter-list line to a blockable host, or null when the line cannot be
+     * honoured at domain granularity. Handles hosts files, bare domains and Adblock-style
+     * `||domain^` network rules (including the common `$third-party,script` option tails,
+     * which the previous parser left attached to the domain so those rules never matched).
+     * Exception rules (`@@`), cosmetic rules (`##`, `#@#`, ...) and path/regex rules are skipped.
+     */
+    internal fun parseRuleToDomain(raw: String): String? {
+        val line = raw.trim()
+        if (line.isEmpty() || line.startsWith("!") || line.startsWith("#") || line.startsWith("[")) return null
+        if (line.startsWith("@@")) return null
+        if (line.contains("##") || line.contains("#@#") || line.contains("#?#") || line.contains("#$#")) return null
+
+        // hosts-file format: "0.0.0.0 example.com"
+        val ws = line.indexOfFirst { it.isWhitespace() }
+        if (ws > 0) {
+            val first = line.substring(0, ws)
+            val second = line.substring(ws).trim().takeWhile { !it.isWhitespace() }.lowercase()
+            return if ((first == "0.0.0.0" || first == "127.0.0.1") && DOMAIN_REGEX.matches(second)) second else null
+        }
+
+        var rule = line
+        val dollar = rule.lastIndexOf('$')
+        if (dollar >= 0) {
+            val options = rule.substring(dollar + 1).split(',').map { it.trim().lowercase() }
+            if (options.any { it !in SAFE_RULE_OPTIONS }) return null
+            rule = rule.substring(0, dollar)
+        }
+
+        if (rule.startsWith("||")) rule = rule.substring(2)
+        rule = rule.removeSuffix("^").removeSuffix(".")
+        val candidate = rule.lowercase()
+        return if (DOMAIN_REGEX.matches(candidate)) candidate else null
+    }
+
+    /** True when [url] refers to the same list as an existing subscription. */
+    private fun sameListUrl(a: String, b: String): Boolean =
+        a.trim().trimEnd('/').equals(b.trim().trimEnd('/'), ignoreCase = true)
+
+    fun findSubscriptionByUrl(context: Context, url: String): PetalFilterSubscription? =
+        getSubscriptions(context).firstOrNull { sameListUrl(it.url, url) }
+
+    /**
+     * Returns the subscription for [url], adding it (enabled) when it is not there yet.
+     * Lets other catalogs (the Browser Store) share this manager as the single source of
+     * truth instead of keeping a parallel, unread preference.
+     */
+    fun ensureSubscription(
+        context: Context,
+        id: String,
+        name: String,
+        description: String,
+        url: String
+    ): PetalFilterSubscription {
+        findSubscriptionByUrl(context, url)?.let { return it }
+        val current = getSubscriptions(context).toMutableList()
+        val sub = PetalFilterSubscription(
+            id = id,
+            name = name,
+            description = description,
+            url = url,
+            isEnabled = false,
+            isCustom = false
+        )
+        current.add(sub)
+        saveSubscriptions(context, current)
+        return sub
+    }
+
+    /**
+     * Downloads a single list (the one the user just enabled) and reloads the active rule set.
+     * Returns the number of rules cached, or -1 if another update is already running.
+     */
+    suspend fun updateSubscription(context: Context, id: String): Int = withContext(Dispatchers.IO) {
+        if (!isUpdating.compareAndSet(false, true)) return@withContext -1
+        try {
+            val current = getSubscriptions(context).toMutableList()
+            val index = current.indexOfFirst { it.id == id }
+            if (index == -1) return@withContext 0
+            val sub = current[index]
+            val cachedFile = File(getRulesDir(context), "${sub.id}.txt")
+            // A missing cache file must not be satisfied by a 304 from a stale ETag.
+            val etag = if (cachedFile.exists()) sub.etag else null
+            val (newEtag, ruleCount) = fetchAndCacheList(sub.url, cachedFile, etag)
+            val total = if (ruleCount > 0) ruleCount else countRulesInFile(cachedFile)
+            if (total > 0) {
+                current[index] = sub.copy(
+                    rulesCount = total,
+                    lastUpdatedMs = System.currentTimeMillis(),
+                    etag = newEtag ?: sub.etag
+                )
+                saveSubscriptions(context, current)
+            }
+            reloadActiveRules(context)
+            total
+        } finally {
+            isUpdating.set(false)
+        }
     }
 
     fun isDomainInActiveSubscriptions(domain: String): Boolean {

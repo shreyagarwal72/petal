@@ -39,6 +39,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.petal.browser.R
 import com.petal.browser.compose.extensions.PetalCuratedExtensionsData
+import com.petal.browser.compose.extensions.InstallPermissionDialog
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.predictive.PetalContentSnapshot
@@ -123,13 +124,16 @@ fun PetalBrowserStoreScreen(
 
     val installedExtensions by PetalExtensionManager.extensions.collectAsState()
     val isExtensionBusy by PetalExtensionManager.busy.collectAsState()
+    // The install prompt used to be rendered only by the Extensions screen, which stops composing
+    // while the Store is open - so Gecko waited forever for an answer and installs from the Store hung.
+    val pendingInstallPrompt by PetalExtensionManager.pendingPrompt.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(PetalStoreCatalog.AddonCategory.ALL) }
 
-    var installedScriptIds by remember { mutableStateOf(PetalStoreCatalog.getInstalledScriptIds(context)) }
-    var subscribedFilterIds by remember { mutableStateOf(PetalStoreCatalog.getSubscribedFilterListIds(context)) }
+    var installedScriptIds by remember { mutableStateOf<Set<String>>(PetalStoreCatalog.getInstalledScriptIds(context)) }
+    var subscribedFilterIds by remember { mutableStateOf<Set<String>>(PetalStoreCatalog.getSubscribedFilterListIds(context)) }
 
     LaunchedEffect(Unit) {
         PetalExtensionManager.attach(context)
@@ -233,10 +237,15 @@ fun PetalBrowserStoreScreen(
                                         isBusy = isExtensionBusy,
                                         onInstall = { addon ->
                                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
-                                            PetalExtensionManager.install(addon.downloadUrl) { success, _ ->
+                                            PetalExtensionManager.install(addon.downloadUrl) { success, message ->
                                                 coroutineScope.launch {
                                                     snackbarHostState.showSnackbar(
-                                                        if (success) "Added ${addon.name} to Petal" else "Failed to install ${addon.name}"
+                                                        when {
+                                                            success -> "Added ${addon.name} to Petal"
+                                                            message == "Installation was canceled." -> "Canceled installing ${addon.name}"
+                                                            !message.isNullOrBlank() -> "${addon.name}: $message"
+                                                            else -> "Failed to install ${addon.name}"
+                                                        }
                                                     )
                                                 }
                                             }
@@ -261,11 +270,15 @@ fun PetalBrowserStoreScreen(
                                         subscribedFilterIds = subscribedFilterIds,
                                         onToggleFilterList = { filter, subscribe ->
                                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                            PetalStoreCatalog.setFilterListSubscribed(context, filter.id, subscribe)
-                                            subscribedFilterIds = PetalStoreCatalog.getSubscribedFilterListIds(context)
                                             coroutineScope.launch {
+                                                val result = PetalStoreCatalog.setFilterListSubscribed(context, filter.id, subscribe)
+                                                subscribedFilterIds = PetalStoreCatalog.getSubscribedFilterListIds(context)
                                                 snackbarHostState.showSnackbar(
-                                                    if (subscribe) "Subscribed to ${filter.name}" else "Unsubscribed from ${filter.name}"
+                                                    when {
+                                                        !subscribe -> "Unsubscribed from ${filter.name}"
+                                                        result.isSuccess -> "Subscribed to ${filter.name} (${result.getOrDefault(0)} rules)"
+                                                        else -> "Subscribed, but ${result.exceptionOrNull()?.message ?: "the list couldn't be downloaded"}"
+                                                    }
                                                 )
                                             }
                                         }
@@ -278,6 +291,10 @@ fun PetalBrowserStoreScreen(
                 }
             }
         }
+    }
+
+    pendingInstallPrompt?.let { prompt ->
+        InstallPermissionDialog(prompt = prompt)
     }
 }
 
@@ -401,11 +418,7 @@ private fun StoreExtensionsPage(
                                 icon = icon
                             ) {
                                 addonsInCategory.forEachIndexed { index, addon ->
-                                    val isInstalled = installedExtensions.any {
-                                        it.id.equals(addon.id, ignoreCase = true) ||
-                                        it.name.equals(addon.name, ignoreCase = true) ||
-                                        (it.amoListingUrl != null && it.amoListingUrl.contains(addon.amoSlug, ignoreCase = true))
-                                    }
+                                    val isInstalled = installedExtensions.any { PetalStoreCatalog.isAddonInstalled(addon, it) }
                                     val position = petalGroupPositionFor(index, addonsInCategory.size)
                                     StoreAddonRow(
                                         addon = addon,
@@ -433,11 +446,7 @@ private fun StoreExtensionsPage(
                             )
                         } else {
                             filteredAddons.forEachIndexed { index, addon ->
-                                val isInstalled = installedExtensions.any {
-                                    it.id.equals(addon.id, ignoreCase = true) ||
-                                    it.name.equals(addon.name, ignoreCase = true) ||
-                                    (it.amoListingUrl != null && it.amoListingUrl.contains(addon.amoSlug, ignoreCase = true))
-                                }
+                                val isInstalled = installedExtensions.any { PetalStoreCatalog.isAddonInstalled(addon, it) }
                                 val position = petalGroupPositionFor(index, filteredAddons.size)
                                 StoreAddonRow(
                                     addon = addon,

@@ -822,6 +822,9 @@ class PetalGeckoView @JvmOverloads constructor(
 
                 pwaManager?.detectPwaManifest()
                 injectClientPrivacyProtections()
+                if (success) {
+                    com.petal.browser.compose.store.PetalStoreScriptInjector.inject(session, context, currentUrl)
+                }
             }
 
             override fun onProgressChange(session: GeckoSession, progress: Int) {
