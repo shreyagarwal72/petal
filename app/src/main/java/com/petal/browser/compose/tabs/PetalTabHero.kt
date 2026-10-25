@@ -89,7 +89,11 @@ fun TabHeroOverlay(
                         val full = Rect(Offset.Zero, Size(c.maxWidth.toFloat(), c.maxHeight.toFloat()))
                         val tile = hero.tabId?.let(tileBounds)?.translate(-origin)
                         // No tile on screen (scrolled away / filtered): shrink towards the centre instead.
-                        val target = tile ?: Rect.fromCenter(full.center, full.width * 0.5f, full.height * 0.5f)
+                        val target = tile ?: run {
+                            val w = full.width * 0.5f
+                            val h = full.height * 0.5f
+                            Rect(full.center.x - w * 0.5f, full.center.y - h * 0.5f, full.center.x + w * 0.5f, full.center.y + h * 0.5f)
+                        }
                         val r = lerp(full, target, p)
                         val placeable = measurable.measure(
                             Constraints.fixed(
