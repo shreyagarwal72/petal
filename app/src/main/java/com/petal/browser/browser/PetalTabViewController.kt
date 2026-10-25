@@ -364,7 +364,9 @@ class PetalTabViewController private constructor(
             if (engineContent !is PetalContentDelegateWrapper) {
                 gs.contentDelegate = PetalContentDelegateWrapper(
                     engine = engineContent,
-                    contextProvider = { context }
+                    contextProvider = { context },
+                    isPrivateProvider = { isIncognito() },
+                    referrerProvider = { pageUrl.takeIf { it.startsWith("http") } }
                 )
             }
 
@@ -1235,7 +1237,9 @@ class PetalTabViewController private constructor(
  */
 private class PetalContentDelegateWrapper(
     val engine: org.mozilla.geckoview.GeckoSession.ContentDelegate?,
-    private val contextProvider: () -> android.content.Context
+    private val contextProvider: () -> android.content.Context,
+    private val isPrivateProvider: () -> Boolean = { false },
+    private val referrerProvider: () -> String? = { null }
 ) : org.mozilla.geckoview.GeckoSession.ContentDelegate {
 
     private fun resolveActivity(): android.app.Activity? {
@@ -1319,7 +1323,9 @@ private class PetalContentDelegateWrapper(
     ) {
         val act = resolveActivity()
         if (act != null) {
-            com.petal.browser.view.PetalGeckoView.handleExternalResponse(act, response)
+            com.petal.browser.view.PetalGeckoView.handleExternalResponse(
+                act, response, isPrivateProvider(), referrerProvider()
+            )
         }
         engine?.onExternalResponse(session, response)
     }

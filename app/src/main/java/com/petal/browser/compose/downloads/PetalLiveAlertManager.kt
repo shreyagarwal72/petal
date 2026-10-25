@@ -60,7 +60,10 @@ object PetalLiveAlertManager {
             if (collectorJob?.isActive == true) return
             collectorJob = scope.launch {
                 try {
-                    PetalFetchDownloadBridge.downloadItems.collect { items ->
+                    PetalFetchDownloadBridge.downloadItems.collect { allItems ->
+                        // Mozilla-owned downloads are notified by PetalMozillaDownloadService
+                        // (official Firefox notifications). Posting here too would duplicate them.
+                        val items = allItems.filter { !PetalFetchDownloadBridge.isMozillaOwned(it.id) }
                         val activeItems = items.filter {
                             it.status == DownloadManager.STATUS_RUNNING ||
                             it.status == DownloadManager.STATUS_PENDING ||

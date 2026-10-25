@@ -261,15 +261,10 @@ public class BrowserUnit {
                 extraHeaders.put("Cache-Control", "no-transform");
                 extraHeaders.put("Referer", verifiedUrl);
 
-                // Petal Unified Best Download Engine:
-                // High-speed parallel multi-threaded chunked downloader (Fetch2 + OkHttp),
-                // with auto-retry on reconnects, safe RFC 5987 filename sanitization,
-                // and real-time live alert progress tracking.
-                com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(
-                        context, verifiedUrl, fileName, userAgent, cookie, extraHeaders,
-                        (fetchId, resolvedName) -> com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(
-                                context, fetchId.longValue(), resolvedName)
-                );
+                // Downloads run on Mozilla's official download service (Android Components
+                // feature-downloads). Notifications and progress come from that pipeline.
+                com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
+                        context, verifiedUrl, fileName, null, userAgent, cookie, extraHeaders, null, null);
             } catch (Exception e) {
                 // Sicherer Umgang mit Fehlermeldungen ohne StringIndexOutOfBoundsException
                 String errorMessage = e.getMessage() != null ? e.getMessage() : e.toString();

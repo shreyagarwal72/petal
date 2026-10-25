@@ -100,6 +100,13 @@ object PetalEngineStore {
             ) + engineMiddleware
         )
         store = newStore
+        // Reload persisted (non-private) downloads so history and unfinished downloads survive
+        // process death, the same way Fenix does at startup.
+        try {
+            newStore.dispatch(mozilla.components.browser.state.action.DownloadAction.RestoreDownloadsStateAction)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to restore downloads state: ${t.message}")
+        }
         Log.i(TAG, "Initialized Mozilla BrowserStore with Prioritization, EngineMiddleware and DownloadMiddleware")
         return newStore
     }

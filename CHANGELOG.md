@@ -1,3 +1,12 @@
+### Unreleased — Official Mozilla download engine
+
+#### ⬇️ Downloads
+- **Firefox/Fenix download pipeline**: Browser, media-grabber, image and legacy WebView downloads now run on Mozilla's `AbstractFetchDownloadService` (Android Components `feature-downloads` 158.0) instead of Fetch2.
+- **Gecko network stack**: The service fetches with `GeckoViewFetchClient`, so Gecko cookies (logins), private mode and proxy settings apply. Per-download headers from the media sniffer are applied on top of it.
+- **Private tabs**: Downloads started in a private tab are marked private and are not saved to download history.
+- **History survives restarts**: Downloads state is restored from Mozilla's storage at startup.
+- **One notification per download**: Mozilla's service posts the progress and completion notifications; Petal's live alerts skip those downloads. The Downloads screen and banner show speed and ETA for them too.
+
 ### v4.5 — 🫧 Pure & Live Liquid Glass + GeckoView 158
 
 > *"Liquid Glass is now pure and live: one sharp wallpaper, one shared frost, a per-pane edge lens, and live backdrops that refract the page, the camera and the screen behind every sheet and menu. Powered by the latest Mozilla GeckoView 158."*

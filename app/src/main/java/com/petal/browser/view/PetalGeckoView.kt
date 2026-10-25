@@ -129,7 +129,13 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         @JvmStatic
-        fun handleExternalResponse(activity: Activity, response: WebResponse) {
+        @JvmOverloads
+        fun handleExternalResponse(
+            activity: Activity,
+            response: WebResponse,
+            isPrivate: Boolean = false,
+            referrerUrl: String? = null
+        ) {
             val responseUrl = response.uri
             if (responseUrl.isNullOrBlank()) return
             val parsed = try { android.net.Uri.parse(responseUrl) } catch (_: Exception) { null }
@@ -176,7 +182,9 @@ class PetalGeckoView @JvmOverloads constructor(
                         url = responseUrl,
                         fileName = confirmedName.ifBlank { fileName },
                         mimeType = mimeType,
-                        responseHeaders = headers
+                        responseHeaders = headers,
+                        referrerUrl = referrerUrl,
+                        isPrivate = isPrivate
                     )
                 }
             }

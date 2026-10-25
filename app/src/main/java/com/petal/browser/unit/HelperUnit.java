@@ -247,11 +247,8 @@ public class HelperUnit {
                                 extraHeaders.put("Cache-Control", "no-transform");
                                 extraHeaders.put("Referer", url);
 
-                                com.petal.browser.download.PetalDownloadEngine.getInstance(activity).enqueueDownload(
-                                        activity, url, finalFileName, userAgent, cookie, extraHeaders,
-                                        (fetchId, resolvedName) -> com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(
-                                                activity, fetchId.longValue(), resolvedName)
-                                );
+                                com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
+                                        activity, url, finalFileName, null, userAgent, cookie, extraHeaders, null, null);
                             }
                         } catch (Exception e) {
                             System.out.println("Error Downloading File: " + e);

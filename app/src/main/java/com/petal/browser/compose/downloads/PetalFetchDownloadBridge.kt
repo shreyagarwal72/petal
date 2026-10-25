@@ -1,19 +1,16 @@
 /*
  * PetalFetchDownloadBridge.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Android's system android.app.DownloadManager has no public pause/resume
- * API - the "pauseDownload"/"resumeDownload" methods that PetalLiveAlertManager
- * used to reach via reflection don't exist on that class, so every pause/resume
- * tap silently no-opped. Fetch2 (com.petal.browser.download.PetalDownloadEngine)
- * was already wired in as a second, redundant download engine that DOES support
- * real pause/resume/cancel, but nothing ever read its state - the Download
- * Manager screen still polled the system DownloadManager, which is why nothing
- * ever visibly changed.
+ * Single entry point and state bridge for Petal downloads.
  *
- * This bridge makes Fetch2 the single source of truth: it listens to Fetch2's
- * download events live (no polling), exposes them as DownloadItem rows the
- * existing Compose UI already knows how to render, and forwards pause/resume/
- * cancel/delete straight to Fetch2 so they actually take effect.
+ * Browser and media downloads run on Mozilla's official download pipeline
+ * (Android Components feature-downloads / AbstractFetchDownloadService over
+ * Gecko's network stack, as in Firefox/Fenix). Their state lives in the
+ * BrowserStore and is mirrored here into DownloadItem rows (with sampled
+ * speed/ETA) for the existing Compose UI. Mozilla's service owns their
+ * notifications; PetalLiveAlertManager skips them via isMozillaOwned().
+ *
+ * Fetch2 remains only for legacy/persisted rows and the self-updater.
  */
 
 package com.petal.browser.compose.downloads
@@ -46,14 +43,14 @@ import kotlin.reflect.KClass
 
 object PetalFetchDownloadBridge {
 
-    /** Mozilla's download middleware is registered in PetalEngineStore. */
-    private const val USE_MOZILLA_DOWNLOAD_PIPELINE = false
-
     private val downloadsMap = LinkedHashMap<Int, Download>()
     private val createdAtMap = LinkedHashMap<Int, Long>()
     private val speedMap = LinkedHashMap<Int, Long>()
     private val etaMap = LinkedHashMap<Int, Long>()
     private val mozillaDownloadsMap = LinkedHashMap<String, DownloadItem>()
+    // Throughput sampling for Mozilla downloads (the store exposes bytes, not speed/ETA).
+    private val mozillaSamples = HashMap<String, Pair<Long, Long>>()
+    private val mozillaSpeeds = HashMap<String, Long>()
     @Volatile
     private var applicationContext: Context? = null
 
@@ -161,15 +158,15 @@ object PetalFetchDownloadBridge {
      * represented by the same Fetch2-backed Petal Download Manager state/UI.
      */
     /**
-     * Enqueues a download originating from GeckoEngine/GeckoView.
+     * Enqueues a download originating from GeckoEngine/GeckoView through Mozilla's official
+     * download pipeline (Android Components feature-downloads, as in Firefox/Fenix).
      *
-     * The Gecko engine is the source of truth for the response metadata. We keep that
-     * metadata (especially Content-Disposition/Content-Type) instead of routing the event
-     * through BrowserUnit, which was the old WebView/raw-download path. The actual bytes are
-     * still handled by the single Fetch2 engine so the existing pause/resume/retry UI remains
-     * consistent.
+     * Bytes are fetched by [com.petal.browser.download.PetalMozillaDownloadService] over Gecko's
+     * own network stack, so Gecko's cookies, private mode and proxy settings apply. The service
+     * owns the foreground/progress/completion notifications for these downloads.
      */
     @JvmStatic
+    @JvmOverloads
     fun enqueueGeckoDownload(
         context: Context,
         url: String,
@@ -177,88 +174,75 @@ object PetalFetchDownloadBridge {
         mimeType: String? = null,
         responseHeaders: Map<String, String> = emptyMap(),
         onEnqueued: ((Long) -> Unit)? = null,
-        onFailed: (() -> Unit)? = null
+        onFailed: (() -> Unit)? = null,
+        referrerUrl: String? = null,
+        isPrivate: Boolean = false
     ) {
-        // Mozilla's FetchDownloadManager pipeline is intentionally NOT used yet.
-        // It returns a download id the moment the request is created, but nothing in
-        // PetalEngineStore registers Mozilla's download middleware, so the download
-        // stays INITIATED (clock icon, 0 B) forever - and because it "succeeded", the
-        // working Fetch2 path below was never reached. Browser downloads go straight
-        // to Fetch2, the same engine the media sniffer already uses successfully.
-        // Flip USE_MOZILLA_DOWNLOAD_PIPELINE once the store middleware is wired and tested.
-        if (USE_MOZILLA_DOWNLOAD_PIPELINE &&
-            enqueueMozillaGeckoDownload(context, url, fileName, mimeType, onEnqueued, onFailed)
-        ) {
-            return
-        }
-        // NOTE: responseHeaders are the SERVER'S REPLY headers (ETag, Accept-Ranges,
-        // Last-Modified, Content-Range, Cache-Control, ...). They were previously copied
-        // onto the outgoing REQUEST, which is wrong: validators/range headers can make a
-        // server answer 304/416 or an empty body, leaving a 0 B download stuck. They are
-        // only useful for naming (already resolved in PetalGeckoView), so they are not
-        // forwarded. Send what a download request actually needs instead.
-        val userAgent = try {
-            android.webkit.WebSettings.getDefaultUserAgent(context)
-        } catch (_: Throwable) {
-            null
-        }
-        val cookie = try {
-            android.webkit.CookieManager.getInstance().getCookie(url)
-        } catch (_: Throwable) {
-            null
-        }
-        enqueueMediaDownload(
+        ensureInitialized(context)
+        // responseHeaders are the SERVER'S reply headers; they are only useful for naming (already
+        // resolved by the caller) and must never be copied onto the outgoing request.
+        val started = enqueueMozillaDownload(
             context = context,
             url = url,
             fileName = fileName,
             mimeType = mimeType,
-            userAgent = userAgent,
-            cookie = cookie,
-            headers = emptyMap(),
-            onEnqueued = onEnqueued,
-            onFailed = onFailed
+            referrerUrl = referrerUrl,
+            isPrivate = isPrivate,
+            extraHeaders = emptyMap(),
+            onEnqueued = onEnqueued
         )
+        if (!started) onFailed?.invoke()
     }
 
-    private fun enqueueMozillaGeckoDownload(
+    /** True when [id] belongs to a download owned by Mozilla's service (and its notifications). */
+    @JvmStatic
+    fun isMozillaOwned(id: Long): Boolean = synchronized(mozillaDownloadsMap) {
+        mozillaDownloadsMap.values.any { it.id == id }
+    }
+
+    private fun enqueueMozillaDownload(
         context: Context,
         url: String,
         fileName: String,
         mimeType: String?,
-        onEnqueued: ((Long) -> Unit)?,
-        onFailed: (() -> Unit)?
+        referrerUrl: String?,
+        isPrivate: Boolean,
+        extraHeaders: Map<String, String>,
+        onEnqueued: ((Long) -> Unit)?
     ): Boolean {
+        if (!SafeDownloadValues.isHttpUrl(url)) return false
         return try {
-            if (!SafeDownloadValues.isHttpUrl(url)) return false
-            val safeName = SafeDownloadValues.fileName(url, null, mimeType, fileName).ifBlank { "download" }
-            val directory = File(
-                android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
-                safeName
-            )
+            val appContext = context.applicationContext
+            val safeName = SafeDownloadValues.fileName(
+                url = url,
+                contentDisposition = null,
+                mimeType = mimeType,
+                preferredFileName = fileName
+            ).ifBlank { "download" }
+            val downloadsDir = android.os.Environment
+                .getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+            com.petal.browser.download.PetalDownloadHeaderRegistry.put(url, extraHeaders)
             val manager = FetchDownloadManager(
-                applicationContext = context.applicationContext,
-                store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context),
+                applicationContext = appContext,
+                store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext),
                 service = com.petal.browser.download.PetalMozillaDownloadService::class,
-                notificationsDelegate = NotificationsDelegate(
-                    NotificationManagerCompat.from(context.applicationContext)
-                )
+                notificationsDelegate = NotificationsDelegate(NotificationManagerCompat.from(appContext))
             )
             val id = manager.download(
                 DownloadState(
                     url = url,
                     fileName = safeName,
                     contentType = mimeType,
-                    directoryPath = directory.parentFile?.absolutePath
-                        ?: android.os.Environment.getExternalStoragePublicDirectory(
-                            android.os.Environment.DIRECTORY_DOWNLOADS
-                        ).absolutePath
+                    directoryPath = downloadsDir.absolutePath,
+                    referrerUrl = referrerUrl,
+                    private = isPrivate
                 )
             )
             if (id.isNullOrBlank()) return false
             onEnqueued?.invoke(id.hashCode().toLong())
             true
-        } catch (_: Throwable) {
-            onFailed?.invoke()
+        } catch (t: Throwable) {
+            android.util.Log.e("PetalDownloadBridge", "Mozilla download start failed: ${t.message}", t)
             false
         }
     }
@@ -280,78 +264,43 @@ object PetalFetchDownloadBridge {
             onFailed?.invoke()
             return
         }
-        // fileName is already the selected/server-provided name. Passing it as
-        // Content-Disposition makes the resolver treat it as a URL fallback and
-        // loses names for signed/dynamic CDN URLs.
-        val safeName = SafeDownloadValues.fileName(
+        // Collect the per-download request headers; PetalMozillaFetchClient applies them on top of
+        // Gecko's own request when Mozilla's service fetches this URL.
+        val extra = LinkedHashMap<String, String>()
+        SafeDownloadValues.header(userAgent, 4096)?.let { extra["User-Agent"] = it }
+        // Do not send cookies or custom auth headers to presigned CDN / S3 URLs (e.g. github-production-release-asset)
+        // as AWS S3 rejects requests with SignatureDoesNotMatch if extra headers are present.
+        val isS3OrCdn = url.contains(".s3.amazonaws.com", ignoreCase = true) ||
+            url.contains(".githubusercontent.com", ignoreCase = true) ||
+            url.contains("github-production-release-asset", ignoreCase = true)
+        if (!isS3OrCdn) {
+            SafeDownloadValues.header(cookie, 16384)?.let { extra["Cookie"] = it }
+        }
+        var referrer: String? = null
+        headers.forEach { (name, value) ->
+            if (name.isBlank() || value.isBlank()) return@forEach
+            if (name.equals("Referer", true)) { referrer = value }
+            if (name.equals("Host", true) || name.equals("Content-Length", true) ||
+                name.equals("Content-Encoding", true) || name.equals("Transfer-Encoding", true) ||
+                name.equals("Connection", true) || name.equals("Accept-Encoding", true) ||
+                name.equals("User-Agent", true) || name.equals("Cookie", true)) return@forEach
+            if (isS3OrCdn && (name.startsWith("x-amz", true) || name.equals("Authorization", true))) return@forEach
+            if ('\r' in name || '\n' in name || '\r' in value || '\n' in value) return@forEach
+            val safeKey = SafeDownloadValues.header(name, 1024) ?: return@forEach
+            val safeValue = SafeDownloadValues.header(value, 4096) ?: return@forEach
+            extra[safeKey] = safeValue
+        }
+        val started = enqueueMozillaDownload(
+            context = context,
             url = url,
-            contentDisposition = null,
+            fileName = fileName,
             mimeType = mimeType,
-            preferredFileName = fileName
-        ).ifBlank { "download" }
-        val downloadsDir = File(
-            android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
-            safeName
+            referrerUrl = referrer,
+            isPrivate = false,
+            extraHeaders = extra,
+            onEnqueued = onEnqueued
         )
-        downloadsDir.parentFile?.mkdirs()
-        var target = downloadsDir
-        if (target.exists()) {
-            val base = target.name.substringBeforeLast('.', target.name)
-            val ext = target.name.substringAfterLast('.', "").let { if (it.isBlank()) "" else ".${it}" }
-            var n = 1
-            while (target.exists()) {
-                target = File(target.parentFile, "$base($n)$ext")
-                n++
-            }
-        }
-
-        try {
-            val request = Request(url, target.absolutePath).apply {
-                priority = Priority.HIGH
-                networkType = NetworkType.ALL
-                enqueueAction = EnqueueAction.INCREMENT_FILE_NAME
-                autoRetryMaxAttempts = 10
-            }
-            SafeDownloadValues.header(userAgent, 4096)?.let { request.addHeader("User-Agent", it) }
-            // Do not send cookies or custom auth headers to presigned CDN / S3 URLs (e.g. github-production-release-asset)
-            // as AWS S3 rejects requests with SignatureDoesNotMatch if extra headers are present.
-            val isS3OrCdn = url.contains(".s3.amazonaws.com", ignoreCase = true) ||
-                            url.contains(".githubusercontent.com", ignoreCase = true) ||
-                            url.contains("github-production-release-asset", ignoreCase = true)
-            if (!isS3OrCdn) {
-                SafeDownloadValues.header(cookie, 16384)?.let { request.addHeader("Cookie", it) }
-            }
-            headers.forEach { (name, value) ->
-                if (name.isBlank() || value.isBlank()) return@forEach
-                if (name.equals("Host", true) || name.equals("Content-Length", true) ||
-                    name.equals("Content-Encoding", true) || name.equals("Transfer-Encoding", true) ||
-                    name.equals("Connection", true) || name.equals("Accept-Encoding", true) ||
-                    name.equals("User-Agent", true) || name.equals("Cookie", true)) return@forEach
-                if (isS3OrCdn && (name.startsWith("x-amz", true) || name.equals("Authorization", true))) return@forEach
-                if ('\r' in name || '\n' in name || '\r' in value || '\n' in value) return@forEach
-                val safeKey = SafeDownloadValues.header(name, 1024) ?: return@forEach
-                val safeValue = SafeDownloadValues.header(value, 4096) ?: return@forEach
-                request.addHeader(safeKey, safeValue)
-            }
-            val fetch = fetchInstance(context)
-            fetch.enqueue(request, { updated ->
-                // Ensure the download starts running immediately rather than idling in Status.ADDED / Status.QUEUED
-                try {
-                    fetch.resume(updated.id)
-                } catch (_: Throwable) {}
-                val trackedName = target.name
-                PetalLiveAlertManager.trackDownload(
-                    context.applicationContext,
-                    updated.id.toLong(),
-                    trackedName
-                )
-                onEnqueued?.invoke(updated.id.toLong())
-            }, {
-                onFailed?.invoke()
-            })
-        } catch (_: Throwable) {
-            onFailed?.invoke()
-        }
+        if (!started) onFailed?.invoke()
     }
 
     @JvmStatic
@@ -555,6 +504,31 @@ object PetalFetchDownloadBridge {
                         else -> DownloadManager.STATUS_FAILED
                     }
                     val total = download.contentLength ?: 0L
+                    val nowMs = System.currentTimeMillis()
+                    val copied = download.currentBytesCopied
+                    var speed = 0L
+                    if (status == DownloadManager.STATUS_RUNNING) {
+                        val prev = mozillaSamples[download.id]
+                        if (prev == null) {
+                            mozillaSamples[download.id] = Pair(nowMs, copied)
+                        } else {
+                            val dt = nowMs - prev.first
+                            if (dt >= 500L) {
+                                val instant = ((copied - prev.second) * 1000L / dt).coerceAtLeast(0L)
+                                val smoothed = mozillaSpeeds[download.id]
+                                    ?.let { (it * 0.6 + instant * 0.4).toLong() } ?: instant
+                                mozillaSpeeds[download.id] = smoothed
+                                mozillaSamples[download.id] = Pair(nowMs, copied)
+                                speed = smoothed
+                            } else {
+                                speed = mozillaSpeeds[download.id] ?: 0L
+                            }
+                        }
+                    } else {
+                        mozillaSamples.remove(download.id)
+                        mozillaSpeeds.remove(download.id)
+                    }
+                    val etaSec = if (speed > 0L && total > copied) (total - copied) / speed else 0L
                     mozillaDownloadsMap[download.id] = DownloadItem(
                         id = id,
                         fileName = download.fileName ?: "download",
@@ -563,7 +537,9 @@ object PetalFetchDownloadBridge {
                         status = status,
                         bytesDownloaded = download.currentBytesCopied,
                         totalSize = total,
-                        localUri = download.filePath,
+                        speedBytesPerSec = speed,
+                        etaSeconds = etaSec,
+                        localUri = download.filePath?.let { path -> if (path.startsWith("/")) "file://$path" else path },
                         timestampMs = download.createdTime
                     )
                 }

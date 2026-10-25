@@ -1,7 +1,9 @@
 package com.petal.browser.download
 
 import androidx.core.app.NotificationManagerCompat
+import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.fetch.Client
 import mozilla.components.feature.downloads.AbstractFetchDownloadService
 import mozilla.components.feature.downloads.DefaultFileSizeFormatter
 import mozilla.components.feature.downloads.DownloadEstimator
@@ -12,9 +14,9 @@ import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 
 /**
- * Android Components download service used by the Mozilla download pipeline.
- * Routing is enabled separately after CI validates this service against the
- * pinned Android Components version.
+ * Android Components download service (the same AbstractFetchDownloadService Firefox/Fenix
+ * uses) and Petal's only engine for browser downloads. Bytes go through Gecko's own network
+ * stack via GeckoViewFetchClient, so Gecko cookies, private mode and proxy settings apply.
  */
 class PetalMozillaDownloadService : AbstractFetchDownloadService() {
     override val store: BrowserStore
@@ -26,7 +28,18 @@ class PetalMozillaDownloadService : AbstractFetchDownloadService() {
         NotificationsDelegate(NotificationManagerCompat.from(this))
     }
 
-    override val httpClient = PetalMozillaFetchClient()
+    override val httpClient: Client by lazy {
+        val base: Client = try {
+            GeckoViewFetchClient(
+                applicationContext,
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(applicationContext)
+            )
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalMozillaDownload", "GeckoViewFetchClient unavailable, using OkHttp", t)
+            PetalOkHttpFetchClient()
+        }
+        PetalMozillaFetchClient(base)
+    }
 
     override val fileSizeFormatter = DefaultFileSizeFormatter(this)
 
