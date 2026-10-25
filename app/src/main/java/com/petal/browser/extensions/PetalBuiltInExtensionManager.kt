@@ -199,6 +199,24 @@ object PetalBuiltInExtensionManager {
         }
     }
 
+    /**
+     * Installs a single built-in and applies its saved on/off preference. Used by callers that
+     * run before BrowserActivity (e.g. Application start-up) so they honour the user's toggle
+     * instead of force-enabling the extension and racing [installAll].
+     */
+    @JvmStatic
+    fun ensureInstalled(context: Context, extensionId: String) {
+        val spec = builtIns.find { it.extensionId == extensionId } ?: return
+        val runtime = try {
+            PetalGeckoRuntime.getOrCreate(context.applicationContext)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Cannot access GeckoRuntime for ${spec.label}", t)
+            return
+        }
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        installAndSync(runtime.webExtensionController, spec, sp.getBoolean(spec.prefKey, spec.defaultOn))
+    }
+
     private fun installAndSync(
         controller: WebExtensionController,
         spec: BuiltInSpec,

@@ -40,6 +40,24 @@ object PetalStoreCatalog {
         val amoListingUrl: String get() = "https://addons.mozilla.org/en-US/android/addon/$amoSlug/"
     }
 
+    /**
+     * True when [ext] is the installed copy of [addon]. Gecko reports an extension's own ID
+     * (a GUID or e-mail style ID), never the AMO slug, so matching on the slug alone left
+     * most installed add-ons showing an "Install" button. The curated ID table is checked
+     * first, then the AMO listing URL, then the display name.
+     */
+    fun isAddonInstalled(
+        addon: StoreAddon,
+        ext: com.petal.browser.extensions.PetalExtensionManager.InstalledExtension
+    ): Boolean {
+        if (ext.id.equals(addon.id, ignoreCase = true) || ext.id.equals(addon.amoSlug, ignoreCase = true)) return true
+        if (com.petal.browser.compose.extensions.PetalCuratedExtensionsData.slugForExtensionId(ext.id)
+                .equals(addon.amoSlug, ignoreCase = true)) return true
+        val listing = ext.amoListingUrl
+        if (listing != null && listing.contains("/addon/${addon.amoSlug}", ignoreCase = true)) return true
+        return ext.name.equals(addon.name, ignoreCase = true)
+    }
+
     val storeAddons: List<StoreAddon> = listOf(
         StoreAddon(
             id = "ublock-origin",
@@ -267,6 +285,51 @@ object PetalStoreCatalog {
             downloads = "250K+"
         ),
         StoreAddon(
+            id = "consent-o-matic",
+            name = "Consent-O-Matic",
+            description = "Automatically answers GDPR cookie consent forms, rejecting non-essential cookies.",
+            amoSlug = "consent-o-matic",
+            category = AddonCategory.PRIVACY,
+            rating = 4.7f,
+            downloads = "100K+"
+        ),
+        StoreAddon(
+            id = "styl-us",
+            name = "Stylus",
+            description = "Redesign websites with custom CSS themes. Install styles from online repositories or write your own.",
+            amoSlug = "styl-us",
+            category = AddonCategory.TOOLS,
+            rating = 4.7f,
+            downloads = "500K+"
+        ),
+        StoreAddon(
+            id = "view-page-archive",
+            name = "Web Archives",
+            description = "View archived and cached versions of web pages via the Wayback Machine and Archive.is.",
+            amoSlug = "view-page-archive",
+            category = AddonCategory.TOOLS,
+            rating = 4.6f,
+            downloads = "100K+"
+        ),
+        StoreAddon(
+            id = "tomato-clock",
+            name = "Tomato Clock",
+            description = "A simple Pomodoro-style timer for focus and productivity sessions.",
+            amoSlug = "tomato-clock",
+            category = AddonCategory.TOOLS,
+            rating = 4.6f,
+            downloads = "100K+"
+        ),
+        StoreAddon(
+            id = "chrome-mask",
+            name = "Chrome Mask",
+            description = "Makes websites see Chrome instead of Firefox, for sites that block or degrade Firefox users.",
+            amoSlug = "chrome-mask",
+            category = AddonCategory.TOOLS,
+            rating = 4.5f,
+            downloads = "50K+"
+        ),
+        StoreAddon(
             id = "leechblock-ng",
             name = "LeechBlock NG",
             description = "Simple yet powerful productivity tool designed to block time-wasting sites on customizable schedules.",
@@ -358,7 +421,7 @@ object PetalStoreCatalog {
                             } catch (_) {}
                         });
                     };
-                    document.addEventListener('DOMContentLoaded', cleanLinks);
+                    cleanLinks();
                     setInterval(cleanLinks, 1500);
                 })();
             """.trimIndent()
@@ -404,7 +467,7 @@ object PetalStoreCatalog {
                         document.body.style.setProperty('overflow', 'auto', 'important');
                         document.documentElement.style.setProperty('overflow', 'auto', 'important');
                     };
-                    window.addEventListener('DOMContentLoaded', restoreScroll);
+                    restoreScroll();
                     setInterval(restoreScroll, 1000);
                 })();
             """.trimIndent()
@@ -419,14 +482,19 @@ object PetalStoreCatalog {
             scriptContent = """
                 (function() {
                     'use strict';
-                    window.addEventListener('DOMContentLoaded', () => {
+                    const run = () => {
                         ['countdown', 'timer', 'timer-count', 'seconds'].forEach(id => {
                             const el = document.getElementById(id);
                             if (el) el.innerText = '0';
                         });
                         const btn = document.querySelector('.btn-captcha, #btn-main, .get-link');
                         if (btn && !btn.disabled) btn.click();
-                    });
+                    };
+                    if (document.readyState === 'loading') {
+                        window.addEventListener('DOMContentLoaded', run);
+                    } else {
+                        run();
+                    }
                 })();
             """.trimIndent()
         ),
@@ -562,7 +630,6 @@ object PetalStoreCatalog {
     // Persistent Subscriptions State Manager
     // ─────────────────────────────────────────────────────────────────────────
     private const val PREF_INSTALLED_SCRIPTS = "sp_store_installed_scripts"
-    private const val PREF_FILTER_SUBSCRIPTIONS = "sp_store_subscribed_filter_lists"
 
     fun getInstalledScriptIds(context: Context): Set<String> {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -576,15 +643,74 @@ object PetalStoreCatalog {
         sp.edit().putStringSet(PREF_INSTALLED_SCRIPTS, current).apply()
     }
 
-    fun getSubscribedFilterListIds(context: Context): Set<String> {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        return sp.getStringSet(PREF_FILTER_SUBSCRIPTIONS, setOf("easylist", "easyprivacy")) ?: setOf("easylist", "easyprivacy")
+    /**
+     * Enabled store scripts that apply to [pageUrl]. A script whose content no longer matches
+     * its recorded SHA-256 is never returned, so tampered or corrupted entries cannot run.
+     */
+    fun enabledScriptsFor(context: Context, pageUrl: String): List<StoreScript> {
+        val enabled = getInstalledScriptIds(context)
+        if (enabled.isEmpty()) return emptyList()
+        return storeScripts.filter { it.id in enabled && matchesPattern(it.matchPattern, pageUrl) && it.verifyIntegrity() }
     }
 
-    fun setFilterListSubscribed(context: Context, listId: String, subscribed: Boolean) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val current = sp.getStringSet(PREF_FILTER_SUBSCRIPTIONS, setOf("easylist", "easyprivacy"))?.toMutableSet() ?: mutableSetOf("easylist", "easyprivacy")
-        if (subscribed) current.add(listId) else current.remove(listId)
-        sp.edit().putStringSet(PREF_FILTER_SUBSCRIPTIONS, current).apply()
+    /** Converts a WebExtension-style match pattern (`*://*.host/*`) to a regex and tests [url]. */
+    internal fun matchesPattern(pattern: String, url: String): Boolean {
+        val schemeEnd = pattern.indexOf("://")
+        if (schemeEnd <= 0) return false
+        val scheme = pattern.substring(0, schemeEnd)
+        val rest = pattern.substring(schemeEnd + 3)
+        val slash = rest.indexOf('/')
+        val host = if (slash >= 0) rest.substring(0, slash) else rest
+        val path = if (slash >= 0) rest.substring(slash) else "/*"
+
+        val schemeRegex = if (scheme == "*") "https?" else Regex.escape(scheme)
+        val hostRegex = when {
+            host == "*" -> "[^/]+"
+            host.startsWith("*.") -> "(?:[^/]+\\.)?" + host.substring(2).split("*").joinToString("[^/]*") { Regex.escape(it) }
+            else -> host.split("*").joinToString("[^/]*") { Regex.escape(it) }
+        }
+        // "/*" must also match a bare origin such as https://example.com (no trailing slash).
+        val pathRegex = if (path == "/*") "(?:/.*)?" else path.split("*").joinToString(".*") { Regex.escape(it) }
+        return Regex("^$schemeRegex://$hostRegex$pathRegex$").containsMatchIn(url)
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Filter lists are owned by PetalFilterSubscriptionManager (the engine the ad blocker
+    // actually reads). The Store used to keep its own, unread preference set, so toggling a
+    // list here changed nothing. These now read and write the real subscriptions.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** IDs of store lists whose subscription is currently enabled. */
+    fun getSubscribedFilterListIds(context: Context): Set<String> {
+        val subs = com.petal.browser.browser.PetalFilterSubscriptionManager.getSubscriptions(context)
+        return storeFilterLists
+            .filter { list -> subs.any { it.isEnabled && it.url.trim().trimEnd('/').equals(list.url.trim().trimEnd('/'), ignoreCase = true) } }
+            .map { it.id }
+            .toSet()
+    }
+
+    /**
+     * Subscribes to / unsubscribes from a store list and, when subscribing, downloads it so the
+     * rules take effect immediately. Returns the number of rules now cached for the list.
+     */
+    suspend fun setFilterListSubscribed(context: Context, listId: String, subscribed: Boolean): Result<Int> {
+        val list = storeFilterLists.firstOrNull { it.id == listId }
+            ?: return Result.failure(IllegalArgumentException("Unknown filter list"))
+        val manager = com.petal.browser.browser.PetalFilterSubscriptionManager
+        val sub = manager.ensureSubscription(
+            context = context,
+            id = "store_${list.id}",
+            name = list.name,
+            description = list.description,
+            url = list.url
+        )
+        manager.toggleSubscription(context, sub.id, subscribed)
+        if (!subscribed) return Result.success(0)
+        val count = manager.updateSubscription(context, sub.id)
+        return if (count > 0) {
+            Result.success(count)
+        } else {
+            Result.failure(IllegalStateException(if (count == -1) "Another update is in progress" else "Couldn't download ${list.name}"))
+        }
     }
 }
