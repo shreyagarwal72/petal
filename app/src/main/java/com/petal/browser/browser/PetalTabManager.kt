@@ -7,9 +7,14 @@ import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.EngineState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
-class PetalTabManager(private val context: Context) {
+import java.util.UUID
 
-    private val store: BrowserStore = PetalEngineStore.getStore(context)
+class PetalTabManager(context: Context) {
+
+    // Hold the application context so a long-lived manager never leaks an Activity.
+    private val context: Context = context.applicationContext
+
+    private val store: BrowserStore = PetalEngineStore.getStore(this.context)
 
     /**
      * Creates and adds a new tab to [BrowserStore].
@@ -22,7 +27,9 @@ class PetalTabManager(private val context: Context) {
     ): TabSessionState {
         val eng = PetalEngineStore.getEngine(context)
         val session = eng.createSession(private = isIncognito)
-        val tabId = "tab_${System.currentTimeMillis()}_${Math.abs(url.hashCode())}"
+        // UUID: millis + url hash collided for same-URL tabs opened in the same millisecond,
+        // and Math.abs(Int.MIN_VALUE) is negative.
+        val tabId = "tab_${UUID.randomUUID()}"
 
         val tabState = TabSessionState(
             id = tabId,
@@ -47,13 +54,19 @@ class PetalTabManager(private val context: Context) {
      * Removes an existing tab by its unique tab ID.
      */
     fun removeTab(tabId: String) {
+        // Close the engine session explicitly; RemoveTabAction alone leaves the native
+        // Gecko session alive when it was created outside the engine-session middleware.
+        val engineSession = store.state.tabs.firstOrNull { it.id == tabId }?.engineState?.engineSession
         PetalEngineStore.removeTab(context, tabId)
+        try { engineSession?.close() } catch (_: Throwable) {}
     }
 
     /**
      * Selects an active tab by its tab ID.
      */
     fun selectTab(tabId: String) {
+        // Selecting an unknown ID would leave selectedTabId dangling.
+        if (store.state.tabs.none { it.id == tabId }) return
         PetalEngineStore.selectTab(context, tabId)
     }
 
@@ -61,7 +74,8 @@ class PetalTabManager(private val context: Context) {
      * Returns the currently selected tab session state, if any.
      */
     fun getSelectedTab(): TabSessionState? {
-        return store.state.tabs.firstOrNull { it.id == store.state.selectedTabId }
+        val state = store.state
+        return state.tabs.firstOrNull { it.id == state.selectedTabId }
     }
 
     /**

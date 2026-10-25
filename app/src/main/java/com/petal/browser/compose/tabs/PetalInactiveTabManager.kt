@@ -118,7 +118,11 @@ object PetalInactiveTabManager {
             "7" -> 7
             "14" -> 14
             "21" -> 21
-            "custom" -> defSp.getInt(PREF_CUSTOM_INACTIVE_DAYS, 21).coerceIn(1, 365)
+            "custom" -> (try {
+                defSp.getInt(PREF_CUSTOM_INACTIVE_DAYS, 21)
+            } catch (_: ClassCastException) {
+                defSp.getString(PREF_CUSTOM_INACTIVE_DAYS, null)?.toIntOrNull() ?: 21
+            }).coerceIn(1, 365)
             else -> 21
         }
     }
@@ -163,8 +167,20 @@ object PetalInactiveTabManager {
         // 1. Clean up 3-month-old inactive tabs
         if (autoClose3Months) {
             val threeMonthsMs = TimeUnit.DAYS.toMillis(90)
-            inactiveTabsList.removeAll { now - it.lastAccessedTimestamp > threeMonthsMs }
+            val expired = inactiveTabsList.filter { now - it.lastAccessedTimestamp > threeMonthsMs }
+            for (e in expired) {
+                tabAccessMap.remove(e.id)
+                com.petal.browser.unit.TabThumbnailCache.remove(e.id)
+            }
+            inactiveTabsList.removeAll(expired.toSet())
         }
+
+        // Prune access records for tabs that were closed (neither open nor archived),
+        // otherwise the persisted map grows forever.
+        val liveIds = HashSet<String>(openTabs.size + inactiveTabsList.size)
+        openTabs.forEach { liveIds.add(it.id) }
+        inactiveTabsList.forEach { liveIds.add(it.id) }
+        tabAccessMap.keys.retainAll(liveIds)
 
         val tabsToArchive = mutableListOf<PetalTabItem>()
 
@@ -178,8 +194,12 @@ object PetalInactiveTabManager {
 
             for ((_, duplicateTabs) in urlGroups) {
                 if (duplicateTabs.size > 1) {
-                    // Sort by last accessed descending (most recent first)
-                    val sorted = duplicateTabs.sortedByDescending { getTabLastAccess(context, it.id) }
+                    // Keep the selected tab if it is one of the copies, otherwise the most
+                    // recently accessed one; archive the rest.
+                    val sorted = duplicateTabs.sortedWith(
+                        compareByDescending<PetalTabItem> { it.isSelected }
+                            .thenByDescending { getTabLastAccess(context, it.id) }
+                    )
                     // Keep index 0, archive index 1..n
                     for (i in 1 until sorted.size) {
                         val duplicateTab = sorted[i]

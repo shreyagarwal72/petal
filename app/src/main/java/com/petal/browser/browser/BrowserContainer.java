@@ -1,6 +1,6 @@
 package com.petal.browser.browser;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,9 +9,9 @@ import java.util.List;
  * dual-engine branches and legacy FOSS Browser (Ninja) checks.
  */
 public class BrowserContainer {
-    private static final List<AlbumController> list = new LinkedList<>();
+    private static final List<AlbumController> list = new ArrayList<>();
 
-    public static AlbumController get(int index) {
+    public synchronized static AlbumController get(int index) {
         return list.get(index);
     }
 
@@ -28,13 +28,14 @@ public class BrowserContainer {
     }
 
     public synchronized static void remove(AlbumController controller) {
+        // Unlink first so a throwing destroy() cannot leave a dead controller in the list.
+        list.remove(controller);
         if (controller != null) {
             controller.destroy();
         }
-        list.remove(controller);
     }
 
-    public static int indexOf(AlbumController controller) {
+    public synchronized static int indexOf(AlbumController controller) {
         return list.indexOf(controller);
     }
 
@@ -42,7 +43,7 @@ public class BrowserContainer {
         return list;
     }
 
-    public static int size() {
+    public synchronized static int size() {
         return list.size();
     }
 
@@ -67,11 +68,12 @@ public class BrowserContainer {
     }
 
     public synchronized static void clear() {
-        for (AlbumController albumController : list) {
+        List<AlbumController> copy = new ArrayList<>(list);
+        list.clear();
+        for (AlbumController albumController : copy) {
             if (albumController != null) {
                 albumController.destroy();
             }
         }
-        list.clear();
     }
 }
