@@ -1250,8 +1250,9 @@ object PetalExtensionManager {
         val ctx = appContext ?: return
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
         controller.list().accept({ list ->
+          try {
             list?.filterNotNull()?.forEach { ext ->
-                attachActionDelegate(ext)
+                try { attachActionDelegate(ext) } catch (t: Throwable) { Log.w(TAG, "attachActionDelegate failed", t) }
             }
             val items = (list ?: emptyList()).mapNotNull { ext -> toInstalled(ext) }
             _extensions.value = items
@@ -1270,6 +1271,9 @@ object PetalExtensionManager {
                     }, { /* icon optional */ })
                 } catch (ignored: Throwable) {}
             }
+          } catch (t: Throwable) {
+            Log.w(TAG, "refresh failed", t)
+          }
         }, {
             Log.w(TAG, "Failed to list extensions", it)
         })
@@ -1384,21 +1388,35 @@ object PetalExtensionManager {
 
     private fun toInstalled(ext: WebExtension?): InstalledExtension? {
         if (ext == null) return null
-        val meta = ext.metaData
-        return InstalledExtension(
-            id = ext.id,
-            name = meta?.name ?: ext.id,
-            description = meta?.description ?: "",
-            version = meta?.version ?: "",
-            enabled = meta?.enabled ?: true,
-            temporary = meta?.temporary ?: false,
-            allowedInPrivateBrowsing = meta?.allowedInPrivateBrowsing ?: false,
-            homepageUrl = meta?.homepageUrl,
-            amoListingUrl = meta?.amoListingUrl,
-            optionsPageUrl = resolveExtensionOptionsUrl(ext),
-            supportsPopup = resolveExtensionPopupUrl(ext) != null || extensionHasPopup(ext),
-            icon = null,
-            raw = ext
-        )
+        return try {
+            // Gecko hands back Java platform types: any of these can be null at runtime.
+            val extId: String = (ext.id as String?) ?: return null
+            val meta = ext.metaData
+            val metaName: String? = meta?.name
+            val metaDesc: String? = meta?.description
+            val metaVersion: String? = meta?.version
+            val optionsUrl = try { resolveExtensionOptionsUrl(ext) } catch (t: Throwable) { null }
+            val hasPopup = try {
+                resolveExtensionPopupUrl(ext) != null || extensionHasPopup(ext)
+            } catch (t: Throwable) { false }
+            InstalledExtension(
+                id = extId,
+                name = metaName ?: extId,
+                description = metaDesc ?: "",
+                version = metaVersion ?: "",
+                enabled = meta?.enabled ?: true,
+                temporary = meta?.temporary ?: false,
+                allowedInPrivateBrowsing = meta?.allowedInPrivateBrowsing ?: false,
+                homepageUrl = meta?.homepageUrl,
+                amoListingUrl = meta?.amoListingUrl,
+                optionsPageUrl = optionsUrl,
+                supportsPopup = hasPopup,
+                icon = null,
+                raw = ext
+            )
+        } catch (t: Throwable) {
+            Log.w(TAG, "Skipping extension that failed to map", t)
+            null
+        }
     }
 }
