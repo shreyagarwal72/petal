@@ -141,12 +141,14 @@ object PetalGeckoRuntime {
             // Low-RAM device tuning: constrain content process count and memory caches
             if (isLowRamDevice) {
                 Log.i(TAG, "Configuring GeckoRuntime for low-RAM device profile (in-process extensions, constrained memory limits)")
-                // Restrict web content isolation strategy to avoid separate content process sprawl
+                // Apply low-RAM content process and cache limits reflectively or via config
                 try {
-                    settingsBuilder.webContentIsolationStrategy(GeckoRuntimeSettings.STRATEGY_ISOLATE_NOTHING)
+                    val method = settingsBuilder.javaClass.getMethod("setWebContentIsolationStrategy", Int::class.javaPrimitiveType)
+                    method.invoke(settingsBuilder, 0)
                 } catch (_: Throwable) {}
                 try {
-                    settingsBuilder.contentProcessCount(1)
+                    val method = settingsBuilder.javaClass.getMethod("setContentProcessCount", Int::class.javaPrimitiveType)
+                    method.invoke(settingsBuilder, 1)
                 } catch (_: Throwable) {}
             }
         } catch (t: Throwable) {

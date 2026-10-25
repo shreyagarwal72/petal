@@ -859,15 +859,17 @@ class PetalTabViewController private constructor(
         }
     }
 
-    fun setDynamicToolbarMaxHeight(toolbarHeightPx: Int) {
+    override fun setDynamicToolbarMaxHeight(height: Int) {
         try {
-            findGeckoView(engineView.asView())?.setDynamicToolbarMaxHeight(toolbarHeightPx)
+            engineView.setDynamicToolbarMaxHeight(height)
+            findGeckoView(engineView.asView())?.setDynamicToolbarMaxHeight(height)
         } catch (_: Throwable) {}
     }
 
-    fun setVerticalClipping(clippingHeightPx: Int) {
+    override fun setVerticalClipping(clippingHeight: Int) {
         try {
-            findGeckoView(engineView.asView())?.setVerticalClipping(clippingHeightPx)
+            engineView.setVerticalClipping(clippingHeight)
+            findGeckoView(engineView.asView())?.setVerticalClipping(clippingHeight)
         } catch (_: Throwable) {}
     }
 
