@@ -6,7 +6,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,10 +54,7 @@ fun PetalSlider(
         onValueChangeFinished = onValueChangeFinished,
         modifier = modifier.height(TrackHeight),
         // The track draws the thumb too, so it can be positioned inside the pill
-        thumb = {
-            // Empty thumb to avoid default huge circle thumb drawing over custom track
-            Spacer(Modifier.size(0.dp))
-        },
+        thumb = {},
         track = { state ->
             val target = (
                 (state.value - state.valueRange.start) /
@@ -110,7 +106,7 @@ fun PetalSlider(
                         .graphicsLayer { rotationZ = rollDegrees }
                         .clip(MaterialShapes.Cookie12Sided.toShape())
                         .background(
-                            if (enabled) MaterialTheme.colorScheme.primaryContainer
+                            if (enabled) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.surfaceContainer
                         )
                 )
