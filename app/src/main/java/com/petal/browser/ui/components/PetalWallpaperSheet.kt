@@ -14,10 +14,6 @@
 
 package com.petal.browser.ui.components
 
-import com.petal.browser.ui.components.PetalGlassFit
-
-import com.petal.browser.ui.components.PetalChip
-
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -635,8 +631,7 @@ fun PetalWallpaperSheet(
                 }
 
                 if (activeUri != null) {
-                    PetalGlassFit(glass = isGlass, shape = RoundedCornerShape(12.dp), sheenIntensity = 0.3f, modifier = Modifier) { gm ->
-                        FilledTonalButton(
+                    FilledTonalButton(
                         onClick = {
                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                             PetalWallpaperManager.clearWallpaper(context)
@@ -647,11 +642,11 @@ fun PetalWallpaperSheet(
                         ),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = gm) {
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(12.dp), enabled = true) else Modifier
+                    ) {
                         Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(stringResource(R.string.ui_reset), maxLines = 1, softWrap = false)
-                    }
                     }
                 }
             }
@@ -663,10 +658,11 @@ fun PetalWallpaperSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                PetalGlassFit(glass = isGlass, shape = RoundedCornerShape(14.dp), sheenIntensity = 0.3f, modifier = Modifier.weight(1f)) { gm ->
-                    FilledTonalButton(
+                FilledTonalButton(
                     onClick = { openDevicePicker() },
-                    modifier = gm,
+                    modifier = Modifier.weight(1f).then(
+                        if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(14.dp), enabled = true) else Modifier
+                    ),
                     colors = ButtonDefaults.filledTonalButtonColors(
                         containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                         contentColor = MaterialTheme.colorScheme.onSurface
@@ -676,7 +672,6 @@ fun PetalWallpaperSheet(
                     Icon(Icons.Rounded.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.ui_device_storage_crop_apply))
-                }
                 }
             }
 
@@ -689,13 +684,20 @@ fun PetalWallpaperSheet(
             ) {
                 items(WALLPAPER_CATEGORIES) { cat ->
                     val isCatSelected = selectedCategory == cat
-                    PetalChip(
+                    FilterChip(
                         selected = isCatSelected,
                         onClick = {
                             PetalHapticEngine.getInstance(context).playTick(context)
                             selectedCategory = cat
                         },
-                        label = cat
+                        label = { Text(cat, fontSize = 12.sp) },
+                        shape = RoundedCornerShape(12.dp),
+                        border = if (isGlass) null else FilterChipDefaults.filterChipBorder(enabled = true, selected = isCatSelected),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primaryContainer,
+                            containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(12.dp), enabled = true) else Modifier
                     )
                 }
             }

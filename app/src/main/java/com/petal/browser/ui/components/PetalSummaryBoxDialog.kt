@@ -1,9 +1,5 @@
 package com.petal.browser.ui.components
 
-import com.petal.browser.ui.components.PetalGlassFit
-
-import com.petal.browser.ui.components.PetalChip
-
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -238,14 +234,14 @@ fun PetalSummaryBoxDialog(
                                         Text(stringResource(R.string.ui_retry), maxLines = 1)
                                     }
                                     val cfgShape = RoundedCornerShape(12.dp)
-                                    PetalGlassFit(glass = isGlass, shape = cfgShape, sheenIntensity = 0.5f, modifier = Modifier) { gm ->
-                                        OutlinedButton(
+                                    OutlinedButton(
                                         onClick = onOpenSettings,
                                         shape = cfgShape,
                                         border = if (isGlass) null
                                             else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                                        modifier = gm) {
+                                        modifier = if (isGlass) Modifier.liquidGlassChrome(cfgShape, enabled = true, sheenIntensity = 0.5f) else Modifier
+                                    ) {
                                         Icon(Icons.Rounded.Key, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(Modifier.width(4.dp))
                                         Text(
@@ -253,7 +249,6 @@ fun PetalSummaryBoxDialog(
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                                             maxLines = 1
                                         )
-                                    }
                                     }
                                 }
                             }

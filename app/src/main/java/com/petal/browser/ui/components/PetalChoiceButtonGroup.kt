@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 /**
  * Option item model for [PetalChoiceButtonGroup].
@@ -82,8 +83,7 @@ fun <T> PetalChoiceButtonGroup(
 
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
 
-    // Glass: the glass surface IS the unselected container, so the button fill stays clear.
-    val unselectedContainer = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLowest
+    val unselectedContainer = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLowest
     val unselectedContent = MaterialTheme.colorScheme.onSurface
     val selectedContainer = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primaryContainer
     val selectedContent = MaterialTheme.colorScheme.onPrimaryContainer
@@ -124,14 +124,16 @@ fun <T> PetalChoiceButtonGroup(
             }
 
             val currentShape = if (isChecked) shapes.checkedShape else shapes.shape
+            val buttonModifier = if (isGlass) {
+                baseModifier.liquidGlassChrome(
+                    shape = currentShape,
+                    enabled = true,
+                    sheenIntensity = if (isChecked) 0.80f else 0.45f
+                )
+            } else {
+                baseModifier
+            }
 
-            // Selected = solid tonal pill (no glass layer under it); unselected = one glass surface.
-            PetalGlassFit(
-                glass = isGlass && !isChecked,
-                shape = currentShape,
-                modifier = baseModifier,
-                sheenIntensity = 0.3f
-            ) { glassModifier ->
             ToggleButton(
                 checked = isChecked,
                 onCheckedChange = {
@@ -140,7 +142,7 @@ fun <T> PetalChoiceButtonGroup(
                     } catch (_: Exception) {}
                     onSelect(option.value)
                 },
-                modifier = glassModifier,
+                modifier = buttonModifier,
                 enabled = option.enabled,
                 shapes = shapes,
                 colors = ToggleButtonDefaults.toggleButtonColors(
@@ -179,7 +181,6 @@ fun <T> PetalChoiceButtonGroup(
                         )
                     }
                 }
-            }
             }
         }
     }
