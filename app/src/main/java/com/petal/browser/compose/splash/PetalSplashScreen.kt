@@ -187,16 +187,16 @@ private fun PetalSplashContent(
         label = "emblem_glow"
     )
 
-    // Material You background gradient inspired by Dolphy & M3 Dynamic Color
+    // Solid, 100% opaque Material You background gradient inspired by Dolphy & M3 Dynamic Color
     val backgroundTop = if (isDark) {
-        if (backgroundColor == Color.Black) Color.Black else backgroundColor
+        if (backgroundColor == Color.Black) Color.Black else colorScheme.surface
     } else {
         colorScheme.surface
     }
     val backgroundMid = if (isDark) {
-        accentColor.copy(alpha = 0.12f)
+        if (backgroundColor == Color.Black) Color(0xFF0A0A0A) else colorScheme.surfaceContainer
     } else {
-        accentColor.copy(alpha = 0.08f)
+        colorScheme.surfaceContainer
     }
     val backgroundBottom = if (isDark) {
         if (backgroundColor == Color.Black) Color.Black else colorScheme.surfaceContainerLowest
