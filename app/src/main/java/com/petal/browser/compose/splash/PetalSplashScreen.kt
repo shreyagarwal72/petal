@@ -8,6 +8,9 @@
  *   with the system/app MaterialTheme colorScheme (Light / Dark / AMOLED).
  * - Procedural web, privacy & security glyph stream with glowing headline.
  * - Clean brand typography without any app icon.
+ * - Hand-off from the system launch splash (cookie + pinwheel, see ic_splash_petal_animated): the system
+ *   splash fades out over this screen while the wordmark and glyph field ease in, so the cookie reads
+ *   as "becoming" the title instead of cutting to it.
  */
 package com.petal.browser.compose.splash
 
@@ -47,6 +50,15 @@ object PetalSplashState {
      */
     @Volatile
     var hasShownThisSession: Boolean = false
+
+    /**
+     * True when the Compose launch splash will play after the system launch splash. Same condition
+     * PetalHomeScreen uses to show it; BrowserActivity reads it to choose how the system splash exits
+     * (dissolve into this screen vs. open up into the home screen).
+     */
+    @JvmStatic
+    fun shouldPlayLaunchSplash(sp: android.content.SharedPreferences): Boolean =
+        sp.getBoolean("sp_app_launch_animation", true) && !hasShownThisSession
 }
 
 private data class PetalWebGlyph(
@@ -163,16 +175,24 @@ private fun PetalSplashContent(
     val backgroundColor = colorScheme.background
     val isDark = isSystemInDarkTheme() || backgroundColor == Color.Black || (colorScheme.surface.red + colorScheme.surface.green + colorScheme.surface.blue) < 1.5f
 
-    // Subtle scale-up and fade-in entrance animation
+    // Entrance, timed with the system splash dissolving over this screen: the wordmark springs up from
+    // slightly smaller and fades in just after the cookie starts to fade, the glyph field/glow follow.
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { entered = true }
     val contentScale by animateFloatAsState(
-        targetValue = 1f,
+        targetValue = if (entered) 1f else 0.78f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
         label = "splash_scale"
     )
     val titleAlpha by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(durationMillis = 600),
+        targetValue = if (entered) 1f else 0f,
+        animationSpec = tween(durationMillis = 420, delayMillis = 120, easing = LinearOutSlowInEasing),
         label = "splash_title_alpha"
+    )
+    val ambientAlpha by animateFloatAsState(
+        targetValue = if (entered) 1f else 0f,
+        animationSpec = tween(durationMillis = 520, easing = LinearOutSlowInEasing),
+        label = "splash_ambient_alpha"
     )
 
     // Breathing pulse for ambient glow
@@ -218,7 +238,9 @@ private fun PetalSplashContent(
     ) {
         // Procedural Web Glyph Particle Stream
         PetalWebGlyphField(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { alpha = ambientAlpha },
             accentColor = accentColor
         )
 
@@ -226,6 +248,7 @@ private fun PetalSplashContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .graphicsLayer { alpha = ambientAlpha }
                 .background(
                     Brush.radialGradient(
                         colors = listOf(

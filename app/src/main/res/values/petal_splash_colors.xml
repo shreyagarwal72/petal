@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launch (system) splash palette. Brand pinwheel colours match ic_launcher_foreground; bg/cookie are
+     overridden per night / Android 12+ (dynamic colour) in the sibling values-* folders. -->
+<resources>
+    <color name="petal_splash_bg">#FFF8F9</color>
+    <color name="petal_splash_cookie">#FFD3BD</color>
+    <color name="petal_splash_teal">#026065</color>
+    <color name="petal_splash_orange">#A04106</color>
+    <color name="petal_splash_orange_light">#E45B24</color>
+</resources>

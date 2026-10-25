@@ -306,6 +306,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private boolean launchRippleTriggered = false;
     /** True while the launch ripple is waiting to be fired from the splash-screen exit animation. */
     private boolean splashRipplePending = false;
+    /** True when the Compose launch splash (PetalSplashScreen) plays right after the system splash. */
+    private boolean splashHandsOffToComposeSplash = false;
 
     public static boolean isExternalOrWidgetLaunch(Intent intent) {
         if (intent == null) return false;
@@ -621,12 +623,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     /**
-     * Custom splash exit: fires the launch ripple from the splash icon's centre while the icon scales up and the
-     * splash fades away, so the splash dissolves into the ripple instead of cutting to the app.
+     * Custom splash exit for the cookie + pinwheel launch mark (Material 3 Expressive, Orion Store style).
+     * <ul>
+     *   <li>Launch splash ON: the mark eases up slightly while the whole splash dissolves, revealing
+     *       PetalSplashScreen underneath, whose wordmark springs in as the cookie fades.</li>
+     *   <li>Launch splash OFF: the mark opens up (scales to 1.6x on the M3 emphasized-accelerate curve)
+     *       while the splash fades, revealing the home screen / page directly.</li>
+     * </ul>
+     * The launch ripple, when enabled, still radiates from the icon's centre in both cases.
      */
-    private void playSplashExitWithRipple(androidx.core.splashscreen.SplashScreenViewProvider provider) {
+    private void playSplashExit(androidx.core.splashscreen.SplashScreenViewProvider provider) {
         try {
-            playSplashExitWithRippleInternal(provider);
+            playSplashExitInternal(provider);
         } catch (Throwable t) {
             // If anything in the custom exit animation throws, the splash view would otherwise stay on
             // top of the app forever and the window would look blank/black. Always drop it.
@@ -636,7 +644,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    private void playSplashExitWithRippleInternal(androidx.core.splashscreen.SplashScreenViewProvider provider) {
+    private void playSplashExitInternal(androidx.core.splashscreen.SplashScreenViewProvider provider) {
         final View splashView = provider.getView();
         // Android 16 can hand back a splash provider whose icon view has already
         // been detached during the exit callback. Treat it as unavailable and
@@ -663,7 +671,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
 
-        final long duration = fireRipple ? 450L : 200L;
+        final boolean toComposeSplash = splashHandsOffToComposeSplash;
+        splashHandsOffToComposeSplash = false;
+        final long duration = toComposeSplash ? 380L : 320L;
+        final PathInterpolator emphasizedAccelerate = new PathInterpolator(0.3f, 0f, 0.8f, 0.15f);
+        final PathInterpolator emphasizedDecelerate = new PathInterpolator(0.05f, 0.7f, 0.1f, 1f);
+        final PathInterpolator fastOutLinearIn = new PathInterpolator(0.4f, 0f, 1f, 1f);
+
         final boolean[] removed = {false};
         final Runnable removeOnce = () -> {
             if (!removed[0]) {
@@ -671,18 +685,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 provider.remove();
             }
         };
-        if (fireRipple && iconView != null) {
+        if (iconView != null) {
+            final float target = toComposeSplash ? 1.12f : 1.6f;
             iconView.animate()
-                    .scaleX(1.25f)
-                    .scaleY(1.25f)
+                    .scaleX(target)
+                    .scaleY(target)
                     .setDuration(duration)
-                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .setInterpolator(toComposeSplash ? emphasizedDecelerate : emphasizedAccelerate)
                     .start();
         }
         splashView.animate()
                 .alpha(0f)
                 .setDuration(duration)
-                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .setInterpolator(toComposeSplash ? fastOutLinearIn : emphasizedAccelerate)
                 .withEndAction(removeOnce)
                 .start();
         // Safety net so the splash can never get stuck if the animation is cancelled.
@@ -739,16 +754,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.wallpaper.PetalWallpaperManager.INSTANCE.init(this);
         } catch (Throwable ignored) {}
 
-        // Blend the splash exit with the launch ripple: on a fresh launch the splash icon scales/fades out while
-        // the liquid ripple radiates from the icon's centre. Uses the same conditions as the launch ripple further
-        // below, which is skipped once this is armed. A timed fallback covers launches where no splash is shown.
-        if (savedInstanceState == null
-                && sp.getBoolean("sp_launch_ripple_enabled", true)
+        // Blend the system launch splash (animated cookie + pinwheel) into whatever comes next. The exit
+        // listener is always installed so the hand-off looks the same on every launch; see playSplashExit.
+        // The launch ripple radiates from the icon's centre on a fresh launch (same conditions as the
+        // fallback below, which is skipped once this is armed). A timed fallback covers launches where no
+        // splash is shown.
+        final boolean coldInternalLaunch = savedInstanceState == null
                 && !sp.getBoolean("sp_app_lock_enabled", false)
-                && !isExternalOrWidgetLaunch(getIntent())) {
+                && !isExternalOrWidgetLaunch(getIntent());
+        splashHandsOffToComposeSplash = coldInternalLaunch
+                && com.petal.browser.compose.splash.PetalSplashState.shouldPlayLaunchSplash(sp);
+        if (coldInternalLaunch && sp.getBoolean("sp_launch_ripple_enabled", true)) {
             launchRippleTriggered = true;
             splashRipplePending = true;
-            splashScreen.setOnExitAnimationListener(this::playSplashExitWithRipple);
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                 if (splashRipplePending && !isFinishing() && !isDestroyed()) {
                     splashRipplePending = false;
@@ -756,6 +774,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             }, 2500L);
         }
+        splashScreen.setOnExitAnimationListener(this::playSplashExit);
 
         com.petal.browser.unit.PetalSessionHistoryManager.initSession();
         com.petal.browser.extensions.PetalExtensionManager.attach(context);

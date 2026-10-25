@@ -86,10 +86,10 @@
         <item name="colorSurface">@android:color/black</item>
     </style>
 
+    <!-- Pre-Android 12: static cookie + pinwheel. Android 12+ overrides this in values-v31/petal_splash_theme.xml. -->
     <style name="Theme.Petal.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/md_theme_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenBackground">@color/petal_splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_petal</item>
         <item name="postSplashScreenTheme">@style/AppTheme</item>
     </style>
 
