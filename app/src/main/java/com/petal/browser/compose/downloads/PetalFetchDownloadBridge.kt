@@ -137,9 +137,16 @@ object PetalFetchDownloadBridge {
             }
 
             try {
-                com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext).observeManually {
-                    publish()
-                }
+                // BrowserStore emits on every tab/title/progress change; only react to downloads.
+                var lastDownloads: Any? = null
+                com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext).observeManually { state ->
+                    val downloads = state.downloads
+                    if (downloads !== lastDownloads) {
+                        lastDownloads = downloads
+                        publish()
+                    }
+                }.resume()
+                publish()
             } catch (_: Throwable) {
             }
 

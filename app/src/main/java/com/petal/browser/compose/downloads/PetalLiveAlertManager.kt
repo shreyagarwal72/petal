@@ -90,7 +90,7 @@ object PetalLiveAlertManager {
                                 DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
                                     handledTerminalStatusMap.remove(item.id)
                                     val lastTime = lastNotifTimeMap[item.id] ?: 0L
-                                    if (now - lastTime >= 150L || lastTime == 0L) {
+                                    if (now - lastTime >= 400L || lastTime == 0L) {
                                         lastNotifTimeMap[item.id] = now
                                         showLiveNotification(
                                             context,

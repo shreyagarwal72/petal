@@ -314,9 +314,11 @@ object PetalFilterSubscriptionManager {
                         val trimmed = line.trim()
                         if (trimmed.isNotEmpty() && !trimmed.startsWith("!") && !trimmed.startsWith("#")) {
                             // Extract domain or pattern if hosts format
-                            val parts = trimmed.split(Regex("\\s+"))
-                            if (parts.size >= 2 && (parts[0] == "0.0.0.0" || parts[0] == "127.0.0.1")) {
-                                newSet.add(parts[1].lowercase())
+                            val ws = trimmed.indexOfFirst { it.isWhitespace() }
+                            val first = if (ws > 0) trimmed.substring(0, ws) else ""
+                            val second = if (ws > 0) trimmed.substring(ws).trim().takeWhile { !it.isWhitespace() } else ""
+                            if (second.isNotEmpty() && (first == "0.0.0.0" || first == "127.0.0.1")) {
+                                newSet.add(second.lowercase())
                             } else {
                                 val clean = trimmed.removePrefix("||").removeSuffix("^")
                                 if (clean.isNotEmpty() && !clean.contains('/')) {
@@ -348,6 +350,14 @@ object PetalFilterSubscriptionManager {
     fun isDomainInActiveSubscriptions(domain: String): Boolean {
         if (domain.isBlank() || compiledRulesCache.isEmpty()) return false
         val clean = domain.lowercase().removePrefix("www.")
-        return compiledRulesCache.contains(clean) || compiledRulesCache.any { clean.endsWith(".$it") }
+        if (compiledRulesCache.contains(clean)) return true
+        // Walk the parent domains (a.b.com -> b.com -> com) with O(1) set lookups instead of
+        // scanning every rule on every request.
+        var dot = clean.indexOf('.')
+        while (dot >= 0 && dot < clean.length - 1) {
+            if (compiledRulesCache.contains(clean.substring(dot + 1))) return true
+            dot = clean.indexOf('.', dot + 1)
+        }
+        return false
     }
 }

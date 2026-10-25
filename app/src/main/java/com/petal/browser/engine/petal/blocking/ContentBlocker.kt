@@ -85,6 +85,18 @@ class ContentBlocker(context: Context) {
         compiledCosmeticRulesFuture.join()
     }
 
+    /**
+     * Background threads wait for the bundled lists to finish parsing (so nothing slips through);
+     * the main thread never does - it would freeze the UI - and simply treats the lists as not
+     * ready yet.
+     */
+    private fun snapshotForCaller(): BundledBlockingSnapshot? =
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            bundledBlockingSnapshot.snapshotIfReady()
+        } else {
+            bundledBlockingSnapshot.snapshot()
+        }
+
     fun shouldBlock(
         requestUrl: String,
         requestHost: String?,
@@ -93,7 +105,7 @@ class ContentBlocker(context: Context) {
         if (!requestUrl.startsWith("http://", ignoreCase = true) &&
             !requestUrl.startsWith("https://", ignoreCase = true)
         ) return false
-        val snapshot = bundledBlockingSnapshot.snapshot()
+        val snapshot = snapshotForCaller() ?: return false
         val advancedDecision = snapshot.advancedRules.decideRequest(
             requestUrl = requestUrl,
             requestHost = requestHost,
@@ -116,7 +128,7 @@ class ContentBlocker(context: Context) {
         decidePopup(targetUrl, openerUrl) == AdvancedFilterAction.Block
 
     internal fun decidePopup(targetUrl: String, openerUrl: String?): AdvancedFilterAction? {
-        val snapshot = bundledBlockingSnapshot.snapshot()
+        val snapshot = snapshotForCaller() ?: return null
         snapshot.advancedRules.decidePopup(targetUrl, openerUrl)?.let { return it }
         val targetHost = runCatching { java.net.URI(targetUrl).host }.getOrNull()
         val openerHost = runCatching { java.net.URI(openerUrl).host }.getOrNull()
@@ -128,11 +140,11 @@ class ContentBlocker(context: Context) {
     internal fun decidePopunder(
         openerTargetUrl: String,
         childUrl: String?,
-    ): AdvancedFilterAction? = bundledBlockingSnapshot.snapshot().advancedRules
-        .decidePopunder(openerTargetUrl, childUrl)
+    ): AdvancedFilterAction? = snapshotForCaller()?.advancedRules
+        ?.decidePopunder(openerTargetUrl, childUrl)
 
     fun shouldBlockPopupWithoutTarget(openerUrl: String?): Boolean =
-        bundledBlockingSnapshot.snapshot().advancedRules.shouldBlockPopupWithoutTarget(openerUrl)
+        snapshotForCaller()?.advancedRules?.shouldBlockPopupWithoutTarget(openerUrl) == true
 
     fun windowOpenDefuserScript(pageUrl: String?): String =
         PetalWindowOpenDefuserScript.script.takeIf {
@@ -141,7 +153,7 @@ class ContentBlocker(context: Context) {
         }.orEmpty()
 
     fun shouldBlockHosts(requestHost: String?, pageHost: String?): Boolean =
-        bundledBlockingSnapshot.snapshot().requestBlocker.shouldBlockHosts(requestHost, pageHost)
+        snapshotForCaller()?.requestBlocker?.shouldBlockHosts(requestHost, pageHost) == true
 
     fun adCosmeticSelectors(pageUrl: String?): List<String> {
         val compiled = compiledCosmeticRulesIfReady()?.rules?.scopedSelectors(pageUrl).orEmpty()

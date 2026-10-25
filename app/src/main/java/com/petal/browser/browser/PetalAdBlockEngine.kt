@@ -99,7 +99,10 @@ object PetalAdBlockEngine {
             whitelistedDomains.addAll(whitelistSet)
 
             // Initialize active filter subscriptions
-            PetalFilterSubscriptionManager.reloadActiveRules(appContext)
+            // Multi-MB host lists: parse off the main thread so cold start isn't blocked.
+            Thread({ PetalFilterSubscriptionManager.reloadActiveRules(appContext) }, "petal-adblock-rules")
+                .apply { isDaemon = true; priority = Thread.MIN_PRIORITY }
+                .start()
 
             // Initialize Brave Shields adblock-rust native engine
             try {

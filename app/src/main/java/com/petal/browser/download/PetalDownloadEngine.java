@@ -101,7 +101,7 @@ public class PetalDownloadEngine {
         // above) - safe to keep high without reintroducing the range-splitting size bug.
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
                 .setDownloadConcurrentLimit(32)
-                .setProgressReportingInterval(150L)
+                .setProgressReportingInterval(500L)
                 .setAutoRetryMaxAttempts(10)
                 .enableAutoStart(true)
                 .enableRetryOnNetworkGain(true)
@@ -123,7 +123,6 @@ public class PetalDownloadEngine {
 
             @Override
             public void onProgress(@NotNull Download download, long etaInMilliSeconds, long downloadedBytesPerSecond) {
-                Log.d(TAG, "Download speed: " + downloadedBytesPerSecond + " B/s, progress: " + download.getProgress() + "%");
             }
         });
     }

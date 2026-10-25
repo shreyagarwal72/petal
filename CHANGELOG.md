@@ -7,6 +7,11 @@
 - **History survives restarts**: Downloads state is restored from Mozilla's storage at startup.
 - **One notification per download**: Mozilla's service posts the progress and completion notifications; Petal's live alerts skip those downloads. The Downloads screen and banner show speed and ETA for them too.
 
+#### ⚡ Performance
+- **Faster page loads**: Ad-block domain checks now look up each parent domain in a set instead of scanning every rule on every request.
+- **Faster cold start**: Subscription lists, yt-dlp and ffmpeg now load off the main thread. The main thread never waits for the bundled filter lists.
+- **Smoother downloads UI**: The Downloads list now updates only when downloads change, not on every tab or title update, and it now actually refreshes for Mozilla downloads. Notification and progress updates are throttled.
+
 ### v4.5 — 🫧 Pure & Live Liquid Glass + GeckoView 158
 
 > *"Liquid Glass is now pure and live: one sharp wallpaper, one shared frost, a per-pane edge lens, and live backdrops that refract the page, the camera and the screen behind every sheet and menu. Powered by the latest Mozilla GeckoView 158."*
