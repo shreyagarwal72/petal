@@ -462,7 +462,7 @@ private fun BuiltInExtensionsList(
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         items(PetalBuiltInExtensionManager.builtIns, key = { it.extensionId }) { spec ->
-            var isEnabled by remember { mutableStateOf(sp.getBoolean(spec.prefKey, spec.defaultOn)) }
+            var isEnabled by remember { mutableStateOf(sp.getBoolean(spec.prefKey, true)) }
 
             PetalGroupListRow(
                 position = petalGroupPositionFor(PetalBuiltInExtensionManager.builtIns.indexOf(spec), PetalBuiltInExtensionManager.builtIns.size),
@@ -1278,7 +1278,7 @@ private fun DetailLinkRow(icon: ImageVector, title: String, url: String, onOpenL
 }
 
 @Composable
-internal fun InstallPermissionDialog(prompt: PetalExtensionManager.PendingPrompt) {
+private fun InstallPermissionDialog(prompt: PetalExtensionManager.PendingPrompt) {
     val meta = prompt.extension.metaData
     val displayName = meta?.name ?: prompt.extension.id
     com.petal.browser.ui.containment.PetalMaterialAlertDialog(

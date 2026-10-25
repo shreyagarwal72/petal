@@ -126,12 +126,7 @@ object PetalAddonManager {
         engine: GeckoEngine,
         callback: (List<WebExtension>) -> Unit
     ) {
-        engine.listInstalledWebExtensions(
-            onSuccess = { callback(it) },
-            onError = { e ->
-                Log.w(TAG, "Failed to list installed extensions", e)
-                callback(emptyList())
-            }
-        )
+        val current = PetalExtensionManager.extensions.value.map { it.raw }
+        callback(emptyList())
     }
 }

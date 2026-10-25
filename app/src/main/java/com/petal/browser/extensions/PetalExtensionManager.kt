@@ -386,14 +386,12 @@ object PetalExtensionManager {
 
     @Volatile private var attached = false
     @Volatile private var appContext: Context? = null
-    @Volatile private var activityRef: java.lang.ref.WeakReference<BrowserActivity>? = null
 
     /** Idempotent - safe to call from every Activity#onCreate. */
     @JvmStatic
     @Synchronized
     fun attach(context: Context) {
         appContext = context.applicationContext
-        findBrowserActivity(context)?.let { activityRef = java.lang.ref.WeakReference(it) }
         if (attached) {
             refresh()
             return
@@ -469,11 +467,6 @@ object PetalExtensionManager {
                 return result
             }
         })
-
-        // Runtime-level tab delegate: without this, browser.tabs.create() and
-        // runtime.openOptionsPage() from any extension (uBlock dashboard, Bitwarden,
-        // SponsorBlock, Violentmonkey, ...) are silently dropped by GeckoView.
-        controller.setTabDelegate(createRuntimeTabDelegate())
 
         controller.setAddonManagerDelegate(object : WebExtensionController.AddonManagerDelegate {
             override fun onInstalled(extension: WebExtension) {
@@ -603,90 +596,6 @@ object PetalExtensionManager {
                 Log.d(TAG, "Failed to attach newly-installed extension ${extension.id} to tab", t)
             }
         }
-    }
-
-    /**
-     * Handles extension-initiated tab creation and options-page requests. New tabs are
-     * adopted into Petal's own tab model the same way window.open() popups are, so the
-     * extension keeps a live reference to the session it asked for.
-     */
-    private fun createRuntimeTabDelegate(): WebExtensionController.TabDelegate {
-        return object : WebExtensionController.TabDelegate {
-            override fun onNewTab(
-                source: WebExtension,
-                createDetails: WebExtension.CreateTabDetails
-            ): GeckoResult<GeckoSession>? {
-                val ctx = appContext ?: return null
-                val activity = findActivityForExtensions(ctx) ?: return null
-                if (activity.isFinishing || activity.isDestroyed) return null
-
-                val targetUrl = createDetails.url?.takeIf { it.isNotBlank() } ?: "about:blank"
-                val newSession = GeckoSession(
-                    org.mozilla.geckoview.GeckoSessionSettings.Builder()
-                        .usePrivateMode(false)
-                        .allowJavascript(true)
-                        .build()
-                )
-
-                // Gecko opens the returned session asynchronously; adopting it before that
-                // completes would make Petal call open() a second time and crash. Poll until
-                // it reports open, then hand it to the tab model.
-                val handler = Handler(Looper.getMainLooper())
-                val adoptWhenOpened = object : Runnable {
-                    private var attempts = 0
-                    override fun run() {
-                        try {
-                            if (activity.isFinishing || activity.isDestroyed) {
-                                if (newSession.isOpen) newSession.close()
-                                return
-                            }
-                            if (!newSession.isOpen) {
-                                if (++attempts <= 120) {
-                                    handler.postDelayed(this, 16L)
-                                } else {
-                                    Log.w(TAG, "Extension tab session did not open in time; skipping adoption")
-                                }
-                                return
-                            }
-                            activity.adoptPopupGeckoSession(newSession, targetUrl, false)
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "Failed to adopt extension tab session", t)
-                            try { if (newSession.isOpen) newSession.close() } catch (_: Throwable) {}
-                        }
-                    }
-                }
-                handler.post(adoptWhenOpened)
-                return GeckoResult.fromValue(newSession)
-            }
-
-            override fun onOpenOptionsPage(source: WebExtension): GeckoResult<AllowOrDeny>? {
-                val ctx = appContext ?: return GeckoResult.fromValue(AllowOrDeny.DENY)
-                val optionsUrl = resolveExtensionOptionsUrl(source)
-                if (optionsUrl.isNullOrBlank()) {
-                    return GeckoResult.fromValue(AllowOrDeny.DENY)
-                }
-                val activity = findActivityForExtensions(ctx)
-                    ?: return GeckoResult.fromValue(AllowOrDeny.DENY)
-                val title = source.metaData?.name ?: source.id
-                Handler(Looper.getMainLooper()).post {
-                    try {
-                        activity.addAlbum("$title Settings", optionsUrl, true)
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Failed to open options page for ${source.id}", t)
-                    }
-                }
-                return GeckoResult.fromValue(AllowOrDeny.ALLOW)
-            }
-        }
-    }
-
-    /**
-     * The live BrowserActivity. [appContext] is the application context and can never be
-     * unwrapped to an Activity, so the activity seen by [attach] is tracked separately.
-     */
-    private fun findActivityForExtensions(context: Context): BrowserActivity? {
-        activityRef?.get()?.takeIf { !it.isFinishing && !it.isDestroyed }?.let { return it }
-        return findBrowserActivity(context)
     }
 
     /**
@@ -1257,12 +1166,7 @@ object PetalExtensionManager {
             onResult(false, message)
             return
         }
-        val ctx = appContext ?: run {
-            val message = "The extension system isn't ready yet. Please try again in a moment."
-            _lastError.value = message
-            onResult(false, message)
-            return
-        }
+        val ctx = appContext ?: return
         attach(ctx)
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
         _busy.value = true

@@ -2,10 +2,5 @@
   "manifest_version": 2,
   "name": "Petal Feeds & News",
   "version": "1.0.0",
-  "description": "Brave-style privacy RSS news aggregator with custom sources and rich thumbnails.",
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "petal-brave-news@petalbrowser.app"
-    }
-  }
+  "description": "Brave-style privacy RSS news aggregator with custom sources and rich thumbnails."
 }

@@ -52,28 +52,7 @@ object PetalCuratedExtensionsData {
     /** Returns real Mozilla AMO CDN icon URL if known */
     fun getAmoIconUrl(slugOrId: String): String? {
         val clean = slugOrId.lowercase().trim()
-        // Keys are matched case-insensitively: several real extension IDs (uBlock0@..,
-        // sponsorBlocker@.., jid1-..@jetpack) contain capitals and never matched a lowercased lookup.
-        return amoIconUrlsByLowerKey[clean]
-    }
-
-    /**
-     * Maps a Gecko extension ID (GUID / e-mail style) back to its AMO slug, using the icon table
-     * where both forms point at the same icon. Returns null for IDs that are not curated.
-     */
-    fun slugForExtensionId(extensionId: String): String? = idToSlug[extensionId.trim().lowercase()]
-
-    private val amoIconUrlsByLowerKey: Map<String, String> by lazy {
-        amoIconUrls.mapKeys { it.key.lowercase() }
-    }
-
-    private val idToSlug: Map<String, String> by lazy {
-        fun isId(key: String) = key.contains('@') || key.startsWith("{")
-        val slugByIcon = amoIconUrls.entries.filter { !isId(it.key) }.associate { it.value to it.key }
-        amoIconUrls.entries
-            .filter { isId(it.key) }
-            .mapNotNull { e -> slugByIcon[e.value]?.let { e.key.lowercase() to it } }
-            .toMap()
+        return amoIconUrls[clean]
     }
 
     private val amoIconUrls: Map<String, String> = mapOf(
