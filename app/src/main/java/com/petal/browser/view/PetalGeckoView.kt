@@ -63,7 +63,7 @@ class PetalGeckoView @JvmOverloads constructor(
     adoptedSession: GeckoSession? = null,
     initialIncognito: Boolean = false,
     val engineSession: mozilla.components.concept.engine.EngineSession? = null
-) : FrameLayout(context, attrs, defStyleAttr), AlbumController, NestedScrollingChild3 {
+) : FrameLayout(context, attrs, defStyleAttr), AlbumController {
 
     companion object {
         /** Max device-pixel scroll offset still considered "at top". */
@@ -626,7 +626,6 @@ class PetalGeckoView @JvmOverloads constructor(
         fun onScrollPositionChanged(scrollY: Int, contentHeight: Int) {}
     }
 
-    private val childHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)
     val geckoView: GeckoView = SafeGeckoView(context).apply {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             com.petal.browser.ui.glass.GeckoGlassBackend.useTextureView(this)
@@ -707,7 +706,6 @@ class PetalGeckoView @JvmOverloads constructor(
     private var sessionInitializationStarted: Boolean = false
 
     init {
-        isNestedScrollingEnabled = true
         addView(
             geckoView,
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
@@ -2415,6 +2413,18 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
+    fun setDynamicToolbarMaxHeight(toolbarHeightPx: Int) {
+        try {
+            geckoView.setDynamicToolbarMaxHeight(toolbarHeightPx)
+        } catch (_: Throwable) {}
+    }
+
+    fun setVerticalClipping(clippingHeightPx: Int) {
+        try {
+            geckoView.setVerticalClipping(clippingHeightPx)
+        } catch (_: Throwable) {}
+    }
+
     override fun destroy() {
         sessionState = SessionState.DESTROYED
         pendingLoadUrl = null
@@ -2447,14 +2457,6 @@ class PetalGeckoView @JvmOverloads constructor(
         return null
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // NestedScrollingChild3 Implementation
-    // ─────────────────────────────────────────────────────────────────────────
-
-    override fun setNestedScrollingEnabled(enabled: Boolean) {
-        childHelper.isNestedScrollingEnabled = enabled
-    }
-
     // ─────────────────────────────────────────────────────────────────
     // Predictive back edge gesture.
     //
@@ -2469,7 +2471,6 @@ class PetalGeckoView @JvmOverloads constructor(
     //
     // Official GeckoView guidance (matching how Fennec/Fenix keep the edge clear for the OS)
     // is to clear systemGestureExclusionRects on every ACTION_DOWN, before
-
     // the OS decides whether this touch belongs to the app or to a
     // predictive back/forward edge swipe - clearing it only after the
     // gesture has already started (as BrowserActivity's
@@ -2482,74 +2483,6 @@ class PetalGeckoView @JvmOverloads constructor(
         }
         return super.dispatchTouchEvent(event)
     }
-
-    override fun isNestedScrollingEnabled(): Boolean = childHelper.isNestedScrollingEnabled
-
-    override fun startNestedScroll(axes: Int, type: Int): Boolean = childHelper.startNestedScroll(axes, type)
-
-    override fun startNestedScroll(axes: Int): Boolean = startNestedScroll(axes, ViewCompat.TYPE_TOUCH)
-
-    override fun stopNestedScroll(type: Int) {
-        childHelper.stopNestedScroll(type)
-    }
-
-    override fun stopNestedScroll() {
-        stopNestedScroll(ViewCompat.TYPE_TOUCH)
-    }
-
-    override fun hasNestedScrollingParent(type: Int): Boolean = childHelper.hasNestedScrollingParent(type)
-
-    override fun hasNestedScrollingParent(): Boolean = hasNestedScrollingParent(ViewCompat.TYPE_TOUCH)
-
-    override fun dispatchNestedScroll(
-        dxConsumed: Int,
-        dyConsumed: Int,
-        dxUnconsumed: Int,
-        dyUnconsumed: Int,
-        offsetInWindow: IntArray?,
-        type: Int,
-        consumed: IntArray
-    ) {
-        childHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, offsetInWindow, type, consumed)
-    }
-
-    override fun dispatchNestedScroll(
-        dxConsumed: Int,
-        dyConsumed: Int,
-        dxUnconsumed: Int,
-        dyUnconsumed: Int,
-        offsetInWindow: IntArray?,
-        type: Int
-    ): Boolean = childHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, offsetInWindow, type)
-
-    override fun dispatchNestedScroll(
-        dxConsumed: Int,
-        dyConsumed: Int,
-        dxUnconsumed: Int,
-        dyUnconsumed: Int,
-        offsetInWindow: IntArray?
-    ): Boolean = dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, offsetInWindow, ViewCompat.TYPE_TOUCH)
-
-    override fun dispatchNestedPreScroll(
-        dx: Int,
-        dy: Int,
-        consumed: IntArray?,
-        offsetInWindow: IntArray?,
-        type: Int
-    ): Boolean = childHelper.dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow, type)
-
-    override fun dispatchNestedPreScroll(
-        dx: Int,
-        dy: Int,
-        consumed: IntArray?,
-        offsetInWindow: IntArray?
-    ): Boolean = dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow, ViewCompat.TYPE_TOUCH)
-
-    override fun dispatchNestedFling(velocityX: Float, velocityY: Float, consumed: Boolean): Boolean =
-        childHelper.dispatchNestedFling(velocityX, velocityY, consumed)
-
-    override fun dispatchNestedPreFling(velocityX: Float, velocityY: Float): Boolean =
-        childHelper.dispatchNestedPreFling(velocityX, velocityY)
 
     override fun gatherTransparentRegion(region: Region?): Boolean {
         return try {
@@ -2900,52 +2833,7 @@ class SafeGeckoView : GeckoView {
     }
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
-        val event = MotionEvent.obtain(ev)
-        val action = ev.actionMasked
-        val eventY = ev.y
-
-        when (action) {
-            MotionEvent.ACTION_DOWN -> {
-                initialDownY = eventY
-                val isAtTop = (parent as? PetalGeckoView)?.isPageAtTop() ?: false
-                gestureCanReachParent = isAtTop
-                if (!isAtTop) {
-                    parent?.requestDisallowInterceptTouchEvent(true)
-                } else {
-                    parent?.requestDisallowInterceptTouchEvent(false)
-                }
-                val handled = super.onTouchEvent(event)
-                event.recycle()
-                return handled
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                if (eventY < initialDownY) {
-                    // Scrolling up into webpage content: immediately disallow parent interception
-                    // so pull-to-refresh never conflicts with webpage scrolling or fling gestures
-                    gestureCanReachParent = false
-                    parent?.requestDisallowInterceptTouchEvent(true)
-                } else if (!gestureCanReachParent && eventY > initialDownY) {
-                    val isAtTop = (parent as? PetalGeckoView)?.isPageAtTop() ?: false
-                    if (isAtTop) {
-                        gestureCanReachParent = true
-                        parent?.requestDisallowInterceptTouchEvent(false)
-                    }
-                }
-            }
-
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                inputResult = PanZoomController.INPUT_RESULT_UNHANDLED
-                overscrollDirections = PanZoomController.OVERSCROLL_FLAG_VERTICAL
-                scrollDirections = 0
-                parent?.requestDisallowInterceptTouchEvent(false)
-                gestureCanReachParent = true
-            }
-        }
-
-        val eventHandled = super.onTouchEvent(event)
-        event.recycle()
-        return eventHandled
+        return super.onTouchEvent(ev)
     }
 
     private fun updateInputResult(event: MotionEvent) {

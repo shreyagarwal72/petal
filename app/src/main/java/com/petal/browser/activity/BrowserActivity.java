@@ -906,7 +906,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // Web content (especially GeckoView) may update gesture-exclusion rects
                 // while a page is loading. Clear them immediately when Android starts the
                 // predictive-back gesture so both websites and the Petal homepage receive it.
-                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                    ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).resetGestureExclusionRects();
+                } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                     ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
                 }
 
@@ -980,7 +982,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // Never allow browser content to reserve the system back edges.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             getWindow().getDecorView().post(() -> {
-                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                    ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).resetGestureExclusionRects();
+                } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                     ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
                 }
 
@@ -2830,7 +2834,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (compose != null) compose.setVisibility(VISIBLE);
     }
 
+    public boolean areBarsAnimating() {
+        if (contentPaddingAnimator != null && contentPaddingAnimator.isRunning()) {
+            return true;
+        }
+        for (androidx.dynamicanimation.animation.SpringAnimation spring : barSprings.values()) {
+            if (spring != null && spring.isRunning()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void updateDynamicToolbarHeights(int toolbarHeightPx) {
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).setDynamicToolbarMaxHeight(toolbarHeightPx);
+        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).setDynamicToolbarMaxHeight(toolbarHeightPx);
+        } else if (activeGeckoView != null) {
+            activeGeckoView.setDynamicToolbarMaxHeight(toolbarHeightPx);
+        }
+    }
+
+    private void updateVerticalClipping(int clippingHeightPx) {
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).setVerticalClipping(clippingHeightPx);
+        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).setVerticalClipping(clippingHeightPx);
+        } else if (activeGeckoView != null) {
+            activeGeckoView.setVerticalClipping(clippingHeightPx);
+        }
+    }
+
     public void applyAddressBarPosition() {
+        android.os.Trace.beginSection("BrowserActivity:applyAddressBarPosition");
         try {
             boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
             View addressBar = findViewById(R.id.compose_address_bar);
@@ -2883,6 +2920,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             final int addressHeight = addressBar.getVisibility() == GONE ? 0 : (addressBar.getHeight() > 0 ? addressBar.getHeight() : (int) HelperUnit.convertDpToPixel(60f, context));
+            updateDynamicToolbarHeights(addressHeight);
             // Use the actual Compose bottom-nav height, NOT the container height.
             // The bottom_nav_container (a RelativeLayout with wrap_content height) can
             // incorrectly measure at the full screen height when RelativeLayout resolves
@@ -3162,6 +3200,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         } catch (Exception e) {
             Log.e(TAG, "Error applying address bar position", e);
+        } finally {
+            android.os.Trace.endSection();
         }
     }
 
@@ -4516,9 +4556,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     private void setBarTranslationNow(View v, float y) {
-        androidx.dynamicanimation.animation.SpringAnimation old = barSprings.get(v);
-        if (old != null && old.isRunning()) old.cancel();
-        v.setTranslationY(y);
+        android.os.Trace.beginSection("BrowserActivity:setBarTranslation");
+        try {
+            androidx.dynamicanimation.animation.SpringAnimation old = barSprings.get(v);
+            if (old != null && old.isRunning()) old.cancel();
+            v.setTranslationY(y);
+            View addressBar = findViewById(R.id.compose_address_bar);
+            if (v == addressBar) {
+                // Inform Gecko of dynamic vertical clipping so fixed/sticky elements track the bar
+                updateVerticalClipping((int) -y);
+            }
+        } finally {
+            android.os.Trace.endSection();
+        }
     }
 
     private void animateContentPadding(int targetTop, int targetBottom) {
@@ -4555,6 +4605,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 .setStiffness(stiffness)
                 .setDampingRatio(dampingRatio));
         barSprings.put(view, anim);
+        View addressBar = findViewById(R.id.compose_address_bar);
+        if (view == addressBar) {
+            anim.addUpdateListener((animation, value, velocity) -> updateVerticalClipping((int) -value));
+        }
         anim.start();
     }
 
@@ -4857,7 +4911,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 isScrolledToTop = activeGeckoView.getScrollY() <= 0;
             }
 
-            return isScrolledToTop && !refreshState.isRefreshing();
+            return isScrolledToTop && !refreshState.isRefreshing() && !areBarsAnimating();
         });
 
         final androidx.compose.ui.platform.ComposeView finalRefreshView = refreshBarCompose;

@@ -111,7 +111,7 @@ object PetalGeckoRuntime {
         }
 
         val settingsBuilder = GeckoRuntimeSettings.Builder()
-            .aboutConfigEnabled(true)
+            .aboutConfigEnabled(isDebug)
             .trustedRecursiveResolverMode(trrMode)
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
@@ -138,9 +138,16 @@ object PetalGeckoRuntime {
 
         // Firefox official memory and performance optimizations
         try {
-            // Low memory device tuning
+            // Low-RAM device tuning: constrain content process count and memory caches
             if (isLowRamDevice) {
                 Log.i(TAG, "Configuring GeckoRuntime for low-RAM device profile (in-process extensions, constrained memory limits)")
+                // Restrict web content isolation strategy to avoid separate content process sprawl
+                try {
+                    settingsBuilder.webContentIsolationStrategy(GeckoRuntimeSettings.STRATEGY_ISOLATE_NOTHING)
+                } catch (_: Throwable) {}
+                try {
+                    settingsBuilder.contentProcessCount(1)
+                } catch (_: Throwable) {}
             }
         } catch (t: Throwable) {
             Log.w(TAG, "Could not apply optional runtime settings: ${t.message}")
@@ -168,26 +175,15 @@ object PetalGeckoRuntime {
 
     /**
      * Official Firefox GeckoView memory management bridge.
-     * Propagates system onTrimMemory / onLowMemory signals to GeckoRuntime and Android Components,
-     * freeing native image decoders, font caches, JIT memory, and background tab DOM trees.
+     * Purges only volatile image decodes at TRIM_MEMORY_RUNNING_LOW and avoids clearing
+     * all caches (preserving network cache, bytecode, and DOM cache for Gecko to manage).
      */
     @JvmStatic
     fun onTrimMemory(context: Context, level: Int) {
         val rt = runtime ?: return
-        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL ||
-            level >= android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             try {
-                // Purge all volatile caches (image decodes, network cache, memory caches)
-                rt.storageController.clearData(
-                    org.mozilla.geckoview.StorageController.ClearFlags.ALL_CACHES
-                )
-                Log.d(TAG, "Purged all Gecko caches on critical memory trim level $level")
-            } catch (t: Throwable) {
-                Log.d(TAG, "Failed to purge caches on critical memory: ${t.message}")
-            }
-        } else if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
-            try {
-                // Purge volatile image caches in StorageController
+                // Purge volatile image caches in StorageController; let Gecko manage the rest
                 rt.storageController.clearData(
                     org.mozilla.geckoview.StorageController.ClearFlags.IMAGE_CACHE
                 )
@@ -199,11 +195,11 @@ object PetalGeckoRuntime {
     }
 
     /**
-     * Handles system onLowMemory callback by aggressively purging caches.
+     * Handles system onLowMemory callback by purging only volatile image cache.
      */
     @JvmStatic
     fun onLowMemory(context: Context) {
-        onTrimMemory(context, android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
+        onTrimMemory(context, android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
     }
 
     @JvmStatic

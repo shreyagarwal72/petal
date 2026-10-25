@@ -431,33 +431,48 @@ class PetalTabViewController private constructor(
             // GeckoSession ScrollDelegate for Tactile Haptics and Address Bar Collapsing on scroll
             gs.scrollDelegate = object : org.mozilla.geckoview.GeckoSession.ScrollDelegate {
                 private var lastAddressBarScrollY: Int = 0
-                private var scrollRun: Int = 0
+                private var accumulatedScrollY: Int = 0
 
                 override fun onScrollChanged(session: org.mozilla.geckoview.GeckoSession, scrollX: Int, scrollY: Int) {
-                    val act = resolveActivity(context) ?: return
-                    act.runOnUiThread {
-                        val density = context.resources.displayMetrics.density
-                        val hideAfterPx = 72f * density
-                        val showAfterPx = 28f * density
-                        val deltaY = scrollY - lastAddressBarScrollY
-                        lastAddressBarScrollY = scrollY
+                    android.os.Trace.beginSection("PetalTab:onScrollChanged")
+                    try {
+                        val act = resolveActivity(context) ?: return
+                        act.runOnUiThread {
+                            android.os.Trace.beginSection("PetalTab:updateToolbarOnScroll")
+                            try {
+                                val density = context.resources.displayMetrics.density
+                                val minScrollThreshold = (8f * density).toInt()
+                                val hideThreshold = (56f * density).toInt()
+                                val showThreshold = (24f * density).toInt()
+                                val deltaY = scrollY - lastAddressBarScrollY
+                                lastAddressBarScrollY = scrollY
 
-                        if (act is com.petal.browser.activity.BrowserActivity) {
-                            if (scrollY <= 2) {
-                                scrollRun = 0
-                                act.animateAddressBarCollapse(false)
-                            } else if (deltaY != 0) {
-                                if ((deltaY > 0) != (scrollRun > 0)) scrollRun = 0
-                                scrollRun += deltaY
-                                if (scrollRun > hideAfterPx) {
-                                    scrollRun = 0
-                                    act.animateAddressBarCollapse(true)
-                                } else if (scrollRun < -showAfterPx) {
-                                    scrollRun = 0
-                                    act.animateAddressBarCollapse(false)
+                                if (act is com.petal.browser.activity.BrowserActivity) {
+                                    if (scrollY <= (2f * density).toInt()) {
+                                        accumulatedScrollY = 0
+                                        act.animateAddressBarCollapse(false)
+                                    } else if (deltaY != 0) {
+                                        // Reset accumulation if direction flipped
+                                        if ((deltaY > 0 && accumulatedScrollY < 0) || (deltaY < 0 && accumulatedScrollY > 0)) {
+                                            accumulatedScrollY = 0
+                                        }
+                                        accumulatedScrollY += deltaY
+
+                                        if (accumulatedScrollY > hideThreshold) {
+                                            accumulatedScrollY = 0
+                                            act.animateAddressBarCollapse(true)
+                                        } else if (accumulatedScrollY < -showThreshold) {
+                                            accumulatedScrollY = 0
+                                            act.animateAddressBarCollapse(false)
+                                        }
+                                    }
                                 }
+                            } finally {
+                                android.os.Trace.endSection()
                             }
                         }
+                    } finally {
+                        android.os.Trace.endSection()
                     }
                 }
             }
@@ -829,6 +844,31 @@ class PetalTabViewController private constructor(
             }
         }
         return null
+    }
+
+    fun resetGestureExclusionRects() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            try {
+                val emptyRects: List<android.graphics.Rect> = java.util.Collections.emptyList()
+                systemGestureExclusionRects = emptyRects
+                findGeckoView(engineView.asView())?.systemGestureExclusionRects = emptyRects
+                for (i in 0 until childCount) {
+                    getChildAt(i)?.systemGestureExclusionRects = emptyRects
+                }
+            } catch (_: Throwable) {}
+        }
+    }
+
+    fun setDynamicToolbarMaxHeight(toolbarHeightPx: Int) {
+        try {
+            findGeckoView(engineView.asView())?.setDynamicToolbarMaxHeight(toolbarHeightPx)
+        } catch (_: Throwable) {}
+    }
+
+    fun setVerticalClipping(clippingHeightPx: Int) {
+        try {
+            findGeckoView(engineView.asView())?.setVerticalClipping(clippingHeightPx)
+        } catch (_: Throwable) {}
     }
 
     /** GeckoView-only integration point used for WebExtension delegates. */
