@@ -182,32 +182,12 @@ private fun Modifier.liquidGlassSheen(
         is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
     }
 
-    // 1. Soft top specular reflection sheen + subtle caustic gradient
-    clipPath(path) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                0f to Color.White.copy(alpha = (0.16f * sheenIntensity).coerceIn(0f, 1f)),
-                0.35f to Color.White.copy(alpha = (0.04f * sheenIntensity).coerceIn(0f, 1f)),
-                0.70f to Color.Transparent,
-                1f to (if (tintColor != Color.Unspecified) tintColor.copy(alpha = 0.05f * sheenIntensity) else Color.White.copy(alpha = 0.02f * sheenIntensity)),
-                startY = 0f,
-                endY = size.height,
-            ),
-        )
-    }
-
-    // 2. High-precision dual-angle chromatic rim reflection stroke (light incident from top-left)
+    // Single even hairline; no specular gradient or chromatic glow.
     drawPath(
         path = path,
-        brush = Brush.linearGradient(
-            0f to Color.White.copy(alpha = (0.48f * sheenIntensity).coerceIn(0f, 1f)),
-            0.30f to (if (tintColor != Color.Unspecified) tintColor.copy(alpha = (0.28f * sheenIntensity).coerceIn(0f, 1f)) else Color.White.copy(alpha = (0.15f * sheenIntensity).coerceIn(0f, 1f))),
-            0.70f to Color.White.copy(alpha = (0.06f * sheenIntensity).coerceIn(0f, 1f)),
-            1f to Color.White.copy(alpha = (0.24f * sheenIntensity).coerceIn(0f, 1f)),
-            start = Offset.Zero,
-            end = Offset(size.width, size.height),
-        ),
-        style = Stroke(width = 1.15.dp.toPx()),
+        color = (if (tintColor != Color.Unspecified) tintColor else Color.White)
+            .copy(alpha = (0.22f * sheenIntensity).coerceIn(0.05f, 0.40f)),
+        style = Stroke(width = 1.dp.toPx()),
     )
 }
 

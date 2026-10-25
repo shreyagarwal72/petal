@@ -18,6 +18,10 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.components.PetalGlassFit
+
+import com.petal.browser.ui.components.PetalChip
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -305,11 +309,12 @@ fun PetalFloatingStatusCard(
                         // Secondary Action Button (if provided)
                         if (data.secondaryActionLabel != null && data.onSecondaryAction != null) {
                             val secShape = RoundedCornerShape(50)
-                            Button(
+                            PetalGlassFit(glass = isGlass, shape = secShape, sheenIntensity = 0.4f, modifier = Modifier) { gm ->
+                                Button(
                                 onClick = data.onSecondaryAction,
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                 shape = secShape,
-                                modifier = if (isGlass) Modifier.liquidGlassChrome(shape = secShape, enabled = true, sheenIntensity = 0.4f) else Modifier,
+                                modifier = gm,
                                 colors = ButtonDefaults.filledTonalButtonColors(
                                     containerColor = if (isGlass) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -322,17 +327,19 @@ fun PetalFloatingStatusCard(
                                     )
                                 )
                             }
+                            }
                             Spacer(Modifier.width(6.dp))
                         }
 
                         // Primary Action Button
                         if (data.primaryActionLabel != null && data.onPrimaryAction != null) {
                             val primShape = RoundedCornerShape(50)
-                            Button(
+                            PetalGlassFit(glass = isGlass, shape = primShape, sheenIntensity = 0.5f, modifier = Modifier) { gm ->
+                                Button(
                                 onClick = data.onPrimaryAction,
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                                 shape = primShape,
-                                modifier = if (isGlass) Modifier.liquidGlassChrome(shape = primShape, enabled = true, sheenIntensity = 0.5f) else Modifier,
+                                modifier = gm,
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -344,6 +351,7 @@ fun PetalFloatingStatusCard(
                                         fontWeight = FontWeight.Bold
                                     )
                                 )
+                            }
                             }
                             Spacer(Modifier.width(4.dp))
                         }

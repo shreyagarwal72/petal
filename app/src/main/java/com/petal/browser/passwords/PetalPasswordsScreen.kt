@@ -1,5 +1,9 @@
 package com.petal.browser.passwords
 
+import com.petal.browser.ui.components.PetalGlassFit
+
+import com.petal.browser.ui.components.PetalChip
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -687,7 +691,9 @@ private fun PasswordDetailsSheet(
 
             // Breach audit check button
             val checkBtnShape = RoundedCornerShape(16.dp)
-            OutlinedButton(
+            PetalGlassFit(glass = isGlass, shape = checkBtnShape, sheenIntensity = 0.4f, modifier = Modifier
+                    .fillMaxWidth()) { gm ->
+                OutlinedButton(
                 onClick = {
                     haptic.playClick(context)
                     isCheckingBreach = true
@@ -701,9 +707,7 @@ private fun PasswordDetailsSheet(
                         }
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (isGlass) Modifier.liquidGlassChrome(checkBtnShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+                modifier = gm,
                 shape = checkBtnShape,
                 border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
@@ -716,6 +720,7 @@ private fun PasswordDetailsSheet(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Check for Breaches")
                 }
+            }
             }
 
             if (breachStatus != null) {
@@ -733,16 +738,17 @@ private fun PasswordDetailsSheet(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 val actionShape = RoundedCornerShape(16.dp)
-                OutlinedButton(
+                PetalGlassFit(glass = isGlass, shape = actionShape, sheenIntensity = 0.4f, modifier = Modifier
+                        .weight(1f)) { gm ->
+                    OutlinedButton(
                     onClick = onDelete,
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    modifier = Modifier
-                        .weight(1f)
-                        .then(if (isGlass) Modifier.liquidGlassChrome(actionShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+                    modifier = gm,
                     shape = actionShape,
                     border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
                 ) {
                     Text("Delete")
+                }
                 }
                 Button(
                     onClick = onEdit,

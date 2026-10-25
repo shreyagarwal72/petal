@@ -331,9 +331,7 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
     val place = remember { GlassPanelPlace() }
     val glass = rememberGraphicsLayer()
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
-    val glowPref = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
     return onGloballyPositioned { place.coords = it; place.origin = it.positionInRoot() }
         .drawWithCache {
             val outline = Path().apply {
@@ -359,23 +357,9 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
                 ceil(size.width + 2 * pad).toInt().coerceAtLeast(1),
                 ceil(size.height + 2 * pad).toInt().coerceAtLeast(1)
             )
-            // Chromatic dual-angle glowing rim reflecting theme primary accent and specular highlight
-            val rim = Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = ((if (dark) 0.50f else 0.85f) * edge).coerceIn(0f, 1f)),
-                    primaryColor.copy(alpha = ((if (dark) 0.35f else 0.45f) * edge * glowPref).coerceIn(0f, 1f)),
-                    Color.White.copy(alpha = ((if (dark) 0.08f else 0.20f) * edge).coerceIn(0f, 1f)),
-                    Color.White.copy(alpha = ((if (dark) 0.25f else 0.45f) * edge).coerceIn(0f, 1f))
-                ),
-                start = Offset.Zero,
-                end = Offset(size.width, size.height)
-            )
-            val spec = Brush.verticalGradient(
-                listOf(
-                    Color.White.copy(alpha = (0.28f * edge).coerceIn(0f, 1f)),
-                    Color.Transparent
-                ),
-                endY = 4.dp.toPx()
+            // Material-style hairline: one even 1dp outline, no chromatic glow, no top specular bar.
+            val rim = androidx.compose.ui.graphics.SolidColor(
+                outlineColor.copy(alpha = ((if (dark) 0.55f else 0.70f) * edge.coerceIn(0.5f, 1.2f)).coerceIn(0f, 0.85f))
             )
             onDrawBehind {
                 try {
@@ -398,9 +382,8 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
                             }
                         }
                         drawRect(if (Build.VERSION.SDK_INT < 31) tint.copy(alpha = .85f) else tint)
-                        drawRect(spec)
                     }
-                    drawPath(outline, rim, style = Stroke((1.25.dp * (0.8f + edge * 0.4f)).toPx()))
+                    drawPath(outline, rim, style = Stroke(1.dp.toPx()))
                 } catch (_: Throwable) {
                     drawRect(tint)
                 }

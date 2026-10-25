@@ -1,5 +1,9 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.components.PetalGlassFit
+
+import com.petal.browser.ui.components.PetalChip
+
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
 
@@ -442,7 +446,7 @@ fun AppearanceSettingsScreenContent(
                                         quickLanguages.forEach { lang ->
                                             val isSelected = appLanguage == lang.tag
                                             val chipShape = RoundedCornerShape(12.dp)
-                                            FilterChip(
+                                            PetalChip(
                                                 selected = isSelected,
                                                 onClick = {
                                                     if (appLanguage != lang.tag) {
@@ -450,27 +454,7 @@ fun AppearanceSettingsScreenContent(
                                                         HelperUnit.setAppLanguage(context, lang.tag)
                                                     }
                                                 },
-                                                shape = chipShape,
-                                                border = if (isGlass) null else FilterChipDefaults.filterChipBorder(enabled = true, selected = isSelected),
-                                                modifier = if (isGlass) {
-                                                    Modifier.liquidGlassChrome(
-                                                        shape = chipShape,
-                                                        enabled = true,
-                                                        sheenIntensity = if (isSelected) 0.5f else 0.25f
-                                                    )
-                                                } else Modifier,
-                                                colors = FilterChipDefaults.filterChipColors(
-                                                    containerColor = if (isGlass) {
-                                                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f)
-                                                    } else MaterialTheme.colorScheme.surfaceContainerLow,
-                                                    selectedContainerColor = if (isGlass) {
-                                                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
-                                                    } else MaterialTheme.colorScheme.secondaryContainer
-                                                ),
-                                                label = { Text(lang.nativeName) },
-                                                leadingIcon = if (isSelected) {
-                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                                } else null
+                                                label = lang.nativeName
                                             )
                                         }
                                     }
