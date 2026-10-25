@@ -1,3 +1,13 @@
+### Unreleased — Predictive back styles
+
+#### 🎞️ Animations
+- **Back animation style slider**: With *Predictive Back Animations* on, Display settings now shows a slider with five styles: **Petal** (the previous animation), **AOSP**, **MIUIX**, **Scale** and **Classic**. The choice applies to every screen immediately.
+- **Live preview**: A looping mini-phone plays the selected style (commit, then cancel, from alternating edges) with your depth-blur setting applied, so you can compare styles while sliding.
+- **Depth blur combines with every style**: The revealed screen is blurred and dimmed in each style and clears as the gesture completes.
+- **Scale exit direction**: The Scale style can follow the gesture or always exit right or left.
+- **Live underlay follows the style**: The real browsing surface revealed behind an overlay uses the selected style's pose.
+- AOSP, MIUIX, Scale and Classic are ported from InstallerX Revived's predictive back transitions (GPL-3.0).
+
 ### Unreleased — Official Mozilla download engine
 
 #### ⬇️ Downloads

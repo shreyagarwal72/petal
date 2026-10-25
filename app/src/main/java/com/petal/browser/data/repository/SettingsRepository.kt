@@ -83,6 +83,8 @@ interface SettingsRepository {
     val scrollHaptics: Flow<Boolean>
     val predictiveBack: Flow<Boolean>
     val depthBlur: Flow<Boolean>
+    val predictiveBackStyle: Flow<com.petal.browser.predictive.PetalBackStyle>
+    val predictiveBackExitDirection: Flow<com.petal.browser.predictive.PetalBackExitDirection>
     val fontSizeScale: Flow<Float>
     val zoomLevelScale: Flow<Float>
     val forceZoom: Flow<Boolean>
@@ -191,6 +193,8 @@ interface SettingsRepository {
     suspend fun setScrollHaptics(enabled: Boolean)
     suspend fun setPredictiveBack(enabled: Boolean)
     suspend fun setDepthBlur(enabled: Boolean)
+    suspend fun setPredictiveBackStyle(style: com.petal.browser.predictive.PetalBackStyle)
+    suspend fun setPredictiveBackExitDirection(direction: com.petal.browser.predictive.PetalBackExitDirection)
     suspend fun setFontSizeScale(scale: Float)
     suspend fun setZoomLevelScale(scale: Float)
     suspend fun setForceZoom(enabled: Boolean)

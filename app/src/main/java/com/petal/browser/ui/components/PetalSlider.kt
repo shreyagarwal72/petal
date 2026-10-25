@@ -44,12 +44,15 @@ fun PetalSlider(
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     enabled: Boolean = true,
-    onValueChangeFinished: (() -> Unit)? = null
+    onValueChangeFinished: (() -> Unit)? = null,
+    /** Number of discrete stops between the ends (0 = continuous). */
+    steps: Int = 0,
 ) {
     Slider(
         value = value,
         onValueChange = onValueChange,
         valueRange = valueRange,
+        steps = steps,
         enabled = enabled,
         onValueChangeFinished = onValueChangeFinished,
         modifier = modifier.height(TrackHeight),

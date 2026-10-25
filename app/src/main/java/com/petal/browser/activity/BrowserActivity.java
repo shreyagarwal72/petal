@@ -526,17 +526,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     private void applyLiveUnderlay(View v, float progress, int swipeEdge) {
-        float eased = predictiveBackEasing.getInterpolation(Math.max(0f, Math.min(1f, progress)));
-        float dir = swipeEdge == BackEventCompat.EDGE_RIGHT ? (1f / 3f) : (-1f / 3f);
-        float scale = 0.94f + 0.06f * eased;
-        v.setScaleX(scale);
-        v.setScaleY(scale);
-        v.setTranslationX(v.getWidth() * dir * (1f - eased));
+        // The selected predictive back style (Petal / AOSP / MIUIX / Scale / Classic) publishes the
+        // pose of the revealed layer: {scale, translationX, translationY, dimAlpha, blurDp}.
+        float[] b = com.petal.browser.predictive.PetalLiveUnderlay.behindValues();
+        v.setScaleX(b[0]);
+        v.setScaleY(b[0]);
+        v.setTranslationX(b[1]);
+        v.setTranslationY(b[2]);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Depth blur + dim (24dp / 0.40 -> 0). Has no visible effect on a SurfaceView-backed
+            // Depth blur + dim. Has no visible effect on a SurfaceView-backed
             // GeckoView; works when the surface is TextureView-backed (glass backend).
-            float blurPx = 24f * (1f - eased) * getResources().getDisplayMetrics().density;
-            int dim = (int) (255f * 0.40f * (1f - eased));
+            float blurPx = b[4] * getResources().getDisplayMetrics().density;
+            int dim = (int) (255f * Math.max(0f, Math.min(1f, b[3])));
             android.graphics.RenderEffect dimFx = android.graphics.RenderEffect.createColorFilterEffect(
                     new android.graphics.PorterDuffColorFilter(
                             android.graphics.Color.argb(dim, 0, 0, 0), android.graphics.PorterDuff.Mode.SRC_ATOP));
@@ -571,6 +572,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             v.setScaleX(1f);
             v.setScaleY(1f);
             v.setTranslationX(0f);
+            v.setTranslationY(0f);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) v.setRenderEffect(null);
             // Committed back runs showAlbum(), which makes the surface visible and clears
             // isOverlayScreenShowing. Cancelled (or nested) back leaves the overlay up: hide again.

@@ -27,6 +27,12 @@ class DisplaySettingsViewModel @Inject constructor(
     val depthBlur: StateFlow<Boolean> = settingsRepository.depthBlur
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val predictiveBackStyle: StateFlow<com.petal.browser.predictive.PetalBackStyle> = settingsRepository.predictiveBackStyle
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.petal.browser.predictive.PetalBackStyle.Petal)
+
+    val predictiveBackExitDirection: StateFlow<com.petal.browser.predictive.PetalBackExitDirection> = settingsRepository.predictiveBackExitDirection
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.petal.browser.predictive.PetalBackExitDirection.AlwaysRight)
+
     val fontSizeScale: StateFlow<Float> = settingsRepository.fontSizeScale
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
 
@@ -55,6 +61,14 @@ class DisplaySettingsViewModel @Inject constructor(
 
     fun setPredictiveBack(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setPredictiveBack(enabled)
+    }
+
+    fun setPredictiveBackStyle(style: com.petal.browser.predictive.PetalBackStyle) = viewModelScope.launch {
+        settingsRepository.setPredictiveBackStyle(style)
+    }
+
+    fun setPredictiveBackExitDirection(direction: com.petal.browser.predictive.PetalBackExitDirection) = viewModelScope.launch {
+        settingsRepository.setPredictiveBackExitDirection(direction)
     }
 
     fun setDepthBlur(enabled: Boolean) = viewModelScope.launch {

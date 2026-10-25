@@ -319,6 +319,16 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean(PetalPredictiveJunction.KEY_DEPTH_BLUR_ENABLED, true)
     }
 
+    override val predictiveBackStyle: Flow<com.petal.browser.predictive.PetalBackStyle> =
+        preferenceFlow(PetalPredictiveJunction.KEY_BACK_STYLE) {
+            com.petal.browser.predictive.PetalBackStyle.fromKey(sp.getString(PetalPredictiveJunction.KEY_BACK_STYLE, null))
+        }
+
+    override val predictiveBackExitDirection: Flow<com.petal.browser.predictive.PetalBackExitDirection> =
+        preferenceFlow(PetalPredictiveJunction.KEY_BACK_EXIT_DIRECTION) {
+            com.petal.browser.predictive.PetalBackExitDirection.fromKey(sp.getString(PetalPredictiveJunction.KEY_BACK_EXIT_DIRECTION, null))
+        }
+
     override val fontSizeScale: Flow<Float> = preferenceFlow("sp_font_size_scale") {
         sp.getFloat("sp_font_size_scale", 1.0f)
     }
@@ -751,6 +761,14 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setDepthBlur(enabled: Boolean) {
         PetalPredictiveJunction.setDepthBlurEnabled(sp, enabled)
+    }
+
+    override suspend fun setPredictiveBackStyle(style: com.petal.browser.predictive.PetalBackStyle) {
+        PetalPredictiveJunction.setBackStyle(sp, style)
+    }
+
+    override suspend fun setPredictiveBackExitDirection(direction: com.petal.browser.predictive.PetalBackExitDirection) {
+        PetalPredictiveJunction.setBackExitDirection(sp, direction)
     }
 
     override suspend fun setFontSizeScale(scale: Float) {

@@ -264,7 +264,7 @@ object PetalSettingsSearchIndex {
             title = "Predictive Back Animations",
             subtitle = "Smooth Android 14+ predictive back gestures with live destination preview sheets",
             category = SettingsCategory.DISPLAY_ZOOM,
-            keywords = listOf("predictive back", "back gesture", "animations", "gesture navigation", "back preview")
+            keywords = listOf("predictive back", "back gesture", "animations", "gesture navigation", "back preview", "back animation style", "petal", "aosp", "miuix", "scale", "classic")
         ),
         SettingsSearchItem(
             id = "display_depth_blur",

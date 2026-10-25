@@ -31,6 +31,7 @@ import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
@@ -56,9 +57,12 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -80,6 +84,8 @@ object PetalPredictiveJunction {
     const val KEY_PREDICTIVE_BACK_ENABLED = "sp_predictive_back_junction_enabled"
     const val KEY_DEPTH_BLUR_ENABLED = "sp_depth_blur_junction_enabled"
     const val KEY_LIVE_UNDERLAY_ENABLED = "sp_live_underlay_junction_enabled"
+    const val KEY_BACK_STYLE = "sp_predictive_back_style"
+    const val KEY_BACK_EXIT_DIRECTION = "sp_predictive_back_exit_direction"
 
     private val _isPredictiveBackEnabled = MutableStateFlow(true)
     val isPredictiveBackEnabled: StateFlow<Boolean> = _isPredictiveBackEnabled.asStateFlow()
@@ -89,6 +95,24 @@ object PetalPredictiveJunction {
 
     private val _isLiveUnderlayEnabled = MutableStateFlow(true)
     val isLiveUnderlayEnabled: StateFlow<Boolean> = _isLiveUnderlayEnabled.asStateFlow()
+
+    private val _backStyle = MutableStateFlow(PetalBackStyle.Petal)
+    val backStyle: StateFlow<PetalBackStyle> = _backStyle.asStateFlow()
+
+    private val _backExitDirection = MutableStateFlow(PetalBackExitDirection.AlwaysRight)
+    val backExitDirection: StateFlow<PetalBackExitDirection> = _backExitDirection.asStateFlow()
+
+    @JvmStatic
+    fun setBackStyle(prefs: SharedPreferences, style: PetalBackStyle) {
+        _backStyle.value = style
+        prefs.edit().putString(KEY_BACK_STYLE, style.key).apply()
+    }
+
+    @JvmStatic
+    fun setBackExitDirection(prefs: SharedPreferences, direction: PetalBackExitDirection) {
+        _backExitDirection.value = direction
+        prefs.edit().putString(KEY_BACK_EXIT_DIRECTION, direction.key).apply()
+    }
 
     @JvmStatic
     fun setLiveUnderlayEnabled(prefs: SharedPreferences, enabled: Boolean) {
@@ -101,6 +125,8 @@ object PetalPredictiveJunction {
         _isLiveUnderlayEnabled.value = prefs.getBoolean(KEY_LIVE_UNDERLAY_ENABLED, true)
         _isPredictiveBackEnabled.value = prefs.getBoolean(KEY_PREDICTIVE_BACK_ENABLED, true)
         _isDepthBlurEnabled.value = prefs.getBoolean(KEY_DEPTH_BLUR_ENABLED, true)
+        _backStyle.value = PetalBackStyle.fromKey(prefs.getString(KEY_BACK_STYLE, null))
+        _backExitDirection.value = PetalBackExitDirection.fromKey(prefs.getString(KEY_BACK_EXIT_DIRECTION, null))
     }
 
     @JvmStatic
@@ -129,6 +155,15 @@ data class PredictiveBackState(
     val swipeEdge: Int = BackEventCompat.EDGE_LEFT,
     /** True when the real surface behind the overlay is being animated instead of a snapshot. */
     val liveUnderlay: Boolean = false,
+    val touchY: Float = 0f,
+    val initialTouchY: Float = 0f,
+    /** True once the finger lifted and the dismissal is settling to completion. */
+    val committing: Boolean = false,
+    val releaseProgress: Float = 0f,
+    /** Progress units per second at the moment of release. */
+    val releaseVelocity: Float = 0f,
+    /** Linear 0..1 position inside the commit settle. */
+    val settleTime: Float = 0f,
 ) {
     companion object {
         val Idle = PredictiveBackState()
@@ -155,17 +190,51 @@ fun PetalPredictiveBackSurface(
     val isUnderlayPreview = LocalIsUnderlayPreview.current
     val progressAnim = remember { Animatable(0f) }
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current.density
+    val screenWidthPx = configuration.screenWidthDp * density
+    val screenHeightPx = configuration.screenHeightDp * density
 
     if (!isUnderlayPreview && enabled) {
         if (junctionPredictiveEnabled) {
             PredictiveBackHandler(enabled = true) { progressFlow ->
+                // The style is latched per gesture so changing it mid-swipe can't glitch the frame.
+                val style = PetalPredictiveJunction.backStyle.value
+                val exitDirection = PetalPredictiveJunction.backExitDirection.value
                 var gestureStarted = false
                 var liveUnderlay = false
+                var initialTouchY = 0f
+                var lastProgress = 0f
+                var lastNanos = 0L
+                var velocity = 0f
+
+                fun publishUnderlay(state: PredictiveBackState) {
+                    if (!liveUnderlay) return
+                    val frame = PetalBackMotion.frame(
+                        style,
+                        state.toInput(style, exitDirection, junctionBlurEnabled, screenWidthPx, screenHeightPx, density),
+                    )
+                    PetalLiveUnderlay.publish(PetalBackMotion.behindValues(frame))
+                    PetalLiveUnderlay.progress(state.progress, state.swipeEdge)
+                }
+
                 try {
                     progressFlow.collect { backEvent ->
+                        val now = System.nanoTime()
                         if (!gestureStarted) {
                             gestureStarted = true
+                            initialTouchY = backEvent.touchY
+                            lastProgress = backEvent.progress
+                            lastNanos = now
                             liveUnderlay = PetalLiveUnderlay.begin(backEvent.swipeEdge)
+                        } else {
+                            val dt = (now - lastNanos) / 1_000_000_000f
+                            if (dt > 0.001f) {
+                                val instant = (backEvent.progress - lastProgress) / dt
+                                velocity = velocity * 0.5f + instant * 0.5f
+                                lastProgress = backEvent.progress
+                                lastNanos = now
+                            }
                         }
                         progressAnim.snapTo(backEvent.progress)
                         backState = PredictiveBackState(
@@ -173,22 +242,45 @@ fun PetalPredictiveBackSurface(
                             progress = backEvent.progress,
                             swipeEdge = backEvent.swipeEdge,
                             liveUnderlay = liveUnderlay,
+                            touchY = backEvent.touchY,
+                            initialTouchY = initialTouchY,
+                            releaseVelocity = velocity,
                         )
-                        if (liveUnderlay) PetalLiveUnderlay.progress(backEvent.progress, backEvent.swipeEdge)
+                        publishUnderlay(backState)
                     }
-                    progressAnim.snapTo(backState.progress)
-                    progressAnim.animateTo(
-                        targetValue = 1f,
-                        animationSpec = spring(
-                            stiffness = Spring.StiffnessMedium,
-                            dampingRatio = Spring.DampingRatioNoBouncy
-                        )
-                    ) {
-                        backState = backState.copy(isActive = true, progress = value)
-                        if (liveUnderlay) PetalLiveUnderlay.progress(value, backState.swipeEdge)
+
+                    // Finger lifted and the system committed the back: settle the dismissal.
+                    val release = backState.progress
+                    backState = backState.copy(committing = true, releaseProgress = release, settleTime = 0f)
+                    if (style.usesSpringCommit) {
+                        progressAnim.snapTo(release)
+                        progressAnim.animateTo(
+                            targetValue = 1f,
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessMedium,
+                                dampingRatio = Spring.DampingRatioNoBouncy
+                            )
+                        ) {
+                            val settle = ((value - release) / (1f - release).coerceAtLeast(0.01f)).coerceIn(0f, 1f)
+                            backState = backState.copy(progress = value, settleTime = settle)
+                            publishUnderlay(backState)
+                        }
+                    } else {
+                        val settleAnim = Animatable(0f)
+                        settleAnim.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(style.commitDurationMs, easing = LinearEasing)
+                        ) {
+                            val eased = style.commitEasing.transform(value)
+                            backState = backState.copy(
+                                progress = release + (1f - release) * eased,
+                                settleTime = value,
+                            )
+                            publishUnderlay(backState)
+                        }
                     }
-                    backState = backState.copy(isActive = true, progress = 1f)
-                    if (liveUnderlay) PetalLiveUnderlay.progress(1f, backState.swipeEdge)
+                    backState = backState.copy(progress = 1f, settleTime = 1f)
+                    publishUnderlay(backState)
                     try {
                         onBack()
                     } finally {
@@ -197,16 +289,22 @@ fun PetalPredictiveBackSurface(
                         backState = PredictiveBackState.Idle
                     }
                 } catch (e: CancellationException) {
-                    progressAnim.snapTo(backState.progress)
+                    val from = backState.progress
+                    backState = backState.copy(committing = false)
+                    progressAnim.snapTo(from)
                     progressAnim.animateTo(
                         targetValue = 0f,
-                        animationSpec = spring(
-                            stiffness = Spring.StiffnessMedium,
-                            dampingRatio = Spring.DampingRatioLowBouncy
-                        )
+                        animationSpec = if (style.usesSpringCommit) {
+                            spring(
+                                stiffness = Spring.StiffnessMedium,
+                                dampingRatio = Spring.DampingRatioLowBouncy
+                            )
+                        } else {
+                            spring(stiffness = 1500f, dampingRatio = Spring.DampingRatioNoBouncy)
+                        }
                     ) {
                         backState = backState.copy(isActive = true, progress = value)
-                        if (liveUnderlay) PetalLiveUnderlay.progress(value, backState.swipeEdge)
+                        publishUnderlay(backState)
                     }
                     if (liveUnderlay) PetalLiveUnderlay.end(false)
                     backState = PredictiveBackState.Idle
@@ -226,6 +324,30 @@ fun PetalPredictiveBackSurface(
         content()
     }
 }
+
+/** Maps live gesture state onto the engine's input for a surface of the given size. */
+fun PredictiveBackState.toInput(
+    style: PetalBackStyle,
+    exitDirection: PetalBackExitDirection,
+    blurEnabled: Boolean,
+    widthPx: Float,
+    heightPx: Float,
+    density: Float,
+): PetalBackInput = PetalBackInput(
+    progress = progress,
+    swipeEdge = swipeEdge,
+    touchY = if (touchY == 0f && initialTouchY == 0f) heightPx / 2f else touchY,
+    initialTouchY = if (touchY == 0f && initialTouchY == 0f) heightPx / 2f else initialTouchY,
+    widthPx = widthPx,
+    heightPx = heightPx,
+    density = density,
+    blurEnabled = blurEnabled,
+    committing = committing,
+    releaseProgress = releaseProgress,
+    releaseVelocity = releaseVelocity,
+    settleTime = settleTime,
+    exitDirection = exitDirection,
+)
 
 /**
  * Screen wrapper that applies predictive back visual effects and depth blur to full-screen Petal surfaces.
@@ -308,12 +430,29 @@ fun PetalScreenWrapper(
     } else 0.dp
 
     val isActive = predictiveBackState.isActive
-    val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
-    val scaleEased = PetalM3EmphasizedEasing.transform(progress)
+    val style by PetalPredictiveJunction.backStyle.collectAsState()
+    val exitDirection by PetalPredictiveJunction.backExitDirection.collectAsState()
+    val configuration = LocalConfiguration.current
+    val screenDensity = LocalDensity.current.density
+    val gestureLive = predictiveEnabled && isActive
+
+    fun gestureFrame(widthPx: Float, heightPx: Float, density: Float): PetalBackFrame? =
+        if (gestureLive) {
+            PetalBackMotion.frame(
+                style,
+                predictiveBackState.toInput(style, exitDirection, blurEnabled, widthPx, heightPx, density),
+            )
+        } else null
+
+    val frame = gestureFrame(
+        configuration.screenWidthDp * screenDensity,
+        configuration.screenHeightDp * screenDensity,
+        screenDensity,
+    )
 
     val currentBlurRadiusDp = if ((isBehindTopScreen || transitionBlurRadiusDp > 0.dp) && blurEnabled) {
-        if (isActive) {
-            (24f * (1f - scaleEased)).dp
+        if (frame != null) {
+            frame.behindBlurDp.dp
         } else if (transitionBlurRadiusDp > 0.dp) {
             transitionBlurRadiusDp
         } else {
@@ -327,11 +466,23 @@ fun PetalScreenWrapper(
         ) {
             // Layer 0: Background snapshot underlay (rendered when gesture is active or behind top screen)
             if (backgroundSnapshot != null && (isActive || isBehindTopScreen) && !(isActive && predictiveBackState.liveUnderlay)) {
-                val snapshotBlurRadius = if (blurEnabled) (24f * (1f - scaleEased)).dp else 0.dp
-                val snapshotDimAlpha = if (!blurEnabled) 0.75f * (1f - scaleEased) else 0.40f * (1f - scaleEased)
-                val snapshotScale = 0.94f + 0.06f * scaleEased
-                val swipeEdge = predictiveBackState.swipeEdge
-                val bgDirectionFactor = if (swipeEdge == BackEventCompat.EDGE_RIGHT) (1f / 3f) else (-1f / 3f)
+                // At rest (not mid-gesture) the snapshot keeps the original Petal pose.
+                val snapshotFrame = frame ?: PetalBackMotion.frame(
+                    PetalBackStyle.Petal,
+                    PetalBackInput(
+                        progress = 0f,
+                        swipeEdge = predictiveBackState.swipeEdge,
+                        touchY = 0f,
+                        initialTouchY = 0f,
+                        widthPx = configuration.screenWidthDp * screenDensity,
+                        heightPx = configuration.screenHeightDp * screenDensity,
+                        density = screenDensity,
+                        blurEnabled = blurEnabled,
+                    ),
+                )
+                val snapshotBlurRadius = snapshotFrame.behindBlurDp.dp
+                val snapshotDimAlpha = snapshotFrame.behindDim
+                val behindLayer = snapshotFrame.behind
 
                 Box(
                     modifier = Modifier
@@ -341,9 +492,11 @@ fun PetalScreenWrapper(
                             else Modifier
                         )
                         .graphicsLayer {
-                            scaleX = snapshotScale
-                            scaleY = snapshotScale
-                            translationX = size.width * bgDirectionFactor * (1f - scaleEased)
+                            scaleX = behindLayer.scale
+                            scaleY = behindLayer.scale
+                            translationX = behindLayer.translationX
+                            translationY = behindLayer.translationY
+                            alpha = behindLayer.alpha
                         }
                 ) {
                     Image(
@@ -355,7 +508,7 @@ fun PetalScreenWrapper(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(alpha = snapshotDimAlpha))
+                            .background(Color.Black.copy(alpha = snapshotDimAlpha.coerceIn(0f, 1f)))
                     )
                 }
             }
@@ -369,45 +522,45 @@ fun PetalScreenWrapper(
                         else Modifier
                     )
                     .graphicsLayer {
-                        val slideEased = PetalPopExitSlideEasing.transform(progress)
+                        val f = gestureFrame(size.width, size.height, density)
 
                         if (!isBehindTopScreen) {
-                            val swipeEdge = predictiveBackState.swipeEdge
-                            val translationXFactor = if (isActive) {
-                                if (swipeEdge == BackEventCompat.EDGE_RIGHT) -1.0f else 1.0f
-                            } else {
-                                0f
+                            val layer = f?.top
+                            if (layer != null) {
+                                scaleX = layer.scale
+                                scaleY = layer.scale
+                                transformOrigin = TransformOrigin(layer.originX, layer.originY)
+                                translationX = layer.translationX
+                                translationY = layer.translationY
+                                alpha = layer.alpha
                             }
-
-                            val scale = 1f - (PETAL_POP_EXIT_MAX_SCALE_DELTA * scaleEased)
-                            val cornerRadius = maxOf(32f * scaleEased, transitionCornerRadius)
-
-                            scaleX = scale
-                            scaleY = scale
-                            translationX = size.width * translationXFactor * slideEased
-                            compositingStrategy = if (isActive || transitionCornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                            val cornerRadius = maxOf(layer?.cornerDp ?: 0f, transitionCornerRadius)
+                            compositingStrategy = if (layer != null || transitionCornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
 
                             if (cornerRadius > 0.5f) {
                                 this.shape = RoundedCornerShape(cornerRadius.dp)
                                 this.clip = true
-                                this.shadowElevation = (16f * scaleEased).dp.toPx()
+                                this.shadowElevation = (layer?.shadowDp ?: 0f).dp.toPx()
                             } else {
                                 this.clip = false
                                 this.shadowElevation = 0f
                             }
                         } else {
-                            val revealScale = if (isActive) 0.94f + 0.06f * scaleEased else 1f
-                            val swipeEdge = predictiveBackState.swipeEdge
-                            val bgDirectionFactor = if (swipeEdge == BackEventCompat.EDGE_RIGHT) (1f / 3f) else (-1f / 3f)
-                            val bgParallaxOffset = if (isActive) size.width * bgDirectionFactor * (1f - scaleEased) else 0f
+                            val layer = f?.behind
+                            if (layer != null) {
+                                scaleX = layer.scale
+                                scaleY = layer.scale
+                                transformOrigin = TransformOrigin(layer.originX, layer.originY)
+                                translationX = layer.translationX
+                                translationY = layer.translationY
+                                alpha = layer.alpha
+                            } else {
+                                alpha = 1f
+                            }
 
-                            val cornerRadius = maxOf(32f * (1f - scaleEased), transitionCornerRadius)
-
-                            scaleX = revealScale
-                            scaleY = revealScale
-                            translationX = bgParallaxOffset
-                            alpha = 1f
-                            compositingStrategy = if (isActive || currentBlurRadiusDp > 0.dp || cornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                            // At rest a behind screen keeps its 32.dp rounded pose; mid-gesture the style decides.
+                            val cornerRadius = maxOf(layer?.cornerDp ?: 32f, transitionCornerRadius)
+                            compositingStrategy = if (layer != null || currentBlurRadiusDp > 0.dp || cornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
                             if (cornerRadius > 0.5f) {
                                 this.shape = RoundedCornerShape(cornerRadius.dp)
                                 this.clip = true
@@ -426,12 +579,12 @@ fun PetalScreenWrapper(
 
                 if (isBehindTopScreen || transitionDimAlpha > 0f) {
                     val settledTargetDim = if (!blurEnabled) 0.75f else 0.40f
-                    val effectiveDimAlpha = if (isActive) settledTargetDim * (1f - scaleEased) else maxOf(settledTargetDim, transitionDimAlpha)
+                    val effectiveDimAlpha = frame?.behindDim ?: maxOf(settledTargetDim, transitionDimAlpha)
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer {
-                                alpha = effectiveDimAlpha
+                                alpha = effectiveDimAlpha.coerceIn(0f, 1f)
                             }
                             .background(Color.Black)
                     )
@@ -440,5 +593,3 @@ fun PetalScreenWrapper(
         }
     }
 }
-
-

@@ -27,6 +27,16 @@ object PetalLiveUnderlay {
     @Volatile
     private var host: Host? = null
 
+    /** Latest behind-layer pose from the active style: scale, tx, ty, dim alpha, blur dp. */
+    @Volatile
+    private var behind: FloatArray = floatArrayOf(1f, 0f, 0f, 0f, 0f)
+
+    @JvmStatic
+    fun publish(values: FloatArray) { behind = values }
+
+    @JvmStatic
+    fun behindValues(): FloatArray = behind
+
     @JvmStatic
     fun attach(h: Host) { host = h }
 
@@ -37,6 +47,7 @@ object PetalLiveUnderlay {
     fun begin(swipeEdge: Int): Boolean {
         val h = host ?: return false
         if (!PetalPredictiveJunction.isLiveUnderlayEnabled.value) return false
+        behind = floatArrayOf(1f, 0f, 0f, 0f, 0f)
         return try {
             if (!h.hasLiveUnderlay()) false else { h.onGestureStart(swipeEdge); true }
         } catch (t: Throwable) { false }

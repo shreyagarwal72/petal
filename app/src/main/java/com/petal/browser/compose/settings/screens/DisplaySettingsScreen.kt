@@ -45,6 +45,8 @@ fun DisplaySettingsScreen(
     val scrollHaptics by viewModel.scrollHaptics.collectAsStateWithLifecycle()
     val predictiveBack by viewModel.predictiveBack.collectAsStateWithLifecycle()
     val depthBlur by viewModel.depthBlur.collectAsStateWithLifecycle()
+    val predictiveBackStyle by viewModel.predictiveBackStyle.collectAsStateWithLifecycle()
+    val predictiveBackExitDirection by viewModel.predictiveBackExitDirection.collectAsStateWithLifecycle()
     val fontSizeScale by viewModel.fontSizeScale.collectAsStateWithLifecycle()
     val zoomLevelScale by viewModel.zoomLevelScale.collectAsStateWithLifecycle()
     val forceZoom by viewModel.forceZoom.collectAsStateWithLifecycle()
@@ -70,6 +72,8 @@ fun DisplaySettingsScreen(
         scrollHaptics = scrollHaptics,
         predictiveBack = predictiveBack,
         depthBlur = depthBlur,
+        predictiveBackStyle = predictiveBackStyle,
+        predictiveBackExitDirection = predictiveBackExitDirection,
         fontSizeScale = fontSizeScale,
         zoomLevelScale = zoomLevelScale,
         forceZoom = forceZoom,
@@ -92,6 +96,8 @@ fun DisplaySettingsScreen(
         onScrollHapticsChange = viewModel::setScrollHaptics,
         onPredictiveBackChange = viewModel::setPredictiveBack,
         onDepthBlurChange = viewModel::setDepthBlur,
+        onPredictiveBackStyleChange = viewModel::setPredictiveBackStyle,
+        onPredictiveBackExitDirectionChange = viewModel::setPredictiveBackExitDirection,
         onFontSizeScaleChange = viewModel::setFontSizeScale,
         onZoomLevelScaleChange = viewModel::setZoomLevelScale,
         onForceZoomChange = viewModel::setForceZoom,
@@ -120,6 +126,8 @@ fun DisplaySettingsScreenContent(
     scrollHaptics: Boolean,
     predictiveBack: Boolean,
     depthBlur: Boolean,
+    predictiveBackStyle: com.petal.browser.predictive.PetalBackStyle,
+    predictiveBackExitDirection: com.petal.browser.predictive.PetalBackExitDirection,
     fontSizeScale: Float,
     zoomLevelScale: Float,
     forceZoom: Boolean,
@@ -142,6 +150,8 @@ fun DisplaySettingsScreenContent(
     onScrollHapticsChange: (Boolean) -> Unit,
     onPredictiveBackChange: (Boolean) -> Unit,
     onDepthBlurChange: (Boolean) -> Unit,
+    onPredictiveBackStyleChange: (com.petal.browser.predictive.PetalBackStyle) -> Unit,
+    onPredictiveBackExitDirectionChange: (com.petal.browser.predictive.PetalBackExitDirection) -> Unit,
     onFontSizeScaleChange: (Float) -> Unit,
     onZoomLevelScaleChange: (Float) -> Unit,
     onForceZoomChange: (Boolean) -> Unit,
@@ -431,7 +441,20 @@ fun DisplaySettingsScreenContent(
                     cardId = "display",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
+                    // The style slider row sits right under the switch, and only while it is on.
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = if (predictiveBack) 5 else 4) { rowIndex, position ->
+                        if (predictiveBack && rowIndex == 1) {
+                            PetalBackStyleSettingsRow(
+                                position = position,
+                                style = predictiveBackStyle,
+                                exitDirection = predictiveBackExitDirection,
+                                depthBlur = depthBlur,
+                                onStyleChange = onPredictiveBackStyleChange,
+                                onExitDirectionChange = onPredictiveBackExitDirectionChange,
+                            )
+                            return@PetalGroup
+                        }
+                        val index = if (predictiveBack && rowIndex > 1) rowIndex - 1 else rowIndex
                         when (index) {
                             0 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
