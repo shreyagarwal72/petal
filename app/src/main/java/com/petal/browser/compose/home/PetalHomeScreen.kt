@@ -567,24 +567,13 @@ fun PetalHomeScreen(
                         } else {
                             homeSp.getFloat("sp_liquid_glass_bg_blur", 16f)
                         }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .then(
-                                    if (glassWallpaper != null) {
-                                        Modifier.captureGlassWallpaper(glassWallpaper)
-                                    } else {
-                                        Modifier
-                                    }
-                                )
-                        ) {
-                            com.petal.browser.wallpaper.PetalAnimatedWallpaperBackground(
-                                wallpaperUri = effectiveWallpaperUri,
-                                dim = effDim,
-                                blur = effBlur,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                        com.petal.browser.wallpaper.PetalGlassAwareWallpaperBackground(
+                            wallpaperUri = effectiveWallpaperUri,
+                            dim = effDim,
+                            blur = effBlur,
+                            glassWallpaper = glassWallpaper,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     } else {
                         com.petal.browser.ui.components.M3ExpressiveVariableBackground(
                             modifier = Modifier.fillMaxSize(),

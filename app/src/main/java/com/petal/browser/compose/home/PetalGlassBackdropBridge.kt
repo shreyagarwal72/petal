@@ -60,7 +60,10 @@ object PetalGlassBackdropBridge {
                                 else sp.getFloat("sp_liquid_glass_bg_dim", 0.35f),
                                 blur = if (usingManager) PetalWallpaperManager.wallpaperBlur
                                 else sp.getFloat("sp_liquid_glass_bg_blur", 16f),
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                // The bars only need a still to blur; a second video player
+                                // here doubled the decoder load and was recorded into glass.
+                                renderVideo = false
                             )
                         } else {
                             M3ExpressiveVariableBackground(

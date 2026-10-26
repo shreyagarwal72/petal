@@ -33,6 +33,23 @@ object PetalWallpaperManager {
     var wallpaperBlur by mutableFloatStateOf(0f)
         private set
 
+    /**
+     * The wallpaper that is currently being fetched or buffered (null when nothing is).
+     * The picker shows a loading indicator on that wallpaper's tile, and the background
+     * clears it once the first frame or image is on screen.
+     */
+    var loadingUri by mutableStateOf<String?>(null)
+        private set
+
+    fun markLoading(uri: String?) {
+        loadingUri = uri
+    }
+
+    /** Called by the wallpaper background when [uri] is showing, or has failed. */
+    fun markReady(uri: String) {
+        if (loadingUri == uri) loadingUri = null
+    }
+
     fun init(context: Context) {
         loadForActiveProfile(context)
     }

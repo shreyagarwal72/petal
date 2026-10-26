@@ -43,6 +43,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
+import com.petal.browser.wallpaper.PetalVideoThumbs
 import androidx.activity.ComponentActivity
 import android.content.ContextWrapper
 import com.petal.browser.compose.file.PetalFilePickerBridge
@@ -485,6 +488,111 @@ val PRESET_WALLPAPERS = listOf(
     )
 )
 
+private class ThumbResult(val file: File?)
+
+private fun WallpaperPreset.isGifPreset(): Boolean =
+    !isVideo && (fullUrl.contains(".gif", ignoreCase = true) || fullUrl.contains("giphy.com", ignoreCase = true))
+
+/** Shown while a preview loads: a quiet tile with the app's adaptive contained loading indicator. */
+@Composable
+private fun ThumbLoading() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+        contentAlignment = Alignment.Center
+    ) {
+        PetalContainedLoadingIndicator(size = 30.dp)
+    }
+}
+
+/** Shown when a preview cannot be loaded, instead of a wrong picture. */
+@Composable
+private fun ThumbFallback(isVideo: Boolean) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.surfaceContainerHighest
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = if (isVideo) Icons.Rounded.Movie else Icons.Rounded.BrokenImage,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+            modifier = Modifier.size(28.dp)
+        )
+    }
+}
+
+/**
+ * One wallpaper preview. Videos show a real frame taken from the video itself (never a borrowed
+ * photo), GIFs show their own first frame, and photos show their own thumbnail.
+ */
+@Composable
+private fun WallpaperThumb(preset: WallpaperPreset) {
+    val context = LocalContext.current
+    if (preset.isVideo) {
+        val result by produceState<ThumbResult?>(
+            initialValue = PetalVideoThumbs.cached(context, preset.fullUrl)?.let { ThumbResult(it) },
+            key1 = preset.fullUrl
+        ) {
+            value = ThumbResult(PetalVideoThumbs.get(context, preset.fullUrl))
+        }
+        val r = result
+        when {
+            r == null -> ThumbLoading()
+            r.file == null -> ThumbFallback(isVideo = true)
+            else -> SubcomposeAsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(r.file)
+                    .size(176, 260)
+                    .crossfade(200)
+                    .build(),
+                contentDescription = preset.title,
+                contentScale = ContentScale.Crop,
+                loading = { ThumbLoading() },
+                error = { ThumbFallback(isVideo = true) },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    } else {
+        val gif = preset.isGifPreset()
+        val request = remember(preset.id) {
+            ImageRequest.Builder(context)
+                .data(if (gif) preset.fullUrl else preset.thumbUrl)
+                .size(176, 260)
+                .crossfade(200)
+                .apply {
+                    if (gif) {
+                        decoderFactory(
+                            if (android.os.Build.VERSION.SDK_INT >= 28) coil.decode.ImageDecoderDecoder.Factory()
+                            else coil.decode.GifDecoder.Factory()
+                        )
+                    } else {
+                        allowHardware(true)
+                        bitmapConfig(Bitmap.Config.RGB_565)
+                    }
+                }
+                .build()
+        }
+        SubcomposeAsyncImage(
+            model = request,
+            contentDescription = preset.title,
+            contentScale = ContentScale.Crop,
+            loading = { ThumbLoading() },
+            error = { ThumbFallback(isVideo = false) },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalWallpaperSheet(
@@ -572,6 +680,58 @@ fun PetalWallpaperSheet(
             } else {
                 pendingCropUri = inputUri
             }
+        }
+    }
+
+    // Which wallpaper is being downloaded or buffered right now; its tile shows the indicator.
+    val loadingUri = PetalWallpaperManager.loadingUri
+    // Never leave a tile spinning for good if the background never reports back.
+    LaunchedEffect(loadingUri) {
+        val pending = loadingUri
+        if (pending != null) {
+            kotlinx.coroutines.delay(25_000L)
+            PetalWallpaperManager.markReady(pending)
+        }
+    }
+
+    fun applyPreset(preset: WallpaperPreset) {
+        val full = preset.fullUrl
+        val remote = full.startsWith("http", ignoreCase = true)
+        val streamed = preset.isVideo || full.contains(".m3u8", ignoreCase = true)
+        if (remote && !streamed) {
+            // Photos and GIFs: download first, then apply, so the home screen never flashes blank.
+            PetalWallpaperManager.markLoading(full)
+            scope.launch {
+                val result = try {
+                    coil.Coil.imageLoader(context).execute(
+                        ImageRequest.Builder(context)
+                            .data(full)
+                            .size(1080, 2400)
+                            .apply {
+                                if (preset.isGifPreset()) {
+                                    decoderFactory(
+                                        if (android.os.Build.VERSION.SDK_INT >= 28) coil.decode.ImageDecoderDecoder.Factory()
+                                        else coil.decode.GifDecoder.Factory()
+                                    )
+                                }
+                            }
+                            .build()
+                    )
+                } catch (_: Throwable) {
+                    null
+                }
+                if (result is coil.request.SuccessResult) {
+                    // The home background reports ready once the picture is on screen.
+                    PetalWallpaperManager.setWallpaper(context, full, currentDim, currentBlur)
+                } else {
+                    PetalWallpaperManager.markReady(full)
+                    android.widget.Toast.makeText(context, "Couldn't download this wallpaper", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            // Videos stream: apply now and show the indicator until the first frame is up.
+            if (remote) PetalWallpaperManager.markLoading(full)
+            PetalWallpaperManager.setWallpaper(context, full, currentDim, currentBlur)
         }
     }
 
@@ -725,9 +885,9 @@ fun PetalWallpaperSheet(
                             .width(88.dp)
                             .height(130.dp)
                             .clip(RoundedCornerShape(16.dp))
-                            .clickable {
+                            .clickable(enabled = loadingUri == null) {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                PetalWallpaperManager.setWallpaper(context, preset.fullUrl, currentDim, currentBlur)
+                                applyPreset(preset)
                             }
                             .border(
                                 width = if (isSelected) 2.5.dp else 0.5.dp,
@@ -735,21 +895,7 @@ fun PetalWallpaperSheet(
                                 shape = RoundedCornerShape(16.dp)
                             )
                     ) {
-                        val thumbRequest = remember(preset.thumbUrl) {
-                            ImageRequest.Builder(context)
-                                .data(preset.thumbUrl)
-                                .size(176, 260)
-                                .crossfade(200)
-                                .allowHardware(true)
-                                .bitmapConfig(Bitmap.Config.RGB_565)
-                                .build()
-                        }
-                        AsyncImage(
-                            model = thumbRequest,
-                            contentDescription = preset.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        WallpaperThumb(preset)
 
                         if (preset.isVideo) {
                             Surface(
@@ -768,6 +914,17 @@ fun PetalWallpaperSheet(
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
+                            }
+                        }
+
+                        if (loadingUri == preset.fullUrl) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.45f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                PetalContainedLoadingIndicator(size = 38.dp)
                             }
                         }
 

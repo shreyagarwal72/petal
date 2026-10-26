@@ -279,13 +279,12 @@ fun M3ExpressiveVariableBackground(
             liquidGlassBgBlur.coerceIn(0f, 40f)
         }
 
-        com.petal.browser.wallpaper.PetalAnimatedWallpaperBackground(
+        com.petal.browser.wallpaper.PetalGlassAwareWallpaperBackground(
             wallpaperUri = effectiveWallpaperUri,
             dim = effDim,
             blur = effBlur,
-            modifier = modifier.fillMaxSize().then(
-                if (wallpaper != null) Modifier.captureGlassWallpaper(wallpaper) else Modifier
-            )
+            glassWallpaper = wallpaper,
+            modifier = modifier.fillMaxSize()
         )
         return
     }

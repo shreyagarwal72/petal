@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.glass.captureGlassWallpaper
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -48,7 +49,6 @@ import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.petal.browser.R
-import com.petal.browser.ui.components.PRESET_WALLPAPERS
 import java.io.File
 
 import android.graphics.Bitmap
@@ -68,37 +68,19 @@ fun PetalAnimatedWallpaperBackground(
     wallpaperUri: String,
     dim: Float = 0.20f,
     blur: Float = 0f,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /**
+     * False draws only the still preview of a video, with no player and no video surface.
+     * Use it for any copy that is recorded into a glass layer: a playing TextureView must
+     * never be recorded and blurred, and a second player would double the decoder load.
+     */
+    renderVideo: Boolean = true
 ) {
     // ExoPlayer and the AndroidView can outlive the Activity context through Compose
     // effects. Keep the player bound to the application context instead.
     val context = LocalContext.current.applicationContext
     val lifecycleOwner = LocalLifecycleOwner.current
-    val isVideo = remember(wallpaperUri) {
-        val lower = wallpaperUri.lowercase()
-        lower.endsWith(".mp4") ||
-        lower.endsWith(".webm") ||
-        lower.endsWith(".mkv") ||
-        lower.endsWith(".mov") ||
-        lower.endsWith(".3gp") ||
-        lower.endsWith(".ts") ||
-        lower.endsWith(".avi") ||
-        lower.endsWith(".flv") ||
-        lower.endsWith(".m4v") ||
-        lower.endsWith(".m3u8") ||
-        lower.contains(".m3u8?") ||
-        lower.contains(".mp4?") ||
-        lower.contains(".webm?") ||
-        lower.contains("video-files") ||
-        lower.contains("videos.pexels.com") ||
-        lower.contains("/video/") ||
-        lower.contains("live_wallpaper_") ||
-        runCatching {
-            val extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(wallpaperUri)
-            val mime = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
-            mime?.startsWith("video/") == true
-        }.getOrDefault(false)
-    }
+    val isVideo = remember(wallpaperUri) { petalIsVideoWallpaper(wallpaperUri) }
 
     val isGif = remember(wallpaperUri, isVideo) {
         if (isVideo) false else {
@@ -127,26 +109,24 @@ fun PetalAnimatedWallpaperBackground(
     ) {
         val blurModifier = if (blur > 0.5f) Modifier.blur(blur.dp) else Modifier
 
-        // Resolve a video preview from the preset catalogue. Compare canonical URLs as
-        // providers may append tracking/query parameters or encode characters differently.
-        // Never ask Coil to decode a video URL as an image: that produced blank/wrong previews.
-        val imageModel = remember(wallpaperUri, isVideo) {
+        // A video's preview is a real frame taken from the video itself (see PetalVideoThumbs),
+        // never a borrowed photo. Images and GIFs use their own URI.
+        val videoPoster by produceState<Any?>(
+            initialValue = if (isVideo) PetalVideoThumbs.cached(context, wallpaperUri) else null,
+            key1 = wallpaperUri,
+            key2 = isVideo
+        ) {
+            value = if (isVideo) PetalVideoThumbs.get(context, wallpaperUri) else null
+        }
+        val imageModel: Any? = remember(wallpaperUri, isVideo, videoPoster) {
             runCatching {
-                val effectiveUri = if (isVideo) {
-                    fun canonical(value: String): String = runCatching {
-                        Uri.parse(Uri.decode(value)).buildUpon().clearQuery().fragment(null).build().toString().trimEnd('/')
-                    }.getOrDefault(value.substringBefore('?').substringBefore('#')).trimEnd('/')
-                    PRESET_WALLPAPERS.firstOrNull { preset ->
-                        canonical(preset.fullUrl) == canonical(wallpaperUri)
-                    }?.thumbUrl
-                } else wallpaperUri
                 when {
-                    effectiveUri == null -> null
-                    effectiveUri.startsWith("android.resource://") -> Uri.parse(effectiveUri)
-                    effectiveUri.startsWith("file://") -> Uri.parse(effectiveUri)
-                    effectiveUri.startsWith("/") -> File(effectiveUri)
-                    effectiveUri.startsWith("content://") -> Uri.parse(effectiveUri)
-                    else -> effectiveUri
+                    isVideo -> videoPoster
+                    wallpaperUri.startsWith("android.resource://") -> Uri.parse(wallpaperUri)
+                    wallpaperUri.startsWith("file://") -> Uri.parse(wallpaperUri)
+                    wallpaperUri.startsWith("/") -> File(wallpaperUri)
+                    wallpaperUri.startsWith("content://") -> Uri.parse(wallpaperUri)
+                    else -> wallpaperUri
                 }
             }.getOrNull()
         }
@@ -177,13 +157,15 @@ fun PetalAnimatedWallpaperBackground(
                 model = imageRequest,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                onSuccess = { if (!isVideo && renderVideo) PetalWallpaperManager.markReady(wallpaperUri) },
+                onError = { if (!isVideo && renderVideo) PetalWallpaperManager.markReady(wallpaperUri) },
                 modifier = Modifier
                     .fillMaxSize()
                     .then(blurModifier)
             )
         }
 
-        if (isVideo && !videoPlaybackFailed) {
+        if (isVideo && renderVideo && !videoPlaybackFailed) {
             val exoPlayer = remember(wallpaperUri) {
                 runCatching {
                     val mediaUri = when {
@@ -224,6 +206,7 @@ fun PetalAnimatedWallpaperBackground(
                                 override fun onPlayerError(error: PlaybackException) {
                                     android.util.Log.e("PetalWallpaper", "ExoPlayer error playing wallpaper: $wallpaperUri", error)
                                     videoPlaybackFailed = true
+                                    PetalWallpaperManager.markReady(wallpaperUri)
                                 }
 
                                 override fun onPlaybackStateChanged(playbackState: Int) {
@@ -233,6 +216,7 @@ fun PetalAnimatedWallpaperBackground(
                                 override fun onRenderedFirstFrame() {
                                     isFirstFrameRendered = true
                                     videoBuffering = false
+                                    PetalWallpaperManager.markReady(wallpaperUri)
                                 }
                             })
                             prepare()
@@ -241,6 +225,7 @@ fun PetalAnimatedWallpaperBackground(
                 }.getOrElse { e ->
                     android.util.Log.e("PetalWallpaper", "Failed to build ExoPlayer: $wallpaperUri", e)
                     videoPlaybackFailed = true
+                    PetalWallpaperManager.markReady(wallpaperUri)
                     null
                 }
             }
@@ -345,5 +330,53 @@ private fun setSafeSurfaceView(playerView: PlayerView) {
             field.isAccessible = true
             field.setInt(playerView, 2)
         } catch (_: Throwable) {}
+    }
+}
+
+/**
+ * The wallpaper, drawn so that liquid glass can safely use it.
+ *
+ * Glass records its wallpaper into a layer, blurs it and refracts it. A playing video
+ * (a TextureView) must never be recorded that way — that is what crashed when a live
+ * wallpaper was applied with Liquid Glass on. So for a video the glass records only the
+ * still preview, and the real video plays on top, outside the recorded layer.
+ * Images and GIFs are recorded as before.
+ */
+@Composable
+fun PetalGlassAwareWallpaperBackground(
+    wallpaperUri: String,
+    dim: Float,
+    blur: Float,
+    glassWallpaper: com.petal.browser.ui.glass.PetalGlassWallpaper?,
+    modifier: Modifier = Modifier
+) {
+    val isVideo = remember(wallpaperUri) { petalIsVideoWallpaper(wallpaperUri) }
+    when {
+        glassWallpaper == null -> PetalAnimatedWallpaperBackground(
+            wallpaperUri = wallpaperUri, dim = dim, blur = blur, modifier = modifier
+        )
+        !isVideo -> Box(modifier = modifier.fillMaxSize()) {
+            PetalAnimatedWallpaperBackground(
+                wallpaperUri = wallpaperUri, dim = dim, blur = blur,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .captureGlassWallpaper(glassWallpaper)
+            )
+        }
+        else -> Box(modifier = modifier.fillMaxSize()) {
+            // What the glass sees: the preview frame only.
+            PetalAnimatedWallpaperBackground(
+                wallpaperUri = wallpaperUri, dim = dim, blur = blur,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .captureGlassWallpaper(glassWallpaper),
+                renderVideo = false
+            )
+            // What you see: the live video, never recorded.
+            PetalAnimatedWallpaperBackground(
+                wallpaperUri = wallpaperUri, dim = dim, blur = blur,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
