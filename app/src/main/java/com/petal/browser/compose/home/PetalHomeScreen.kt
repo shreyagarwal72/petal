@@ -87,9 +87,6 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
-import com.petal.browser.ui.containment.rememberPetalBackdrop
-import com.petal.browser.ui.containment.petalBackdropSource
-import com.petal.browser.ui.containment.LocalPetalBackdrop
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.mediumIncreased
@@ -542,11 +539,9 @@ fun PetalHomeScreen(
     val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val homeSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val isGlassEnabled = homeSp.getBoolean("sp_liquid_glass_enabled", false)
-    val homeBackdrop = rememberPetalBackdrop()
 
     CompositionLocalProvider(
-        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides glassWallpaper,
-        LocalPetalBackdrop provides (if (isGlassEnabled) homeBackdrop else null)
+        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides glassWallpaper
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -564,9 +559,7 @@ fun PetalHomeScreen(
                 }
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(if (isGlassEnabled) Modifier.petalBackdropSource(homeBackdrop) else Modifier)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     if (!effectiveWallpaperUri.isNullOrBlank()) {
                         val effDim = if (!activeWallpaperUri.isNullOrBlank()) {
@@ -600,7 +593,6 @@ fun PetalHomeScreen(
                     com.petal.browser.ui.components.ExpressiveHeader(
                         title = "Petal",
                         subtitle = "Personal Window to the Web",
-                        backdrop = if (isGlassEnabled) homeBackdrop else null,
                         actions = {
                                 // Wallpaper Customizer Action Button
                                 IconButton(

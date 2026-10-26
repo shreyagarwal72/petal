@@ -158,11 +158,10 @@ fun Modifier.liquidGlassChrome(
     val tuning = com.petal.browser.ui.glass.rememberRefractionTuning(refractionOverride, refractionWidthOverride)
     val masterGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
     if (!enabled || !masterGlass) return this
-    val effectiveBackdrop = backdrop ?: LocalPetalBackdrop.current
-    if (effectiveBackdrop != null && petalRealGlassSupported) {
+    if (backdrop != null && petalRealGlassSupported) {
         val dark = isDark || (MaterialTheme.colorScheme.background.luminance() < .5f)
         val effectiveSheen = sheenOverride ?: sheenIntensity
-        return this.petalRealGlass(effectiveBackdrop, shape, dark, tuning)
+        return this.petalRealGlass(backdrop, shape, dark, tuning)
             .liquidGlassSheen(shape, effectiveSheen, tintColor)
     }
     if (backdrop == null && LocalPetalGlassWallpaper.current?.ready == true) {
@@ -235,7 +234,7 @@ fun petalGroupSurfaceColor(): Color {
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     LocalPetalGlassRevision.current
-    if (isGlass && (LocalPetalGlassWallpaper.current?.ready == true || (LocalPetalBackdrop.current != null && petalRealGlassSupported))) {
+    if (isGlass && LocalPetalGlassWallpaper.current?.ready == true) {
         return if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .45f) else Color.Transparent
     }
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f

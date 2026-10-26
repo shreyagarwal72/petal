@@ -30,8 +30,6 @@ import com.kyant.backdrop.highlight.Highlight
  */
 typealias PetalBackdrop = LayerBackdrop
 
-val LocalPetalBackdrop = compositionLocalOf<PetalBackdrop?> { null }
-
 @Composable
 fun rememberPetalBackdrop(): PetalBackdrop = rememberLayerBackdrop()
 
