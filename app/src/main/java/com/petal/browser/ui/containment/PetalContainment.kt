@@ -94,6 +94,10 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.preference.PreferenceManager
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.SelectableChipColors
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.LocalPetalGlassRevision
 import com.petal.browser.ui.glass.petalGlassPanel
@@ -1023,6 +1027,51 @@ fun PetalSheet(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PetalFilterChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    shape: Shape = RoundedCornerShape(12.dp),
+    colors: SelectableChipColors? = null,
+    border: BorderStroke? = null,
+) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentSize provides Dp.Unspecified
+    ) {
+        FilterChip(
+            selected = selected,
+            onClick = onClick,
+            label = label,
+            modifier = modifier.then(
+                if (isGlass) Modifier.liquidGlassChrome(
+                    shape = shape,
+                    enabled = true,
+                    sheenIntensity = if (selected) 0.5f else 0.25f
+                ) else Modifier
+            ),
+            enabled = enabled,
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            shape = shape,
+            colors = colors ?: FilterChipDefaults.filterChipColors(
+                containerColor = if (isGlass) {
+                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f)
+                } else MaterialTheme.colorScheme.surfaceContainerLow,
+                selectedContainerColor = if (isGlass) {
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
+                } else MaterialTheme.colorScheme.secondaryContainer
+            ),
+            border = if (isGlass) null else (border ?: FilterChipDefaults.filterChipBorder(enabled = enabled, selected = selected))
+        )
     }
 }
 

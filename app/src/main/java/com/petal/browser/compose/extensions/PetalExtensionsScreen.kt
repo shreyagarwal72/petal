@@ -75,6 +75,9 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.containment.petalGroupPositionFor
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
@@ -926,6 +929,8 @@ private fun AddExtensionSheet(
     val context = LocalContext.current
     val busy by PetalExtensionManager.busy.collectAsState()
     val extensions by PetalExtensionManager.extensions.collectAsState()
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val btnShape = RoundedCornerShape(16.dp)
 
     com.petal.browser.ui.containment.PetalSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
         Column(
@@ -950,8 +955,13 @@ private fun AddExtensionSheet(
 
             Button(
                 onClick = onOpenStore,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(btnShape, enabled = true, sheenIntensity = 0.5f, tintColor = MaterialTheme.colorScheme.primaryContainer) else Modifier),
+                shape = btnShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary
+                )
             ) {
                 Icon(Icons.Rounded.Storefront, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -965,8 +975,14 @@ private fun AddExtensionSheet(
                     onRequestFileImport()
                 },
                 enabled = !busy,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(btnShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+                shape = btnShape,
+                border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = if (isGlass) petalGroupSurfaceColor() else Color.Transparent
+                )
             ) {
                 Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -977,8 +993,13 @@ private fun AddExtensionSheet(
             var showCustomCollectionDialog by remember { mutableStateOf(false) }
             FilledTonalButton(
                 onClick = { showCustomCollectionDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(btnShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+                shape = btnShape,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.secondaryContainer
+                )
             ) {
                 Icon(Icons.Rounded.CollectionsBookmark, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -1132,8 +1153,13 @@ private fun AddExtensionSheet(
             Spacer(Modifier.height(8.dp))
             FilledTonalButton(
                 onClick = { showMozillaCatalogPrompt = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(btnShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+                shape = btnShape,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.secondaryContainer
+                )
             ) {
                 Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -1153,14 +1179,25 @@ private fun AddExtensionSheet(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text(stringResource(R.string.ui_https_addons_mozilla_org_addon)) },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp)
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else Color.Transparent,
+                    unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else Color.Transparent,
+                    focusedBorderColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                    unfocusedBorderColor = if (isGlass) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f) else MaterialTheme.colorScheme.outlineVariant
+                )
             )
             Spacer(Modifier.height(12.dp))
             Button(
                 onClick = { if (manualUrl.isNotBlank()) onInstall(manualUrl.trim()) },
                 enabled = manualUrl.isNotBlank() && !busy,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(btnShape, enabled = true, sheenIntensity = 0.5f, tintColor = MaterialTheme.colorScheme.primaryContainer) else Modifier),
+                shape = btnShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary
+                )
             ) {
                 if (busy) {
                     com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 18.dp)
