@@ -104,7 +104,7 @@ jobs:
             -PRELEASE_STORE_PASSWORD="$KEYSTORE_STORE_PASS" \
             -PRELEASE_KEY_ALIAS="$KEYSTORE_ALIAS" \
             -PRELEASE_KEY_PASSWORD="$KEYSTORE_KEY_PASS" \
-            --stacktrace --info
+            --build-cache --parallel --stacktrace
           for apk in app/build/outputs/apk/release/*.apk; do
             if [ -f "$apk" ]; then
               cp "$apk" raw_apks/
