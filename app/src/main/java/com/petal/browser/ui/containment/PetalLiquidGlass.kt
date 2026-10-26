@@ -2,6 +2,7 @@ package com.petal.browser.ui.containment
 
 import android.os.Build
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -28,6 +29,8 @@ import com.kyant.backdrop.highlight.Highlight
  *  - A WebView cannot be recorded, so surfaces drawn over web pages stay on the fallback look.
  */
 typealias PetalBackdrop = LayerBackdrop
+
+val LocalPetalBackdrop = compositionLocalOf<PetalBackdrop?> { null }
 
 @Composable
 fun rememberPetalBackdrop(): PetalBackdrop = rememberLayerBackdrop()

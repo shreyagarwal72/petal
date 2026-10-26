@@ -87,6 +87,9 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.rememberPetalBackdrop
+import com.petal.browser.ui.containment.petalBackdropSource
+import com.petal.browser.ui.containment.LocalPetalBackdrop
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.mediumIncreased
@@ -537,26 +540,35 @@ fun PetalHomeScreen(
     }
 
     val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
-    CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides glassWallpaper) {
+    val homeSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val isGlassEnabled = homeSp.getBoolean("sp_liquid_glass_enabled", false)
+    val homeBackdrop = rememberPetalBackdrop()
+
+    CompositionLocalProvider(
+        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides glassWallpaper,
+        LocalPetalBackdrop provides (if (isGlassEnabled) homeBackdrop else null)
+    ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                    // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
-                    val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
-                    val homeSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-                    val isGlassEnabled = homeSp.getBoolean("sp_liquid_glass_enabled", false)
-                    val glassBgMode = homeSp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
-                    val glassImageUri = homeSp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
-                    val effectiveWallpaperUri = when {
-                        !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
-                        isGlassEnabled && glassBgMode == "IMAGE" && glassImageUri.isNotBlank() -> glassImageUri
-                        else -> null
-                    }
+                // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
+                val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
+                val glassBgMode = homeSp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
+                val glassImageUri = homeSp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
+                val effectiveWallpaperUri = when {
+                    !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
+                    isGlassEnabled && glassBgMode == "IMAGE" && glassImageUri.isNotBlank() -> glassImageUri
+                    else -> null
+                }
 
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(if (isGlassEnabled) Modifier.petalBackdropSource(homeBackdrop) else Modifier)
+                ) {
                     if (!effectiveWallpaperUri.isNullOrBlank()) {
-                        val glassWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
                         val effDim = if (!activeWallpaperUri.isNullOrBlank()) {
                             com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim
                         } else {
@@ -580,14 +592,16 @@ fun PetalHomeScreen(
                             pageSeed = "home_page"
                         )
                     }
+                }
 
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        com.petal.browser.ui.components.ExpressiveHeader(
-                            title = "Petal",
-                            subtitle = "Personal Window to the Web",
-                            actions = {
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    com.petal.browser.ui.components.ExpressiveHeader(
+                        title = "Petal",
+                        subtitle = "Personal Window to the Web",
+                        backdrop = if (isGlassEnabled) homeBackdrop else null,
+                        actions = {
                                 // Wallpaper Customizer Action Button
                                 IconButton(
                                     onClick = { showWallpaperSheet = true },
