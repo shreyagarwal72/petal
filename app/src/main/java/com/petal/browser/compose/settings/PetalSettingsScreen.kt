@@ -7,21 +7,24 @@
 
 package com.petal.browser.compose.settings
 
-import com.petal.browser.ui.components.petalContainerEnter
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -29,6 +32,7 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
+import kotlinx.coroutines.launch
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.compose.settings.screens.*
 import com.petal.browser.predictive.PetalContentSnapshot
@@ -161,79 +165,114 @@ object PetalSettingsBridge {
     }
 }
 
+private val SettingsPushEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+private const val SETTINGS_PUSH_MS = 340
+private const val SETTINGS_POP_MS = 300
+
+/**
+ * One persistent composition for the hub and every category page.
+ *
+ * The old version swapped between two completely different trees (hub-only vs hub+page) whenever a
+ * category opened or closed. That tore down and rebuilt the hub and the predictive-back handler at
+ * the exact moment the gesture committed (the visible pop at the end of the back animation), and
+ * the open animation was a container transform that shrank a whole blank page down to the tapped
+ * row. Now the hub stays composed underneath at all times, a category is a layer pushed on top of
+ * it (shared-axis slide + fade, hub parallax/dim/blur easing in alongside), and back, gesture or
+ * arrow, simply pops that layer.
+ */
 @Composable
 fun PetalSettingsScreen(
     backgroundSnapshot: ImageBitmap? = null,
     initialCategory: SettingsCategory = SettingsCategory.OVERVIEW,
     onBackPress: () -> Unit = {}
 ) {
-    var currentCategory by remember(initialCategory) { mutableStateOf(initialCategory) }
+    var pageCategory by remember(initialCategory) {
+        mutableStateOf<SettingsCategory?>(initialCategory.takeIf { it != SettingsCategory.OVERVIEW })
+    }
     var currentHighlightId by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
-    val isCategoryDrilled = currentCategory != SettingsCategory.OVERVIEW && searchQuery.isBlank()
-    val activeCategory = currentCategory
+    // 0 = hub only, 1 = category page fully pushed. Starts pushed when we were opened straight into a category.
+    val push = remember(initialCategory) {
+        Animatable(if (initialCategory != SettingsCategory.OVERVIEW) 1f else 0f)
+    }
+    val drilled = pageCategory != null
+    val behindFraction: () -> Float = remember(push) { { if (pageCategory != null) push.value else 0f } }
 
-    if (isCategoryDrilled) {
-        PetalPredictiveBackSurface(
-            enabled = true,
-            onBack = {
-                currentCategory = SettingsCategory.OVERVIEW
-                currentHighlightId = null
-            }
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                PetalScreenWrapper(isBehind = true) {
-                    SettingsHubScreen(
-                        searchQuery = searchQuery,
-                        onSearchQueryChange = { searchQuery = it },
-                        onCategoryClick = { category, highlightId ->
-                            currentCategory = category
-                            currentHighlightId = highlightId
-                        },
-                        onNavigateBack = onBackPress
-                    )
-                }
-                PetalScreenWrapper(isBehind = false) {
-                    PetalSettingsAnimatedContent(targetKey = activeCategory) {
-                        Box(Modifier.fillMaxSize().petalContainerEnter()) {
-                        RenderCategoryContent(
-                            category = activeCategory,
-                            targetHighlightItemId = currentHighlightId,
-                            onNavigateToAddressBar = {
-                                currentCategory = SettingsCategory.ADDRESS_BAR
-                                currentHighlightId = null
-                            },
-                            onNavigateToDownloads = {
-                                currentCategory = SettingsCategory.DOWNLOADS
-                                currentHighlightId = null
-                            },
-                            onNavigateBack = {
-                                currentCategory = SettingsCategory.OVERVIEW
-                                currentHighlightId = null
-                            }
-                        )
-                        }
-                    }
-                }
+    fun openCategory(category: SettingsCategory, highlightId: String?) {
+        searchQuery = ""
+        currentHighlightId = highlightId
+        val wasOpen = pageCategory != null
+        pageCategory = category
+        if (!wasOpen) {
+            scope.launch {
+                push.snapTo(0f)
+                push.animateTo(1f, tween(SETTINGS_PUSH_MS, easing = SettingsPushEasing))
             }
         }
-    } else {
-        PetalPredictiveBackSurface(
-            enabled = true,
-            onBack = onBackPress
+    }
+
+    // Arrow / in-page back: animate the page out, then drop it.
+    fun closeCategory() {
+        scope.launch {
+            push.animateTo(0f, tween(SETTINGS_POP_MS, easing = SettingsPushEasing))
+            pageCategory = null
+            currentHighlightId = null
+        }
+    }
+
+    PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = {
+            if (pageCategory != null) {
+                // The gesture already slid the page away; remove it without a second animation.
+                pageCategory = null
+                currentHighlightId = null
+                scope.launch { push.snapTo(0f) }
+            } else {
+                onBackPress()
+            }
+        }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            PetalScreenWrapper(
+                isBehind = drilled,
+                backgroundSnapshot = if (drilled) null else backgroundSnapshot,
+                behindFraction = if (drilled) behindFraction else null,
+            ) {
                 SettingsHubScreen(
                     searchQuery = searchQuery,
                     onSearchQueryChange = { searchQuery = it },
-                    onCategoryClick = { category, highlightId ->
-                        currentCategory = category
-                        currentHighlightId = highlightId
-                        searchQuery = ""
-                    },
+                    onCategoryClick = { category, highlightId -> openCategory(category, highlightId) },
                     onNavigateBack = onBackPress
                 )
+            }
+
+            val shown = pageCategory
+            if (shown != null) {
+                PetalScreenWrapper(
+                    isBehind = false,
+                    modifier = Modifier.graphicsLayer {
+                        val e = push.value
+                        translationX = (1f - e) * size.width * 0.33f
+                        alpha = (e * 2.2f).coerceIn(0f, 1f)
+                    }
+                ) {
+                    PetalSettingsAnimatedContent(targetKey = shown) { category ->
+                        RenderCategoryContent(
+                            category = category,
+                            targetHighlightItemId = currentHighlightId,
+                            onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
+                            onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                            onNavigateBack = { closeCategory() }
+                        )
+                    }
+                }
             }
         }
     }
@@ -307,10 +346,15 @@ private fun RenderCategoryContent(
 }
 
 
+/**
+ * Crossfades between categories (e.g. Search -> Address Bar). The content lambda receives the
+ * category it is rendering: previously it ignored the animated state and always drew the NEW
+ * category, so the outgoing page visibly jumped to the incoming one before fading.
+ */
 @Composable
 private fun PetalSettingsAnimatedContent(
-    targetKey: Any,
-    content: @Composable () -> Unit
+    targetKey: SettingsCategory,
+    content: @Composable (SettingsCategory) -> Unit
 ) {
     AnimatedContent(
         targetState = targetKey,
@@ -319,7 +363,7 @@ private fun PetalSettingsAnimatedContent(
                 fadeOut(animationSpec = tween(160)))
         },
         label = "petalSettingsContentTransition"
-    ) {
-        content()
+    ) { category ->
+        content(category)
     }
 }

@@ -55,7 +55,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -364,6 +366,13 @@ fun PetalScreenWrapper(
     isBehind: Boolean = false,
     backgroundSnapshot: ImageBitmap? = null,
     modifier: Modifier = Modifier,
+    /**
+     * Optional 0..1 "how far is the screen above me pushed in" read in the DRAW phase. When set, a
+     * behind screen eases its resting pose (parallax, dim, corners, depth blur) in with the push
+     * instead of snapping to it, and the resting pose is the exact frame-0 pose of the selected
+     * back style so the first frame of a back gesture continues from it without a jump.
+     */
+    behindFraction: (() -> Float)? = null,
     content: @Composable () -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -518,7 +527,7 @@ fun PetalScreenWrapper(
                 modifier = Modifier
                     .fillMaxSize()
                     .then(
-                        if (isBehindTopScreen && blurEnabled && currentBlurRadiusDp > 0.dp) Modifier.blur(radius = currentBlurRadiusDp)
+                        if (behindFraction == null && isBehindTopScreen && blurEnabled && currentBlurRadiusDp > 0.dp) Modifier.blur(radius = currentBlurRadiusDp)
                         else Modifier
                     )
                     .graphicsLayer {
@@ -547,6 +556,9 @@ fun PetalScreenWrapper(
                             }
                         } else {
                             val layer = f?.behind
+                            var restCorner = 32f
+                            var blurDp = 0f
+                            var fractionActive = false
                             if (layer != null) {
                                 scaleX = layer.scale
                                 scaleY = layer.scale
@@ -554,13 +566,44 @@ fun PetalScreenWrapper(
                                 translationX = layer.translationX
                                 translationY = layer.translationY
                                 alpha = layer.alpha
+                                if (behindFraction != null) blurDp = f?.behindBlurDp ?: 0f
+                            } else if (behindFraction != null) {
+                                val fr = behindFraction.invoke().coerceIn(0f, 1f)
+                                val rest = PetalBackMotion.frame(
+                                    style,
+                                    PetalBackInput(
+                                        progress = 0f,
+                                        swipeEdge = BackEventCompat.EDGE_LEFT,
+                                        touchY = size.height / 2f,
+                                        initialTouchY = size.height / 2f,
+                                        widthPx = size.width,
+                                        heightPx = size.height,
+                                        density = density,
+                                        blurEnabled = blurEnabled,
+                                    ),
+                                )
+                                val pose = rest.behind
+                                scaleX = 1f + (pose.scale - 1f) * fr
+                                scaleY = 1f + (pose.scale - 1f) * fr
+                                transformOrigin = TransformOrigin(pose.originX, pose.originY)
+                                translationX = pose.translationX * fr
+                                translationY = pose.translationY * fr
+                                alpha = 1f + (pose.alpha - 1f) * fr
+                                restCorner = pose.cornerDp * fr
+                                blurDp = rest.behindBlurDp * fr
+                                fractionActive = fr > 0.001f
                             } else {
                                 alpha = 1f
                             }
 
                             // At rest a behind screen keeps its 32.dp rounded pose; mid-gesture the style decides.
-                            val cornerRadius = maxOf(layer?.cornerDp ?: 32f, transitionCornerRadius)
-                            compositingStrategy = if (layer != null || currentBlurRadiusDp > 0.dp || cornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                            val cornerRadius = maxOf(layer?.cornerDp ?: restCorner, transitionCornerRadius)
+                            val blurring = behindFraction != null && blurEnabled && blurDp > 0.5f
+                            compositingStrategy = if (layer != null || currentBlurRadiusDp > 0.dp || cornerRadius > 0.5f || fractionActive || blurring) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                            renderEffect = if (blurring) {
+                                val px = blurDp.dp.toPx()
+                                BlurEffect(px, px, TileMode.Clamp)
+                            } else null
                             if (cornerRadius > 0.5f) {
                                 this.shape = RoundedCornerShape(cornerRadius.dp)
                                 this.clip = true
@@ -584,7 +627,13 @@ fun PetalScreenWrapper(
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer {
-                                alpha = effectiveDimAlpha.coerceIn(0f, 1f)
+                                val dim = when {
+                                    frame != null -> frame.behindDim
+                                    behindFraction != null ->
+                                        maxOf(settledTargetDim * behindFraction.invoke().coerceIn(0f, 1f), transitionDimAlpha)
+                                    else -> effectiveDimAlpha
+                                }
+                                alpha = dim.coerceIn(0f, 1f)
                             }
                             .background(Color.Black)
                     )

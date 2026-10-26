@@ -5097,6 +5097,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     private void showOverviewAfterCapture() {
         try {
+            captureBrowserMainPreview();
             isOverlayScreenShowing = true;
             clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
@@ -5152,7 +5153,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 }
             );
-            presentComposeScreen(tabSwitcherView);
+            // The tab grid runs its own page<->tile hero transition; the generic fade/slide-in would
+            // fight it (the whole screen fading up from 0 while the hero morphs).
+            presentComposeScreen(tabSwitcherView, false);
         } catch (Exception e) {
             Log.e(TAG, "Error showing tabs overview", e);
         }
@@ -5614,7 +5617,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void captureBrowserMainPreview() {
-        // No-op preview snapshot placeholder for screen transition previews
+        // Screenshot the page BEFORE the caller hides it for an overlay, so the predictive-back
+        // underlay shows the real page instead of a black frame. Consumed by the next
+        // PetalContentSnapshot.capture() (every overlay bridge calls that when building its view).
+        try {
+            View root = findViewById(android.R.id.content);
+            if (root == null) root = getWindow().getDecorView();
+            com.petal.browser.predictive.PetalContentSnapshot.capturePreview(root);
+        } catch (Throwable t) {
+            Log.w(TAG, "Preview capture failed", t);
+        }
     }
 
     public void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final AdapterRecord adapterRecord, List<Record> recordList, int location) {

@@ -30,6 +30,7 @@ import android.graphics.Canvas
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.SystemClock
 import android.view.PixelCopy
 import android.view.View
 import android.view.Window
@@ -63,8 +64,44 @@ object PetalContentSnapshot {
             return if (bmp != null && !bmp.isRecycled()) bmp else null
         }
 
+    /** A pre-hide screenshot taken by the host just before it hides the page behind an overlay. */
+    @Volatile
+    private var preview: Bitmap? = null
+
+    @Volatile
+    private var previewAt = 0L
+
+    @Volatile
+    private var currentAt = 0L
+
+    private const val PREVIEW_MAX_AGE_MS = 1500L
+
+    /** Cleanups that land right after a new capture belong to the screen that was just replaced. */
+    private const val CLEAR_GRACE_MS = 600L
+
+    /**
+     * Captures the visible page BEFORE the host hides it (app bar, tab surfaces, home...) to show an
+     * overlay. Overlay bridges used to screenshot after those views were already hidden, so the
+     * predictive-back underlay was a black frame. The next [capture] consumes this preview.
+     */
+    @JvmStatic
+    fun capturePreview(rootView: View) {
+        preview = try { grab(rootView) } catch (e: Throwable) { null }
+        previewAt = SystemClock.uptimeMillis()
+    }
+
     @JvmStatic
     fun capture(rootView: View): Bitmap {
+        val now = SystemClock.uptimeMillis()
+        val pre = preview
+        preview = null
+        val result = if (pre != null && !pre.isRecycled && now - previewAt <= PREVIEW_MAX_AGE_MS) pre else grab(rootView)
+        _current = result
+        currentAt = now
+        return result
+    }
+
+    private fun grab(rootView: View): Bitmap {
         val width = rootView.width.coerceAtLeast(1)
         val height = rootView.height.coerceAtLeast(1)
 
@@ -116,12 +153,14 @@ object PetalContentSnapshot {
             }
         }
 
-        _current = captured
         return captured
     }
 
     @JvmStatic
     fun clear() {
+        // The overlay being replaced is disposed after the new one has already captured; wiping
+        // here would hand the new screen a null underlay (black predictive-back background).
+        if (SystemClock.uptimeMillis() - currentAt < CLEAR_GRACE_MS) return
         _current = null
     }
 

@@ -157,11 +157,17 @@ fun PetalDeleteScreen(
         )
     }
 
+    // This screen lives in its own Activity (Settings_Delete). Faking predictive back inside the
+    // Compose tree had no screenshot to show behind it (black background) and, once the gesture
+    // finished, snapped back to rest and replayed the Activity's own finish animation. Leave the
+    // gesture to the system instead: it animates this window away over the REAL previous screen
+    // (cross-activity predictive back), exactly like Chrome. onBackPress/finish still handles the
+    // on-screen back arrow.
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = false,
         onBack = onBackPress,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+    com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = null) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),

@@ -182,43 +182,25 @@ object PetalOmniboxBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    // Opens out of the search button (bottom right) with the same spring feel as
-                    // the tab manager, and closes back toward it.
-                    val reveal = remember { androidx.compose.animation.core.Animatable(0f) }
-                    val revealScope = rememberCoroutineScope()
-                    LaunchedEffect(Unit) {
-                        reveal.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 380f))
-                    }
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier.graphicsLayer {
-                            val r = reveal.value
-                            val sc = 0.92f + 0.08f * r
-                            scaleX = sc
-                            scaleY = sc
-                            alpha = r.coerceIn(0f, 1f)
-                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.9f, 1f)
-                        }
-                    ) {
-                        PetalOmniboxPage(
-                            backgroundSnapshot = snapshotBitmap,
-                            activity = activity,
-                            initialQuery = initialQuery,
-                            pageTitle = pageTitle,
-                            pageUrl = pageUrl,
-                            favicon = favicon,
-                            isIncognito = isIncognito,
-                            onQuerySubmitted = { query ->
-                                onQuerySubmitted(query)
-                                onBackPress()
-                            },
-                            onBackPress = {
-                                revealScope.launch {
-                                    reveal.animateTo(0f, tween(140))
-                                    onBackPress()
-                                }
-                            }
-                        )
-                    }
+                    // No wrapper layer around the page: presentComposeScreen() owns the open animation and
+                    // PetalScreenWrapper owns the back gesture. Any extra alpha/scale layer here also faded
+                    // the snapshot underlay and replayed a fade after the gesture had finished.
+                    PetalOmniboxPage(
+                        backgroundSnapshot = snapshotBitmap,
+                        activity = activity,
+                        initialQuery = initialQuery,
+                        pageTitle = pageTitle,
+                        pageUrl = pageUrl,
+                        favicon = favicon,
+                        isIncognito = isIncognito,
+                        onQuerySubmitted = { query ->
+                            onQuerySubmitted(query)
+                            onBackPress()
+                        },
+                        // The predictive-back surface already animates the page away; a second
+                        // fade/scale here replayed over the finished gesture, so close at once.
+                        onBackPress = { onBackPress() }
+                    )
                 }
             }
         }
