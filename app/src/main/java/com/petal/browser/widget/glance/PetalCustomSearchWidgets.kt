@@ -71,7 +71,21 @@ import androidx.core.content.res.ResourcesCompat
 import com.petal.browser.ui.theme.AppFont
 
 
-private fun getWidgetColorScheme(context: Context): androidx.compose.material3.ColorScheme {
+/**
+ * Never let a bad pref / palette id / dynamic-color failure take the whole widget down:
+ * an exception thrown while composing leaves the launcher showing "Can't load widget".
+ */
+private fun getWidgetColorScheme(context: Context): androidx.compose.material3.ColorScheme =
+    try {
+        buildWidgetColorScheme(context)
+    } catch (t: Throwable) {
+        android.util.Log.e("PetalWidget", "Falling back to default widget colors", t)
+        val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+            Configuration.UI_MODE_NIGHT_YES
+        if (night) androidx.compose.material3.darkColorScheme() else androidx.compose.material3.lightColorScheme()
+    }
+
+private fun buildWidgetColorScheme(context: Context): androidx.compose.material3.ColorScheme {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
     val isDark = when (themeConfig) {
@@ -195,233 +209,27 @@ private fun widgetActionIntent(context: Context, action: String): Intent =
     }
 
 /**
- * Fast two-pass box blur on ARGB_8888 bitmap.
- * Runs quickly on downsampled bitmaps to produce a soft frosted glass effect.
+ * Liquid-glass overlay used by every search widget.
+ *
+ * Earlier versions decoded the user's wallpaper, box-blurred it and handed a full-size
+ * ARGB bitmap to RemoteViews. On most devices that blew the ~1 MB binder limit (or OOM'd the
+ * host process), which is what produced the "Can't load widget" / endless-spinner state. It
+ * also ignored the real widget size, so the artwork was stretched.
+ *
+ * Glass is now built from a translucent scheme tint (alpha comes from getWidgetColorScheme)
+ * plus a shape-drawable overlay (sheen, caustic, specular rim). Shape drawables scale to any
+ * widget size, cost no bitmap memory, and let the real wallpaper show through the translucent
+ * tint, which is the closest a home-screen widget can get to genuine glass.
  */
-private fun fastBoxBlur(src: Bitmap, radius: Int): Bitmap {
-    if (radius < 1) return src
-    val w = src.width
-    val h = src.height
-    val pix = IntArray(w * h)
-    src.getPixels(pix, 0, w, 0, 0, w, h)
-
-    val wm = w - 1
-    val hm = h - 1
-    val wh = w * h
-    val div = radius + radius + 1
-
-    val r = IntArray(wh)
-    val g = IntArray(wh)
-    val b = IntArray(wh)
-    var rsum: Int
-    var gsum: Int
-    var bsum: Int
-    var x: Int
-    var y: Int
-    var i: Int
-    var p: Int
-    var yp: Int
-    var yi: Int
-    var yw: Int
-    val vmin = IntArray(maxOf(w, h))
-
-    var divsum = (div + 1) shr 1
-    divsum *= divsum
-    val dv = IntArray(256 * divsum)
-    for (idx in 0 until 256 * divsum) {
-        dv[idx] = idx / divsum
-    }
-
-    yw = 0
-    yi = 0
-
-    for (row in 0 until h) {
-        rsum = 0
-        gsum = 0
-        bsum = 0
-        for (col in -radius..radius) {
-            p = pix[yi + minOf(wm, maxOf(col, 0))]
-            rsum += (p shr 16) and 0xff
-            gsum += (p shr 8) and 0xff
-            bsum += p and 0xff
-        }
-        for (col in 0 until w) {
-            r[yi] = dv[rsum]
-            g[yi] = dv[gsum]
-            b[yi] = dv[bsum]
-
-            if (row == 0) {
-                vmin[col] = minOf(col + radius + 1, wm)
-            }
-            val p1 = pix[yw + vmin[col]]
-            val p2 = pix[yw + maxOf(col - radius, 0)]
-
-            rsum += ((p1 shr 16) and 0xff) - ((p2 shr 16) and 0xff)
-            gsum += ((p1 shr 8) and 0xff) - ((p2 shr 8) and 0xff)
-            bsum += (p1 and 0xff) - (p2 and 0xff)
-            yi++
-        }
-        yw += w
-    }
-
-    for (col in 0 until w) {
-        rsum = 0
-        gsum = 0
-        bsum = 0
-        yp = -radius * w
-        for (row in -radius..radius) {
-            yi = maxOf(0, yp) + col
-            rsum += r[yi]
-            gsum += g[yi]
-            bsum += b[yi]
-            yp += w
-        }
-        yi = col
-        for (row in 0 until h) {
-            pix[yi] = (0xff000000.toInt()) or (dv[rsum] shl 16) or (dv[gsum] shl 8) or dv[bsum]
-            if (col == 0) {
-                vmin[row] = minOf(row + radius + 1, hm) * w
-            }
-            val p1 = col + vmin[row]
-            val p2 = col + maxOf(row - radius, 0) * w
-
-            rsum += r[p1] - r[p2]
-            gsum += g[p1] - g[p2]
-            bsum += b[p1] - b[p2]
-
-            yi += w
-        }
-    }
-
-    val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-    out.setPixels(pix, 0, w, 0, 0, w, h)
-    return out
-}
-
-/**
- * Samples the current wallpaper (Petal custom wallpaper or system wallpaper)
- * and generates a frosted liquid glass card bitmap with dual specular highlight rim.
- */
-private fun createLiquidGlassCardBitmap(
-    widthDp: Int,
-    heightDp: Int,
-    cornerDp: Int,
-    scheme: androidx.compose.material3.ColorScheme,
-    context: Context
-): Bitmap? {
-    val density = context.resources.displayMetrics.density
-    val w = (widthDp * density).toInt().coerceAtLeast(10)
-    val h = (heightDp * density).toInt().coerceAtLeast(10)
-
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val isGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
-    val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
-    val glassAlpha = sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f)
-
-    var baseWallpaper: Bitmap? = null
-    try {
-        val profileUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
-            ?: sp.getString("sp_home_wallpaper_uri", null)
-        if (!profileUri.isNullOrBlank()) {
-            val uri = android.net.Uri.parse(profileUri)
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                baseWallpaper = android.graphics.BitmapFactory.decodeStream(stream)
-            }
-        }
-    } catch (_: Throwable) {}
-
-    if (baseWallpaper == null) {
-        try {
-            val wm = android.app.WallpaperManager.getInstance(context)
-            val d = wm.drawable
-            if (d is android.graphics.drawable.BitmapDrawable) {
-                baseWallpaper = d.bitmap
-            } else if (d != null) {
-                val bmp = Bitmap.createBitmap(w.coerceAtLeast(100), h.coerceAtLeast(100), Bitmap.Config.ARGB_8888)
-                val c = Canvas(bmp)
-                d.setBounds(0, 0, c.width, c.height)
-                d.draw(c)
-                baseWallpaper = bmp
-            }
-        } catch (_: Throwable) {}
-    }
-
-    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-    val rect = android.graphics.RectF(0f, 0f, w.toFloat(), h.toFloat())
-    val cornerPx = cornerDp * density
-
-    val path = android.graphics.Path().apply {
-        addRoundRect(rect, cornerPx, cornerPx, android.graphics.Path.Direction.CW)
-    }
-
-    canvas.save()
-    canvas.clipPath(path)
-
-    if (baseWallpaper != null && !baseWallpaper!!.isRecycled) {
-        // Downscale wallpaper to card resolution then apply fast box blur for genuine frosted glass
-        try {
-            val downscaleW = (w / 3).coerceAtLeast(40)
-            val downscaleH = (h / 3).coerceAtLeast(40)
-            val scaledDown = Bitmap.createScaledBitmap(baseWallpaper!!, downscaleW, downscaleH, true)
-            val blurred = fastBoxBlur(scaledDown, radius = 6)
-            val filterPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
-            val dstRect = android.graphics.Rect(0, 0, w, h)
-            canvas.drawBitmap(blurred, null, dstRect, filterPaint)
-            if (blurred !== scaledDown && !blurred.isRecycled) blurred.recycle()
-            if (!scaledDown.isRecycled) scaledDown.recycle()
-        } catch (_: Throwable) {
-            // Fallback: draw directly if downscale/blur fails
-            val srcW = baseWallpaper!!.width
-            val srcH = baseWallpaper!!.height
-            val srcRect = android.graphics.Rect(0, (srcH * 0.15f).toInt(), srcW, (srcH * 0.85f).toInt())
-            val dstRect = android.graphics.Rect(0, 0, w, h)
-            val filterPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
-            canvas.drawBitmap(baseWallpaper!!, srcRect, dstRect, filterPaint)
-        }
-    }
-
-    // Frosted tint overlay matching the scheme surfaceContainer
-    val surfaceInt = scheme.surfaceContainer.toArgb()
-    val tintAlpha = if (isGlass) (glassAlpha * 0.55f).coerceIn(0.20f, 0.80f) else 1.0f
-    val alphaInt = (tintAlpha * 255).toInt().coerceIn(0, 255)
-    val tintColor = android.graphics.Color.argb(
-        alphaInt,
-        android.graphics.Color.red(surfaceInt),
-        android.graphics.Color.green(surfaceInt),
-        android.graphics.Color.blue(surfaceInt)
-    )
-    val tintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = tintColor
-        style = Paint.Style.FILL
-    }
-    canvas.drawRect(rect, tintPaint)
-
-    // Liquid Glass Specular Rim Border & Sheen Highlight
-    if (isGlass) {
-        val rimStrokeWidth = 1.5f * density
-        val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = rimStrokeWidth
-            shader = android.graphics.LinearGradient(
-                0f, 0f, w.toFloat() * 0.6f, h.toFloat(),
-                android.graphics.Color.argb((220 * sheen).toInt().coerceIn(40, 255), 255, 255, 255),
-                android.graphics.Color.argb((35 * sheen).toInt().coerceIn(10, 100), 255, 255, 255),
-                Shader.TileMode.CLAMP
-            )
-        }
-        val insetRect = android.graphics.RectF(
-            rimStrokeWidth / 2f,
-            rimStrokeWidth / 2f,
-            w.toFloat() - rimStrokeWidth / 2f,
-            h.toFloat() - rimStrokeWidth / 2f
-        )
-        val rimCorner = (cornerPx - rimStrokeWidth / 2f).coerceAtLeast(0f)
-        canvas.drawRoundRect(insetRect, rimCorner, rimCorner, rimPaint)
-    }
-
-    canvas.restore()
-    return bitmap
+@Composable
+private fun GlassOverlay(enabled: Boolean, @androidx.annotation.DrawableRes overlayRes: Int, cornerDp: Int) {
+    if (!enabled) return
+    Box(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .cornerRadius(cornerDp.dp)
+            .background(ImageProvider(overlayRes))
+    ) {}
 }
 
 /**
@@ -647,27 +455,14 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
     val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
 
     if (isExpanded) {
-        val glassCardBitmap = remember(scheme, isLiquidGlass) {
-            if (isLiquidGlass) {
-                createLiquidGlassCardBitmap(widthDp = 280, heightDp = 110, cornerDp = 28, scheme = scheme, context = context)
-            } else null
-        }
 
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(28.dp)
-                .then(
-                    if (glassCardBitmap != null) GlanceModifier else GlanceModifier.background(surfaceContainerLowProvider(scheme))
-                )
+                .background(surfaceContainerLowProvider(scheme))
         ) {
-            if (glassCardBitmap != null) {
-                Image(
-                    provider = ImageProvider(glassCardBitmap),
-                    contentDescription = null,
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-            }
+            GlassOverlay(enabled = isLiquidGlass, overlayRes = R.drawable.widget_glass_sheen_card, cornerDp = 24)
             Column(
                 modifier = GlanceModifier.fillMaxSize().padding(10.dp),
                 verticalAlignment = Alignment.Vertical.CenterVertically
@@ -742,27 +537,14 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
         }
     } else {
         // Compact Pill Mode
-        val glassPillBitmap = remember(scheme, isLiquidGlass) {
-            if (isLiquidGlass) {
-                createLiquidGlassCardBitmap(widthDp = 240, heightDp = 52, cornerDp = 26, scheme = scheme, context = context)
-            } else null
-        }
 
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(28.dp)
-                .then(
-                    if (glassPillBitmap != null) GlanceModifier else GlanceModifier.background(surfaceContainerHighProvider(scheme))
-                )
+                .background(surfaceContainerHighProvider(scheme))
         ) {
-            if (glassPillBitmap != null) {
-                Image(
-                    provider = ImageProvider(glassPillBitmap),
-                    contentDescription = null,
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-            }
+            GlassOverlay(enabled = isLiquidGlass, overlayRes = R.drawable.widget_glass_sheen_pill, cornerDp = 28)
             Petal1ExpressiveSearchRow(
                 modifier = GlanceModifier
                     .fillMaxSize()
@@ -952,28 +734,15 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
 
-    val glassCardBitmap = remember(scheme, isLiquidGlass) {
-        if (isLiquidGlass) {
-            createLiquidGlassCardBitmap(widthDp = 280, heightDp = 56, cornerDp = 28, scheme = scheme, context = context)
-        } else null
-    }
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
-            .then(
-                if (glassCardBitmap != null) GlanceModifier else GlanceModifier.background(surfaceContainerLowProvider(scheme))
-            ),
+            .background(surfaceContainerLowProvider(scheme)),
         contentAlignment = Alignment.Center
     ) {
-        if (glassCardBitmap != null) {
-            Image(
-                provider = ImageProvider(glassCardBitmap),
-                contentDescription = null,
-                modifier = GlanceModifier.fillMaxSize()
-            )
-        }
+        GlassOverlay(enabled = isLiquidGlass, overlayRes = R.drawable.widget_glass_sheen_card, cornerDp = 24)
         Row(
             modifier = GlanceModifier.fillMaxSize().padding(6.dp),
             verticalAlignment = Alignment.Vertical.CenterVertically
@@ -1116,29 +885,16 @@ private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
 
-    val glassPillBitmap = remember(scheme, isLiquidGlass) {
-        if (isLiquidGlass) {
-            createLiquidGlassCardBitmap(widthDp = 280, heightDp = 56, cornerDp = 28, scheme = scheme, context = context)
-        } else null
-    }
 
     // Material 3 Expressive Pill Bar (height 56dp, corner radius 28dp)
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
-            .then(
-                if (glassPillBitmap != null) GlanceModifier else GlanceModifier.background(surfaceContainerHighProvider(scheme))
-            ),
+            .background(surfaceContainerHighProvider(scheme)),
         contentAlignment = Alignment.Center
     ) {
-        if (glassPillBitmap != null) {
-            Image(
-                provider = ImageProvider(glassPillBitmap),
-                contentDescription = null,
-                modifier = GlanceModifier.fillMaxSize()
-            )
-        }
+        GlassOverlay(enabled = isLiquidGlass, overlayRes = R.drawable.widget_glass_sheen_pill, cornerDp = 28)
         Row(
             modifier = GlanceModifier
                 .fillMaxSize()

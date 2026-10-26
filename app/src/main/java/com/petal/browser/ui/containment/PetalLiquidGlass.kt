@@ -35,8 +35,16 @@ fun rememberPetalBackdrop(): PetalBackdrop = rememberLayerBackdrop()
 /** Marks this element as the picture that sibling glass surfaces refract. */
 fun Modifier.petalBackdropSource(backdrop: PetalBackdrop): Modifier = this.layerBackdrop(backdrop)
 
-/** Blur needs API 31 and the lens shader needs API 33, so older phones keep the fallback look. */
+/**
+ * Real (backdrop) glass needs RenderEffect, so API 31+. The edge-bending lens is an AGSL
+ * RuntimeShader and needs API 33; on Android 12/12L the glass is still real, blurred and
+ * vibrant, just without the rim refraction. Below API 31 the frosted fallback look is used.
+ */
 val petalRealGlassSupported: Boolean
+    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+/** The lens refraction shader (API 33+). */
+val petalLensSupported: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
 internal fun Modifier.petalRealGlass(
@@ -59,7 +67,7 @@ internal fun Modifier.petalRealGlass(
             )
             blur(7f.dp.toPx())
             // Stride's panel lens, clamped to fit short headers.
-            if (refraction.enabled) {
+            if (refraction.enabled && petalLensSupported) {
                 val lensHeight = (24.dp.toPx() * refraction.width).coerceAtMost(size.minDimension / 2f)
                 lens(lensHeight, 56.dp.toPx() * refraction.strength, false)
             }
