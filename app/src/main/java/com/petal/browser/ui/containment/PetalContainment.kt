@@ -142,14 +142,19 @@ fun Modifier.liquidGlassChrome(
     backdrop: PetalBackdrop? = null,
     isDark: Boolean = false,
     alphaOverride: Float? = null,
-    sheenOverride: Float? = null
+    sheenOverride: Float? = null,
+    refractionOverride: Float? = null,
+    refractionWidthOverride: Float? = null
 ): Modifier {
+    // Read first, on every path: any liquid-glass pref change (master toggle, sliders)
+    // must recompose headers using the backdrop path too, not just wallpaper panels.
+    LocalPetalGlassRevision.current
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val tuning = com.petal.browser.ui.glass.rememberRefractionTuning(refractionOverride, refractionWidthOverride)
     val masterGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
     if (!enabled || !masterGlass) return this
     if (backdrop == null && LocalPetalGlassWallpaper.current?.ready == true) {
-        LocalPetalGlassRevision.current
         val dark = MaterialTheme.colorScheme.background.luminance() < .5f
         val opacity = (alphaOverride ?: sp.getFloat("sp_liquid_glass_alpha", .70f)).coerceIn(.10f, .95f)
         val tint = if (tintColor != Color.Unspecified) tintColor else MaterialTheme.colorScheme.surfaceContainerHigh
@@ -160,11 +165,13 @@ fun Modifier.liquidGlassChrome(
         return this.petalGlassPanel(
             shape = shape,
             tint = tint.copy(alpha = baseAlpha.coerceIn(0f, 0.96f)),
-            edge = (sheen / 0.60f).coerceIn(0f, 2.5f)
+            edge = (sheen / 0.60f).coerceIn(0f, 2.5f),
+            refractionOverride = tuning.strength,
+            refractionWidthOverride = tuning.width
         )
     }
     val effectiveSheen = sheenOverride ?: sheenIntensity
-    return this.petalRealGlass(backdrop, shape, isDark)
+    return this.petalRealGlass(backdrop, shape, isDark, tuning)
         .liquidGlassSheen(shape, effectiveSheen, tintColor)
 }
 

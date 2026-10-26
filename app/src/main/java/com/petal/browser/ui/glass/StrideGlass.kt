@@ -172,6 +172,8 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
     internal var host: View? = null
     internal var coords: LayoutCoordinates? = null
     private var size = Size.Zero
+    private var shape: Shape? = null
+    private var direction: LayoutDirection? = null
     private var outline: android.graphics.Path? = null
     private var radii: FloatArray? = null
     private var look: GlassLook? = null
@@ -194,9 +196,12 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
     internal fun detach() = backdrop.detach(this)
 
     internal fun setShape(size: Size, shape: Shape, direction: LayoutDirection, density: Density, look: GlassLook) {
-        if (size == this.size && look == this.look && outline != null) return
+        if (size == this.size && look == this.look && shape == this.shape &&
+            direction == this.direction && outline != null) return
         this.size = size
         this.look = look
+        this.shape = shape
+        this.direction = direction
         outline = Path().apply { addOutline(shape.createOutline(size, direction, density)) }.asAndroidPath()
         radii = cornerRadii(shape, size, direction, density)
         val key = listOf(size, radii?.toList(), look.blur, look.lensHeight, look.lensAmount, look.pad)

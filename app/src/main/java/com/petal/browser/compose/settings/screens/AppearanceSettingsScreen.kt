@@ -81,6 +81,8 @@ fun AppearanceSettingsScreen(
     val liquidGlassEnabled by viewModel.liquidGlassEnabled.collectAsStateWithLifecycle()
     val liquidGlassAlpha by viewModel.liquidGlassAlpha.collectAsStateWithLifecycle()
     val liquidGlassSheen by viewModel.liquidGlassSheen.collectAsStateWithLifecycle()
+    val liquidGlassRefraction by viewModel.liquidGlassRefraction.collectAsStateWithLifecycle()
+    val liquidGlassRefractionWidth by viewModel.liquidGlassRefractionWidth.collectAsStateWithLifecycle()
     val liquidGlassTint by viewModel.liquidGlassTint.collectAsStateWithLifecycle()
     val liquidGlassContainments by viewModel.liquidGlassContainments.collectAsStateWithLifecycle()
     val liquidGlassBottomNav by viewModel.liquidGlassBottomNav.collectAsStateWithLifecycle()
@@ -118,6 +120,8 @@ fun AppearanceSettingsScreen(
         liquidGlassEnabled = liquidGlassEnabled,
         liquidGlassAlpha = liquidGlassAlpha,
         liquidGlassSheen = liquidGlassSheen,
+        liquidGlassRefraction = liquidGlassRefraction,
+        liquidGlassRefractionWidth = liquidGlassRefractionWidth,
         liquidGlassTint = liquidGlassTint,
         liquidGlassContainments = liquidGlassContainments,
         liquidGlassBottomNav = liquidGlassBottomNav,
@@ -152,6 +156,8 @@ fun AppearanceSettingsScreen(
         onLiquidGlassEnabledChange = viewModel::setLiquidGlassEnabled,
         onLiquidGlassAlphaChange = viewModel::setLiquidGlassAlpha,
         onLiquidGlassSheenChange = viewModel::setLiquidGlassSheen,
+        onLiquidGlassRefractionChange = viewModel::setLiquidGlassRefraction,
+        onLiquidGlassRefractionWidthChange = viewModel::setLiquidGlassRefractionWidth,
         onLiquidGlassTintChange = viewModel::setLiquidGlassTint,
         onLiquidGlassContainmentsChange = viewModel::setLiquidGlassContainments,
         onLiquidGlassBottomNavChange = viewModel::setLiquidGlassBottomNav,
@@ -193,6 +199,8 @@ fun AppearanceSettingsScreenContent(
     liquidGlassEnabled: Boolean = false,
     liquidGlassAlpha: Float = 0.70f,
     liquidGlassSheen: Float = 0.60f,
+    liquidGlassRefraction: Float = 1.0f,
+    liquidGlassRefractionWidth: Float = 1.0f,
     liquidGlassTint: String = "FROSTED",
     liquidGlassContainments: Boolean = true,
     liquidGlassBottomNav: Boolean = true,
@@ -229,6 +237,8 @@ fun AppearanceSettingsScreenContent(
     onLiquidGlassEnabledChange: (Boolean) -> Unit = {},
     onLiquidGlassAlphaChange: (Float) -> Unit = {},
     onLiquidGlassSheenChange: (Float) -> Unit = {},
+    onLiquidGlassRefractionChange: (Float) -> Unit = {},
+    onLiquidGlassRefractionWidthChange: (Float) -> Unit = {},
     onLiquidGlassTintChange: (String) -> Unit = {},
     onLiquidGlassContainmentsChange: (Boolean) -> Unit = {},
     onLiquidGlassBottomNavChange: (Boolean) -> Unit = {},
@@ -1046,6 +1056,9 @@ fun AppearanceSettingsScreenContent(
                                 // Real-time local state so sliding immediately updates on this screen without lag or waiting for disk writes
                                 var liveAlpha by remember(liquidGlassAlpha) { mutableFloatStateOf(liquidGlassAlpha) }
                                 var liveSheen by remember(liquidGlassSheen) { mutableFloatStateOf(liquidGlassSheen) }
+                                var liveRefraction by remember(liquidGlassRefraction) { mutableFloatStateOf(liquidGlassRefraction) }
+                                var liveRefractionWidth by remember(liquidGlassRefractionWidth) { mutableFloatStateOf(liquidGlassRefractionWidth) }
+                                val lensSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
                                 // Live Liquid Glass Interactive Preview Card
                                 val previewShape = RoundedCornerShape(24.dp)
@@ -1085,7 +1098,9 @@ fun AppearanceSettingsScreenContent(
                                                 enabled = true,
                                                 sheenIntensity = liveSheen,
                                                 alphaOverride = liveAlpha,
-                                                sheenOverride = liveSheen
+                                                sheenOverride = liveSheen,
+                                                refractionOverride = liveRefraction,
+                                                refractionWidthOverride = liveRefractionWidth
                                             )
                                     ) {
                                         Column(
@@ -1195,6 +1210,72 @@ fun AppearanceSettingsScreenContent(
                                             onLiquidGlassSheenChange(it)
                                         },
                                         valueRange = 0f..1f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                // Refraction Strength Slider
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Refraction Strength",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = if (lensSupported) "${Math.round(liveRefraction * 100)}%" else "Android 13+",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    PetalSlider(
+                                        value = liveRefraction,
+                                        onValueChange = {
+                                            liveRefraction = it
+                                            onLiquidGlassRefractionChange(it)
+                                        },
+                                        valueRange = 0f..2f,
+                                        enabled = lensSupported,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Text(
+                                        text = if (lensSupported) "How strongly the rim bends what is behind the glass. 0% turns the lens off."
+                                        else "Edge refraction needs Android 13 or newer. Your device shows blur only.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                // Refraction Width Slider
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Refraction Width",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = if (lensSupported) "${Math.round(liveRefractionWidth * 100)}%" else "Android 13+",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    PetalSlider(
+                                        value = liveRefractionWidth,
+                                        onValueChange = {
+                                            liveRefractionWidth = it
+                                            onLiquidGlassRefractionWidthChange(it)
+                                        },
+                                        valueRange = 0f..2f,
+                                        enabled = lensSupported,
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }

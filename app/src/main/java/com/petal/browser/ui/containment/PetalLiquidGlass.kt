@@ -42,7 +42,8 @@ val petalRealGlassSupported: Boolean
 internal fun Modifier.petalRealGlass(
     backdrop: PetalBackdrop?,
     shape: Shape,
-    isDark: Boolean
+    isDark: Boolean,
+    refraction: com.petal.browser.ui.glass.RefractionTuning = com.petal.browser.ui.glass.RefractionTuning()
 ): Modifier {
     if (backdrop == null || !petalRealGlassSupported) return this
     return this.drawBackdrop(
@@ -58,7 +59,10 @@ internal fun Modifier.petalRealGlass(
             )
             blur(7f.dp.toPx())
             // Stride's panel lens, clamped to fit short headers.
-            lens(24.dp.toPx().coerceAtMost(size.minDimension / 2f), 56.dp.toPx(), false)
+            if (refraction.enabled) {
+                val lensHeight = (24.dp.toPx() * refraction.width).coerceAtMost(size.minDimension / 2f)
+                lens(lensHeight, 56.dp.toPx() * refraction.strength, false)
+            }
         },
         onDrawSurface = {
             // Light veil so text stays readable on any background.

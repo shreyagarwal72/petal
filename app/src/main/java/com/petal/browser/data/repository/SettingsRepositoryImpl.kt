@@ -156,6 +156,14 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getFloat("sp_liquid_glass_sheen", 0.60f)
     }
 
+    override val liquidGlassRefraction: Flow<Float> = preferenceFlow("sp_liquid_glass_refraction") {
+        sp.getFloat("sp_liquid_glass_refraction", 1.0f)
+    }
+
+    override val liquidGlassRefractionWidth: Flow<Float> = preferenceFlow("sp_liquid_glass_refraction_width") {
+        sp.getFloat("sp_liquid_glass_refraction_width", 1.0f)
+    }
+
     override val liquidGlassTint: Flow<String> = preferenceFlow("sp_liquid_glass_tint") {
         sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED"
     }
@@ -574,6 +582,14 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setLiquidGlassSheen(sheen: Float) {
         sp.edit().putFloat("sp_liquid_glass_sheen", sheen).apply()
         com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
+    }
+
+    override suspend fun setLiquidGlassRefraction(strength: Float) {
+        sp.edit().putFloat("sp_liquid_glass_refraction", strength.coerceIn(0f, 2f)).apply()
+    }
+
+    override suspend fun setLiquidGlassRefractionWidth(width: Float) {
+        sp.edit().putFloat("sp_liquid_glass_refraction_width", width.coerceIn(0f, 2f)).apply()
     }
 
     override suspend fun setLiquidGlassTint(tint: String) {

@@ -16,6 +16,10 @@ navigation bars reuse Petal's existing View-backed Stride glass so they sample b
 content rather than the settings wallpaper. Browser bars retain a stronger tint for contrast
 over arbitrary websites. The incognito address bar stays solid.
 
+Appearance has **Refraction Strength** and **Refraction Width** sliders (0-200%, default 100%).
+They multiply each surface's own lens (`sp_liquid_glass_refraction`, `sp_liquid_glass_refraction_width`),
+so every surface follows them; 0% turns the lens off. They need Android 13 and are disabled below it.
+
 Android 12 supports backdrop blur; Android 13 adds the runtime lens shader. Older versions
 use a stronger tint for readability. No new dependencies were added. Vyxel and Stride were
 read-only references.
@@ -26,6 +30,7 @@ Manual device checks:
 - Check light/dark themes, Glass/Morphs/image backgrounds, opacity, and sheen changes live.
 - Scroll cards over the wallpaper; its position should remain fixed behind each pane.
 - Check top/bottom address bars, floating/standard navigation, and incognito.
+- Drag both refraction sliders: the preview, headers, nav bar, selection slab and selection toolbar should change live; 0% should look like plain frost.
 - Check Android 12 blur and Android 13+ refraction; check the older-device tint fallback.
 
 Original versions of edited files are saved in `build/liquid-glass-originals` because this

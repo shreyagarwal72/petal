@@ -61,6 +61,7 @@ fun rememberGlassBar(source: View?): GlassBar? {
 @Composable
 fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     LocalPetalGlassRevision.current
+    val tuning = rememberRefractionTuning()
     val wallpaper = LocalPetalGlassWallpaper.current
     val density = LocalDensity.current
     val dark = tint.luminance() < 0.5f
@@ -113,8 +114,8 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     // beveled specular sheen, and clear optical depth.
     val look = with(density) {
         val blur = (10f + alphaPref * 14f).dp.toPx()
-        val lensHeight = 16.dp.toPx()
-        val lensAmount = 10.dp.toPx()
+        val lensHeight = 16.dp.toPx() * tuning.width
+        val lensAmount = 10.dp.toPx() * tuning.strength
         // Ensure pad completely accommodates both blur and refraction displacement
         val pad = blur * 1.5f + lensAmount + 6.dp.toPx()
         GlassLook(
@@ -167,9 +168,10 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
 @Composable
 fun Modifier.glassTile(target: () -> Rect?, shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     val density = LocalDensity.current
+    val tuning = rememberRefractionTuning()
     val look = with(density) {
-        val lensHeight = 12.dp.toPx()
-        val lensAmount = 14.dp.toPx()
+        val lensHeight = 12.dp.toPx() * tuning.width
+        val lensAmount = 14.dp.toPx() * tuning.strength
         SlabLook(
             fill = tint.copy(alpha = 0.12f).argb(),
             rimTop = Color.White.copy(alpha = 0.95f).argb(),

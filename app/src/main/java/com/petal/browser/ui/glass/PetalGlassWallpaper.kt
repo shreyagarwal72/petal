@@ -45,6 +45,21 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlin.math.ceil
 
+/**
+ * The shared frost: a light 7 dp blur, as documented in docs/liquid-glass.md. Heavier blur
+ * flattens the image before the lens bends it, which hides the refraction.
+ */
+private const val FROST_BLUR_DP = 7f
+
+private fun frostEffect(density: androidx.compose.ui.unit.Density): androidx.compose.ui.graphics.RenderEffect? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
+    return try {
+        val px = with(density) { FROST_BLUR_DP.dp.toPx() }
+        android.graphics.RenderEffect.createBlurEffect(px, px, android.graphics.Shader.TileMode.CLAMP)
+            .asComposeRenderEffect()
+    } catch (_: Throwable) { null }
+}
+
 /** Stride/Vyxel's shared wallpaper: frost once, then refract only each card's patch. */
 class PetalGlassWallpaper(val sharp: GraphicsLayer, val frosted: GraphicsLayer) {
     var origin by mutableStateOf(Offset.Zero)
@@ -84,13 +99,7 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
             wallpaper.hasRecorded = false
         }
     }.drawWithCache {
-        wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                android.graphics.RenderEffect.createBlurEffect(
-                    20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
-                ).asComposeRenderEffect()
-            } catch (_: Throwable) { null }
-        } else null
+        wallpaper.frosted.renderEffect = frostEffect(this)
         onDrawWithContent {
             try {
                 if (size.width > 0f && size.height > 0f) {
@@ -142,13 +151,7 @@ fun Modifier.captureGlassWallpaperLive(
             wallpaper.hasRecorded = false
         }
     }.drawWithCache {
-        wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                android.graphics.RenderEffect.createBlurEffect(
-                    20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
-                ).asComposeRenderEffect()
-            } catch (_: Throwable) { null }
-        } else null
+        wallpaper.frosted.renderEffect = frostEffect(this)
         onDrawWithContent {
             tick() // reading per-frame state makes this block run (and re-record) each frame
             try {
@@ -187,13 +190,7 @@ fun Modifier.recordGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
             wallpaper.hasRecorded = false
         }
     }.drawWithCache {
-        wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                android.graphics.RenderEffect.createBlurEffect(
-                    20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
-                ).asComposeRenderEffect()
-            } catch (_: Throwable) { null }
-        } else null
+        wallpaper.frosted.renderEffect = frostEffect(this)
         onDrawWithContent {
             try {
                 if (size.width > 0f && size.height > 0f) {
@@ -240,13 +237,7 @@ private fun Modifier.liveGlassWallpaperImpl(
             wallpaper.hasRecorded = false
         }
     }.drawWithCache {
-        wallpaper.frosted.renderEffect = if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                android.graphics.RenderEffect.createBlurEffect(
-                    20.dp.toPx(), 20.dp.toPx(), android.graphics.Shader.TileMode.CLAMP
-                ).asComposeRenderEffect()
-            } catch (_: Throwable) { null }
-        } else null
+        wallpaper.frosted.renderEffect = frostEffect(this)
         val srcLoc = IntArray(2)
         onDrawWithContent {
             tick() // reading per-frame state redraws (and re-records) every frame
@@ -325,7 +316,14 @@ fun PetalGlassPattern(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
+fun Modifier.petalGlassPanel(
+    shape: Shape,
+    tint: Color,
+    edge: Float,
+    refractionOverride: Float? = null,
+    refractionWidthOverride: Float? = null
+): Modifier {
+    val tuning = rememberRefractionTuning(refractionOverride, refractionWidthOverride)
     val wallpaper = LocalPetalGlassWallpaper.current ?: return this
     if (!wallpaper.ready) return this
     val place = remember { GlassPanelPlace() }
@@ -343,8 +341,9 @@ fun Modifier.petalGlassPanel(shape: Shape, tint: Color, edge: Float): Modifier {
                     addRect(androidx.compose.ui.geometry.Rect(Offset.Zero, size))
                 }
             }
-            val lensHeight = 14.dp.toPx()
-            val lensAmount = 16.dp.toPx()
+            val lensHeight = 14.dp.toPx() * tuning.width
+            val lensAmount = 16.dp.toPx() * tuning.strength
+            // The pad must hold everything the lens can pull in, or the rim clamps.
             val pad = lensAmount + 4.dp.toPx()
             val effect = try {
                 val radii = cornerRadii(shape, size, layoutDirection, this)

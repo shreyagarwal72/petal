@@ -1,3 +1,13 @@
+### Unreleased — Liquid glass refraction controls
+
+#### 🫧 Liquid Glass
+- **Refraction sliders**: Appearance → Liquid Glass UI now has *Refraction Strength* and *Refraction Width* (0–200%, default 100%). Strength sets how far the rim pulls the image; width sets how far in from the rim the glass bends. 0% turns the lens off. They apply live to panels, the nav bar, the selection slab, headers and the selection toolbar, and show in the preview card. On Android 12 and older the sliders are disabled, since the lens needs Android 13.
+- **Visible refraction**: The shared frosted wallpaper now uses the documented 7 dp blur instead of 20 dp, which flattened the image before the lens could bend it.
+- **Headers follow settings live**: Backdrop-based headers and the master glass check now update when any liquid glass setting changes, not only wallpaper panels.
+- **Selection toolbar** follows opacity and sheen changes live.
+- **Nav bar shape changes**: A same-size shape change no longer keeps stale corner radii.
+- Lens padding scales with refraction strength so a strong lens no longer clamps at the rim.
+
 ### Unreleased — Predictive back styles
 
 #### 🎞️ Animations

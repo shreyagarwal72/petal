@@ -358,6 +358,8 @@ private fun GlassToolbar(actions: List<PetalSelectionAction>, shape: Shape, modi
     val scheme = MaterialTheme.colorScheme
     val dark = scheme.background.luminance() < 0.5f
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    // Re-read whenever a liquid-glass pref changes, so the toolbar follows the sliders.
+    com.petal.browser.ui.glass.LocalPetalGlassRevision.current
     val opacity = sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.10f, 0.95f)
     val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
     val baseAlpha = if (dark) 0.14f + opacity * 0.40f else 0.18f + opacity * 0.50f

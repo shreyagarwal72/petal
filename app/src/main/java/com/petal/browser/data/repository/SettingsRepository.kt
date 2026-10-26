@@ -37,6 +37,10 @@ interface SettingsRepository {
     val liquidGlassEnabled: Flow<Boolean>
     val liquidGlassAlpha: Flow<Float>
     val liquidGlassSheen: Flow<Float>
+    /** Refraction strength multiplier (1 = as designed, 0 = lens off). */
+    val liquidGlassRefraction: Flow<Float>
+    /** Refraction width multiplier: how far in from the rim the glass bends. */
+    val liquidGlassRefractionWidth: Flow<Float>
     val liquidGlassTint: Flow<String>
     val liquidGlassContainments: Flow<Boolean>
     val liquidGlassBottomNav: Flow<Boolean>
@@ -150,6 +154,8 @@ interface SettingsRepository {
     suspend fun setLiquidGlassEnabled(enabled: Boolean)
     suspend fun setLiquidGlassAlpha(alpha: Float)
     suspend fun setLiquidGlassSheen(sheen: Float)
+    suspend fun setLiquidGlassRefraction(strength: Float)
+    suspend fun setLiquidGlassRefractionWidth(width: Float)
     suspend fun setLiquidGlassTint(tint: String)
     suspend fun setLiquidGlassContainments(enabled: Boolean)
     suspend fun setLiquidGlassBottomNav(enabled: Boolean)
