@@ -1337,8 +1337,8 @@ fun PetalTabGridSwitcher(
             // ── Closed Tabs Vault: a real full page hosted in this screen (not a Dialog window) ──
             AnimatedVisibility(
                 visible = isVaultVisible,
-                enter = fadeIn(tween(220)) + slideInVertically(tween(320)) { it / 12 },
-                exit = fadeOut(tween(180)) + slideOutVertically(tween(240)) { it / 12 },
+                enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { it / 12 },
+                exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { it / 12 },
                 modifier = Modifier.fillMaxSize().zIndex(20f)
             ) {
                 PetalRecentlyClosedVault(

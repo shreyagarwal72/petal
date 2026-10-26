@@ -323,11 +323,7 @@ fun Modifier.petalPressScale(
     interactionSource: InteractionSource,
     pressedScale: Float = 0.97f,
 ): Modifier {
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) pressedScale else 1f,
-        label = "petalPressScale",
-    )
+    val scale = com.petal.browser.ui.components.rememberPetalPressScale(interactionSource, pressedScale)
     return graphicsLayer {
         scaleX = scale
         scaleY = scale

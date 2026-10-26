@@ -1,4 +1,6 @@
 package com.petal.browser.compose.settings.screens
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import com.petal.browser.ui.components.scrollMotionBlur
 
 import androidx.compose.animation.*
@@ -271,9 +273,14 @@ fun SettingsHubScreen(
                             2 -> PetalBadgeVariant.TERTIARY
                             else -> PetalBadgeVariant.SURFACE_TONAL
                         }
+                        val tileBounds = androidx.compose.runtime.remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
                         PetalGroupListRow(
                             position = petalGroupPositionFor(index, filteredCategories.size),
-                            onClick = { onCategoryClick(category, null) },
+                            modifier = Modifier.onGloballyPositioned { tileBounds[0] = it.boundsInWindow() },
+                            onClick = {
+                                com.petal.browser.ui.components.PetalContainerSource.set(tileBounds[0])
+                                onCategoryClick(category, null)
+                            },
                             leading = {
                                 PetalGroupIconBadge(
                                     painter = painterResource(category.iconRes),

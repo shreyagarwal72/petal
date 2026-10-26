@@ -22,6 +22,7 @@
 
 package com.petal.browser.compose.pdf
 
+import com.petal.browser.ui.components.petalContainerEnter
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -208,11 +209,13 @@ object PetalPdfViewerBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId,
                 ) {
-                    PetalPdfViewerScreen(
-                        pdfUri = pdfUri,
-                        displayName = displayName ?: pdfUri.lastPathSegment ?: "Document.pdf",
-                        onBackPress = onBackPress,
-                    )
+                    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize().petalContainerEnter()) {
+                        PetalPdfViewerScreen(
+                            pdfUri = pdfUri,
+                            displayName = displayName ?: pdfUri.lastPathSegment ?: "Document.pdf",
+                            onBackPress = onBackPress,
+                        )
+                    }
                 }
             }
         }
@@ -948,12 +951,8 @@ private fun PetalPdfViewerScreenImpl(
                     AnimatedVisibility(
                         visible = controlsVisible && !showFindBar && !isEditMode && !isTextEditMode,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        enter = fadeIn(tween(180)) + slideInVertically(
-                            spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
-                        ) { -it },
-                        exit = fadeOut(tween(150)) + slideOutVertically(
-                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                        ) { -it }
+                        enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { -it },
+                        exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { -it }
                     ) {
                         PdfViewerTopBar(
                             title = displayName,
@@ -982,8 +981,8 @@ private fun PetalPdfViewerScreenImpl(
                     AnimatedVisibility(
                         visible = showFindBar,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        enter = fadeIn(tween(200)) + slideInVertically { -it },
-                        exit = fadeOut(tween(150)) + slideOutVertically { -it }
+                        enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { -it },
+                        exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { -it }
                     ) {
                         PdfFindBar(
                             query = findQuery,
@@ -1035,8 +1034,8 @@ private fun PetalPdfViewerScreenImpl(
                     AnimatedVisibility(
                         visible = isEditMode,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        enter = fadeIn(tween(200)) + slideInVertically { -it },
-                        exit = fadeOut(tween(150)) + slideOutVertically { -it }
+                        enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { -it },
+                        exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { -it }
                     ) {
                         PdfEditTopBar(
                             selectedTool = selectedTool,
@@ -1063,8 +1062,8 @@ private fun PetalPdfViewerScreenImpl(
                     AnimatedVisibility(
                         visible = isTextEditMode,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        enter = fadeIn(tween(200)) + slideInVertically { -it },
-                        exit = fadeOut(tween(150)) + slideOutVertically { -it }
+                        enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { -it },
+                        exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { -it }
                     ) {
                         PdfTextEditTopBar(
                             isLoading = isLoadingTextLines,
@@ -1082,12 +1081,8 @@ private fun PetalPdfViewerScreenImpl(
                     AnimatedVisibility(
                         visible = controlsVisible && !isEditMode && !isTextEditMode,
                         modifier = Modifier.align(Alignment.BottomCenter),
-                        enter = fadeIn(tween(180)) + slideInVertically(
-                            spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
-                        ) { it },
-                        exit = fadeOut(tween(150)) + slideOutVertically(
-                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                        ) { it }
+                        enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { it },
+                        exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { it }
                     ) {
                         PdfViewerBottomBar(
                             currentPage = currentVisiblePage.value + 1,

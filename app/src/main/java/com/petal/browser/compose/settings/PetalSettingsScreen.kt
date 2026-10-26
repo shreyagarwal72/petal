@@ -7,6 +7,7 @@
 
 package com.petal.browser.compose.settings
 
+import com.petal.browser.ui.components.petalContainerEnter
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedContent
@@ -195,6 +196,7 @@ fun PetalSettingsScreen(
                 }
                 PetalScreenWrapper(isBehind = false) {
                     PetalSettingsAnimatedContent(targetKey = activeCategory) {
+                        Box(Modifier.fillMaxSize().petalContainerEnter()) {
                         RenderCategoryContent(
                             category = activeCategory,
                             targetHighlightItemId = currentHighlightId,
@@ -211,6 +213,7 @@ fun PetalSettingsScreen(
                                 currentHighlightId = null
                             }
                         )
+                        }
                     }
                 }
             }

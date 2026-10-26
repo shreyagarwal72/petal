@@ -47,8 +47,7 @@ object PetalMotion {
 
 @Composable
 fun Modifier.petalPressScale(interactionSource: MutableInteractionSource, targetScale: Float = 0.97f): Modifier {
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) targetScale else 1f, PetalMotion.spatialFast(), label = "petalPressScale")
+    val scale = com.petal.browser.ui.components.rememberPetalPressScale(interactionSource, targetScale)
     return scale(scale)
 }
 

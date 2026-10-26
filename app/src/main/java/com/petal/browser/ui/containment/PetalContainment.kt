@@ -244,6 +244,30 @@ fun petalGroupSurfaceColor(): Color {
     return color
 }
 
+/**
+ * Same corners as [petalGroupShape], but the four radii animate when a row's position in its group changes
+ * (rows added/removed, a row becoming first/last). Nothing animates on first composition.
+ * Radii are clamped at 0 so a spring overshoot can never produce a negative corner.
+ */
+@Composable
+fun rememberPetalGroupShape(position: PetalGroupPosition): RoundedCornerShape {
+    val target = petalGroupShape(position)
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val spec = androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec<androidx.compose.ui.unit.Dp>()
+    val probe = androidx.compose.ui.geometry.Size(1000f, 1000f)
+    fun corner(c: androidx.compose.foundation.shape.CornerSize) = with(density) { c.toPx(probe, density).toDp() }
+    val topStart by androidx.compose.animation.core.animateDpAsState(corner(target.topStart), spec, label = "groupTopStart")
+    val topEnd by androidx.compose.animation.core.animateDpAsState(corner(target.topEnd), spec, label = "groupTopEnd")
+    val bottomEnd by androidx.compose.animation.core.animateDpAsState(corner(target.bottomEnd), spec, label = "groupBottomEnd")
+    val bottomStart by androidx.compose.animation.core.animateDpAsState(corner(target.bottomStart), spec, label = "groupBottomStart")
+    return RoundedCornerShape(
+        topStart = topStart.coerceAtLeast(0.dp),
+        topEnd = topEnd.coerceAtLeast(0.dp),
+        bottomEnd = bottomEnd.coerceAtLeast(0.dp),
+        bottomStart = bottomStart.coerceAtLeast(0.dp),
+    )
+}
+
 fun petalGroupShape(position: PetalGroupPosition): RoundedCornerShape = when (position) {
     PetalGroupPosition.SINGLE -> RoundedCornerShape(28.dp)
     PetalGroupPosition.TOP -> RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 6.dp, bottomEnd = 6.dp)
@@ -405,7 +429,7 @@ fun PetalGroupRow(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
-    val shape = petalGroupShape(position)
+    val shape = rememberPetalGroupShape(position)
     val activeSurfaceColor = petalGroupSurfaceColor()
     val disabledContainerColor = if (isGlass) {
         activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
@@ -473,7 +497,7 @@ fun PetalGroupControlRow(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
-    val shape = petalGroupShape(position)
+    val shape = rememberPetalGroupShape(position)
     val activeSurfaceColor = petalGroupSurfaceColor()
     val disabledContainerColor = if (isGlass) {
         activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
@@ -574,7 +598,7 @@ fun PetalGroupToggleRow(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
-    val shape = petalGroupShape(position)
+    val shape = rememberPetalGroupShape(position)
     val activeSurfaceColor = petalGroupSurfaceColor()
     val disabledContainerColor = if (isGlass) {
         activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
@@ -630,7 +654,7 @@ fun PetalSettingsToggleRow(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
-    val shape = petalGroupShape(position)
+    val shape = rememberPetalGroupShape(position)
     val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     val activeSurfaceColor = petalGroupSurfaceColor()
@@ -706,7 +730,7 @@ fun PetalSettingsToggleRow(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
-    val shape = petalGroupShape(position)
+    val shape = rememberPetalGroupShape(position)
     val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     val activeSurfaceColor = petalGroupSurfaceColor()
@@ -797,7 +821,7 @@ fun PetalGroupListRow(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
-    val shape = petalGroupShape(position)
+    val shape = rememberPetalGroupShape(position)
     val rowContainerColor = when {
         LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
         selected -> selectedColor

@@ -423,8 +423,8 @@ fun PetalVideoPlayerOverlay(
         if (isControlsLocked) {
             AnimatedVisibility(
                 visible = areControlsVisible,
-                enter = fadeIn(tween(200)),
-                exit = fadeOut(tween(200)),
+                enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()),
+                exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = bottomClearance + 24.dp),
@@ -443,8 +443,8 @@ fun PetalVideoPlayerOverlay(
         // ── 7. Primary Interactive Controls (Top Bar, Center Play, Bottom Bar) ──
         AnimatedVisibility(
             visible = areControlsVisible && !isControlsLocked,
-            enter = fadeIn(tween(250)),
-            exit = fadeOut(tween(250)),
+            enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()),
+            exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Top & Bottom Gradient Scrims for readability

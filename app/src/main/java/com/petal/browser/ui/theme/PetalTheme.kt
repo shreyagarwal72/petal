@@ -241,6 +241,7 @@ fun PetalExpressiveTheme(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(hapticListener) }
     }
 
+    val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
     CompositionLocalProvider(
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper,
         com.petal.browser.ui.glass.LocalPetalGlassRevision provides glassRevision,
@@ -252,7 +253,7 @@ fun PetalExpressiveTheme(
     ) {
         androidx.compose.material3.MaterialExpressiveTheme(
             colorScheme = colorScheme,
-            motionScheme = androidx.compose.material3.MotionScheme.expressive(),
+            motionScheme = if (reduceMotion) com.petal.browser.ui.components.PetalInstantMotionScheme else androidx.compose.material3.MotionScheme.expressive(),
             typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexSettings, customFontPath, customFontSettings),
             content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
         )

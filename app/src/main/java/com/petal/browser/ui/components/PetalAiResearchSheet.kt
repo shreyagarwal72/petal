@@ -353,8 +353,8 @@ fun PetalAiResearchSheet(
             // ── Inline API key setup ──
             AnimatedVisibility(
                 visible = showApiKeyConfig,
-                enter = fadeIn(animationSpec = tween(220)) + expandVertically(animationSpec = tween(300)),
-                exit = fadeOut(animationSpec = tween(180)) + shrinkVertically(animationSpec = tween(240))
+                enter = fadeIn(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + expandVertically(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()),
+                exit = fadeOut(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + shrinkVertically(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec())
             ) {
                 val keyRows = buildList {
                     if (isCustomProvider) add(AiKeyRow.ENDPOINT)
@@ -600,8 +600,8 @@ fun PetalAiResearchSheet(
             // ── Loading ──
             AnimatedVisibility(
                 visible = isLoading,
-                enter = fadeIn(animationSpec = tween(220)) + expandVertically(animationSpec = tween(300)),
-                exit = fadeOut(animationSpec = tween(160)) + shrinkVertically(animationSpec = tween(220))
+                enter = fadeIn(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + expandVertically(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()),
+                exit = fadeOut(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + shrinkVertically(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec())
             ) {
                 PetalHeroCard {
                     Row(
@@ -676,7 +676,7 @@ fun PetalAiResearchSheet(
             // ── Result ──
             AnimatedVisibility(
                 visible = responseResult != null,
-                enter = fadeIn(animationSpec = tween(300)) + expandVertically(animationSpec = tween(400)),
+                enter = fadeIn(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + expandVertically(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()),
                 exit = fadeOut() + shrinkVertically()
             ) {
                 responseResult?.let { response ->

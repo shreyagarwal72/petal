@@ -47,7 +47,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import com.petal.browser.ui.components.entrance
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.components.PetalContainerSource
+import com.petal.browser.ui.components.PetalSwipeAction
+import com.petal.browser.ui.components.PetalSwipeRow
+import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.containment.PetalSnackbarHost
@@ -340,6 +346,7 @@ fun PetalDownloadManagerScreen(
     val rawDownloadList by PetalFetchDownloadBridge.downloadItems.collectAsState()
     var pendingDeletedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var pendingDeleteItems by remember { mutableStateOf<List<DownloadItem>>(emptyList()) }
+    val rowBounds = remember { mutableMapOf<Long, androidx.compose.ui.geometry.Rect>() }
     var deleteSelectedFiles by remember { mutableStateOf(false) }
     val downloadList = remember(rawDownloadList, pendingDeletedIds) {
         rawDownloadList.filter { !pendingDeletedIds.contains(it.id) }
@@ -649,19 +656,50 @@ fun PetalDownloadManagerScreen(
 
                         itemsIndexed(items, key = { _, it -> it.id }) { index, item ->
                             val isSelected = selectedIds.contains(item.id)
-                            DownloadRowItem(
-                                item = item,
-                                isSelected = isSelected,
-                                isSelectionMode = isSelectionMode,
-                                position = petalGroupPositionFor(index, items.size),
-                                showFullDate = (sortOption != DownloadSortOption.DATE_DESC && sortOption != DownloadSortOption.DATE_ASC),
+                            val rowPosition = petalGroupPositionFor(index, items.size)
+                            val confirmDelete = sharedPreferences.getBoolean("sp_confirm_download_delete", true)
+                            val errorContainer = MaterialTheme.colorScheme.errorContainer
+                            val onErrorContainer = MaterialTheme.colorScheme.onErrorContainer
+                            val swipeDelete = remember(item.id, confirmDelete, errorContainer, onErrorContainer) {
+                                PetalSwipeAction(
+                                    icon = Icons.Rounded.DeleteForever,
+                                    label = "Delete",
+                                    container = errorContainer,
+                                    content = onErrorContainer,
+                                    // With the confirm dialog on, the row springs back and the dialog decides; otherwise it folds away.
+                                    removes = !confirmDelete,
+                                    onTrigger = {
+                                        if (confirmDelete) {
+                                            deleteSelectedFiles = sharedPreferences.getBoolean("sp_delete_download_file", false)
+                                            pendingDeleteItems = listOf(item)
+                                        } else {
+                                            performStagedDelete(listOf(item), sharedPreferences.getBoolean("sp_delete_download_file", false))
+                                        }
+                                    }
+                                )
+                            }
+                            PetalSwipeRow(
                                 modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                                    .onGloballyPositioned { rowBounds[item.id] = it.boundsInWindow() }
                                     .entrance(index = index, playKey = item.id)
                                     .animateItem(
                                         fadeInSpec = PetalSpring.fadeIn(),
                                         fadeOutSpec = PetalSpring.fadeOut(),
                                         placementSpec = PetalSpring.spatial()
                                     ),
+                                shape = petalGroupShape(rowPosition),
+                                enabled = !isSelectionMode,
+                                endToStart = swipeDelete,
+                            ) {
+                            DownloadRowItem(
+                                item = item,
+                                isSelected = isSelected,
+                                isSelectionMode = isSelectionMode,
+                                position = rowPosition,
+                                showFullDate = (sortOption != DownloadSortOption.DATE_DESC && sortOption != DownloadSortOption.DATE_ASC),
+                                modifier = Modifier,
                                 onToggleSelect = { toggleSelection(item.id) },
                                 onLongClick = {
                                     if (!isSelectionMode) {
@@ -670,6 +708,7 @@ fun PetalDownloadManagerScreen(
                                 },
                                 onDeleteItem = { deleteFile -> performStagedDelete(listOf(item), deleteFile) },
                                 onOpenFile = {
+                                    PetalContainerSource.set(rowBounds[item.id])
                                     val activity = context as? com.petal.browser.activity.BrowserActivity
                                     if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName)) {
                                         val allImages = sortedDownloadList.filter { it.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName) && !it.localUri.isNullOrBlank() }
@@ -706,6 +745,7 @@ fun PetalDownloadManagerScreen(
                                     }
                                 }
                             )
+                            }
                         }
                     }
                 }
@@ -941,7 +981,7 @@ private fun DownloadRowItem(
             else if (item.status == DownloadManager.STATUS_SUCCESSFUL) onOpenFile()
         },
         onLongClick = onLongClick,
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = modifier.fillMaxWidth(),
         leading = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (isSelectionMode) {

@@ -22,6 +22,7 @@
 
 package com.petal.browser.compose.downloads
 
+import com.petal.browser.ui.components.petalContainerEnter
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -152,11 +153,13 @@ object PetalImageViewerBridge {
                     colorStyle   = colorStyle,
                     paletteId    = paletteId,
                 ) {
-                    PetalImageViewerScreen(
-                        initialIndex       = initialIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0)),
-                        entries            = entries,
-                        onBackPress        = onBackPress,
-                    )
+                    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize().petalContainerEnter()) {
+                        PetalImageViewerScreen(
+                            initialIndex       = initialIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0)),
+                            entries            = entries,
+                            onBackPress        = onBackPress,
+                        )
+                    }
                 }
             }
         }
@@ -376,12 +379,8 @@ fun PetalImageViewerScreen(
                     AnimatedVisibility(
                         visible = controlsVisible,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        enter = fadeIn(tween(180)) + slideInVertically(
-                            spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
-                        ) { -it },
-                        exit = fadeOut(tween(150)) + slideOutVertically(
-                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                        ) { -it },
+                        enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { -it },
+                        exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { -it },
                     ) {
                         ImageViewerTopBar(
                             currentIndex = pagerState.currentPage,
@@ -436,12 +435,8 @@ fun PetalImageViewerScreen(
                     AnimatedVisibility(
                         visible = controlsVisible,
                         modifier = Modifier.align(Alignment.BottomCenter),
-                        enter = fadeIn(tween(180)) + slideInVertically(
-                            spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
-                        ) { it },
-                        exit = fadeOut(tween(150)) + slideOutVertically(
-                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                        ) { it },
+                        enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { it },
+                        exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { it },
                     ) {
                         ImageViewerBottomBar(
                             entry        = currentEntry,
@@ -475,8 +470,8 @@ fun PetalImageViewerScreen(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .padding(bottom = 100.dp),
-                            enter = fadeIn(tween(220)),
-                            exit  = fadeOut(tween(180)),
+                            enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()),
+                            exit  = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()),
                         ) {
                             PageIndicatorDots(
                                 count   = entries.size,

@@ -20,6 +20,7 @@
 
 package com.petal.browser.compose.file
 
+import com.petal.browser.ui.components.petalContainerEnter
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -122,11 +123,13 @@ object PetalFileViewerBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId,
                 ) {
-                    PetalFileViewerScreen(
-                        fileUri = fileUri,
-                        displayName = displayName ?: fileUri.lastPathSegment ?: "Document",
-                        onBackPress = onBackPress,
-                    )
+                    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize().petalContainerEnter()) {
+                        PetalFileViewerScreen(
+                            fileUri = fileUri,
+                            displayName = displayName ?: fileUri.lastPathSegment ?: "Document",
+                            onBackPress = onBackPress,
+                        )
+                    }
                 }
             }
         }

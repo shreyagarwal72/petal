@@ -93,6 +93,8 @@ fun ExpressiveHeader(
     maxSubtitleLines: Int = 2,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
+    // Motion comes from the theme's scheme (instant when reduce-motion is on), not hardcoded springs.
+    val motion = MaterialTheme.motionScheme
     val glow = MaterialTheme.colorScheme.primary
     val secondaryGlow = MaterialTheme.colorScheme.tertiary
 
@@ -133,12 +135,12 @@ fun ExpressiveHeader(
                 ) {
                     androidx.compose.animation.AnimatedVisibility(
                         visible = onBack != null,
-                        enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)) +
-                                androidx.compose.animation.slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessLow)),
-                        exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                        enter = fadeIn(animationSpec = motion.defaultEffectsSpec()) +
+                                scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()) +
+                                androidx.compose.animation.slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = motion.defaultSpatialSpec()),
+                        exit = fadeOut(animationSpec = motion.fastEffectsSpec()) +
                                 scaleOut(targetScale = 0.92f) +
-                                androidx.compose.animation.slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessLow))
+                                androidx.compose.animation.slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = motion.defaultSpatialSpec())
                     ) {
                         Row {
                             FilledTonalIconButton(
@@ -164,12 +166,12 @@ fun ExpressiveHeader(
                     AnimatedContent(
                         targetState = title to (subtitle ?: ""),
                         transitionSpec = {
-                            (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                             slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { it / 3 } +
-                             scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)))
+                            (fadeIn(animationSpec = motion.defaultEffectsSpec()) +
+                             slideInVertically(animationSpec = motion.defaultSpatialSpec()) { it / 3 } +
+                             scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()))
                                 .togetherWith(
-                                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                    slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { -it / 3 } +
+                                    fadeOut(animationSpec = motion.fastEffectsSpec()) +
+                                    slideOutVertically(animationSpec = motion.defaultSpatialSpec()) { -it / 3 } +
                                     scaleOut(targetScale = 0.92f)
                                 )
                         },
@@ -230,9 +232,9 @@ fun ExpressiveHeader(
 
                     androidx.compose.animation.AnimatedVisibility(
                         visible = true,
-                        enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)),
-                        exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                        enter = fadeIn(animationSpec = motion.defaultEffectsSpec()) +
+                                scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()),
+                        exit = fadeOut(animationSpec = motion.fastEffectsSpec()) +
                                 scaleOut(targetScale = 0.92f)
                     ) {
                         Row(
