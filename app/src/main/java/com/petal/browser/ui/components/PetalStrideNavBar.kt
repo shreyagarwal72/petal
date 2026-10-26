@@ -56,13 +56,19 @@ import com.petal.browser.ui.glass.navIconMotion
 import com.petal.browser.ui.glass.rememberGlassBar
 import kotlin.math.roundToInt
 
-private val NavOrder = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
+private val NavOrder4 = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
+/** With search in the centre. */
+private val NavOrder5 = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.SEARCH, PetalNavTab.TABS, PetalNavTab.MENU)
 
 /**
  * What the bar needs besides the selected label: four icon slots (24 dp icon + 14 dp
  * padding each side), the gaps between them, the row's own padding and the label gap.
  */
 private val NAV_FIXED_WIDTH = (4 * 52 + 3 * 4 + 20 + 8).dp
+
+/** Same, when the bar shares the row with the separate search button: tighter item padding. */
+private val NAV_FIXED_WIDTH_COMPACT = (4 * 46 + 3 * 2 + 16 + 8).dp
+private val NAV_FIXED_WIDTH_COMPACT5 = (5 * 46 + 4 * 2 + 16 + 8).dp
 
 /**
  * Stride's floating nav bar, in Petal: a glass pill whose selected item opens its label
@@ -83,10 +89,19 @@ internal fun PetalStrideNavBar(
     onMenuClick: () -> Unit,
     onSwipeTabLeft: () -> Unit,
     onSwipeTabRight: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    includeSearch: Boolean = false,
+    onSearchClick: () -> Unit = {}
 ) {
+    val NavOrder = if (includeSearch) NavOrder5 else NavOrder4
     val scheme = MaterialTheme.colorScheme
     val pill = CircleShape
+    val compactAll = compact || includeSearch
+    val itemPadH = if (compactAll) 11.dp else 14.dp
+    val rowPadH = if (compactAll) 8.dp else 10.dp
+    val itemGap = if (compactAll) 2.dp else 4.dp
+    val fixedWidth = if (includeSearch) NAV_FIXED_WIDTH_COMPACT5 else if (compact) NAV_FIXED_WIDTH_COMPACT else NAV_FIXED_WIDTH
     val context = androidx.compose.ui.platform.LocalContext.current
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
     val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
@@ -131,7 +146,7 @@ internal fun PetalStrideNavBar(
         // take. Past that it shrinks its type rather than wrapping or pushing the bar
         // off a narrow screen.
         val labelMax = with(LocalDensity.current) {
-            (constraints.maxWidth - NAV_FIXED_WIDTH.roundToPx()).coerceAtLeast(24.dp.roundToPx())
+            (constraints.maxWidth - fixedWidth.roundToPx()).coerceAtLeast(24.dp.roundToPx())
         }
         // Where each item sits, so the glass slab can slide to the selected one.
         val itemBounds = remember { mutableStateMapOf<PetalNavTab, Rect>() }
@@ -154,9 +169,9 @@ internal fun PetalStrideNavBar(
         Row(
             modifier = Modifier
                 .glassTile(slab, pill, scheme.primary, glassBar)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+                .padding(horizontal = rowPadH, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(itemGap)
         ) {
             NavOrder.forEach { tab ->
                 val selected = selectedTab == tab
@@ -166,12 +181,14 @@ internal fun PetalStrideNavBar(
                     PetalNavTab.NEW_TAB -> "New"
                     PetalNavTab.TABS -> "Tabs"
                     PetalNavTab.MENU -> "Menu"
+                    PetalNavTab.SEARCH -> "Search"
                 }
                 val onClick = when (tab) {
                     PetalNavTab.HOME -> onHomeClick
                     PetalNavTab.NEW_TAB -> onNewTabClick
                     PetalNavTab.TABS -> onTabsClick
                     PetalNavTab.MENU -> onMenuClick
+                    PetalNavTab.SEARCH -> onSearchClick
                 }
                 val tint = if (selected) scheme.primary else scheme.onSurfaceVariant
                 val labelStyle = MaterialTheme.typography.labelLarge.copy(color = scheme.primary)
@@ -184,7 +201,7 @@ internal fun PetalStrideNavBar(
                 ) {
                     Row(
                         modifier = Modifier
-                            .padding(horizontal = 14.dp, vertical = 12.dp)
+                            .padding(horizontal = itemPadH, vertical = 12.dp)
                             // Magnified under the glass slab, by as much of the slab as is
                             // over this item — so it grows as the slab arrives.
                             .graphicsLayer {
@@ -245,5 +262,6 @@ private fun NavIcon(tab: PetalNavTab, selected: Boolean, tint: Color, tabCount: 
         PetalNavTab.NEW_TAB -> Icon(Icons.Rounded.Add, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
         PetalNavTab.TABS -> TabCountBadge(color = tint, count = tabCount, scale = badgeScale)
         PetalNavTab.MENU -> Icon(Icons.Rounded.MoreVert, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+        PetalNavTab.SEARCH -> Icon(painterResource(com.petal.browser.R.drawable.ic_petal_search), contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
     }
 }

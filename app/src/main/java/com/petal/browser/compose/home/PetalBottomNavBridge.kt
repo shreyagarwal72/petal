@@ -19,6 +19,7 @@ import androidx.preference.PreferenceManager
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,7 @@ interface PetalBottomNavHandler {
     fun onNewTabClick()
     fun onTabsClick()
     fun onMenuClick()
+    fun onSearchClick() {}
     fun onSwipeTabLeft() {}
     fun onSwipeTabRight() {}
 }
@@ -155,6 +157,19 @@ object PetalBottomNavBridge {
                                 else com.petal.browser.R.id.main_content
                             )
                         }
+                        val splashActive by com.petal.browser.compose.splash.PetalSplashState.splashActive
+                        // Safety net: never leave the bar hidden if the splash flag is not cleared.
+                        LaunchedEffect(splashActive) {
+                            if (splashActive) {
+                                kotlinx.coroutines.delay(4000L)
+                                com.petal.browser.compose.splash.PetalSplashState.splashActive.value = false
+                            }
+                        }
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = !splashActive,
+                            enter = androidx.compose.animation.fadeIn(),
+                            exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.snap())
+                        ) {
                         PetalBottomNavBar(
                             selectedTab = currentTab,
                             tabCount = currentCount,
@@ -166,9 +181,11 @@ object PetalBottomNavBridge {
                             onNewTabClick = { currentHandler?.onNewTabClick() },
                             onTabsClick = { currentHandler?.onTabsClick() },
                             onMenuClick = { currentHandler?.onMenuClick() },
+                            onSearchClick = { currentHandler?.onSearchClick() },
                             onSwipeTabLeft = { currentHandler?.onSwipeTabLeft() },
                             onSwipeTabRight = { currentHandler?.onSwipeTabRight() }
                         )
+                        }
                     }
                 }
             }

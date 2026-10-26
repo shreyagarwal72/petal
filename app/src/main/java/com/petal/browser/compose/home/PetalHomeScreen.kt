@@ -490,6 +490,14 @@ fun PetalHomeScreen(
         mutableStateOf(appLaunchAnimEnabled && !com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession)
     }
 
+    // Tell the bottom nav bar whether the splash is up, so it can stay hidden behind it.
+    androidx.compose.runtime.SideEffect {
+        com.petal.browser.compose.splash.PetalSplashState.splashActive.value = showLaunchSplash
+    }
+    DisposableEffect(Unit) {
+        onDispose { com.petal.browser.compose.splash.PetalSplashState.splashActive.value = false }
+    }
+
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_welcome_shown") {

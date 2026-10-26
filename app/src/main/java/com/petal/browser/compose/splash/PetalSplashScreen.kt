@@ -52,6 +52,13 @@ object PetalSplashState {
     var hasShownThisSession: Boolean = false
 
     /**
+     * True while the launch splash is on screen. The bottom nav bar watches this and stays
+     * hidden until the splash is done.
+     */
+    @JvmField
+    val splashActive = androidx.compose.runtime.mutableStateOf(false)
+
+    /**
      * True when the Compose launch splash will play after the system launch splash. Same condition
      * PetalHomeScreen uses to show it; BrowserActivity reads it to choose how the system splash exits
      * (dissolve into this screen vs. open up into the home screen).

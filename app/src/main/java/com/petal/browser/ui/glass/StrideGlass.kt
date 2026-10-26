@@ -346,7 +346,7 @@ const val SLAB_MAGNIFY = 1.12f
 @RequiresApi(Build.VERSION_CODES.S)
 private fun glassEffect(size: Size, look: GlassLook, radii: FloatArray?): RenderEffect {
     val vibrancy = RenderEffect.createColorFilterEffect(
-        ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.5f) })
+        ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.25f) })
     )
     val blurred = if (look.blur >= 0.5f) {
         RenderEffect.createBlurEffect(look.blur, look.blur, vibrancy, Shader.TileMode.CLAMP)

@@ -71,7 +71,8 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     val baseEdge = if (themeGlass) (prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f) else 1f
     // Frost level matched to the settings containments (~0.4 alpha), so the bar reads as
     // frosted glass even where the live page cannot be sampled.
-    val baseTintAlpha = ((if (dark) 0.30f else 0.38f) * opacity).coerceIn(0f, 0.9f)
+    // Raised from 0.30/0.38: page text behind the bars was still readable through the glass.
+    val baseTintAlpha = ((if (dark) 0.50f else 0.58f) * opacity.coerceAtMost(1.1f)).coerceIn(0.35f, 0.85f)
     if (bar == null) {
         if (wallpaper != null && wallpaper.ready) {
             return this.petalGlassPanel(shape, tint.copy(alpha = baseTintAlpha), baseEdge)
@@ -111,9 +112,9 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     // Liquid glass tint: authentic physical glass with pure light bending refraction,
     // beveled specular sheen, and clear optical depth.
     val look = with(density) {
-        val blur = (2.5f + alphaPref * 5.0f).dp.toPx()
+        val blur = (10f + alphaPref * 14f).dp.toPx()
         val lensHeight = 16.dp.toPx()
-        val lensAmount = 18.dp.toPx()
+        val lensAmount = 10.dp.toPx()
         // Ensure pad completely accommodates both blur and refraction displacement
         val pad = blur * 1.5f + lensAmount + 6.dp.toPx()
         GlassLook(

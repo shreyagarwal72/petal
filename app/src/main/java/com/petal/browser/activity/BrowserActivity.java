@@ -764,6 +764,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 && !isExternalOrWidgetLaunch(getIntent());
         splashHandsOffToComposeSplash = coldInternalLaunch
                 && com.petal.browser.compose.splash.PetalSplashState.shouldPlayLaunchSplash(sp);
+        // Keep the bottom nav bar hidden from the very first frame while the launch splash plays.
+        com.petal.browser.compose.splash.PetalSplashState.splashActive.setValue(splashHandsOffToComposeSplash);
         if (coldInternalLaunch && sp.getBoolean("sp_launch_ripple_enabled", true)) {
             launchRippleTriggered = true;
             splashRipplePending = true;
@@ -2806,6 +2808,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             String title = currentAlbumController != null ? currentAlbumController.getTitle() : "";
                             String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                             showOverflow(null, navView, 0, title, url, null, null, 0);
+                        }
+
+                        @Override
+                        public void onSearchClick() {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
+                            // Fresh search: open the omnibox empty, not pre-filled with the page URL.
+                            showOmniboxPage("");
                         }
 
                         @Override

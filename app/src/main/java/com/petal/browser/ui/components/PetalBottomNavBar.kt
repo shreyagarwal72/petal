@@ -70,6 +70,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -83,6 +85,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -93,9 +96,10 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 enum class PetalNavTab {
-    HOME, NEW_TAB, TABS, MENU
+    HOME, NEW_TAB, TABS, MENU, SEARCH
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -127,6 +131,8 @@ fun PetalBottomNavBar(
     onMenuClick: () -> Unit,
     onSwipeTabLeft: () -> Unit = {},
     onSwipeTabRight: () -> Unit = {},
+    onSearchClick: () -> Unit = {},
+    showSearch: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     // Whole-bar entrance: slides up and fades in with a soft spring when first shown
@@ -135,6 +141,45 @@ fun PetalBottomNavBar(
         entrance.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 260f))
     }
     val entranceOffsetPx = with(LocalDensity.current) { 32.dp.toPx() }
+
+    // Search launch: the bar leans away while the omnibox opens, so hiding it is not a jump cut.
+    val scope = rememberCoroutineScope()
+    val searchLaunch = remember { Animatable(0f) }
+    val hostView = LocalView.current
+    var barShown by remember { mutableStateOf(hostView.isShown) }
+    DisposableEffect(hostView) {
+        val vto = hostView.viewTreeObserver
+        val listener = android.view.ViewTreeObserver.OnGlobalLayoutListener {
+            val now = hostView.isShown
+            if (now != barShown) barShown = now
+        }
+        vto.addOnGlobalLayoutListener(listener)
+        onDispose {
+            val alive = hostView.viewTreeObserver
+            if (alive.isAlive) alive.removeOnGlobalLayoutListener(listener)
+        }
+    }
+    // Coming back from the omnibox: reset the lean and spring the bar up again.
+    LaunchedEffect(barShown) {
+        if (barShown && searchLaunch.value > 0f) {
+            searchLaunch.snapTo(0f)
+            entrance.snapTo(0f)
+            entrance.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 260f))
+        }
+    }
+    val launchSearch: () -> Unit = {
+        if (searchLaunch.value == 0f) {
+            scope.launch {
+                searchLaunch.animateTo(1f, tween(durationMillis = 150, easing = FastOutSlowInEasing))
+                onSearchClick()
+                // If the host did not hide the bar, do not leave it faded out.
+                delay(700L)
+                if (hostView.isShown && searchLaunch.value > 0f) {
+                    searchLaunch.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 300f))
+                }
+            }
+        }
+    }
 
     val badgeScale = remember { Animatable(1f) }
     LaunchedEffect(tabCount) {
@@ -152,14 +197,24 @@ fun PetalBottomNavBar(
     val newTabLabel = "New"
 
     val effectiveFloating = isFloatingStyle && !isBottomAddressBar
+    val navCtx = androidx.compose.ui.platform.LocalContext.current
+    val navPrefs = remember(navCtx) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(navCtx) }
+    com.petal.browser.ui.glass.LocalPetalGlassRevision.current
+    val themeGlassNav = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+    val glassNavOn = themeGlassNav || (com.petal.browser.ui.glass.StrideGlassPrefs.isEnabled(navCtx) && !navPrefs.contains("sp_liquid_glass_enabled"))
+    // Liquid glass + floating: search is its own glass button on the right.
+    // Everything else (Material 3 Expressive floating/docked, glass docked): search sits in the centre.
+    val separateSearch = showSearch && effectiveFloating && glassNavOn
+    val centerSearch = showSearch && !separateSearch
     val flatGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
     // Glass on the docked bar runs through the gesture-bar area, so no page shows unblurred under it.
     val flatNavInset = if (flatGlass && !effectiveFloating) {
         with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
     } else 0.dp
     if (effectiveFloating) {
-        // Stride's floating glass nav bar (see PetalStrideNavBar).
-        Box(
+        // Stride's floating glass nav bar (see PetalStrideNavBar): the tab pill sits in the
+        // middle, and search is its own glass button on the right.
+        Row(
             modifier = modifier
                 .graphicsLayer {
                     translationY = (1f - entrance.value) * entranceOffsetPx
@@ -168,28 +223,59 @@ fun PetalBottomNavBar(
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(bottom = 18.dp, start = 12.dp, end = 12.dp),
-            contentAlignment = Alignment.BottomCenter
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            PetalStrideNavBar(
-                selectedTab = selectedTab,
-                tabCount = tabCount,
-                badgeScale = badgeScale.value,
-                glassSource = glassSource,
-                onHomeClick = onHomeClick,
-                onNewTabClick = onNewTabClick,
-                onTabsClick = onTabsClick,
-                onMenuClick = onMenuClick,
-                onSwipeTabLeft = onSwipeTabLeft,
-                onSwipeTabRight = onSwipeTabRight
-            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .graphicsLayer {
+                        val p = searchLaunch.value
+                        translationY = p * 22.dp.toPx()
+                        val sc = 1f - 0.05f * p
+                        scaleX = sc
+                        scaleY = sc
+                        alpha = 1f - p
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                PetalStrideNavBar(
+                    selectedTab = selectedTab,
+                    tabCount = tabCount,
+                    badgeScale = badgeScale.value,
+                    glassSource = glassSource,
+                    onHomeClick = onHomeClick,
+                    onNewTabClick = onNewTabClick,
+                    onTabsClick = onTabsClick,
+                    onMenuClick = onMenuClick,
+                    onSwipeTabLeft = onSwipeTabLeft,
+                    onSwipeTabRight = onSwipeTabRight,
+                    compact = separateSearch,
+                    includeSearch = centerSearch,
+                    onSearchClick = launchSearch
+                )
+            }
+            if (separateSearch) {
+                PetalSearchGlassButton(
+                    glassSource = glassSource,
+                    onClick = launchSearch,
+                    modifier = Modifier.graphicsLayer {
+                        val p = searchLaunch.value
+                        val sc = 1f + 0.22f * p
+                        scaleX = sc
+                        scaleY = sc
+                        alpha = 1f - 0.7f * p
+                    }
+                )
+            }
         }
     } else {
         // Material 3 Expressive Non-Floating Bottom Navigation Bar
         Box(
             modifier = modifier
                 .graphicsLayer {
-                    translationY = (1f - entrance.value) * entranceOffsetPx
-                    alpha = entrance.value.coerceIn(0f, 1f)
+                    translationY = (1f - entrance.value) * entranceOffsetPx + searchLaunch.value * 22.dp.toPx()
+                    alpha = entrance.value.coerceIn(0f, 1f) * (1f - searchLaunch.value)
                 }
                 .fillMaxWidth()
                 .then(if (flatGlass) Modifier else Modifier.navigationBarsPadding()),
@@ -296,6 +382,25 @@ fun PetalBottomNavBar(
                         onClick = onNewTabClick
                     )
 
+                    if (centerSearch) {
+                        ExpressiveNavTabItem(
+                            selected = false,
+                            label = "Search",
+                            index = 2,
+                            isLiquidGlass = isLiquidGlass,
+                            modifier = Modifier.weight(1f),
+                            icon = { _, _ ->
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.ic_petal_search),
+                                    contentDescription = "Search",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
+                            onClick = launchSearch
+                        )
+                    }
+
                     ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.TABS,
                         label = "Tabs",
@@ -350,6 +455,7 @@ fun PetalBottomNavBar(
                         },
                         onClick = onMenuClick
                     )
+
                 }
             }
         }
