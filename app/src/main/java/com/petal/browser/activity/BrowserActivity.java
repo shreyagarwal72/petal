@@ -1321,6 +1321,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onStop() {
         if (petalBrowserFeatures != null) petalBrowserFeatures.stop();
         try {
+            // Gecko reports session-state (history) changes asynchronously, so onPause() can run a
+            // moment before the last navigation is reflected. Persist once more when fully backgrounded -
+            // this is the last reliable point before the user clears the app from recents. Skipped when
+            // finishing so a clear-on-exit wipe below is never undone by a fresh save.
+            if (!isFinishing()) saveOpenedTabs();
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving tab session in onStop", e);
+        }
+        try {
             if (isFinishing() && sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
                 BrowserUnit.clearOnExit(this);
             }
@@ -2270,7 +2279,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             BrowserContainer.replace(slot, materialized);
             controller = materialized;
-            if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
+            // Restore the tab's saved Gecko session state (back/forward history) when it is simply
+            // being brought back as-is. An explicit overrideUrl is a new navigation, so it loads normally.
+            boolean historyRestored = false;
+            if (overrideUrl == null && !placeholder.isIncognito()
+                    && targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
+                historyRestored = com.petal.browser.unit.PetalTabSessionManager.restorePersistedHistory(
+                        this, materialized, effectiveId, targetUrl);
+            }
+            if (historyRestored) {
+                // History restored into the session; no extra load (it would add a duplicate entry).
+            } else if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
                 materialized.loadUrl(targetUrl);
             } else {
                 materialized.loadUrl("about:blank");

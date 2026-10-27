@@ -73,6 +73,20 @@ object PetalTabSessionManager {
 
         val active = currentController ?: controllers.firstOrNull()
 
+        // Snapshot each live tab's GeckoView session state (back/forward history, scroll, form data) on
+        // the caller thread, then write it to disk on the executor. Persisting only the URL is what made
+        // Back jump straight to Home after the app was cleared from recents: the restored tab had a
+        // brand-new single-entry history.
+        val capturedEngineStates = HashMap<String, String>()
+        for (controller in controllers) {
+            if (controller.isIncognito) continue
+            if (controller is com.petal.browser.browser.PetalTabViewController) {
+                val id = controller.getTabId() ?: continue
+                if (controller.url.isNullOrBlank() || isHomeUrl(controller.url)) continue
+                controller.captureEngineState()?.let { capturedEngineStates[id] = it }
+            }
+        }
+
         executor.execute {
             try {
                 val records = mutableListOf<TabSessionRecord>()
@@ -136,6 +150,20 @@ object PetalTabSessionManager {
                     )
                     records.add(record)
 
+                    if (controller is com.petal.browser.browser.PetalTabViewController) {
+                        val capturedState = capturedEngineStates[tabId]
+                        when {
+                            // The tab is showing Home: any older saved web history would wrongly
+                            // resurrect a page the user already left.
+                            isHomeUrl(effectiveUrl) -> PetalTabStateStore.delete(context, tabId)
+                            capturedState != null -> PetalTabStateStore.write(context, tabId, capturedState)
+                            // else: Gecko hasn't reported a state yet (e.g. right after a cold restore).
+                            // Keep the previously saved file instead of overwriting it with nothing.
+                        }
+                    }
+                    // Placeholder (not yet materialized / suspended) tabs own no live session; their
+                    // saved state file is kept as-is and pruned below only if the tab disappears.
+
                     if (effectiveUrl.isNotBlank()) {
                         legacyUrls.add(effectiveUrl)
                     }
@@ -144,6 +172,7 @@ object PetalTabSessionManager {
 
                 val sp = PreferenceManager.getDefaultSharedPreferences(context)
                 if (records.isEmpty()) {
+                    PetalTabStateStore.clearAll(context)
                     sp.edit()
                         .remove(PREF_SESSION_JSON)
                         .remove(PREF_OPEN_TABS_LEGACY)
@@ -156,6 +185,10 @@ object PetalTabSessionManager {
                     } catch (_: Exception) {}
                     return@execute
                 }
+
+                // Cache hygiene: drop saved history for tabs that were closed so the state directory
+                // never grows beyond the set of currently open tabs.
+                PetalTabStateStore.retainOnly(context, records.map { it.persistentTabId })
 
                 val json = gson.toJson(records)
 
@@ -288,7 +321,11 @@ object PetalTabSessionManager {
                     // That redundant load triggers GeckoView's page lifecycle callbacks which race
                     // with showAlbum() and creating a transient blank page.
                     if (record.url.isNotBlank() && !isHomeUrl(record.url)) {
-                        geckoView.loadUrl(record.url)
+                        // Prefer restoring the saved Gecko session state so the tab keeps its
+                        // back/forward history; only fall back to a bare URL load if none exists.
+                        if (!restorePersistedHistory(activity, geckoView, tabId, record.url)) {
+                            geckoView.loadUrl(record.url)
+                        }
                     }
                     // else: leave GeckoView unloaded; showAlbum() will display the Compose home
 
@@ -326,6 +363,24 @@ object PetalTabSessionManager {
             Log.e(TAG, "Failed to restore tab session", e)
             return false
         }
+    }
+
+    /**
+     * Restores the persisted GeckoView session state (back/forward history, scroll, form data) saved for
+     * [tabId] into [controller]'s fresh engine session. Call on the main thread right after the
+     * controller is bound and INSTEAD of loadUrl(). Returns true if the history was restored; false means
+     * the caller must fall back to loading [url] normally.
+     */
+    @JvmStatic
+    fun restorePersistedHistory(
+        context: Context,
+        controller: com.petal.browser.browser.PetalTabViewController,
+        tabId: String?,
+        url: String?
+    ): Boolean {
+        if (tabId.isNullOrBlank() || url.isNullOrBlank() || isHomeUrl(url)) return false
+        val serialized = PetalTabStateStore.read(context, tabId) ?: return false
+        return controller.restoreEngineState(serialized, url)
     }
 
     /**
@@ -403,6 +458,7 @@ object PetalTabSessionManager {
         if (context == null) return
         executor.execute {
             try {
+                PetalTabStateStore.clearAll(context)
                 val sp = PreferenceManager.getDefaultSharedPreferences(context)
                 sp.edit()
                     .remove(PREF_SESSION_JSON)

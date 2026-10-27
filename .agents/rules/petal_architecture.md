@@ -36,3 +36,8 @@
 ## 4. Tab Restore Architecture
 - Use `PetalTabSessionManager` with SQLite persistence (`TABLE_SESSION`), SharedPreferences backups, and legacy `openTabs` compatibility.
 - Ensure all Kotlin/Java interop classes provide `@JvmStatic` or `@JvmOverloads` when consumed by Java classes like `BrowserActivity.java` or `BackupUnit.java`.
+- **Back/forward history must survive process death.** Persisting only a tab's URL is not enough: a restored tab created via `loadUrl()` has a fresh single-entry history, so Back falls through to Home.
+  - `PetalTabViewController` captures `GeckoSession.SessionState` through `SessionStateCapturingProgressDelegate` (`onSessionStateChange`) and exposes `captureEngineState()` / `restoreEngineState()`.
+  - `PetalTabSessionManager.saveSession()` writes each live non-incognito tab's state to `PetalTabStateStore` (one file per tab in `noBackupFilesDir`, atomic writes, pruned when tabs close).
+  - On restore (`restoreSession()` and placeholder materialization in `BrowserActivity.showAlbum()`), call `PetalTabSessionManager.restorePersistedHistory()` INSTEAD of `loadUrl()`; fall back to `loadUrl()` only if it returns false.
+  - Never persist incognito state. Wipe state files in `clearSession()` and on clear-history-on-exit.

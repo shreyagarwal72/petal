@@ -56,6 +56,12 @@ class PetalTabViewController private constructor(
     private var pendingNavUrl: String? = null
     private var pendingNavSince = 0L
 
+    // Most recent GeckoView session state (back/forward history, scroll, zoom, form data) reported by
+    // Gecko through ProgressDelegate.onSessionStateChange. Kept as the raw object and only serialized
+    // on demand (see captureEngineState) because Gecko emits these updates very frequently.
+    @Volatile
+    private var latestGeckoState: org.mozilla.geckoview.GeckoSession.SessionState? = null
+
     private fun isStaleInitialBlank(newUrl: String): Boolean {
         if (!newUrl.equals("about:blank", ignoreCase = true)) return false
         if (pendingNavUrl == null) return false
@@ -324,6 +330,7 @@ class PetalTabViewController private constructor(
         observedSession?.unregister(observer)
         refreshFeature?.stop()
         refreshFeature = null
+        if (observedSession !== session) latestGeckoState = null
         observedSession = session
         this.tab = tab
         boundTabId = tab.id
@@ -401,6 +408,18 @@ class PetalTabViewController private constructor(
                 }
             } else {
                 engineNavigation.updateDependencies(context, { pageUrl }, { isIncognito() })
+            }
+
+            // Progress Delegate: keep Mozilla's engine delegate (page start/stop, progress, security)
+            // and additionally capture GeckoSession.SessionState so the tab's back/forward history can
+            // be persisted and restored after the app process is killed. See PetalTabStateStore.
+            val engineProgress = gs.progressDelegate
+            if (engineProgress is SessionStateCapturingProgressDelegate) {
+                engineProgress.onState = { state -> latestGeckoState = state }
+            } else {
+                gs.progressDelegate = SessionStateCapturingProgressDelegate(engineProgress) { state ->
+                    latestGeckoState = state
+                }
             }
 
             gs.selectionActionDelegate = object : org.mozilla.geckoview.GeckoSession.SelectionActionDelegate {
@@ -878,6 +897,46 @@ class PetalTabViewController private constructor(
     /** GeckoView-only integration point used for WebExtension delegates. */
     fun getGeckoSession(): org.mozilla.geckoview.GeckoSession? =
         com.petal.browser.view.PetalGeckoView.getEngineGeckoSession(observedSession)
+
+    /**
+     * Serialized GeckoView session state (history stack, scroll, zoom, form data) for persistence,
+     * or null when none is available yet or the tab is private (private tabs are never persisted).
+     */
+    fun captureEngineState(): String? {
+        if (isIncognito()) return null
+        val state = latestGeckoState ?: return null
+        return try {
+            state.toString().takeIf { it.length > 2 }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    /**
+     * Restores a previously captured [captureEngineState] value into this tab's fresh engine session so
+     * the back/forward history survives process death. Must be called on the main thread after
+     * [bindTab] and INSTEAD of [loadUrl]. Returns false when the state is unusable; the caller should
+     * then fall back to [loadUrl].
+     */
+    @MainThread
+    fun restoreEngineState(serializedState: String, expectedUrl: String): Boolean {
+        val gs = getGeckoSession() ?: return false
+        return try {
+            val state = org.mozilla.geckoview.GeckoSession.SessionState.fromString(serializedState)
+                ?: return false
+            // Same guard loadUrl() installs: a freshly created session first reports its own initial
+            // about:blank document, which must not be mistaken for "this tab is Home".
+            pendingNavUrl = expectedUrl
+            pendingNavSince = android.os.SystemClock.uptimeMillis()
+            gs.restoreState(state)
+            latestGeckoState = state
+            true
+        } catch (t: Throwable) {
+            pendingNavUrl = null
+            android.util.Log.w("PetalTabNav", "restoreEngineState failed: ${t.message}")
+            false
+        }
+    }
 
     fun getMediaBridge(): com.petal.browser.media.PetalMediaBridge? = mediaBridge
 
@@ -1499,5 +1558,64 @@ private class ExternalSchemeNavigationDelegate(
             android.util.Log.w("PetalTabNav", "Error forwarding onLoadRequest: ${t.message}")
             org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.ALLOW)
         }
+    }
+}
+
+/**
+ * Forwards every ProgressDelegate callback explicitly to Mozilla GeckoEngine's own delegate (no Kotlin
+ * `by` delegation, which drops Java default methods per KT-18324) and additionally hands each
+ * [org.mozilla.geckoview.GeckoSession.SessionState] to [onState]. The captured state carries the tab's
+ * back/forward history, which is what lets Back keep working after the app is cleared from recents.
+ */
+private class SessionStateCapturingProgressDelegate(
+    private val engine: org.mozilla.geckoview.GeckoSession.ProgressDelegate?,
+    @Volatile var onState: (org.mozilla.geckoview.GeckoSession.SessionState) -> Unit
+) : org.mozilla.geckoview.GeckoSession.ProgressDelegate {
+
+    override fun onPageStart(session: org.mozilla.geckoview.GeckoSession, url: String) {
+        try {
+            engine?.onPageStart(session, url)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onPageStart: ${t.message}")
+        }
+    }
+
+    override fun onPageStop(session: org.mozilla.geckoview.GeckoSession, success: Boolean) {
+        try {
+            engine?.onPageStop(session, success)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onPageStop: ${t.message}")
+        }
+    }
+
+    override fun onProgressChange(session: org.mozilla.geckoview.GeckoSession, progress: Int) {
+        try {
+            engine?.onProgressChange(session, progress)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onProgressChange: ${t.message}")
+        }
+    }
+
+    override fun onSecurityChange(
+        session: org.mozilla.geckoview.GeckoSession,
+        securityInfo: org.mozilla.geckoview.GeckoSession.ProgressDelegate.SecurityInformation
+    ) {
+        try {
+            engine?.onSecurityChange(session, securityInfo)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onSecurityChange: ${t.message}")
+        }
+    }
+
+    override fun onSessionStateChange(
+        session: org.mozilla.geckoview.GeckoSession,
+        sessionState: org.mozilla.geckoview.GeckoSession.SessionState
+    ) {
+        try {
+            engine?.onSessionStateChange(session, sessionState)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "Error forwarding onSessionStateChange: ${t.message}")
+        }
+        onState(sessionState)
     }
 }

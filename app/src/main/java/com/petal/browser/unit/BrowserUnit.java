@@ -311,6 +311,8 @@ public class BrowserUnit {
         if (clearHistory) {
             BrowserUnit.clearHistory(context);
             PetalSessionHistoryManager.clearSessionHistory(context);
+            // Saved per-tab back/forward stacks are browsing history too.
+            PetalTabStateStore.clearAll(context);
         } else {
             // Reset in-memory session tracker (clears duplicate-visit suppression set)
             // without touching any rows in the SQLite HISTORY table.
