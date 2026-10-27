@@ -52,22 +52,22 @@ import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 
 /**
- * Petal Download Engine (MDM)
+ * Petal Download Engine (legacy Fetch2 path: self-updater and persisted legacy rows).
+ *
  * Uses Fetch2 + OkHttpDownloader in SEQUENTIAL mode: a single continuous byte stream per
  * download, with real pause/resume, automatic retry on network reconnects, and byte-stream
  * integrity checks.
  *
- * NOTE: this deliberately does NOT use FileDownloaderType.PARALLEL. Parallel mode
- * pre-allocates the destination file to the server-reported Content-Length and fills it by
- * issuing several concurrent byte-Range requests. That only produces a correctly-sized file
- * when the server reliably honours Range requests for every chunk. Media/CDN URLs picked up
- * by the media grabber are exactly the case where that assumption breaks: many video CDNs
- * either reject Range requests, silently return a full 200 response instead of a partial
- * 206, or serve short-lived signed URLs that don't tolerate several concurrent connections.
- * When that happens, Fetch2 still reports the pre-allocated Content-Length as the file size,
- * but some byte ranges are never actually written - so the saved file's reported size does
- * not match its real, playable content ("wrong size" downloads). SEQUENTIAL mode reads and
- * writes one continuous stream and only ever reports/finalizes the bytes it actually wrote.
+ * This used to document "deliberately NOT parallel" while the code below actually passed
+ * FileDownloaderType.PARALLEL, so the safeguard described here was never in effect. Fetch2's
+ * PARALLEL mode pre-allocates the destination to the server-reported Content-Length and fills
+ * it with concurrent Range requests; a CDN that ignores or mishandles a Range leaves holes, and
+ * the file ends up the "right" size but with the wrong content (the updater's presigned
+ * GitHub/S3 URLs are exactly this case). It is now actually SEQUENTIAL.
+ *
+ * Multi-connection speed-ups for browser downloads live in
+ * {@link com.petal.browser.download.PetalParallelFetchClient}, which verifies every segment and
+ * reassembles them in order, so it cannot produce a wrong-sized file.
  */
 public class PetalDownloadEngine {
     private static final String TAG = "PetalDownloadEngine";
@@ -81,12 +81,14 @@ public class PetalDownloadEngine {
         // Custom high-performance OkHttpClient mirroring Firefox Mobile network stack
         // High connection pooling, HTTP/2 multiplexing, non-blocking asynchronous IO,
         // and low latency connection timeouts.
-        Dispatcher dispatcher = new Dispatcher(Executors.newFixedThreadPool(64));
-        dispatcher.setMaxRequests(128);
-        dispatcher.setMaxRequestsPerHost(32);
+        // Sized for a handful of simultaneous files on a phone. The previous 64 threads / 128
+        // requests / 32 per host only added memory pressure and made servers rate-limit us.
+        Dispatcher dispatcher = new Dispatcher(Executors.newFixedThreadPool(16));
+        dispatcher.setMaxRequests(32);
+        dispatcher.setMaxRequestsPerHost(8);
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .dispatcher(dispatcher)
-                .connectionPool(new ConnectionPool(64, 5, TimeUnit.MINUTES))
+                .connectionPool(new ConnectionPool(16, 5, TimeUnit.MINUTES))
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(0, TimeUnit.MILLISECONDS)
                 .writeTimeout(0, TimeUnit.MILLISECONDS)
@@ -97,15 +99,14 @@ public class PetalDownloadEngine {
                 .build();
 
         // setDownloadConcurrentLimit controls how many separate downloads run at once, not
-        // how many concurrent byte-range chunks make up a single file (see SEQUENTIAL note
-        // above) - safe to keep high without reintroducing the range-splitting size bug.
+        // how many concurrent byte-range chunks make up a single file (see SEQUENTIAL note above).
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
-                .setDownloadConcurrentLimit(32)
+                .setDownloadConcurrentLimit(4)
                 .setProgressReportingInterval(500L)
                 .setAutoRetryMaxAttempts(10)
                 .enableAutoStart(true)
                 .enableRetryOnNetworkGain(true)
-                .setHttpDownloader(new OkHttpDownloader(okHttpClient, Downloader.FileDownloaderType.PARALLEL))
+                .setHttpDownloader(new OkHttpDownloader(okHttpClient, Downloader.FileDownloaderType.SEQUENTIAL))
                 .enableLogging(false)
                 .build();
         fetch = Fetch.Impl.getInstance(fetchConfiguration);
@@ -139,7 +140,7 @@ public class PetalDownloadEngine {
     }
 
     /**
-     * Enqueues a high-speed parallel multi-threaded download request.
+     * Enqueues a single-stream download request (see class doc for why this is not segmented).
      */
     public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders) {
         enqueueDownload(context, url, fileName, userAgent, cookie, extraHeaders, null);
@@ -148,7 +149,7 @@ public class PetalDownloadEngine {
     private final Map<String, Long> recentEnqueues = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
-     * Enqueues a parallel download request and reports the Fetch2-assigned download ID back once queued.
+     * Enqueues a download request and reports the Fetch2-assigned download ID back once queued.
      */
     public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders, java.util.function.BiConsumer<Integer, String> onEnqueued) {
         if (url == null || url.isEmpty()) return;

@@ -5,12 +5,10 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.os.PowerManager
 import android.util.Log
 import com.petal.browser.activity.BrowserActivity
 import java.io.File
@@ -20,9 +18,12 @@ import java.io.File
  *
  * Implements Mozilla Firefox's download architecture:
  * - Independent process survival on task removal (swiping app away from recents).
- * - Dual WakeLock (CPU partial wake lock) and WifiLock (high-performance WiFi mode) to ensure
- *   streaming packets never halt when the device screen turns off or enters Doze mode.
  * - Automatic queue restore and START_STICKY lifecycle for resilient background transfers.
+ *
+ * CPU/Wi-Fi wake locks are NOT taken here any more. They used to be, but this service only
+ * ever runs for Fetch2-owned downloads, so downloads on Mozilla's pipeline (the main browser
+ * path) had no lock at all and stalled when the screen turned off. PetalDownloadKeepAlive now
+ * holds the locks for every active transfer, whichever engine owns it.
  */
 class PetalDownloadService : Service() {
 
@@ -57,16 +58,20 @@ class PetalDownloadService : Service() {
                 it.updatePersistentNotification()
                 return
             }
-            val active = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { isActive(it.status) }
+            val active = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { ownsAndActive(it) }
             if (active != null) start(context, active.id, active.fileName)
         }
 
         @JvmStatic
         fun stopIfNoActiveDownloads(context: Context) {
-            if (PetalFetchDownloadBridge.downloadItems.value.none { isActive(it.status) }) {
+            if (PetalFetchDownloadBridge.downloadItems.value.none { ownsAndActive(it) }) {
                 runningInstance?.stopForegroundAndSelf()
             }
         }
+
+        /** Active AND ours: Mozilla-owned rows have their own service and notification. */
+        private fun ownsAndActive(item: DownloadItem): Boolean =
+            isActive(item.status) && !PetalFetchDownloadBridge.isMozillaOwned(item.id)
 
         private fun isActive(status: Int): Boolean =
             status == android.app.DownloadManager.STATUS_RUNNING ||
@@ -74,15 +79,12 @@ class PetalDownloadService : Service() {
             status == android.app.DownloadManager.STATUS_PAUSED
     }
 
-    private var wakeLock: PowerManager.WakeLock? = null
-    private var wifiLock: WifiManager.WifiLock? = null
     private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate() {
         super.onCreate()
         runningInstance = this
         PetalFetchDownloadBridge.ensureInitialized(applicationContext)
-        acquireLocks()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -126,16 +128,14 @@ class PetalDownloadService : Service() {
             restoreActiveDownloads()
         }
         updatePersistentNotification()
-        acquireLocks()
         return START_STICKY
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         // When user swipes Petal away from the Recent Apps screen, do NOT kill the downloads.
         // Foreground download services remain independent of activity task stacks in Firefox.
-        Log.i(TAG, "Petal task swiped/removed; keeping foreground download service alive and locks active")
+        Log.i(TAG, "Petal task swiped/removed; keeping foreground download service alive")
         super.onTaskRemoved(rootIntent)
-        acquireLocks()
         updatePersistentNotification()
     }
 
@@ -156,13 +156,12 @@ class PetalDownloadService : Service() {
                 PetalLiveAlertManager.trackDownload(applicationContext, it.id.toLong(), name, startService = false)
             }
             updatePersistentNotification()
-            acquireLocks()
         }
     }
 
     /** Keeps one non-dismissible foreground notification alive independently of the Activity. */
     fun updatePersistentNotification() {
-        val active = PetalFetchDownloadBridge.downloadItems.value.filter { isActive(it.status) }
+        val active = PetalFetchDownloadBridge.downloadItems.value.filter { ownsAndActive(it) }
         if (active.isEmpty()) {
             mainHandler.post { stopForegroundAndSelf() }
             return
@@ -240,70 +239,16 @@ class PetalDownloadService : Service() {
         }
     }
 
-    /**
-     * Acquires both CPU Partial WakeLock and high-performance WifiLock to protect downloads
-     * against device screen off, deep sleep, and Doze network throttling.
-     */
-    private fun acquireLocks() {
-        try {
-            if (wakeLock == null) {
-                val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
-                wakeLock = pm?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PetalBrowser:DownloadWakeLock")?.apply {
-                    setReferenceCounted(false)
-                }
-            }
-            if (wakeLock?.isHeld == false) {
-                wakeLock?.acquire(24 * 60 * 60 * 1000L) // 24 hours max safeguard
-            }
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to acquire wake lock", e)
-        }
-
-        try {
-            if (wifiLock == null) {
-                val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
-                val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    WifiManager.WIFI_MODE_FULL_LOW_LATENCY
-                } else {
-                    @Suppress("DEPRECATION")
-                    WifiManager.WIFI_MODE_FULL_HIGH_PERF
-                }
-                wifiLock = wm?.createWifiLock(mode, "PetalBrowser:DownloadWifiLock")?.apply {
-                    setReferenceCounted(false)
-                }
-            }
-            if (wifiLock?.isHeld == false) {
-                wifiLock?.acquire()
-            }
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to acquire wifi lock", e)
-        }
-    }
-
-    private fun releaseLocks() {
-        try {
-            if (wakeLock?.isHeld == true) wakeLock?.release()
-        } catch (_: Throwable) {}
-        wakeLock = null
-
-        try {
-            if (wifiLock?.isHeld == true) wifiLock?.release()
-        } catch (_: Throwable) {}
-        wifiLock = null
-    }
-
     private fun stopForegroundAndSelf() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) stopForeground(STOP_FOREGROUND_REMOVE)
             else @Suppress("DEPRECATION") stopForeground(true)
         } catch (_: Throwable) {}
-        releaseLocks()
         stopSelf()
     }
 
     override fun onDestroy() {
         runningInstance = null
-        releaseLocks()
         super.onDestroy()
     }
 

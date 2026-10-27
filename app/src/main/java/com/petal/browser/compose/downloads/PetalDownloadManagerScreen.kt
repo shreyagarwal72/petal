@@ -106,6 +106,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.download.PetalBatteryOptimization
 
 @Immutable
 data class DownloadItem(
@@ -119,7 +120,9 @@ data class DownloadItem(
     val speedBytesPerSec: Long = 0L,
     val etaSeconds: Long = 0L,
     val localUri: String?,
-    val timestampMs: Long = System.currentTimeMillis()
+    val timestampMs: Long = System.currentTimeMillis(),
+    /** Parallel HTTP connections currently serving this download (1 = ordinary single stream). */
+    val connections: Int = 1
 )
 
 object PetalDownloadBridge {
@@ -181,9 +184,14 @@ fun formatSpeed(bytesPerSec: Long): String {
 
 fun formatEta(seconds: Long): String {
     if (seconds <= 0) return "--"
-    val mins = seconds / 60
+    val hours = seconds / 3600
+    val mins = (seconds % 3600) / 60
     val secs = seconds % 60
-    return if (mins > 0) "${mins}m ${secs}s" else "${secs}s"
+    return when {
+        hours > 0 -> "${hours}h ${mins}m"
+        mins > 0 -> "${mins}m ${secs}s"
+        else -> "${secs}s"
+    }
 }
 
 fun extractDomain(url: String): String {
@@ -308,15 +316,68 @@ fun PetalDownloadManagerScreen(
 
     val hostActivity = context as? Activity
     var showNotificationPermissionDialog by remember { mutableStateOf(false) }
+
+    // ── Background-download protection (battery optimization) ───────────────────────────────
+    // Doze and vendor battery managers freeze or kill apps once the screen locks, even with a
+    // foreground service running. Ask for the exemption the first time this page opens, and on
+    // every later app session for as long as it is still not granted. It never stacks on top of
+    // the notification prompt: it waits until that one is resolved.
+    var showBatteryDialog by remember { mutableStateOf(false) }
+    var batteryExempt by remember { mutableStateOf(PetalBatteryOptimization.isExempt(context)) }
+    var notificationCheckDone by remember { mutableStateOf(false) }
+    fun maybePromptBattery() {
+        if (notificationCheckDone && !showNotificationPermissionDialog && !showBatteryDialog &&
+            PetalBatteryOptimization.shouldPrompt(context)
+        ) {
+            PetalBatteryOptimization.markPrompted()
+            showBatteryDialog = true
+        }
+    }
     LaunchedEffect(Unit) {
         val permissionMissing = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         val notificationsDisabled = !NotificationManagerCompat.from(context).areNotificationsEnabled()
         showNotificationPermissionDialog = permissionMissing || notificationsDisabled
+        notificationCheckDone = true
+        maybePromptBattery()
+    }
+    // Returning from a system screen (notification permission, battery settings) re-checks state.
+    DisposableEffect(context) {
+        val owner = context as? androidx.lifecycle.LifecycleOwner
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                batteryExempt = PetalBatteryOptimization.isExempt(context)
+                maybePromptBattery()
+            }
+        }
+        owner?.lifecycle?.addObserver(observer)
+        onDispose { owner?.lifecycle?.removeObserver(observer) }
+    }
+    if (showBatteryDialog) {
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+            onDismissRequest = { showBatteryDialog = false },
+            icon = { Icon(Icons.Rounded.BatteryAlert, contentDescription = null) },
+            title = { Text("Keep downloads running") },
+            text = {
+                Text(
+                    "Android can pause downloads when your screen locks to save battery. " +
+                        "Allow Petal to run in the background so large downloads finish while your phone is locked.\n\n" +
+                        "On some phones you may also need to enable \"Autostart\" or choose \"No restrictions\" " +
+                        "for Petal in system settings."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showBatteryDialog = false
+                    PetalBatteryOptimization.requestExemption(context)
+                }) { Text("Allow") }
+            },
+            dismissButton = { TextButton(onClick = { showBatteryDialog = false }) { Text(stringResource(R.string.ui_not_now)) } }
+        )
     }
     if (showNotificationPermissionDialog) {
         com.petal.browser.ui.containment.PetalMaterialAlertDialog(
-            onDismissRequest = { showNotificationPermissionDialog = false },
+            onDismissRequest = { showNotificationPermissionDialog = false; maybePromptBattery() },
             icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
             title = { Text(stringResource(R.string.ui_enable_download_tracking)) },
             text = { Text(stringResource(R.string.ui_allow_notifications_to_see_live)) },
@@ -330,14 +391,12 @@ fun PetalDownloadManagerScreen(
                     }
                 }) { Text(stringResource(R.string.ui_allow_notifications)) }
             },
-            dismissButton = { TextButton(onClick = { showNotificationPermissionDialog = false }) { Text(stringResource(R.string.ui_not_now)) } }
+            dismissButton = { TextButton(onClick = { showNotificationPermissionDialog = false; maybePromptBattery() }) { Text(stringResource(R.string.ui_not_now)) } }
         )
     }
-    // Downloads now flow through Fetch2 (see BrowserUnit.download), which is the only
-    // engine here that actually supports pause/resume. PetalFetchDownloadBridge listens
-    // to it live, so this list updates instantly on progress/pause/resume/completion
-    // instead of being polled from the system DownloadManager (which never reflected a
-    // pause and is why the feature looked broken).
+    // PetalFetchDownloadBridge merges every engine (Mozilla's download service for browser/media
+    // downloads, Fetch2 for legacy rows and the updater) into one live list, so this screen updates
+    // instantly on progress/pause/resume/completion without polling the system DownloadManager.
     var isLoading by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         PetalFetchDownloadBridge.ensureInitialized(context)
@@ -618,6 +677,26 @@ fun PetalDownloadManagerScreen(
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {
+                    if (downloadList.any { it.status == DownloadManager.STATUS_RUNNING }) {
+                        item(key = "active_summary") {
+                            ActiveDownloadsSummary(
+                                items = downloadList,
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .animateItem()
+                            )
+                        }
+                        if (!batteryExempt) {
+                            item(key = "battery_warning") {
+                                BackgroundDownloadWarning(
+                                    onFix = { PetalBatteryOptimization.requestExemption(context) },
+                                    modifier = Modifier
+                                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                                        .animateItem()
+                                )
+                            }
+                        }
+                    }
                     if (autoPreviewDownloadedImages) {
                         item {
                             DownloadedImagePreviewStrip(
@@ -711,7 +790,7 @@ fun PetalDownloadManagerScreen(
                                     PetalContainerSource.set(rowBounds[item.id])
                                     val activity = context as? com.petal.browser.activity.BrowserActivity
                                     if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName)) {
-                                        val allImages = sortedDownloadList.filter { it.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName) && !it.localUri.isNullOrBlank() }
+                                        val allImages = sortedDownloadList.filter { it.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }
                                         activity.pendingOverlayBackAction = Runnable {
                                             activity.runOnUiThread { activity.showDownloads() }
                                         }
@@ -1037,16 +1116,20 @@ private fun DownloadRowItem(
                                 val percentStr = if (item.progress != null) "${(item.progress * 100).toInt()}%" else ""
                                 parts.add("${formatBytes(item.bytesDownloaded)} of $formattedSize")
                                 if (percentStr.isNotEmpty()) parts.add(percentStr)
+                                // Speed and ETA were computed all along but never shown anywhere.
+                                parts.add(if (item.speedBytesPerSec > 0) formatSpeed(item.speedBytesPerSec) else "Starting…")
+                                if (item.etaSeconds > 0) parts.add("${formatEta(item.etaSeconds)} left")
+                                if (item.connections > 1) parts.add("×${item.connections} connections")
                             }
                             DownloadManager.STATUS_FAILED -> parts.add("Failed • $formattedSize")
                             DownloadManager.STATUS_PAUSED -> parts.add("Paused • $formattedSize")
                             else -> parts.add(formattedSize)
                         }
-                        if (timeStr.isNotEmpty()) {
-                            parts.add(timeStr)
-                        }
-                        if (domain.isNotEmpty()) {
-                            parts.add(domain)
+                        // A running row already carries progress, speed and ETA; adding time and
+                        // domain would only get everything truncated by the single-line ellipsis.
+                        if (item.status != DownloadManager.STATUS_RUNNING) {
+                            if (timeStr.isNotEmpty()) parts.add(timeStr)
+                            if (domain.isNotEmpty()) parts.add(domain)
                         }
                         parts.joinToString(" • ")
                     }
@@ -1166,6 +1249,116 @@ private fun DownloadRowItem(
                 }
         }
     )
+}
+
+/** Aggregate card shown while anything is downloading: count, combined speed, overall ETA and progress. */
+@Composable
+private fun ActiveDownloadsSummary(items: List<DownloadItem>, modifier: Modifier = Modifier) {
+    val running = items.filter { it.status == DownloadManager.STATUS_RUNNING }
+    if (running.isEmpty()) return
+    val waiting = items.count { it.status == DownloadManager.STATUS_PENDING }
+    val totalSpeed = running.sumOf { it.speedBytesPerSec }
+    // Only downloads with a known size can contribute to an honest overall percentage.
+    val sized = running.filter { it.totalSize > 0L }
+    val sizedTotal = sized.sumOf { it.totalSize }
+    val sizedDone = sized.sumOf { it.bytesDownloaded.coerceAtMost(it.totalSize) }
+    val overall = if (sizedTotal > 0L) (sizedDone.toFloat() / sizedTotal.toFloat()).coerceIn(0f, 1f) else null
+    val eta = if (totalSpeed > 0L && sizedTotal > sizedDone) (sizedTotal - sizedDone) / totalSpeed else 0L
+    val animated by animateFloatAsState(
+        targetValue = overall ?: 0f,
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "dl_summary_progress"
+    )
+
+    val title = buildString {
+        append(if (running.size == 1) "1 download" else "${running.size} downloads")
+        if (waiting > 0) append(" • $waiting waiting")
+    }
+    val detail = buildString {
+        append(if (totalSpeed > 0L) formatSpeed(totalSpeed) else "Starting…")
+        if (eta > 0L) append(" • ${formatEta(eta)} left")
+    }
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Rounded.Speed,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (overall != null) {
+                    Text(
+                        text = "${(overall * 100).toInt()}%",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+            if (overall != null) {
+                Spacer(Modifier.height(10.dp))
+                LinearProgressIndicator(
+                    progress = { animated },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(CircleShape),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.12f)
+                )
+            }
+        }
+    }
+}
+
+/** Shown only while downloads are running and Petal is still battery-restricted. */
+@Composable
+private fun BackgroundDownloadWarning(onFix: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.tertiaryContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.BatteryAlert,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = "Downloads may pause when your screen locks",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onFix) { Text("Fix") }
+        }
+    }
 }
 
 /**

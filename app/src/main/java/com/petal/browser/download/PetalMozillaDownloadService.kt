@@ -17,6 +17,10 @@ import mozilla.components.support.utils.DefaultDownloadFileUtils
  * Android Components download service (the same AbstractFetchDownloadService Firefox/Fenix
  * uses) and Petal's only engine for browser downloads. Bytes go through Gecko's own network
  * stack via GeckoViewFetchClient, so Gecko cookies, private mode and proxy settings apply.
+ *
+ * Large downloads from servers that support HTTP Range are fetched over several parallel
+ * connections by [PetalParallelFetchClient]; this service is unaware of that and keeps owning
+ * notifications, pause/resume and completion exactly as before.
  */
 class PetalMozillaDownloadService : AbstractFetchDownloadService() {
     override val store: BrowserStore
@@ -38,7 +42,14 @@ class PetalMozillaDownloadService : AbstractFetchDownloadService() {
             android.util.Log.w("PetalMozillaDownload", "GeckoViewFetchClient unavailable, using OkHttp", t)
             PetalOkHttpFetchClient()
         }
-        PetalMozillaFetchClient(base)
+        // Order matters: PetalMozillaFetchClient injects the per-URL Referer/Cookie/UA headers on the
+        // original request, then PetalParallelFetchClient splits it into Range segments that all
+        // inherit those headers. Parallel mode self-disables for servers without Range support.
+        PetalMozillaFetchClient(
+            PetalParallelFetchClient(base) {
+                PetalParallelFetchClient.Settings.load(applicationContext)
+            }
+        )
     }
 
     override val fileSizeFormatter = DefaultFileSizeFormatter(this)

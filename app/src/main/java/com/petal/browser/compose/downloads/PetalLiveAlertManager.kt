@@ -176,7 +176,12 @@ object PetalLiveAlertManager {
         // this used to reach via reflection doesn't exist on that class, so this always threw
         // and silently did nothing. Fetch2 (via the bridge) genuinely supports pausing.
         PetalFetchDownloadBridge.pause(context, downloadId)
-        showPausedNotification(context, downloadId)
+        // Mozilla-owned downloads already get their own paused notification from Mozilla's
+        // service; posting ours as well produced two notifications for one download, and ours was
+        // never cleared on cancel because nothing tracks it.
+        if (!PetalFetchDownloadBridge.isMozillaOwned(downloadId)) {
+            showPausedNotification(context, downloadId)
+        }
     }
 
     @JvmStatic

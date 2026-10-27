@@ -31,6 +31,13 @@ import com.tonyodev.fetch2.NetworkType
 import com.tonyodev.fetch2.Priority
 import com.tonyodev.fetch2.Request
 import com.petal.browser.download.SafeDownloadValues
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,9 +55,11 @@ object PetalFetchDownloadBridge {
     private val speedMap = LinkedHashMap<Int, Long>()
     private val etaMap = LinkedHashMap<Int, Long>()
     private val mozillaDownloadsMap = LinkedHashMap<String, DownloadItem>()
-    // Throughput sampling for Mozilla downloads (the store exposes bytes, not speed/ETA).
-    private val mozillaSamples = HashMap<String, Pair<Long, Long>>()
-    private val mozillaSpeeds = HashMap<String, Long>()
+    // Throughput for Mozilla downloads (the store exposes bytes, not speed/ETA). One sliding-window
+    // meter per download gives a steady readout that also decays when the transfer stalls.
+    private val mozillaMeters = HashMap<String, com.petal.browser.download.PetalSpeedMeter>()
+    private val tickerScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var tickerJob: Job? = null
     @Volatile
     private var applicationContext: Context? = null
 
@@ -155,6 +164,7 @@ object PetalFetchDownloadBridge {
             } catch (_: Throwable) {
             }
 
+            startTicker()
             initialized = true
         }
     }
@@ -484,6 +494,29 @@ object PetalFetchDownloadBridge {
                 }.thenByDescending { it.timestampMs }
             )
         _downloadItems.value = items
+
+        // Hold the CPU/Wi-Fi awake for every engine's transfers, so nothing stalls on screen-off.
+        applicationContext?.let { ctx ->
+            // Only bytes-in-flight count. A queued/offline (PENDING) item must not pin the CPU awake.
+            val moving = items.count { it.status == DownloadManager.STATUS_RUNNING }
+            com.petal.browser.download.PetalDownloadKeepAlive.update(ctx, moving)
+        }
+    }
+
+    /**
+     * Re-publishes once a second while something is downloading. The store only emits when bytes
+     * change, so without this a stalled download would keep showing its last speed forever and the
+     * keep-alive wake lock would never be renewed. Publishing an unchanged list is a no-op for the
+     * StateFlow, so this costs no recomposition when nothing moved.
+     */
+    private fun startTicker() {
+        if (tickerJob?.isActive == true) return
+        tickerJob = tickerScope.launch {
+            while (isActive) {
+                delay(1000L)
+                if (_downloadItems.value.any { it.status == DownloadManager.STATUS_RUNNING }) publish()
+            }
+        }
     }
 
     /** Mirrors Android Components' global BrowserStore download map into Petal's existing UI model. */
@@ -515,27 +548,15 @@ object PetalFetchDownloadBridge {
                     val copied = download.currentBytesCopied
                     var speed = 0L
                     if (status == DownloadManager.STATUS_RUNNING) {
-                        val prev = mozillaSamples[download.id]
-                        if (prev == null) {
-                            mozillaSamples[download.id] = Pair(nowMs, copied)
-                        } else {
-                            val dt = nowMs - prev.first
-                            if (dt >= 500L) {
-                                val instant = ((copied - prev.second) * 1000L / dt).coerceAtLeast(0L)
-                                val smoothed = mozillaSpeeds[download.id]
-                                    ?.let { (it * 0.6 + instant * 0.4).toLong() } ?: instant
-                                mozillaSpeeds[download.id] = smoothed
-                                mozillaSamples[download.id] = Pair(nowMs, copied)
-                                speed = smoothed
-                            } else {
-                                speed = mozillaSpeeds[download.id] ?: 0L
-                            }
-                        }
+                        val meter = mozillaMeters.getOrPut(download.id) { com.petal.browser.download.PetalSpeedMeter() }
+                        speed = meter.update(nowMs, copied)
                     } else {
-                        mozillaSamples.remove(download.id)
-                        mozillaSpeeds.remove(download.id)
+                        mozillaMeters.remove(download.id)
                     }
-                    val etaSec = if (speed > 0L && total > copied) (total - copied) / speed else 0L
+                    val etaSec = com.petal.browser.download.PetalSpeedMeter.etaSeconds(total - copied, speed)
+                    val connections = if (status == DownloadManager.STATUS_RUNNING) {
+                        com.petal.browser.download.PetalParallelStats.connectionsFor(download.url)
+                    } else 1
                     mozillaDownloadsMap[download.id] = DownloadItem(
                         id = id,
                         fileName = download.fileName ?: "download",
@@ -547,9 +568,12 @@ object PetalFetchDownloadBridge {
                         speedBytesPerSec = speed,
                         etaSeconds = etaSec,
                         localUri = download.filePath?.let { path -> if (path.startsWith("/")) "file://$path" else path },
-                        timestampMs = download.createdTime
+                        timestampMs = download.createdTime,
+                        connections = connections
                     )
                 }
+                // Drop meters for downloads that no longer exist (previously leaked until process death).
+                mozillaMeters.keys.retainAll(mozillaDownloadsMap.keys)
             }
         } catch (_: Throwable) {
             // BrowserStore may not be available during helper-process startup.

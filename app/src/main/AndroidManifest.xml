@@ -54,6 +54,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- One-tap "Allow background activity" dialog so downloads keep running with the screen off.
+         FOSS/GitHub variant only: Google Play restricts this permission, so omit it in the Play
+         variant (PetalBatteryOptimization then falls back to the permission-free settings list). -->
+    <uses-permission
+        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+        tools:ignore="BatteryLife" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Direct APK self-updater permission for petal (FOSS / GitHub Release Variant) -->

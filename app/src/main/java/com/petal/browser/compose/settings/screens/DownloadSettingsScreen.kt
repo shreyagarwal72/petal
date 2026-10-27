@@ -28,6 +28,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.preference.PreferenceManager
 import com.petal.browser.compose.downloads.LiveUpdateNotificationManager
 import com.petal.browser.compose.settings.viewmodel.DownloadSettingsViewModel
+import com.petal.browser.download.PetalBatteryOptimization
+import com.petal.browser.download.PetalParallelFetchClient
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.ExternalDownloadManagerHelper
@@ -275,6 +277,111 @@ fun DownloadSettingsScreenContent(
                         )
                     }
 
+                }
+
+                // Speed & background reliability (parallel connections, battery exemption)
+                PetalSettingsSection(
+                    title = "Speed & reliability",
+                    icon = Icons.Rounded.Speed,
+                    cardId = "misc_download_speed",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+                    var parallelEnabled by remember {
+                        mutableStateOf(sp.getBoolean(PetalParallelFetchClient.Settings.KEY_ENABLED, true))
+                    }
+                    var connections by remember {
+                        mutableStateOf(
+                            PetalParallelFetchClient.Settings.load(context).connections
+                                .coerceAtLeast(2)
+                        )
+                    }
+                    var batteryExempt by remember { mutableStateOf(PetalBatteryOptimization.isExempt(context)) }
+                    DisposableEffect(context) {
+                        val owner = context as? androidx.lifecycle.LifecycleOwner
+                        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                                batteryExempt = PetalBatteryOptimization.isExempt(context)
+                            }
+                        }
+                        owner?.lifecycle?.addObserver(observer)
+                        onDispose { owner?.lifecycle?.removeObserver(observer) }
+                    }
+
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { rowIndex, rowPosition ->
+                        when (rowIndex) {
+                            0 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = "Parallel downloads",
+                                subtitle = "Fetch big files over several connections at once. Falls back to a single stream on servers that don't support it.",
+                                icon = Icons.Rounded.Speed,
+                                checked = parallelEnabled,
+                                position = rowPosition,
+                                onCheckedChange = {
+                                    parallelEnabled = it
+                                    sp.edit().putBoolean(PetalParallelFetchClient.Settings.KEY_ENABLED, it).apply()
+                                }
+                            )
+                            1 -> com.petal.browser.ui.containment.PetalGroupListRow(
+                                position = rowPosition,
+                                onClick = {
+                                    if (parallelEnabled) {
+                                        val options = listOf(2, 4, 6, 8)
+                                        connections = options[(options.indexOf(connections) + 1).mod(options.size)]
+                                        sp.edit().putInt(PetalParallelFetchClient.Settings.KEY_CONNECTIONS, connections).apply()
+                                    }
+                                },
+                                leading = {
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Tune,
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Text(
+                                        text = "Connections per download",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Tap to change. More is faster on slow servers, but some hosts limit it (Petal backs off automatically). Applies to new downloads.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailing = {
+                                    Text(
+                                        text = if (parallelEnabled) "$connections" else "Off",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            )
+                            else -> com.petal.browser.ui.containment.PetalGroupListRow(
+                                position = rowPosition,
+                                onClick = { if (!batteryExempt) PetalBatteryOptimization.requestExemption(context) },
+                                leading = {
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.BatteryAlert,
+                                        variant = if (batteryExempt) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+                                        else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Text(
+                                        text = "Background downloads",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = if (batteryExempt) "Unrestricted: downloads keep running with the screen off."
+                                        else "Restricted: Android may pause downloads when the screen locks. Tap to allow.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            )
+                        }
+                    }
                 }
 
                 // Default Download Manager Card

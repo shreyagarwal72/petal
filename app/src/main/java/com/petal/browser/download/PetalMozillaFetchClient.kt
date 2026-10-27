@@ -71,8 +71,11 @@ class PetalOkHttpFetchClient(
  * arbitrary headers, so [PetalMozillaFetchClient] injects them when the request is sent.
  */
 object PetalDownloadHeaderRegistry {
-    private const val TTL_MS = 10 * 60 * 1000L
-    private class Entry(val headers: Map<String, String>, val at: Long)
+    // A download can sit paused for hours and then be resumed; a 10 minute TTL silently dropped
+    // the Referer/Cookie/UA on resume and the CDN answered 403. The TTL is now measured from the
+    // last time the headers were actually used, not from when they were registered.
+    private const val TTL_MS = 12 * 60 * 60 * 1000L
+    private class Entry(val headers: Map<String, String>, @Volatile var at: Long)
     private val entries = java.util.concurrent.ConcurrentHashMap<String, Entry>()
 
     @JvmStatic
@@ -84,7 +87,11 @@ object PetalDownloadHeaderRegistry {
     }
 
     @JvmStatic
-    fun headersFor(url: String): Map<String, String> = entries[url]?.headers ?: emptyMap()
+    fun headersFor(url: String): Map<String, String> {
+        val entry = entries[url] ?: return emptyMap()
+        entry.at = System.currentTimeMillis()
+        return entry.headers
+    }
 }
 
 /**
