@@ -107,6 +107,14 @@ object PetalFetchDownloadBridge {
                     }
                     upsert(download)
                     registerWithSystemDownloads(appContext, download)
+                    try {
+                        com.petal.browser.account.progress.PetalProgressStore.bump(
+                            appContext,
+                            com.petal.browser.account.progress.PetalCounter.DOWNLOADS,
+                            1L,
+                            xpGain = 5L
+                        )
+                    } catch (_: Throwable) {}
                 }
 
                 override fun onError(download: Download, error: com.tonyodev.fetch2.Error, throwable: Throwable?) {

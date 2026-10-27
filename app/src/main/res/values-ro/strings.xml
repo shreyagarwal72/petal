@@ -1392,7 +1392,6 @@
     <string name="ui_petal_home">Petal Home</string>
     <string name="ui_ask_petal_ai">Întrebați Petal AI</string>
     <string name="petal_autofill_service_name">Umplere automată petală</string>
-    <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
     <string name="upload_chooser_title">Alegeți sursa de încărcare</string>
     <string name="upload_chooser_files_title">Fișiere</string>
     <string name="upload_chooser_files_desc">Răsfoiți dosare și documente cu selectorul de fișiere al lui Petal</string>

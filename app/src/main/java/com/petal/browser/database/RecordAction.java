@@ -22,10 +22,12 @@ import com.petal.browser.unit.RecordUnit;
 public class RecordAction {
     public static final int HISTORY_ITEM = 0;
     public static final int BOOKMARK_ITEM = 2;
+    private final Context context;
     private final RecordHelper helper;
     private SQLiteDatabase database;
 
     public RecordAction(Context context) {
+        this.context = context != null ? context.getApplicationContext() : null;
         this.helper = new RecordHelper(context);
     }
     public void open(boolean rw) {database = rw ? helper.getWritableDatabase() : helper.getReadableDatabase();}
@@ -48,6 +50,16 @@ public class RecordAction {
         values.put(RecordUnit.COLUMN_TIME, record.getIconColor());
         values.put(RecordUnit.COLUMN_IS_READING_LIST, record.isReadingList() ? 1 : 0);
         database.insert(RecordUnit.TABLE_BOOKMARK, null, values);
+        if (context != null) {
+            try {
+                com.petal.browser.account.progress.PetalProgressStore.INSTANCE.bump(
+                    context,
+                    com.petal.browser.account.progress.PetalCounter.BOOKMARKS,
+                    1L,
+                    3L
+                );
+            } catch (Throwable ignored) {}
+        }
     }
 
     public List<Record> listBookmark(Context context, boolean filter, long filterBy) {

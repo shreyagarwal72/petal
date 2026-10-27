@@ -279,6 +279,17 @@ object PetalAdBlockEngine {
                 domainBlockedCount.computeIfAbsent(cleanHost) { java.util.concurrent.atomic.AtomicInteger(0) }.incrementAndGet()
             }
         }
+        val app = com.petal.browser.PetalApplication.instance
+        if (app != null) {
+            try {
+                com.petal.browser.account.progress.PetalProgressStore.bump(
+                    app,
+                    com.petal.browser.account.progress.PetalCounter.SITES_BLOCKED,
+                    1L,
+                    xpGain = 1L
+                )
+            } catch (_: Throwable) {}
+        }
     }
 
     @JvmStatic

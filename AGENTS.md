@@ -12,7 +12,7 @@
   - Distributed via Google Play Store.
   - **No In-App Self-Updater**: Google Play Developer Program Policy strictly forbids apps downloading or installing executable code/APKs outside Google Play.
   - **Google Play In-App Updates**: Powered by official `com.google.android.play:app-update-ktx` (`PetalPlayUpdateManager.kt`, `PetalPlayUpdatePopup.kt`).
-  - **Monetization & Supportive Ads**: Features optional supportive ad banners on the home screen (`SupportiveAdsSettingsScreen.kt`, `PetalSupportiveAdsManager.kt`, `com.google.android.gms:play-services-ads`).
+  - **Monetization & Supportive Ads**: Features Unity Ads (`PetalUnityRewardedAds.kt`) which is strictly opt-in, rewarded only, initialized only after explicit user consent, and never triggered or touched in private/incognito tabs. Google AdMob has been completely removed.
   - **Publishing & Assets**: Tracks Fastlane metadata (`fastlane/`), Google Play graphic assets (`graphics/`, `wiki/`), draft backups (`drafts/`), variable fonts (`inter_variable.ttf`, `lexend_variable.ttf`, etc.), and bundle signing utilities (`.github/scripts/strip_aab_signatures.py`).
   - **Permissions**: Omits `REQUEST_INSTALL_PACKAGES` to maintain Play Store compliance.
 
@@ -21,9 +21,9 @@
 - Treat `petal` as the primary browser feature and browsing engine source.
 - **Never blindly mirror or fast-forward merge repositories**. Features, engine improvements, bug fixes (such as Firefox Sync, widgets, address bar physics, media players) must be synced while strictly respecting variant-specific boundaries.
 - When porting changes:
-  1. Never delete or overwrite Play Store variant components (`PetalPlayUpdateManager`, `PetalSupportiveAdsManager`, `SupportiveAdsSettingsScreen`, `fastlane`, variable fonts) in `petal_browser`.
-  2. Never copy Play Store SDKs (`play-services-ads`, `app-update`) into `petal`.
-  3. Keep settings navigation mapped to `SettingsCategory.ADS` in `petal_browser` and `SettingsCategory.UPDATER` in `petal`.
+  1. Never delete or overwrite Play Store variant components (`PetalPlayUpdateManager`, `fastlane`, variable fonts) in `petal_browser`.
+  2. Never copy Play Store SDKs (`app-update`) into `petal`.
+  3. Keep settings navigation mapped to `SettingsCategory.UPDATER` in `petal`.
 
 ## 3. File Reading & Execution Hygiene
 - Inspect targets precisely once, synthesize necessary context, and immediately apply the concrete practical fix.

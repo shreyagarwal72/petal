@@ -157,11 +157,6 @@
             android:name="android.webkit.WebView.MetricsOptOut"
             android:value="true" />
 
-        <!-- Google AdMob App ID (Play Store variant) -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="@string/admob_app_id" />
-
         <!-- AppLocales Metadata Holder Service for AppCompat auto-store locales -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
@@ -616,7 +611,14 @@
                 android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup"
                 tools:node="remove" />
+            <!-- Unity Ads starts only after the user opts in (PetalUnityRewardedAds), not at app start -->
+            <meta-data
+                android:name="com.unity3d.services.core.configuration.AdsSdkInitializer"
+                tools:node="remove" />
         </provider>
+        <service
+            android:name="com.unity3d.ads.adplayer.AdTaskRemovalDetectionService"
+            tools:node="remove" />
 
     </application>
 

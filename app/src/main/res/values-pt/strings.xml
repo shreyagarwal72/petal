@@ -1392,7 +1392,6 @@
     <string name="ui_petal_home">Casa de Pétalas</string>
     <string name="ui_ask_petal_ai">Pergunte à Petal AI</string>
     <string name="petal_autofill_service_name">Preenchimento automático de pétalas</string>
-    <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
     <string name="upload_chooser_title">Escolha a origem do upload</string>
     <string name="upload_chooser_files_title">Arquivos</string>
     <string name="upload_chooser_files_desc">Navegue por pastas e documentos com o seletor de arquivos do Petal</string>

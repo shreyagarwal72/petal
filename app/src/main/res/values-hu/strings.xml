@@ -1392,7 +1392,6 @@
     <string name="ui_petal_home">Szirom Otthon</string>
     <string name="ui_ask_petal_ai">Kérdezd meg a Petal AI-t</string>
     <string name="petal_autofill_service_name">Szirom automatikus kitöltése</string>
-    <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
     <string name="upload_chooser_title">Válassza ki a feltöltési forrást</string>
     <string name="upload_chooser_files_title">Fájlok</string>
     <string name="upload_chooser_files_desc">Böngésszen mappák és dokumentumok között a Petal fájlválasztójával</string>

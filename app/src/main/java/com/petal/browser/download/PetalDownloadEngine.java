@@ -115,6 +115,14 @@ public class PetalDownloadEngine {
             @Override
             public void onCompleted(@NotNull Download download) {
                 Log.d(TAG, "Download completed successfully: " + download.getFile());
+                try {
+                    com.petal.browser.account.progress.PetalProgressStore.INSTANCE.bump(
+                        context,
+                        com.petal.browser.account.progress.PetalCounter.DOWNLOADS,
+                        1L,
+                        5L
+                    );
+                } catch (Throwable ignored) {}
             }
 
             @Override

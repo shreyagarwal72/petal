@@ -1392,7 +1392,6 @@
     <string name="ui_petal_home">Лепестковый дом</string>
     <string name="ui_ask_petal_ai">Спросите Лепестка AI</string>
     <string name="petal_autofill_service_name">Лепестковое автозаполнение</string>
-    <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
     <string name="upload_chooser_title">Выберите источник загрузки</string>
     <string name="upload_chooser_files_title">Файлы</string>
     <string name="upload_chooser_files_desc">Просматривайте папки и документы с помощью средства выбора файлов Petal.</string>

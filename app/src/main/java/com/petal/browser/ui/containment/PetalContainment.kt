@@ -406,7 +406,7 @@ fun PetalGroupIconBadge(
     containerColor: Color,
     contentColor: Color,
     size: Dp = 44.dp,
-    iconSize: Dp = 22.dp,
+    iconSize: Dp = 24.dp,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {

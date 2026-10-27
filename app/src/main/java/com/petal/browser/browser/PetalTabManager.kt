@@ -47,6 +47,14 @@ class PetalTabManager(context: Context) {
         if (url.isNotBlank() && !url.equals("about:blank", ignoreCase = true)) {
             session.loadUrl(url)
         }
+        try {
+            com.petal.browser.account.progress.PetalProgressStore.bump(
+                context,
+                com.petal.browser.account.progress.PetalCounter.TABS_OPENED,
+                1L,
+                xpGain = 1L
+            )
+        } catch (_: Throwable) {}
         return tabState
     }
 

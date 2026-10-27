@@ -1392,7 +1392,6 @@
     <string name="ui_petal_home">Accueil Pétale</string>
     <string name="ui_ask_petal_ai">Demandez à Petal AI</string>
     <string name="petal_autofill_service_name">Remplissage automatique des pétales</string>
-    <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
     <string name="upload_chooser_title">Choisissez la source de téléchargement</string>
     <string name="upload_chooser_files_title">Fichiers</string>
     <string name="upload_chooser_files_desc">Parcourez les dossiers et les documents avec le sélecteur de fichiers de Petal</string>

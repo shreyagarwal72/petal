@@ -100,6 +100,7 @@ fun FirefoxAccountSyncScreen(
     var showDirectEmailDialog by remember { mutableStateOf(false) }
     var directEmailInput by remember { mutableStateOf("") }
     var showEditNameDialog by remember { mutableStateOf(false) }
+    var showBadgesSheet by remember { mutableStateOf(false) }
     var nameInput by remember(profile.displayName) { mutableStateOf(profile.displayName ?: "") }
 
     var isClearOnExit by remember {
@@ -167,6 +168,10 @@ fun FirefoxAccountSyncScreen(
     }
 
 
+    LaunchedEffect(Unit) { com.petal.browser.account.progress.PetalProgressStore.init(context) }
+    if (showBadgesSheet) com.petal.browser.account.progress.PetalBadgesSheet(onDismiss = { showBadgesSheet = false })
+    com.petal.browser.account.progress.PetalBadgeUnlockHost()
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
         onBack = {
@@ -207,7 +212,32 @@ fun FirefoxAccountSyncScreen(
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // ── Section 1: User Profile Hero Card ─────────────────────
+                            // ── Section 1: Local profile (card, stats, badges, supporter unlocks) ──
+                            com.petal.browser.account.progress.PetalProfileCard(
+                                profile = profile,
+                                onAvatarClick = {
+                                    val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
+                                    if (profile.avatarType == AvatarType.GALLERY_URI && permanentFile.exists() && permanentFile.length() > 0) {
+                                        pendingCropUri = Uri.fromFile(permanentFile)
+                                        showCropDialog = true
+                                    } else {
+                                        openAvatarMediaPicker()
+                                    }
+                                },
+                                onEditName = {
+                                    nameInput = profile.displayName
+                                    showEditNameDialog = true
+                                }
+                            )
+
+                            com.petal.browser.account.progress.PetalStatTiles()
+
+                            com.petal.browser.account.progress.PetalBadgeCollectionCard(onOpen = { showBadgesSheet = true })
+
+                            com.petal.browser.account.progress.PetalSupportCard(
+                                onMessage = { msg -> coroutineScope.launch { snackbarHostState.showSnackbar(msg) } }
+                            )
+
                             com.petal.browser.ui.containment.PetalHeroCard(
                                 shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -217,81 +247,6 @@ fun FirefoxAccountSyncScreen(
                                     modifier = Modifier.padding(20.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Box(
-                                        contentAlignment = Alignment.BottomEnd,
-                                        modifier = Modifier.bouncyClickable {
-                                            val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
-                                            if (profile.avatarType == AvatarType.GALLERY_URI && permanentFile.exists() && permanentFile.length() > 0) {
-                                                pendingCropUri = Uri.fromFile(permanentFile)
-                                                showCropDialog = true
-                                            } else {
-                                                openAvatarMediaPicker()
-                                            }
-                                        }
-                                    ) {
-                                        ProfileAvatarDisplay(profile = profile, sizeDp = 88)
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                                            border = BorderStroke(2.dp, MaterialTheme.colorScheme.surfaceContainerLow),
-                                            modifier = Modifier.size(30.dp)
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(
-                                                    imageVector = if (profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty()) Icons.Rounded.Crop else Icons.Rounded.AddPhotoAlternate,
-                                                    contentDescription = stringResource(R.string.ui_change_profile_picture),
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(Modifier.height(14.dp))
-
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(
-                                            text = profile.displayName,
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            modifier = Modifier
-                                                .size(28.dp)
-                                                .bouncyClickable {
-                                                    nameInput = profile.displayName
-                                                    showEditNameDialog = true
-                                                }
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(
-                                                    Icons.Rounded.Edit,
-                                                    contentDescription = stringResource(R.string.ui_edit_user_name),
-                                                    modifier = Modifier.size(15.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(Modifier.height(2.dp))
-
-                                    Text(
-                                        text = stringResource(R.string.ui_petal_browser_profile),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-
-                                    Spacer(Modifier.height(18.dp))
-
                                     // Avatar Preset Row
                                     Text(
                                         text = stringResource(R.string.ui_choose_profile_picture),
@@ -776,7 +731,7 @@ fun FirefoxAccountSyncScreen(
                                             Icon(
                                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.mobile_vibrate_filled),
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimary
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
                                         },
                                         position = petalGroupPositionFor(0, securityItemCount),
@@ -955,7 +910,7 @@ fun FirefoxAccountSyncScreen(
                                             Icon(
                                                 painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.reset_settings_rounded),
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimary
+                                                tint = MaterialTheme.colorScheme.onTertiaryContainer
                                             )
                                         },
                                         position = petalGroupPositionFor(1, storageItemCount),

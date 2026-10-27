@@ -7026,6 +7026,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updateBackCallbackState();
         saveOpenedTabs();
         com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(this);
+        try {
+            com.petal.browser.account.progress.PetalProgressStore.INSTANCE.bump(
+                this,
+                com.petal.browser.account.progress.PetalCounter.TABS_OPENED,
+                1L,
+                1L
+            );
+        } catch (Throwable ignored) {}
     }
 
     public void saveOpenedTabs() {

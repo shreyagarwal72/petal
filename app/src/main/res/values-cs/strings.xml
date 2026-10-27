@@ -1392,7 +1392,6 @@
     <string name="ui_petal_home">Petal Home</string>
     <string name="ui_ask_petal_ai">Zeptejte se Petal AI</string>
     <string name="petal_autofill_service_name">Automatické plnění okvětních lístků</string>
-    <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
     <string name="upload_chooser_title">Vyberte zdroj nahrávání</string>
     <string name="upload_chooser_files_title">Soubory</string>
     <string name="upload_chooser_files_desc">Procházejte složky a dokumenty pomocí Petalova výběru souborů</string>

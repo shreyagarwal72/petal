@@ -1392,7 +1392,6 @@
     <string name="ui_petal_home">Petal Ana Sayfası</string>
     <string name="ui_ask_petal_ai">Petal AI\'ye sorun</string>
     <string name="petal_autofill_service_name">Yaprak Otomatik Doldurma</string>
-    <string name="admob_app_id">ca-app-pub-5680314597533936~2825634534</string>
     <string name="upload_chooser_title">Yükleme kaynağını seçin</string>
     <string name="upload_chooser_files_title">Dosyalar</string>
     <string name="upload_chooser_files_desc">Petal\'ın dosya seçicisiyle klasörlere ve belgelere göz atın</string>

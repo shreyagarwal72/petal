@@ -1392,7 +1392,6 @@
     <string name="ui_petal_home">花瓣之家</string>
     <string name="ui_ask_petal_ai">詢問花瓣人工智慧</string>
     <string name="petal_autofill_service_name">花瓣自動填充</string>
-    <string name="admob_app_id"></string>
     <string name="upload_chooser_title">選擇上傳來源</string>
     <string name="upload_chooser_files_title">文件</string>
     <string name="upload_chooser_files_desc">使用 Petal 的文件選擇器瀏覽資料夾和文檔</string>

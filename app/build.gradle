@@ -157,6 +157,8 @@ configurations.all {
 dependencies {
     implementation 'com.google.android.material:material:1.14.0'
     implementation 'androidx.preference:preference:1.2.1'
+    implementation 'com.unity3d.ads:unity-ads:4.21.0'
+    implementation 'androidx.fragment:fragment:1.8.9' // unity-ads pulls an old fragment that breaks ActivityResult APIs
     implementation 'androidx.media:media:1.7.0'
     implementation 'androidx.webkit:webkit:1.16.0'
     implementation 'androidx.palette:palette:1.0.0'
@@ -229,8 +231,7 @@ dependencies {
     // see https://github.com/android/identity-samples/issues/90) that some devices hit
     // even with fully correct OAuth configuration.
 
-    // Google Mobile Ads (GMS Ads) & Google Play In-App Updates
-    implementation 'com.google.android.gms:play-services-ads:24.0.0'
+    // Google Play In-App Updates
     implementation 'com.google.android.play:app-update:2.1.0'
     implementation 'com.google.android.play:app-update-ktx:2.1.0'
 
