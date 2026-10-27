@@ -9,17 +9,18 @@ import com.unity3d.ads.IUnityAdsLoadListener
 import com.unity3d.ads.IUnityAdsShowListener
 import com.unity3d.ads.UnityAds
 import com.unity3d.ads.UnityAdsShowOptions
+import com.unity3d.ads.metadata.MetaData
 
 /**
  * Optional rewarded ads through Unity Ads.
+ * Supports REAL live monetization ads as well as opt-in test ads.
  * Unity is initialized and loaded only after the user opts in on the support card.
  * It is never touched from browser tabs, so private tabs are unaffected.
  */
 object PetalUnityRewardedAds : PetalRewardedAds {
     private const val TAG = "PetalAds"
-    private const val GAME_ID = "800412724"
-    private const val PRIMARY_PLACEMENT = "BP_Rewarded_Android"
-    private val CANDIDATE_PLACEMENTS = listOf(PRIMARY_PLACEMENT, "Rewarded_Android", "rewardedVideo")
+    private const val DEFAULT_GAME_ID = "800412724"
+    private const val DEFAULT_PLACEMENT = "BP_Rewarded_Android"
 
     override val isAvailable: Boolean = true
 
@@ -29,17 +30,53 @@ object PetalUnityRewardedAds : PetalRewardedAds {
     @Volatile override var isLoading: Boolean = false
         private set
 
-    @Volatile private var activePlacement: String = PRIMARY_PLACEMENT
+    @Volatile private var activePlacement: String = DEFAULT_PLACEMENT
     private var pendingShow: Pair<Activity, ((Boolean) -> Unit)>? = null
     private var pendingMessage: ((String) -> Unit)? = null
 
     private fun consented(ctx: Context) =
         PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean("pp_ads_consent", false)
 
-    private fun isTestMode(ctx: Context): Boolean {
-        // Test mode is enabled by default to allow reliable testing during development and testing APKs.
-        // Set "pp_ads_test_mode" to false in preferences only when ready for live production monetization.
-        return PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean("pp_ads_test_mode", true)
+    /**
+     * Test mode is FALSE by default to request and display REAL ads from the ad network.
+     * Can be set to true via "pp_ads_test_mode" preference for testing when needed.
+     */
+    fun isTestMode(ctx: Context): Boolean =
+        PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean("pp_ads_test_mode", false)
+
+    fun setTestMode(ctx: Context, enabled: Boolean) {
+        PreferenceManager.getDefaultSharedPreferences(ctx).edit().putBoolean("pp_ads_test_mode", enabled).apply()
+    }
+
+    private fun getGameId(ctx: Context): String =
+        PreferenceManager.getDefaultSharedPreferences(ctx).getString("pp_unity_game_id", null)?.takeIf { it.isNotBlank() } ?: DEFAULT_GAME_ID
+
+    private fun getCandidatePlacements(ctx: Context): List<String> {
+        val custom = PreferenceManager.getDefaultSharedPreferences(ctx).getString("pp_unity_placement", null)?.takeIf { it.isNotBlank() }
+        val list = mutableListOf<String>()
+        if (custom != null) list.add(custom)
+        if (DEFAULT_PLACEMENT !in list) list.add(DEFAULT_PLACEMENT)
+        if ("Rewarded_Android" !in list) list.add("Rewarded_Android")
+        if ("rewardedVideo" !in list) list.add("rewardedVideo")
+        return list
+    }
+
+    private fun applyConsentMetadata(context: Context) {
+        try {
+            val gdpr = MetaData(context)
+            gdpr.set("gdpr.consent", true)
+            gdpr.commit()
+
+            val privacy = MetaData(context)
+            privacy.set("privacy.consent", true)
+            privacy.commit()
+
+            val user = MetaData(context)
+            user.set("user.nonbehavioral", false)
+            user.commit()
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to apply ad consent metadata", e)
+        }
     }
 
     override fun preload(context: Context) {
@@ -52,15 +89,17 @@ object PetalUnityRewardedAds : PetalRewardedAds {
     }
 
     private fun ensureInitialized(app: Context, onReady: () -> Unit) {
-        if (UnityAds.isInitialized()) {
+        applyConsentMetadata(app)
+        if (UnityAds.isInitialized) {
             onReady()
             return
         }
         val testMode = isTestMode(app)
-        Log.d(TAG, "Initializing Unity Ads SDK: gameId=$GAME_ID, testMode=$testMode")
-        UnityAds.initialize(app, GAME_ID, testMode, object : IUnityAdsInitializationListener {
+        val gameId = getGameId(app)
+        Log.d(TAG, "Initializing Unity Ads SDK for real ads: gameId=$gameId, testMode=$testMode")
+        UnityAds.initialize(app, gameId, testMode, object : IUnityAdsInitializationListener {
             override fun onInitializationComplete() {
-                Log.d(TAG, "Unity Ads SDK initialization complete")
+                Log.d(TAG, "Unity Ads SDK initialization complete (testMode=$testMode)")
                 onReady()
             }
 
@@ -78,25 +117,26 @@ object PetalUnityRewardedAds : PetalRewardedAds {
     }
 
     private fun loadPlacement(context: Context, candidateIndex: Int) {
-        if (candidateIndex >= CANDIDATE_PLACEMENTS.size) {
-            Log.e(TAG, "All candidate placements failed to load")
+        val candidates = getCandidatePlacements(context)
+        if (candidateIndex >= candidates.size) {
+            Log.e(TAG, "All candidate placements failed to load for real ads")
             isLoading = false
             isLoaded = false
-            pendingMessage?.invoke("No ad available right now. Please check internet and try again.")
+            pendingMessage?.invoke("No real ads filled right now. Please check connection and try again.")
             pendingShow?.second?.invoke(false)
             pendingShow = null
             pendingMessage = null
             return
         }
 
-        val placement = CANDIDATE_PLACEMENTS[candidateIndex]
+        val placement = candidates[candidateIndex]
         activePlacement = placement
         isLoading = true
-        Log.d(TAG, "Loading Unity Ads placement: $placement (candidate index $candidateIndex)")
+        Log.d(TAG, "Loading real Unity Ad on placement: $placement (candidate index $candidateIndex of ${candidates.size})")
 
         UnityAds.load(placement, object : IUnityAdsLoadListener {
             override fun onUnityAdsAdLoaded(placementId: String?) {
-                Log.d(TAG, "Unity Ad loaded successfully: $placementId")
+                Log.d(TAG, "Unity Ad successfully loaded: $placementId")
                 isLoading = false
                 isLoaded = true
                 val pending = pendingShow
@@ -113,7 +153,7 @@ object PetalUnityRewardedAds : PetalRewardedAds {
                 error: UnityAds.UnityAdsLoadError?,
                 message: String?
             ) {
-                Log.w(TAG, "Failed to load placement $placementId: $error - $message. Trying fallback candidate...")
+                Log.w(TAG, "Failed to load real ad on $placementId: $error - $message. Trying next candidate...")
                 loadPlacement(context, candidateIndex + 1)
             }
         })
@@ -138,18 +178,18 @@ object PetalUnityRewardedAds : PetalRewardedAds {
         }
 
         if (isLoading) {
-            Log.d(TAG, "Ad is already loading, queuing show request")
-            onMessage("Ad is loading, please wait a moment...")
+            Log.d(TAG, "Ad is already loading, waiting...")
+            onMessage("Loading real ad, please wait a moment...")
             pendingShow = activity to onResult
             pendingMessage = onMessage
             return
         }
 
-        Log.d(TAG, "Ad not loaded; initiating load before show")
+        Log.d(TAG, "Real ad not loaded; initiating load before show")
         pendingShow = activity to onResult
         pendingMessage = onMessage
         isLoading = true
-        onMessage("Loading ad...")
+        onMessage("Loading real ad...")
         ensureInitialized(app) {
             loadPlacement(app, 0)
         }
@@ -157,7 +197,7 @@ object PetalUnityRewardedAds : PetalRewardedAds {
 
     private fun display(activity: Activity, onMessage: ((String) -> Unit)?, onResult: (Boolean) -> Unit) {
         isLoaded = false
-        Log.d(TAG, "Displaying Unity Ad on placement: $activePlacement")
+        Log.d(TAG, "Displaying real Unity Ad on placement: $activePlacement")
 
         val showOptions = UnityAdsShowOptions()
         UnityAds.show(activity, activePlacement, showOptions, object : IUnityAdsShowListener {
@@ -173,18 +213,18 @@ object PetalUnityRewardedAds : PetalRewardedAds {
             }
 
             override fun onUnityAdsShowStart(placementId: String?) {
-                Log.d(TAG, "Unity Ad started playback: $placementId")
+                Log.d(TAG, "Real Unity Ad started playback: $placementId")
             }
 
             override fun onUnityAdsShowClick(placementId: String?) {
-                Log.d(TAG, "Unity Ad clicked: $placementId")
+                Log.d(TAG, "Real Unity Ad clicked: $placementId")
             }
 
             override fun onUnityAdsShowComplete(
                 placementId: String?,
                 state: UnityAds.UnityAdsShowCompletionState?
             ) {
-                Log.d(TAG, "Unity Ad completed playback: $placementId, state: $state")
+                Log.d(TAG, "Real Unity Ad completed playback: $placementId, state: $state")
                 val completed = state == UnityAds.UnityAdsShowCompletionState.COMPLETED
                 onResult(completed)
                 preload(activity)
