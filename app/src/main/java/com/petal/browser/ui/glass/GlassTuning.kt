@@ -36,3 +36,28 @@ fun rememberRefractionTuning(
         width = (widthOverride ?: sp.getFloat(PREF_GLASS_REFRACTION_WIDTH, 1f)).coerceIn(0f, 2f)
     )
 }
+
+const val PREF_GLASS_SHEEN = "sp_liquid_glass_sheen"
+const val PREF_GLASS_ALPHA = "sp_liquid_glass_alpha"
+
+/**
+ * Live sheen value (0..1). Reads [LocalPetalGlassRevision] so every surface that uses it
+ * recomposes the moment the slider moves, instead of keeping whatever it read when it was
+ * first composed. [enabled] = false returns the neutral default for non-glass surfaces.
+ */
+@Composable
+fun rememberGlassSheen(enabled: Boolean = true, default: Float = 0.60f): Float {
+    LocalPetalGlassRevision.current
+    if (!enabled) return default
+    val sp = PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+    return sp.getFloat(PREF_GLASS_SHEEN, default).coerceIn(0f, 1f)
+}
+
+/** Live translucency value (0.10..0.95); same live-update contract as [rememberGlassSheen]. */
+@Composable
+fun rememberGlassAlpha(default: Float = 0.70f): Float {
+    LocalPetalGlassRevision.current
+    val sp = PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+    return sp.getFloat(PREF_GLASS_ALPHA, default).coerceIn(0.10f, 0.95f)
+}
+

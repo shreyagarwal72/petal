@@ -249,7 +249,7 @@ fun PetalLensBottomSheet(
 
     val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val sheetSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheetSheen = if (isLiquidGlass) sheetSp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheetSheen = com.petal.browser.ui.glass.rememberGlassSheen(isLiquidGlass)
     val sheetDark = MaterialTheme.colorScheme.background.luminance() < .5f
 
     Surface(

@@ -70,7 +70,7 @@ fun PetalAdBlockSettingsScreen(
 
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     var showAddCustomListDialog by remember { mutableStateOf(false) }
     var customListNameInput by remember { mutableStateOf("") }

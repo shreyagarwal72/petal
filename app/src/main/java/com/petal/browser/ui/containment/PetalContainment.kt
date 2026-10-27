@@ -158,15 +158,16 @@ fun Modifier.liquidGlassChrome(
     val tuning = com.petal.browser.ui.glass.rememberRefractionTuning(refractionOverride, refractionWidthOverride)
     val masterGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
     if (!enabled || !masterGlass) return this
+    val backdropOpacity = (alphaOverride ?: sp.getFloat("sp_liquid_glass_alpha", .70f)).coerceIn(.10f, .95f)
     if (backdrop != null && petalRealGlassSupported) {
         val dark = isDark || (MaterialTheme.colorScheme.background.luminance() < .5f)
         val effectiveSheen = sheenOverride ?: sheenIntensity
-        return this.petalRealGlass(backdrop, shape, dark, tuning)
+        return this.petalRealGlass(backdrop, shape, dark, tuning, backdropOpacity)
             .liquidGlassSheen(shape, effectiveSheen, tintColor)
     }
     if (backdrop == null && LocalPetalGlassWallpaper.current?.ready == true) {
         val dark = MaterialTheme.colorScheme.background.luminance() < .5f
-        val opacity = (alphaOverride ?: sp.getFloat("sp_liquid_glass_alpha", .70f)).coerceIn(.10f, .95f)
+        val opacity = backdropOpacity
         val tint = if (tintColor != Color.Unspecified) tintColor else MaterialTheme.colorScheme.surfaceContainerHigh
         val sheen = (sheenOverride ?: sp.getFloat("sp_liquid_glass_sheen", .60f)).coerceIn(0f, 1f)
         // Authentic physical liquid glass: alpha directly modulates translucency vs opacity.
@@ -181,7 +182,7 @@ fun Modifier.liquidGlassChrome(
         )
     }
     val effectiveSheen = sheenOverride ?: sheenIntensity
-    return this.petalRealGlass(backdrop, shape, isDark, tuning)
+    return this.petalRealGlass(backdrop, shape, isDark, tuning, backdropOpacity)
         .liquidGlassSheen(shape, effectiveSheen, tintColor)
 }
 
@@ -438,7 +439,7 @@ fun PetalGroupRow(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val shape = rememberPetalGroupShape(position)
     val activeSurfaceColor = petalGroupSurfaceColor()
     val disabledContainerColor = if (isGlass) {
@@ -506,7 +507,7 @@ fun PetalGroupControlRow(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val shape = rememberPetalGroupShape(position)
     val activeSurfaceColor = petalGroupSurfaceColor()
     val disabledContainerColor = if (isGlass) {
@@ -607,7 +608,7 @@ fun PetalGroupToggleRow(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val shape = rememberPetalGroupShape(position)
     val activeSurfaceColor = petalGroupSurfaceColor()
     val disabledContainerColor = if (isGlass) {
@@ -663,7 +664,7 @@ fun PetalSettingsToggleRow(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val shape = rememberPetalGroupShape(position)
     val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
@@ -739,7 +740,7 @@ fun PetalSettingsToggleRow(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val shape = rememberPetalGroupShape(position)
     val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
@@ -830,7 +831,7 @@ fun PetalGroupListRow(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val shape = rememberPetalGroupShape(position)
     val rowContainerColor = when {
         LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
@@ -898,7 +899,7 @@ fun PetalFloatingToolbar(modifier: Modifier = Modifier, elevation: Dp = 6.dp, co
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val toolbarShape = CircleShape
     Surface(
         modifier = modifier.liquidGlassChrome(shape = toolbarShape, enabled = isGlass, sheenIntensity = sheen),
@@ -977,7 +978,7 @@ fun PetalSheet(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
     val fallbackColor = if (dark) Color(0xE61A1C1E) else Color(0xE6F2F4F7)
@@ -1087,7 +1088,7 @@ fun PetalSelectableOptionCard(title: String, selected: Boolean, onClick: () -> U
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val cardShape = RoundedCornerShape(20.dp)
     val defaultContainer = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
     val container by animateColorAsState(if (selected) MaterialTheme.colorScheme.primaryContainer else defaultContainer, label = "petalOptionContainer")
@@ -1130,7 +1131,7 @@ fun PetalHeroCard(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     Card(
         modifier = modifier.fillMaxWidth().liquidGlassChrome(shape, enabled = isGlass, sheenIntensity = sheen),
         shape = shape,
@@ -1157,7 +1158,7 @@ fun PetalActionCard(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     Card(
         onClick = onClick,
         enabled = enabled,

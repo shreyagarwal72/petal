@@ -120,7 +120,7 @@ fun MiscSettingsScreenContent(
                     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                     val ctx = LocalContext.current
                     val sp = remember(ctx) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(ctx) }
-                    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+                    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
                     PetalGroup(rowCount = snapOptions.size) { index, position ->
                         val (provider, label, icon) = snapOptions[index]

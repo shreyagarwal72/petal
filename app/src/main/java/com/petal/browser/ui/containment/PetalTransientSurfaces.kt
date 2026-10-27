@@ -101,7 +101,7 @@ fun PetalPopupMenu(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     // The glass lives INSIDE the menu content. Putting liquidGlassChrome on DropdownMenu's own
     // modifier drew the panel outside the popup's real bounds (an offset ghost rectangle).
@@ -241,7 +241,7 @@ fun PetalAlertDialog(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val dialogShape = RoundedCornerShape(32.dp)
 
     AlertDialog(
@@ -297,7 +297,7 @@ fun PetalMaterialAlertDialog(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -329,7 +329,7 @@ fun PetalDialog(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
         com.petal.browser.ui.glass.PetalGlassContainer(

@@ -77,7 +77,7 @@ fun PetalBackStyleSettingsRow(
     val context = LocalContext.current
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val shape = petalGroupShape(position)
 
     // Local copy so the thumb and preview react on the very frame the finger moves.

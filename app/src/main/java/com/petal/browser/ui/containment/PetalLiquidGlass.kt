@@ -52,7 +52,9 @@ internal fun Modifier.petalRealGlass(
     backdrop: PetalBackdrop?,
     shape: Shape,
     isDark: Boolean,
-    refraction: com.petal.browser.ui.glass.RefractionTuning = com.petal.browser.ui.glass.RefractionTuning()
+    refraction: com.petal.browser.ui.glass.RefractionTuning = com.petal.browser.ui.glass.RefractionTuning(),
+    /** Translucency slider (0.10..0.95): higher = denser veil. */
+    opacity: Float = 0.70f
 ): Modifier {
     if (backdrop == null || !petalRealGlassSupported) return this
     return this.drawBackdrop(
@@ -75,7 +77,8 @@ internal fun Modifier.petalRealGlass(
         },
         onDrawSurface = {
             // Light veil so text stays readable on any background.
-            drawRect((if (isDark) Color.Black else Color.White).copy(alpha = if (isDark) .22f else .32f))
+            val veil = (if (isDark) 0.08f + opacity * 0.20f else 0.12f + opacity * 0.28f).coerceIn(0f, 0.9f)
+            drawRect((if (isDark) Color.Black else Color.White).copy(alpha = veil))
         }
     )
 }
