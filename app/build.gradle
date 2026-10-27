@@ -181,6 +181,9 @@ dependencies {
 
     // AndroidX Activity, Lifecycle, and SavedState Explicit KTX Dependencies
     implementation 'androidx.core:core-splashscreen:1.0.1'
+    // Installs the baseline profile (src/main/baseline-prof.txt) at first run so hot UI paths
+    // are AOT-compiled instead of interpreted/JIT'd. Cuts cold-start and first-scroll jank.
+    implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     implementation 'androidx.activity:activity-ktx:1.9.3'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
     implementation 'androidx.savedstate:savedstate-ktx:1.2.1'

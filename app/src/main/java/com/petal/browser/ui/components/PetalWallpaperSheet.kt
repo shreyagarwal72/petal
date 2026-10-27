@@ -842,7 +842,7 @@ fun PetalWallpaperSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(WALLPAPER_CATEGORIES) { cat ->
+                items(WALLPAPER_CATEGORIES, key = { it }) { cat ->
                     val isCatSelected = selectedCategory == cat
                     FilterChip(
                         selected = isCatSelected,

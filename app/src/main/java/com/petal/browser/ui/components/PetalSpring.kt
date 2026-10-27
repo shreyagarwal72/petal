@@ -7,7 +7,16 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import android.app.ActivityManager
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 
@@ -111,3 +120,43 @@ fun rememberReduceMotion(): Boolean {
 /** Returns [snap] when reduced motion is on, otherwise [spec]. */
 fun <T> FiniteAnimationSpec<T>.orSnap(reduceMotion: Boolean): FiniteAnimationSpec<T> =
     if (reduceMotion) snap() else this
+
+
+/** True on low-RAM devices, where decorative blur / endless motion should be skipped. */
+@Composable
+fun rememberLowEndDevice(): Boolean {
+    val context = LocalContext.current
+    return remember(context) {
+        try {
+            (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.isLowRamDevice == true
+        } catch (_: Exception) {
+            false
+        }
+    }
+}
+
+/**
+ * True while the host activity is at least STARTED. Endless decorative animations should
+ * read this and stop when it is false, so a backgrounded or covered screen costs no frames.
+ */
+@Composable
+fun rememberIsForeground(): Boolean {
+    val context = LocalContext.current
+    val owner = remember(context) {
+        var c: Context? = context
+        while (c is ContextWrapper && c !is LifecycleOwner) c = c.baseContext
+        c as? LifecycleOwner
+    } ?: return true
+    val state: State<Boolean> = remember(owner) {
+        mutableStateOf(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+    }
+    DisposableEffect(owner) {
+        val obs = LifecycleEventObserver { _, _ ->
+            (state as androidx.compose.runtime.MutableState<Boolean>).value =
+                owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+        }
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs) }
+    }
+    return state.value
+}

@@ -140,7 +140,7 @@ fun PetalResourceSnifferSheet(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(PetalResourceCategory.values()) { category ->
+                items(PetalResourceCategory.values(), key = { it.name }) { category ->
                     val count = if (category == PetalResourceCategory.ALL) {
                         resources.size
                     } else {

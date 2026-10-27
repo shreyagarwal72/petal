@@ -344,7 +344,7 @@ private fun StoreExtensionsPage(
                 .padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(PetalStoreCatalog.AddonCategory.values()) { category ->
+            items(PetalStoreCatalog.AddonCategory.values(), key = { it.name }) { category ->
                 FilterChip(
                     selected = selectedCategory == category,
                     onClick = { onSelectCategory(category) },

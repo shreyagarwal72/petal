@@ -328,7 +328,8 @@ fun M3ExpressiveVariableBackground(
     val primaryColor = MaterialTheme.colorScheme.primary
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
 
-    val animate = !isReducedMotionEnabled() && !isBatterySaverEnabled()
+    val animate = !isReducedMotionEnabled() && !isBatterySaverEnabled() &&
+        rememberIsForeground() && !rememberLowEndDevice()
     val transition = rememberInfiniteTransition(label = "m3_expressive_bg")
 
     // Slow continuous drift

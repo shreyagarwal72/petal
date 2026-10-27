@@ -116,7 +116,7 @@ fun PetalAspectRatioSheet(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                items(VideoScaleModes) { option ->
+                items(VideoScaleModes, key = { it.id }) { option ->
                     val isSelected = option.id.equals(currentModeId, ignoreCase = true)
                     val cardBg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
                     val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface

@@ -404,7 +404,7 @@ fun SafeLockerScreen(
                                 contentPadding = PaddingValues(horizontal = 16.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                items(SafeLockerCategory.values()) { category ->
+                                items(SafeLockerCategory.values(), key = { it.name }) { category ->
                                     val isSelected = selectedCategory == category
                                     FilterChip(
                                         selected = isSelected,

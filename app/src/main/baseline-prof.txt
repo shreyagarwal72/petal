@@ -1,0 +1,20 @@
+# Baseline profile (wildcard form). Android pre-compiles these classes/methods at install,
+# so the first launch, first scroll and first animation don't run in the interpreter.
+# H = hot, S = startup, P = post-startup.
+HSPLcom/petal/browser/activity/BrowserActivity;->**(**)**
+HSPLcom/petal/browser/view/**;->**(**)**
+HSPLcom/petal/browser/browser/**;->**(**)**
+HSPLcom/petal/browser/engine/**;->**(**)**
+HSPLcom/petal/browser/ui/**;->**(**)**
+HSPLcom/petal/browser/compose/home/**;->**(**)**
+HSPLcom/petal/browser/compose/tabs/**;->**(**)**
+HSPLcom/petal/browser/predictive/**;->**(**)**
+HSPLcom/petal/browser/haptics/**;->**(**)**
+Lcom/petal/browser/activity/BrowserActivity;
+Lcom/petal/browser/view/**;
+Lcom/petal/browser/browser/**;
+Lcom/petal/browser/engine/**;
+Lcom/petal/browser/ui/**;
+Lcom/petal/browser/compose/home/**;
+Lcom/petal/browser/compose/tabs/**;
+Lcom/petal/browser/predictive/**;

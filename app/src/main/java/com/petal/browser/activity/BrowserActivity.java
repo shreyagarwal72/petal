@@ -4601,27 +4601,62 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    /**
+     * Resizes the page area for the bars with ONE layout pass instead of one per frame.
+     * The padding jumps straight to the target; the page views are then offset by the
+     * difference and eased back to zero with translationY, so nothing visibly jumps.
+     * translationY runs on the render thread and never re-lays out GeckoView.
+     */
     private void animateContentPadding(int targetTop, int targetBottom) {
         final View mainContent = findViewById(R.id.main_content);
         if (mainContent == null) return;
         if (contentPaddingAnimator != null) {
-            contentPaddingAnimator.cancel();
+            contentPaddingAnimator.cancel(); // flushes its leftover offset, see onAnimationEnd/Cancel
         }
         final int startTop = mainContent.getPaddingTop();
         final int startBottom = mainContent.getPaddingBottom();
         if (startTop == targetTop && startBottom == targetBottom) return;
-        contentPaddingAnimator = android.animation.ValueAnimator.ofFloat(0f, 1f);
-        contentPaddingAnimator.setDuration(240L);
-        contentPaddingAnimator.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
-        contentPaddingAnimator.addUpdateListener(anim -> {
-            float f = (float) anim.getAnimatedValue();
-            mainContent.setPadding(
-                    mainContent.getPaddingLeft(),
-                    startTop + (int) ((targetTop - startTop) * f),
-                    mainContent.getPaddingRight(),
-                    startBottom + (int) ((targetBottom - startBottom) * f));
+        final float startOffset = startTop - targetTop; // content top moves by this when padding snaps
+        mainContent.setPadding(mainContent.getPaddingLeft(), targetTop, mainContent.getPaddingRight(), targetBottom);
+        if (startOffset == 0f || !(mainContent instanceof android.view.ViewGroup)) return;
+        final android.view.ViewGroup group = (android.view.ViewGroup) mainContent;
+        final float[] applied = {0f};
+        final java.lang.Runnable flush = () -> {
+            float rest = -applied[0];
+            if (rest != 0f) {
+                for (int i = 0; i < group.getChildCount(); i++) {
+                    View c = group.getChildAt(i);
+                    c.setTranslationY(c.getTranslationY() + rest);
+                }
+                applied[0] = 0f;
+            }
+        };
+        // Apply the starting offset now so the first drawn frame matches the old layout.
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View c = group.getChildAt(i);
+            c.setTranslationY(c.getTranslationY() + startOffset);
+        }
+        applied[0] = startOffset;
+        final android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofFloat(1f, 0f);
+        contentPaddingAnimator = anim;
+        anim.setDuration(240L);
+        anim.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
+        anim.addUpdateListener(a -> {
+            float target = startOffset * (float) a.getAnimatedValue();
+            float delta = target - applied[0];
+            if (delta != 0f) {
+                for (int i = 0; i < group.getChildCount(); i++) {
+                    View c = group.getChildAt(i);
+                    c.setTranslationY(c.getTranslationY() + delta);
+                }
+                applied[0] = target;
+            }
         });
-        contentPaddingAnimator.start();
+        anim.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override public void onAnimationEnd(android.animation.Animator animation) { flush.run(); }
+            @Override public void onAnimationCancel(android.animation.Animator animation) { flush.run(); }
+        });
+        anim.start();
     }
 
     /** Springs a view's vertical offset. A running spring on the same view is cancelled first, so repeated calls never stack. */

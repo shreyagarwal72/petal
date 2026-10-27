@@ -213,7 +213,7 @@ fun Modifier.bouncyClickable(
 /** Gentle infinite breathing scale for active elements. Disabled for reduced motion. */
 @Composable
 fun Modifier.pulse(from: Float = 1f, to: Float = 1.08f, durationMs: Int = 1800): Modifier {
-    if (rememberReduceMotion()) return this
+    if (rememberReduceMotion() || !rememberIsForeground()) return this
     val transition = rememberInfiniteTransition(label = "pulse")
     val scale = transition.animateFloat(
         initialValue = from,
