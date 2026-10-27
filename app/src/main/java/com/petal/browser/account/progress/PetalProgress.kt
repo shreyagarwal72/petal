@@ -241,6 +241,8 @@ interface PetalRewardedAds {
     val isAvailable: Boolean
     val isLoaded: Boolean get() = false
     val isLoading: Boolean get() = false
+    /** Why the last load/show attempt failed (already shown to the user via onMessage), or null. */
+    val lastError: String? get() = null
     /** Shows one rewarded ad. Calls onResult(true) only if it was fully watched. */
     fun show(activity: android.app.Activity, onResult: (Boolean) -> Unit)
     fun show(activity: android.app.Activity, onMessage: (String) -> Unit, onResult: (Boolean) -> Unit) {

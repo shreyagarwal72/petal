@@ -518,7 +518,9 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                                         isAdActive = false
                                         if (watched) {
                                             if (PetalProgressStore.onAdCompleted(ctx)) onMessage("Thank you! +${PetalXp.AD_XP} XP")
-                                        } else {
+                                        } else if (provider.lastError == null) {
+                                            // Only for a skipped/closed ad. A real failure already told the
+                                            // user why through onMessage; don't overwrite it with this.
                                             onMessage("Ad was not completed. Watch the full ad to earn it.")
                                         }
                                     }
