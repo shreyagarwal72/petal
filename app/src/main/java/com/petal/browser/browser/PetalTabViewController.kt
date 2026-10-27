@@ -1,6 +1,7 @@
 package com.petal.browser.browser
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.util.AttributeSet
 import android.view.View
@@ -80,6 +81,41 @@ class PetalTabViewController private constructor(
     private var mediaPosition: mozilla.components.concept.engine.mediasession.MediaSession.PositionState? = null
     private var mediaBridge: com.petal.browser.media.PetalMediaBridge? = null
     private val preferences by lazy { PreferenceManager.getDefaultSharedPreferences(appContext) }
+    private val prefChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == null) return@OnSharedPreferenceChangeListener
+        when (key) {
+            "sp_javascript", "profileStandard_javascript" -> {
+                val profile = com.petal.browser.view.PetalGeckoView.getProfile(appContext)
+                val jsEnabled = preferences.getBoolean(
+                    "sp_javascript",
+                    preferences.getBoolean("${profile}_javascript", preferences.getBoolean("profileStandard_javascript", true))
+                )
+                try {
+                    getGeckoSession()?.settings?.allowJavascript = jsEnabled
+                } catch (t: Throwable) {
+                    android.util.Log.w("PetalTabViewController", "Failed to update allowJavascript: ${t.message}")
+                }
+            }
+            "sp_ad_block", "sp_etp_strict", "profileStandard_adBlock" -> {
+                val host = try { android.net.Uri.parse(pageUrl.orEmpty()).host } catch (_: Throwable) { null }
+                val effectiveMode = com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(appContext, host)
+                applyTrackingProtectionMode(effectiveMode)
+            }
+            "sp_desktop_site" -> {
+                val profile = com.petal.browser.view.PetalGeckoView.getProfile(appContext)
+                val host = try { android.net.Uri.parse(pageUrl.orEmpty()).host } catch (_: Throwable) { null }
+                val desktopEnabled = if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
+                    preferences.getBoolean("sp_desktop_site_$host", false)
+                } else {
+                    preferences.getBoolean("${profile}_desktop", preferences.getBoolean("sp_desktop_site", false))
+                }
+                observedSession?.toggleDesktopMode(desktopEnabled, reload = false)
+            }
+            "sp_font_size_scale", "sp_zoom_level_scale", "sp_force_enable_zoom", "sp_caret_browsing" -> {
+                com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this@PetalTabViewController)
+            }
+        }
+    }
     private var refreshFeature: SwipeRefreshFeature? = null
     private var fullScreenFeature: FullScreenFeature? = null
     private var attachedLifecycle: Lifecycle? = null
@@ -152,6 +188,7 @@ class PetalTabViewController private constructor(
             if (!loading) {
                 injectPagePrivacyAndAdBlock()
                 recordHistoryVisit(pageUrl, pageTitle)
+                com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this@PetalTabViewController)
             }
         }
 
@@ -317,6 +354,7 @@ class PetalTabViewController private constructor(
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         )
         (context as? LifecycleOwner)?.let(::attachLifecycle)
+        preferences.registerOnSharedPreferenceChangeListener(prefChangeListener)
     }
 
     /** Bind this view to a tab already owned by BrowserStore. */
@@ -700,6 +738,7 @@ class PetalTabViewController private constructor(
         val effectiveMode = com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(appContext, host)
         applyTrackingProtectionMode(effectiveMode)
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(preferences)
+        com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this)
     }
 
     fun applyTrackingProtectionMode(mode: com.petal.browser.browser.PetalAdBlockMode) {
@@ -1111,6 +1150,9 @@ class PetalTabViewController private constructor(
         onBrowserStateChanged = null
         attachedLifecycle?.removeObserver(engineLifecycleObserver)
         attachedLifecycle = null
+        try {
+            preferences.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
+        } catch (_: Throwable) {}
         engineView.release()
         if (removedTabId != null) PetalEngineStore.removeTab(appContext, removedTabId)
     }

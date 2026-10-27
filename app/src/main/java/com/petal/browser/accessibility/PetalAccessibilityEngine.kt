@@ -22,12 +22,48 @@ import android.view.MotionEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.preference.PreferenceManager
+import com.petal.browser.browser.AlbumController
 import com.petal.browser.unit.HelperUnit
 
 object PetalAccessibilityEngine {
 
     private const val TAG = "PetalAccessibility"
     const val JS_BRIDGE_NAME = "PetalAccessibilityBridge"
+
+    private fun evaluateJavascript(controller: AlbumController?, script: String) {
+        if (controller == null) return
+        when (controller) {
+            is com.petal.browser.browser.PetalTabViewController -> {
+                controller.evaluateJavascript(script, null)
+            }
+            is com.petal.browser.view.PetalGeckoView -> {
+                controller.evaluateJavascript(script, null)
+            }
+            is WebView -> {
+                controller.evaluateJavascript(script, null)
+            }
+        }
+    }
+
+    // ── Master Accessibility Hook for Tab Controllers ────────────────────────
+
+    @JvmStatic
+    fun applyAccessibilitySettings(controller: AlbumController?) {
+        if (controller == null) return
+        val view = controller.albumView ?: return
+        val context = view.context ?: return
+
+        // 1. Bypass viewport zoom locks if force zoom is enabled
+        applyForceZoom(controller)
+
+        // 2. Apply text and site zoom
+        applyZoom(controller, controller.url)
+
+        // 3. Synchronize caret browsing if active
+        if (isCaretBrowsingEnabled(context)) {
+            applyCaretBrowsing(controller, true)
+        }
+    }
 
     // ── 1. Per-Site Zoom Management ──────────────────────────────────────────
 
@@ -55,6 +91,23 @@ object PetalAccessibilityEngine {
         val clamped = zoomPercent.coerceIn(50, 300)
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         sp.edit().putInt("sp_site_zoom_${domain}", clamped).apply()
+    }
+
+    @JvmStatic
+    fun applyZoom(controller: AlbumController?, url: String?) {
+        if (controller == null) return
+        val view = controller.albumView ?: return
+        val context = view.context ?: return
+        val zoom = getSiteZoom(context, url ?: controller.url)
+        val scale = zoom / 100f
+        val js = """
+            (function() {
+                try {
+                    document.body.style.zoom = '$scale';
+                } catch(e) {}
+            })();
+        """.trimIndent()
+        evaluateJavascript(controller, js)
     }
 
     @JvmStatic
@@ -89,6 +142,32 @@ object PetalAccessibilityEngine {
     fun isForceZoomEnabled(context: Context): Boolean {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         return sp.getBoolean("sp_force_enable_zoom", true)
+    }
+
+    @JvmStatic
+    fun applyForceZoom(controller: AlbumController?) {
+        if (controller == null) return
+        val view = controller.albumView ?: return
+        val context = view.context ?: return
+        if (!isForceZoomEnabled(context)) return
+
+        val js = """
+            (function() {
+                try {
+                    var metas = document.querySelectorAll('meta[name="viewport"]');
+                    metas.forEach(function(m) {
+                        m.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes');
+                    });
+                    if (metas.length === 0) {
+                        var m = document.createElement('meta');
+                        m.name = 'viewport';
+                        m.content = 'width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes';
+                        document.head.appendChild(m);
+                    }
+                } catch(e) {}
+            })();
+        """.trimIndent()
+        evaluateJavascript(controller, js)
     }
 
     @JvmStatic
@@ -167,7 +246,7 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun toggleCaretBrowsing(context: Context, controller: com.petal.browser.browser.AlbumController?): Boolean {
+    fun toggleCaretBrowsing(context: Context, controller: AlbumController?): Boolean {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val current = sp.getBoolean("sp_caret_browsing", false)
         val newState = !current
@@ -177,25 +256,21 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun setCaretBrowsing(context: Context, controller: com.petal.browser.browser.AlbumController?, enabled: Boolean) {
+    fun setCaretBrowsing(context: Context, controller: AlbumController?, enabled: Boolean) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         sp.edit().putBoolean("sp_caret_browsing", enabled).apply()
         applyCaretBrowsing(controller, enabled)
     }
 
     @JvmStatic
-    fun applyCaretBrowsing(controller: com.petal.browser.browser.AlbumController?, enabled: Boolean) {
+    fun applyCaretBrowsing(controller: AlbumController?, enabled: Boolean) {
         if (controller == null) return
         val js = if (enabled) {
             "document.designMode = 'on'; window.__petal_caret_mode = true;"
         } else {
             "if (window.__petal_caret_mode) { document.designMode = 'off'; window.__petal_caret_mode = false; }"
         }
-        if (controller is com.petal.browser.view.PetalGeckoView) {
-            controller.evaluateJavascript(js, null)
-        } else if (controller is WebView) {
-            controller.evaluateJavascript(js, null)
-        }
+        evaluateJavascript(controller, js)
     }
 
     // ── 5. System Caption Settings Launcher ─────────────────────────────────
@@ -222,9 +297,9 @@ object PetalAccessibilityEngine {
     private var lastSwipeTime = 0L
 
     @JvmStatic
-    fun handleGenericMotion(controller: com.petal.browser.browser.AlbumController?, event: MotionEvent): Boolean {
+    fun handleGenericMotion(controller: AlbumController?, event: MotionEvent): Boolean {
         if (controller == null) return false
-        val view = controller.getAlbumView()
+        val view = controller.albumView
         val context = view?.context ?: return false
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val enabled = sp.getBoolean("sp_touchpad_swipe_nav", true)
@@ -235,20 +310,31 @@ object PetalAccessibilityEngine {
             val now = System.currentTimeMillis()
             if (now - lastSwipeTime < 600L) return false
 
-            if (hScroll < -0.65f) {
-                // Swipe Left -> Go Back
-                if (controller is com.petal.browser.view.PetalGeckoView && controller.canGoBack()) {
-                    lastSwipeTime = now
-                    controller.goBack()
-                    return true
+            val canBack = when (controller) {
+                is com.petal.browser.browser.PetalTabViewController -> controller.canGoBack()
+                is com.petal.browser.view.PetalGeckoView -> controller.canGoBack()
+                else -> false
+            }
+            val canFwd = when (controller) {
+                is com.petal.browser.browser.PetalTabViewController -> controller.canGoForward()
+                is com.petal.browser.view.PetalGeckoView -> controller.canGoForward()
+                else -> false
+            }
+
+            if (hScroll < -0.65f && canBack) {
+                lastSwipeTime = now
+                when (controller) {
+                    is com.petal.browser.browser.PetalTabViewController -> controller.goBack()
+                    is com.petal.browser.view.PetalGeckoView -> controller.goBack()
                 }
-            } else if (hScroll > 0.65f) {
-                // Swipe Right -> Go Forward
-                if (controller is com.petal.browser.view.PetalGeckoView && controller.canGoForward()) {
-                    lastSwipeTime = now
-                    controller.goForward()
-                    return true
+                return true
+            } else if (hScroll > 0.65f && canFwd) {
+                lastSwipeTime = now
+                when (controller) {
+                    is com.petal.browser.browser.PetalTabViewController -> controller.goForward()
+                    is com.petal.browser.view.PetalGeckoView -> controller.goForward()
                 }
+                return true
             }
         }
         return false

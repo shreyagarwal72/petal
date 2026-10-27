@@ -665,7 +665,8 @@ fun DisplaySettingsScreenContent(
                                     position = position,
                                     onCheckedChange = { newValue ->
                                         onCaretBrowsingChange(newValue)
-                                        PetalAccessibilityEngine.setCaretBrowsing(context, null, newValue)
+                                        val act = context as? com.petal.browser.activity.BrowserActivity
+                                        PetalAccessibilityEngine.setCaretBrowsing(context, act?.currentAlbumController, newValue)
                                     }
                                 )
                             }

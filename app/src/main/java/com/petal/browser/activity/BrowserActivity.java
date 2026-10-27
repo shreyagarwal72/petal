@@ -43,6 +43,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.widget.PopupWindow;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -1784,7 +1785,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showOverflow(null, null, 0, title, url, null, null, 0);
                 return true;
             case KeyEvent.KEYCODE_F7:
-                boolean caretState = com.petal.browser.accessibility.PetalAccessibilityEngine.toggleCaretBrowsing(this, activeGeckoView);
+                boolean caretState = com.petal.browser.accessibility.PetalAccessibilityEngine.toggleCaretBrowsing(this, currentAlbumController != null ? currentAlbumController : activeGeckoView);
                 com.petal.browser.view.PetalToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
                 return true;
             case KeyEvent.KEYCODE_BACK:
@@ -1792,6 +1793,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (com.petal.browser.accessibility.PetalAccessibilityEngine.handleGenericMotion(currentAlbumController != null ? currentAlbumController : activeGeckoView, event)) {
+            return true;
+        }
+        return super.onGenericMotionEvent(event);
     }
 
     @Override

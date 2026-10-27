@@ -122,6 +122,7 @@ object PetalGeckoRuntime {
                     .build()
             )
             .javaScriptEnabled(sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true)))
+            .fontSizeFactor(sp.getFloat("sp_font_size_scale", 1.0f))
             .consoleOutput(isDebug)
             .remoteDebuggingEnabled(isDebug)
             .webManifest(true)
@@ -219,6 +220,14 @@ object PetalGeckoRuntime {
             try {
                 // 1. JavaScript
                 rt.settings.javaScriptEnabled = sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
+
+                // Text zoom / font scale factor
+                try {
+                    val fontScale = sp.getFloat("sp_font_size_scale", 1.0f)
+                    rt.settings.fontSizeFactor = fontScale
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Could not sync fontSizeFactor: ${t.message}")
+                }
 
                 // 2. Enhanced Tracking Protection & AdBlock
                 val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
