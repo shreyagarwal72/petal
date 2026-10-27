@@ -19,7 +19,7 @@ object PetalUnityRewardedAds : PetalRewardedAds {
     private const val GAME_ID = "800412724"
     private const val PLACEMENT = "BP_Rewarded_Android"
     // Keep true while testing. Set to false only for the release you publish.
-    private const val TEST_MODE = true
+    private val TEST_MODE = com.petal.browser.BuildConfig.DEBUG
 
     override val isAvailable: Boolean = true
 

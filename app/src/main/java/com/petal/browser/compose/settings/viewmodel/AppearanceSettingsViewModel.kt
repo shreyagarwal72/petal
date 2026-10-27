@@ -232,9 +232,6 @@ class AppearanceSettingsViewModel @Inject constructor(
     }
 
     fun setLiquidGlassEnabled(enabled: Boolean) = viewModelScope.launch {
-        if (enabled) {
-            settingsRepository.setLiquidGlassUnlocked(true)
-        }
         settingsRepository.setLiquidGlassEnabled(enabled)
     }
 

@@ -66,6 +66,8 @@ class PetalApplication : Application() {
         instance = this
         // Rewarded ads provider. Only registers a handle; Unity does not start until the user opts in.
         com.petal.browser.account.progress.PetalAds.provider = com.petal.browser.account.progress.PetalUnityRewardedAds
+        // Applies feature locks (and the one-time grandfathering) before any screen reads them.
+        com.petal.browser.account.progress.PetalProgressStore.init(this)
         // GeckoView starts helper processes for GPU, content tabs and crash
         // handling. Android creates our Application in each of them too. A
         // GeckoRuntime must only ever be created by the browser process: doing

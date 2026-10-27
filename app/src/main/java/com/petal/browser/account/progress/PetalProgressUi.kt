@@ -323,7 +323,7 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(target.title, fontWeight = FontWeight.SemiBold)
-                    Text(if (unlocked) "Unlocked" else "$got / ${target.adsNeeded} ads watched", style = MaterialTheme.typography.labelMedium)
+                    Text(if (unlocked) "Unlocked" else "$got / ${target.adsNeeded} ads watched, or reach level ${target.levelNeeded}", style = MaterialTheme.typography.labelMedium)
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -339,7 +339,7 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                         reason != null -> onMessage(reason)
                         act == null -> onMessage("Can't show an ad here.")
                         else -> provider.show(act) { watched ->
-                            if (watched && PetalProgressStore.onAdCompleted(ctx, if (unlocked) null else target)) onMessage("Thank you! +${PetalXp.AD_XP} XP")
+                            if (watched && PetalProgressStore.onAdCompleted(ctx)) onMessage("Thank you! +${PetalXp.AD_XP} XP")
                             else onMessage("No reward. Watch the full ad to earn it.")
                         }
                     }

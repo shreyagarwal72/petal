@@ -69,9 +69,20 @@ val PETAL_BADGES: List<PetalBadge> = listOf(
     PetalBadge("grove_keeper", "Grove Keeper", "Reach level 30", minLevel = 30),
 )
 
-/** Things an ad can unlock. Keep core browsing features out of this list. */
-enum class PetalUnlockable(val id: String, val title: String, val adsNeeded: Int) {
-    LIQUID_GLASS("liquid_glass", "Liquid Glass", 3),
+/**
+ * Features locked behind a task. Add a new entry here to lock another cosmetic feature.
+ * A feature unlocks when ANY path is met: enough ads watched in total, OR a high enough level.
+ * Keep core browsing features OUT of this list.
+ */
+enum class PetalUnlockable(
+    val id: String,
+    val title: String,
+    val adsNeeded: Int,
+    val levelNeeded: Int,
+    /** Preference key that turns the feature on. It is forced off while the feature is locked. */
+    val enabledKey: String,
+) {
+    LIQUID_GLASS("liquid_glass", "Liquid Glass", adsNeeded = 3, levelNeeded = 10, enabledKey = "sp_liquid_glass_enabled"),
 }
 
 /** Backed by the default SharedPreferences so the existing "sp_liquid_glass_unlocked" flag keeps working. */
@@ -82,7 +93,6 @@ object PetalProgressStore {
     private const val KEY_SINCE = "pp_since"
     private const val KEY_LAST_DAY = "pp_last_day"
     private const val KEY_AD_STAMPS = "pp_ad_stamps"
-    private const val KEY_UNLOCK_PREFIX = "pp_unlock_progress_"
 
     var xp by mutableStateOf(0L); private set
     var unlockedBadges by mutableStateOf<Set<String>>(emptySet()); private set
@@ -107,6 +117,7 @@ object PetalProgressStore {
         if (s == 0L) { s = System.currentTimeMillis(); p.edit().putLong(KEY_SINCE, s).apply() }
         since = s
         counters = PetalCounter.values().associate { it.key to p.getLong(it.key, 0L) }
+        migrateFeatureLocks(ctx)
         touchDay(ctx)
     }
 
@@ -143,10 +154,35 @@ object PetalProgressStore {
     private fun evaluateBadges(ctx: Context) {
         val fresh = PETAL_BADGES.filter { it.id !in unlockedBadges }
             .filter { val (cur, goal) = badgeProgress(it); cur >= goal }.map { it.id }
+        refreshUnlocks(ctx)
         if (fresh.isEmpty()) return
         unlockedBadges = unlockedBadges + fresh
         sp(ctx).edit().putString(KEY_BADGES, unlockedBadges.joinToString(",")).apply()
         newlyUnlocked = newlyUnlocked + fresh
+    }
+
+    /** Runs after every XP or counter change, so a level-up unlocks features at once. */
+    private fun refreshUnlocks(ctx: Context) { PetalUnlockable.values().forEach { isUnlocked(ctx, it) } }
+
+    /**
+     * One time: people who already had a locked feature turned on keep it (it was free before).
+     * After that, any locked feature that is still switched on is forced off.
+     */
+    private fun migrateFeatureLocks(ctx: Context) {
+        val p = sp(ctx)
+        val first = !p.getBoolean("pp_feat_migrated", false)
+        PetalUnlockable.values().forEach { u ->
+            if (first && p.getBoolean(u.enabledKey, false)) persistUnlock(ctx, u)
+            if (!isUnlocked(ctx, u) && p.getBoolean(u.enabledKey, false)) p.edit().putBoolean(u.enabledKey, false).apply()
+        }
+        if (first) p.edit().putBoolean("pp_feat_migrated", true).apply()
+    }
+
+    private fun persistUnlock(ctx: Context, u: PetalUnlockable) {
+        val e = sp(ctx).edit().putBoolean("pp_unlocked_" + u.id, true)
+        // Older code and the settings screen read this flag for Liquid Glass.
+        if (u == PetalUnlockable.LIQUID_GLASS) e.putBoolean("sp_liquid_glass_unlocked", true)
+        e.apply()
     }
 
     fun consumeNewBadges() { newlyUnlocked = emptyList() }
@@ -173,28 +209,28 @@ object PetalProgressStore {
         }
     }
 
-    fun unlockProgress(ctx: Context, u: PetalUnlockable): Int = sp(ctx).getInt(KEY_UNLOCK_PREFIX + u.id, 0)
+    /** Ads watched toward this feature, capped at what it needs (for "1 / 3" labels). */
+    fun unlockProgress(ctx: Context, u: PetalUnlockable): Int = counter(PetalCounter.ADS_WATCHED).toInt().coerceAtMost(u.adsNeeded)
 
-    /** The single check the rest of the app should use. */
-    fun isUnlocked(ctx: Context, u: PetalUnlockable): Boolean = when (u) {
-        PetalUnlockable.LIQUID_GLASS -> sp(ctx).getBoolean("sp_liquid_glass_unlocked", false)
+    /** The ONE check the rest of the app must use. Persists the unlock the first time a path is met. */
+    fun isUnlocked(ctx: Context, u: PetalUnlockable): Boolean {
+        val p = sp(ctx)
+        if (p.getBoolean("pp_unlocked_" + u.id, false)) return true
+        val ads = p.getLong(PetalCounter.ADS_WATCHED.key, 0L)
+        val lvl = PetalXp.level(p.getLong(KEY_XP, 0L))
+        val met = ads >= u.adsNeeded || lvl >= u.levelNeeded
+        if (met) persistUnlock(ctx, u)
+        return met
     }
 
     /** Call only after the SDK confirms the ad was fully watched. */
-    fun onAdCompleted(ctx: Context, target: PetalUnlockable?, now: Long = System.currentTimeMillis()): Boolean {
+    fun onAdCompleted(ctx: Context, now: Long = System.currentTimeMillis()): Boolean {
         init(ctx)
         if (adBlockReason(ctx, now) != null) return false
         val p = sp(ctx)
         val stamps = p.getString(KEY_AD_STAMPS, "").orEmpty().split(',').mapNotNull { it.toLongOrNull() }
             .filter { now - it < PetalXp.DAY_MS } + now
         p.edit().putString(KEY_AD_STAMPS, stamps.joinToString(",")).apply()
-        if (target != null && !isUnlocked(ctx, target)) {
-            val got = (unlockProgress(ctx, target) + 1).coerceAtMost(target.adsNeeded)
-            p.edit().putInt(KEY_UNLOCK_PREFIX + target.id, got).apply()
-            if (got >= target.adsNeeded && target == PetalUnlockable.LIQUID_GLASS) {
-                p.edit().putBoolean("sp_liquid_glass_unlocked", true).apply()
-            }
-        }
         bump(ctx, PetalCounter.ADS_WATCHED, 1L, xpGain = PetalXp.AD_XP)
         return true
     }
