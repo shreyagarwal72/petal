@@ -489,20 +489,47 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
             if (!consent) {
                 Text("Ads load from a third party. Nothing loads until you agree.", style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = { sp.edit().putBoolean("pp_ads_consent", true).apply(); consent = true }) { Text("I agree, enable ads") }
-            } else {
                 Button(onClick = {
-                    val reason = PetalProgressStore.adBlockReason(ctx)
-                    val act = ctx.findActivity()
-                    when {
-                        reason != null -> onMessage(reason)
-                        act == null -> onMessage("Can't show an ad here.")
-                        else -> provider.show(act) { watched ->
-                            if (watched && PetalProgressStore.onAdCompleted(ctx)) onMessage("Thank you! +${PetalXp.AD_XP} XP")
-                            else onMessage("No reward. Watch the full ad to earn it.")
+                    sp.edit().putBoolean("pp_ads_consent", true).apply()
+                    consent = true
+                    provider.preload(ctx)
+                }) { Text("I agree, enable ads") }
+            } else {
+                LaunchedEffect(Unit) {
+                    provider.preload(ctx)
+                }
+                var isAdActive by remember { mutableStateOf(false) }
+                Button(
+                    onClick = {
+                        val reason = PetalProgressStore.adBlockReason(ctx)
+                        val act = ctx.findActivity()
+                        when {
+                            reason != null -> onMessage(reason)
+                            act == null -> onMessage("Can't show an ad here.")
+                            else -> {
+                                isAdActive = true
+                                provider.show(
+                                    activity = act,
+                                    onMessage = { msg ->
+                                        isAdActive = false
+                                        onMessage(msg)
+                                    },
+                                    onResult = { watched ->
+                                        isAdActive = false
+                                        if (watched) {
+                                            if (PetalProgressStore.onAdCompleted(ctx)) onMessage("Thank you! +${PetalXp.AD_XP} XP")
+                                        } else {
+                                            onMessage("Ad was not completed. Watch the full ad to earn it.")
+                                        }
+                                    }
+                                )
+                            }
                         }
-                    }
-                }) { Text("Watch an ad (+${PetalXp.AD_XP} XP)") }
+                    },
+                    enabled = !isAdActive
+                ) {
+                    Text(if (isAdActive || provider.isLoading) "Loading ad..." else "Watch an ad (+${PetalXp.AD_XP} XP)")
+                }
             }
         }
     }

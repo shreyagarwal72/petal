@@ -5,6 +5,7 @@
 
     <!-- Network & Connectivity -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
@@ -611,14 +612,7 @@
                 android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup"
                 tools:node="remove" />
-            <!-- Unity Ads starts only after the user opts in (PetalUnityRewardedAds), not at app start -->
-            <meta-data
-                android:name="com.unity3d.services.core.configuration.AdsSdkInitializer"
-                tools:node="remove" />
         </provider>
-        <service
-            android:name="com.unity3d.ads.adplayer.AdTaskRemovalDetectionService"
-            tools:node="remove" />
 
     </application>
 

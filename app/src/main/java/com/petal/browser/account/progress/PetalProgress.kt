@@ -239,8 +239,14 @@ object PetalProgressStore {
 /** Plug-in point for the ad SDK. The FOSS build keeps the no-op default. */
 interface PetalRewardedAds {
     val isAvailable: Boolean
+    val isLoaded: Boolean get() = false
+    val isLoading: Boolean get() = false
     /** Shows one rewarded ad. Calls onResult(true) only if it was fully watched. */
     fun show(activity: android.app.Activity, onResult: (Boolean) -> Unit)
+    fun show(activity: android.app.Activity, onMessage: (String) -> Unit, onResult: (Boolean) -> Unit) {
+        show(activity, onResult)
+    }
+    fun preload(context: android.content.Context) {}
 }
 
 object PetalNoAds : PetalRewardedAds {
