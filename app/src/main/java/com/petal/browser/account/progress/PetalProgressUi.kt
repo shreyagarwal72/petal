@@ -41,6 +41,9 @@ import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.theme.MaterialShapes
+import com.petal.browser.ui.theme.toShape
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -456,7 +459,10 @@ fun PetalBadgeUnlockHost() {
     )
 }
 
-/** Opt-in card. Never shows an ad by itself. Hidden when the build has no ad provider (FOSS). */
+/**
+ * Expressive 'Fuel the Code' Developer Support Card.
+ * Replaces commercial-style ad prompts with an indie developer quest hub inspired by Orion Store.
+ */
 @Composable
 fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
@@ -465,74 +471,141 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
     if (!provider.isAvailable) return
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(ctx) }
     var consent by remember { mutableStateOf(sp.getBoolean("pp_ads_consent", false)) }
-    val target = PetalUnlockable.LIQUID_GLASS
-    val unlocked = PetalProgressStore.isUnlocked(ctx, target)
-    val got = PetalProgressStore.unlockProgress(ctx, target)
+    var showQuestSheet by remember { mutableStateOf(false) }
 
-    Surface(shape = RoundedCornerShape(32.dp), color = cs.tertiaryContainer, contentColor = cs.onTertiaryContainer, modifier = modifier.fillMaxWidth()) {
-        Column(Modifier.padding(20.dp)) {
-            Text("Support Petal", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-            Text(
-                "Watching a short ad is optional. It earns XP and unlocks cosmetic extras. Core browser features are always free.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(if (unlocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock, null)
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(target.title, fontWeight = FontWeight.SemiBold)
-                    Text(if (unlocked) "Unlocked" else "$got / ${target.adsNeeded} ads watched, or reach level ${target.levelNeeded}", style = MaterialTheme.typography.labelMedium)
+    val adsWatched = PetalProgressStore.counter(PetalCounter.ADS_WATCHED)
+    val milestone = PetalSupporterQuest.currentMilestone(adsWatched)
+    val nextMilestone = PetalSupporterQuest.nextMilestone(adsWatched)
+    val rankLabel = if (adsWatched <= 0L) "Start your journey" else "Rank: ${milestone.rank}"
+
+    val shape = RoundedCornerShape(32.dp)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+
+    Surface(
+        shape = shape,
+        color = if (isGlass) petalGroupSurfaceColor() else cs.tertiaryContainer,
+        contentColor = if (isGlass) cs.onSurface else cs.onTertiaryContainer,
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true) else Modifier)
+            .bouncyClickable {
+                if (consent) {
+                    showQuestSheet = true
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            if (!consent) {
-                Text("Ads load from a third party. Nothing loads until you agree.", style = MaterialTheme.typography.labelMedium)
-                Spacer(Modifier.height(8.dp))
-                Button(onClick = {
-                    sp.edit().putBoolean("pp_ads_consent", true).apply()
-                    consent = true
-                    provider.preload(ctx)
-                }) { Text("I agree, enable ads") }
-            } else {
-                LaunchedEffect(Unit) {
-                    provider.preload(ctx)
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(MaterialShapes.Cookie9Sided.toShape())
+                        .background(cs.primary.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (adsWatched > 0L) Icons.Rounded.LocalFlorist else Icons.Rounded.VolunteerActivism,
+                        contentDescription = null,
+                        tint = cs.primary,
+                        modifier = Modifier.size(26.dp)
+                    )
                 }
-                var isAdActive by remember { mutableStateOf(false) }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = "Fuel the Code",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = cs.onSurface
+                    )
+                    Text(
+                        text = rankLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = cs.onSurfaceVariant
+                    )
+                }
+                if (consent) {
+                    Surface(
+                        shape = CircleShape,
+                        color = cs.surface.copy(alpha = 0.6f),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowForward,
+                                contentDescription = "Enter Quest",
+                                tint = cs.onSurface,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            if (!consent) {
+                Text(
+                    text = "Petal Browser is built independently without trackers or corporate paywalls. By watching optional sponsor videos, you directly support open-source development and earn cosmetic rewards like Liquid Glass.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = cs.onSurfaceVariant
+                )
+                Spacer(Modifier.height(12.dp))
                 Button(
                     onClick = {
-                        val reason = PetalProgressStore.adBlockReason(ctx)
-                        val act = ctx.findActivity()
-                        when {
-                            reason != null -> onMessage(reason)
-                            act == null -> onMessage("Can't show an ad here.")
-                            else -> {
-                                isAdActive = true
-                                provider.show(
-                                    activity = act,
-                                    onMessage = { msg ->
-                                        isAdActive = false
-                                        onMessage(msg)
-                                    },
-                                    onResult = { watched ->
-                                        isAdActive = false
-                                        if (watched) {
-                                            if (PetalProgressStore.onAdCompleted(ctx)) onMessage("Thank you! +${PetalXp.AD_XP} XP")
-                                        } else if (provider.lastError == null) {
-                                            // Only for a skipped/closed ad. A real failure already told the
-                                            // user why through onMessage; don't overwrite it with this.
-                                            onMessage("Ad was not completed. Watch the full ad to earn it.")
-                                        }
-                                    }
-                                )
-                            }
-                        }
+                        sp.edit().putBoolean("pp_ads_consent", true).apply()
+                        consent = true
+                        provider.preload(ctx)
+                        showQuestSheet = true
                     },
-                    enabled = !isAdActive
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
-                    Text(if (isAdActive || provider.isLoading) "Loading ad..." else "Watch an ad (+${PetalXp.AD_XP} XP)")
+                    Icon(Icons.Rounded.Favorite, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Join the Developer Quest", fontWeight = FontWeight.Bold)
+                }
+            } else {
+                val progressFraction = if (nextMilestone != null) {
+                    (adsWatched.toFloat() / nextMilestone.level).coerceIn(0f, 1f)
+                } else 1f
+
+                LinearProgressIndicator(
+                    progress = { progressFraction },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(CircleShape),
+                    color = cs.primary,
+                    trackColor = cs.surfaceVariant
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = nextMilestone?.let { "$adsWatched fueled · ${it.level - adsWatched} more to ${it.title}" }
+                            ?: "$adsWatched fueled · all supporter ranks unlocked",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = cs.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Tap to open",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = cs.primary
+                    )
                 }
             }
         }
+    }
+
+    if (showQuestSheet) {
+        PetalFuelTheCodeSheet(
+            onDismiss = { showQuestSheet = false },
+            onMessage = onMessage
+        )
     }
 }

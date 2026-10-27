@@ -85,6 +85,66 @@ enum class PetalUnlockable(
     LIQUID_GLASS("liquid_glass", "Liquid Glass", adsNeeded = 3, levelNeeded = 10, enabledKey = "sp_liquid_glass_enabled"),
 }
 
+/**
+ * Botanical & Dev Support Milestones inspired by Orion Store's 'Fuel the Code' approach.
+ * Transforms third-party ad viewing into an indie developer backing journey.
+ */
+data class PetalSupporterMilestone(
+    val level: Int,
+    val rank: String,
+    val title: String,
+    val story: String,
+    val badgeId: String? = null,
+    val unlockableId: String? = null
+)
+
+val PETAL_SUPPORTER_MILESTONES: List<PetalSupporterMilestone> = listOf(
+    PetalSupporterMilestone(
+        level = 1,
+        rank = "Sprout Backer",
+        title = "First Seed Planted",
+        story = "You fueled the code for the first time! The developer's greenhouse has taken root."
+    ),
+    PetalSupporterMilestone(
+        level = 3,
+        rank = "Bloom Supporter",
+        title = "Liquid Glass Awakens",
+        story = "Three sparks of support provided. You've earned the Supporter badge and unlocked Liquid Glass!",
+        badgeId = "supporter",
+        unlockableId = "liquid_glass"
+    ),
+    PetalSupporterMilestone(
+        level = 8,
+        rank = "Garden Guardian",
+        title = "Firewall Reinforced",
+        story = "You helped protect the browser against invasive trackers, corporate telemetry, and paywalls."
+    ),
+    PetalSupporterMilestone(
+        level = 15,
+        rank = "Grove Keeper",
+        title = "Gecko Engine Overclocked",
+        story = "The open-source web engine runs swift and pure thanks to your continued backing."
+    ),
+    PetalSupporterMilestone(
+        level = 25,
+        rank = "Petal Legend",
+        title = "Eternal Patron",
+        story = "Maximum tier reached! You are now an eternal patron of independent open-source development.",
+        badgeId = "patron"
+    )
+)
+
+object PetalSupporterQuest {
+    fun currentMilestone(adsWatched: Long): PetalSupporterMilestone =
+        PETAL_SUPPORTER_MILESTONES.lastOrNull { adsWatched >= it.level } ?: PETAL_SUPPORTER_MILESTONES.first()
+
+    fun nextMilestone(adsWatched: Long): PetalSupporterMilestone? =
+        PETAL_SUPPORTER_MILESTONES.firstOrNull { adsWatched < it.level }
+
+    fun currentRank(adsWatched: Long): String =
+        if (adsWatched <= 0L) "Seedling" else currentMilestone(adsWatched).rank
+}
+
 /** Backed by the default SharedPreferences so the existing "sp_liquid_glass_unlocked" flag keeps working. */
 object PetalProgressStore {
     private const val KEY_XP = "pp_xp"

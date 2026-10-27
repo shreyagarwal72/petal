@@ -32,6 +32,7 @@ fun AboutSettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var showFuelSheet by remember { mutableStateOf(false) }
 
     fun copyToClipboard(label: String, text: String) {
         try {
@@ -128,7 +129,8 @@ fun AboutSettingsScreen(
                     cardId = "about_community"
                 ) {
                     CommunityEcosystemGroup(
-                        onOpenUrl = { openUrl(it) }
+                        onOpenUrl = { openUrl(it) },
+                        onFuelTheCode = { showFuelSheet = true }
                     )
                 }
 
@@ -172,6 +174,13 @@ fun AboutSettingsScreen(
 
                 Spacer(Modifier.height(32.dp))
             }
+        }
+
+        if (showFuelSheet) {
+            com.petal.browser.account.progress.PetalFuelTheCodeSheet(
+                onDismiss = { showFuelSheet = false },
+                onMessage = { msg -> PetalToast.show(context, msg) }
+            )
         }
     }
 }

@@ -177,6 +177,7 @@ fun PetalAboutDeveloperSheetContent(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val primaryColor = MaterialTheme.colorScheme.primary
+    var showFuelSheet by remember { mutableStateOf(false) }
 
     fun copyToClipboard(label: String, text: String) {
         try {
@@ -305,7 +306,8 @@ fun PetalAboutDeveloperSheetContent(
                                 cardId = "about_community"
                             ) {
                                 CommunityEcosystemGroup(
-                                    onOpenUrl = { openUrl(it) }
+                                    onOpenUrl = { openUrl(it) },
+                                    onFuelTheCode = { showFuelSheet = true }
                                 )
                             }
 
@@ -358,6 +360,15 @@ fun PetalAboutDeveloperSheetContent(
 
                             Spacer(Modifier.height(32.dp))
                         }
+                    }
+
+                    if (showFuelSheet) {
+                        com.petal.browser.account.progress.PetalFuelTheCodeSheet(
+                            onDismiss = { showFuelSheet = false },
+                            onMessage = { msg ->
+                                coroutineScope.launch { snackbarHostState.showSnackbar(msg) }
+                            }
+                        )
                     }
 
                     PetalThemedSnackbarHost(
@@ -843,15 +854,48 @@ private fun WebLinkGroup(
 }
 
 /**
- * Clean Community & Ecosystem containment group.
+ * Clean Community & Ecosystem containment group with direct Fuel the Code developer support.
  */
 @Composable
 fun CommunityEcosystemGroup(
-    onOpenUrl: (String) -> Unit
+    onOpenUrl: (String) -> Unit,
+    onFuelTheCode: () -> Unit = {}
 ) {
-    PetalGroup(rowCount = 2, modifier = Modifier.fillMaxWidth()) { index, position ->
+    PetalGroup(rowCount = 3, modifier = Modifier.fillMaxWidth()) { index, position ->
         when (index) {
             0 -> {
+                PetalGroupListRow(
+                    position = position,
+                    onClick = onFuelTheCode,
+                    leading = {
+                        PetalGroupIconBadge(
+                            icon = Icons.Rounded.VolunteerActivism,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY
+                        )
+                    },
+                    content = {
+                        Text(
+                            text = "Fuel the Code",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Support independent dev & earn Bloom XP",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailing = {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                )
+            }
+            1 -> {
                 PetalGroupListRow(
                     position = position,
                     onClick = { onOpenUrl("https://t.me/championworkspace") },
@@ -883,7 +927,7 @@ fun CommunityEcosystemGroup(
                     }
                 )
             }
-            1 -> {
+            2 -> {
                 PetalGroupListRow(
                     position = position,
                     onClick = { onOpenUrl("https://github.com/shreyagarwal72?tab=repositories") },
