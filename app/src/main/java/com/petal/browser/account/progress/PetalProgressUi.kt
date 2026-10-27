@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.*
@@ -22,14 +24,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petal.browser.R
 import com.petal.browser.account.GoogleUserProfile
 import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.ui.components.bouncyClickable
@@ -75,6 +81,11 @@ fun PetalProfileCard(
     val glass = isLiquidGlassEnabled()
     val showcased = PETAL_BADGES.filter { it.id in PetalProgressStore.showcase && PetalProgressStore.isBadgeUnlocked(it.id) }
 
+    val configuration = LocalConfiguration.current
+    val avatarSizeDp = if (configuration.screenWidthDp < 360) 68 else if (configuration.screenWidthDp < 400) 72 else 80
+    val cameraBadgeSizeDp = if (avatarSizeDp <= 72) 24 else 28
+    val cameraIconSizeDp = if (avatarSizeDp <= 72) 13 else 15
+
     Box(
         modifier
             .fillMaxWidth()
@@ -82,76 +93,224 @@ fun PetalProfileCard(
             .background(Brush.linearGradient(listOf(cs.primaryContainer, cs.tertiaryContainer)))
             .liquidGlassChrome(shape = shape, enabled = glass, sheenIntensity = 0.6f)
     ) {
-        Column(Modifier.padding(22.dp)) {
+        if (glass) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(cs.surface.copy(alpha = 0.22f))
+            )
+        }
+        Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "PETAL EXPLORER",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 2.sp),
-                    color = cs.onPrimaryContainer, modifier = Modifier.weight(1f)
+                    color = cs.onPrimaryContainer,
+                    modifier = Modifier.weight(1f)
                 )
-                Surface(shape = CircleShape, color = cs.surface, contentColor = cs.onSurface) {
+                Surface(
+                    shape = CircleShape,
+                    color = cs.surfaceContainerHighest.copy(alpha = 0.95f),
+                    contentColor = cs.onSurface,
+                    border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.4f))
+                ) {
                     Text(
-                        "LV $level", Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold)
+                        "LV $level",
+                        Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold)
                     )
                 }
             }
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.bouncyClickable { onAvatarClick() }, contentAlignment = Alignment.BottomEnd) {
-                    ProfileAvatarDisplay(profile = profile, sizeDp = 84)
+                Box(
+                    Modifier.bouncyClickable { onAvatarClick() },
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    ProfileAvatarDisplay(profile = profile, sizeDp = avatarSizeDp)
                     Surface(
-                        shape = CircleShape, color = cs.primary, contentColor = cs.onPrimary,
-                        border = BorderStroke(2.dp, cs.surface), modifier = Modifier.size(28.dp)
-                    ) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Rounded.PhotoCamera, null, Modifier.size(15.dp)) } }
-                }
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            profile.displayName,
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            color = cs.onPrimaryContainer, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                        IconButton(onClick = onEditName, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Rounded.Edit, "Edit name", tint = cs.onPrimaryContainer, modifier = Modifier.size(18.dp))
+                        shape = CircleShape,
+                        color = cs.primary,
+                        contentColor = cs.onPrimary,
+                        border = BorderStroke(2.dp, cs.surface),
+                        modifier = Modifier.size(cameraBadgeSizeDp.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.PhotoCamera, null, Modifier.size(cameraIconSizeDp.dp))
                         }
                     }
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        BasicText(
+                            text = profile.displayName,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = cs.onPrimaryContainer
+                            ),
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 16.sp,
+                                maxFontSize = MaterialTheme.typography.titleLarge.fontSize,
+                                stepSize = 1.sp
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .bouncyClickable { onEditName() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Rounded.Edit,
+                                contentDescription = stringResource(R.string.progress_edit_name),
+                                tint = cs.onPrimaryContainer,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(2.dp))
                     Text(
                         "${PetalXp.title(level)} • ${fmt(xp)} XP",
-                        style = MaterialTheme.typography.bodyMedium, color = cs.onPrimaryContainer.copy(alpha = 0.85f)
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = cs.onPrimaryContainer.copy(alpha = 0.95f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
-            Spacer(Modifier.height(18.dp))
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(10.dp).clip(CircleShape),
-                color = cs.primary, trackColor = cs.surface.copy(alpha = 0.55f),
-            )
+            Spacer(Modifier.height(16.dp))
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(CircleShape)
+                    .background(cs.surface.copy(alpha = 0.55f))
+            ) {
+                val barProgress = progress.coerceIn(0f, 1f)
+                val fillWidth = when {
+                    xp <= 0L -> 0.dp
+                    barProgress <= 0f -> 10.dp
+                    else -> (maxWidth * barProgress).coerceAtLeast(10.dp)
+                }
+                if (fillWidth > 0.dp) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(fillWidth)
+                            .clip(CircleShape)
+                            .background(cs.primary)
+                    )
+                }
+            }
             Spacer(Modifier.height(6.dp))
             Text(
                 "${fmt(xp - PetalXp.start(level))} / ${fmt(PetalXp.step(level))} XP to level ${level + 1}",
-                style = MaterialTheme.typography.labelMedium, color = cs.onPrimaryContainer.copy(alpha = 0.8f)
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                color = cs.onPrimaryContainer.copy(alpha = 0.92f)
             )
             Spacer(Modifier.height(14.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (showcased.isEmpty()) {
-                        Text("Pin up to 3 badges here", style = MaterialTheme.typography.labelMedium, color = cs.onPrimaryContainer.copy(alpha = 0.7f))
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val isNarrow = maxWidth < 340.dp
+                val since = PetalProgressStore.since
+                val sinceText = if (since > 0) {
+                    stringResource(
+                        R.string.progress_since,
+                        SimpleDateFormat("MMM yyyy", Locale.getDefault()).format(Date(since))
+                    )
+                } else null
+
+                if (isNarrow && sinceText != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (showcased.isEmpty()) {
+                                Text(
+                                    stringResource(R.string.progress_pin_hint),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                    color = cs.onPrimaryContainer.copy(alpha = 0.90f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            } else {
+                                showcased.forEach {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = cs.surface,
+                                        contentColor = cs.primary,
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(badgeIcon(it.id), it.title, Modifier.size(20.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Text(
+                            sinceText,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = cs.onPrimaryContainer,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
-                    showcased.forEach {
-                        Surface(shape = CircleShape, color = cs.surface, contentColor = cs.primary, modifier = Modifier.size(36.dp)) {
-                            Box(contentAlignment = Alignment.Center) { Icon(badgeIcon(it.id), it.title, Modifier.size(20.dp)) }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (showcased.isEmpty()) {
+                                Text(
+                                    stringResource(R.string.progress_pin_hint),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                    color = cs.onPrimaryContainer.copy(alpha = 0.90f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            } else {
+                                showcased.forEach {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = cs.surface,
+                                        contentColor = cs.primary,
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(badgeIcon(it.id), it.title, Modifier.size(20.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (sinceText != null) {
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                sinceText,
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = cs.onPrimaryContainer,
+                                maxLines = 1
+                            )
                         }
                     }
                 }
-                val since = PetalProgressStore.since
-                if (since > 0) Text(
-                    "Since " + SimpleDateFormat("MMM yyyy", Locale.getDefault()).format(Date(since)),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = cs.onPrimaryContainer
-                )
             }
         }
     }

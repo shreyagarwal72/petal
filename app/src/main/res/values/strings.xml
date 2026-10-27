@@ -1634,7 +1634,7 @@
     <string name="progress_xp_header">%1$s • %2$s XP</string>
     <string name="progress_xp_to_next">%1$s / %2$s XP to level %3$d</string>
     <string name="progress_edit_name">Edit name</string>
-    <string name="progress_since">Since </string>
+    <string name="progress_since">Since %1$s</string>
     <string name="progress_pin_hint">Pin up to 3 badges here</string>
     <string name="progress_tabs_opened">Tabs opened</string>
     <string name="progress_bookmarks">Bookmarks</string>
