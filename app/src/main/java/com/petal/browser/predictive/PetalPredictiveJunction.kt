@@ -373,6 +373,13 @@ fun PetalScreenWrapper(
      * back style so the first frame of a back gesture continues from it without a jump.
      */
     behindFraction: (() -> Float)? = null,
+    /**
+     * Give this page its own liquid-glass wallpaper. The app theme provides ONE shared wallpaper;
+     * while two pages exist at once (open, close, predictive back) both recorded into it and fought
+     * over its position, so the glass showed the wrong patch. Pass false only for a screen that
+     * draws no background of its own and still wants to refract the shared one.
+     */
+    isolateGlassWallpaper: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -397,6 +404,11 @@ fun PetalScreenWrapper(
     val predictiveEnabled = junctionPredictiveEnabled
     val blurEnabled = junctionBlurEnabled
     val predictiveBackState = LocalPredictiveBackState.current
+
+    val outerGlassWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
+    val ownGlassWallpaper =
+        if (isolateGlassWallpaper && outerGlassWallpaper != null) com.petal.browser.ui.glass.rememberPetalGlassWallpaper() else null
+    val pageGlassWallpaper = ownGlassWallpaper ?: outerGlassWallpaper
 
     val myEntry = lifecycleOwner as? NavBackStackEntry
     val previousEntryId = navController?.previousBackStackEntry?.id
@@ -618,7 +630,9 @@ fun PetalScreenWrapper(
                         else Modifier
                     )
             ) {
-                content()
+                CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides pageGlassWallpaper) {
+                    content()
+                }
 
                 if (isBehindTopScreen || transitionDimAlpha > 0f) {
                     val settledTargetDim = if (!blurEnabled) 0.75f else 0.40f

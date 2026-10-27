@@ -62,6 +62,12 @@ private fun frostEffect(density: androidx.compose.ui.unit.Density): androidx.com
 
 /** Stride/Vyxel's shared wallpaper: frost once, then refract only each card's patch. */
 class PetalGlassWallpaper(val sharp: GraphicsLayer, val frosted: GraphicsLayer) {
+    /**
+     * Live layout coordinates of the node that records this wallpaper. Glass panels measure their
+     * position RELATIVE to this node at draw time, so a parent's scale, slide or predictive-back
+     * transform (which never triggers layout) cannot push the refracted patch out of place.
+     */
+    @Volatile var coords: LayoutCoordinates? = null
     var origin by mutableStateOf(Offset.Zero)
     var ready by mutableStateOf(false)
     var hasRecorded by mutableStateOf(false)
@@ -90,10 +96,8 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
         try {
             wallpaper.origin = it.positionInRoot()
             val isNowReady = it.isAttached && it.size.width > 0 && it.size.height > 0
-            if (!isNowReady) {
-                wallpaper.hasRecorded = false
-            }
-            wallpaper.ready = isNowReady
+            // A transient zero size during a page transition must not drop the glass: stay ready.
+            if (isNowReady) { wallpaper.coords = it; wallpaper.ready = true }
         } catch (_: Throwable) {
             wallpaper.ready = false
             wallpaper.hasRecorded = false
@@ -144,8 +148,8 @@ fun Modifier.captureGlassWallpaperLive(
         try {
             wallpaper.origin = it.positionInRoot()
             val isNowReady = it.isAttached && it.size.width > 0 && it.size.height > 0
-            if (!isNowReady) wallpaper.hasRecorded = false
-            wallpaper.ready = isNowReady
+            // A transient zero size during a page transition must not drop the glass: stay ready.
+            if (isNowReady) { wallpaper.coords = it; wallpaper.ready = true }
         } catch (_: Throwable) {
             wallpaper.ready = false
             wallpaper.hasRecorded = false
@@ -181,10 +185,8 @@ fun Modifier.recordGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
         try {
             wallpaper.origin = it.positionInRoot()
             val isNowReady = it.isAttached && it.size.width > 0 && it.size.height > 0
-            if (!isNowReady) {
-                wallpaper.hasRecorded = false
-            }
-            wallpaper.ready = isNowReady
+            // A transient zero size during a page transition must not drop the glass: stay ready.
+            if (isNowReady) { wallpaper.coords = it; wallpaper.ready = true }
         } catch (_: Throwable) {
             wallpaper.ready = false
             wallpaper.hasRecorded = false
@@ -225,10 +227,8 @@ private fun Modifier.liveGlassWallpaperImpl(
         try {
             wallpaper.origin = it.positionInRoot()
             val isNowReady = it.size.width > 0 && it.size.height > 0
-            if (!isNowReady) {
-                wallpaper.hasRecorded = false
-            }
-            wallpaper.ready = isNowReady
+            // A transient zero size during a page transition must not drop the glass: stay ready.
+            if (isNowReady) { wallpaper.coords = it; wallpaper.ready = true }
             val pos = it.positionOnScreen()
             boxOnScreen[0] = pos.x
             boxOnScreen[1] = pos.y
@@ -378,9 +378,8 @@ fun Modifier.petalGlassPanel(
             )
             onDrawBehind {
                 try {
-                    val stored = place.origin
-                    val origin = place.coords?.takeIf { it.isAttached }?.positionInRoot() ?: stored
-                    val shift = wallpaper.origin - origin
+                    val stored = place.origin // read so a layout move (scroll) redraws the panel
+                    val shift = glassShift(wallpaper, place.coords, stored)
                     clipPath(outline) {
                         if (wallpaper.hasRecorded) {
                             try {
@@ -405,6 +404,25 @@ fun Modifier.petalGlassPanel(
                 }
             }
         }
+}
+
+/**
+ * Where to draw the wallpaper layer, in the panel's own pixels, so it lines up with the real
+ * wallpaper. Uses the panel's position inside the wallpaper node's own space, which is unchanged by
+ * any transform applied above both of them (page slide, scale, predictive back, depth blur).
+ * Falls back to the old root-position maths if the two are not in the same hierarchy.
+ */
+private fun glassShift(wallpaper: PetalGlassWallpaper, panel: LayoutCoordinates?, stored: Offset): Offset {
+    val wc = wallpaper.coords?.takeIf { it.isAttached }
+    val pc = panel?.takeIf { it.isAttached }
+    if (wc != null && pc != null) {
+        try {
+            val inWallpaper = wc.localPositionOf(pc, Offset.Zero)
+            if (inWallpaper.x.isFinite() && inWallpaper.y.isFinite()) return -inWallpaper
+        } catch (_: Throwable) {}
+    }
+    val origin = try { pc?.positionInRoot() } catch (_: Throwable) { null } ?: stored
+    return wallpaper.origin - origin
 }
 
 private class GlassPanelPlace {

@@ -321,7 +321,7 @@ fun PetalImageViewerScreen(
         enabled = true,
         onBack = onBackPress
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
             Scaffold(
                 containerColor = Color.Black,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),

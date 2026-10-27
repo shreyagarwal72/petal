@@ -887,7 +887,7 @@ fun CommunityEcosystemGroup(
                     },
                     trailing = {
                         Icon(
-                            Icons.AutoMirrored.Rounded.ArrowForward,
+                            Icons.Rounded.ChevronRight,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)

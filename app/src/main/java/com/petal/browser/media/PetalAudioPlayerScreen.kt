@@ -240,7 +240,7 @@ fun PetalAudioPlayerScreen(
         enabled = true,
         onBack = onClose
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
             Box(
                 modifier = modifier
                     .fillMaxSize()

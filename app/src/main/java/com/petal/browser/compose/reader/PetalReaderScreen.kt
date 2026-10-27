@@ -134,7 +134,7 @@ fun PetalReaderScreen(
         enabled = true,
         onBack = onBack,
     ) {
-        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
             Scaffold(
                 containerColor = containerBg,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0)

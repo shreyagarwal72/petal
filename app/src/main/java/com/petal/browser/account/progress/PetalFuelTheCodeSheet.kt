@@ -161,7 +161,7 @@ fun PetalFuelTheCodeSheet(
 
     fun handleAdFailed(reason: String) {
         integrityReason = reason
-        haptic?.playDoubleClick(ctx)
+        haptic?.playHeavyClick(ctx)
         viewState = "noad"
     }
 
