@@ -39,10 +39,7 @@ import com.petal.browser.R
 @Composable
 fun DataBackupSettingsScreen(
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    onNavigateToUpdater: () -> Unit = {},
-    onNavigateToAbout: () -> Unit = {},
-    onNavigateToDevOptions: () -> Unit = {}
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 
@@ -567,46 +564,6 @@ fun DataBackupSettingsScreen(
                                             Text(stringResource(R.string.ui_restore_json))
                                         }
                                     }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                PetalSettingsSection(
-                    title = "System, Updates & About",
-                    iconRes = com.petal.browser.R.drawable.info_filled
-                ) {
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
-                        when (index) {
-                            0 -> {
-                                com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Rounded.Update,
-                                    title = "Updates & Diagnostics",
-                                    subtitle = "Release tracker, changelog and crash reporting",
-                                    position = position,
-                                    onClick = onNavigateToUpdater,
-                                    trailing = { Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                )
-                            }
-                            1 -> {
-                                com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Rounded.Info,
-                                    title = "About Petal Browser",
-                                    subtitle = "App version, licenses, GitHub & developer",
-                                    position = position,
-                                    onClick = onNavigateToAbout,
-                                    trailing = { Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                )
-                            }
-                            2 -> {
-                                com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Rounded.Code,
-                                    title = "Developer Options & APIs",
-                                    subtitle = "AI endpoint models, AndroidX WebKit flags & Credential Manager",
-                                    position = position,
-                                    onClick = onNavigateToDevOptions,
-                                    trailing = { Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                                 )
                             }
                         }
