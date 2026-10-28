@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+: animated cookie + pinwheel. Replaces the static-icon style in values/themes.xml. -->
+<!-- Android 12+: cookie + pinwheel splash. Points to static ic_splash_petal to guarantee zero starting window crash across all Android versions and OEM ROMs. -->
 <resources>
     <style name="Theme.Petal.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/petal_splash_bg</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_petal_animated</item>
-        <item name="windowSplashScreenAnimationDuration">900</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_petal</item>
         <item name="postSplashScreenTheme">@style/AppTheme</item>
     </style>
 </resources>

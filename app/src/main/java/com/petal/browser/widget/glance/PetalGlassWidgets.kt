@@ -47,8 +47,10 @@ object PetalGlassWidgets {
     fun displaySize(context: Context): Pair<Int, Int> {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && wm != null) {
-            val bounds = wm.currentWindowMetrics.bounds
-            return Pair(bounds.width(), bounds.height())
+            try {
+                val bounds = wm.currentWindowMetrics.bounds
+                return Pair(bounds.width(), bounds.height())
+            } catch (_: Throwable) {}
         }
         val dm = context.resources.displayMetrics
         return Pair(dm.widthPixels, dm.heightPixels)
