@@ -237,11 +237,25 @@ private fun systemTypography(fontWeight: Int): Typography {
 }
 
 enum class GSFlexPreset(val label: String) {
-    PETAL("Petal (Default)"),
-    NEO("Neo (Wide & Clean)"),
-    COMPACT("Compact (High Density)"),
-    AIRY("Airy (Spacious & Light)"),
-    EXPRESSIVE("Expressive (Ultra Round)")
+    PETAL_SIGNATURE("Petal Signature"),
+    NEO("Neo"),
+    COMPACT("Impact"),
+    AIRY("Airy"),
+    CUSTOM("Custom Variable");
+
+    companion object {
+        fun fromName(name: String?): GSFlexPreset {
+            if (name.isNullOrBlank()) return PETAL_SIGNATURE
+            return when (name.trim().uppercase()) {
+                "PETAL", "PETAL_SIGNATURE", "ZENITH" -> PETAL_SIGNATURE
+                "NEO" -> NEO
+                "COMPACT", "IMPACT" -> COMPACT
+                "AIRY" -> AIRY
+                "CUSTOM" -> CUSTOM
+                else -> PETAL_SIGNATURE
+            }
+        }
+    }
 }
 
 data class FontAxes(
@@ -263,7 +277,7 @@ data class FontAxes(
 }
 
 data class GSFlexSettings(
-    val preset: GSFlexPreset = GSFlexPreset.PETAL,
+    val preset: GSFlexPreset = GSFlexPreset.PETAL_SIGNATURE,
     val display: FontAxes = FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
     val headline: FontAxes = FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
     val body: FontAxes = FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
@@ -271,7 +285,7 @@ data class GSFlexSettings(
 
 fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes> {
     return when (preset) {
-        GSFlexPreset.PETAL -> Triple(
+        GSFlexPreset.PETAL_SIGNATURE -> Triple(
             FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
             FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
             FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
@@ -291,12 +305,106 @@ fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes
             FontAxes(500f, 120f, 32f, 0f, 0f, 100f),
             FontAxes(400f, 110f, 16f, 0f, 0f, 50f)
         )
-        GSFlexPreset.EXPRESSIVE -> Triple(
-            FontAxes(950f, 115f, 30f, 0f, 0f, 100f),
-            FontAxes(850f, 105f, 32f, 0f, 0f, 100f),
-            FontAxes(500f, 100f, 16f, 20f, 0f, 100f)
-        )
+        else -> getPresetFontAxes(GSFlexPreset.PETAL_SIGNATURE)
     }
+}
+
+fun loadGSFlexSettings(sp: android.content.SharedPreferences): GSFlexSettings {
+    val presetName = sp.getString("sp_gs_flex_preset", GSFlexPreset.PETAL_SIGNATURE.name)
+    val preset = GSFlexPreset.fromName(presetName)
+    val defaultAxes = getPresetFontAxes(GSFlexPreset.PETAL_SIGNATURE)
+    val display = FontAxes(
+        weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_weight", defaultAxes.first.weight),
+        width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_width", defaultAxes.first.width),
+        opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_opsz", defaultAxes.first.opsz),
+        grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_grade", defaultAxes.first.grade),
+        slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_slant", defaultAxes.first.slant),
+        roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_roundness", defaultAxes.first.roundness)
+    )
+    val headline = FontAxes(
+        weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_weight", defaultAxes.second.weight),
+        width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_width", defaultAxes.second.width),
+        opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_opsz", defaultAxes.second.opsz),
+        grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_grade", defaultAxes.second.grade),
+        slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_slant", defaultAxes.second.slant),
+        roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_roundness", defaultAxes.second.roundness)
+    )
+    val body = FontAxes(
+        weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_weight", defaultAxes.third.weight),
+        width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_width", defaultAxes.third.width),
+        opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_opsz", defaultAxes.third.opsz),
+        grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_grade", defaultAxes.third.grade),
+        slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_slant", defaultAxes.third.slant),
+        roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_roundness", defaultAxes.third.roundness)
+    )
+    return GSFlexSettings(preset = preset, display = display, headline = headline, body = body)
+}
+
+fun saveGSFlexSettings(sp: android.content.SharedPreferences, settings: GSFlexSettings) {
+    sp.edit()
+        .putString("sp_gs_flex_preset", settings.preset.name)
+        .putFloat("sp_gs_d_weight", settings.display.weight)
+        .putFloat("sp_gs_d_width", settings.display.width)
+        .putFloat("sp_gs_d_opsz", settings.display.opsz)
+        .putFloat("sp_gs_d_grade", settings.display.grade)
+        .putFloat("sp_gs_d_slant", settings.display.slant)
+        .putFloat("sp_gs_d_roundness", settings.display.roundness)
+        .putFloat("sp_gs_h_weight", settings.headline.weight)
+        .putFloat("sp_gs_h_width", settings.headline.width)
+        .putFloat("sp_gs_h_opsz", settings.headline.opsz)
+        .putFloat("sp_gs_h_grade", settings.headline.grade)
+        .putFloat("sp_gs_h_slant", settings.headline.slant)
+        .putFloat("sp_gs_h_roundness", settings.headline.roundness)
+        .putFloat("sp_gs_b_weight", settings.body.weight)
+        .putFloat("sp_gs_b_width", settings.body.width)
+        .putFloat("sp_gs_b_opsz", settings.body.opsz)
+        .putFloat("sp_gs_b_grade", settings.body.grade)
+        .putFloat("sp_gs_b_slant", settings.body.slant)
+        .putFloat("sp_gs_b_roundness", settings.body.roundness)
+        .apply()
+}
+
+@OptIn(ExperimentalTextApi::class)
+fun createGsFlexTypography(settings: GSFlexSettings): Typography {
+    val axes = if (settings.preset != GSFlexPreset.CUSTOM) {
+        getPresetFontAxes(settings.preset)
+    } else {
+        Triple(settings.display, settings.headline, settings.body)
+    }
+
+    val displayFont = FontFamily(Font(
+        resId = R.font.google_sans_flex_variable,
+        variationSettings = axes.first.toVariationSettings(),
+        weight = FontWeight(axes.first.weight.toInt().coerceIn(1, 1000))
+    ))
+    val headlineFont = FontFamily(Font(
+        resId = R.font.google_sans_flex_variable,
+        variationSettings = axes.second.toVariationSettings(),
+        weight = FontWeight(axes.second.weight.toInt().coerceIn(1, 1000))
+    ))
+    val bodyFont = FontFamily(Font(
+        resId = R.font.google_sans_flex_variable,
+        variationSettings = axes.third.toVariationSettings(),
+        weight = FontWeight(axes.third.weight.toInt().coerceIn(1, 1000))
+    ))
+
+    return Typography(
+        displayLarge = TextStyle(fontFamily = displayFont, fontWeight = FontWeight.Normal, fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
+        displayMedium = TextStyle(fontFamily = displayFont, fontWeight = FontWeight.Normal, fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp),
+        displaySmall = TextStyle(fontFamily = displayFont, fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
+        headlineLarge = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
+        headlineMedium = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp),
+        headlineSmall = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp),
+        titleLarge = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp),
+        titleMedium = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
+        titleSmall = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+        bodyLarge = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.5.sp),
+        bodyMedium = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.25.sp),
+        bodySmall = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
+        labelLarge = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+        labelMedium = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp),
+        labelSmall = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp)
+    )
 }
 
 @OptIn(ExperimentalTextApi::class)
@@ -311,25 +419,7 @@ fun petalTypography(
 ): Typography = try {
     when (appFont) {
         AppFont.PETAL -> {
-            if (gsFlexSettings.preset == GSFlexPreset.PETAL) expressivePetalTypography() else {
-            val effectiveAxes = getPresetFontAxes(gsFlexSettings.preset)
-            val displayFont = FontFamily(Font(
-                resId = R.font.google_sans_flex_variable,
-                variationSettings = effectiveAxes.first.toVariationSettings(),
-                weight = FontWeight(effectiveAxes.first.weight.toInt().coerceIn(1, 1000))
-            ))
-            val headlineFont = FontFamily(Font(
-                resId = R.font.google_sans_flex_variable,
-                variationSettings = effectiveAxes.second.toVariationSettings(),
-                weight = FontWeight(effectiveAxes.second.weight.toInt().coerceIn(1, 1000))
-            ))
-            val bodyFont = FontFamily(Font(
-                resId = R.font.google_sans_flex_variable,
-                variationSettings = effectiveAxes.third.toVariationSettings(),
-                weight = FontWeight(effectiveAxes.third.weight.toInt().coerceIn(1, 1000))
-            ))
-            buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
-            }
+            createGsFlexTypography(gsFlexSettings)
         }
         AppFont.CUSTOM -> {
             val validPath = customFontPath?.takeIf { it.isNotBlank() }

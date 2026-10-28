@@ -34,7 +34,10 @@ class AppearanceSettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 100f)
 
     val gsFlexPreset: StateFlow<GSFlexPreset> = settingsRepository.gsFlexPreset
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GSFlexPreset.PETAL)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GSFlexPreset.PETAL_SIGNATURE)
+
+    val gsFlexSettings: StateFlow<com.petal.browser.ui.theme.GSFlexSettings> = settingsRepository.gsFlexSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.petal.browser.ui.theme.GSFlexSettings())
 
     val colorStyle: StateFlow<ColorStyle> = settingsRepository.colorStyle
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ColorStyle.TONAL_SPOT)
@@ -153,6 +156,10 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setGsFlexPreset(preset: GSFlexPreset) = viewModelScope.launch {
         settingsRepository.setGsFlexPreset(preset)
+    }
+
+    fun setGsFlexSettings(settings: com.petal.browser.ui.theme.GSFlexSettings) = viewModelScope.launch {
+        settingsRepository.setGsFlexSettings(settings)
     }
 
     fun setColorStyle(style: ColorStyle) = viewModelScope.launch {

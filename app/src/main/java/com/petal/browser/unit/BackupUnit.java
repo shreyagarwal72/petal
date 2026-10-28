@@ -158,7 +158,8 @@ public class BackupUnit {
             key.startsWith("sp_custom_body_") || key.startsWith("sp_reader_font_size") ||
             key.startsWith("sp_reader_line_height") || key.equals("sp_font_width") ||
             key.equals("sp_font_roundness") || key.equals("sp_font_size_scale") ||
-            key.equals("sp_zoom_level_scale")) {
+            key.equals("sp_zoom_level_scale") || key.startsWith("sp_gs_d_") ||
+            key.startsWith("sp_gs_h_") || key.startsWith("sp_gs_b_")) {
             return true;
         }
         for (String suffix : KNOWN_FLOAT_SUFFIXES) {

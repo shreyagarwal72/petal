@@ -91,7 +91,8 @@ object PetalSettingsBridge {
                 var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
                 var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
                 var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
-                var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL") }
+                var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "PETAL_SIGNATURE") ?: "PETAL_SIGNATURE") }
+                var gsFlexSettingsState by remember { mutableStateOf(loadGSFlexSettings(sp)) }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
@@ -107,12 +108,15 @@ object PetalSettingsBridge {
                             customFontSettingsState = getCustomFontSettings(sp)
                             customFontPathState = sp.getString("sp_custom_font_path", null)
                         }
+                        if (key != null && (key.startsWith("sp_gs_") || key == "sp_gs_flex_preset")) {
+                            gsFlexSettingsState = loadGSFlexSettings(sp)
+                        }
                         when (key) {
                             "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                             "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
-                            "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL"
+                            "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "PETAL_SIGNATURE") ?: "PETAL_SIGNATURE"
                             "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
@@ -128,12 +132,7 @@ object PetalSettingsBridge {
                 val appFont = remember(fontName) {
                     try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.PETAL }
                 }
-                val resolvedPreset = remember(presetName) {
-                    try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.PETAL }
-                }
-                val gsFlexSettings = remember(presetName) {
-                    GSFlexSettings(preset = resolvedPreset)
-                }
+                val gsFlexSettings = gsFlexSettingsState
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }

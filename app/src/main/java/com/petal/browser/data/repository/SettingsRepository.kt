@@ -17,6 +17,7 @@ interface SettingsRepository {
     val fontWeight: Flow<Float>
     val fontRoundness: Flow<Float>
     val gsFlexPreset: Flow<GSFlexPreset>
+    val gsFlexSettings: Flow<com.petal.browser.ui.theme.GSFlexSettings>
     val colorStyle: Flow<ColorStyle>
     val paletteId: Flow<String>
     val dynamicColor: Flow<Boolean>
@@ -134,6 +135,7 @@ interface SettingsRepository {
     suspend fun setFontWeight(weight: Float)
     suspend fun setFontRoundness(roundness: Float)
     suspend fun setGsFlexPreset(preset: GSFlexPreset)
+    suspend fun setGsFlexSettings(settings: com.petal.browser.ui.theme.GSFlexSettings)
     suspend fun setColorStyle(style: ColorStyle)
     suspend fun setPaletteId(id: String)
     suspend fun setDynamicColor(enabled: Boolean)

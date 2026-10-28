@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,6 +63,7 @@ fun AppearanceSettingsScreen(
     val fontWeight by viewModel.fontWeight.collectAsStateWithLifecycle()
     val fontRoundness by viewModel.fontRoundness.collectAsStateWithLifecycle()
     val gsFlexPreset by viewModel.gsFlexPreset.collectAsStateWithLifecycle()
+    val gsFlexSettings by viewModel.gsFlexSettings.collectAsStateWithLifecycle()
     val colorStyle by viewModel.colorStyle.collectAsStateWithLifecycle()
     val paletteId by viewModel.paletteId.collectAsStateWithLifecycle()
     val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
@@ -101,6 +103,7 @@ fun AppearanceSettingsScreen(
         fontWeight = fontWeight,
         fontRoundness = fontRoundness,
         gsFlexPreset = gsFlexPreset,
+        gsFlexSettings = gsFlexSettings,
         colorStyle = colorStyle,
         paletteId = paletteId,
         dynamicColor = dynamicColor,
@@ -138,6 +141,7 @@ fun AppearanceSettingsScreen(
         onFontWeightChange = viewModel::setFontWeight,
         onFontRoundnessChange = viewModel::setFontRoundness,
         onGsFlexPresetChange = viewModel::setGsFlexPreset,
+        onGsFlexSettingsChange = viewModel::setGsFlexSettings,
         onColorStyleChange = viewModel::setColorStyle,
         onPaletteIdChange = viewModel::setPaletteId,
         onDynamicColorChange = viewModel::setDynamicColor,
@@ -180,6 +184,7 @@ fun AppearanceSettingsScreenContent(
     fontWeight: Float,
     fontRoundness: Float,
     gsFlexPreset: GSFlexPreset,
+    gsFlexSettings: com.petal.browser.ui.theme.GSFlexSettings = com.petal.browser.ui.theme.GSFlexSettings(),
     colorStyle: ColorStyle,
     paletteId: String,
     dynamicColor: Boolean,
@@ -219,6 +224,7 @@ fun AppearanceSettingsScreenContent(
     onFontWeightChange: (Float) -> Unit,
     onFontRoundnessChange: (Float) -> Unit,
     onGsFlexPresetChange: (GSFlexPreset) -> Unit,
+    onGsFlexSettingsChange: (com.petal.browser.ui.theme.GSFlexSettings) -> Unit = {},
     onColorStyleChange: (ColorStyle) -> Unit,
     onPaletteIdChange: (String) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
@@ -740,25 +746,226 @@ fun AppearanceSettingsScreenContent(
                         }
                     )
 
-                    // GS Flex Preset Chips (For Petal Signature)
+                    // Petal Signature Typography Customization (Zenith GS Flex Engine)
                     AnimatedVisibility(visible = appFont == AppFont.PETAL) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                stringResource(R.string.ui_petal_signature_design_preset),
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            com.petal.browser.ui.components.PetalChoiceButtonGroup(
-                                options = GSFlexPreset.values().map { preset ->
-                                    com.petal.browser.ui.components.PetalButtonGroupItem(
-                                        value = preset,
-                                        label = preset.label.substringBefore(" (")
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            // Live Preview Card
+                            val previewTypography = remember(gsFlexSettings) {
+                                com.petal.browser.ui.theme.createGsFlexTypography(gsFlexSettings)
+                            }
+                            var lastNonCustomPreset by remember(gsFlexSettings.preset) {
+                                mutableStateOf(if (gsFlexSettings.preset == GSFlexPreset.CUSTOM) GSFlexPreset.PETAL_SIGNATURE else gsFlexSettings.preset)
+                            }
+                            var selectedLevelTab by remember { mutableIntStateOf(0) }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                    .padding(20.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Petal Signature",
+                                        style = previewTypography.displayLarge.copy(
+                                            fontSize = 38.sp,
+                                            lineHeight = 42.sp,
+                                            letterSpacing = (-1.5).sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        textAlign = TextAlign.Center
                                     )
-                                },
-                                selected = gsFlexPreset,
-                                minHeight = 44.dp,
-                                onSelect = onGsFlexPresetChange
+                                    Text(
+                                        text = "Headline Treatment",
+                                        style = previewTypography.headlineMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        text = "Standard body text for optimized reading experience in Petal browser.",
+                                        style = previewTypography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    )
+                                }
+                            }
+
+                            // Design System Presets
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "Design System Presets",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                val presetOptions = listOf(
+                                    com.petal.browser.ui.components.PetalButtonGroupItem(
+                                        value = GSFlexPreset.PETAL_SIGNATURE,
+                                        label = "Petal Signature"
+                                    ),
+                                    com.petal.browser.ui.components.PetalButtonGroupItem(
+                                        value = GSFlexPreset.NEO,
+                                        label = "Neo"
+                                    ),
+                                    com.petal.browser.ui.components.PetalButtonGroupItem(
+                                        value = GSFlexPreset.COMPACT,
+                                        label = "Impact"
+                                    ),
+                                    com.petal.browser.ui.components.PetalButtonGroupItem(
+                                        value = GSFlexPreset.AIRY,
+                                        label = "Airy"
+                                    )
+                                )
+                                com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                                    options = presetOptions,
+                                    selected = if (gsFlexSettings.preset == GSFlexPreset.CUSTOM) lastNonCustomPreset else gsFlexSettings.preset,
+                                    minHeight = 44.dp,
+                                    scrollableIfCrowded = true,
+                                    onSelect = { newPreset ->
+                                        lastNonCustomPreset = newPreset
+                                        onGsFlexPresetChange(newPreset)
+                                        if (gsFlexSettings.preset != GSFlexPreset.CUSTOM) {
+                                            onGsFlexSettingsChange(gsFlexSettings.copy(preset = newPreset))
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Custom Variable Toggle
+                            com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = "Use Custom Variable",
+                                subtitle = "Override preset with your own fine-tuned axes",
+                                icon = Icons.Rounded.Tune,
+                                checked = gsFlexSettings.preset == GSFlexPreset.CUSTOM,
+                                position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                                onCheckedChange = { checked ->
+                                    val newPreset = if (checked) GSFlexPreset.CUSTOM else lastNonCustomPreset
+                                    onGsFlexPresetChange(newPreset)
+                                    onGsFlexSettingsChange(gsFlexSettings.copy(preset = newPreset))
+                                }
                             )
+
+                            // Custom Variable Fine-Tuning Section
+                            AnimatedVisibility(visible = gsFlexSettings.preset == GSFlexPreset.CUSTOM) {
+                                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                                    Button(
+                                        onClick = {
+                                            val presetAxes = com.petal.browser.ui.theme.getPresetFontAxes(lastNonCustomPreset)
+                                            onGsFlexSettingsChange(
+                                                gsFlexSettings.copy(
+                                                    preset = GSFlexPreset.CUSTOM,
+                                                    display = presetAxes.first,
+                                                    headline = presetAxes.second,
+                                                    body = presetAxes.third
+                                                )
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    ) {
+                                        Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Copy from Current Preset", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold))
+                                    }
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Tune,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            text = "Fine-tune Axes per Level",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+
+                                    val levelTabs = listOf("Display", "Headline", "Body")
+                                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                                        labels = levelTabs,
+                                        selectedIndex = selectedLevelTab,
+                                        onSelectIndex = { selectedLevelTab = it },
+                                        minHeight = 44.dp,
+                                        scrollableIfCrowded = false
+                                    )
+
+                                    val currentAxes = when (selectedLevelTab) {
+                                        0 -> gsFlexSettings.display
+                                        1 -> gsFlexSettings.headline
+                                        else -> gsFlexSettings.body
+                                    }
+
+                                    fun updateAxes(newAxes: com.petal.browser.ui.theme.FontAxes) {
+                                        val updated = when (selectedLevelTab) {
+                                            0 -> gsFlexSettings.copy(preset = GSFlexPreset.CUSTOM, display = newAxes)
+                                            1 -> gsFlexSettings.copy(preset = GSFlexPreset.CUSTOM, headline = newAxes)
+                                            else -> gsFlexSettings.copy(preset = GSFlexPreset.CUSTOM, body = newAxes)
+                                        }
+                                        onGsFlexSettingsChange(updated)
+                                    }
+
+                                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        GSFlexVariableSlider(
+                                            label = "Weight",
+                                            value = currentAxes.weight,
+                                            range = 100f..1000f,
+                                            formatter = { "%.0f".format(it) },
+                                            onValueChange = { updateAxes(currentAxes.copy(weight = it)) }
+                                        )
+                                        GSFlexVariableSlider(
+                                            label = "Width",
+                                            value = currentAxes.width,
+                                            range = 25f..150f,
+                                            formatter = { "%.0f".format(it) },
+                                            onValueChange = { updateAxes(currentAxes.copy(width = it)) }
+                                        )
+                                        GSFlexVariableSlider(
+                                            label = "Optical Size",
+                                            value = currentAxes.opsz,
+                                            range = 6f..72f,
+                                            formatter = { "%.0f pt".format(it) },
+                                            onValueChange = { updateAxes(currentAxes.copy(opsz = it)) }
+                                        )
+                                        GSFlexVariableSlider(
+                                            label = "Grade",
+                                            value = currentAxes.grade,
+                                            range = -200f..200f,
+                                            formatter = { "%+.0f".format(it) },
+                                            onValueChange = { updateAxes(currentAxes.copy(grade = it)) }
+                                        )
+                                        GSFlexVariableSlider(
+                                            label = "Slant",
+                                            value = currentAxes.slant,
+                                            range = -10f..0f,
+                                            formatter = { "%.0f°".format(it) },
+                                            onValueChange = { updateAxes(currentAxes.copy(slant = it)) }
+                                        )
+                                        GSFlexVariableSlider(
+                                            label = "Roundness",
+                                            value = currentAxes.roundness,
+                                            range = 0f..100f,
+                                            formatter = { "%.0f%%".format(it) },
+                                            onValueChange = { updateAxes(currentAxes.copy(roundness = it)) }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -1686,6 +1893,48 @@ fun AppearanceSettingsScreenContent(
 }
 
 @Composable
+private fun GSFlexVariableSlider(
+    label: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    formatter: (Float) -> String = { "%.0f".format(it) },
+    onValueChange: (Float) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                softWrap = false
+            )
+            Text(
+                text = formatter(value),
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
+        com.petal.browser.ui.components.PetalSlider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = range,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+
+@Composable
 private fun PaletteSwatchSquare(
     scheme: ColorScheme,
     selected: Boolean,
@@ -1758,3 +2007,45 @@ private fun PaletteSwatchSquare(
         }
     }
 }
+
+@Composable
+private fun GSFlexVariableSlider(
+    label: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    formatter: (Float) -> String = { "%.0f".format(it) },
+    onValueChange: (Float) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                softWrap = false
+            )
+            Text(
+                text = formatter(value),
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
+        com.petal.browser.ui.components.PetalSlider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = range,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+

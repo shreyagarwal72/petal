@@ -117,9 +117,7 @@ fun PetalExpressiveTheme(
     },
     gsFlexSettings: GSFlexSettings = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        val presetName = sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL"
-        val preset = try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.PETAL }
-        GSFlexSettings(preset = preset)
+        loadGSFlexSettings(sp)
     },
     colorStyle: ColorStyle = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)

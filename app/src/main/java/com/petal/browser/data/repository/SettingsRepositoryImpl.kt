@@ -43,6 +43,16 @@ class SettingsRepositoryImpl @Inject constructor(
         awaitClose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }.onStart { emit(getter()) }.distinctUntilChanged()
 
+    private fun <T> preferenceFlow(keys: Set<String>, getter: () -> T): Flow<T> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
+            if (changedKey != null && keys.contains(changedKey)) {
+                trySend(getter())
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.onStart { emit(getter()) }.distinctUntilChanged()
+
     // ── Appearance & Theming ──────────────────────────────────────────────────
     override val appFont: Flow<AppFont> = preferenceFlow("sp_app_font") {
         AppFont.fromName(sp.getString("sp_app_font", "PETAL"))
@@ -61,11 +71,18 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val gsFlexPreset: Flow<GSFlexPreset> = preferenceFlow("sp_gs_flex_preset") {
-        try {
-            GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL")
-        } catch (e: Exception) {
-            GSFlexPreset.PETAL
-        }
+        GSFlexPreset.fromName(sp.getString("sp_gs_flex_preset", GSFlexPreset.PETAL_SIGNATURE.name))
+    }
+
+    override val gsFlexSettings: Flow<com.petal.browser.ui.theme.GSFlexSettings> = preferenceFlow(
+        setOf(
+            "sp_gs_flex_preset",
+            "sp_gs_d_weight", "sp_gs_d_width", "sp_gs_d_opsz", "sp_gs_d_grade", "sp_gs_d_slant", "sp_gs_d_roundness",
+            "sp_gs_h_weight", "sp_gs_h_width", "sp_gs_h_opsz", "sp_gs_h_grade", "sp_gs_h_slant", "sp_gs_h_roundness",
+            "sp_gs_b_weight", "sp_gs_b_width", "sp_gs_b_opsz", "sp_gs_b_grade", "sp_gs_b_slant", "sp_gs_b_roundness"
+        )
+    ) {
+        com.petal.browser.ui.theme.loadGSFlexSettings(sp)
     }
 
     override val colorStyle: Flow<ColorStyle> = preferenceFlow("sp_color_style") {
@@ -494,6 +511,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setGsFlexPreset(preset: GSFlexPreset) {
         sp.edit().putString("sp_gs_flex_preset", preset.name).apply()
+    }
+
+    override suspend fun setGsFlexSettings(settings: com.petal.browser.ui.theme.GSFlexSettings) {
+        com.petal.browser.ui.theme.saveGSFlexSettings(sp, settings)
     }
 
     override suspend fun setColorStyle(style: ColorStyle) {

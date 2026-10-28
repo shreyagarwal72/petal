@@ -125,10 +125,10 @@ object PetalWelcomeBridge {
                         com.petal.browser.ui.theme.AppFont.fromName(fontName)
                     }
                     val resolvedPreset = remember(presetName) {
-                        try { com.petal.browser.ui.theme.GSFlexPreset.valueOf(presetName) } catch (e: Exception) { com.petal.browser.ui.theme.GSFlexPreset.PETAL }
+                        com.petal.browser.ui.theme.GSFlexPreset.fromName(presetName)
                     }
                     val gsFlexSettings = remember(presetName) {
-                        com.petal.browser.ui.theme.GSFlexSettings(preset = resolvedPreset)
+                        com.petal.browser.ui.theme.loadGSFlexSettings(sp)
                     }
                     val colorStyle = remember(styleName) {
                         try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
