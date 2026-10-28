@@ -565,12 +565,12 @@ fun PetalDownloadManagerScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            if (isSelectionMode) {
-                ExpressiveHeader(
-                    title = "${selectedIds.size} Selected",
-                    subtitle = "Selecting Mode",
-                    onBack = { selectedIds = emptySet() },
-                    actions = {
+            ExpressiveHeader(
+                title = if (isSelectionMode) "${selectedIds.size} Selected" else "Downloads",
+                subtitle = if (isSelectionMode) "Selecting Mode" else "${downloadList.size} files",
+                onBack = if (isSelectionMode) { { selectedIds = emptySet() } } else onBackPress,
+                actions = {
+                    if (isSelectionMode) {
                         HeaderActionIcon(
                             icon = if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
                             contentDescription = "Select All",
@@ -600,14 +600,7 @@ fun PetalDownloadManagerScreen(
                                 selectedIds = emptySet()
                             }
                         )
-                    }
-                )
-            } else {
-                ExpressiveHeader(
-                    title = "Downloads",
-                    subtitle = "${downloadList.size} files",
-                    onBack = onBackPress,
-                    actions = {
+                    } else {
                         Box {
                             HeaderActionIcon(
                                 icon = Icons.Rounded.Sort,
@@ -657,8 +650,8 @@ fun PetalDownloadManagerScreen(
                             onClick = { isSettingsOpen = true }
                         )
                     }
-                )
-            }
+                }
+            )
 
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             if (isLoading) {

@@ -142,11 +142,58 @@ object PetalPredictiveJunction {
         _isDepthBlurEnabled.value = enabled
         prefs.edit().putBoolean(KEY_DEPTH_BLUR_ENABLED, enabled).apply()
     }
+
+    /**
+     * Checks if the current Android OS level supports native predictive back gesture dispatch.
+     * Android 14+ (API 34, UPSIDE_DOWN_CAKE) is the official platform requirement.
+     */
+    val isDeviceSupported: Boolean
+        get() = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+
+    /**
+     * Set of page keys / sub-flows that do not support or participate in full-card predictive back gestures.
+     * (E.g. in-screen category drilldowns, selection modes, dialog sub-steps).
+     */
+    private val NON_PREDICTIVE_PAGES = setOf(
+        "CATEGORY_DRILLDOWN",
+        "SELECTION_MODE",
+        "DIALOG_STEP",
+        "INACTIVE_SETTINGS"
+    )
+
+    /**
+     * Checks whether a given page or screen supports full-card predictive back gesture navigation.
+     */
+    @JvmStatic
+    fun isPagePredictiveSupported(pageKey: String?): Boolean {
+        if (pageKey == null) return false
+        return pageKey !in NON_PREDICTIVE_PAGES
+    }
+
+    /**
+     * Determines whether Zenith-like header transition / animation should be active.
+     * Triggers when:
+     * 1) Predictive animations are toggled off by the user (_isPredictiveBackEnabled == false), OR
+     * 2) Device is not supported (API < 34 / Android 13 or lower), OR
+     * 3) Current page / transition is a non-supported page.
+     */
+    @JvmStatic
+    fun shouldUseZenithHeaderTransition(
+        isPredictiveSettingEnabled: Boolean = _isPredictiveBackEnabled.value,
+        pageKey: String? = null
+    ): Boolean {
+        if (!isPredictiveSettingEnabled) return true
+        if (!isDeviceSupported) return true
+        if (pageKey != null && !isPagePredictiveSupported(pageKey)) return true
+        return false
+    }
 }
 
 val LocalPetalPredictiveJunctionState = compositionLocalOf { true }
 val LocalPetalDepthBlurJunctionState = compositionLocalOf { true }
 val LocalIsUnderlayPreview = compositionLocalOf { false }
+val LocalZenithHeaderActive = compositionLocalOf { false }
+val LocalZenithHeaderHoisted = compositionLocalOf { false }
 
 /**
  * Live state of an in-flight predictive back gesture.
@@ -318,10 +365,15 @@ fun PetalPredictiveBackSurface(
         }
     }
 
+    val isZenithHeaderActive = remember(junctionPredictiveEnabled) {
+        PetalPredictiveJunction.shouldUseZenithHeaderTransition(junctionPredictiveEnabled)
+    }
+
     CompositionLocalProvider(
         LocalPetalPredictiveJunctionState provides junctionPredictiveEnabled,
         LocalPetalDepthBlurJunctionState provides junctionBlurEnabled,
         LocalPredictiveBackState provides backState,
+        LocalZenithHeaderActive provides isZenithHeaderActive,
     ) {
         content()
     }

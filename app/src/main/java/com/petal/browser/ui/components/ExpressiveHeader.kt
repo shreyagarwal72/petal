@@ -1,11 +1,15 @@
 package com.petal.browser.ui.components
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.LinearEasing
@@ -91,8 +95,16 @@ fun ExpressiveHeader(
     backdrop: com.petal.browser.ui.containment.PetalBackdrop? = null,
     maxTitleLines: Int = 2,
     maxSubtitleLines: Int = 2,
+    isRootHeader: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
+    val isHoisted = com.petal.browser.predictive.LocalZenithHeaderHoisted.current
+    if (isHoisted && !isRootHeader) {
+        // Child screen yields to the hoisted top-level Zenith header
+        return
+    }
+
+    val isZenithTransition = com.petal.browser.predictive.LocalZenithHeaderActive.current
     // Motion comes from the theme's scheme (instant when reduce-motion is on), not hardcoded springs.
     val motion = MaterialTheme.motionScheme
     val glow = MaterialTheme.colorScheme.primary
@@ -135,12 +147,24 @@ fun ExpressiveHeader(
                 ) {
                     androidx.compose.animation.AnimatedVisibility(
                         visible = onBack != null,
-                        enter = fadeIn(animationSpec = motion.defaultEffectsSpec()) +
+                        enter = if (isZenithTransition) {
+                            fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)) +
+                                slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessLow))
+                        } else {
+                            fadeIn(animationSpec = motion.defaultEffectsSpec()) +
                                 scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()) +
-                                androidx.compose.animation.slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = motion.defaultSpatialSpec()),
-                        exit = fadeOut(animationSpec = motion.fastEffectsSpec()) +
+                                slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = motion.defaultSpatialSpec())
+                        },
+                        exit = if (isZenithTransition) {
+                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                scaleOut(targetScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessLow))
+                        } else {
+                            fadeOut(animationSpec = motion.fastEffectsSpec()) +
                                 scaleOut(targetScale = 0.92f) +
-                                androidx.compose.animation.slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = motion.defaultSpatialSpec())
+                                slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = motion.defaultSpatialSpec())
+                        }
                     ) {
                         Row {
                             FilledTonalIconButton(
@@ -166,14 +190,25 @@ fun ExpressiveHeader(
                     AnimatedContent(
                         targetState = title to (subtitle ?: ""),
                         transitionSpec = {
-                            (fadeIn(animationSpec = motion.defaultEffectsSpec()) +
-                             slideInVertically(animationSpec = motion.defaultSpatialSpec()) { it / 3 } +
-                             scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()))
-                                .togetherWith(
-                                    fadeOut(animationSpec = motion.fastEffectsSpec()) +
-                                    slideOutVertically(animationSpec = motion.defaultSpatialSpec()) { -it / 3 } +
-                                    scaleOut(targetScale = 0.92f)
-                                )
+                            if (isZenithTransition) {
+                                (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                 slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { it / 4 } +
+                                 scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)))
+                                    .togetherWith(
+                                        fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                        slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { -it / 4 } +
+                                        scaleOut(targetScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessLow))
+                                    )
+                            } else {
+                                (fadeIn(animationSpec = motion.defaultEffectsSpec()) +
+                                 slideInVertically(animationSpec = motion.defaultSpatialSpec()) { it / 3 } +
+                                 scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()))
+                                    .togetherWith(
+                                        fadeOut(animationSpec = motion.fastEffectsSpec()) +
+                                        slideOutVertically(animationSpec = motion.defaultSpatialSpec()) { -it / 3 } +
+                                        scaleOut(targetScale = 0.92f)
+                                    )
+                            }
                         },
                         label = "ExpressiveHeaderTransition",
                         modifier = Modifier.weight(1f)
@@ -232,10 +267,24 @@ fun ExpressiveHeader(
 
                     androidx.compose.animation.AnimatedVisibility(
                         visible = true,
-                        enter = fadeIn(animationSpec = motion.defaultEffectsSpec()) +
-                                scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()),
-                        exit = fadeOut(animationSpec = motion.fastEffectsSpec()) +
+                        enter = if (isZenithTransition) {
+                            fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                scaleIn(initialScale = 0.7f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)) +
+                                slideInHorizontally(initialOffsetX = { it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                expandHorizontally(expandFrom = Alignment.End, animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                        } else {
+                            fadeIn(animationSpec = motion.defaultEffectsSpec()) +
+                                scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec())
+                        },
+                        exit = if (isZenithTransition) {
+                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                scaleOut(targetScale = 0.7f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                slideOutHorizontally(targetOffsetX = { it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                shrinkHorizontally(shrinkTowards = Alignment.End, animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                        } else {
+                            fadeOut(animationSpec = motion.fastEffectsSpec()) +
                                 scaleOut(targetScale = 0.92f)
+                        }
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),

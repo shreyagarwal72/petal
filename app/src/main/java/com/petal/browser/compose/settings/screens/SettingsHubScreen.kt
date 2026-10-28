@@ -59,7 +59,9 @@ fun SettingsHubScreen(
     onSearchQueryChange: (String) -> Unit,
     onCategoryClick: (SettingsCategory, String?) -> Unit,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSearchOpen: Boolean = false,
+    onSearchOpenChange: ((Boolean) -> Unit)? = null
 ) {
     val searchResult = remember(searchQuery) {
         PetalSettingsSearchIndex.search(searchQuery)
@@ -70,11 +72,19 @@ fun SettingsHubScreen(
     val matchingItems = searchResult.matchingItems
     val didYouMean = searchResult.didYouMean
 
-    var isSearchOpen by rememberSaveable { mutableStateOf(searchQuery.isNotBlank()) }
+    var internalSearchOpen by rememberSaveable { mutableStateOf(searchQuery.isNotBlank()) }
+    val effectiveSearchOpen = if (onSearchOpenChange != null) isSearchOpen else internalSearchOpen
+    val toggleSearch: (Boolean) -> Unit = { open ->
+        if (onSearchOpenChange != null) {
+            onSearchOpenChange(open)
+        } else {
+            internalSearchOpen = open
+        }
+    }
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(isSearchOpen) {
-        if (isSearchOpen && searchQuery.isEmpty()) {
+    LaunchedEffect(effectiveSearchOpen) {
+        if (effectiveSearchOpen && searchQuery.isEmpty()) {
             try {
                 focusRequester.requestFocus()
             } catch (_: Exception) {}
@@ -95,14 +105,14 @@ fun SettingsHubScreen(
                 onBack = onNavigateBack,
                 actions = {
                     HeaderActionIcon(
-                        icon = if (isSearchOpen) Icons.Rounded.Close else Icons.Rounded.Search,
-                        contentDescription = if (isSearchOpen) "Close search" else "Search settings",
+                        icon = if (effectiveSearchOpen) Icons.Rounded.Close else Icons.Rounded.Search,
+                        contentDescription = if (effectiveSearchOpen) "Close search" else "Search settings",
                         onClick = {
-                            if (isSearchOpen) {
-                                isSearchOpen = false
+                            if (effectiveSearchOpen) {
+                                toggleSearch(false)
                                 onSearchQueryChange("")
                             } else {
-                                isSearchOpen = true
+                                toggleSearch(true)
                             }
                         }
                     )
@@ -110,7 +120,7 @@ fun SettingsHubScreen(
             )
 
             AnimatedVisibility(
-                visible = isSearchOpen,
+                visible = effectiveSearchOpen,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {

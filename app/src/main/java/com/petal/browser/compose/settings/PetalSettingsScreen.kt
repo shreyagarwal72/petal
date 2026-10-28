@@ -35,9 +35,18 @@ import androidx.preference.PreferenceManager
 import kotlinx.coroutines.launch
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.compose.settings.screens.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.petal.browser.predictive.LocalZenithHeaderActive
+import com.petal.browser.predictive.LocalZenithHeaderHoisted
+import com.petal.browser.predictive.PetalPredictiveJunction
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
+import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.theme.*
 
 enum class SettingsCategory(val title: String, val subtitle: String, val iconRes: Int) {
@@ -189,8 +198,12 @@ fun PetalSettingsScreen(
     var pageCategory by remember(initialCategory) {
         mutableStateOf<SettingsCategory?>(initialCategory.takeIf { it != SettingsCategory.OVERVIEW })
     }
+    var activeHeaderCategory by remember(initialCategory) {
+        mutableStateOf<SettingsCategory?>(initialCategory.takeIf { it != SettingsCategory.OVERVIEW })
+    }
     var currentHighlightId by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
+    var isSearchOpen by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     // 0 = hub only, 1 = category page fully pushed. Starts pushed when we were opened straight into a category.
@@ -200,10 +213,19 @@ fun PetalSettingsScreen(
     val drilled = pageCategory != null
     val behindFraction: () -> Float = remember(push) { { if (pageCategory != null) push.value else 0f } }
 
+    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    val isZenithMode = remember(junctionPredictiveEnabled, pageCategory) {
+        PetalPredictiveJunction.shouldUseZenithHeaderTransition(
+            isPredictiveSettingEnabled = junctionPredictiveEnabled,
+            pageKey = if (pageCategory != null) "CATEGORY_DRILLDOWN" else null
+        )
+    }
+
     fun openCategory(category: SettingsCategory, highlightId: String?) {
         searchQuery = ""
         currentHighlightId = highlightId
         val wasOpen = pageCategory != null
+        activeHeaderCategory = category
         pageCategory = category
         if (!wasOpen) {
             scope.launch {
@@ -215,6 +237,7 @@ fun PetalSettingsScreen(
 
     // Arrow / in-page back: animate the page out, then drop it.
     fun closeCategory() {
+        activeHeaderCategory = null
         scope.launch {
             push.animateTo(0f, tween(SETTINGS_POP_MS, easing = SettingsPushEasing))
             pageCategory = null
@@ -227,6 +250,7 @@ fun PetalSettingsScreen(
         onBack = {
             if (pageCategory != null) {
                 // The gesture already slid the page away; remove it without a second animation.
+                activeHeaderCategory = null
                 pageCategory = null
                 currentHighlightId = null
                 scope.launch { push.snapTo(0f) }
@@ -235,42 +259,80 @@ fun PetalSettingsScreen(
             }
         }
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            PetalScreenWrapper(
-                isBehind = drilled,
-                backgroundSnapshot = if (drilled) null else backgroundSnapshot,
-                behindFraction = if (drilled) behindFraction else null,
-            ) {
-                SettingsHubScreen(
-                    searchQuery = searchQuery,
-                    onSearchQueryChange = { searchQuery = it },
-                    onCategoryClick = { category, highlightId -> openCategory(category, highlightId) },
-                    onNavigateBack = onBackPress
+            if (isZenithMode) {
+                ExpressiveHeader(
+                    title = activeHeaderCategory?.title ?: "Settings",
+                    subtitle = activeHeaderCategory?.subtitle ?: "Browser Preferences & Customization",
+                    onBack = if (activeHeaderCategory != null) { { closeCategory() } } else onBackPress,
+                    isRootHeader = true,
+                    actions = {
+                        if (activeHeaderCategory == null) {
+                            HeaderActionIcon(
+                                icon = if (isSearchOpen) Icons.Rounded.Close else Icons.Rounded.Search,
+                                contentDescription = if (isSearchOpen) "Close search" else "Search settings",
+                                onClick = {
+                                    if (isSearchOpen) {
+                                        isSearchOpen = false
+                                        searchQuery = ""
+                                    } else {
+                                        isSearchOpen = true
+                                    }
+                                }
+                            )
+                        }
+                    }
                 )
             }
 
-            val shown = pageCategory
-            if (shown != null) {
-                PetalScreenWrapper(
-                    isBehind = false,
-                    modifier = Modifier.graphicsLayer {
-                        val e = push.value
-                        translationX = (1f - e) * size.width * 0.33f
-                        alpha = (e * 2.2f).coerceIn(0f, 1f)
-                    }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                CompositionLocalProvider(
+                    LocalZenithHeaderHoisted provides isZenithMode,
+                    LocalZenithHeaderActive provides isZenithMode
                 ) {
-                    PetalSettingsAnimatedContent(targetKey = shown) { category ->
-                        RenderCategoryContent(
-                            category = category,
-                            targetHighlightItemId = currentHighlightId,
-                            onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
-                            onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
-                            onNavigateBack = { closeCategory() }
+                    PetalScreenWrapper(
+                        isBehind = drilled,
+                        backgroundSnapshot = if (drilled) null else backgroundSnapshot,
+                        behindFraction = if (drilled) behindFraction else null,
+                    ) {
+                        SettingsHubScreen(
+                            searchQuery = searchQuery,
+                            onSearchQueryChange = { searchQuery = it },
+                            onCategoryClick = { category, highlightId -> openCategory(category, highlightId) },
+                            onNavigateBack = onBackPress,
+                            isSearchOpen = isSearchOpen,
+                            onSearchOpenChange = { isSearchOpen = it }
                         )
+                    }
+
+                    val shown = pageCategory
+                    if (shown != null) {
+                        PetalScreenWrapper(
+                            isBehind = false,
+                            modifier = Modifier.graphicsLayer {
+                                val e = push.value
+                                translationX = (1f - e) * size.width * 0.33f
+                                alpha = (e * 2.2f).coerceIn(0f, 1f)
+                            }
+                        ) {
+                            PetalSettingsAnimatedContent(targetKey = shown) { category ->
+                                RenderCategoryContent(
+                                    category = category,
+                                    targetHighlightItemId = currentHighlightId,
+                                    onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
+                                    onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                                    onNavigateBack = { closeCategory() }
+                                )
+                            }
+                        }
                     }
                 }
             }
