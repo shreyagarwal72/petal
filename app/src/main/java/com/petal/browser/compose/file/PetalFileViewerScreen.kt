@@ -69,6 +69,8 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.compose.pdf.PetalPdfViewerScreen
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.ui.components.PetalButtonVariant
 import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
@@ -856,12 +858,16 @@ private fun ArchiveEntryPreview(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(Modifier.height(18.dp))
-                                FilledTonalButton(onClick = {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(uri, mimeTypeForExtension(ext))
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    })
-                                }) { Text(stringResource(R.string.ui_open_with)) }
+                                PetalLiquidButton(
+                                    onClick = {
+                                        context.startActivity(Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(uri, mimeTypeForExtension(ext))
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        })
+                                    },
+                                    variant = PetalButtonVariant.Tonal,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) { Text(stringResource(R.string.ui_open_with)) }
                             }
                         }
                     }
@@ -1448,11 +1454,12 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(24.dp))
-        FilledTonalButton(
+        PetalLiquidButton(
             onClick = {
                 PetalHapticEngine.getInstance(context).playClick(context)
                 openExternal(context, fileUri)
             },
+            variant = PetalButtonVariant.Tonal,
             shape = RoundedCornerShape(20.dp),
         ) {
             Icon(Icons.Rounded.OpenInNew, contentDescription = null)

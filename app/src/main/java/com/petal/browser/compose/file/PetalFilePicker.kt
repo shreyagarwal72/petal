@@ -83,6 +83,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -479,8 +480,9 @@ private fun FilePickerBrowserContent(
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_show_hidden_files), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) },
                             trailingIcon = {
-                                Switch(
+                                IconSwitch(
                                     checked = showHiddenFiles,
+                                    icon = Icons.Rounded.Check,
                                     onCheckedChange = null,
                                     modifier = Modifier.scale(0.8f)
                                 )

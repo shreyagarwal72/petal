@@ -71,6 +71,8 @@ import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.ui.components.PetalButtonVariant
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -241,12 +243,16 @@ fun PetalExtensionsScreen(
                 },
                 floatingActionButton = {
                     if (selectedTabIndex == 1) {
-                        ExtendedFloatingActionButton(
+                        PetalLiquidButton(
                             onClick = { showAddSheet = true },
-                            icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-                            text = { Text(stringResource(R.string.ui_install_from_amo_xpi)) },
-                            shape = RoundedCornerShape(20.dp)
-                        )
+                            variant = PetalButtonVariant.Filled,
+                            shape = RoundedCornerShape(20.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.ui_install_from_amo_xpi))
+                        }
                     }
                 }
             ) { innerPadding ->
@@ -954,15 +960,11 @@ private fun AddExtensionSheet(
             )
             Spacer(Modifier.height(16.dp))
 
-            Button(
+            PetalLiquidButton(
                 onClick = onOpenStore,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (isGlass) Modifier.liquidGlassChrome(btnShape, enabled = true, sheenIntensity = 0.5f, tintColor = MaterialTheme.colorScheme.primaryContainer) else Modifier),
+                variant = PetalButtonVariant.Filled,
                 shape = btnShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary
-                )
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Rounded.Storefront, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -970,20 +972,15 @@ private fun AddExtensionSheet(
             }
 
             Spacer(Modifier.height(8.dp))
-            OutlinedButton(
+            PetalLiquidButton(
                 onClick = {
                     onDismiss()
                     onRequestFileImport()
                 },
                 enabled = !busy,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (isGlass) Modifier.liquidGlassChrome(btnShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+                variant = PetalButtonVariant.Outlined,
                 shape = btnShape,
-                border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = if (isGlass) petalGroupSurfaceColor() else Color.Transparent
-                )
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -992,19 +989,15 @@ private fun AddExtensionSheet(
 
             Spacer(Modifier.height(8.dp))
             var showCustomCollectionDialog by remember { mutableStateOf(false) }
-            FilledTonalButton(
+            PetalLiquidButton(
                 onClick = { showCustomCollectionDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (isGlass) Modifier.liquidGlassChrome(btnShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
+                variant = PetalButtonVariant.Tonal,
                 shape = btnShape,
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.secondaryContainer
-                )
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Rounded.CollectionsBookmark, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Custom AMO Collection")
+                Text("Custom AMO Add-on Collection")
             }
 
             if (showCustomCollectionDialog) {
@@ -1016,7 +1009,7 @@ private fun AddExtensionSheet(
                 var collectionError by remember { mutableStateOf<String?>(null) }
                 var fetchedAddons by remember { mutableStateOf<List<PetalExtensionManager.CatalogEntry>?>(null) }
 
-                AlertDialog(
+                com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                     onDismissRequest = { showCustomCollectionDialog = false },
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1250,11 +1243,12 @@ private fun ExtensionDetailSheet(
             }
             if (extension.enabled && extension.supportsPopup) {
                 Spacer(Modifier.height(16.dp))
-                FilledTonalButton(
+                PetalLiquidButton(
                     onClick = {
                         onDismiss()
                         onOpenPopup()
                     },
+                    variant = PetalButtonVariant.Tonal,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -1273,11 +1267,11 @@ private fun ExtensionDetailSheet(
                 DetailLinkRow(icon = Icons.Rounded.Settings, title = stringResource(R.string.ui_extension_settings_2), url = url, onOpenLink = onOpenLink)
             }
             Spacer(Modifier.height(16.dp))
-            OutlinedButton(
+            PetalLiquidButton(
                 onClick = onUninstall,
+                variant = PetalButtonVariant.Destructive,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -1296,7 +1290,7 @@ private fun DetailRow(icon: ImageVector, title: String, checked: Boolean, onChec
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(title, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        IconSwitch(checked = checked, icon = Icons.Rounded.Check, onCheckedChange = onCheckedChange)
     }
 }
 

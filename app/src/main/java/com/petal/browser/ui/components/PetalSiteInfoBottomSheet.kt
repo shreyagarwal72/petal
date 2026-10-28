@@ -31,6 +31,7 @@ import com.petal.browser.unit.HelperUnit
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.view.PetalGeckoView
 import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.components.IconSwitch
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -344,8 +345,9 @@ fun PetalSiteInfoBottomSheet(
                             )
                         }
 
-                        Switch(
+                        IconSwitch(
                             checked = trackingProtectionEnabled,
+                            icon = Icons.Rounded.Check,
                             onCheckedChange = { enabled ->
                                 trackingProtectionEnabled = enabled
                                 if (enabled) {

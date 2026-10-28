@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.PetalSlider
+import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.containment.liquidGlassChrome
 import kotlinx.coroutines.launch
 
@@ -65,10 +67,8 @@ fun PetalSubtitleConfigSheet(
         }
     }
 
-    ModalBottomSheet(
+    PetalSheet(
         onDismissRequest = onDismissRequest,
-        containerColor = if (isLiquidGlass) Color(0xFF14141E).copy(alpha = 0.92f) else MaterialTheme.colorScheme.surfaceContainerHigh,
-        dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier
     ) {
         Column(
@@ -175,7 +175,7 @@ fun PetalSubtitleConfigSheet(
                     )
                 }
 
-                Slider(
+                PetalSlider(
                     value = subtitleDelayMs.toFloat(),
                     onValueChange = { onSubtitleDelayChange(it.toLong()) },
                     valueRange = -10000f..10000f,
@@ -205,7 +205,7 @@ fun PetalSubtitleConfigSheet(
                     )
                 }
 
-                Slider(
+                PetalSlider(
                     value = subtitleFontSizeSp,
                     onValueChange = { onSubtitleFontSizeChange(it) },
                     valueRange = 14f..32f,

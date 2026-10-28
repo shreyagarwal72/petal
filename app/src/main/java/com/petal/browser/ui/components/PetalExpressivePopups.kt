@@ -126,8 +126,9 @@ fun PetalExpressiveAlertDialog(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (dismissText != null) {
-                TextButton(
+                PetalLiquidButton(
                     onClick = { (onDismiss ?: onDismissRequest)() },
+                    variant = PetalButtonVariant.Text,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(dismissText)
@@ -135,15 +136,10 @@ fun PetalExpressiveAlertDialog(
                 Spacer(Modifier.width(8.dp))
             }
 
-            Button(
+            PetalLiquidButton(
                 onClick = onConfirm,
-                modifier = Modifier.heightIn(min = 48.dp),
-                colors = if (destructive) {
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    )
-                } else ButtonDefaults.buttonColors()
+                variant = if (destructive) PetalButtonVariant.Destructive else PetalButtonVariant.Filled,
+                modifier = Modifier.heightIn(min = 48.dp)
             ) {
                 Text(confirmText, fontWeight = FontWeight.Bold)
             }
@@ -545,7 +541,7 @@ fun PetalExpressiveColorDialog(
         listOf(Triple("R", r, 0), Triple("G", g, 1), Triple("B", b, 2)).forEach { (label, value, idx) ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.width(24.dp))
-                Slider(
+                PetalSlider(
                     value = value,
                     onValueChange = {
                         when (idx) { 0 -> r = it; 1 -> g = it; else -> b = it }

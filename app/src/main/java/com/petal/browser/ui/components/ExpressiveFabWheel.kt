@@ -23,6 +23,9 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 data class FabWheelAction(
     val id: String,
@@ -57,6 +60,9 @@ fun ExpressiveFabWheel(
         label = "FabWheelExpansion"
     )
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val fabShape = if (isExpanded) RoundedCornerShape(20.dp) else CircleShape
+
     Column(
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -71,14 +77,20 @@ fun ExpressiveFabWheel(
                     .padding(bottom = 4.dp)
             ) {
                 actions.forEach { action ->
+                    val actionShape = RoundedCornerShape(20.dp)
                     Surface(
                         onClick = {
                             isExpanded = false
                             action.onClick()
                         },
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        shadowElevation = 6.dp
+                        shape = actionShape,
+                        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shadowElevation = if (isGlass) 0.dp else 6.dp,
+                        tonalElevation = if (isGlass) 0.dp else 2.dp,
+                        modifier = Modifier.then(
+                            if (isGlass) Modifier.liquidGlassChrome(actionShape, enabled = true, sheenIntensity = 0.60f, pressFx = true)
+                            else Modifier
+                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -105,11 +117,24 @@ fun ExpressiveFabWheel(
         // Primary FAB Trigger
         FloatingActionButton(
             onClick = { isExpanded = !isExpanded },
-            shape = if (isExpanded) RoundedCornerShape(20.dp) else CircleShape,
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            shape = fabShape,
+            containerColor = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.50f) else MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
-            modifier = Modifier.size(56.dp)
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = if (isGlass) 0.dp else 8.dp,
+                pressedElevation = if (isGlass) 0.dp else 4.dp
+            ),
+            modifier = Modifier
+                .size(56.dp)
+                .then(
+                    if (isGlass) Modifier.liquidGlassChrome(
+                        fabShape,
+                        enabled = true,
+                        sheenIntensity = 0.75f,
+                        tintColor = MaterialTheme.colorScheme.primaryContainer,
+                        pressFx = true
+                    ) else Modifier
+                )
         ) {
             Icon(
                 imageVector = Icons.Rounded.Add,

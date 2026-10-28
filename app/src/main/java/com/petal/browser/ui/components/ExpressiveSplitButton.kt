@@ -34,6 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 enum class SplitButtonVariant {
     FILLED, TONAL, ELEVATED, OUTLINED
@@ -142,6 +145,10 @@ fun ExpressiveSplitButton(
         label = "SplitButtonMenuScale"
     )
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val effectiveContainer = if (isGlass) petalGroupSurfaceColor() else containerColor
+    val effectiveBorder = if (isGlass || variant != SplitButtonVariant.OUTLINED) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(pillGap),
@@ -152,16 +159,24 @@ fun ExpressiveSplitButton(
         // --- PRIMARY ACTION SURFACE ---
         Surface(
             shape = primaryShape,
-            color = containerColor,
-            tonalElevation = if (variant == SplitButtonVariant.ELEVATED) 4.dp else 0.dp,
-            shadowElevation = if (variant == SplitButtonVariant.ELEVATED) 3.dp else 0.dp,
-            border = if (variant == SplitButtonVariant.OUTLINED) BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
+            color = effectiveContainer,
+            tonalElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 4.dp,
+            shadowElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 3.dp,
+            border = effectiveBorder,
             modifier = Modifier
                 .height(height)
                 .graphicsLayer {
                     scaleX = primaryScale
                     scaleY = primaryScale
                 }
+                .then(
+                    if (isGlass) Modifier.liquidGlassChrome(
+                        shape = primaryShape,
+                        enabled = true,
+                        sheenIntensity = 0.55f,
+                        pressFx = true
+                    ) else Modifier
+                )
                 .clip(primaryShape)
                 .clickable(
                     interactionSource = primaryInteractionSource,
@@ -200,10 +215,10 @@ fun ExpressiveSplitButton(
         // --- CONNECTED MORPHING MENU SURFACE ---
         Surface(
             shape = menuShape,
-            color = containerColor,
-            tonalElevation = if (variant == SplitButtonVariant.ELEVATED) 4.dp else 0.dp,
-            shadowElevation = if (variant == SplitButtonVariant.ELEVATED) 3.dp else 0.dp,
-            border = if (variant == SplitButtonVariant.OUTLINED) BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
+            color = effectiveContainer,
+            tonalElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 4.dp,
+            shadowElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 3.dp,
+            border = effectiveBorder,
             modifier = Modifier
                 .height(height)
                 .width((height.value * 0.88f).dp)
@@ -211,6 +226,14 @@ fun ExpressiveSplitButton(
                     scaleX = menuScale
                     scaleY = menuScale
                 }
+                .then(
+                    if (isGlass) Modifier.liquidGlassChrome(
+                        shape = menuShape,
+                        enabled = true,
+                        sheenIntensity = 0.55f,
+                        pressFx = true
+                    ) else Modifier
+                )
                 .clip(menuShape)
                 .clickable(
                     interactionSource = menuInteractionSource,

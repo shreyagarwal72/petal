@@ -986,8 +986,9 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                         Text(stringResource(R.string.ui_amoled_pure_black), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
                         Text(stringResource(R.string.ui_deep_oled_pitch_black_background), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Switch(
+                    IconSwitch(
                         checked = isAmoled,
+                        icon = Icons.Rounded.Check,
                         onCheckedChange = { checked ->
                             isAmoled = checked
                             sp.edit().putBoolean("sp_amoled", checked).apply()
@@ -1371,8 +1372,9 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
                     Text(stringResource(R.string.ui_enable_petal_shield), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
                     Text(stringResource(R.string.ui_block_ads_trackers_popups_across), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Switch(
+                IconSwitch(
                     checked = isAdBlockEnabled,
+                    icon = Icons.Rounded.Check,
                     onCheckedChange = { checked ->
                         isAdBlockEnabled = checked
                         sp.edit().putBoolean("sp_ad_block", checked).apply()

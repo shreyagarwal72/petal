@@ -33,6 +33,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import com.petal.browser.ui.containment.PetalSheet
+import com.petal.browser.ui.containment.PetalMaterialAlertDialog
+import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.ui.components.PetalButtonVariant
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
@@ -401,7 +405,7 @@ fun PetalBadgesSheet(onDismiss: () -> Unit) {
     val ctx = LocalContext.current
     val cs = MaterialTheme.colorScheme
     var focus by remember { mutableStateOf(PETAL_BADGES.first()) }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = cs.surfaceContainerLow) {
+    PetalSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
             val got = PETAL_BADGES.count { PetalProgressStore.isBadgeUnlocked(it.id) }
             Text("Badges  $got/${PETAL_BADGES.size}", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
@@ -415,7 +419,10 @@ fun PetalBadgesSheet(onDismiss: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     if (unlocked) {
                         val pinned = focus.id in PetalProgressStore.showcase
-                        FilledTonalButton(onClick = { PetalProgressStore.toggleShowcase(ctx, focus.id) }) {
+                        PetalLiquidButton(
+                            onClick = { PetalProgressStore.toggleShowcase(ctx, focus.id) },
+                            variant = PetalButtonVariant.Tonal
+                        ) {
                             Text(if (pinned) "Unpin from card" else "Pin to card (max 3)")
                         }
                     } else {
@@ -450,12 +457,19 @@ fun PetalBadgeUnlockHost() {
     if (fresh.isEmpty()) return
     val badges = PETAL_BADGES.filter { it.id in fresh }
     if (badges.isEmpty()) { PetalProgressStore.consumeNewBadges(); return }
-    AlertDialog(
+    PetalMaterialAlertDialog(
         onDismissRequest = { PetalProgressStore.consumeNewBadges() },
         icon = { Icon(badgeIcon(badges.first().id), null, tint = MaterialTheme.colorScheme.primary) },
         title = { Text(if (badges.size == 1) "Badge unlocked" else "${badges.size} badges unlocked") },
         text = { Text(badges.joinToString("\n") { "${it.title}: ${it.hint}" }) },
-        confirmButton = { TextButton(onClick = { PetalProgressStore.consumeNewBadges() }) { Text("Nice") } }
+        confirmButton = {
+            PetalLiquidButton(
+                onClick = { PetalProgressStore.consumeNewBadges() },
+                variant = PetalButtonVariant.Filled
+            ) {
+                Text("Nice")
+            }
+        }
     )
 }
 

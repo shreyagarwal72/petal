@@ -35,6 +35,7 @@ import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
+import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.*
@@ -898,7 +899,7 @@ private fun PasswordEditSheet(
 
                     if (selectedPreset == PetalPasswordGenerator.Preset.CUSTOM) {
                         Text("Length: ${customLength.toInt()} characters", style = MaterialTheme.typography.bodySmall)
-                        Slider(
+                        PetalSlider(
                             value = customLength,
                             onValueChange = { customLength = it },
                             valueRange = 8f..32f,
@@ -910,7 +911,7 @@ private fun PasswordEditSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Include Special Symbols", style = MaterialTheme.typography.bodySmall)
-                            Switch(checked = includeSymbols, onCheckedChange = { includeSymbols = it })
+                            IconSwitch(checked = includeSymbols, icon = Icons.Rounded.Check, onCheckedChange = { includeSymbols = it })
                         }
                     }
                 }

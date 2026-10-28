@@ -291,7 +291,7 @@ fun PetalVideoPlayerOverlay(
                     .padding(top = topClearance + 20.dp)
                     .clip(boostShape)
                     .then(
-                        if (isLiquidGlass) Modifier.liquidGlassChrome(boostShape, enabled = true, sheenIntensity = 0.9f)
+                        if (isLiquidGlass) Modifier.liquidGlassChrome(boostShape, enabled = true, sheenIntensity = 0.9f, pressFx = true)
                         else Modifier.border(1.dp, Color.White.copy(alpha = 0.25f), boostShape)
                     )
             ) {
@@ -605,7 +605,7 @@ fun PetalVideoPlayerOverlay(
                                         if (isLiquidGlass) {
                                             Modifier
                                                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.85f), pillShape)
-                                                .liquidGlassChrome(pillShape, enabled = true, sheenIntensity = 0.9f)
+                                                .liquidGlassChrome(pillShape, enabled = true, sheenIntensity = 0.9f, pressFx = true)
                                         } else {
                                             Modifier.background(MaterialTheme.colorScheme.primary, pillShape)
                                         }
@@ -647,7 +647,7 @@ fun PetalVideoPlayerOverlay(
                     val sideBtnModifier = if (isLiquidGlass) {
                         Modifier
                             .background(Color.Black.copy(alpha = 0.5f), sideBtnShape)
-                            .liquidGlassChrome(sideBtnShape, enabled = true, sheenIntensity = 0.8f)
+                            .liquidGlassChrome(sideBtnShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
                     } else {
                         Modifier
                             .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f), sideBtnShape)
@@ -676,7 +676,7 @@ fun PetalVideoPlayerOverlay(
                     val playBtnModifier = if (isLiquidGlass) {
                         Modifier
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.9f), playBtnShape)
-                            .liquidGlassChrome(playBtnShape, enabled = true, sheenIntensity = 1.0f)
+                            .liquidGlassChrome(playBtnShape, enabled = true, sheenIntensity = 1.0f, pressFx = true)
                     } else {
                         Modifier.background(MaterialTheme.colorScheme.primary, playBtnShape)
                     }

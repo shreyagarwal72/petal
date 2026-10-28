@@ -670,7 +670,7 @@ fun PetalOmniboxPage(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 4.dp)
-                                    .liquidGlassChrome(shape = qaShape, enabled = isGlass, sheenIntensity = sheen)
+                                    .liquidGlassChrome(shape = qaShape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -829,7 +829,7 @@ fun PetalOmniboxPage(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 12.dp, vertical = 6.dp)
-                                        .liquidGlassChrome(shape = pasteShape, enabled = isGlass, sheenIntensity = sheen)
+                                        .liquidGlassChrome(shape = pasteShape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -933,7 +933,7 @@ fun PetalOmniboxPage(
                                             tonalElevation = if (isGlass) 0.dp else 1.dp,
                                             modifier = Modifier
                                                 .width(92.dp)
-                                                .liquidGlassChrome(shape = shortcutShape, enabled = isGlass, sheenIntensity = sheen)
+                                                .liquidGlassChrome(shape = shortcutShape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
                                         ) {
                                             Column(
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),

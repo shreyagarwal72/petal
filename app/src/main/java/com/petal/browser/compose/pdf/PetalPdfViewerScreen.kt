@@ -101,6 +101,8 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.ui.components.PetalButtonVariant
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.glass.captureGlassWallpaperLive
@@ -768,8 +770,9 @@ private fun PetalPdfViewerScreenImpl(
                                     color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                                 )
                                 Spacer(Modifier.height(18.dp))
-                                FilledTonalButton(
+                                PetalLiquidButton(
                                     onClick = onBackPress,
+                                    variant = PetalButtonVariant.Tonal,
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Text(stringResource(R.string.ui_go_back))
@@ -1297,7 +1300,7 @@ private fun PetalPdfViewerScreenImpl(
                 )
             },
             confirmButton = {
-                Button(
+                PetalLiquidButton(
                     onClick = {
                         if (noteInput.isNotBlank()) {
                             recordUndoSnapshot(pendingNotePage)
@@ -1313,13 +1316,18 @@ private fun PetalPdfViewerScreenImpl(
                         }
                         showAddNoteDialog = false
                     },
+                    variant = PetalButtonVariant.Filled,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(stringResource(R.string.ui_add_note))
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showAddNoteDialog = false }, shape = RoundedCornerShape(12.dp)) {
+                PetalLiquidButton(
+                    onClick = { showAddNoteDialog = false },
+                    variant = PetalButtonVariant.Outlined,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
                     Text(stringResource(R.string.ui_cancel))
                 }
             }
@@ -1390,7 +1398,7 @@ private fun PetalPdfViewerScreenImpl(
                 }
             },
             confirmButton = {
-                Button(
+                PetalLiquidButton(
                     onClick = {
                         if (editedText.isNotBlank() && editedText != lineBeingEdited.text) {
                             applyTextLineEdit(lineBeingEdited, editedText)
@@ -1398,6 +1406,7 @@ private fun PetalPdfViewerScreenImpl(
                             selectedTextLine = null
                         }
                     },
+                    variant = PetalButtonVariant.Filled,
                     enabled = !isSavingTextEdit,
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -1409,8 +1418,9 @@ private fun PetalPdfViewerScreenImpl(
                 }
             },
             dismissButton = {
-                OutlinedButton(
+                PetalLiquidButton(
                     onClick = { selectedTextLine = null },
+                    variant = PetalButtonVariant.Outlined,
                     enabled = !isSavingTextEdit,
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -2460,7 +2470,7 @@ private fun PdfJumpToPageDialog(
                 Spacer(Modifier.height(16.dp))
 
                 if (totalPages > 1) {
-                    Slider(
+                    com.petal.browser.ui.components.PetalSlider(
                         value = targetPage.toFloat(),
                         onValueChange = {
                             val p = it.toInt().coerceIn(1, totalPages)
@@ -2496,18 +2506,23 @@ private fun PdfJumpToPageDialog(
             }
         },
         confirmButton = {
-            Button(
+            PetalLiquidButton(
                 onClick = {
                     val parsed = textInput.toIntOrNull() ?: targetPage
                     onJump(parsed.coerceIn(1, totalPages))
                 },
+                variant = PetalButtonVariant.Filled,
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(stringResource(R.string.ui_jump))
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss, shape = RoundedCornerShape(12.dp)) {
+            PetalLiquidButton(
+                onClick = onDismiss,
+                variant = PetalButtonVariant.Outlined,
+                shape = RoundedCornerShape(12.dp)
+            ) {
                 Text(stringResource(R.string.ui_cancel))
             }
         }

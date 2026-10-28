@@ -26,7 +26,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.PetalButtonVariant
+import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.ui.components.PetalLiquidIconButton
 import com.petal.browser.ui.containment.PetalContainmentShapes
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import java.util.Locale
 
 /**
@@ -168,15 +174,18 @@ fun PetalFloatingTtsPlayerBar(
     val context = LocalContext.current
     var showSpeedMenu by remember { mutableStateOf(false) }
     val speedOptions = listOf(0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val heroShape = PetalContainmentShapes.Hero
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        shape = PetalContainmentShapes.Hero,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 6.dp,
-        shadowElevation = 8.dp
+            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .then(if (isGlass) Modifier.liquidGlassChrome(heroShape, enabled = true, sheenIntensity = 0.65f) else Modifier),
+        shape = heroShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = if (isGlass) 0.dp else 6.dp,
+        shadowElevation = if (isGlass) 0.dp else 8.dp
     ) {
         Row(
             modifier = Modifier
@@ -187,8 +196,9 @@ fun PetalFloatingTtsPlayerBar(
         ) {
             // Speed indicator button
             Box {
-                FilledTonalButton(
+                PetalLiquidButton(
                     onClick = { showSpeedMenu = true },
+                    variant = PetalButtonVariant.Tonal,
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                     modifier = Modifier.height(36.dp)
@@ -224,51 +234,55 @@ fun PetalFloatingTtsPlayerBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                IconButton(
+                PetalLiquidIconButton(
                     onClick = {
                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                         engine.skipPrevious()
-                    }
+                    },
+                    size = 40.dp,
+                    contentDescription = "Previous sentence"
                 ) {
-                    Icon(Icons.Rounded.Replay10, contentDescription = "Previous sentence")
+                    Icon(Icons.Rounded.Replay10, contentDescription = null)
                 }
 
-                FilledIconButton(
+                PetalLiquidIconButton(
                     onClick = {
                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
                         if (engine.isSpeaking) engine.pause() else engine.play()
                     },
-                    modifier = Modifier.size(48.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
+                    size = 48.dp,
+                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = if (engine.isSpeaking) "Pause" else "Play"
                 ) {
                     Icon(
                         imageVector = if (engine.isSpeaking) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = if (engine.isSpeaking) "Pause" else "Play",
+                        contentDescription = null,
                         modifier = Modifier.size(28.dp)
                     )
                 }
 
-                IconButton(
+                PetalLiquidIconButton(
                     onClick = {
                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                         engine.skipNext()
-                    }
+                    },
+                    size = 40.dp,
+                    contentDescription = "Next sentence"
                 ) {
-                    Icon(Icons.Rounded.Forward10, contentDescription = "Next sentence")
+                    Icon(Icons.Rounded.Forward10, contentDescription = null)
                 }
             }
 
             // Close button
-            IconButton(
+            PetalLiquidIconButton(
                 onClick = {
                     engine.stop()
                     onClose()
-                }
+                },
+                size = 36.dp,
+                contentDescription = "Close player"
             ) {
-                Icon(Icons.Rounded.Close, contentDescription = "Close player")
+                Icon(Icons.Rounded.Close, contentDescription = null)
             }
         }
     }

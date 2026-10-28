@@ -22,6 +22,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.compose.tabs.PetalInactiveTabManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
+import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalSettingsSection
 import androidx.compose.ui.res.stringResource
@@ -148,7 +149,7 @@ fun InactiveSettingsScreen(
                                         )
                                     }
                                 }
-                                Slider(
+                                PetalSlider(
                                     value = customDays.toFloat(),
                                     onValueChange = { v ->
                                         customDays = v.toInt().coerceIn(1, 365)

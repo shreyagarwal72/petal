@@ -27,6 +27,9 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.PetalButtonVariant
+import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 object PetalPlayUpdatePopupBridge {
@@ -87,18 +90,13 @@ object PetalPlayUpdatePopupBridge {
                         ) {
                             var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
-                                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                                ModalBottomSheet(
+                                PetalSheet(
                                     onDismissRequest = {
                                         showSheet = false
                                         val parent = composeView?.parent as? ViewGroup
                                         parent?.removeView(composeView)
                                         onDismiss()
-                                    },
-                                    sheetState = sheetState,
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                                    dragHandle = { BottomSheetDefaults.DragHandle() }
+                                    }
                                 ) {
                                     PetalPlayUpdatePopupContent(
                                         isDownloaded = isDownloaded,
@@ -270,11 +268,9 @@ fun PetalPlayUpdatePopupContent(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 if (isDownloaded) {
-                    Button(
-                        onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
-                            onRestartNow()
-                        },
+                    PetalLiquidButton(
+                        onClick = onRestartNow,
+                        variant = PetalButtonVariant.Filled,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
@@ -288,11 +284,9 @@ fun PetalPlayUpdatePopupContent(
                         )
                     }
 
-                    OutlinedButton(
-                        onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                            onDismiss()
-                        },
+                    PetalLiquidButton(
+                        onClick = onDismiss,
+                        variant = PetalButtonVariant.Outlined,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
@@ -301,11 +295,9 @@ fun PetalPlayUpdatePopupContent(
                         Text("Later")
                     }
                 } else {
-                    Button(
-                        onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
-                            onUpdateNow()
-                        },
+                    PetalLiquidButton(
+                        onClick = onUpdateNow,
+                        variant = PetalButtonVariant.Filled,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
@@ -319,11 +311,9 @@ fun PetalPlayUpdatePopupContent(
                         )
                     }
 
-                    OutlinedButton(
-                        onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                            onDismiss()
-                        },
+                    PetalLiquidButton(
+                        onClick = onDismiss,
+                        variant = PetalButtonVariant.Outlined,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
