@@ -367,31 +367,6 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                     .background(Color.Black.copy(alpha = 0.45f))
             )
 
-            // Grid lines overlay to help launcher cell snapping
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val strokeColor = Color.White.copy(alpha = 0.08f)
-                val cols = 4
-                val rows = 6
-                val stepX = size.width / cols
-                val stepY = size.height / rows
-                for (i in 1 until cols) {
-                    drawLine(
-                        color = strokeColor,
-                        start = androidx.compose.ui.geometry.Offset(i * stepX, 0f),
-                        end = androidx.compose.ui.geometry.Offset(i * stepX, size.height),
-                        strokeWidth = 1f
-                    )
-                }
-                for (j in 1 until rows) {
-                    drawLine(
-                        color = strokeColor,
-                        start = androidx.compose.ui.geometry.Offset(0f, j * stepY),
-                        end = androidx.compose.ui.geometry.Offset(size.width, j * stepY),
-                        strokeWidth = 1f
-                    )
-                }
-            }
-
             // Draggable widget alignment frame
             val frameLeft = offsetX.roundToInt().coerceIn(0, max(0, screenSize.width - frameWidthPx.roundToInt()))
             val frameTop = offsetY.roundToInt().coerceIn(0, max(0, screenSize.height - frameHeightPx.roundToInt()))

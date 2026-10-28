@@ -307,16 +307,16 @@ private fun PetalGlassWidgetCard(
                 Row(
                     modifier = GlanceModifier
                         .cornerRadius(12.dp)
-                        .background(ColorProvider(Color(0xD910121A), Color(0xD910121A)))
+                        .background(ColorProvider(Color(0xD910121A)))
                         .clickable(alignAction)
                         .padding(horizontal = 7.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.Vertical.CenterVertically
                 ) {
                     Image(
-                        provider = ImageProvider(R.drawable.widget_ic_lens),
+                        provider = ImageProvider(R.drawable.widget_ic_lens_camera),
                         contentDescription = context.getString(R.string.widget_glass_align_badge),
                         modifier = GlanceModifier.size(11.dp),
-                        colorFilter = ColorFilter.tint(ColorProvider(Color.White, Color.White))
+                        colorFilter = ColorFilter.tint(ColorProvider(Color.White))
                     )
                     Spacer(modifier = GlanceModifier.width(3.dp))
                     Text(
@@ -324,7 +324,7 @@ private fun PetalGlassWidgetCard(
                         style = TextStyle(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Medium,
-                            color = ColorProvider(Color.White, Color.White)
+                            color = ColorProvider(Color.White)
                         )
                     )
                 }
@@ -579,7 +579,7 @@ private fun Petal1Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                         .height(48.dp)
                         .cornerRadius(24.dp)
                         .background(
-                            if (isLiquidGlass) ColorProvider(Color(0x33FFFFFF), Color(0x28000000))
+                            if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x28000000) else Color(0x33FFFFFF))
                             else surfaceContainerHighProvider(scheme)
                         )
                         .padding(horizontal = 6.dp),
@@ -863,7 +863,7 @@ private fun Petal2Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                     .defaultWeight()
                     .cornerRadius(22.dp)
                     .background(
-                        if (isLiquidGlass) ColorProvider(Color(0x33FFFFFF), Color(0x28000000))
+                        if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x28000000) else Color(0x33FFFFFF))
                         else surfaceContainerHighProvider(scheme)
                     )
                     .clickable(searchAction)
@@ -1055,7 +1055,7 @@ private fun Petal3Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                     .size(40.dp)
                     .cornerRadius(20.dp)
                     .background(
-                        if (isLiquidGlass) ColorProvider(Color(0x33FFFFFF), Color(0x28000000))
+                        if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x28000000) else Color(0x33FFFFFF))
                         else GlanceTheme.colors.primaryContainer
                     )
                     .clickable(aiAction),
