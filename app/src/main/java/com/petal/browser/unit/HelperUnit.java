@@ -833,7 +833,7 @@ public class HelperUnit {
             textView.setEllipsize(TextUtils.TruncateAt.END);
             textView.setTextColor(textColor);
             textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
-            textView.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            textView.setTypeface(com.petal.browser.ui.theme.PetalFontHelper.INSTANCE.getAppTypeface(context));
             textView.setGravity(Gravity.CENTER_VERTICAL);
         }
 
@@ -846,7 +846,7 @@ public class HelperUnit {
             }
             int actionColor = primaryInverse.data != 0 ? primaryInverse.data : Color.parseColor("#FFB1C8");
             actionView.setTextColor(actionColor);
-            actionView.setTypeface(Typeface.DEFAULT_BOLD);
+            actionView.setTypeface(Typeface.create(com.petal.browser.ui.theme.PetalFontHelper.INSTANCE.getAppTypeface(context), Typeface.BOLD));
             actionView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
         }
 

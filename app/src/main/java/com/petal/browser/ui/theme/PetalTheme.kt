@@ -84,41 +84,13 @@ fun PetalExpressiveTheme(
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
         sp.getBoolean("sp_expressive_colors", false)
     },
-    appFont: AppFont = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
-        AppFont.fromName(fontName)
-    },
-    customFontPath: String? = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        val path = sp.getString("sp_custom_font_path", null)
-        if (!path.isNullOrBlank() && java.io.File(path).exists()) {
-            path
-        } else {
-            val defaultCustom = LocalContext.current.filesDir.resolve("custom_font.ttf")
-            if (defaultCustom.exists()) defaultCustom.absolutePath else null
-        }
-    },
-    customFontSettings: CustomFontSettings = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        getCustomFontSettings(sp)
-    },
-    fontWidth: Float = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_font_width", 92f)
-    },
-    fontWeight: Int = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        com.petal.browser.unit.HelperUnit.getSafeInt(sp, "sp_font_weight", 750)
-    },
-    fontRoundness: Float = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_font_roundness", 100f)
-    },
-    gsFlexSettings: GSFlexSettings = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        loadGSFlexSettings(sp)
-    },
+    appFont: AppFont? = null,
+    customFontPath: String? = null,
+    customFontSettings: CustomFontSettings? = null,
+    fontWidth: Float = 92f,
+    fontWeight: Int = 750,
+    fontRoundness: Float = 100f,
+    gsFlexSettings: GSFlexSettings? = null,
     colorStyle: ColorStyle = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -209,9 +181,14 @@ fun PetalExpressiveTheme(
 
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     var glassRevision by remember(sp) { androidx.compose.runtime.mutableIntStateOf(0) }
+    var fontRevision by remember(sp) { androidx.compose.runtime.mutableIntStateOf(0) }
     androidx.compose.runtime.DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == null || key.startsWith("sp_liquid_glass_") || key == "sp_stride_glass_nav") glassRevision++
+            if (key == null || key.startsWith("sp_liquid_glass_") || key == "sp_stride_glass_nav") {
+                glassRevision++
+            } else if (key == "sp_app_font" || key.startsWith("sp_gs_") || key.startsWith("sp_font_") || key.startsWith("sp_custom_")) {
+                fontRevision++
+            }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
@@ -239,6 +216,65 @@ fun PetalExpressiveTheme(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(hapticListener) }
     }
 
+    val effectiveAppFont = remember(fontRevision, appFont) {
+        if (fontRevision > 0 || appFont == null) {
+            val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+            AppFont.fromName(fontName)
+        } else {
+            appFont
+        }
+    }
+
+    val effectiveGsFlexSettings = remember(fontRevision, gsFlexSettings) {
+        if (fontRevision > 0 || gsFlexSettings == null) {
+            loadGSFlexSettings(sp)
+        } else {
+            gsFlexSettings
+        }
+    }
+
+    val effectiveCustomFontPath = remember(fontRevision, customFontPath) {
+        if (fontRevision > 0 || customFontPath == null) {
+            val path = sp.getString("sp_custom_font_path", null)
+            if (!path.isNullOrBlank() && java.io.File(path).exists()) {
+                path
+            } else {
+                val defaultCustom = context.filesDir.resolve("custom_font.ttf")
+                if (defaultCustom.exists()) defaultCustom.absolutePath else null
+            }
+        } else {
+            customFontPath
+        }
+    }
+
+    val effectiveCustomFontSettings = remember(fontRevision, customFontSettings) {
+        if (fontRevision > 0 || customFontSettings == null) {
+            getCustomFontSettings(sp)
+        } else {
+            customFontSettings
+        }
+    }
+
+    val effectiveTypography = remember(
+        effectiveAppFont,
+        fontWidth,
+        fontWeight,
+        fontRoundness,
+        effectiveGsFlexSettings,
+        effectiveCustomFontPath,
+        effectiveCustomFontSettings
+    ) {
+        petalTypography(
+            appFont = effectiveAppFont,
+            fontWidth = fontWidth,
+            fontWeight = fontWeight,
+            fontRoundness = fontRoundness,
+            gsFlexSettings = effectiveGsFlexSettings,
+            customFontPath = effectiveCustomFontPath,
+            customFontSettings = effectiveCustomFontSettings
+        )
+    }
+
     val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
     CompositionLocalProvider(
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper,
@@ -252,7 +288,7 @@ fun PetalExpressiveTheme(
         androidx.compose.material3.MaterialExpressiveTheme(
             colorScheme = colorScheme,
             motionScheme = if (reduceMotion) com.petal.browser.ui.components.PetalInstantMotionScheme else androidx.compose.material3.MotionScheme.expressive(),
-            typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexSettings, customFontPath, customFontSettings),
+            typography = effectiveTypography,
             content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
         )
     }

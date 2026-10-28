@@ -39,6 +39,10 @@ class PetalApplication : Application() {
     }
 
     private val widgetThemePrefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key != null && (key.startsWith("sp_gs_") || key == "sp_gs_flex_preset" || key.startsWith("sp_custom_font"))) {
+            PetalSearchWidgetProvider.updateAllWidgets(this@PetalApplication)
+            return@OnSharedPreferenceChangeListener
+        }
         when (key) {
             "sp_theme_config",
             "sp_palette_id",

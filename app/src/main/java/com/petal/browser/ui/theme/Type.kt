@@ -50,6 +50,27 @@ object PetalFontHelper {
         }
     }
 
+    fun getAppTypeface(context: android.content.Context): android.graphics.Typeface {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        val appFont = AppFont.fromName(sp.getString("sp_app_font", "PETAL"))
+        if (appFont == AppFont.CUSTOM) {
+            val path = sp.getString("sp_custom_font_path", null)
+            val defaultCustom = context.filesDir.resolve("custom_font.ttf")
+            val file = if (!path.isNullOrBlank() && java.io.File(path).exists()) java.io.File(path) else if (defaultCustom.exists()) defaultCustom else null
+            if (file != null && file.canRead()) {
+                try {
+                    return android.graphics.Typeface.createFromFile(file)
+                } catch (_: Exception) {}
+            }
+        }
+        return try {
+            androidx.core.content.res.ResourcesCompat.getFont(context, R.font.google_sans_flex_variable)
+                ?: android.graphics.Typeface.DEFAULT
+        } catch (_: Exception) {
+            android.graphics.Typeface.DEFAULT
+        }
+    }
+
     private fun getFileName(context: android.content.Context, uri: android.net.Uri): String? {
         var name: String? = null
         if (uri.scheme == "content") {
@@ -174,21 +195,21 @@ private data class Tiers(
 )
 
 private fun buildTypography(t: Tiers): Typography = Typography(
-    displayLarge = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Bold, fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
-    displayMedium = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Bold, fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp),
-    displaySmall = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Bold, fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
-    headlineLarge = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.Bold, fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
-    headlineMedium = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp),
-    headlineSmall = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp),
+    displayLarge = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
+    displayMedium = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp),
+    displaySmall = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
+    headlineLarge = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
+    headlineMedium = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp),
+    headlineSmall = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp),
     titleLarge = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp),
     titleMedium = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
     titleSmall = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-    bodyLarge = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.2.sp),
-    bodyMedium = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.15.sp),
-    bodySmall = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.2.sp),
+    bodyLarge = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.5.sp),
+    bodyMedium = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.25.sp),
+    bodySmall = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
     labelLarge = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-    labelMedium = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.2.sp),
-    labelSmall = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.2.sp)
+    labelMedium = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp),
+    labelSmall = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp)
 )
 
 @OptIn(ExperimentalTextApi::class)
@@ -374,18 +395,15 @@ fun createGsFlexTypography(settings: GSFlexSettings): Typography {
 
     val displayFont = FontFamily(Font(
         resId = R.font.google_sans_flex_variable,
-        variationSettings = axes.first.toVariationSettings(),
-        weight = FontWeight(axes.first.weight.toInt().coerceIn(1, 1000))
+        variationSettings = axes.first.toVariationSettings()
     ))
     val headlineFont = FontFamily(Font(
         resId = R.font.google_sans_flex_variable,
-        variationSettings = axes.second.toVariationSettings(),
-        weight = FontWeight(axes.second.weight.toInt().coerceIn(1, 1000))
+        variationSettings = axes.second.toVariationSettings()
     ))
     val bodyFont = FontFamily(Font(
         resId = R.font.google_sans_flex_variable,
-        variationSettings = axes.third.toVariationSettings(),
-        weight = FontWeight(axes.third.weight.toInt().coerceIn(1, 1000))
+        variationSettings = axes.third.toVariationSettings()
     ))
 
     return Typography(
@@ -426,19 +444,31 @@ fun petalTypography(
             val file = if (validPath != null) java.io.File(validPath) else null
 
             if (file != null && file.exists() && file.canRead()) {
-                val customFont = try {
-                    FontFamily(Font(file))
+                val displayFont = try {
+                    FontFamily(Font(file, variationSettings = customFontSettings.display.toVariationSettings()))
                 } catch (_: Throwable) {
-                    try { FontFamily(android.graphics.Typeface.createFromFile(file)) } catch (_: Throwable) { null }
+                    try { FontFamily(Font(file)) } catch (_: Throwable) {
+                        try { FontFamily(android.graphics.Typeface.createFromFile(file)) } catch (_: Throwable) { null }
+                    }
+                }
+                val headlineFont = try {
+                    FontFamily(Font(file, variationSettings = customFontSettings.headline.toVariationSettings()))
+                } catch (_: Throwable) {
+                    displayFont
+                }
+                val bodyFont = try {
+                    FontFamily(Font(file, variationSettings = customFontSettings.body.toVariationSettings()))
+                } catch (_: Throwable) {
+                    displayFont
                 }
 
-                if (customFont != null) {
-                    buildTypography(Tiers(customFont, customFont, customFont, customFont, customFont))
+                if (displayFont != null && headlineFont != null && bodyFont != null) {
+                    buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
                 } else {
-                    petalTypography(AppFont.PETAL, fontWidth, fontWeight, fontRoundness, gsFlexSettings)
+                    createGsFlexTypography(gsFlexSettings)
                 }
             } else {
-                petalTypography(AppFont.PETAL, fontWidth, fontWeight, fontRoundness, gsFlexSettings)
+                createGsFlexTypography(gsFlexSettings)
             }
         }
     }

@@ -182,24 +182,7 @@ private fun surfaceContainerHighestProvider(scheme: androidx.compose.material3.C
     ColorProvider(scheme.surfaceContainerHighest)
 
 private fun getWidgetTypeface(context: Context): Typeface {
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val appFont = AppFont.fromName(sp.getString("sp_app_font", "PETAL"))
-    if (appFont == AppFont.CUSTOM) {
-        val path = sp.getString("sp_custom_font_path", null)
-        if (!path.isNullOrBlank()) {
-            val file = java.io.File(path)
-            if (file.exists() && file.canRead()) {
-                try {
-                    return Typeface.createFromFile(file)
-                } catch (_: Exception) {}
-            }
-        }
-    }
-    return try {
-        ResourcesCompat.getFont(context, R.font.google_sans_flex_variable) ?: Typeface.DEFAULT_BOLD
-    } catch (_: Exception) {
-        Typeface.DEFAULT_BOLD
-    }
+    return com.petal.browser.ui.theme.PetalFontHelper.getAppTypeface(context)
 }
 
 private fun widgetActionIntent(context: Context, action: String): Intent =
