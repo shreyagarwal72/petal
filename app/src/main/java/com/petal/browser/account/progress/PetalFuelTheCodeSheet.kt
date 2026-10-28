@@ -284,14 +284,30 @@ fun PetalFuelTheCodeSheet(
                         ) {
                             Icon(Icons.Rounded.VolunteerActivism, null, Modifier.size(48.dp), tint = cs.primary)
                         }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Fuel the Code",
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                                textAlign = TextAlign.Center,
+                                color = cs.onSurface
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = cs.tertiaryContainer
+                            ) {
+                                Text(
+                                    text = "BETA",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = cs.onTertiaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                         Text(
-                            text = "The Developer's Quest",
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
-                            textAlign = TextAlign.Center,
-                            color = cs.onSurface
-                        )
-                        Text(
-                            text = "Petal Browser is built as an independent open-source web browser. No telemetry trackers, no corporate paywalls. By watching a short sponsor ad, you directly fuel development and server uptime.",
+                            text = "Code name: Beta (Work in Progress). Petal Browser is built as an independent open-source web browser. Voluntary ad viewing directly supports development, and all browser features remain 100% unlocked for everyone.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             color = cs.onSurfaceVariant
@@ -336,7 +352,7 @@ fun PetalFuelTheCodeSheet(
                         ) {
                             Icon(Icons.Rounded.Bolt, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("I'm a Hero · Fuel the Code (+40 XP)", fontWeight = FontWeight.Bold)
+                            Text("I'm a Hero · Fuel the Code (Beta) (+40 XP)", fontWeight = FontWeight.Bold)
                         }
 
                         TextButton(
@@ -409,18 +425,34 @@ fun PetalFuelTheCodeSheet(
                         ) {
                             Icon(Icons.Rounded.LocalFlorist, null, Modifier.size(52.dp), tint = cs.primary)
                         }
-                        Text(
-                            text = "Resting at the Greenhouse",
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
-                            color = cs.onSurface
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Fuel the Code",
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                                color = cs.onSurface
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = cs.tertiaryContainer
+                            ) {
+                                Text(
+                                    text = "BETA",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = cs.onTertiaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                         Surface(
                             shape = CircleShape,
                             color = cs.secondaryContainer,
                             modifier = Modifier.padding(vertical = 2.dp)
                         ) {
                             Text(
-                                text = "Current Rank: ${currentMilestone.rank} · $adsWatched Fueled",
+                                text = "Current Rank: ${currentMilestone.rank} · $adsWatched Fueled (Beta)",
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = cs.onSecondaryContainer

@@ -158,7 +158,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val liquidGlassUnlocked: Flow<Boolean> = preferenceFlow("sp_liquid_glass_unlocked") {
-        sp.getBoolean("sp_liquid_glass_unlocked", false)
+        true
     }
 
     override val liquidGlassEnabled: Flow<Boolean> = preferenceFlow("sp_liquid_glass_enabled") {
@@ -591,9 +591,6 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setLiquidGlassEnabled(enabled: Boolean) {
-        // Locked until the user earns it (watch ads or reach the level). Turning it off is always allowed.
-        if (enabled && !com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
-                application, com.petal.browser.account.progress.PetalUnlockable.LIQUID_GLASS)) return
         sp.edit().putBoolean("sp_liquid_glass_enabled", enabled).apply()
         com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }

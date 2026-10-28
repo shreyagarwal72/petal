@@ -82,11 +82,11 @@ enum class PetalUnlockable(
     /** Preference key that turns the feature on. It is forced off while the feature is locked. */
     val enabledKey: String,
 ) {
-    LIQUID_GLASS("liquid_glass", "Liquid Glass", adsNeeded = 3, levelNeeded = 10, enabledKey = "sp_liquid_glass_enabled"),
+    LIQUID_GLASS("liquid_glass", "Liquid Glass", adsNeeded = 0, levelNeeded = 0, enabledKey = "sp_liquid_glass_enabled"),
 }
 
 /**
- * Botanical & Dev Support Milestones inspired by Orion Store's 'Fuel the Code' approach.
+ * Botanical & Dev Support Milestones inspired by Orion Store's 'Fuel the Code (Beta)' approach.
  * Transforms third-party ad viewing into an indie developer backing journey.
  */
 data class PetalSupporterMilestone(
@@ -108,10 +108,9 @@ val PETAL_SUPPORTER_MILESTONES: List<PetalSupporterMilestone> = listOf(
     PetalSupporterMilestone(
         level = 3,
         rank = "Bloom Supporter",
-        title = "Liquid Glass Awakens",
-        story = "Three sparks of support provided. You've earned the Supporter badge and unlocked Liquid Glass!",
-        badgeId = "supporter",
-        unlockableId = "liquid_glass"
+        title = "Supporter of the Garden",
+        story = "Three sparks of support provided. You've earned the Supporter badge!",
+        badgeId = "supporter"
     ),
     PetalSupporterMilestone(
         level = 8,
@@ -230,12 +229,10 @@ object PetalProgressStore {
      */
     private fun migrateFeatureLocks(ctx: Context) {
         val p = sp(ctx)
-        val first = !p.getBoolean("pp_feat_migrated", false)
         PetalUnlockable.values().forEach { u ->
-            if (first && p.getBoolean(u.enabledKey, false)) persistUnlock(ctx, u)
-            if (!isUnlocked(ctx, u) && p.getBoolean(u.enabledKey, false)) p.edit().putBoolean(u.enabledKey, false).apply()
+            persistUnlock(ctx, u)
         }
-        if (first) p.edit().putBoolean("pp_feat_migrated", true).apply()
+        p.edit().putBoolean("sp_liquid_glass_unlocked", true).apply()
     }
 
     private fun persistUnlock(ctx: Context, u: PetalUnlockable) {
@@ -270,17 +267,12 @@ object PetalProgressStore {
     }
 
     /** Ads watched toward this feature, capped at what it needs (for "1 / 3" labels). */
-    fun unlockProgress(ctx: Context, u: PetalUnlockable): Int = counter(PetalCounter.ADS_WATCHED).toInt().coerceAtMost(u.adsNeeded)
+    fun unlockProgress(ctx: Context, u: PetalUnlockable): Int = 0
 
-    /** The ONE check the rest of the app must use. Persists the unlock the first time a path is met. */
+    /** The ONE check the rest of the app must use. All features are unlocked by default. */
     fun isUnlocked(ctx: Context, u: PetalUnlockable): Boolean {
-        val p = sp(ctx)
-        if (p.getBoolean("pp_unlocked_" + u.id, false)) return true
-        val ads = p.getLong(PetalCounter.ADS_WATCHED.key, 0L)
-        val lvl = PetalXp.level(p.getLong(KEY_XP, 0L))
-        val met = ads >= u.adsNeeded || lvl >= u.levelNeeded
-        if (met) persistUnlock(ctx, u)
-        return met
+        persistUnlock(ctx, u)
+        return true
     }
 
     /** Call only after the SDK confirms the ad was fully watched. */

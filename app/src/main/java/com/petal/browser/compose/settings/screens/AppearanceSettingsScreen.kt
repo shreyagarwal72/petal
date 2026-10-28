@@ -1228,7 +1228,7 @@ fun AppearanceSettingsScreenContent(
                         // Master Toggle
                         com.petal.browser.ui.containment.PetalSettingsToggleRow(
                             title = "Liquid Glass UI",
-                            subtitle = if (liquidGlassEnabled) "Active system-wide across containments, bottom bar & address bar" else if (!liquidGlassUnlocked) "Locked. Watch 3 supportive ads or reach level 10 in Account & Profile" else "Enable liquid glass materials & specular effects",
+                            subtitle = if (liquidGlassEnabled) "Active system-wide across containments, bottom bar & address bar" else "Enable liquid glass materials & specular effects",
                             icon = Icons.Rounded.BlurOn,
                             checked = liquidGlassEnabled,
                             position = if (liquidGlassEnabled) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
