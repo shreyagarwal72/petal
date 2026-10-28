@@ -673,8 +673,9 @@ fun PetalVideoPlayerOverlay(
                         }
                     }
                 }
+            }
 
-                // ── Center Action Controls (Rewind 10s, Big Play/Pause, Fast-Forward 10s) ──
+            // ── Center Action Controls (Rewind 10s, Big Play/Pause, Fast-Forward 10s) ──
                 Row(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalArrangement = Arrangement.spacedBy(36.dp),

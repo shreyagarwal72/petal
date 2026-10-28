@@ -1994,7 +1994,6 @@ private fun PdfViewerTopBar(
                 }
             }
         }
-        }
     }
 }
 
@@ -2204,13 +2203,18 @@ private fun PdfEditTopBar(
                     }
 
                     PetalLiquidButton(
-                        text = stringResource(R.string.ui_save),
                         onClick = onSave,
                         enabled = !isSaving,
                         shape = RoundedCornerShape(16.dp),
-                        variant = PetalButtonVariant.FILLED,
-                        loading = isSaving,
-                    )
+                        variant = PetalButtonVariant.Filled,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        if (isSaving) {
+                            PetalContainedLoadingIndicator(size = 18.dp)
+                        } else {
+                            Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
 
                 // Color Palette Row
