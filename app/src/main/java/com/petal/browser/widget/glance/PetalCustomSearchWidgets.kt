@@ -1,5 +1,6 @@
 package com.petal.browser.widget.glance
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -29,6 +30,7 @@ import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
@@ -215,6 +217,122 @@ private fun GlassOverlay(enabled: Boolean, @androidx.annotation.DrawableRes over
     ) {}
 }
 
+private fun isDarkTheme(context: Context): Boolean {
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
+    return when (themeConfig) {
+        "DARK" -> true
+        "LIGHT" -> false
+        else -> {
+            val flags = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            flags == Configuration.UI_MODE_NIGHT_YES
+        }
+    }
+}
+
+/**
+ * Root card container for Petal widgets with Stride-inspired hardware liquid glass rendering.
+ *
+ * When liquid glass is enabled and a calibrated crop rect exists, renders the hardware-blurred,
+ * tinted, specular-lit wallpaper slice. If not calibrated yet, shows an AlignBadge to launch calibration.
+ */
+@Composable
+private fun PetalGlassWidgetCard(
+    appWidgetId: Int,
+    scheme: androidx.compose.material3.ColorScheme,
+    modifier: GlanceModifier = GlanceModifier,
+    cornerDp: androidx.compose.ui.unit.Dp = 28.dp,
+    fallbackBackground: ColorProvider,
+    content: @Composable () -> Unit
+) {
+    val context = LocalContext.current
+    val size = LocalSize.current
+    val density = context.resources.displayMetrics.density
+
+    val widthPx = (size.width.value * density).toInt()
+    val heightPx = (size.height.value * density).toInt()
+
+    if (widthPx > 0 && heightPx > 0 && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+        PetalGlassWidgets.noteSize(context, appWidgetId, widthPx, heightPx)
+    }
+
+    val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
+    val rect = if (isLiquidGlass && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+        PetalGlassWidgets.getRect(context, appWidgetId)
+    } else {
+        null
+    }
+
+    val isDark = isDarkTheme(context)
+    val glassBitmap = if (isLiquidGlass && rect != null) {
+        val spec = PetalGlassWidgetRenderer.Spec(
+            rect = rect,
+            blurDp = 24f,
+            cornerDp = cornerDp.value,
+            dark = isDark,
+            edge = 1f
+        )
+        PetalGlassWidgetRenderer.render(context, spec)
+    } else {
+        null
+    }
+
+    val rootModifier = if (glassBitmap != null) {
+        modifier
+            .fillMaxSize()
+            .cornerRadius(cornerDp)
+            .background(ImageProvider(glassBitmap))
+    } else {
+        modifier
+            .fillMaxSize()
+            .cornerRadius(cornerDp)
+            .background(fallbackBackground)
+    }
+
+    Box(
+        modifier = rootModifier,
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+
+        if (isLiquidGlass && rect == null && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            val alignIntent = PetalWidgetGlassActivity.intent(context, appWidgetId)
+            val alignAction = actionStartActivity(alignIntent)
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .padding(top = 4.dp, end = 8.dp),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                Row(
+                    modifier = GlanceModifier
+                        .cornerRadius(12.dp)
+                        .background(ColorProvider(Color(0xD910121A), Color(0xD910121A)))
+                        .clickable(alignAction)
+                        .padding(horizontal = 7.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.Vertical.CenterVertically
+                ) {
+                    Image(
+                        provider = ImageProvider(R.drawable.widget_ic_lens),
+                        contentDescription = context.getString(R.string.widget_glass_align_badge),
+                        modifier = GlanceModifier.size(11.dp),
+                        colorFilter = ColorFilter.tint(ColorProvider(Color.White, Color.White))
+                    )
+                    Spacer(modifier = GlanceModifier.width(3.dp))
+                    Text(
+                        text = context.getString(R.string.widget_glass_align_badge),
+                        style = TextStyle(
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ColorProvider(Color.White, Color.White)
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
 /**
  * Generates an anti-aliased bitmap with an expressive radial gradient and bold letter "P".
  * When Liquid Glass is enabled, renders specular reflective rim stroke and translucent gradient.
@@ -393,12 +511,18 @@ class PetalSearchPetal1Widget : GlanceAppWidget() {
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val appWidgetId = try {
+            GlanceAppWidgetManager(context).getAppWidgetId(id)
+        } catch (_: Throwable) {
+            AppWidgetManager.INVALID_APPWIDGET_ID
+        }
+
         provideContent {
             val scheme = getWidgetColorScheme(context)
             GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
                 val size = LocalSize.current
                 val isExpanded = size.height >= 85.dp
-                Petal1Content(scheme = scheme, isExpanded = isExpanded)
+                Petal1Content(appWidgetId = appWidgetId, scheme = scheme, isExpanded = isExpanded)
             }
         }
     }
@@ -409,7 +533,7 @@ class PetalSearchPetal1WidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpanded: Boolean) {
+private fun Petal1Content(appWidgetId: Int, scheme: androidx.compose.material3.ColorScheme, isExpanded: Boolean) {
     val context = LocalContext.current
     val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
@@ -438,14 +562,12 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
     val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
 
     if (isExpanded) {
-
-        Box(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .cornerRadius(28.dp)
-                .background(surfaceContainerLowProvider(scheme))
+        PetalGlassWidgetCard(
+            appWidgetId = appWidgetId,
+            scheme = scheme,
+            cornerDp = 28.dp,
+            fallbackBackground = surfaceContainerLowProvider(scheme)
         ) {
-            GlassOverlay(enabled = isLiquidGlass, overlayRes = R.drawable.widget_glass_sheen_card, cornerDp = 24)
             Column(
                 modifier = GlanceModifier.fillMaxSize().padding(10.dp),
                 verticalAlignment = Alignment.Vertical.CenterVertically
@@ -456,7 +578,10 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
                         .fillMaxWidth()
                         .height(48.dp)
                         .cornerRadius(24.dp)
-                        .background(surfaceContainerHighProvider(scheme))
+                        .background(
+                            if (isLiquidGlass) ColorProvider(Color(0x33FFFFFF), Color(0x28000000))
+                            else surfaceContainerHighProvider(scheme)
+                        )
                         .padding(horizontal = 6.dp),
                     badgeBitmap = pBadgeBitmap,
                     searchAction = searchAction,
@@ -520,14 +645,12 @@ private fun Petal1Content(scheme: androidx.compose.material3.ColorScheme, isExpa
         }
     } else {
         // Compact Pill Mode
-
-        Box(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .cornerRadius(28.dp)
-                .background(surfaceContainerHighProvider(scheme))
+        PetalGlassWidgetCard(
+            appWidgetId = appWidgetId,
+            scheme = scheme,
+            cornerDp = 28.dp,
+            fallbackBackground = surfaceContainerHighProvider(scheme)
         ) {
-            GlassOverlay(enabled = isLiquidGlass, overlayRes = R.drawable.widget_glass_sheen_pill, cornerDp = 28)
             Petal1ExpressiveSearchRow(
                 modifier = GlanceModifier
                     .fillMaxSize()
@@ -693,10 +816,16 @@ class PetalSearchPetal2Widget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val appWidgetId = try {
+            GlanceAppWidgetManager(context).getAppWidgetId(id)
+        } catch (_: Throwable) {
+            AppWidgetManager.INVALID_APPWIDGET_ID
+        }
+
         provideContent {
             val scheme = getWidgetColorScheme(context)
             GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
-                Petal2Content(scheme = scheme)
+                Petal2Content(appWidgetId = appWidgetId, scheme = scheme)
             }
         }
     }
@@ -707,7 +836,7 @@ class PetalSearchPetal2WidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
+private fun Petal2Content(appWidgetId: Int, scheme: androidx.compose.material3.ColorScheme) {
     val context = LocalContext.current
     val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
@@ -717,15 +846,12 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
 
-
-    Box(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .cornerRadius(28.dp)
-            .background(surfaceContainerLowProvider(scheme)),
-        contentAlignment = Alignment.Center
+    PetalGlassWidgetCard(
+        appWidgetId = appWidgetId,
+        scheme = scheme,
+        cornerDp = 28.dp,
+        fallbackBackground = surfaceContainerLowProvider(scheme)
     ) {
-        GlassOverlay(enabled = isLiquidGlass, overlayRes = R.drawable.widget_glass_sheen_card, cornerDp = 24)
         Row(
             modifier = GlanceModifier.fillMaxSize().padding(6.dp),
             verticalAlignment = Alignment.Vertical.CenterVertically
@@ -736,7 +862,10 @@ private fun Petal2Content(scheme: androidx.compose.material3.ColorScheme) {
                     .fillMaxHeight()
                     .defaultWeight()
                     .cornerRadius(22.dp)
-                    .background(surfaceContainerHighProvider(scheme))
+                    .background(
+                        if (isLiquidGlass) ColorProvider(Color(0x33FFFFFF), Color(0x28000000))
+                        else surfaceContainerHighProvider(scheme)
+                    )
                     .clickable(searchAction)
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart
@@ -833,10 +962,16 @@ class PetalSearchPetal3Widget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val appWidgetId = try {
+            GlanceAppWidgetManager(context).getAppWidgetId(id)
+        } catch (_: Throwable) {
+            AppWidgetManager.INVALID_APPWIDGET_ID
+        }
+
         provideContent {
             val scheme = getWidgetColorScheme(context)
             GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
-                Petal3Content(scheme = scheme)
+                Petal3Content(appWidgetId = appWidgetId, scheme = scheme)
             }
         }
     }
@@ -847,7 +982,7 @@ class PetalSearchPetal3WidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
+private fun Petal3Content(appWidgetId: Int, scheme: androidx.compose.material3.ColorScheme) {
     val context = LocalContext.current
     val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
@@ -868,16 +1003,12 @@ private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
 
-
-    // Material 3 Expressive Pill Bar (height 56dp, corner radius 28dp)
-    Box(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .cornerRadius(28.dp)
-            .background(surfaceContainerHighProvider(scheme)),
-        contentAlignment = Alignment.Center
+    PetalGlassWidgetCard(
+        appWidgetId = appWidgetId,
+        scheme = scheme,
+        cornerDp = 28.dp,
+        fallbackBackground = surfaceContainerHighProvider(scheme)
     ) {
-        GlassOverlay(enabled = isLiquidGlass, overlayRes = R.drawable.widget_glass_sheen_pill, cornerDp = 28)
         Row(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -923,15 +1054,21 @@ private fun Petal3Content(scheme: androidx.compose.material3.ColorScheme) {
                 modifier = GlanceModifier
                     .size(40.dp)
                     .cornerRadius(20.dp)
-                    .background(GlanceTheme.colors.primaryContainer)
-                .clickable(aiAction),
+                    .background(
+                        if (isLiquidGlass) ColorProvider(Color(0x33FFFFFF), Color(0x28000000))
+                        else GlanceTheme.colors.primaryContainer
+                    )
+                    .clickable(aiAction),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     provider = ImageProvider(R.drawable.widget_ic_sparkle),
                     contentDescription = context.getString(R.string.ui_ask_petal_ai),
                     modifier = GlanceModifier.size(22.dp),
-                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer)
+                    colorFilter = ColorFilter.tint(
+                        if (isLiquidGlass) GlanceTheme.colors.primary
+                        else GlanceTheme.colors.onPrimaryContainer
+                    )
                 )
             }
         }

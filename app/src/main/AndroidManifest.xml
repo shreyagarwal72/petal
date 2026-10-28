@@ -17,6 +17,7 @@
 
     <!-- Haptics, Audio & Media Capture -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Android 16+ Live Updates (promoted ongoing notifications & status bar chips) -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
@@ -533,6 +534,18 @@
         </receiver>
 
 
+
+        <activity
+            android:name="com.petal.browser.widget.glance.PetalWidgetGlassActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
+            android:taskAffinity="com.petal.browser.widgetglass"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
 
         <receiver
             android:name="com.petal.browser.widget.glance.PetalSearchPetal1WidgetReceiver"

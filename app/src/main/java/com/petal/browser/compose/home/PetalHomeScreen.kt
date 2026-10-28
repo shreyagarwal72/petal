@@ -513,7 +513,7 @@ fun PetalHomeScreen(
     var showProfileSwitchSheet by remember { mutableStateOf(false) }
     var showWallpaperSheet by remember { mutableStateOf(false) }
 
-    // Candy-browser profile transition function
+    // Petal browser profile transition function
     fun switchProfile(targetProfileId: String) {
         if (targetProfileId == com.petal.browser.profile.PetalProfileManager.activeProfile.id) return
         coroutineScope.launch {
@@ -653,7 +653,7 @@ fun PetalHomeScreen(
                             }
                         )
 
-                        // Main home scrolling column wrapped with Candy-Browser profile switch animation
+                        // Main home scrolling column wrapped with Petal profile switch animation
                         val homeScrollState = rememberScrollState()
                         Column(
                             modifier = Modifier

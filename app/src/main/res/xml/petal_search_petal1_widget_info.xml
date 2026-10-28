@@ -9,6 +9,8 @@
     android:maxResizeWidth="500dp"
     android:maxResizeHeight="240dp"
     android:updatePeriodMillis="0"
+    android:configure="com.petal.browser.widget.glance.PetalWidgetGlassActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional"
     android:initialLayout="@layout/glance_default_layout"
     android:previewImage="@drawable/preview_widget_petal1"
     android:previewLayout="@layout/preview_widget_petal1_layout"

@@ -168,6 +168,15 @@
     <string name="widget_search_petal2_desc">Material 3 Expressive search bar with embedded search pill and action island.</string>
     <string name="widget_search_petal3_name">Petal #3</string>
     <string name="widget_search_petal3_desc">Minimalist horizontal pill bar with circular brand badge on left and AI shortcut on right.</string>
+    <string name="widget_glass_align_title">Align Liquid Glass</string>
+    <string name="widget_glass_align_hint">Drag or tap the frame to match where this widget sits on your home screen, then save.</string>
+    <string name="widget_glass_pick_wallpaper">Select Wallpaper</string>
+    <string name="widget_glass_detect_wallpaper">Auto-Detect Wallpaper</string>
+    <string name="widget_glass_save">Save Alignment</string>
+    <string name="widget_glass_reset">Reset</string>
+    <string name="widget_glass_align_badge">Align Glass</string>
+    <string name="widget_glass_not_ready_title">Liquid Glass Setup</string>
+    <string name="widget_glass_not_ready_desc">To render real home screen liquid glass, Petal needs your home screen wallpaper image.</string>
 
     <!-- Crash Reporting & Diagnostic Tracker -->
     <string name="crash_reporting_title">Crash &amp; Diagnostic Reporting</string>
