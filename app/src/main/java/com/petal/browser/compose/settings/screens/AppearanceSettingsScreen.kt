@@ -1249,101 +1249,15 @@ fun AppearanceSettingsScreenContent(
                                 var liveRefractionWidth by remember(liquidGlassRefractionWidth) { mutableFloatStateOf(liquidGlassRefractionWidth) }
                                 val lensSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
-                                // Live Liquid Glass Interactive Preview Card
-                                val previewShape = RoundedCornerShape(24.dp)
-                                val previewBaseColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = (0.12f + liveAlpha * 0.40f).coerceIn(0f, 1f))
-                                
-                                // Vibrant backdrop container behind the glass card to demonstrate live refraction & translucency
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(previewShape)
-                                ) {
-                                    // Colorful vivid multi-color gradient underneath to showcase light bending & transparency
-                                    Box(
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .background(
-                                                androidx.compose.ui.graphics.Brush.linearGradient(
-                                                    listOf(
-                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.40f),
-                                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f)
-                                                    )
-                                                )
-                                            )
-                                    )
-
-                                    Card(
-                                        shape = previewShape,
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = if (com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current?.ready == true) Color.Transparent else previewBaseColor
-                                        ),
-                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .liquidGlassChrome(
-                                                shape = previewShape,
-                                                enabled = true,
-                                                sheenIntensity = liveSheen,
-                                                alphaOverride = liveAlpha,
-                                                sheenOverride = liveSheen,
-                                                refractionOverride = liveRefraction,
-                                                refractionWidthOverride = liveRefractionWidth
-                                            )
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(18.dp),
-                                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                                ) {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(36.dp)
-                                                            .clip(CircleShape)
-                                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Rounded.AutoAwesome,
-                                                            contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    }
-                                                    Column {
-                                                        Text(
-                                                            text = "Liquid Glass Live Preview",
-                                                            style = MaterialTheme.typography.titleMedium,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = MaterialTheme.colorScheme.onSurface
-                                                        )
-                                                        Text(
-                                                            text = "Specular light refraction & chromatic rim",
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                            Text(
-                                                text = "Pure frosted glass material renders responsive chromatic edges and real-time alpha translucency over the active backdrop layer.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-                                }
+                                // Live preview: real Kyant glass over moving colour. Every slider below
+                                // drives it frame by frame (the values are the unsaved live ones).
+                                com.petal.browser.ui.glass.PetalGlassLab(
+                                    opacity = liveAlpha,
+                                    sheen = liveSheen,
+                                    refraction = liveRefraction,
+                                    refractionWidth = liveRefractionWidth,
+                                    fx = com.petal.browser.ui.glass.rememberGlassFx()
+                                )
 
                                 // Glass Translucency Slider (Stride style PetalSlider)
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1468,6 +1382,22 @@ fun AppearanceSettingsScreenContent(
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
+
+                                androidx.compose.material3.TextButton(
+                                    onClick = {
+                                        liveAlpha = 0.70f
+                                        liveSheen = 0.60f
+                                        liveRefraction = 1f
+                                        liveRefractionWidth = 1f
+                                        onLiquidGlassAlphaChange(0.70f)
+                                        onLiquidGlassSheenChange(0.60f)
+                                        onLiquidGlassRefractionChange(1f)
+                                        onLiquidGlassRefractionWidthChange(1f)
+                                    },
+                                    modifier = Modifier.align(Alignment.End)
+                                ) { Text("Reset glass tuning") }
+
+                                com.petal.browser.ui.glass.GlassEffectsSettings()
 
                                 Divider(
                                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),

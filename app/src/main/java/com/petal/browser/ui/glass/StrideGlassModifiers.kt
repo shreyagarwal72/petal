@@ -59,7 +59,20 @@ fun rememberGlassBar(source: View?): GlassBar? {
  * rather than leaving its labels over sharp, busy content.
  */
 @Composable
-fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
+fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?, pressFx: Boolean = true): Modifier {
+    val fx = rememberGlassFx()
+    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(
+        androidx.compose.ui.platform.LocalContext.current
+    )
+    val glassActive = bar != null || sp.getBoolean("sp_liquid_glass_enabled", false)
+    if (!pressFx || !glassActive || !fx.any) return liquidGlassBase(shape, tint, bar)
+    // Kyant-style interaction: the glass swells under the finger and a light follows it.
+    val press = rememberGlassPress(fx)
+    return this.glassPressScale(press).liquidGlassBase(shape, tint, bar).glassPressOverlay(press, shape)
+}
+
+@Composable
+private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
     LocalPetalGlassRevision.current
     val tuning = rememberRefractionTuning()
     val wallpaper = LocalPetalGlassWallpaper.current
@@ -166,7 +179,13 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
  * every frame, so an animated target is followed exactly with nothing recomposed.
  */
 @Composable
-fun Modifier.glassTile(target: () -> Rect?, shape: Shape, tint: Color, bar: GlassBar?): Modifier {
+fun Modifier.glassTile(
+    target: () -> Rect?,
+    shape: Shape,
+    tint: Color,
+    bar: GlassBar?,
+    press: GlassPress? = null
+): Modifier {
     val density = LocalDensity.current
     val tuning = rememberRefractionTuning()
     val look = with(density) {
@@ -209,6 +228,8 @@ fun Modifier.glassTile(target: () -> Rect?, shape: Shape, tint: Color, bar: Glas
             }
     }
     val place = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
+    // Last frame's slab centre and time, for the velocity stretch.
+    val motion = remember { FloatArray(3) }
     return this
         .onGloballyPositioned { place[0] = it }
         .drawWithCache {
@@ -217,10 +238,35 @@ fun Modifier.glassTile(target: () -> Rect?, shape: Shape, tint: Color, bar: Glas
                 val own = place[0]?.takeIf { it.isAttached } ?: return@onDrawBehind
                 val barInRoot = barCoords.positionInRoot()
                 val r = target()?.translate(-barInRoot)
-                bar.setSlab(r, shape, layoutDirection, this, look)
+
+                // Kyant's slab interaction: while held the slab swells, its lens deepens, and
+                // it stretches along its motion like a drop of liquid.
+                val fx = press?.fx
+                val p = if (press != null) press.progress else 0f
+                val lensP = if (fx?.showLens == true) p else 0f
+                val liveLook = if (lensP > 0.001f) {
+                    look.copy(
+                        lensHeight = look.lensHeight * (1f + 0.6f * lensP),
+                        lensAmount = look.lensAmount * (1f + 0.9f * lensP),
+                        pad = look.pad + look.lensAmount * 0.9f * lensP
+                    )
+                } else look
+                var sx = 1f
+                var sy = 1f
+                if (r != null && fx?.showSquish == true) {
+                    val now = System.nanoTime() / 1_000_000f
+                    val dt = (now - motion[2]).coerceAtLeast(1f)
+                    val vx = if (motion[2] == 0f || dt > 64f) 0f else (r.center.x - motion[0]) / dt
+                    motion[0] = r.center.x
+                    motion[2] = now
+                    val stretch = (kotlin.math.abs(vx) * 0.12f).coerceIn(0f, 0.18f)
+                    sx = (1f + 0.14f * p) * (1f + stretch)
+                    sy = (1f + 0.14f * p) * (1f - stretch * 0.5f)
+                }
+                bar.setSlab(r, shape, layoutDirection, this, liveLook)
                 bar.recordSlab()
                 drawIntoCanvas { canvas ->
-                    bar.drawSlab(canvas.nativeCanvas, own.positionInRoot() - barInRoot)
+                    bar.drawSlab(canvas.nativeCanvas, own.positionInRoot() - barInRoot, sx, sy)
                 }
             }
         }

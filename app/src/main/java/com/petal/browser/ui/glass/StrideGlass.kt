@@ -321,7 +321,7 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
     }
 
     /** Draws the slab at [offset] from the bar's origin (the caller's own position in the bar). */
-    internal fun drawSlab(canvas: Canvas, offset: Offset) {
+    internal fun drawSlab(canvas: Canvas, offset: Offset, scaleX: Float = 1f, scaleY: Float = 1f) {
         val rc = canvas as? RecordingCanvas ?: return
         val r = slab ?: return
         val outline = slabOutline ?: return
@@ -329,6 +329,7 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
         if (!slabNode.hasDisplayList()) return
         val save = rc.save()
         rc.translate(r.left - offset.x, r.top - offset.y)
+        if (scaleX != 1f || scaleY != 1f) rc.scale(scaleX, scaleY, r.width / 2f, r.height / 2f)
         val inner = rc.save()
         rc.clipPath(outline)
         rc.translate(-look.pad, -look.pad)

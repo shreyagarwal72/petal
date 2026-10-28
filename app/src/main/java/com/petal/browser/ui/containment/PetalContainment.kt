@@ -101,6 +101,8 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.LocalPetalGlassRevision
 import com.petal.browser.ui.glass.petalGlassPanel
+import com.petal.browser.ui.glass.glassPressOverlay
+import com.petal.browser.ui.glass.glassPressScale
 
 enum class PetalGroupPosition { SINGLE, TOP, MIDDLE, BOTTOM }
 
@@ -148,7 +150,37 @@ fun Modifier.liquidGlassChrome(
     alphaOverride: Float? = null,
     sheenOverride: Float? = null,
     refractionOverride: Float? = null,
-    refractionWidthOverride: Float? = null
+    refractionWidthOverride: Float? = null,
+    /** Kyant's press effects (swell + a light under the finger) for tappable glass. */
+    pressFx: Boolean = false
+): Modifier {
+    val fx = com.petal.browser.ui.glass.rememberGlassFx()
+    val masterOn = PreferenceManager
+        .getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
+        .getBoolean("sp_liquid_glass_enabled", false)
+    val press = if (pressFx && enabled && masterOn && fx.any) {
+        com.petal.browser.ui.glass.rememberGlassPress(fx)
+    } else null
+    val scaled = if (press != null) this.glassPressScale(press, 8f) else this
+    val glass = scaled.liquidGlassChromeBase(
+        shape, enabled, sheenIntensity, tintColor, backdrop, isDark,
+        alphaOverride, sheenOverride, refractionOverride, refractionWidthOverride
+    )
+    return if (press != null) glass.glassPressOverlay(press, shape) else glass
+}
+
+@Composable
+private fun Modifier.liquidGlassChromeBase(
+    shape: Shape,
+    enabled: Boolean,
+    sheenIntensity: Float,
+    tintColor: Color,
+    backdrop: PetalBackdrop?,
+    isDark: Boolean,
+    alphaOverride: Float?,
+    sheenOverride: Float?,
+    refractionOverride: Float?,
+    refractionWidthOverride: Float?
 ): Modifier {
     // Read first, on every path: any liquid-glass pref change (master toggle, sliders)
     // must recompose headers using the backdrop path too, not just wallpaper panels.
@@ -460,7 +492,7 @@ fun PetalGroupRow(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)
-            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             PetalGroupIconBadge(icon, iconContainer, iconTint)
@@ -629,7 +661,7 @@ fun PetalGroupToggleRow(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)
-            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             leadingIcon()
@@ -687,7 +719,7 @@ fun PetalSettingsToggleRow(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)
-            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
     ) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
@@ -764,7 +796,7 @@ fun PetalSettingsToggleRow(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)
-            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
     ) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
@@ -848,7 +880,7 @@ fun PetalGroupListRow(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)
-            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
             .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = minHeight).padding(contentPadding), verticalAlignment = Alignment.CenterVertically) {
@@ -1162,7 +1194,7 @@ fun PetalActionCard(
     Card(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.scale(scale).liquidGlassChrome(shape, enabled = isGlass, sheenIntensity = sheen),
+        modifier = modifier.scale(scale).liquidGlassChrome(shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
         shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = if (isGlass || LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else containerColor,

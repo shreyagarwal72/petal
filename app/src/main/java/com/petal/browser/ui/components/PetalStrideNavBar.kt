@@ -52,6 +52,8 @@ import com.petal.browser.ui.glass.TabWeights
 import com.petal.browser.ui.glass.bouncyClickable
 import com.petal.browser.ui.glass.glassTile
 import com.petal.browser.ui.glass.liquidGlass
+import com.petal.browser.ui.glass.glassPressOverlay
+import com.petal.browser.ui.glass.glassPressScale
 import com.petal.browser.ui.glass.navIconMotion
 import com.petal.browser.ui.glass.rememberGlassBar
 import kotlin.math.roundToInt
@@ -120,11 +122,16 @@ internal fun PetalStrideNavBar(
     )
 
     val isLiquidGlassActive = glassBar != null || themeGlass
+    // Kyant's interaction effects: the bar swells under the finger, a light follows it, and
+    // the selection slab deepens its lens and stretches with its motion.
+    val glassPress = com.petal.browser.ui.glass.rememberGlassPress()
     BoxWithConstraints(
         modifier = modifier
             .graphicsLayer { translationX = dragOffsetPx }
             .then(if (!isLiquidGlassActive) Modifier.shadow(12.dp, pill, clip = false) else Modifier)
-            .liquidGlass(pill, scheme.surfaceContainerHigh, glassBar)
+            .then(if (isLiquidGlassActive) Modifier.glassPressScale(glassPress, 16f) else Modifier)
+            .liquidGlass(pill, scheme.surfaceContainerHigh, glassBar, pressFx = false)
+            .then(if (isLiquidGlassActive) Modifier.glassPressOverlay(glassPress, pill) else Modifier)
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
                     onDragStart = { isDragging = true },
@@ -168,7 +175,7 @@ internal fun PetalStrideNavBar(
         }
         Row(
             modifier = Modifier
-                .glassTile(slab, pill, scheme.primary, glassBar)
+                .glassTile(slab, pill, scheme.primary, glassBar, if (isLiquidGlassActive) glassPress else null)
                 .padding(horizontal = rowPadH, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(itemGap)

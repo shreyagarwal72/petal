@@ -128,7 +128,8 @@ fun <T> PetalChoiceButtonGroup(
                 baseModifier.liquidGlassChrome(
                     shape = currentShape,
                     enabled = true,
-                    sheenIntensity = if (isChecked) 0.80f else 0.45f
+                    sheenIntensity = if (isChecked) 0.80f else 0.45f,
+                    pressFx = true
                 )
             } else {
                 baseModifier
