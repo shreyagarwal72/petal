@@ -510,7 +510,7 @@ fun PetalOverflowMenuSheet(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
-                // Top Header Circular Icon Action Buttons Row (Chrome-style navigation bar)
+                // Tier 1: Hero Quick Navigation & Action Row
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -532,6 +532,12 @@ fun PetalOverflowMenuSheet(
                         onClick = onGoForward
                     )
                     CircularIconButton(
+                        icon = Icons.Rounded.Refresh,
+                        contentDescription = stringResource(R.string.ui_reload),
+                        enabled = true,
+                        onClick = onReload
+                    )
+                    CircularIconButton(
                         icon = if (isBookmarked && !isHomePage) Icons.Rounded.Star else Icons.Rounded.StarBorder,
                         contentDescription = stringResource(R.string.ui_toggle_bookmark),
                         enabled = !isHomePage,
@@ -539,16 +545,16 @@ fun PetalOverflowMenuSheet(
                         onClick = onToggleBookmark
                     )
                     CircularIconButton(
-                        icon = Icons.Rounded.ArrowDownward,
-                        contentDescription = stringResource(R.string.ui_downloads),
-                        enabled = true,
-                        onClick = onOpenDownloadsShortcut
+                        icon = Icons.Rounded.Share,
+                        contentDescription = stringResource(R.string.ui_share_link),
+                        enabled = !isHomePage,
+                        onClick = onShareLink
                     )
                     CircularIconButton(
-                        icon = Icons.Rounded.Refresh,
-                        contentDescription = stringResource(R.string.ui_reload),
+                        icon = Icons.Rounded.Settings,
+                        contentDescription = stringResource(R.string.ui_settings),
                         enabled = true,
-                        onClick = onReload
+                        onClick = onOpenSettings
                     )
                 }
 
@@ -558,7 +564,7 @@ fun PetalOverflowMenuSheet(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                 )
 
-                // Section 1: Tab actions
+                // Tier 2: Tabs & Shield
                 MenuRowItem(
                     icon = Icons.Rounded.Add,
                     title = stringResource(R.string.ui_new_tab_2),
@@ -571,13 +577,7 @@ fun PetalOverflowMenuSheet(
                     onClick = onNewIncognitoTab
                 )
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
-
-                // Section 2: Quick Toggles (AdBlocker & Desktop site)
+                // Privacy Shield HUD
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier
@@ -618,6 +618,13 @@ fun PetalOverflowMenuSheet(
                     }
                 }
 
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                )
+
+                // Tier 3: Current Page Controls (when active)
                 if (!isHomePage) {
                     MenuRowSwitchItem(
                         icon = Icons.Rounded.DesktopWindows,
@@ -625,6 +632,21 @@ fun PetalOverflowMenuSheet(
                         subtitle = stringResource(R.string.ui_request_desktop_version),
                         checked = isDesktopSite,
                         onCheckedChange = onToggleDesktopSite
+                    )
+                    MenuRowItem(
+                        icon = Icons.Rounded.FindInPage,
+                        title = stringResource(R.string.ui_find_in_page),
+                        onClick = onSearchOnSite
+                    )
+                    MenuRowItem(
+                        icon = Icons.Rounded.MenuBook,
+                        title = stringResource(R.string.ui_reading_mode),
+                        onClick = onShowReadingMode
+                    )
+                    MenuRowItem(
+                        icon = Icons.Rounded.InstallMobile,
+                        title = stringResource(R.string.ui_install_as_app),
+                        onClick = onInstallPwa
                     )
                 }
 
@@ -637,22 +659,45 @@ fun PetalOverflowMenuSheet(
                     )
                 }
 
-                if (!isHomePage) {
-                    MenuRowItem(
-                        icon = if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                        title = if (isBookmarked) "Remove bookmark" else "Add bookmark",
-                        onClick = onToggleBookmark
-                    )
-                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                )
 
-                // Section 2.5: Extensions
+                // Tier 4: Library & Navigation
+                MenuRowItem(
+                    icon = Icons.Rounded.History,
+                    title = stringResource(R.string.ui_history),
+                    onClick = onOpenHistory
+                )
+                MenuRowItem(
+                    icon = Icons.Rounded.Bookmark,
+                    title = stringResource(R.string.ui_bookmarks),
+                    onClick = onOpenBookmarks
+                )
+                MenuRowItem(
+                    icon = Icons.Rounded.Download,
+                    title = stringResource(R.string.ui_downloads),
+                    onClick = onOpenDownloads
+                )
+                MenuRowItem(
+                    icon = Icons.Rounded.DeleteSweep,
+                    title = stringResource(R.string.ui_delete_browsing_data),
+                    onClick = onDeleteBrowsingData
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                )
+
+                // Tier 5: Extensions & Add-ons
                 val extensions by PetalExtensionManager.extensions.collectAsState()
                 val enabledExtensions = remember(extensions) {
                     extensions.filter { it.enabled && !PetalBuiltInExtensionManager.isBuiltIn(it.id) }
                 }
-                // Keep the Extensions section collapsed every time the overflow menu opens.
-                // This also prevents the submenu from being left visually expanded when the
-                // overflow dialog is dismissed and opened again.
                 var isExtensionsExpanded by remember { mutableStateOf(false) }
 
                 if (enabledExtensions.isEmpty()) {
@@ -698,58 +743,11 @@ fun PetalOverflowMenuSheet(
                     }
                 }
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
-
-                // Section 3: Navigation & Data
-                MenuRowItem(
-                    icon = Icons.Rounded.History,
-                    title = stringResource(R.string.ui_history),
-                    onClick = onOpenHistory
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.DeleteSweep,
-                    title = stringResource(R.string.ui_delete_browsing_data),
-                    onClick = onDeleteBrowsingData
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.Download,
-                    title = stringResource(R.string.ui_downloads),
-                    onClick = onOpenDownloads
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.Bookmark,
-                    title = stringResource(R.string.ui_bookmarks),
-                    onClick = onOpenBookmarks
-                )
-                if (!isHomePage) {
-                    MenuRowItem(
-                        icon = Icons.Rounded.Share,
-                        title = stringResource(R.string.ui_share_link),
-                        onClick = onShareLink
-                    )
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
-
-                // Section 4: Tools & Settings
-                MenuRowItem(
-                    icon = Icons.Rounded.Widgets,
-                    title = stringResource(R.string.ui_quick_tools),
-                    subtitle = stringResource(R.string.ui_qr_translator_pdf_devtools_inspector),
-                    onClick = onOpenQuickTools
-                )
-
+                // Tier 6: Advanced & Quick Tools (Quarantined power tools)
                 MenuRowItem(
                     icon = Icons.Rounded.Build,
                     title = stringResource(R.string.ui_more_tools),
+                    subtitle = "Quick tools, DevTools, Clean link & PDF",
                     trailingIcon = if (isMoreToolsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                     onClick = { isMoreToolsExpanded = !isMoreToolsExpanded }
                 )
@@ -760,19 +758,19 @@ fun PetalOverflowMenuSheet(
                     exit = shrinkVertically()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        if (!isHomePage) {
-                            MenuRowItem(
-                                icon = Icons.Rounded.FindInPage,
-                                title = stringResource(R.string.ui_find_in_page),
-                                isSubItem = true,
-                                onClick = onSearchOnSite
-                            )
-                        }
                         MenuRowItem(
-                            icon = Icons.Rounded.MenuBook,
-                            title = stringResource(R.string.ui_reading_mode),
+                            icon = Icons.Rounded.Widgets,
+                            title = stringResource(R.string.ui_quick_tools),
+                            subtitle = stringResource(R.string.ui_qr_translator_pdf_devtools_inspector),
                             isSubItem = true,
-                            onClick = onShowReadingMode
+                            onClick = onOpenQuickTools
+                        )
+                        MenuRowItem(
+                            icon = Icons.Rounded.LinkOff,
+                            title = stringResource(R.string.ui_copy_clean_link),
+                            subtitle = stringResource(R.string.ui_strip_tracking_referral_tags),
+                            isSubItem = true,
+                            onClick = onCopyCleanLink
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.Print,
@@ -787,17 +785,10 @@ fun PetalOverflowMenuSheet(
                             onClick = onSavePage
                         )
                         MenuRowItem(
-                            icon = Icons.Rounded.Share,
-                            title = stringResource(R.string.ui_share_link),
+                            icon = Icons.Rounded.Code,
+                            title = "View Page Source",
                             isSubItem = true,
-                            onClick = onShareLink
-                        )
-                        MenuRowItem(
-                            icon = Icons.Rounded.LinkOff,
-                            title = stringResource(R.string.ui_copy_clean_link),
-                            subtitle = stringResource(R.string.ui_strip_tracking_referral_tags),
-                            isSubItem = true,
-                            onClick = onCopyCleanLink
+                            onClick = onViewSource
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.Terminal,
@@ -813,20 +804,6 @@ fun PetalOverflowMenuSheet(
                         )
                     }
                 }
-
-                if (!isHomePage) {
-                    MenuRowItem(
-                        icon = Icons.Rounded.InstallMobile,
-                        title = stringResource(R.string.ui_install_as_app),
-                        onClick = onInstallPwa
-                    )
-                }
-
-                MenuRowItem(
-                    icon = Icons.Rounded.Settings,
-                    title = stringResource(R.string.ui_settings),
-                    onClick = onOpenSettings
-                )
 
                 Spacer(Modifier.height(8.dp))
             }

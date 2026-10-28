@@ -54,14 +54,14 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", com.petal.browser.R.drawable.ic_ai_stars),
     APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", com.petal.browser.R.drawable.brightness_medium_filled),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", com.petal.browser.R.drawable.layers_filled),
-    SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.home_filled),
+    SEARCH_HOMEPAGE("Search & Navigation", "Search engine, address bar, gestures & homepage", com.petal.browser.R.drawable.home_filled),
     DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", com.petal.browser.R.drawable.mobile_vibrate_filled),
     ADDRESS_BAR("Address Bar", "Position, size, gestures and toolbar actions", com.petal.browser.R.drawable.ic_search),
-    MEDIA("Media", "Video player, media sniffer & background detection", com.petal.browser.R.drawable.video_filled),
+    MEDIA("Media & Downloads", "Video player, media sniffer, downloads & storage", com.petal.browser.R.drawable.video_filled),
     DOWNLOADS("Downloads", "Download engine, external downloaders & storage management", com.petal.browser.R.drawable.icon_download),
-    TABS("Tabs", "Inactive tabs, tab groups and tab cleanup", com.petal.browser.R.drawable.icon_tab),
+    TABS("Tabs & Engine", "Tab grid, inactive tabs, cleanup & GeckoView engine", com.petal.browser.R.drawable.icon_tab),
     MISCELLANEOUS("Miscellaneous", "Custom tabs, external apps and camera tools", com.petal.browser.R.drawable.app_registration),
-    DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", com.petal.browser.R.drawable.backup_filled),
+    DATA_STORAGE("System & About", "Backup & restore, updates, diagnostics & developer tools", com.petal.browser.R.drawable.backup_filled),
     UPDATER("Updates & Diagnostics", "Release tracker, auto-updates & crash reporting", com.petal.browser.R.drawable.update_rounded),
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", com.petal.browser.R.drawable.info_filled)
 }
@@ -328,6 +328,7 @@ fun PetalSettingsScreen(
                                     targetHighlightItemId = currentHighlightId,
                                     onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
                                     onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                                    onNavigateCategory = { cat -> openCategory(cat, null) },
                                     onNavigateBack = { closeCategory() }
                                 )
                             }
@@ -345,6 +346,7 @@ private fun RenderCategoryContent(
     targetHighlightItemId: String? = null,
     onNavigateToAddressBar: () -> Unit = {},
     onNavigateToDownloads: () -> Unit = {},
+    onNavigateCategory: (SettingsCategory) -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
     when (category) {
@@ -395,7 +397,12 @@ private fun RenderCategoryContent(
             )
         }
         SettingsCategory.DATA_STORAGE -> {
-            DataBackupSettingsScreen(onNavigateBack = onNavigateBack)
+            DataBackupSettingsScreen(
+                onNavigateBack = onNavigateBack,
+                onNavigateToUpdater = { onNavigateCategory(SettingsCategory.UPDATER) },
+                onNavigateToAbout = { onNavigateCategory(SettingsCategory.ABOUT) },
+                onNavigateToDevOptions = { onNavigateCategory(SettingsCategory.API_INTEGRATIONS) }
+            )
         }
         SettingsCategory.UPDATER -> {
             UpdaterSettingsScreen(onNavigateBack = onNavigateBack)

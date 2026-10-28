@@ -462,19 +462,29 @@ object PetalSettingsSearchIndex {
         )
     )
 
-    private val allCategories: List<SettingsCategory> = listOf(
-        SettingsCategory.API_INTEGRATIONS,
+    val hubCategories: List<SettingsCategory> = listOf(
         SettingsCategory.APPEARANCE,
         SettingsCategory.PRIVACY,
         SettingsCategory.SEARCH_HOMEPAGE,
-        SettingsCategory.DISPLAY_ZOOM,
-        SettingsCategory.ADDRESS_BAR,
-        SettingsCategory.MEDIA,
         SettingsCategory.TABS,
-        SettingsCategory.MISCELLANEOUS,
+        SettingsCategory.MEDIA,
+        SettingsCategory.DATA_STORAGE
+    )
+
+    val allCategories: List<SettingsCategory> = listOf(
+        SettingsCategory.APPEARANCE,
+        SettingsCategory.PRIVACY,
+        SettingsCategory.SEARCH_HOMEPAGE,
+        SettingsCategory.ADDRESS_BAR,
+        SettingsCategory.DISPLAY_ZOOM,
+        SettingsCategory.TABS,
+        SettingsCategory.MEDIA,
+        SettingsCategory.DOWNLOADS,
         SettingsCategory.DATA_STORAGE,
         SettingsCategory.UPDATER,
-        SettingsCategory.ABOUT
+        SettingsCategory.ABOUT,
+        SettingsCategory.MISCELLANEOUS,
+        SettingsCategory.API_INTEGRATIONS
     )
 
     // Dictionary of common settings terms for spelling correction
@@ -498,7 +508,7 @@ object PetalSettingsSearchIndex {
             return SettingsSearchResult(
                 query = "",
                 didYouMean = null,
-                matchingCategories = allCategories,
+                matchingCategories = hubCategories,
                 matchingItems = emptyList()
             )
         }

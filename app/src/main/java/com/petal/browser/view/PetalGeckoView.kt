@@ -663,7 +663,61 @@ class PetalGeckoView @JvmOverloads constructor(
     // Mirrors Firefox's BrowserThumbnails gate: only thumbnail once the compositor has painted
     // real content for the current document. Reset again when GeckoView drops its paint state.
     private var hasContentfulPaint: Boolean = false
+    private var hasDocumentPainted: Boolean = false
     private var previewRetryCount: Int = 0
+
+    private val surfaceCoverView: View = View(context).apply {
+        layoutParams = LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        setBackgroundColor(getThemeBackgroundColor())
+        visibility = View.VISIBLE
+    }
+
+    private fun getThemeBackgroundColor(): Int {
+        val isAmoled = sp.getBoolean("sp_amoled", false)
+        val configStr = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
+        val isDark = when (configStr.uppercase()) {
+            "LIGHT" -> false
+            "DARK" -> true
+            else -> {
+                val nightModeFlags = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+                nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES
+            }
+        }
+        return when {
+            isDark && isAmoled -> android.graphics.Color.BLACK
+            isDark -> android.graphics.Color.parseColor("#121212")
+            else -> android.graphics.Color.WHITE
+        }
+    }
+
+    private fun showSurfaceCover() {
+        if (!hasDocumentPainted) {
+            surfaceCoverView.setBackgroundColor(getThemeBackgroundColor())
+            surfaceCoverView.alpha = 1f
+            surfaceCoverView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun dismissSurfaceCover() {
+        if (surfaceCoverView.visibility == View.VISIBLE) {
+            post {
+                surfaceCoverView.animate()
+                    .alpha(0f)
+                    .setDuration(120L)
+                    .withEndAction {
+                        surfaceCoverView.visibility = View.GONE
+                        surfaceCoverView.alpha = 1f
+                    }
+                    .start()
+            }
+        }
+    }
+
+    private fun isInternalBootstrapUrl(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        if (url.startsWith("moz-extension://") && (url.contains("bootstrap.html") || url.contains("token="))) return true
+        return false
+    }
 
     private var tabId: String = "tab_${System.currentTimeMillis()}_${Math.abs(hashCode())}"
     private var tabGroupId: String? = null
@@ -718,6 +772,10 @@ class PetalGeckoView @JvmOverloads constructor(
             geckoView,
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
+        addView(
+            surfaceCoverView,
+            LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
         com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, currentUrl)
         com.petal.browser.media.sniffer.PetalNativeSnifferEngine.setActiveTab(tabId, currentUrl)
         if (PetalGeckoRuntime.isGeckoAvailable(context)) {
@@ -754,8 +812,14 @@ class PetalGeckoView @JvmOverloads constructor(
         // Progress & Loading Delegate
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
             override fun onPageStart(session: GeckoSession, url: String) {
+                if (isInternalBootstrapUrl(url)) return
+                if (url.equals("about:blank", ignoreCase = true) && persistentUrl.isNotBlank() && !BrowserUnit.isHomePage(persistentUrl)) {
+                    return
+                }
                 previewRevision++
                 hasContentfulPaint = false
+                hasDocumentPainted = false
+                showSurfaceCover()
                 previewRetryCount = 0
                 isStopped = false
                 currentScrollY = 0
@@ -1008,6 +1072,10 @@ class PetalGeckoView @JvmOverloads constructor(
                 hasUserGesture: Boolean
             ) {
                 if (url.isNullOrBlank() || url.equals(currentUrl, ignoreCase = true)) return
+                if (isInternalBootstrapUrl(url)) return
+                if (url.equals("about:blank", ignoreCase = true) && persistentUrl.isNotBlank() && !BrowserUnit.isHomePage(persistentUrl)) {
+                    return
+                }
                 // Brave Bounce Tracking Defense: skip intermediary tracking redirects directly to destination
                 val unbouncedUrl = com.petal.browser.privacy.PetalBounceTrackingProtection.detectAndUnwrapBounceUrl(url)
                 if (unbouncedUrl != null && !unbouncedUrl.equals(url, ignoreCase = true)) {
@@ -1218,6 +1286,8 @@ class PetalGeckoView @JvmOverloads constructor(
         session.contentDelegate = object : GeckoSession.ContentDelegate {
             override fun onFirstContentfulPaint(session: GeckoSession) {
                 hasContentfulPaint = true
+                hasDocumentPainted = true
+                dismissSurfaceCover()
                 previewRetryCount = 0
                 // Firefox captures when "not loading && first contentful paint". The page may
                 // already have stopped loading by the time the first paint lands, so capture now,
@@ -1227,7 +1297,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onPaintStatusReset(session: GeckoSession) {
                 // The session was paused/backgrounded and compositor resources were released.
-                // Capturing now would yield a blank frame, so wait for the next first paint.
+                // Document paint history is retained so returning to the tab preserves presentation.
                 hasContentfulPaint = false
             }
 
@@ -2111,6 +2181,9 @@ class PetalGeckoView @JvmOverloads constructor(
         geckoView.requestFocus()
         isForegroundTab = true
         session.setActive(true)
+        if (hasDocumentPainted) {
+            dismissSurfaceCover()
+        }
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(null, session)
         geckoView.visibility = View.VISIBLE
         // Notify BrowserStore of tab selection

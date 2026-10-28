@@ -266,6 +266,9 @@ object PetalEngineStore {
      */
     @JvmStatic
     fun updateUrlAndTitle(context: Context, tabId: String, url: String, title: String) {
+        if (url.startsWith("moz-extension://") && (url.contains("bootstrap.html") || url.contains("token="))) {
+            return
+        }
         val st = getStore(context)
         st.dispatch(
             mozilla.components.browser.state.action.ContentAction.UpdateUrlAction(tabId, url)
