@@ -2,10 +2,12 @@ package com.petal.browser.ui.components
 
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
@@ -297,7 +299,7 @@ object PetalOverflowBridge {
             dialog.setOnShowListener {
                 dialog.window?.let { window ->
                     window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
-                    window.setGravity(android.view.Gravity.TOP or android.view.Gravity.END)
+                    window.setGravity(android.view.Gravity.BOTTOM or android.view.Gravity.END)
                     window.setBackgroundDrawableResource(android.R.color.transparent)
                     if (useBlurBg && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
@@ -373,37 +375,72 @@ fun PetalOverflowMenuSheet(
         }
     }
 
+    BackHandler(enabled = !isDismissing) {
+        handleDismiss()
+    }
+
     LaunchedEffect(isDismissing) {
         if (isDismissing) {
-            kotlinx.coroutines.delay(200)
+            kotlinx.coroutines.delay(180)
             onDismissRequest()
         }
     }
 
-    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val isTopAddressBar = remember(sp) { "TOP".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true) }
-
     val scale by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0.2f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        targetValue = if (isVisible) 1f else 0.12f,
+        animationSpec = if (isVisible) {
+            spring(
+                dampingRatio = 0.74f,
+                stiffness = 400f
+            )
+        } else {
+            spring(
+                dampingRatio = 0.88f,
+                stiffness = 460f
+            )
+        },
         label = "MenuExpandScale"
     )
 
     val translationY by animateFloatAsState(
-        targetValue = if (isVisible) 0f else (if (isTopAddressBar) -60f else 60f),
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
-        label = "MenuSlide"
+        targetValue = if (isVisible) 0f else 32f,
+        animationSpec = if (isVisible) {
+            spring(
+                dampingRatio = 0.74f,
+                stiffness = 400f
+            )
+        } else {
+            spring(
+                dampingRatio = 0.88f,
+                stiffness = 460f
+            )
+        },
+        label = "MenuSlideY"
+    )
+
+    val translationX by animateFloatAsState(
+        targetValue = if (isVisible) 0f else 8f,
+        animationSpec = if (isVisible) {
+            spring(
+                dampingRatio = 0.74f,
+                stiffness = 400f
+            )
+        } else {
+            spring(
+                dampingRatio = 0.88f,
+                stiffness = 460f
+            )
+        },
+        label = "MenuSlideX"
     )
 
     val alpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = if (isVisible) {
+            spring(stiffness = Spring.StiffnessMediumLow)
+        } else {
+            tween(durationMillis = 150)
+        },
         label = "MenuExpandAlpha"
     )
 
@@ -463,16 +500,21 @@ fun PetalOverflowMenuSheet(
             }
         }
 
+        val navBarBottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val statusBarTopInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        val bottomOffset = navBarBottomInset + 76.dp
+        val topOffset = statusBarTopInset + 16.dp
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    top = if (isTopAddressBar) 68.dp else 40.dp,
+                    top = topOffset,
                     end = 12.dp,
                     start = 12.dp,
-                    bottom = if (isTopAddressBar) 40.dp else 72.dp
+                    bottom = bottomOffset
                 ),
-            contentAlignment = if (isTopAddressBar) Alignment.TopEnd else Alignment.BottomEnd
+            contentAlignment = Alignment.BottomEnd
         ) {
         com.petal.browser.ui.containment.PetalHeroCard(
             shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
@@ -489,8 +531,9 @@ fun PetalOverflowMenuSheet(
                     scaleX = scale
                     scaleY = scale
                     this.translationY = translationY
+                    this.translationX = translationX
                     this.alpha = alpha
-                    transformOrigin = if (isTopAddressBar) TransformOrigin(1f, 0f) else TransformOrigin(1f, 1f)
+                    transformOrigin = TransformOrigin(0.92f, 1f)
                 }
         ) {
             val isHomePage = remember(pageUrl, pageTitle) {
@@ -549,12 +592,6 @@ fun PetalOverflowMenuSheet(
                         contentDescription = stringResource(R.string.ui_share_link),
                         enabled = !isHomePage,
                         onClick = onShareLink
-                    )
-                    CircularIconButton(
-                        icon = Icons.Rounded.Settings,
-                        contentDescription = stringResource(R.string.ui_settings),
-                        enabled = true,
-                        onClick = onOpenSettings
                     )
                 }
 
@@ -804,6 +841,18 @@ fun PetalOverflowMenuSheet(
                         )
                     }
                 }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                )
+
+                MenuRowItem(
+                    icon = Icons.Rounded.Settings,
+                    title = stringResource(R.string.ui_settings),
+                    onClick = onOpenSettings
+                )
 
                 Spacer(Modifier.height(8.dp))
             }
