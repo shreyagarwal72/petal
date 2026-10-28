@@ -925,43 +925,43 @@ fun AppearanceSettingsScreenContent(
                                             label = "Weight",
                                             value = currentAxes.weight,
                                             range = 100f..1000f,
-                                            formatter = { "%.0f".format(it) },
-                                            onValueChange = { updateAxes(currentAxes.copy(weight = it)) }
+                                            formatter = { v -> String.format(java.util.Locale.US, "%.0f", v) },
+                                            onValueChange = { newWeight -> updateAxes(currentAxes.copy(weight = newWeight)) }
                                         )
                                         GSFlexVariableSlider(
                                             label = "Width",
                                             value = currentAxes.width,
                                             range = 25f..150f,
-                                            formatter = { "%.0f".format(it) },
-                                            onValueChange = { updateAxes(currentAxes.copy(width = it)) }
+                                            formatter = { v -> String.format(java.util.Locale.US, "%.0f", v) },
+                                            onValueChange = { newWidth -> updateAxes(currentAxes.copy(width = newWidth)) }
                                         )
                                         GSFlexVariableSlider(
                                             label = "Optical Size",
                                             value = currentAxes.opsz,
                                             range = 6f..72f,
-                                            formatter = { "%.0f pt".format(it) },
-                                            onValueChange = { updateAxes(currentAxes.copy(opsz = it)) }
+                                            formatter = { v -> String.format(java.util.Locale.US, "%.0f pt", v) },
+                                            onValueChange = { newOpsz -> updateAxes(currentAxes.copy(opsz = newOpsz)) }
                                         )
                                         GSFlexVariableSlider(
                                             label = "Grade",
                                             value = currentAxes.grade,
                                             range = -200f..200f,
-                                            formatter = { "%+.0f".format(it) },
-                                            onValueChange = { updateAxes(currentAxes.copy(grade = it)) }
+                                            formatter = { v -> String.format(java.util.Locale.US, "%+.0f", v) },
+                                            onValueChange = { newGrade -> updateAxes(currentAxes.copy(grade = newGrade)) }
                                         )
                                         GSFlexVariableSlider(
                                             label = "Slant",
                                             value = currentAxes.slant,
                                             range = -10f..0f,
-                                            formatter = { "%.0f°".format(it) },
-                                            onValueChange = { updateAxes(currentAxes.copy(slant = it)) }
+                                            formatter = { v -> String.format(java.util.Locale.US, "%.0f°", v) },
+                                            onValueChange = { newSlant -> updateAxes(currentAxes.copy(slant = newSlant)) }
                                         )
                                         GSFlexVariableSlider(
                                             label = "Roundness",
                                             value = currentAxes.roundness,
                                             range = 0f..100f,
-                                            formatter = { "%.0f%%".format(it) },
-                                            onValueChange = { updateAxes(currentAxes.copy(roundness = it)) }
+                                            formatter = { v -> String.format(java.util.Locale.US, "%.0f%%", v) },
+                                            onValueChange = { newRoundness -> updateAxes(currentAxes.copy(roundness = newRoundness)) }
                                         )
                                     }
                                 }
@@ -1893,48 +1893,6 @@ fun AppearanceSettingsScreenContent(
 }
 
 @Composable
-private fun GSFlexVariableSlider(
-    label: String,
-    value: Float,
-    range: ClosedFloatingPointRange<Float>,
-    formatter: (Float) -> String = { "%.0f".format(it) },
-    onValueChange: (Float) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                softWrap = false
-            )
-            Text(
-                text = formatter(value),
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-                softWrap = false
-            )
-        }
-        com.petal.browser.ui.components.PetalSlider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = range,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-
-
-@Composable
 private fun PaletteSwatchSquare(
     scheme: ColorScheme,
     selected: Boolean,
@@ -2013,7 +1971,7 @@ private fun GSFlexVariableSlider(
     label: String,
     value: Float,
     range: ClosedFloatingPointRange<Float>,
-    formatter: (Float) -> String = { "%.0f".format(it) },
+    formatter: (Float) -> String = { v -> String.format(java.util.Locale.US, "%.0f", v) },
     onValueChange: (Float) -> Unit
 ) {
     Column(
