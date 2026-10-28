@@ -74,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -227,7 +228,7 @@ fun PetalBrightnessHud(
     val shape = RoundedCornerShape(24.dp)
     val surfaceModifier = if (isLiquidGlass) {
         Modifier
-            .background(Color.Black.copy(alpha = 0.55f), shape)
+            .background(petalGroupSurfaceColor(), shape)
             .liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.9f)
     } else {
         Modifier
@@ -284,7 +285,7 @@ fun PetalVolumeHud(
 
     val surfaceModifier = if (isLiquidGlass) {
         Modifier
-            .background(Color.Black.copy(alpha = 0.55f), shape)
+            .background(petalGroupSurfaceColor(), shape)
             .liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.9f)
     } else {
         Modifier
@@ -346,7 +347,7 @@ fun PetalSlideToUnlock(
     val containerShape = RoundedCornerShape(32.dp)
     val containerModifier = if (isLiquidGlass) {
         Modifier
-            .background(Color.Black.copy(alpha = 0.55f), containerShape)
+            .background(petalGroupSurfaceColor(), containerShape)
             .liquidGlassChrome(containerShape, enabled = true, sheenIntensity = 0.9f)
     } else {
         Modifier

@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 fun IconSwitch(
     checked: Boolean,
     icon: ImageVector,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {

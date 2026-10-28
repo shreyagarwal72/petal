@@ -95,6 +95,7 @@ class PetalVideoPlayerOverlayBridge(
 
         val cv = ComposeView(activity).apply {
             setContent {
+                val hostView = this
                 val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
@@ -108,13 +109,16 @@ class PetalVideoPlayerOverlayBridge(
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
 
-                PetalExpressiveTheme(
-                    dynamicColor = dynamicColor,
-                    useAmoled = isAmoled,
-                    appFont = appFont,
-                    colorStyle = colorStyle,
-                    paletteId = paletteId,
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.petal.browser.ui.glass.LocalPetalGlassSource provides hostView
                 ) {
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = appFont,
+                        colorStyle = colorStyle,
+                        paletteId = paletteId,
+                    ) {
                     // Continuous position ticker loop while playing so timeline & timers never freeze
                     LaunchedEffect(isPlaying, playbackSpeed) {
                         var lastTick = android.os.SystemClock.elapsedRealtime()
@@ -218,6 +222,7 @@ class PetalVideoPlayerOverlayBridge(
                 }
             }
         }
+    }
         val lp = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT,

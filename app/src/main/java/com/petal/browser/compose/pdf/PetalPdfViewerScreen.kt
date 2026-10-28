@@ -102,6 +102,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.ui.components.PetalLiquidIconButton
 import com.petal.browser.ui.components.PetalButtonVariant
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -1858,57 +1859,37 @@ private fun PdfViewerTopBar(
     onInfo: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
-        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
-
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val barShape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
+    val barShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
 
-    Box(
+    Surface(
+        shape = barShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.94f),
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (isGlass) {
-                    Modifier.windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
-                } else {
-                    Modifier
-                        .background(
-                            androidx.compose.ui.graphics.Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.80f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                        .padding(top = topClearance)
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                }
-            )
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true, pressFx = false) else Modifier)
     ) {
-        Surface(
-            shape = barShape,
-            color = if (isGlass) petalGroupSurfaceColor() else Color.Transparent,
-            shadowElevation = 0.dp,
-            tonalElevation = 0.dp,
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true) else Modifier)
-        ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
+                .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
+            PetalLiquidIconButton(
+                onClick = onBack,
+                contentDescription = stringResource(R.string.ui_back),
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.ui_back),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(8.dp))
 
             Column(
                 modifier = Modifier
@@ -1933,35 +1914,44 @@ private fun PdfViewerTopBar(
                 }
             }
 
-            IconButton(onClick = onReadingSettings) {
+            PetalLiquidIconButton(
+                onClick = onReadingSettings,
+                contentDescription = stringResource(R.string.ui_pdf_reading_settings),
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.Tune,
-                    contentDescription = stringResource(R.string.ui_pdf_reading_settings),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
-            IconButton(onClick = onFindText) {
+            Spacer(Modifier.width(4.dp))
+            PetalLiquidIconButton(
+                onClick = onFindText,
+                contentDescription = stringResource(R.string.ui_find_text),
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.Search,
-                    contentDescription = stringResource(R.string.ui_find_text),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
+            Spacer(Modifier.width(4.dp))
             val menuRotation by animateFloatAsState(
                 targetValue = if (menuExpanded) 180f else 0f,
                 animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
                 label = "pdf_menu_rot"
             )
             Box {
-                IconButton(
+                PetalLiquidIconButton(
                     onClick = { menuExpanded = true },
-                    modifier = Modifier.graphicsLayer { rotationZ = menuRotation }
+                    modifier = Modifier.graphicsLayer { rotationZ = menuRotation },
+                    contentDescription = stringResource(R.string.ui_more),
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = stringResource(R.string.ui_more),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -2023,6 +2013,8 @@ private fun PdfFindBar(
 ) {
     val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val findShape = RoundedCornerShape(28.dp)
 
     Box(
         modifier = Modifier
@@ -2031,16 +2023,17 @@ private fun PdfFindBar(
             .padding(horizontal = 16.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
-            shadowElevation = 8.dp,
+            shape = findShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
+            shadowElevation = 0.dp,
+            tonalElevation = 0.dp,
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                    RoundedCornerShape(28.dp)
-                )
+                .then(if (isGlass) Modifier.liquidGlassChrome(findShape, enabled = true, pressFx = false) else Modifier)
         ) {
             Row(
                 modifier = Modifier
@@ -2075,17 +2068,29 @@ private fun PdfFindBar(
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
 
-                    IconButton(onClick = onPrevious, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = stringResource(R.string.ui_previous))
+                    PetalLiquidIconButton(
+                        onClick = onPrevious,
+                        size = 36.dp,
+                        contentDescription = stringResource(R.string.ui_previous),
+                    ) {
+                        Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = null)
                     }
 
-                    IconButton(onClick = onNext, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = stringResource(R.string.ui_next))
+                    PetalLiquidIconButton(
+                        onClick = onNext,
+                        size = 36.dp,
+                        contentDescription = stringResource(R.string.ui_next),
+                    ) {
+                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
                     }
                 }
 
-                IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close_search))
+                PetalLiquidIconButton(
+                    onClick = onClose,
+                    size = 36.dp,
+                    contentDescription = stringResource(R.string.ui_close_search),
+                ) {
+                    Icon(Icons.Rounded.Close, contentDescription = null)
                 }
             }
         }
@@ -2118,6 +2123,9 @@ private fun PdfEditTopBar(
         Color(0xFF8E24AA)  // Purple
     )
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val editShape = RoundedCornerShape(24.dp)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -2125,14 +2133,14 @@ private fun PdfEditTopBar(
             .padding(horizontal = 12.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
-            shadowElevation = 8.dp,
-            modifier = Modifier.border(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                RoundedCornerShape(24.dp)
-            )
+            shape = editShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
+            shadowElevation = 0.dp,
+            tonalElevation = 0.dp,
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.liquidGlassChrome(editShape, enabled = true, pressFx = false) else Modifier)
         ) {
             Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                 Row(
@@ -2140,8 +2148,12 @@ private fun PdfEditTopBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(onClick = onCancel, modifier = Modifier.size(38.dp)) {
-                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_cancel))
+                    PetalLiquidIconButton(
+                        onClick = onCancel,
+                        size = 38.dp,
+                        contentDescription = stringResource(R.string.ui_cancel),
+                    ) {
+                        Icon(Icons.Rounded.Close, contentDescription = null)
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -2169,35 +2181,36 @@ private fun PdfEditTopBar(
                             shape = RoundedCornerShape(12.dp)
                         )
 
-                        IconButton(
+                        PetalLiquidIconButton(
                             onClick = onUndo,
                             enabled = canUndo,
-                            modifier = Modifier.size(38.dp)
+                            size = 38.dp,
+                            contentDescription = stringResource(R.string.ui_undo),
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.Undo,
-                                contentDescription = stringResource(R.string.ui_undo),
+                                contentDescription = null,
                                 tint = if (canUndo) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.35f)
                             )
                         }
 
-                        IconButton(onClick = onClearAnnotations, modifier = Modifier.size(38.dp)) {
-                            Icon(Icons.Rounded.DeleteSweep, contentDescription = stringResource(R.string.ui_clear))
+                        PetalLiquidIconButton(
+                            onClick = onClearAnnotations,
+                            size = 38.dp,
+                            contentDescription = stringResource(R.string.ui_clear),
+                        ) {
+                            Icon(Icons.Rounded.DeleteSweep, contentDescription = null)
                         }
                     }
 
-                    Button(
+                    PetalLiquidButton(
+                        text = stringResource(R.string.ui_save),
                         onClick = onSave,
                         enabled = !isSaving,
                         shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                    ) {
-                        if (isSaving) {
-                            PetalContainedLoadingIndicator(size = 18.dp)
-                        } else {
-                            Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
-                        }
-                    }
+                        variant = PetalButtonVariant.FILLED,
+                        loading = isSaving,
+                    )
                 }
 
                 // Color Palette Row
@@ -2312,10 +2325,14 @@ private fun PdfViewerBottomBar(
                 }
 
                 // View Mode Toggle (Continuous vs Page Pager)
-                IconButton(onClick = onToggleViewMode, modifier = Modifier.size(34.dp)) {
+                PetalLiquidIconButton(
+                    onClick = onToggleViewMode,
+                    size = 34.dp,
+                    contentDescription = stringResource(R.string.ui_pdf_view_mode),
+                ) {
                     Icon(
                         imageVector = if (viewMode == PdfViewMode.CONTINUOUS_VERTICAL) Icons.Rounded.ViewDay else Icons.Rounded.ViewCarousel,
-                        contentDescription = stringResource(R.string.ui_pdf_view_mode),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(19.dp)
                     )
@@ -2323,13 +2340,14 @@ private fun PdfViewerBottomBar(
 
                 // Auto Scroll Toggle (Only in continuous mode)
                 if (viewMode == PdfViewMode.CONTINUOUS_VERTICAL) {
-                    IconButton(
+                    PetalLiquidIconButton(
                         onClick = onToggleAutoScroll,
-                        modifier = Modifier.size(34.dp)
+                        size = 34.dp,
+                        contentDescription = stringResource(R.string.ui_pdf_auto_scroll),
                     ) {
                         Icon(
                             imageVector = if (isAutoScrolling) Icons.Rounded.PauseCircle else Icons.Rounded.PlayCircle,
-                            contentDescription = stringResource(R.string.ui_pdf_auto_scroll),
+                            contentDescription = null,
                             tint = if (isAutoScrolling) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
@@ -2337,63 +2355,84 @@ private fun PdfViewerBottomBar(
                 }
 
                 // Margin Crop Whitespace Toggle
-                IconButton(
+                PetalLiquidIconButton(
                     onClick = onToggleCropMargins,
-                    modifier = Modifier.size(34.dp)
+                    size = 34.dp,
+                    contentDescription = stringResource(R.string.ui_pdf_crop_margins),
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CropFree,
-                        contentDescription = stringResource(R.string.ui_pdf_crop_margins),
+                        contentDescription = null,
                         tint = if (isCropMarginsEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(19.dp)
                     )
                 }
 
                 // Reading Tone / Options Dialog Trigger
-                IconButton(onClick = onReadingSettings, modifier = Modifier.size(34.dp)) {
+                PetalLiquidIconButton(
+                    onClick = onReadingSettings,
+                    size = 34.dp,
+                    contentDescription = stringResource(R.string.ui_pdf_reading_tone),
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.Palette,
-                        contentDescription = stringResource(R.string.ui_pdf_reading_tone),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(19.dp)
                     )
                 }
 
                 // Thumbnail Grid
-                IconButton(onClick = onShowThumbnails, modifier = Modifier.size(34.dp)) {
+                PetalLiquidIconButton(
+                    onClick = onShowThumbnails,
+                    size = 34.dp,
+                    contentDescription = stringResource(R.string.ui_thumbnails),
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.GridView,
-                        contentDescription = stringResource(R.string.ui_thumbnails),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(19.dp)
                     )
                 }
 
                 // Edit PDF's real text
-                IconButton(onClick = onEditText, modifier = Modifier.size(34.dp)) {
+                PetalLiquidIconButton(
+                    onClick = onEditText,
+                    size = 34.dp,
+                    contentDescription = stringResource(R.string.ui_edit_document_text),
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.TextFields,
-                        contentDescription = stringResource(R.string.ui_edit_document_text),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(19.dp)
                     )
                 }
 
                 // Zoom Out Button
-                IconButton(onClick = onZoomOut, modifier = Modifier.size(32.dp)) {
+                PetalLiquidIconButton(
+                    onClick = onZoomOut,
+                    size = 32.dp,
+                    contentDescription = stringResource(R.string.ui_zoom_out_2),
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.Remove,
-                        contentDescription = stringResource(R.string.ui_zoom_out_2),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(18.dp)
                     )
                 }
 
                 // Zoom In Button
-                IconButton(onClick = onZoomIn, modifier = Modifier.size(32.dp)) {
+                PetalLiquidIconButton(
+                    onClick = onZoomIn,
+                    size = 32.dp,
+                    contentDescription = stringResource(R.string.ui_zoom_in_2),
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.Add,
-                        contentDescription = stringResource(R.string.ui_zoom_in_2),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(18.dp)
                     )

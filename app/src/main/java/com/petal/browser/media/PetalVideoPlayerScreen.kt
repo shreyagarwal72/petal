@@ -128,18 +128,22 @@ fun PetalVideoPlayerScreen(
         }
     }
 
+    val hostView = androidx.compose.ui.platform.LocalView.current
     val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onClose
+    androidx.compose.runtime.CompositionLocalProvider(
+        com.petal.browser.ui.glass.LocalPetalGlassSource provides hostView
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(Color.Black),
-            ) {
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = true,
+            onBack = onClose
+        ) {
+            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+                Box(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .background(Color.Black),
+                ) {
         // ExoPlayer PlayerView
         AndroidView(
             modifier = Modifier.fillMaxSize(),
@@ -238,6 +242,7 @@ fun PetalVideoPlayerScreen(
             )
         }
     }
+            }
         }
     }
 }

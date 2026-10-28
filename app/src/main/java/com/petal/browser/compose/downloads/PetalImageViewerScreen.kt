@@ -84,6 +84,15 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalView
+import com.petal.browser.ui.components.PetalLiquidIconButton
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.LocalPetalGlassSource
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaperLive
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.containment.PetalSheet
 import kotlinx.coroutines.delay
@@ -315,30 +324,38 @@ fun PetalImageViewerScreen(
         }
     }
 
-    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+    val hostView = LocalView.current
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val imageWallpaper = rememberPetalGlassWallpaper()
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onBackPress
+    CompositionLocalProvider(
+        LocalPetalGlassSource provides hostView,
+        LocalPetalGlassWallpaper provides (if (isGlass) imageWallpaper else null)
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
-            Scaffold(
-                containerColor = Color.Black,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = {
-            com.petal.browser.ui.containment.PetalSnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.navigationBarsPadding()
-            )
-        },
-    ) { innerPadding ->
+        val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black)
-                        .padding(innerPadding)
-                ) {
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = true,
+            onBack = onBackPress
+        ) {
+            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
+                Scaffold(
+                    containerColor = Color.Black,
+                    contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                    snackbarHost = {
+                        com.petal.browser.ui.containment.PetalSnackbarHost(
+                            hostState = snackbarHostState,
+                            modifier = Modifier.navigationBarsPadding()
+                        )
+                    },
+                ) { innerPadding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black)
+                            .padding(innerPadding)
+                            .captureGlassWallpaperLive(imageWallpaper) { pagerState.currentPage.toLong() }
+                    ) {
                     // ── Gallery View (Horizontal Pager or Comic Vertical Strip) ──
                     if (isComicMode) {
                         LazyColumn(
@@ -484,24 +501,25 @@ fun PetalImageViewerScreen(
         }
     }
 
-    // ── Image Crop Dialog ────────────────────────────────
-    if (showCropDialog && currentEntry != null) {
-        PetalImageCropDialog(
-            imageUri = currentEntry.downloadItem?.localUri?.let { Uri.parse(it) },
-            imageUrl = currentEntry.sourceUrl,
-            onDismissRequest = { showCropDialog = false },
-            onImageSaved = { savedFile ->
-                showCropDialog = false
-            }
-        )
-    }
+        // ── Image Crop Dialog ────────────────────────────────
+        if (showCropDialog && currentEntry != null) {
+            PetalImageCropDialog(
+                imageUri = currentEntry.downloadItem?.localUri?.let { Uri.parse(it) },
+                imageUrl = currentEntry.sourceUrl,
+                onDismissRequest = { showCropDialog = false },
+                onImageSaved = { savedFile ->
+                    showCropDialog = false
+                }
+            )
+        }
 
-    // ── Image Info Bottom Sheet ──────────────────────────
-    if (showInfoSheet && currentEntry != null) {
-        ImageInfoBottomSheet(
-            entry     = currentEntry,
-            onDismiss = { showInfoSheet = false },
-        )
+        // ── Image Info Bottom Sheet ──────────────────────────
+        if (showInfoSheet && currentEntry != null) {
+            ImageInfoBottomSheet(
+                entry     = currentEntry,
+                onDismiss = { showInfoSheet = false },
+            )
+        }
     }
 }
 
@@ -712,45 +730,44 @@ private fun ImageViewerTopBar(
     onScanOcr: () -> Unit = {},
 ) {
     var moreMenuExpanded by remember { mutableStateOf(false) }
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val barShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
 
-    // These viewers hide the system status bar immediately on launch (immersive mode), so
-    // statusBarsPadding() alone collapses to 0 and the bar sits flush against the physical top
-    // edge / camera cutout. Combine the (usually-zero) status bar inset with the display cutout
-    // inset, and fall back to a comfortable minimum so there's always real breathing room.
-    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
-        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
-
-    Box(
+    Surface(
+        shape = barShape,
+        color = if (isGlass) petalGroupSurfaceColor() else Color.Black.copy(alpha = 0.75f),
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(Color.Black.copy(alpha = 0.72f), Color.Transparent),
-                )
-            )
-            .padding(top = topClearance)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true, pressFx = false) else Modifier)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Back button
-            IconButton(onClick = onBack) {
+            PetalLiquidIconButton(
+                onClick = onBack,
+                contentDescription = stringResource(R.string.ui_back),
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.ui_back),
-                    tint = Color.White,
+                    contentDescription = null,
+                    tint = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White,
                 )
             }
 
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(8.dp))
 
             // Title + counter
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text      = fileName,
-                    color     = Color.White,
+                    color     = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White,
                     style     = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                     maxLines  = 1,
                     overflow  = TextOverflow.Ellipsis,
@@ -758,21 +775,39 @@ private fun ImageViewerTopBar(
                 if (total > 1) {
                     Text(
                         text  = stringResource(R.string.ui_of, currentIndex + 1, total),
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = if (isGlass) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
 
             // OCR / Scan Text
-            IconButton(onClick = onScanOcr) {
-                Icon(Icons.Rounded.DocumentScanner, contentDescription = "Scan Text", tint = Color.White)
+            PetalLiquidIconButton(
+                onClick = onScanOcr,
+                contentDescription = "Scan Text",
+            ) {
+                Icon(
+                    Icons.Rounded.DocumentScanner,
+                    contentDescription = null,
+                    tint = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White
+                )
             }
 
+            Spacer(Modifier.width(4.dp))
+
             // Share
-            IconButton(onClick = onShare) {
-                Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.ui_share), tint = Color.White)
+            PetalLiquidIconButton(
+                onClick = onShare,
+                contentDescription = stringResource(R.string.ui_share),
+            ) {
+                Icon(
+                    Icons.Rounded.Share,
+                    contentDescription = null,
+                    tint = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White
+                )
             }
+
+            Spacer(Modifier.width(4.dp))
 
             // More options
             val menuRotation by animateFloatAsState(
@@ -781,11 +816,16 @@ private fun ImageViewerTopBar(
                 label = "img_menu_rot"
             )
             Box {
-                IconButton(
+                PetalLiquidIconButton(
                     onClick = { moreMenuExpanded = true },
-                    modifier = Modifier.graphicsLayer { rotationZ = menuRotation }
+                    modifier = Modifier.graphicsLayer { rotationZ = menuRotation },
+                    contentDescription = stringResource(R.string.ui_more),
                 ) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.ui_more), tint = Color.White)
+                    Icon(
+                        Icons.Rounded.MoreVert,
+                        contentDescription = null,
+                        tint = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White
+                    )
                 }
                 com.petal.browser.ui.containment.PetalPopupMenu(
                     expanded    = moreMenuExpanded,
@@ -828,30 +868,28 @@ private fun ImageViewerBottomBar(
     onInfo: () -> Unit,
 ) {
     val isLocal = entry?.downloadItem != null
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val bottomShape = RoundedCornerShape(32.dp)
     val bottomClearance = WindowInsets.navigationBars.asPaddingValues()
         .calculateBottomPadding().coerceAtLeast(16.dp)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f)),
-                )
-            )
             .padding(bottom = bottomClearance)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Surface(
-            shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
-            tonalElevation = 6.dp,
-            shadowElevation = 8.dp,
-            border = androidx.compose.foundation.BorderStroke(
+            shape = bottomShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
+            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             ),
-            modifier = Modifier.clip(RoundedCornerShape(32.dp)),
+            modifier = Modifier.then(if (isGlass) Modifier.liquidGlassChrome(bottomShape, enabled = true, pressFx = false) else Modifier),
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -927,6 +965,7 @@ private fun ViewerActionButton(
     onClick: () -> Unit,
 ) {
     val hapticClick = com.petal.browser.haptics.rememberHapticOnClick(onClick)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -935,10 +974,12 @@ private fun ViewerActionButton(
         FilledTonalIconButton(
             onClick = hapticClick,
             colors = IconButtonDefaults.filledTonalIconButtonColors(
-                containerColor = containerColor,
+                containerColor = if (isGlass) petalGroupSurfaceColor() else containerColor,
                 contentColor = tint,
             ),
-            modifier = Modifier.size(44.dp),
+            modifier = Modifier
+                .size(44.dp)
+                .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, pressFx = true) else Modifier),
             shape = CircleShape,
         ) {
             Icon(

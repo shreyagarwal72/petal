@@ -52,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -67,11 +68,20 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
+import com.petal.browser.compose.downloads.PetalImageViewerScreen
+import com.petal.browser.compose.downloads.PetalViewerImageEntry
 import com.petal.browser.compose.pdf.PetalPdfViewerScreen
 import com.petal.browser.haptics.PetalHapticEngine
-import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.media.PetalAudioPlayerScreen
+import com.petal.browser.media.PetalVideoPlayerScreen
 import com.petal.browser.ui.components.PetalButtonVariant
+import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.ui.components.PetalLiquidIconButton
 import com.petal.browser.ui.containment.*
+import com.petal.browser.ui.glass.LocalPetalGlassSource
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaperLive
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -213,76 +223,124 @@ fun PetalFileViewerScreen(
         return
     }
 
+    // Image files rendered natively with interactive PetalImageViewerScreen
+    if (category == PetalFileViewerCategory.IMAGE) {
+        val entry = remember(fileUri, displayName) {
+            PetalViewerImageEntry(
+                label = displayName,
+                sourceUrl = fileUri.toString(),
+            )
+        }
+        PetalImageViewerScreen(
+            initialIndex = 0,
+            entries = listOf(entry),
+            onBackPress = onBackPress,
+        )
+        return
+    }
+
+    // Media files rendered natively with PetalAudioPlayerScreen / PetalVideoPlayerScreen
+    if (category == PetalFileViewerCategory.MEDIA) {
+        val isAudio = remember(extension) {
+            extension in listOf("mp3", "wav", "ogg", "m4a", "flac", "aac")
+        }
+        if (isAudio) {
+            PetalAudioPlayerScreen(
+                mediaUri = fileUri,
+                displayName = displayName,
+                onClose = onBackPress,
+            )
+        } else {
+            PetalVideoPlayerScreen(
+                videoUri = fileUri,
+                displayName = displayName,
+                onClose = onBackPress,
+            )
+        }
+        return
+    }
+
     var isEditing by remember { mutableStateOf(false) }
     var isWordWrap by remember { mutableStateOf(false) }
     var onSaveRequested by remember { mutableStateOf<(() -> Unit)?>(null) }
 
-    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+    val hostView = LocalView.current
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val fileWallpaper = rememberPetalGlassWallpaper()
+    val glassFrameTick = remember { mutableLongStateOf(0L) }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onBackPress
+    CompositionLocalProvider(
+        LocalPetalGlassSource provides hostView,
+        LocalPetalGlassWallpaper provides (if (isGlass) fileWallpaper else null)
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            // Glass backdrop: records the page background so every card and the top bar
-            // frost and refract it live. The Box colour is the plain (non-glass) fallback.
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
-            ) {
-            com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                modifier = Modifier.fillMaxSize(),
-                pageSeed = "petal_file_viewer"
-            )
-            Scaffold(
-                containerColor = Color.Transparent,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            PetalFileViewerTopBar(
-                title = displayName,
-                extension = extension,
-                category = category,
-                isEditing = isEditing,
-                isWordWrap = isWordWrap,
-                onToggleEdit = { isEditing = !isEditing },
-                onToggleWrap = { isWordWrap = !isWordWrap },
-                onSave = { onSaveRequested?.invoke() },
-                onBack = onBackPress,
-                onShare = { shareFile(context, fileUri, displayName) },
-                onOpenExternal = { openExternal(context, fileUri) },
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .navigationBarsPadding()
+        val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = true,
+            onBack = onBackPress
         ) {
-            when (category) {
-                PetalFileViewerCategory.ARCHIVE -> ArchiveViewerContent(
-                    fileUri = fileUri,
-                    extension = extension,
-                    displayName = displayName
-                )
-                PetalFileViewerCategory.IMAGE -> ImageViewerContent(fileUri = fileUri, displayName = displayName)
-                PetalFileViewerCategory.MEDIA -> MediaViewerContent(fileUri = fileUri, displayName = displayName, extension = extension)
-                PetalFileViewerCategory.DOCX -> DocxViewerContent(fileUri = fileUri)
-                PetalFileViewerCategory.PPTX -> PptxViewerContent(fileUri = fileUri)
-                PetalFileViewerCategory.XLSX -> XlsxViewerContent(fileUri = fileUri)
-                PetalFileViewerCategory.TEXT_CODE -> TextCodeViewerContent(
-                    fileUri = fileUri,
-                    isEditing = isEditing,
-                    isWordWrap = isWordWrap,
-                    onTextLoaded = {},
-                    onRegisterSaveHandler = { handler -> onSaveRequested = handler },
-                    onEditFinish = { isEditing = false }
-                )
-                else -> GenericBinaryContent(fileUri = fileUri, displayName = displayName, extension = extension)
-            }
-        }
-    }
+            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+                // Glass backdrop: records the page background so cards and the top bar
+                // frost and refract it live with authentic liquid glass.
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .captureGlassWallpaperLive(fileWallpaper) { glassFrameTick.longValue }
+                ) {
+                    com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                        modifier = Modifier.fillMaxSize(),
+                        pageSeed = "petal_file_viewer"
+                    )
+                    Scaffold(
+                        containerColor = Color.Transparent,
+                        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                        topBar = {
+                            PetalFileViewerTopBar(
+                                title = displayName,
+                                extension = extension,
+                                category = category,
+                                isEditing = isEditing,
+                                isWordWrap = isWordWrap,
+                                onToggleEdit = { isEditing = !isEditing },
+                                onToggleWrap = { isWordWrap = !isWordWrap },
+                                onSave = { onSaveRequested?.invoke() },
+                                onBack = onBackPress,
+                                onShare = { shareFile(context, fileUri, displayName) },
+                                onOpenExternal = { openExternal(context, fileUri) },
+                            )
+                        }
+                    ) { innerPadding ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                                .navigationBarsPadding()
+                        ) {
+                            when (category) {
+                                PetalFileViewerCategory.ARCHIVE -> ArchiveViewerContent(
+                                    fileUri = fileUri,
+                                    extension = extension,
+                                    displayName = displayName
+                                )
+                                PetalFileViewerCategory.IMAGE -> ImageViewerContent(fileUri = fileUri, displayName = displayName)
+                                PetalFileViewerCategory.MEDIA -> MediaViewerContent(fileUri = fileUri, displayName = displayName, extension = extension)
+                                PetalFileViewerCategory.DOCX -> DocxViewerContent(fileUri = fileUri)
+                                PetalFileViewerCategory.PPTX -> PptxViewerContent(fileUri = fileUri)
+                                PetalFileViewerCategory.XLSX -> XlsxViewerContent(fileUri = fileUri)
+                                PetalFileViewerCategory.TEXT_CODE -> TextCodeViewerContent(
+                                    fileUri = fileUri,
+                                    isEditing = isEditing,
+                                    isWordWrap = isWordWrap,
+                                    onTextLoaded = {},
+                                    onRegisterSaveHandler = { handler -> onSaveRequested = handler },
+                                    onEditFinish = { isEditing = false }
+                                )
+                                else -> GenericBinaryContent(fileUri = fileUri, displayName = displayName, extension = extension)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -308,12 +366,12 @@ private fun PetalFileViewerTopBar(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true) else Modifier),
+            .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true, pressFx = false) else Modifier),
         shape = barShape,
         color = if (isGlass) petalGroupSurfaceColor()
                 else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f),
-        tonalElevation = if (isGlass) 0.dp else 3.dp,
-        shadowElevation = if (isGlass) 0.dp else 2.dp,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
     ) {
         Row(
             modifier = Modifier
@@ -321,18 +379,21 @@ private fun PetalFileViewerTopBar(
                 // Status bar / cutout inset goes INSIDE the bar so it paints behind the status
                 // bar instead of leaving a black gap above it.
                 .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
+            PetalLiquidIconButton(
+                onClick = onBack,
+                contentDescription = stringResource(R.string.ui_back),
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.ui_back),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(8.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -351,43 +412,61 @@ private fun PetalFileViewerTopBar(
 
             if (category == PetalFileViewerCategory.TEXT_CODE) {
                 if (isEditing) {
-                    IconButton(onClick = onSave) {
+                    PetalLiquidIconButton(
+                        onClick = onSave,
+                        contentDescription = stringResource(R.string.ui_save_file),
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.Save,
-                            contentDescription = stringResource(R.string.ui_save_file),
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 } else {
-                    IconButton(onClick = onToggleWrap) {
+                    PetalLiquidIconButton(
+                        onClick = onToggleWrap,
+                        contentDescription = if (isWordWrap) "Disable word wrap" else "Enable word wrap",
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.WrapText,
-                            contentDescription = if (isWordWrap) "Disable word wrap" else "Enable word wrap",
+                            contentDescription = null,
                             tint = if (isWordWrap) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
-                IconButton(onClick = onToggleEdit) {
+                Spacer(Modifier.width(4.dp))
+                PetalLiquidIconButton(
+                    onClick = onToggleEdit,
+                    contentDescription = if (isEditing) "View mode" else "Edit mode",
+                ) {
                     Icon(
                         imageVector = if (isEditing) Icons.Rounded.Visibility else Icons.Rounded.Edit,
-                        contentDescription = if (isEditing) "View mode" else "Edit mode",
+                        contentDescription = null,
                         tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
 
-            IconButton(onClick = onShare) {
+            Spacer(Modifier.width(4.dp))
+            PetalLiquidIconButton(
+                onClick = onShare,
+                contentDescription = stringResource(R.string.ui_share_file),
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.Share,
-                    contentDescription = stringResource(R.string.ui_share_file),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
-            IconButton(onClick = onOpenExternal) {
+            Spacer(Modifier.width(4.dp))
+            PetalLiquidIconButton(
+                onClick = onOpenExternal,
+                contentDescription = stringResource(R.string.ui_open_with_external_app),
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.OpenInNew,
-                    contentDescription = stringResource(R.string.ui_open_with_external_app),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -542,13 +621,14 @@ private fun ArchiveViewerContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 if (pathSegments.isNotEmpty()) {
-                                    IconButton(
+                                    PetalLiquidIconButton(
                                         onClick = { navigateUp() },
-                                        modifier = Modifier.size(36.dp)
+                                        size = 36.dp,
+                                        contentDescription = "Up",
                                     ) {
                                         Icon(
                                             Icons.AutoMirrored.Filled.ArrowBack,
-                                            contentDescription = "Up",
+                                            contentDescription = null,
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
@@ -830,7 +910,33 @@ private fun ArchiveEntryPreview(
 
                 when {
                     ext == "pdf" -> PetalPdfViewerScreen(pdfUri = uri, displayName = name, onBackPress = onBack)
-                    isImage -> ImageViewerContent(fileUri = uri, displayName = name)
+                    isImage -> {
+                        val entryItem = remember(uri, name) {
+                            PetalViewerImageEntry(
+                                label = name,
+                                sourceUrl = uri.toString(),
+                            )
+                        }
+                        PetalImageViewerScreen(
+                            initialIndex = 0,
+                            entries = listOf(entryItem),
+                            onBackPress = onBack,
+                        )
+                    }
+                    ext in listOf("mp4", "mkv", "webm", "3gp") -> {
+                        PetalVideoPlayerScreen(
+                            videoUri = uri,
+                            displayName = name,
+                            onClose = onBack,
+                        )
+                    }
+                    ext in listOf("mp3", "wav", "ogg", "m4a", "flac", "aac") -> {
+                        PetalAudioPlayerScreen(
+                            mediaUri = uri,
+                            displayName = name,
+                            onClose = onBack,
+                        )
+                    }
                     isText -> TextCodeViewerContent(
                         fileUri = uri,
                         isEditing = false,

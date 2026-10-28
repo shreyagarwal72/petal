@@ -75,7 +75,9 @@ import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.PetalLiquidIconButton
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
@@ -472,106 +474,141 @@ fun PetalVideoPlayerOverlay(
                 )
 
                 // ── Top Bar: Title, Speed, Aspect, Lock, PiP, Cast, Close ──
-                Column(
+                val topBarShape = RoundedCornerShape(24.dp)
+                Surface(
+                    shape = topBarShape,
+                    color = if (isLiquidGlass) petalGroupSurfaceColor() else Color.Black.copy(alpha = 0.55f),
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)
-                        .padding(top = topClearance, start = 16.dp, end = 16.dp),
+                        .padding(top = topClearance, start = 16.dp, end = 16.dp)
+                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(topBarShape, enabled = true, pressFx = false) else Modifier)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                     ) {
                         Row(
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f).padding(end = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            IconButton(onClick = onCloseFullscreen) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f).padding(end = 12.dp),
+                            ) {
+                                PetalLiquidIconButton(
+                                    onClick = onCloseFullscreen,
+                                    size = 38.dp,
                                     contentDescription = "Close",
-                                    tint = Color.White,
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = title.ifBlank { stringResource(R.string.app_name) },
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            // Speed jumping capsule
-                            PetalSpeedCapsule(
-                                speed = currentSpeed,
-                                isLiquidGlass = isLiquidGlass,
-                                onClick = { showSpeedSelector = !showSpeedSelector },
-                            )
-
-                            // Aspect Ratio
-                            IconButton(onClick = { showAspectSheet = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.FitScreen,
-                                    contentDescription = stringResource(R.string.ui_aspect_ratio),
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp),
-                                )
-                            }
-
-                            // Subtitles & Sync
-                            IconButton(onClick = { showSubtitleSheet = true }) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Subtitles,
-                                    contentDescription = "Subtitles",
-                                    tint = if (loadedSubtitles.isNotEmpty()) MaterialTheme.colorScheme.primary else Color.White,
-                                    modifier = Modifier.size(22.dp),
-                                )
-                            }
-
-                            // Lock Player Controls
-                            IconButton(onClick = {
-                                isControlsLocked = true
-                                PetalHapticEngine.getInstance(context).playClick(context)
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Lock,
-                                    contentDescription = stringResource(R.string.ui_player_locked),
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp),
-                                )
-                            }
-
-                            // Cast Button
-                            if (onCastClick != null) {
-                                IconButton(onClick = { onCastClick.invoke() }) {
+                                ) {
                                     Icon(
-                                        imageVector = Icons.Default.Cast,
-                                        contentDescription = stringResource(R.string.ui_cast_to_device),
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = null,
                                         tint = Color.White,
-                                        modifier = Modifier.size(22.dp),
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = title.ifBlank { stringResource(R.string.app_name) },
+                                    color = Color.White,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                // Speed jumping capsule
+                                PetalSpeedCapsule(
+                                    speed = currentSpeed,
+                                    isLiquidGlass = isLiquidGlass,
+                                    onClick = { showSpeedSelector = !showSpeedSelector },
+                                )
+
+                                // Aspect Ratio
+                                PetalLiquidIconButton(
+                                    onClick = { showAspectSheet = true },
+                                    size = 38.dp,
+                                    contentDescription = stringResource(R.string.ui_aspect_ratio),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.FitScreen,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+
+                                // Subtitles & Sync
+                                PetalLiquidIconButton(
+                                    onClick = { showSubtitleSheet = true },
+                                    size = 38.dp,
+                                    contentDescription = "Subtitles",
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Subtitles,
+                                        contentDescription = null,
+                                        tint = if (loadedSubtitles.isNotEmpty()) MaterialTheme.colorScheme.primary else Color.White,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+
+                                // Lock Player Controls
+                                PetalLiquidIconButton(
+                                    onClick = {
+                                        isControlsLocked = true
+                                        PetalHapticEngine.getInstance(context).playClick(context)
+                                    },
+                                    size = 38.dp,
+                                    contentDescription = stringResource(R.string.ui_player_locked),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+
+                                // Cast Button
+                                if (onCastClick != null) {
+                                    PetalLiquidIconButton(
+                                        onClick = { onCastClick.invoke() },
+                                        size = 38.dp,
+                                        contentDescription = stringResource(R.string.ui_cast_to_device),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Cast,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
+                                }
+
+                                // Picture in Picture
+                                PetalLiquidIconButton(
+                                    onClick = onPipClick,
+                                    size = 38.dp,
+                                    contentDescription = "PiP",
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.PictureInPictureAlt,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp),
                                     )
                                 }
                             }
-
-                            // Picture in Picture
-                            IconButton(onClick = onPipClick) {
-                                Icon(
-                                    imageVector = Icons.Default.PictureInPictureAlt,
-                                    contentDescription = "PiP",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp),
-                                )
-                            }
                         }
-                    }
 
                     // Horizontal Speed Quick Selector Bar
                     AnimatedVisibility(visible = showSpeedSelector) {
@@ -719,20 +756,28 @@ fun PetalVideoPlayerOverlay(
                 }
 
                 // ── Bottom Seekbar & Controls Area ──────────────────────────
-                Column(
+                val bottomPillShape = RoundedCornerShape(28.dp)
+                Surface(
+                    shape = bottomPillShape,
+                    color = if (isLiquidGlass) petalGroupSurfaceColor() else Color.Black.copy(alpha = 0.55f),
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                         .padding(bottom = bottomClearance)
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(bottomPillShape, enabled = true, pressFx = false) else Modifier),
                 ) {
-                    PetalSeekbarWithTimers(
-                        positionMs = positionMs,
-                        durationMs = durationMs,
-                        isPaused = !isPlaying,
-                        onSeek = onSeek,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    Box(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                        PetalSeekbarWithTimers(
+                            positionMs = positionMs,
+                            durationMs = durationMs,
+                            isPaused = !isPlaying,
+                            onSeek = onSeek,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
         }
