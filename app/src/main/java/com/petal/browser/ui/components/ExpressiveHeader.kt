@@ -59,6 +59,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
@@ -96,6 +97,8 @@ fun ExpressiveHeader(
     maxTitleLines: Int = 2,
     maxSubtitleLines: Int = 2,
     isRootHeader: Boolean = false,
+    targetTitle: String? = null,
+    targetSubtitle: String? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val isHoisted = com.petal.browser.predictive.LocalZenithHeaderHoisted.current
@@ -141,6 +144,13 @@ fun ExpressiveHeader(
                     .padding(horizontal = 20.dp)
                     .padding(top = 4.dp, bottom = 12.dp),
             ) {
+                val backState = com.petal.browser.predictive.LocalPredictiveBackState.current
+                val effectiveTargetTitle = targetTitle ?: if (onBack != null) "Settings" else null
+                val effectiveTargetSubtitle = targetSubtitle ?: if (onBack != null) "Browser Preferences & Customization" else null
+                val isGestureActive = backState.isActive && effectiveTargetTitle != null && onBack != null
+                val progress = if (isGestureActive) backState.progress.coerceIn(0f, 1f) else 0f
+                val swipeDir = if (backState.swipeEdge == androidx.activity.BackEventCompat.EDGE_LEFT) 1f else -1f
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -166,7 +176,17 @@ fun ExpressiveHeader(
                                 slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = motion.defaultSpatialSpec())
                         }
                     ) {
-                        Row {
+                        val backButtonAlpha = if (isGestureActive) (1f - progress * 2.0f).coerceIn(0f, 1f) else 1f
+                        val backButtonScale = if (isGestureActive) (1f - 0.20f * progress).coerceIn(0.8f, 1f) else 1f
+                        val backButtonOffset = if (isGestureActive) -16f * progress * swipeDir else 0f
+                        Row(
+                            modifier = Modifier.graphicsLayer {
+                                alpha = backButtonAlpha
+                                scaleX = backButtonScale
+                                scaleY = backButtonScale
+                                translationX = backButtonOffset
+                            }
+                        ) {
                             FilledTonalIconButton(
                                 onClick = { onBack?.invoke() },
                                 colors = IconButtonDefaults.filledTonalIconButtonColors(
@@ -187,81 +207,83 @@ fun ExpressiveHeader(
                         }
                     }
 
-                    AnimatedContent(
-                        targetState = title to (subtitle ?: ""),
-                        transitionSpec = {
-                            if (isZenithTransition) {
-                                (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                 slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { it / 4 } +
-                                 scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)))
-                                    .togetherWith(
-                                        fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                        slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { -it / 4 } +
-                                        scaleOut(targetScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessLow))
-                                    )
-                            } else {
-                                (fadeIn(animationSpec = motion.defaultEffectsSpec()) +
-                                 slideInVertically(animationSpec = motion.defaultSpatialSpec()) { it / 3 } +
-                                 scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()))
-                                    .togetherWith(
-                                        fadeOut(animationSpec = motion.fastEffectsSpec()) +
-                                        slideOutVertically(animationSpec = motion.defaultSpatialSpec()) { -it / 3 } +
-                                        scaleOut(targetScale = 0.92f)
-                                    )
-                            }
-                        },
-                        label = "ExpressiveHeaderTransition",
-                        modifier = Modifier.weight(1f)
-                    ) { (currentTitle, currentSubtitle) ->
-                        Column(modifier = Modifier.fillMaxWidth().clipToBounds()) {
-                            val titleFontSize = remember(currentTitle, onBack) {
-                                when {
-                                    onBack != null && currentTitle.length > 22 -> 14.sp
-                                    onBack != null && currentTitle.length > 18 -> 15.sp
-                                    onBack != null && currentTitle.length > 14 -> 16.5.sp
-                                    onBack != null -> 18.sp
-                                    currentTitle.length > 22 -> 16.5.sp
-                                    currentTitle.length > 18 -> 17.5.sp
-                                    currentTitle.length > 14 -> 19.5.sp
-                                    else -> 22.sp
-                                }
-                            }
-
-                            Text(
-                                text = currentTitle,
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = titleFontSize,
-                                    lineHeight = (titleFontSize.value + 4).sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            if (currentSubtitle.isNotBlank()) {
-                                val subtitleFontSize = remember(currentSubtitle) {
-                                    when {
-                                        currentSubtitle.length > 32 -> 11.5.sp
-                                        currentSubtitle.length > 24 -> 12.sp
-                                        else -> 13.sp
+                    if (isGestureActive && effectiveTargetTitle != null) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clipToBounds()
+                        ) {
+                            // Outgoing active title
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .graphicsLayer {
+                                        alpha = (1f - progress * 1.8f).coerceIn(0f, 1f)
+                                        translationX = progress * 48f * swipeDir
+                                        scaleX = 1f - 0.06f * progress
+                                        scaleY = 1f - 0.06f * progress
                                     }
-                                }
-                                Text(
-                                    text = currentSubtitle,
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = subtitleFontSize,
-                                        lineHeight = (subtitleFontSize.value + 4).sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = maxSubtitleLines,
-                                    softWrap = maxSubtitleLines > 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.fillMaxWidth()
+                            ) {
+                                HeaderTitleBlock(
+                                    title = title,
+                                    subtitle = subtitle,
+                                    hasBack = onBack != null,
+                                    maxSubtitleLines = maxSubtitleLines
                                 )
                             }
+
+                            // Incoming target title
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .graphicsLayer {
+                                        alpha = ((progress - 0.2f) / 0.8f).coerceIn(0f, 1f)
+                                        translationX = -28f * (1f - progress) * swipeDir
+                                        scaleX = 0.94f + 0.06f * progress
+                                        scaleY = 0.94f + 0.06f * progress
+                                    }
+                            ) {
+                                HeaderTitleBlock(
+                                    title = effectiveTargetTitle,
+                                    subtitle = effectiveTargetSubtitle,
+                                    hasBack = false,
+                                    maxSubtitleLines = maxSubtitleLines
+                                )
+                            }
+                        }
+                    } else {
+                        AnimatedContent(
+                            targetState = title to (subtitle ?: ""),
+                            transitionSpec = {
+                                if (isZenithTransition) {
+                                    (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                     slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { it / 4 } +
+                                     scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)))
+                                        .togetherWith(
+                                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                            slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { -it / 4 } +
+                                            scaleOut(targetScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessLow))
+                                        )
+                                } else {
+                                    (fadeIn(animationSpec = motion.defaultEffectsSpec()) +
+                                     slideInVertically(animationSpec = motion.defaultSpatialSpec()) { it / 3 } +
+                                     scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()))
+                                        .togetherWith(
+                                            fadeOut(animationSpec = motion.fastEffectsSpec()) +
+                                            slideOutVertically(animationSpec = motion.defaultSpatialSpec()) { -it / 3 } +
+                                            scaleOut(targetScale = 0.92f)
+                                        )
+                                }
+                            },
+                            label = "ExpressiveHeaderTransition",
+                            modifier = Modifier.weight(1f)
+                        ) { (currentTitle, currentSubtitle) ->
+                            HeaderTitleBlock(
+                                title = currentTitle,
+                                subtitle = currentSubtitle.takeIf { it.isNotBlank() },
+                                hasBack = onBack != null,
+                                maxSubtitleLines = maxSubtitleLines
+                            )
                         }
                     }
 
@@ -288,13 +310,79 @@ fun ExpressiveHeader(
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.graphicsLayer {
+                                if (isGestureActive) {
+                                    alpha = ((progress - 0.35f) / 0.65f).coerceIn(0f, 1f)
+                                    scaleX = 0.8f + 0.2f * progress
+                                    scaleY = 0.8f + 0.2f * progress
+                                }
+                            }
                         ) {
                             actions()
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HeaderTitleBlock(
+    title: String,
+    subtitle: String?,
+    hasBack: Boolean,
+    maxSubtitleLines: Int = 2
+) {
+    Column(modifier = Modifier.fillMaxWidth().clipToBounds()) {
+        val titleFontSize = remember(title, hasBack) {
+            when {
+                hasBack && title.length > 22 -> 14.sp
+                hasBack && title.length > 18 -> 15.sp
+                hasBack && title.length > 14 -> 16.5.sp
+                hasBack -> 18.sp
+                title.length > 22 -> 16.5.sp
+                title.length > 18 -> 17.5.sp
+                title.length > 14 -> 19.5.sp
+                else -> 22.sp
+            }
+        }
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontSize = titleFontSize,
+                lineHeight = (titleFontSize.value + 4).sp
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        if (!subtitle.isNullOrBlank()) {
+            val subtitleFontSize = remember(subtitle) {
+                when {
+                    subtitle.length > 32 -> 11.5.sp
+                    subtitle.length > 24 -> 12.sp
+                    else -> 13.sp
+                }
+            }
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = subtitleFontSize,
+                    lineHeight = (subtitleFontSize.value + 4).sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = maxSubtitleLines,
+                softWrap = maxSubtitleLines > 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

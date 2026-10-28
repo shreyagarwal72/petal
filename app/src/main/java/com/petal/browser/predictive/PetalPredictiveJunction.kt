@@ -182,10 +182,8 @@ object PetalPredictiveJunction {
         isPredictiveSettingEnabled: Boolean = _isPredictiveBackEnabled.value,
         pageKey: String? = null
     ): Boolean {
-        if (!isPredictiveSettingEnabled) return true
-        if (!isDeviceSupported) return true
-        if (pageKey != null && !isPagePredictiveSupported(pageKey)) return true
-        return false
+        if (pageKey != null && !isPagePredictiveSupported(pageKey)) return false
+        return true
     }
 }
 

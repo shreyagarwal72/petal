@@ -258,79 +258,53 @@ fun PetalSettingsScreen(
             }
         }
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (isZenithMode) {
-                ExpressiveHeader(
-                    title = activeHeaderCategory?.title ?: "Settings",
-                    subtitle = activeHeaderCategory?.subtitle ?: "Browser Preferences & Customization",
-                    onBack = if (activeHeaderCategory != null) { { closeCategory() } } else onBackPress,
-                    isRootHeader = true,
-                    actions = {
-                        if (activeHeaderCategory == null) {
-                            HeaderActionIcon(
-                                icon = if (isSearchOpen) Icons.Rounded.Close else Icons.Rounded.Search,
-                                contentDescription = if (isSearchOpen) "Close search" else "Search settings",
-                                onClick = {
-                                    if (isSearchOpen) {
-                                        isSearchOpen = false
-                                        searchQuery = ""
-                                    } else {
-                                        isSearchOpen = true
-                                    }
-                                }
-                            )
-                        }
-                    }
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+            CompositionLocalProvider(
+                LocalZenithHeaderHoisted provides false,
+                LocalZenithHeaderActive provides isZenithMode
             ) {
-                CompositionLocalProvider(
-                    LocalZenithHeaderHoisted provides isZenithMode,
-                    LocalZenithHeaderActive provides isZenithMode
+                // Layer 1: Root Settings Hub Screen. Completely wrapped inside PetalScreenWrapper (Header + List).
+                PetalScreenWrapper(
+                    isBehind = drilled,
+                    backgroundSnapshot = if (drilled) null else backgroundSnapshot,
+                    behindFraction = if (drilled) behindFraction else null,
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    PetalScreenWrapper(
-                        isBehind = drilled,
-                        backgroundSnapshot = if (drilled) null else backgroundSnapshot,
-                        behindFraction = if (drilled) behindFraction else null,
-                    ) {
-                        SettingsHubScreen(
-                            searchQuery = searchQuery,
-                            onSearchQueryChange = { searchQuery = it },
-                            onCategoryClick = { category, highlightId -> openCategory(category, highlightId) },
-                            onNavigateBack = onBackPress,
-                            isSearchOpen = isSearchOpen,
-                            onSearchOpenChange = { isSearchOpen = it }
-                        )
-                    }
+                    SettingsHubScreen(
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = { searchQuery = it },
+                        onCategoryClick = { category, highlightId -> openCategory(category, highlightId) },
+                        onNavigateBack = onBackPress,
+                        isSearchOpen = isSearchOpen,
+                        onSearchOpenChange = { isSearchOpen = it }
+                    )
+                }
 
-                    val shown = pageCategory
-                    if (shown != null) {
-                        PetalScreenWrapper(
-                            isBehind = false,
-                            modifier = Modifier.graphicsLayer {
+                // Layer 2: Category Drill-Down Screen. Completely wrapped inside PetalScreenWrapper (Header + Content).
+                val shown = pageCategory
+                if (shown != null) {
+                    PetalScreenWrapper(
+                        isBehind = false,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
                                 val e = push.value
                                 translationX = (1f - e) * size.width * 0.33f
                                 alpha = (e * 2.2f).coerceIn(0f, 1f)
                             }
-                        ) {
-                            PetalSettingsAnimatedContent(targetKey = shown) { category ->
-                                RenderCategoryContent(
-                                    category = category,
-                                    targetHighlightItemId = currentHighlightId,
-                                    onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
-                                    onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
-                                    onNavigateBack = { closeCategory() }
-                                )
-                            }
+                    ) {
+                        PetalSettingsAnimatedContent(targetKey = shown) { category ->
+                            RenderCategoryContent(
+                                category = category,
+                                targetHighlightItemId = currentHighlightId,
+                                onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
+                                onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                                onNavigateBack = { closeCategory() }
+                            )
                         }
                     }
                 }
