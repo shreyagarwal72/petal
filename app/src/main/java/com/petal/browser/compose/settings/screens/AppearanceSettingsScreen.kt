@@ -1293,8 +1293,8 @@ fun AppearanceSettingsScreenContent(
                                 var liveContrast by remember(liquidGlassContrast) { mutableFloatStateOf(liquidGlassContrast) }
                                 val lensSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
-                                // Live preview: real Kyant glass over moving colour. Every slider below
-                                // drives it frame by frame (the values are the unsaved live ones).
+                                // Live preview: authentic Liquid Glass AGSL over moving colour. Every slider below
+                                // drives it frame by frame (the values are the unsaved live ones) with zero lag.
                                 com.petal.browser.ui.glass.PetalGlassLab(
                                     opacity = liveAlpha,
                                     sheen = liveSheen,
@@ -1304,7 +1304,10 @@ fun AppearanceSettingsScreenContent(
                                     chromatic = liveChromatic,
                                     rimAngle = liveRimAngle,
                                     rimStrength = liveRimStrength,
-                                    edgeWidth = liveEdgeWidth
+                                    edgeWidth = liveEdgeWidth,
+                                    softRimStrength = liveSoftRimStrength,
+                                    borderStrength = liveBorderStrength,
+                                    contrast = liveContrast
                                 )
 
                                 // Glass Translucency Slider (Stride style PetalSlider)
@@ -1327,10 +1330,8 @@ fun AppearanceSettingsScreenContent(
                                     }
                                     PetalSlider(
                                         value = liveAlpha,
-                                        onValueChange = {
-                                            liveAlpha = it
-                                            onLiquidGlassAlphaChange(it)
-                                        },
+                                        onValueChange = { liveAlpha = it },
+                                        onValueChangeFinished = { onLiquidGlassAlphaChange(liveAlpha) },
                                         valueRange = 0.10f..0.95f,
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -1356,10 +1357,8 @@ fun AppearanceSettingsScreenContent(
                                     }
                                     PetalSlider(
                                         value = liveSheen,
-                                        onValueChange = {
-                                            liveSheen = it
-                                            onLiquidGlassSheenChange(it)
-                                        },
+                                        onValueChange = { liveSheen = it },
+                                        onValueChangeFinished = { onLiquidGlassSheenChange(liveSheen) },
                                         valueRange = 0f..1f,
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -1385,10 +1384,8 @@ fun AppearanceSettingsScreenContent(
                                     }
                                     PetalSlider(
                                         value = liveRefraction,
-                                        onValueChange = {
-                                            liveRefraction = it
-                                            onLiquidGlassRefractionChange(it)
-                                        },
+                                        onValueChange = { liveRefraction = it },
+                                        onValueChangeFinished = { onLiquidGlassRefractionChange(liveRefraction) },
                                         valueRange = 0f..2f,
                                         enabled = lensSupported,
                                         modifier = Modifier.fillMaxWidth()
@@ -1421,10 +1418,8 @@ fun AppearanceSettingsScreenContent(
                                     }
                                     PetalSlider(
                                         value = liveRefractionWidth,
-                                        onValueChange = {
-                                            liveRefractionWidth = it
-                                            onLiquidGlassRefractionWidthChange(it)
-                                        },
+                                        onValueChange = { liveRefractionWidth = it },
+                                        onValueChangeFinished = { onLiquidGlassRefractionWidthChange(liveRefractionWidth) },
                                         valueRange = 0f..2f,
                                         enabled = lensSupported,
                                         modifier = Modifier.fillMaxWidth()
@@ -1494,10 +1489,8 @@ fun AppearanceSettingsScreenContent(
                                             }
                                             PetalSlider(
                                                 value = liveChromatic,
-                                                onValueChange = {
-                                                    liveChromatic = it
-                                                    onLiquidGlassChromaticChange(it)
-                                                },
+                                                onValueChange = { liveChromatic = it },
+                                                onValueChangeFinished = { onLiquidGlassChromaticChange(liveChromatic) },
                                                 valueRange = 0f..0.05f,
                                                 enabled = lensSupported,
                                                 modifier = Modifier.fillMaxWidth()
@@ -1529,10 +1522,8 @@ fun AppearanceSettingsScreenContent(
                                             }
                                             PetalSlider(
                                                 value = liveRimAngle,
-                                                onValueChange = {
-                                                    liveRimAngle = it
-                                                    onLiquidGlassRimAngleChange(it)
-                                                },
+                                                onValueChange = { liveRimAngle = it },
+                                                onValueChangeFinished = { onLiquidGlassRimAngleChange(liveRimAngle) },
                                                 valueRange = 0f..360f,
                                                 enabled = lensSupported,
                                                 modifier = Modifier.fillMaxWidth()
@@ -1564,10 +1555,8 @@ fun AppearanceSettingsScreenContent(
                                             }
                                             PetalSlider(
                                                 value = liveRimStrength,
-                                                onValueChange = {
-                                                    liveRimStrength = it
-                                                    onLiquidGlassRimStrengthChange(it)
-                                                },
+                                                onValueChange = { liveRimStrength = it },
+                                                onValueChangeFinished = { onLiquidGlassRimStrengthChange(liveRimStrength) },
                                                 valueRange = 0f..2.5f,
                                                 enabled = lensSupported,
                                                 modifier = Modifier.fillMaxWidth()
@@ -1599,10 +1588,8 @@ fun AppearanceSettingsScreenContent(
                                             }
                                             PetalSlider(
                                                 value = liveEdgeWidth,
-                                                onValueChange = {
-                                                    liveEdgeWidth = it
-                                                    onLiquidGlassEdgeWidthChange(it)
-                                                },
+                                                onValueChange = { liveEdgeWidth = it },
+                                                onValueChangeFinished = { onLiquidGlassEdgeWidthChange(liveEdgeWidth) },
                                                 valueRange = 0.010f..0.120f,
                                                 enabled = lensSupported,
                                                 modifier = Modifier.fillMaxWidth()
@@ -1634,10 +1621,8 @@ fun AppearanceSettingsScreenContent(
                                             }
                                             PetalSlider(
                                                 value = liveSoftRimStrength,
-                                                onValueChange = {
-                                                    liveSoftRimStrength = it
-                                                    onLiquidGlassSoftRimStrengthChange(it)
-                                                },
+                                                onValueChange = { liveSoftRimStrength = it },
+                                                onValueChangeFinished = { onLiquidGlassSoftRimStrengthChange(liveSoftRimStrength) },
                                                 valueRange = 0f..2.0f,
                                                 enabled = lensSupported,
                                                 modifier = Modifier.fillMaxWidth()
@@ -1669,10 +1654,8 @@ fun AppearanceSettingsScreenContent(
                                             }
                                             PetalSlider(
                                                 value = liveBorderStrength,
-                                                onValueChange = {
-                                                    liveBorderStrength = it
-                                                    onLiquidGlassBorderStrengthChange(it)
-                                                },
+                                                onValueChange = { liveBorderStrength = it },
+                                                onValueChangeFinished = { onLiquidGlassBorderStrengthChange(liveBorderStrength) },
                                                 valueRange = 0f..1.0f,
                                                 enabled = lensSupported,
                                                 modifier = Modifier.fillMaxWidth()
@@ -1704,10 +1687,8 @@ fun AppearanceSettingsScreenContent(
                                             }
                                             PetalSlider(
                                                 value = liveContrast,
-                                                onValueChange = {
-                                                    liveContrast = it
-                                                    onLiquidGlassContrastChange(it)
-                                                },
+                                                onValueChange = { liveContrast = it },
+                                                onValueChangeFinished = { onLiquidGlassContrastChange(liveContrast) },
                                                 valueRange = 1.0f..1.4f,
                                                 enabled = lensSupported,
                                                 modifier = Modifier.fillMaxWidth()

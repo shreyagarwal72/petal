@@ -4,16 +4,31 @@ import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.effect
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.highlight.Highlight
+import com.petal.browser.ui.containment.PetalBackdrop
+import com.petal.browser.ui.containment.petalRealGlassSupported
+import com.petal.browser.ui.containment.rememberPetalBackdrop
 import java.util.WeakHashMap
 import kotlin.math.PI
 import kotlin.math.cos
@@ -21,12 +36,12 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * Comprehensive tuning parameters for the high-fidelity AGSL Liquid Glass Shader.
- * Reverse-engineered and calibrated from Liquid Glass v17.2.
+ * Comprehensive tuning parameters for the authentic AGSL Liquid Glass Shader.
+ * Reverse-engineered directly from Liquid Glass v17.2 smali (com.pau.liqglass.ui.GlassStyle).
  */
 @Immutable
 data class PetalLiquidGlassTuning(
-    val blurRadiusDp: Float = 20.0f,
+    val blurRadiusDp: Float = 24.0f,
     val refractionStrength: Float = 0.085f,
     val edgeWidth: Float = 0.040f,
     val chromaticAberration: Float = 0.015f,
@@ -38,11 +53,12 @@ data class PetalLiquidGlassTuning(
     val borderStrength: Float = 0.35f,
     val contrastBoost: Float = 1.08f,
     val squircleN: Float = 3.0f,
+    val unitPx: Float = 1000.0f,
     val perfDisableChromatic: Boolean = false,
     val perfDisableRimLight: Boolean = false
 ) {
     val refractionEnabled: Boolean
-        get() = refractionStrength > 0.001f && edgeWidth > 0.001f
+        get() = refractionStrength > 0.0001f && edgeWidth > 0.0001f
 }
 
 /**
@@ -203,24 +219,44 @@ object PetalLiquidShaderPool {
 }
 
 /**
- * Extracts the corner radius from a Compose Shape for the shader.
+ * Extracts and clamps the corner radius from a Compose Shape for the shader.
+ * Formula from Liquid Glass v17.2: radius coerced into [0, (minDimension / 2) * 0.99].
  */
+fun superellipseRadius(radiusPx: Float, size: Size): Float {
+    val maxRadius = (min(size.width, size.height) / 2f) * 0.99f
+    return radiusPx.coerceIn(0f, maxRadius)
+}
+
 fun superellipseRadius(shape: Shape, size: Size, density: Density): Float {
-    if (shape !is CornerBasedShape) return (min(size.width, size.height) * 0.15f).coerceAtLeast(4f)
-    val maxRadius = min(size.width, size.height) / 2f
-    val r = shape.topStart.toPx(size, density)
-    return r.coerceIn(0f, maxRadius)
+    val r = if (shape is CornerBasedShape) {
+        shape.topStart.toPx(size, density)
+    } else {
+        (min(size.width, size.height) * 0.15f)
+    }
+    return superellipseRadius(r, size)
 }
 
 /**
- * Determines the squircle exponent (n) for continuous smooth corner curves.
+ * Determines the squircle exponent (n) via smoothstep curvature transition.
+ * Direct reverse-engineered formula from Liquid Glass v17.2 smali:
+ *   t = (radiusPx / halfMin).coerceIn(0f, 1f)
+ *   s = t * t * (3f - 2f * t)
+ *   n = 8.0f - 6.0f * s
  */
-fun superellipseExponent(shape: Shape, requestedN: Float = 3.0f): Float {
-    return requestedN.coerceIn(2.0f, 4.0f)
+fun superellipseExponent(radiusPx: Float, size: Size): Float {
+    val halfMin = min(size.width, size.height) / 2f
+    if (halfMin <= 0f) return 2.0f
+    val t = (radiusPx / halfMin).coerceIn(0f, 1f)
+    val s = t * t * (3f - 2f * t)
+    return 8f - 6f * s
+}
+
+fun superellipseExponent(shape: Shape, radiusPx: Float, size: Size): Float {
+    return superellipseExponent(radiusPx, size)
 }
 
 /**
- * Binds all uniforms to the AGSL RuntimeShader with subpixel unit normalization.
+ * Binds all uniforms to the AGSL RuntimeShader with calibrated viewport normalization.
  */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 fun bindLiquidShaderUniforms(
@@ -241,11 +277,11 @@ fun bindLiquidShaderUniforms(
     val radius = superellipseRadius(shape, size, density)
     shader.setFloatUniform("radius", radius)
 
-    val cornerN = superellipseExponent(shape, tuning.squircleN)
+    val cornerN = superellipseExponent(radius, size)
     shader.setFloatUniform("cornerN", cornerN)
 
-    // Subpixel unit normalization factor (half height, minimum 16px)
-    val unitPx = (height * 0.5f).coerceAtLeast(16f)
+    // Viewport scale factor (default 1000f, calibrated from Liquid Glass v17.2)
+    val unitPx = tuning.unitPx.coerceAtLeast(1f)
     shader.setFloatUniform("unitPx", unitPx)
 
     shader.setFloatUniform("edgeWidth", tuning.edgeWidth.coerceIn(0.001f, 0.5f))
@@ -265,7 +301,8 @@ fun bindLiquidShaderUniforms(
     val effRim = if (tuning.perfDisableRimLight) 0f else tuning.rimStrength.coerceIn(0f, 3.0f)
     shader.setFloatUniform("rimStrength", effRim)
 
-    val angleRad = (tuning.rimAngleDeg * (PI / 180.0)).toFloat()
+    // Directional light vector with negated angle to match reference incident vector:
+    val angleRad = -(tuning.rimAngleDeg * (PI / 180.0)).toFloat()
     shader.setFloatUniform("rimTrig", cos(angleRad), sin(angleRad))
 
     shader.setFloatUniform(
@@ -310,5 +347,92 @@ fun createPetalLiquidRenderEffect(
         RenderEffect.createRuntimeShaderEffect(shader, "content")
     } catch (_: Throwable) {
         null
+    }
+}
+
+/**
+ * Authentic Liquid Glass surface modifier directly reverse-engineered from Liquid Glass v17.2.
+ * (com.pau.liqglass.ui.EditPanelUiKt.panelGlassSurface)
+ *
+ * Checks platform capability:
+ * - API 33+: Renders AGSL Liquid Glass RuntimeShader with zero double-painting (highlight = null, onDrawSurface = empty).
+ * - API 31-32: Fallback to Kyant vibrancy + blur + lens.
+ * - < API 31: Fallback to clean translucent surface tint.
+ */
+@Composable
+fun Modifier.petalLiquidGlassSurface(
+    shape: Shape,
+    backdrop: PetalBackdrop? = null,
+    tuning: PetalLiquidGlassTuning = rememberPetalLiquidGlassTuning(),
+    tintColor: Color = Color.Unspecified,
+    tintAlpha: Float? = null,
+    preBlurred: Boolean = false
+): Modifier {
+    LocalPetalGlassRevision.current
+    val effectiveBackdrop = backdrop ?: rememberPetalBackdrop()
+    val isDark = androidx.compose.material3.MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val effTintAlpha = tintAlpha ?: (if (isDark) 0.16f else 0.22f)
+    val effTintColor = if (tintColor != Color.Unspecified) tintColor else if (isDark) Color.Black else Color.White
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && tuning.refractionEnabled) {
+        return this.drawBackdrop(
+            backdrop = effectiveBackdrop,
+            shape = { shape },
+            effects = {
+                if (!preBlurred && tuning.blurRadiusDp > 0f) {
+                    blur(tuning.blurRadiusDp.dp.toPx())
+                }
+                val cornerR = superellipseRadius(shape, size, this)
+                val cornerN = superellipseExponent(cornerR, size)
+                val pad = padding
+                val angleRad = -(tuning.rimAngleDeg * (PI / 180.0)).toFloat()
+                val shader = PetalLiquidShaderPool.get(this)
+
+                shader.setFloatUniform("size", size.width, size.height)
+                shader.setFloatUniform("offset", -pad, -pad)
+                shader.setFloatUniform("radius", cornerR)
+                shader.setFloatUniform("cornerN", cornerN)
+                shader.setFloatUniform("unitPx", tuning.unitPx.coerceAtLeast(1f))
+                shader.setFloatUniform("edgeWidth", tuning.edgeWidth)
+                shader.setFloatUniform("refraction", tuning.refractionStrength)
+                shader.setFloatUniform("chromatic", if (tuning.perfDisableChromatic) 0f else tuning.chromaticAberration)
+                shader.setFloatUniform("tint", effTintColor.red, effTintColor.green, effTintColor.blue, effTintAlpha)
+                shader.setFloatUniform("contrast", tuning.contrastBoost)
+                shader.setFloatUniform("rimStrength", if (tuning.perfDisableRimLight) 0f else tuning.rimStrength)
+                shader.setFloatUniform("rimTrig", cos(angleRad), sin(angleRad))
+                shader.setFloatUniform("softRim", tuning.softRimStrength, tuning.softRimWidth, tuning.softRimTint)
+                shader.setFloatUniform("borderStrength", tuning.borderStrength)
+
+                val renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "content").asComposeRenderEffect()
+                effect(renderEffect)
+            },
+            highlight = null, // IMPORTANT: No double highlight! The shader computes specular highlights natively!
+            onDrawSurface = {} // IMPORTANT: No double veil! The shader handles surface tinting natively!
+        ).clip(shape)
+    } else if (petalRealGlassSupported) {
+        // Fallback for API 31-32 (Kyant lens)
+        return this.drawBackdrop(
+            backdrop = effectiveBackdrop,
+            shape = { shape },
+            effects = {
+                vibrancy()
+                if (!preBlurred && tuning.blurRadiusDp > 0f) {
+                    blur(tuning.blurRadiusDp.dp.toPx())
+                }
+                if (tuning.refractionEnabled) {
+                    val lensHeight = (24.dp.toPx() * (tuning.edgeWidth * 10f)).coerceAtMost(size.minDimension / 2f)
+                    lens(lensHeight, 56.dp.toPx() * (tuning.refractionStrength * 10f), false)
+                }
+            },
+            highlight = if (tuning.rimStrength > 0.01f) {
+                { Highlight.Default.copy(alpha = (0.7f * (tuning.rimStrength / 1.2f)).coerceIn(0f, 1f)) }
+            } else null,
+            onDrawSurface = {
+                drawRect(effTintColor.copy(alpha = effTintAlpha))
+            }
+        ).clip(shape)
+    } else {
+        // Fallback for < API 31
+        return this.clip(shape).background(effTintColor.copy(alpha = (effTintAlpha + 0.35f).coerceIn(0f, 0.9f)))
     }
 }

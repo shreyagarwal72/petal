@@ -349,8 +349,21 @@ fun Modifier.petalGlassPanel(
             val pad = lensAmount + 4.dp.toPx()
             val effect = try {
                 val radii = cornerRadii(shape, size, layoutDirection, this)
-                radii?.let { lensEffect(size, pad, it, lensHeight, lensAmount, advancedTuning, shape) }
+                radii?.let {
+                    lensEffect(
+                        size = size,
+                        pad = pad,
+                        radii = it,
+                        height = lensHeight,
+                        amount = lensAmount,
+                        tuning = advancedTuning,
+                        shape = shape,
+                        tintColor = tint,
+                        tintAlpha = tint.alpha
+                    )
+                }
             } catch (_: Throwable) { null }
+            val isLiquidShader = effect != null && advancedTuning.refractionEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             try {
                 glass.renderEffect = effect?.asComposeRenderEffect()
             } catch (_: Throwable) {
@@ -397,10 +410,14 @@ fun Modifier.petalGlassPanel(
                                 } catch (_: Throwable) {}
                             }
                         }
-                        drawRect(if (Build.VERSION.SDK_INT < 31) tint.copy(alpha = .85f) else tint)
-                        drawRect(spec)
+                        if (!isLiquidShader) {
+                            drawRect(if (Build.VERSION.SDK_INT < 31) tint.copy(alpha = .85f) else tint)
+                            drawRect(spec)
+                        }
                     }
-                    drawPath(outline, rim, style = Stroke((1.25.dp * (0.8f + edge * 0.4f)).toPx()))
+                    if (!isLiquidShader) {
+                        drawPath(outline, rim, style = Stroke((1.25.dp * (0.8f + edge * 0.4f)).toPx()))
+                    }
                 } catch (_: Throwable) {
                     drawRect(tint)
                 }

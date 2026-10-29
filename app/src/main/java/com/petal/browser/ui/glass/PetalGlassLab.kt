@@ -79,7 +79,11 @@ data class GlassLabTuning(
     val chromatic: Float = 0.015f,
     val rimAngle: Float = 45f,
     val rimStrength: Float = 1.20f,
-    val edgeWidth: Float = 0.040f
+    val edgeWidth: Float = 0.040f,
+    val softRimStrength: Float = 0.80f,
+    val borderStrength: Float = 0.35f,
+    val contrast: Float = 1.08f,
+    val unitPx: Float = 1000.0f
 )
 
 /**
@@ -99,7 +103,11 @@ fun PetalGlassLab(
     chromatic: Float = 0.015f,
     rimAngle: Float = 45f,
     rimStrength: Float = 1.20f,
-    edgeWidth: Float = 0.040f
+    edgeWidth: Float = 0.040f,
+    softRimStrength: Float = 0.80f,
+    borderStrength: Float = 0.35f,
+    contrast: Float = 1.08f,
+    unitPx: Float = 1000.0f
 ) {
     val tuning = GlassLabTuning(
         opacity = opacity,
@@ -109,7 +117,11 @@ fun PetalGlassLab(
         chromatic = chromatic,
         rimAngle = rimAngle,
         rimStrength = rimStrength,
-        edgeWidth = edgeWidth
+        edgeWidth = edgeWidth,
+        softRimStrength = softRimStrength,
+        borderStrength = borderStrength,
+        contrast = contrast,
+        unitPx = unitPx
     )
     val backdrop = rememberPetalBackdrop()
     val outer = RoundedCornerShape(28.dp)
@@ -253,6 +265,7 @@ private fun LabTabs(
             }
         }
 
+        val useLiquidTabs = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && fx.showLens && tuning.refraction > 0.0001f
         // The selection slab: clear glass that swells, deepens its lens and stretches as it moves.
         Box(
             Modifier
@@ -276,17 +289,25 @@ private fun LabTabs(
                         if (petalRealGlassSupported && fx.showLens && tuning.refraction > 0.001f) {
                             val p = drag.pressProgress
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                val pad = padding
                                 val liquidEffect = createPetalLiquidRenderEffect(
                                     size = size,
-                                    offset = Offset.Zero,
+                                    offset = Offset(-pad, -pad),
                                     shape = capsule,
                                     tuning = PetalLiquidGlassTuning(
-                                        refractionStrength = (tuning.refraction * 0.1f * p).coerceIn(0f, 1f),
-                                        edgeWidth = (tuning.edgeWidth * p).coerceIn(0.005f, 0.2f),
-                                        chromaticAberration = tuning.chromatic * p,
+                                        refractionStrength = (0.085f * tuning.refraction * (0.5f + 0.5f * p)).coerceIn(0f, 1f),
+                                        edgeWidth = (tuning.edgeWidth * tuning.refractionWidth * (0.7f + 0.3f * p)).coerceIn(0.001f, 0.5f),
+                                        chromaticAberration = tuning.chromatic,
                                         rimAngleDeg = tuning.rimAngle,
-                                        rimStrength = tuning.rimStrength * p
+                                        rimStrength = tuning.rimStrength * (0.6f + 0.4f * p),
+                                        softRimStrength = tuning.softRimStrength,
+                                        borderStrength = tuning.borderStrength,
+                                        contrastBoost = tuning.contrast,
+                                        unitPx = tuning.unitPx
                                     ),
+                                    tintColor = Color.White,
+                                    tintAlpha = 0.12f * (1f - p * 0.5f),
+                                    density = this,
                                     scope = this
                                 )
                                 if (liquidEffect != null) {
@@ -305,15 +326,20 @@ private fun LabTabs(
                             }
                         }
                     },
-                    highlight = if (tuning.sheen > 0.01f) {
-                        { Highlight.Default.copy(alpha = (drag.pressProgress * (tuning.sheen / 0.6f)).coerceIn(0f, 1f)) }
-                    } else null,
+                    highlight = if (useLiquidTabs) null else {
+                        if (tuning.sheen > 0.01f) {
+                            { Highlight.Default.copy(alpha = (drag.pressProgress * (tuning.sheen / 0.6f)).coerceIn(0f, 1f)) }
+                        } else null
+                    },
                     onDrawSurface = {
-                        val p = drag.pressProgress
-                        drawRect(Color.White.copy(alpha = 0.16f * (1f - p)))
-                        drawRect(Color.Black.copy(alpha = 0.03f * p))
+                        if (!useLiquidTabs) {
+                            val p = drag.pressProgress
+                            drawRect(Color.White.copy(alpha = 0.16f * (1f - p)))
+                            drawRect(Color.Black.copy(alpha = 0.03f * p))
+                        }
                     }
                 )
+                .clip(capsule)
                 .height(56.dp)
                 .fillMaxWidth(1f / count)
         )
@@ -321,9 +347,9 @@ private fun LabTabs(
 }
 
 /**
- * Kyant glass with the Appearance values applied: [GlassLabTuning.opacity] sets blur and veil,
- * [GlassLabTuning.sheen] the highlight, the refraction pair the rim lens. [lensBoost] (0..1,
- * read at draw time) deepens the lens while the surface is pressed.
+ * Authentic Liquid Glass panel preview with the Appearance values applied frame-by-frame:
+ * When API 33+, renders AGSL Liquid Glass RuntimeShader with zero double-painting.
+ * [lensBoost] (0..1, read dynamically at draw time) deepens the refraction while pressed.
  */
 private fun Modifier.labGlass(
     backdrop: PetalBackdrop,
@@ -335,39 +361,51 @@ private fun Modifier.labGlass(
         // Below Android 12 nothing can be blurred: a plain frosted veil stands in.
         return this.clip(shape).background(Color.White.copy(alpha = (0.10f + t.opacity * 0.30f).coerceIn(0f, 0.9f)))
     }
+    val useLiquid = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && t.refraction > 0.0001f
     val sheenAlpha = (t.sheen / 0.6f).coerceIn(0f, 1f)
+
     return this.drawBackdrop(
         backdrop = backdrop,
         shape = { shape },
-        highlight = if (t.sheen > 0.01f) {
-            { Highlight.Default.copy(alpha = sheenAlpha) }
-        } else null,
+        highlight = if (useLiquid) null else {
+            if (t.sheen > 0.01f) {
+                { Highlight.Default.copy(alpha = sheenAlpha) }
+            } else null
+        },
         effects = {
-            vibrancy()
-            blur((3f + t.opacity * 9f).dp.toPx())
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && t.refraction > 0.001f) {
+            if (!useLiquid) {
+                vibrancy()
+            }
+            blur((6f + t.opacity * 18f).dp.toPx())
+            if (useLiquid) {
                 val boost = lensBoost()
-                val liquidEffect = createPetalLiquidRenderEffect(
-                    size = size,
-                    offset = Offset.Zero,
-                    shape = shape,
-                    tuning = PetalLiquidGlassTuning(
-                        blurRadiusDp = (3f + t.opacity * 9f),
-                        refractionStrength = (t.refraction * 0.12f * (1f + 0.9f * boost)).coerceIn(0f, 1f),
-                        edgeWidth = (t.edgeWidth * (1f + 0.5f * boost)).coerceIn(0.005f, 0.2f),
-                        chromaticAberration = t.chromatic,
-                        rimAngleDeg = t.rimAngle,
-                        rimStrength = t.rimStrength
-                    ),
-                    scope = this
-                )
-                if (liquidEffect != null) {
-                    effect(liquidEffect.asComposeRenderEffect())
-                } else if (t.refractionWidth > 0.001f) {
-                    val height = (22.dp.toPx() * t.refractionWidth * (1f + 0.5f * boost))
-                        .coerceAtMost(size.minDimension / 2f)
-                    lens(height, 30.dp.toPx() * t.refraction * (1f + 0.9f * boost))
-                }
+                val cornerR = superellipseRadius(shape, size, this)
+                val cornerN = superellipseExponent(cornerR, size)
+                val pad = padding
+                val angleRad = -(t.rimAngle * (PI / 180.0)).toFloat()
+                val shader = PetalLiquidShaderPool.get(this)
+
+                val refStrength = (0.085f * t.refraction * (1f + 0.8f * boost)).coerceIn(0f, 1f)
+                val edgeW = (t.edgeWidth * t.refractionWidth * (1f + 0.4f * boost)).coerceIn(0.001f, 0.5f)
+                val veilAlpha = (0.04f + t.opacity * 0.22f).coerceIn(0f, 0.9f)
+
+                shader.setFloatUniform("size", size.width, size.height)
+                shader.setFloatUniform("offset", -pad, -pad)
+                shader.setFloatUniform("radius", cornerR)
+                shader.setFloatUniform("cornerN", cornerN)
+                shader.setFloatUniform("unitPx", t.unitPx.coerceAtLeast(1f))
+                shader.setFloatUniform("edgeWidth", edgeW)
+                shader.setFloatUniform("refraction", refStrength)
+                shader.setFloatUniform("chromatic", t.chromatic)
+                shader.setFloatUniform("tint", 1f, 1f, 1f, veilAlpha)
+                shader.setFloatUniform("contrast", t.contrast)
+                shader.setFloatUniform("rimStrength", t.rimStrength)
+                shader.setFloatUniform("rimTrig", cos(angleRad), sin(angleRad))
+                shader.setFloatUniform("softRim", t.softRimStrength, 1.0f, 0.5f)
+                shader.setFloatUniform("borderStrength", t.borderStrength)
+
+                val renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "content").asComposeRenderEffect()
+                effect(renderEffect)
             } else if (t.refraction > 0.001f && t.refractionWidth > 0.001f) {
                 val boost = lensBoost()
                 val height = (22.dp.toPx() * t.refractionWidth * (1f + 0.5f * boost))
@@ -376,9 +414,11 @@ private fun Modifier.labGlass(
             }
         },
         onDrawSurface = {
-            drawRect(Color.White.copy(alpha = (0.04f + t.opacity * 0.22f).coerceIn(0f, 0.9f)))
+            if (!useLiquid) {
+                drawRect(Color.White.copy(alpha = (0.04f + t.opacity * 0.22f).coerceIn(0f, 0.9f)))
+            }
         }
-    )
+    ).clip(shape)
 }
 
 /** Colour that moves, with fine lines that make bending obvious. This is the backdrop source. */

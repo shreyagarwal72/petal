@@ -68,28 +68,38 @@ internal fun Modifier.petalRealGlass(
         refractionStrength = 0.085f * refraction.strength,
         edgeWidth = 0.040f * refraction.width
     )
+    val useLiquid = tuning.refractionEnabled && petalLensSupported
+    val veilAlpha = (if (isDark) 0.08f + opacity * 0.20f else 0.12f + opacity * 0.28f).coerceIn(0f, 0.9f)
+    val tintColor = if (isDark) Color.Black else Color.White
+
     return this.drawBackdrop(
         backdrop = backdrop,
         shape = { shape },
-        highlight = { Highlight.Default },
+        highlight = if (useLiquid) null else {
+            if (tuning.rimStrength > 0.01f) {
+                { Highlight.Default.copy(alpha = (0.7f * (tuning.rimStrength / 1.2f)).coerceIn(0f, 1f)) }
+            } else null
+        },
         effects = {
-            vibrancy()
-            colorControls(
-                brightness = 0f,
-                contrast = tuning.contrastBoost,
-                saturation = 1.35f
-            )
+            if (!useLiquid) {
+                vibrancy()
+                colorControls(
+                    brightness = 0f,
+                    contrast = tuning.contrastBoost,
+                    saturation = 1.35f
+                )
+            }
             blur(tuning.blurRadiusDp.dp.toPx())
 
             // High-fidelity AGSL Liquid Glass Shader (API 33+)
-            if (tuning.refractionEnabled && petalLensSupported) {
-                val veilAlpha = (if (isDark) 0.08f + opacity * 0.20f else 0.12f + opacity * 0.28f).coerceIn(0f, 0.9f)
+            if (useLiquid) {
+                val pad = padding
                 val liquidEffect = createPetalLiquidRenderEffect(
                     size = size,
-                    offset = Offset.Zero,
+                    offset = Offset(-pad, -pad),
                     shape = shape,
                     tuning = tuning,
-                    tintColor = if (isDark) Color.Black else Color.White,
+                    tintColor = tintColor,
                     tintAlpha = veilAlpha,
                     density = this,
                     scope = this
@@ -106,9 +116,10 @@ internal fun Modifier.petalRealGlass(
             }
         },
         onDrawSurface = {
-            // Light veil fallback so text stays readable on any background
-            val veil = (if (isDark) 0.08f + opacity * 0.20f else 0.12f + opacity * 0.28f).coerceIn(0f, 0.9f)
-            drawRect((if (isDark) Color.Black else Color.White).copy(alpha = veil))
+            if (!useLiquid) {
+                // Light veil fallback so text stays readable on any background
+                drawRect(tintColor.copy(alpha = veilAlpha))
+            }
         }
     )
 }

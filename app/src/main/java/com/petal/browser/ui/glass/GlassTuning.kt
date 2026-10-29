@@ -62,7 +62,10 @@ fun rememberPetalLiquidGlassTuning(
     chromaticOverride: Float? = null,
     rimAngleOverride: Float? = null,
     rimStrengthOverride: Float? = null,
-    contrastOverride: Float? = null
+    contrastOverride: Float? = null,
+    softRimStrengthOverride: Float? = null,
+    borderStrengthOverride: Float? = null,
+    unitPxOverride: Float? = null
 ): PetalLiquidGlassTuning {
     LocalPetalGlassRevision.current
     val sp = PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
@@ -75,15 +78,16 @@ fun rememberPetalLiquidGlassTuning(
     val baseRimStrength = (rimStrengthOverride ?: sp.getFloat(PREF_GLASS_RIM_STRENGTH, 1.20f)).coerceIn(0f, 3.0f)
     val baseContrast = (contrastOverride ?: sp.getFloat(PREF_GLASS_CONTRAST, 1.08f)).coerceIn(0.8f, 1.6f)
 
-    val softRimStrength = sp.getFloat(PREF_GLASS_SOFT_RIM_STRENGTH, 0.80f).coerceIn(0f, 2.5f)
+    val softRimStrength = (softRimStrengthOverride ?: sp.getFloat(PREF_GLASS_SOFT_RIM_STRENGTH, 0.80f)).coerceIn(0f, 2.5f)
     val softRimWidth = sp.getFloat(PREF_GLASS_SOFT_RIM_WIDTH, 1.00f).coerceIn(0.2f, 3.0f)
     val softRimTint = sp.getFloat(PREF_GLASS_SOFT_RIM_TINT, 0.50f).coerceIn(0f, 1.0f)
-    val borderStrength = sp.getFloat(PREF_GLASS_BORDER_STRENGTH, 0.35f).coerceIn(0f, 1.0f)
+    val borderStrength = (borderStrengthOverride ?: sp.getFloat(PREF_GLASS_BORDER_STRENGTH, 0.35f)).coerceIn(0f, 1.0f)
     val squircleN = sp.getFloat(PREF_GLASS_SQUIRCLE_N, 3.0f).coerceIn(2.0f, 4.0f)
     val perfNoChroma = sp.getBoolean(PREF_GLASS_PERF_NO_CHROMA, false)
+    val unitPx = (unitPxOverride ?: 1000.0f).coerceAtLeast(1f)
 
     return PetalLiquidGlassTuning(
-        blurRadiusDp = 20.0f,
+        blurRadiusDp = 24.0f,
         refractionStrength = 0.085f * refMult,
         edgeWidth = baseEdge * widthMult,
         chromaticAberration = baseChromatic,
@@ -95,6 +99,7 @@ fun rememberPetalLiquidGlassTuning(
         borderStrength = borderStrength,
         contrastBoost = baseContrast,
         squircleN = squircleN,
+        unitPx = unitPx,
         perfDisableChromatic = perfNoChroma,
         perfDisableRimLight = false
     )

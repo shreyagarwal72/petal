@@ -371,11 +371,13 @@ internal fun lensEffect(
     height: Float,
     amount: Float,
     tuning: PetalLiquidGlassTuning? = null,
-    shape: Shape? = null
+    shape: Shape? = null,
+    tintColor: Color = Color.Unspecified,
+    tintAlpha: Float = 0.20f
 ): RenderEffect? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
     if (height <= 0f && amount <= 0f && tuning?.refractionEnabled != true) return null
-    return lensShaderEffect(size, pad, radii, height, amount, tuning, shape)
+    return lensShaderEffect(size, pad, radii, height, amount, tuning, shape, tintColor, tintAlpha)
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -386,7 +388,9 @@ private fun lensShaderEffect(
     height: Float,
     amount: Float,
     tuning: PetalLiquidGlassTuning? = null,
-    shape: Shape? = null
+    shape: Shape? = null,
+    tintColor: Color = Color.Unspecified,
+    tintAlpha: Float = 0.20f
 ): RenderEffect {
     if (tuning != null && tuning.refractionEnabled) {
         val shader = PetalLiquidShaderPool.get()
@@ -396,7 +400,9 @@ private fun lensShaderEffect(
             size = size,
             offset = Offset(-pad, -pad),
             shape = effShape,
-            tuning = tuning
+            tuning = tuning,
+            tintColor = tintColor,
+            tintAlpha = tintAlpha
         )
         return RenderEffect.createRuntimeShaderEffect(shader, "content")
     }
