@@ -479,6 +479,44 @@
             </intent-filter>
         </activity>
 
+        <!-- Standalone APK Installer Activity ("Install with Petal") -->
+        <activity
+            android:name="com.petal.browser.apk.PetalApkInstallActivity"
+            android:label="@string/petal_installer_name"
+            android:theme="@style/Theme.Petal.Installer"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:autoRemoveFromRecents="true"
+            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden"
+            android:exported="true">
+
+            <!-- Primary APK open / install intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.INSTALL_PACKAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" android:mimeType="application/vnd.android.package-archive" />
+                <data android:scheme="file" android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+
+            <!-- Octet-stream fallback matching .apk filenames -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:mimeType="application/octet-stream" android:pathPattern=".*\\.apk" />
+                <data android:scheme="file" android:mimeType="application/octet-stream" android:pathPattern=".*\\.apk" />
+            </intent-filter>
+
+            <!-- Share APK into Petal Installer -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.android.package-archive" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+        </activity>
+
         <!-- Standalone PWA / Web App Shell Activity -->
         <activity
             android:name="com.petal.browser.pwa.PetalPwaActivity"
