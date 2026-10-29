@@ -15,8 +15,6 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.shape.CornerBasedShape
-import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -364,48 +362,14 @@ private fun glassEffect(size: Size, look: GlassLook, radii: FloatArray?): Render
 }
 
 /** Stride's rounded-rect lens alone. Null below Android 13 (no runtime shader). */
-internal fun lensEffect(
-    size: Size,
-    pad: Float,
-    radii: FloatArray,
-    height: Float,
-    amount: Float,
-    tuning: PetalLiquidGlassTuning? = null,
-    shape: Shape? = null,
-    tintColor: Color = Color.Unspecified,
-    tintAlpha: Float = 0.20f
-): RenderEffect? {
+internal fun lensEffect(size: Size, pad: Float, radii: FloatArray, height: Float, amount: Float): RenderEffect? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
-    if (height <= 0f && amount <= 0f && tuning?.refractionEnabled != true) return null
-    return lensShaderEffect(size, pad, radii, height, amount, tuning, shape, tintColor, tintAlpha)
+    if (height <= 0f || amount <= 0f) return null
+    return lensShaderEffect(size, pad, radii, height, amount)
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun lensShaderEffect(
-    size: Size,
-    pad: Float,
-    radii: FloatArray,
-    height: Float,
-    amount: Float,
-    tuning: PetalLiquidGlassTuning? = null,
-    shape: Shape? = null,
-    tintColor: Color = Color.Unspecified,
-    tintAlpha: Float = 0.20f
-): RenderEffect {
-    if (tuning != null && tuning.refractionEnabled) {
-        val shader = PetalLiquidShaderPool.get()
-        val effShape = shape ?: RoundedCornerShape(CornerSize(if (radii.isNotEmpty()) radii[0] else 0f))
-        bindLiquidShaderUniforms(
-            shader = shader,
-            size = size,
-            offset = Offset(-pad, -pad),
-            shape = effShape,
-            tuning = tuning,
-            tintColor = tintColor,
-            tintAlpha = tintAlpha
-        )
-        return RenderEffect.createRuntimeShaderEffect(shader, "content")
-    }
+private fun lensShaderEffect(size: Size, pad: Float, radii: FloatArray, height: Float, amount: Float): RenderEffect {
     val shader = LensShaders.plain
     shader.setFloatUniform("size", size.width, size.height)
     shader.setFloatUniform("offset", -pad, -pad)

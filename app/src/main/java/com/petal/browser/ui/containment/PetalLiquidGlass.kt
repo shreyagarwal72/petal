@@ -4,10 +4,8 @@ import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
@@ -15,13 +13,9 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.colorControls
-import com.kyant.backdrop.effects.effect
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
-import com.petal.browser.ui.glass.PetalLiquidGlassTuning
-import com.petal.browser.ui.glass.RefractionTuning
-import com.petal.browser.ui.glass.createPetalLiquidRenderEffect
 
 /**
  * Explicit sibling backdrops for headers. Repeated cards use the shared frosted wallpaper
@@ -58,68 +52,33 @@ internal fun Modifier.petalRealGlass(
     backdrop: PetalBackdrop?,
     shape: Shape,
     isDark: Boolean,
-    refraction: RefractionTuning = RefractionTuning(),
+    refraction: com.petal.browser.ui.glass.RefractionTuning = com.petal.browser.ui.glass.RefractionTuning(),
     /** Translucency slider (0.10..0.95): higher = denser veil. */
-    opacity: Float = 0.70f,
-    liquidTuning: PetalLiquidGlassTuning? = null
+    opacity: Float = 0.70f
 ): Modifier {
     if (backdrop == null || !petalRealGlassSupported) return this
-    val tuning = liquidTuning ?: PetalLiquidGlassTuning(
-        refractionStrength = 0.085f * refraction.strength,
-        edgeWidth = 0.040f * refraction.width
-    )
-    val useLiquid = tuning.refractionEnabled && petalLensSupported
-    val veilAlpha = (if (isDark) 0.08f + opacity * 0.20f else 0.12f + opacity * 0.28f).coerceIn(0f, 0.9f)
-    val tintColor = if (isDark) Color.Black else Color.White
-
     return this.drawBackdrop(
         backdrop = backdrop,
         shape = { shape },
-        highlight = if (useLiquid) null else {
-            if (tuning.rimStrength > 0.01f) {
-                { Highlight.Default.copy(alpha = (0.7f * (tuning.rimStrength / 1.2f)).coerceIn(0f, 1f)) }
-            } else null
-        },
+        highlight = { Highlight.Default },
         effects = {
-            if (!useLiquid) {
-                vibrancy()
-                colorControls(
-                    brightness = 0f,
-                    contrast = tuning.contrastBoost,
-                    saturation = 1.35f
-                )
-            }
-            blur(tuning.blurRadiusDp.dp.toPx())
-
-            // High-fidelity AGSL Liquid Glass Shader (API 33+)
-            if (useLiquid) {
-                val pad = padding
-                val liquidEffect = createPetalLiquidRenderEffect(
-                    size = size,
-                    offset = Offset(-pad, -pad),
-                    shape = shape,
-                    tuning = tuning,
-                    tintColor = tintColor,
-                    tintAlpha = veilAlpha,
-                    density = this,
-                    scope = this
-                )
-                if (liquidEffect != null) {
-                    effect(liquidEffect.asComposeRenderEffect())
-                } else {
-                    val lensHeight = (24.dp.toPx() * (tuning.edgeWidth * 10f)).coerceAtMost(size.minDimension / 2f)
-                    lens(lensHeight, 56.dp.toPx() * (tuning.refractionStrength * 10f), false)
-                }
-            } else if (refraction.enabled && petalLensSupported) {
+            vibrancy()
+            colorControls(
+                brightness = 0f,
+                contrast = 1f,
+                saturation = 1.5f
+            )
+            blur(7f.dp.toPx())
+            // Stride's panel lens, clamped to fit short headers.
+            if (refraction.enabled && petalLensSupported) {
                 val lensHeight = (24.dp.toPx() * refraction.width).coerceAtMost(size.minDimension / 2f)
                 lens(lensHeight, 56.dp.toPx() * refraction.strength, false)
             }
         },
         onDrawSurface = {
-            if (!useLiquid) {
-                // Light veil fallback so text stays readable on any background
-                drawRect(tintColor.copy(alpha = veilAlpha))
-            }
+            // Light veil so text stays readable on any background.
+            val veil = (if (isDark) 0.08f + opacity * 0.20f else 0.12f + opacity * 0.28f).coerceIn(0f, 0.9f)
+            drawRect((if (isDark) Color.Black else Color.White).copy(alpha = veil))
         }
     )
 }

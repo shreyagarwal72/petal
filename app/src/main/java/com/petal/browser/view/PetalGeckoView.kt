@@ -1702,19 +1702,11 @@ class PetalGeckoView @JvmOverloads constructor(
                 "DARK" -> true
                 else -> isSysDark || forceDark
             }
-            val targetColorScheme = if (isDark) {
-                GeckoSessionSettings.COLOR_SCHEME_DARK
-            } else {
-                GeckoSessionSettings.COLOR_SCHEME_LIGHT
-            }
+            val targetColorScheme = if (isDark) 1 else 0 // 1: COLOR_SCHEME_DARK, 0: COLOR_SCHEME_LIGHT
             try {
-                session.settings.preferredColorScheme = targetColorScheme
-            } catch (_: Throwable) {
-                try {
-                    val method = session.settings.javaClass.getMethod("setPreferredColorScheme", Int::class.javaPrimitiveType)
-                    method.invoke(session.settings, targetColorScheme)
-                } catch (_: Throwable) {}
-            }
+                val method = session.settings.javaClass.getMethod("setPreferredColorScheme", Int::class.javaPrimitiveType)
+                method.invoke(session.settings, targetColorScheme)
+            } catch (_: Throwable) {}
         } catch (t: Throwable) {
             android.util.Log.w("PetalGeckoView", "Failed to apply dark mode policy: ${t.message}")
         }

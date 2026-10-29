@@ -321,11 +321,9 @@ fun Modifier.petalGlassPanel(
     tint: Color,
     edge: Float,
     refractionOverride: Float? = null,
-    refractionWidthOverride: Float? = null,
-    liquidTuning: PetalLiquidGlassTuning? = null
+    refractionWidthOverride: Float? = null
 ): Modifier {
     val tuning = rememberRefractionTuning(refractionOverride, refractionWidthOverride)
-    val advancedTuning = liquidTuning ?: rememberPetalLiquidGlassTuning(refractionOverride, refractionWidthOverride)
     val wallpaper = LocalPetalGlassWallpaper.current ?: return this
     if (!wallpaper.ready) return this
     val place = remember { GlassPanelPlace() }
@@ -349,21 +347,8 @@ fun Modifier.petalGlassPanel(
             val pad = lensAmount + 4.dp.toPx()
             val effect = try {
                 val radii = cornerRadii(shape, size, layoutDirection, this)
-                radii?.let {
-                    lensEffect(
-                        size = size,
-                        pad = pad,
-                        radii = it,
-                        height = lensHeight,
-                        amount = lensAmount,
-                        tuning = advancedTuning,
-                        shape = shape,
-                        tintColor = tint,
-                        tintAlpha = tint.alpha
-                    )
-                }
+                radii?.let { lensEffect(size, pad, it, lensHeight, lensAmount) }
             } catch (_: Throwable) { null }
-            val isLiquidShader = effect != null && advancedTuning.refractionEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             try {
                 glass.renderEffect = effect?.asComposeRenderEffect()
             } catch (_: Throwable) {
@@ -410,14 +395,10 @@ fun Modifier.petalGlassPanel(
                                 } catch (_: Throwable) {}
                             }
                         }
-                        if (!isLiquidShader) {
-                            drawRect(if (Build.VERSION.SDK_INT < 31) tint.copy(alpha = .85f) else tint)
-                            drawRect(spec)
-                        }
+                        drawRect(if (Build.VERSION.SDK_INT < 31) tint.copy(alpha = .85f) else tint)
+                        drawRect(spec)
                     }
-                    if (!isLiquidShader) {
-                        drawPath(outline, rim, style = Stroke((1.25.dp * (0.8f + edge * 0.4f)).toPx()))
-                    }
+                    drawPath(outline, rim, style = Stroke((1.25.dp * (0.8f + edge * 0.4f)).toPx()))
                 } catch (_: Throwable) {
                     drawRect(tint)
                 }

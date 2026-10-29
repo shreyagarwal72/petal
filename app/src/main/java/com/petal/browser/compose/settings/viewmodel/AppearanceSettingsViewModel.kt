@@ -141,27 +141,6 @@ class AppearanceSettingsViewModel @Inject constructor(
     val liquidGlassBgBlur: StateFlow<Float> = settingsRepository.liquidGlassBgBlur
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 16f)
 
-    val liquidGlassEdgeWidth: StateFlow<Float> = settingsRepository.liquidGlassEdgeWidth
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.040f)
-
-    val liquidGlassChromatic: StateFlow<Float> = settingsRepository.liquidGlassChromatic
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.015f)
-
-    val liquidGlassRimAngle: StateFlow<Float> = settingsRepository.liquidGlassRimAngle
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 45.0f)
-
-    val liquidGlassRimStrength: StateFlow<Float> = settingsRepository.liquidGlassRimStrength
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.20f)
-
-    val liquidGlassSoftRimStrength: StateFlow<Float> = settingsRepository.liquidGlassSoftRimStrength
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.80f)
-
-    val liquidGlassBorderStrength: StateFlow<Float> = settingsRepository.liquidGlassBorderStrength
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.35f)
-
-    val liquidGlassContrast: StateFlow<Float> = settingsRepository.liquidGlassContrast
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.08f)
-
     fun setAppFont(font: AppFont) = viewModelScope.launch {
         settingsRepository.setAppFont(font)
     }
@@ -320,37 +299,5 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setLiquidGlassBgBlur(blur: Float) = viewModelScope.launch {
         settingsRepository.setLiquidGlassBgBlur(blur)
-    }
-
-    fun setLiquidGlassEdgeWidth(width: Float) = viewModelScope.launch {
-        settingsRepository.setLiquidGlassEdgeWidth(width)
-    }
-
-    fun setLiquidGlassChromatic(chroma: Float) = viewModelScope.launch {
-        settingsRepository.setLiquidGlassChromatic(chroma)
-    }
-
-    fun setLiquidGlassRimAngle(angle: Float) = viewModelScope.launch {
-        settingsRepository.setLiquidGlassRimAngle(angle)
-    }
-
-    fun setLiquidGlassRimStrength(strength: Float) = viewModelScope.launch {
-        settingsRepository.setLiquidGlassRimStrength(strength)
-    }
-
-    fun setLiquidGlassSoftRimStrength(strength: Float) = viewModelScope.launch {
-        settingsRepository.setLiquidGlassSoftRimStrength(strength)
-    }
-
-    fun setLiquidGlassBorderStrength(strength: Float) = viewModelScope.launch {
-        settingsRepository.setLiquidGlassBorderStrength(strength)
-    }
-
-    fun setLiquidGlassContrast(contrast: Float) = viewModelScope.launch {
-        settingsRepository.setLiquidGlassContrast(contrast)
-    }
-
-    fun resetAdvancedLiquidGlass() = viewModelScope.launch {
-        settingsRepository.resetAdvancedLiquidGlass()
     }
 }

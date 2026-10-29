@@ -94,13 +94,6 @@ fun AppearanceSettingsScreen(
     val liquidGlassBgImageUri by viewModel.liquidGlassBgImageUri.collectAsStateWithLifecycle()
     val liquidGlassBgDim by viewModel.liquidGlassBgDim.collectAsStateWithLifecycle()
     val liquidGlassBgBlur by viewModel.liquidGlassBgBlur.collectAsStateWithLifecycle()
-    val liquidGlassEdgeWidth by viewModel.liquidGlassEdgeWidth.collectAsStateWithLifecycle()
-    val liquidGlassChromatic by viewModel.liquidGlassChromatic.collectAsStateWithLifecycle()
-    val liquidGlassRimAngle by viewModel.liquidGlassRimAngle.collectAsStateWithLifecycle()
-    val liquidGlassRimStrength by viewModel.liquidGlassRimStrength.collectAsStateWithLifecycle()
-    val liquidGlassSoftRimStrength by viewModel.liquidGlassSoftRimStrength.collectAsStateWithLifecycle()
-    val liquidGlassBorderStrength by viewModel.liquidGlassBorderStrength.collectAsStateWithLifecycle()
-    val liquidGlassContrast by viewModel.liquidGlassContrast.collectAsStateWithLifecycle()
     val forceDarkMode by viewModel.forceDarkMode.collectAsStateWithLifecycle()
 
     AppearanceSettingsScreenContent(
@@ -135,13 +128,6 @@ fun AppearanceSettingsScreen(
         liquidGlassSheen = liquidGlassSheen,
         liquidGlassRefraction = liquidGlassRefraction,
         liquidGlassRefractionWidth = liquidGlassRefractionWidth,
-        liquidGlassEdgeWidth = liquidGlassEdgeWidth,
-        liquidGlassChromatic = liquidGlassChromatic,
-        liquidGlassRimAngle = liquidGlassRimAngle,
-        liquidGlassRimStrength = liquidGlassRimStrength,
-        liquidGlassSoftRimStrength = liquidGlassSoftRimStrength,
-        liquidGlassBorderStrength = liquidGlassBorderStrength,
-        liquidGlassContrast = liquidGlassContrast,
         liquidGlassTint = liquidGlassTint,
         liquidGlassContainments = liquidGlassContainments,
         liquidGlassBottomNav = liquidGlassBottomNav,
@@ -179,14 +165,6 @@ fun AppearanceSettingsScreen(
         onLiquidGlassSheenChange = viewModel::setLiquidGlassSheen,
         onLiquidGlassRefractionChange = viewModel::setLiquidGlassRefraction,
         onLiquidGlassRefractionWidthChange = viewModel::setLiquidGlassRefractionWidth,
-        onLiquidGlassEdgeWidthChange = viewModel::setLiquidGlassEdgeWidth,
-        onLiquidGlassChromaticChange = viewModel::setLiquidGlassChromatic,
-        onLiquidGlassRimAngleChange = viewModel::setLiquidGlassRimAngle,
-        onLiquidGlassRimStrengthChange = viewModel::setLiquidGlassRimStrength,
-        onLiquidGlassSoftRimStrengthChange = viewModel::setLiquidGlassSoftRimStrength,
-        onLiquidGlassBorderStrengthChange = viewModel::setLiquidGlassBorderStrength,
-        onLiquidGlassContrastChange = viewModel::setLiquidGlassContrast,
-        onResetAdvancedLiquidGlass = viewModel::resetAdvancedLiquidGlass,
         onLiquidGlassTintChange = viewModel::setLiquidGlassTint,
         onLiquidGlassContainmentsChange = viewModel::setLiquidGlassContainments,
         onLiquidGlassBottomNavChange = viewModel::setLiquidGlassBottomNav,
@@ -232,13 +210,6 @@ fun AppearanceSettingsScreenContent(
     liquidGlassSheen: Float = 0.60f,
     liquidGlassRefraction: Float = 1.0f,
     liquidGlassRefractionWidth: Float = 1.0f,
-    liquidGlassEdgeWidth: Float = 0.040f,
-    liquidGlassChromatic: Float = 0.015f,
-    liquidGlassRimAngle: Float = 45.0f,
-    liquidGlassRimStrength: Float = 1.20f,
-    liquidGlassSoftRimStrength: Float = 0.80f,
-    liquidGlassBorderStrength: Float = 0.35f,
-    liquidGlassContrast: Float = 1.08f,
     liquidGlassTint: String = "FROSTED",
     liquidGlassContainments: Boolean = true,
     liquidGlassBottomNav: Boolean = true,
@@ -279,14 +250,6 @@ fun AppearanceSettingsScreenContent(
     onLiquidGlassSheenChange: (Float) -> Unit = {},
     onLiquidGlassRefractionChange: (Float) -> Unit = {},
     onLiquidGlassRefractionWidthChange: (Float) -> Unit = {},
-    onLiquidGlassEdgeWidthChange: (Float) -> Unit = {},
-    onLiquidGlassChromaticChange: (Float) -> Unit = {},
-    onLiquidGlassRimAngleChange: (Float) -> Unit = {},
-    onLiquidGlassRimStrengthChange: (Float) -> Unit = {},
-    onLiquidGlassSoftRimStrengthChange: (Float) -> Unit = {},
-    onLiquidGlassBorderStrengthChange: (Float) -> Unit = {},
-    onLiquidGlassContrastChange: (Float) -> Unit = {},
-    onResetAdvancedLiquidGlass: () -> Unit = {},
     onLiquidGlassTintChange: (String) -> Unit = {},
     onLiquidGlassContainmentsChange: (Boolean) -> Unit = {},
     onLiquidGlassBottomNavChange: (Boolean) -> Unit = {},
@@ -1298,13 +1261,6 @@ fun AppearanceSettingsScreenContent(
                                 var liveSheen by remember(liquidGlassSheen) { mutableFloatStateOf(liquidGlassSheen) }
                                 var liveRefraction by remember(liquidGlassRefraction) { mutableFloatStateOf(liquidGlassRefraction) }
                                 var liveRefractionWidth by remember(liquidGlassRefractionWidth) { mutableFloatStateOf(liquidGlassRefractionWidth) }
-                                var liveEdgeWidth by remember(liquidGlassEdgeWidth) { mutableFloatStateOf(liquidGlassEdgeWidth) }
-                                var liveChromatic by remember(liquidGlassChromatic) { mutableFloatStateOf(liquidGlassChromatic) }
-                                var liveRimAngle by remember(liquidGlassRimAngle) { mutableFloatStateOf(liquidGlassRimAngle) }
-                                var liveRimStrength by remember(liquidGlassRimStrength) { mutableFloatStateOf(liquidGlassRimStrength) }
-                                var liveSoftRimStrength by remember(liquidGlassSoftRimStrength) { mutableFloatStateOf(liquidGlassSoftRimStrength) }
-                                var liveBorderStrength by remember(liquidGlassBorderStrength) { mutableFloatStateOf(liquidGlassBorderStrength) }
-                                var liveContrast by remember(liquidGlassContrast) { mutableFloatStateOf(liquidGlassContrast) }
                                 val lensSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
                                 // Live preview: authentic Liquid Glass AGSL over moving colour. Every slider below
@@ -1314,14 +1270,7 @@ fun AppearanceSettingsScreenContent(
                                     sheen = liveSheen,
                                     refraction = liveRefraction,
                                     refractionWidth = liveRefractionWidth,
-                                    fx = com.petal.browser.ui.glass.rememberGlassFx(),
-                                    chromatic = liveChromatic,
-                                    rimAngle = liveRimAngle,
-                                    rimStrength = liveRimStrength,
-                                    edgeWidth = liveEdgeWidth,
-                                    softRimStrength = liveSoftRimStrength,
-                                    borderStrength = liveBorderStrength,
-                                    contrast = liveContrast
+                                    fx = com.petal.browser.ui.glass.rememberGlassFx()
                                 )
 
                                 // Glass Translucency Slider (Stride style PetalSlider)
@@ -1456,279 +1405,6 @@ fun AppearanceSettingsScreenContent(
 
                                 com.petal.browser.ui.glass.GlassEffectsSettings()
 
-                                var showAdvancedTweaks by remember { mutableStateOf(false) }
-
-                                androidx.compose.material3.OutlinedButton(
-                                    onClick = { showAdvancedTweaks = !showAdvancedTweaks },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (showAdvancedTweaks) Icons.Rounded.ExpandLess else Icons.Rounded.Tune,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(if (showAdvancedTweaks) "Hide Advanced Optical Tweaks" else "Advanced Liquid Glass Optical Tweaks")
-                                }
-
-                                AnimatedVisibility(
-                                    visible = showAdvancedTweaks,
-                                    enter = fadeIn() + expandVertically(),
-                                    exit = fadeOut() + shrinkVertically()
-                                ) {
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(14.dp),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 4.dp)
-                                    ) {
-                                        // 1. Prismatic Chromatic Dispersion
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "Prismatic Chromatic Dispersion",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = if (lensSupported) "${(liveChromatic * 1000).toInt() / 10f}%" else "Android 13+",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            PetalSlider(
-                                                value = liveChromatic,
-                                                onValueChange = { liveChromatic = it },
-                                                onValueChangeFinished = { onLiquidGlassChromaticChange(liveChromatic) },
-                                                valueRange = 0f..0.05f,
-                                                enabled = lensSupported,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                            Text(
-                                                text = "Optical wavelength separation (red/blue fringes) on refracted boundaries.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        // 2. Specular Rim Light Angle
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "Specular Light Angle",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = if (lensSupported) "${liveRimAngle.toInt()}°" else "Android 13+",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            PetalSlider(
-                                                value = liveRimAngle,
-                                                onValueChange = { liveRimAngle = it },
-                                                onValueChangeFinished = { onLiquidGlassRimAngleChange(liveRimAngle) },
-                                                valueRange = 0f..360f,
-                                                enabled = lensSupported,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                            Text(
-                                                text = "Directional incident angle of the virtual light source.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        // 3. Specular Rim Light Strength
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "Specular Rim Highlight Strength",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = if (lensSupported) "${(liveRimStrength * 100).toInt()}%" else "Android 13+",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            PetalSlider(
-                                                value = liveRimStrength,
-                                                onValueChange = { liveRimStrength = it },
-                                                onValueChangeFinished = { onLiquidGlassRimStrengthChange(liveRimStrength) },
-                                                valueRange = 0f..2.5f,
-                                                enabled = lensSupported,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                            Text(
-                                                text = "Sharp micro-bevel reflection intensity along rim contours.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        // 4. Edge Bevel Width
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "Bevel Edge Width",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = if (lensSupported) "${(liveEdgeWidth * 1000).toInt() / 10f}%" else "Android 13+",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            PetalSlider(
-                                                value = liveEdgeWidth,
-                                                onValueChange = { liveEdgeWidth = it },
-                                                onValueChangeFinished = { onLiquidGlassEdgeWidthChange(liveEdgeWidth) },
-                                                valueRange = 0.010f..0.120f,
-                                                enabled = lensSupported,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                            Text(
-                                                text = "Curvature extent of the rim bevel before flattening into the glass plane.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        // 5. Ambient Soft Rim Glow
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "Ambient Soft Rim Glow",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = if (lensSupported) "${(liveSoftRimStrength * 100).toInt()}%" else "Android 13+",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            PetalSlider(
-                                                value = liveSoftRimStrength,
-                                                onValueChange = { liveSoftRimStrength = it },
-                                                onValueChangeFinished = { onLiquidGlassSoftRimStrengthChange(liveSoftRimStrength) },
-                                                valueRange = 0f..2.0f,
-                                                enabled = lensSupported,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                            Text(
-                                                text = "Radiating luminous glow tinted by surrounding backdrop colours.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        // 6. 3D Bevel Occlusion Shadow
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "3D Bevel Occlusion Shadow",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = if (lensSupported) "${(liveBorderStrength * 100).toInt()}%" else "Android 13+",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            PetalSlider(
-                                                value = liveBorderStrength,
-                                                onValueChange = { liveBorderStrength = it },
-                                                onValueChangeFinished = { onLiquidGlassBorderStrengthChange(liveBorderStrength) },
-                                                valueRange = 0f..1.0f,
-                                                enabled = lensSupported,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                            Text(
-                                                text = "Opposing edge bevel shadow producing tactile extrusion depth.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        // 7. Contrast Boost
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "Optical Contrast Boost",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = if (lensSupported) "${(liveContrast * 100).toInt()}%" else "Android 13+",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            PetalSlider(
-                                                value = liveContrast,
-                                                onValueChange = { liveContrast = it },
-                                                onValueChangeFinished = { onLiquidGlassContrastChange(liveContrast) },
-                                                valueRange = 1.0f..1.4f,
-                                                enabled = lensSupported,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                            Text(
-                                                text = "Preserves pristine white specular peaks under heavy background blur.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        androidx.compose.material3.TextButton(
-                                            onClick = {
-                                                liveChromatic = 0.015f
-                                                liveRimAngle = 45.0f
-                                                liveRimStrength = 1.20f
-                                                liveEdgeWidth = 0.040f
-                                                liveSoftRimStrength = 0.80f
-                                                liveBorderStrength = 0.35f
-                                                liveContrast = 1.08f
-                                                onResetAdvancedLiquidGlass()
-                                            },
-                                            modifier = Modifier.align(Alignment.End)
-                                        ) { Text("Reset optical tweaks to defaults") }
-                                    }
-                                }
 
                                 Divider(
                                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),

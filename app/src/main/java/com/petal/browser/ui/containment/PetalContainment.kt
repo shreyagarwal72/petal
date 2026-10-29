@@ -188,16 +188,14 @@ private fun Modifier.liquidGlassChromeBase(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val tuning = com.petal.browser.ui.glass.rememberRefractionTuning(refractionOverride, refractionWidthOverride)
-    val liquidTuning = com.petal.browser.ui.glass.rememberPetalLiquidGlassTuning(refractionOverride, refractionWidthOverride)
     val masterGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
     if (!enabled || !masterGlass) return this
     val backdropOpacity = (alphaOverride ?: sp.getFloat("sp_liquid_glass_alpha", .70f)).coerceIn(.10f, .95f)
-    val isLiquid = liquidTuning.refractionEnabled && petalLensSupported
     if (backdrop != null && petalRealGlassSupported) {
         val dark = isDark || (MaterialTheme.colorScheme.background.luminance() < .5f)
         val effectiveSheen = sheenOverride ?: sheenIntensity
-        val baseGlass = this.petalRealGlass(backdrop, shape, dark, tuning, backdropOpacity, liquidTuning)
-        return if (isLiquid) baseGlass else baseGlass.liquidGlassSheen(shape, effectiveSheen, tintColor)
+        return this.petalRealGlass(backdrop, shape, dark, tuning, backdropOpacity)
+            .liquidGlassSheen(shape, effectiveSheen, tintColor)
     }
     if (backdrop == null && LocalPetalGlassWallpaper.current?.ready == true) {
         val dark = MaterialTheme.colorScheme.background.luminance() < .5f
@@ -212,13 +210,12 @@ private fun Modifier.liquidGlassChromeBase(
             tint = tint.copy(alpha = baseAlpha.coerceIn(0f, 0.96f)),
             edge = (sheen / 0.60f).coerceIn(0f, 2.5f),
             refractionOverride = tuning.strength,
-            refractionWidthOverride = tuning.width,
-            liquidTuning = liquidTuning
+            refractionWidthOverride = tuning.width
         )
     }
     val effectiveSheen = sheenOverride ?: sheenIntensity
-    val baseGlass = this.petalRealGlass(backdrop, shape, isDark, tuning, backdropOpacity, liquidTuning)
-    return if (isLiquid) baseGlass else baseGlass.liquidGlassSheen(shape, effectiveSheen, tintColor)
+    return this.petalRealGlass(backdrop, shape, isDark, tuning, backdropOpacity)
+        .liquidGlassSheen(shape, effectiveSheen, tintColor)
 }
 
 /** Specular highlight + rim stroke only (the original Petal "glass" look). */
