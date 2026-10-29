@@ -124,10 +124,7 @@ object PetalEngineStore {
             applicationScope = mainScope
         )
         sessionStorage = storage
-
-        val currentStore = getStore(appContext)
-        autoSave = storage.autoSave(currentStore)
-        Log.i(TAG, "Initialized Mozilla SessionStorage with AutoSave")
+        Log.i(TAG, "Initialized Mozilla SessionStorage")
         return storage
     }
 

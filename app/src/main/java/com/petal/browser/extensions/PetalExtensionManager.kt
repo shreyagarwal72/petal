@@ -531,8 +531,49 @@ object PetalExtensionManager {
         }
     }
 
+    /** Creates the global WebExtension.TabDelegate handling browser.tabs.create() from add-ons. */
+    private fun createWebExtensionTabDelegate(context: Context): WebExtension.TabDelegate {
+        return object : WebExtension.TabDelegate {
+            override fun onNewTab(
+                source: WebExtension,
+                createDetails: WebExtension.CreateTabDetails
+            ): GeckoResult<GeckoSession>? {
+                val act = findBrowserActivity(context) ?: return null
+                val targetUrl = createDetails.url?.takeIf { it.isNotBlank() } ?: "about:blank"
+                val currentSession = currentBrowserSession(context)
+                val isPrivate = (currentSession?.settings?.usePrivateMode ?: false) && source.metaData.allowedInPrivateBrowsing
+
+                val result = GeckoResult<GeckoSession>()
+                act.runOnUiThread {
+                    try {
+                        val newSession = GeckoSession(
+                            org.mozilla.geckoview.GeckoSessionSettings.Builder()
+                                .usePrivateMode(isPrivate)
+                                .allowJavascript(true)
+                                .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
+                                .build()
+                        )
+                        act.adoptPopupGeckoSession(newSession, targetUrl, isPrivate)
+                        result.complete(newSession)
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "Failed to handle onNewTab from extension ${source.id}", t)
+                        result.complete(null)
+                    }
+                }
+                return result
+            }
+        }
+    }
+
     /** Attaches the popup/action bridge to a given extension so its toolbar button works. */
     private fun attachActionDelegate(extension: WebExtension) {
+        try {
+            appContext?.let { ctx ->
+                extension.setTabDelegate(createWebExtensionTabDelegate(ctx))
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Failed to attach tab delegate to ${extension.id}", e)
+        }
         try {
             extension.setActionDelegate(object : WebExtension.ActionDelegate {
                 override fun onBrowserAction(
@@ -703,8 +744,11 @@ object PetalExtensionManager {
         // composition can leave Gecko waiting for the popup host and make the browser
         // appear stuck on tap. GeckoSession.open() is asynchronous, so this does not
         // block the UI thread while Gecko initializes the popup document.
+        val ctx = appContext ?: return null
+        val isPrivateTab = sourceSession?.settings?.usePrivateMode
+            ?: (currentBrowserSession(ctx)?.settings?.usePrivateMode ?: false)
         val popupSettings = org.mozilla.geckoview.GeckoSessionSettings.Builder()
-            .usePrivateMode(false)
+            .usePrivateMode(isPrivateTab && extension.metaData.allowedInPrivateBrowsing)
             .allowJavascript(true)
             .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
             .build()
@@ -778,11 +822,8 @@ object PetalExtensionManager {
                     var style = document.createElement('style');
                     style.id = 'petal-ext-popup-responsive';
                     style.innerHTML = [
-                        'html, body { max-width: 100vw !important; width: 100% !important; min-width: unset !important; overflow-x: hidden !important; box-sizing: border-box !important; }',
-                        '*, *::before, *::after { box-sizing: border-box !important; }',
-                        '.container, .wrapper, .content, .inner, .card, .panel, .notification, .popup, .popup-container, .popup-inner, .app, .app-container, .main, main, [role="main"], [class*="container"], [class*="wrapper"], [class*="card"], [class*="notification"], [class*="popup"], [class*="panel"], [class*="dialog"], [class*="modal"], [id*="container"], [id*="wrapper"], [id*="notification"], [id*="popup"] { max-width: calc(100vw - 8px) !important; width: auto !important; min-width: unset !important; margin-left: auto !important; margin-right: auto !important; overflow-x: hidden !important; }',
-                        'button, input, select, textarea, a { max-width: 100% !important; word-break: break-word !important; }',
-                        '[style*="position: fixed"], [style*="position:fixed"] { max-width: 100vw !important; width: 100% !important; left: 0 !important; right: 0 !important; }'
+                        'html, body { max-width: 100vw !important; min-width: unset !important; overflow-x: hidden !important; box-sizing: border-box !important; }',
+                        '*, *::before, *::after { box-sizing: border-box !important; }'
                     ].join(' ');
                     (document.head || document.documentElement).appendChild(style);
                 } catch(e) {}
@@ -844,21 +885,23 @@ object PetalExtensionManager {
         if (action != null) {
             try {
                 action.click()
-                // Some GeckoView/extension combinations deliver the popup asynchronously.
-                // If no popup was produced, the manifest URL fallback below will recover it.
-                Handler(Looper.getMainLooper()).postDelayed({
-                    if (_pendingPopup.value == null) {
-                        try {
-                            val stillActive = currentBrowserSession(ctx)
-                            if (stillActive === activeSession) {
-                                val directUrl = resolveExtensionPopupUrl(rawExt)
-                                if (!directUrl.isNullOrBlank()) openDirectPopup(rawExt, directUrl, ctx)
+                // If extension declared a popup in manifest, allow an asynchronous fallback if the action
+                // callback did not arrive. Extensions without popups simply handle action.click() in their background script.
+                if (extensionHasPopup(rawExt)) {
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (_pendingPopup.value == null) {
+                            try {
+                                val stillActive = currentBrowserSession(ctx)
+                                if (stillActive === activeSession) {
+                                    val directUrl = resolveExtensionPopupUrl(rawExt)
+                                    if (!directUrl.isNullOrBlank()) openDirectPopup(rawExt, directUrl, ctx)
+                                }
+                            } catch (t: Throwable) {
+                                Log.d(TAG, "Delayed extension popup fallback failed for $extensionId", t)
                             }
-                        } catch (t: Throwable) {
-                            Log.d(TAG, "Delayed extension popup fallback failed for $extensionId", t)
                         }
-                    }
-                }, 700L)
+                    }, 700L)
+                }
                 return
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to click extension action for $extensionId, falling back to direct popup load", e)
@@ -897,8 +940,9 @@ object PetalExtensionManager {
                 existing.close()
             } catch (ignored: Exception) {}
         }
+        val isPrivateTab = currentBrowserSession(context)?.settings?.usePrivateMode ?: false
         val popupSettings = org.mozilla.geckoview.GeckoSessionSettings.Builder()
-            .usePrivateMode(false)
+            .usePrivateMode(isPrivateTab && extension.metaData.allowedInPrivateBrowsing)
             .allowJavascript(true)
             .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
             .build()

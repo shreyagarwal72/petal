@@ -36,18 +36,23 @@ object PetalTabSuspender {
     const val PREF_TAB_SUSPEND_TIMEOUT = "sp_tab_suspend_timeout" // "5", "15", "30", "never" (minutes)
 
     /**
-     * Determines whether a given [PetalGeckoView] tab is eligible for suspension.
+     * Determines whether a given tab is eligible for suspension.
      */
-    fun canSuspendTab(tab: PetalGeckoView, isForeground: Boolean): Boolean {
+    fun canSuspendTab(tab: AlbumController, isForeground: Boolean): Boolean {
         if (isForeground) return false
+        if (tab is PlaceholderAlbumController) return false
         // Never suspend if playing media/audio
-        if (tab.isPlayingAudio() || tab.hasActiveMediaSession()) return false
-        // Home tabs are lightweight about:blank anyway
+        if (tab is PetalGeckoView) {
+            if (tab.isPlayingAudio() || tab.hasActiveMediaSession()) return false
+        } else if (tab is com.petal.browser.browser.PetalTabViewController) {
+            val bridge = tab.getMediaBridge()
+            if (bridge?.activeGeckoMediaSession != null || bridge?.activeEngineMediaController != null) return false
+        }
         return true
     }
 
     /**
-     * Suspends a specific [PetalGeckoView] tab at [index] in [BrowserContainer], replacing
+     * Suspends a specific tab at [index] in [BrowserContainer], replacing
      * it with a lightweight [PlaceholderAlbumController].
      *
      * @return true if suspended, false otherwise.
@@ -56,36 +61,69 @@ object PetalTabSuspender {
     fun suspendTab(context: Context, index: Int): Boolean {
         if (index < 0 || index >= BrowserContainer.size()) return false
         val controller = BrowserContainer.get(index)
-        if (controller !is PetalGeckoView) return false
+        if (controller is PlaceholderAlbumController) return false
 
-        val tabId = controller.getTabId()
-        val url = if (controller.persistentUrl.isNotBlank()) controller.persistentUrl else controller.url
-        val title = controller.title
-        val favicon = controller.getFavicon()
-        val groupId = controller.getTabGroupId()
-        val groupTitle = controller.getTabGroupTitle()
-        val isIncognito = controller.isIncognito()
+        val tabId: String
+        val url: String
+        val title: String
+        val favicon: android.graphics.Bitmap?
+        val groupId: String?
+        val groupTitle: String?
+        val isIncognito: Boolean
 
-        // Save preview thumbnail before tearing down native surface
-        try {
-            controller.updatePreviewCache(true)
-        } catch (_: Throwable) {}
+        when (controller) {
+            is PetalGeckoView -> {
+                tabId = controller.getTabId()
+                url = if (controller.persistentUrl.isNotBlank()) controller.persistentUrl else controller.url
+                title = controller.title
+                favicon = controller.getFavicon()
+                groupId = controller.getTabGroupId()
+                groupTitle = controller.getTabGroupTitle()
+                isIncognito = controller.isIncognito()
 
-        // Notify BrowserStore of session suspension (triggers SuspendMiddleware/Unlink)
-        try {
-            PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId))
-        } catch (_: Throwable) {}
+                try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
+                try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
-        // Safely deactivate and release native GeckoView session
-        try {
-            controller.deactivate()
-            val session = controller.session
-            if (session.isOpen) {
-                controller.geckoView.releaseSession()
-                session.close()
+                try {
+                    controller.deactivate()
+                    val session = controller.session
+                    if (session.isOpen) {
+                        controller.geckoView.releaseSession()
+                        session.close()
+                    }
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Error closing GeckoSession during suspension: ${t.message}")
+                }
             }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Error closing GeckoSession during suspension: ${t.message}")
+            is com.petal.browser.browser.PetalTabViewController -> {
+                tabId = controller.getTabId() ?: controller.hashCode().toString()
+                url = controller.url
+                title = controller.title
+                favicon = controller.getFavicon()
+                groupId = controller.getTabGroupId()
+                groupTitle = controller.getTabGroupTitle()
+                isIncognito = controller.isIncognito()
+
+                try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
+                // Persist engine back/forward state before releasing the view
+                try {
+                    controller.captureEngineState()?.let { state ->
+                        if (!isIncognito && url.isNotBlank() && !com.petal.browser.unit.BrowserUnit.isHomePage(url)) {
+                            com.petal.browser.unit.PetalTabStateStore.write(context, tabId, state)
+                        }
+                    }
+                } catch (_: Throwable) {}
+
+                try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
+
+                try {
+                    controller.deactivate()
+                    controller.destroy()
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Error destroying PetalTabViewController during suspension: ${t.message}")
+                }
+            }
+            else -> return false
         }
 
         // Replace with memory-friendly PlaceholderAlbumController
@@ -123,12 +161,15 @@ object PetalTabSuspender {
         for (i in 0 until BrowserContainer.size()) {
             val controller = BrowserContainer.get(i)
             if (controller === activeController) continue
-            if (controller is PetalGeckoView) {
-                if (!canSuspendTab(controller, false)) continue
-                val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, controller.getTabId())
-                if (lastAccess > 0L && (now - lastAccess) >= timeoutMs) {
-                    suspendTab(context, i)
-                }
+            if (!canSuspendTab(controller, false)) continue
+            val tabId = when (controller) {
+                is PetalGeckoView -> controller.getTabId()
+                is com.petal.browser.browser.PetalTabViewController -> controller.getTabId()
+                else -> null
+            } ?: continue
+            val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, tabId)
+            if (lastAccess > 0L && (now - lastAccess) >= timeoutMs) {
+                suspendTab(context, i)
             }
         }
     }
@@ -144,11 +185,14 @@ object PetalTabSuspender {
         for (i in 0 until BrowserContainer.size()) {
             val controller = BrowserContainer.get(i)
             if (controller === activeController) continue
-            if (controller is PetalGeckoView) {
-                if (!canSuspendTab(controller, false)) continue
-                val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, controller.getTabId())
-                candidates.add(Pair(i, lastAccess))
-            }
+            if (!canSuspendTab(controller, false)) continue
+            val tabId = when (controller) {
+                is PetalGeckoView -> controller.getTabId()
+                is com.petal.browser.browser.PetalTabViewController -> controller.getTabId()
+                else -> null
+            } ?: continue
+            val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, tabId)
+            candidates.add(Pair(i, lastAccess))
         }
 
         // Sort ascending by last access (oldest accessed tabs first)

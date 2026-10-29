@@ -411,7 +411,14 @@ class PetalTabViewController private constructor(
                     engine = engineContent,
                     contextProvider = { context },
                     isPrivateProvider = { isIncognito() },
-                    referrerProvider = { pageUrl.takeIf { it.startsWith("http") } }
+                    referrerProvider = { pageUrl.takeIf { it.startsWith("http") } },
+                    onCrashCallback = {
+                        post {
+                            try {
+                                reload()
+                            } catch (_: Throwable) {}
+                        }
+                    }
                 )
             }
 
@@ -1340,7 +1347,8 @@ private class PetalContentDelegateWrapper(
     val engine: org.mozilla.geckoview.GeckoSession.ContentDelegate?,
     private val contextProvider: () -> android.content.Context,
     private val isPrivateProvider: () -> Boolean = { false },
-    private val referrerProvider: () -> String? = { null }
+    private val referrerProvider: () -> String? = { null },
+    private val onCrashCallback: (() -> Unit)? = null
 ) : org.mozilla.geckoview.GeckoSession.ContentDelegate {
 
     private fun resolveActivity(): android.app.Activity? {
@@ -1376,10 +1384,12 @@ private class PetalContentDelegateWrapper(
 
     override fun onCrash(session: org.mozilla.geckoview.GeckoSession) {
         engine?.onCrash(session)
+        onCrashCallback?.invoke()
     }
 
     override fun onKill(session: org.mozilla.geckoview.GeckoSession) {
         engine?.onKill(session)
+        onCrashCallback?.invoke()
     }
 
     override fun onFirstContentfulPaint(session: org.mozilla.geckoview.GeckoSession) {

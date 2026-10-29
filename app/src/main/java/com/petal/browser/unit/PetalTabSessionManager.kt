@@ -80,10 +80,16 @@ object PetalTabSessionManager {
         val capturedEngineStates = HashMap<String, String>()
         for (controller in controllers) {
             if (controller.isIncognito) continue
-            if (controller is com.petal.browser.browser.PetalTabViewController) {
-                val id = controller.getTabId() ?: continue
-                if (controller.url.isNullOrBlank() || isHomeUrl(controller.url)) continue
-                controller.captureEngineState()?.let { capturedEngineStates[id] = it }
+            val id = when (controller) {
+                is com.petal.browser.browser.PetalTabViewController -> controller.getTabId()
+                is PetalGeckoView -> controller.getTabId()
+                else -> null
+            } ?: continue
+            val url = controller.url
+            if (url.isNullOrBlank() || isHomeUrl(url)) continue
+            when (controller) {
+                is com.petal.browser.browser.PetalTabViewController -> controller.captureEngineState()?.let { capturedEngineStates[id] = it }
+                is PetalGeckoView -> controller.captureEngineState()?.let { capturedEngineStates[id] = it }
             }
         }
 
@@ -150,7 +156,7 @@ object PetalTabSessionManager {
                     )
                     records.add(record)
 
-                    if (controller is com.petal.browser.browser.PetalTabViewController) {
+                    if (controller is com.petal.browser.browser.PetalTabViewController || controller is PetalGeckoView) {
                         val capturedState = capturedEngineStates[tabId]
                         when {
                             // The tab is showing Home: any older saved web history would wrongly

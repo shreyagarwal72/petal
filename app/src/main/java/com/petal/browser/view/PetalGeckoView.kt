@@ -112,11 +112,11 @@ class PetalGeckoView @JvmOverloads constructor(
             engineSession: mozilla.components.concept.engine.EngineSession?
         ): GeckoSession? = extractGeckoSession(engineSession)
 
-        @JvmField
-        var globalBrowserController: BrowserController? = null
+        @Volatile
+        private var globalBrowserControllerRef: java.lang.ref.WeakReference<BrowserController>? = null
 
         @JvmStatic
-        fun getBrowserController(): BrowserController? = globalBrowserController
+        fun getBrowserController(): BrowserController? = globalBrowserControllerRef?.get()
 
         @JvmStatic
         fun getProfile(context: Context? = null): String {
@@ -766,6 +766,18 @@ class PetalGeckoView @JvmOverloads constructor(
     private var lastCrashRecoveryTime: Long = 0L
     private var crashRecoveryCount: Int = 0
     private var sessionInitializationStarted: Boolean = false
+    @Volatile
+    private var latestGeckoState: GeckoSession.SessionState? = null
+
+    fun captureEngineState(): String? {
+        if (isIncognito) return null
+        val state = latestGeckoState ?: return null
+        return try {
+            state.toString().takeIf { it.length > 2 }
+        } catch (_: Throwable) {
+            null
+        }
+    }
 
     init {
         addView(
@@ -906,6 +918,10 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {
                 currentSecurityInfo = securityInfo
                 onPageSecurityChanged?.invoke(securityInfo.isSecure)
+            }
+
+            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
+                latestGeckoState = sessionState
             }
         }
 
@@ -1663,9 +1679,12 @@ class PetalGeckoView @JvmOverloads constructor(
         // GeckoView uses the same shared browser loading surface as WebView.
         // BrowserActivity renders it with the exact Material 3 Expressive
         // LinearWavyProgressIndicator used by Essentials' App Updater.
-        if (isForegroundTab && globalBrowserController != null) {
-            val p = if (!isStopped) progress else BrowserUnit.LOADING_STOPPED
-            globalBrowserController?.updateProgress(p)
+        if (isForegroundTab) {
+            val bc = getBrowserController()
+            if (bc != null) {
+                val p = if (!isStopped) progress else BrowserUnit.LOADING_STOPPED
+                bc.updateProgress(p)
+            }
         }
     }
 
@@ -2352,7 +2371,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
 
     fun setBrowserController(controller: BrowserController?) {
-        globalBrowserController = controller
+        globalBrowserControllerRef = if (controller != null) java.lang.ref.WeakReference(controller) else null
     }
 
     fun setOnScrollChangeListener(listener: OnScrollChangeListener?) {

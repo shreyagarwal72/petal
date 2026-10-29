@@ -1292,6 +1292,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onDestroy() {
+        activeGeckoView = null;
         com.petal.browser.predictive.PetalLiveUnderlay.detach(liveUnderlayHost);
         try {
             if (isMediaBound) {
@@ -7273,6 +7274,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             geckoView.activate();
             if (dialogOverview != null) dialogOverview.cancel();
             showAlbum(geckoView);
+
+            try {
+                com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                    this,
+                    geckoView.getTabId(),
+                    popupUrl,
+                    getString(R.string.app_name),
+                    isIncognito,
+                    true
+                );
+            } catch (Throwable ignored) {}
 
             updateOmniBox();
             updatePersistentBottomNav();
