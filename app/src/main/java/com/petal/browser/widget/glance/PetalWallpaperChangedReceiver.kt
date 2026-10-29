@@ -14,7 +14,7 @@ import android.content.Intent
  */
 class PetalWallpaperChangedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != WallpaperManager.ACTION_WALLPAPER_CHANGED) return
+        if (intent.action != Intent.ACTION_WALLPAPER_CHANGED) return
         // Clear cached bitmap and tiles so the next render picks up the new wallpaper
         PetalGlassWidgetRenderer.forget()
         PetalGlassWidgetRenderer.deleteTiles(context)
