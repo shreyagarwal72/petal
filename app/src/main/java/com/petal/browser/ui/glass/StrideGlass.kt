@@ -15,6 +15,8 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -388,7 +390,7 @@ private fun lensShaderEffect(
 ): RenderEffect {
     if (tuning != null && tuning.refractionEnabled) {
         val shader = PetalLiquidShaderPool.get()
-        val effShape = shape ?: RoundedCornerShape(radii[0].dp)
+        val effShape = shape ?: RoundedCornerShape(CornerSize(if (radii.isNotEmpty()) radii[0] else 0f))
         bindLiquidShaderUniforms(
             shader = shader,
             size = size,
