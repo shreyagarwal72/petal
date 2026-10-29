@@ -32,6 +32,15 @@
 -keep class org.mozilla.geckoview.** { *; }
 -keep class org.mozilla.gecko.** { *; }
 
+# GeckoView's DebugConfig.fromFile parses YAML with SnakeYAML on every start. R8 moves the
+# renamed SnakeYAML classes into the root package, where Class.getPackage() is null on
+# Android, so its static initialiser throws NullPointerException (Package.getName) and the
+# app dies in PetalApplication.onCreate. Keep SnakeYAML and its package names intact.
+-keep class org.yaml.snakeyaml.** { *; }
+-keeppackagenames org.yaml.snakeyaml.**
+-dontwarn org.yaml.snakeyaml.**
+-dontwarn java.beans.**
+
 # ---- yt-dlp (youtubedl-android) -------------------------------------------------------------
 # Maps yt-dlp's JSON output onto its model classes with Jackson.
 -keep class com.yausername.** { *; }
