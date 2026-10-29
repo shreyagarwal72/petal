@@ -391,22 +391,7 @@ private fun openDownloadedFile(context: Context, data: ActiveBannerData) {
         }
 
         if (contentUri != null) {
-            val ext = MimeTypeMap.getFileExtensionFromUrl(data.fileName.ifEmpty { contentUri.toString() })
-            if (!ext.isNullOrEmpty()) {
-                val detected = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext.lowercase(Locale.US))
-                if (!detected.isNullOrEmpty()) {
-                    mimeType = detected
-                }
-            }
-            if (mimeType.isNullOrEmpty()) {
-                mimeType = "*/*"
-            }
-
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(contentUri, mimeType)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
+            com.petal.browser.download.PetalFileOpener.openFile(context, contentUri, data.fileName, mimeType)
         }
     } catch (e: Exception) {
         e.printStackTrace()

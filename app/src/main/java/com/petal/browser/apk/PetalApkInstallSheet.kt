@@ -38,8 +38,6 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
-typealias ApkStep = PetalApkInstallerEngine.ApkStep
-
 /**
  * Material 3 Expressive & Liquid Glass APK Installer Sheet.
  * Directly recreates the Orion Store installer bottom sheet with offline insights,
@@ -78,7 +76,7 @@ fun PetalApkInstallSheet(
                 .padding(bottom = 20.dp)
         ) {
             when (step) {
-                is ApkStep.Reading -> {
+                ApkStep.Reading -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -246,7 +244,7 @@ fun PetalApkInstallSheet(
 }
 
 @Composable
-private fun ReadyContent(
+private fun ColumnScope.ReadyContent(
     apk: PetalApkInstallerEngine.ApkMeta,
     insights: PetalApkInsights.Report?,
     isInspecting: Boolean,
@@ -333,7 +331,7 @@ private fun ReadyContent(
             customInstaller = customInstaller,
             onExpandToggle = {
                 beyondInstallExpanded = !beyondInstallExpanded
-                PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.SELECTION, 0.7f)
+                PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.TICK, 0.7f)
             },
             onOptionToggle = onOptionToggle,
             onCustomInstallerChange = onCustomInstallerChange

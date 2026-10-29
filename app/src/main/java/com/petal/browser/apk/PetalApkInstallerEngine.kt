@@ -18,6 +18,15 @@ import java.io.InputStream
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
+sealed interface ApkStep {
+    data object Reading : ApkStep
+    data class Ready(val apk: PetalApkInstallerEngine.ApkMeta) : ApkStep
+    data class Installing(val apk: PetalApkInstallerEngine.ApkMeta) : ApkStep
+    data class Inspect(val apk: PetalApkInstallerEngine.ApkMeta) : ApkStep
+    data class Done(val apk: PetalApkInstallerEngine.ApkMeta) : ApkStep
+    data class Failed(val apk: PetalApkInstallerEngine.ApkMeta?, val title: String, val body: String) : ApkStep
+}
+
 /**
  * Multi-route APK installer engine for Petal Browser.
  * Supports Elevated (Root / Shizuku), Android PackageInstaller Session, and system PackageInstaller fallback.
@@ -46,15 +55,6 @@ object PetalApkInstallerEngine {
         SYSTEM,
         SIGNATURE_MISMATCH,
         HIDDEN
-    }
-
-    sealed interface ApkStep {
-        data object Reading : ApkStep
-        data class Ready(val apk: ApkMeta) : ApkStep
-        data class Installing(val apk: ApkMeta) : ApkStep
-        data class Inspect(val apk: ApkMeta) : ApkStep
-        data class Done(val apk: ApkMeta) : ApkStep
-        data class Failed(val apk: ApkMeta?, val title: String, val body: String) : ApkStep
     }
 
     data class InstallOption(

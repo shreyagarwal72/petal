@@ -1501,29 +1501,7 @@ internal fun openDownloadedFile(context: Context, item: DownloadItem) {
         }
 
         if (contentUri != null) {
-            val extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(item.fileName.ifEmpty { contentUri.toString() })
-            if (!extension.isNullOrEmpty()) {
-                val detectedType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
-                if (!detectedType.isNullOrEmpty()) {
-                    mimeType = detectedType
-                }
-            }
-            if (mimeType.isNullOrEmpty()) mimeType = "*/*"
-
-            val isApk = item.fileName.lowercase().endsWith(".apk") || mimeType == "application/vnd.android.package-archive"
-            val intent = if (isApk) {
-                Intent(context, com.petal.browser.apk.PetalApkInstallActivity::class.java).apply {
-                    action = Intent.ACTION_VIEW
-                    setDataAndType(contentUri, "application/vnd.android.package-archive")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-            } else {
-                Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(contentUri, mimeType)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-            }
-            context.startActivity(intent)
+            com.petal.browser.download.PetalFileOpener.openFile(context, contentUri, item.fileName, mimeType)
         } else {
             val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             dm.openDownloadedFile(item.id)

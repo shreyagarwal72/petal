@@ -388,25 +388,7 @@ object PetalLiveAlertManager {
         }
 
         val openFileIntent = if (fileUri != null) {
-            val extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(fileName.ifEmpty { fileUri.toString() })
-            var mimeType = if (!extension.isNullOrEmpty()) {
-                android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
-            } else null
-            if (mimeType.isNullOrEmpty()) mimeType = "*/*"
-
-            val isApk = fileName.lowercase().endsWith(".apk") || mimeType == "application/vnd.android.package-archive"
-            if (isApk) {
-                Intent(context, com.petal.browser.apk.PetalApkInstallActivity::class.java).apply {
-                    action = Intent.ACTION_VIEW
-                    setDataAndType(fileUri, "application/vnd.android.package-archive")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-            } else {
-                Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(fileUri, mimeType)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-            }
+            com.petal.browser.download.PetalFileOpener.createOpenIntent(context, fileUri, fileName)
         } else {
             Intent(context, BrowserActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP

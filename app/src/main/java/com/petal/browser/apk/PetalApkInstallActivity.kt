@@ -13,7 +13,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.apk.PetalApkInstallerEngine.ApkStep
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
