@@ -579,6 +579,11 @@ fun PetalHomeScreen(
                             glassWallpaper = glassWallpaper,
                             modifier = Modifier.fillMaxSize()
                         )
+                    } else if (com.petal.browser.ui.theme.SeasonalEvent.isHalloweenActive && homeSp.getBoolean("sp_seasonal_themes_enabled", true)) {
+                        com.petal.browser.ui.theme.HalloweenBackground(
+                            modifier = Modifier.fillMaxSize(),
+                            glassWallpaper = glassWallpaper
+                        )
                     } else {
                         com.petal.browser.ui.components.M3ExpressiveVariableBackground(
                             modifier = Modifier.fillMaxSize(),

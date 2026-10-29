@@ -38,7 +38,7 @@ val isDynamicColorSupported: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 val defaultPaletteId: String
-    get() = "petal"
+    get() = if (SeasonalEvent.isHalloweenActive) "halloween" else "petal"
 
 enum class ThemeConfig {
     FOLLOW_SYSTEM, LIGHT, DARK
@@ -74,7 +74,11 @@ fun PetalExpressiveTheme(
     },
     dynamicColor: Boolean = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+        if (SeasonalEvent.isHalloweenActive && !sp.contains("useDynamicColor")) {
+            false
+        } else {
+            sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+        }
     },
     useAmoled: Boolean = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
@@ -98,7 +102,14 @@ fun PetalExpressiveTheme(
     },
     paletteId: String = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+        val stored = sp.getString("sp_palette_id", null)
+        if (stored == null) {
+            defaultPaletteId
+        } else if (SeasonalEvent.isHalloweenActive && stored == "petal" && !sp.getBoolean("sp_palette_manually_selected", false)) {
+            "halloween"
+        } else {
+            stored
+        }
     },
     blurEffectEnabled: Boolean = run {
         androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)

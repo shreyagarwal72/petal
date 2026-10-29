@@ -447,14 +447,89 @@ private val DefaultDark = darkColorScheme(
     onSurfaceVariant = Color(0xFFC4C6D0)
 )
 
-val PetalPalettes: List<PetalPalette> = listOf(
-    PetalPalette("petal", "Petal Pink", Color(0xFFD81B60), PetalLight, PetalDark),
-    PetalPalette("default", "Indigo", Color(0xFF4D568D), DefaultLight, DefaultDark),
-    PetalPalette("tide", "Tide", Color(0xFF00A88E), TideLight, TideDark),
-    PetalPalette("zen", "Zen", Color(0xFF445E91), ZenLight, ZenDark),
-    PetalPalette("ember", "Ember", Color(0xFFB4552D), EmberLight, EmberDark),
-    PetalPalette("forest", "Forest", Color(0xFF3B6939), ForestLight, ForestDark)
+// --- Official Halloween Spooky Palette (MorpheApp Integration) ---
+private val HalloweenLight = lightColorScheme(
+    primary = Color(0xFFE65100),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFFFDCC1),
+    onPrimaryContainer = Color(0xFF341000),
+    secondary = Color(0xFF6B538C),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFEEDBFF),
+    onSecondaryContainer = Color(0xFF250F43),
+    tertiary = Color(0xFF825500),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFFFDF9E),
+    onTertiaryContainer = Color(0xFF291800),
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+    background = Color(0xFFFFF8F6),
+    onBackground = Color(0xFF211A18),
+    surface = Color(0xFFFFF8F6),
+    onSurface = Color(0xFF211A18),
+    surfaceVariant = Color(0xFFF3DFD1),
+    onSurfaceVariant = Color(0xFF51443B),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFFF1EB),
+    surfaceContainer = Color(0xFFFAECE5),
+    surfaceContainerHigh = Color(0xFFF4E6DF),
+    surfaceContainerHighest = Color(0xFFEEE0DA),
+    outline = Color(0xFF84746A),
+    outlineVariant = Color(0xFFD6C3B7)
 )
+
+private val HalloweenDark = darkColorScheme(
+    primary = Color(0xFFFFB74D),
+    onPrimary = Color(0xFF4A2800),
+    primaryContainer = Color(0xFF6E3900),
+    onPrimaryContainer = Color(0xFFFFDCC1),
+    secondary = Color(0xFF9C7FC4),
+    onSecondary = Color(0xFF28113F),
+    secondaryContainer = Color(0xFF3E2856),
+    onSecondaryContainer = Color(0xFFE8DEFA),
+    tertiary = Color(0xFFFFD54F),
+    onTertiary = Color(0xFF3E2E00),
+    tertiaryContainer = Color(0xFF5A4300),
+    onTertiaryContainer = Color(0xFFFFEFA7),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    background = Color(0xFF130F17),
+    onBackground = Color(0xFFEDE0EC),
+    surface = Color(0xFF130F17),
+    onSurface = Color(0xFFEDE0EC),
+    surfaceVariant = Color(0xFF453D4C),
+    onSurfaceVariant = Color(0xFFCBC3D1),
+    surfaceContainerLowest = Color(0xFF0D0A10),
+    surfaceContainerLow = Color(0xFF1A1520),
+    surfaceContainer = Color(0xFF201B27),
+    surfaceContainerHigh = Color(0xFF2B2533),
+    surfaceContainerHighest = Color(0xFF362F40),
+    outline = Color(0xFF948C9A),
+    outlineVariant = Color(0xFF453D4C)
+)
+
+val PetalPalettes: List<PetalPalette>
+    get() = if (SeasonalEvent.isHalloweenActive) {
+        listOf(
+            PetalPalette("halloween", "Halloween Spooky", Color(0xFFF57C00), HalloweenLight, HalloweenDark),
+            PetalPalette("petal", "Petal Pink", Color(0xFFD81B60), PetalLight, PetalDark),
+            PetalPalette("default", "Indigo", Color(0xFF4D568D), DefaultLight, DefaultDark),
+            PetalPalette("tide", "Tide", Color(0xFF00A88E), TideLight, TideDark),
+            PetalPalette("zen", "Zen", Color(0xFF445E91), ZenLight, ZenDark),
+            PetalPalette("ember", "Ember", Color(0xFFB4552D), EmberLight, EmberDark),
+            PetalPalette("forest", "Forest", Color(0xFF3B6939), ForestLight, ForestDark)
+        )
+    } else {
+        listOf(
+            PetalPalette("petal", "Petal Pink", Color(0xFFD81B60), PetalLight, PetalDark),
+            PetalPalette("default", "Indigo", Color(0xFF4D568D), DefaultLight, DefaultDark),
+            PetalPalette("tide", "Tide", Color(0xFF00A88E), TideLight, TideDark),
+            PetalPalette("zen", "Zen", Color(0xFF445E91), ZenLight, ZenDark),
+            PetalPalette("ember", "Ember", Color(0xFFB4552D), EmberLight, EmberDark),
+            PetalPalette("forest", "Forest", Color(0xFF3B6939), ForestLight, ForestDark),
+            PetalPalette("halloween", "Halloween Spooky", Color(0xFFF57C00), HalloweenLight, HalloweenDark)
+        )
+    }
 
 fun paletteById(id: String): PetalPalette = PetalPalettes.firstOrNull { it.id == id } ?: PetalPalettes.first()
 

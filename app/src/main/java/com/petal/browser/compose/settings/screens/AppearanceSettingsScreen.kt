@@ -600,6 +600,8 @@ fun AppearanceSettingsScreenContent(
                                             shape = CircleShape
                                         )
                                         .clickable {
+                                            androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                                                .edit().putBoolean("sp_palette_manually_selected", true).apply()
                                             onPaletteIdChange(pal.id)
                                             onDynamicColorChange(false)
                                             PetalSearchWidgetProvider.updateAllWidgets(context)
