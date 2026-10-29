@@ -154,22 +154,18 @@ private fun buildWidgetColorScheme(context: Context): androidx.compose.material3
         scheme = scheme.applyAmoled()
     }
 
-    val liquidGlassEnabled = sp.getBoolean("sp_liquid_glass_enabled", false)
+    val liquidGlassEnabled = PetalGlassWidgets.isLiquidGlassEnabled(context)
     if (liquidGlassEnabled) {
         val glassAlpha = sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f)
-        val outerAlpha = (glassAlpha * 0.45f).coerceIn(0.12f, 0.75f)
-        val innerAlpha = (glassAlpha * 0.38f).coerceIn(0.10f, 0.65f)
-        val pillAlpha = (glassAlpha * 0.35f).coerceIn(0.10f, 0.60f)
+        val outerAlpha = (glassAlpha * 0.75f).coerceIn(0.40f, 0.90f)
+        val innerAlpha = (glassAlpha * 0.65f).coerceIn(0.35f, 0.85f)
 
         scheme = scheme.copy(
             surfaceContainerLow = scheme.surfaceContainerLow.copy(alpha = outerAlpha),
             surfaceContainer = scheme.surfaceContainer.copy(alpha = innerAlpha),
             surfaceContainerHigh = scheme.surfaceContainerHigh.copy(alpha = innerAlpha),
             surfaceContainerHighest = scheme.surfaceContainerHighest.copy(alpha = innerAlpha),
-            surfaceContainerLowest = scheme.surfaceContainerLowest.copy(alpha = outerAlpha),
-            primaryContainer = scheme.primaryContainer.copy(alpha = pillAlpha),
-            secondaryContainer = scheme.secondaryContainer.copy(alpha = pillAlpha),
-            tertiaryContainer = scheme.tertiaryContainer.copy(alpha = pillAlpha)
+            surfaceContainerLowest = scheme.surfaceContainerLowest.copy(alpha = outerAlpha)
         )
     }
 
@@ -273,6 +269,9 @@ private fun PetalGlassWidgetCard(
     }
 
     val isDark = isDarkTheme(context)
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
+    val refraction = sp.getFloat("sp_liquid_glass_refraction", 1.0f).coerceIn(0f, 2f)
 
     // Use FileProvider URI to avoid RemoteViews binder 1 MB limit.
     // Raw Bitmap via ImageProvider(bitmap) silently blows the limit on most phones.
@@ -282,16 +281,18 @@ private fun PetalGlassWidgetCard(
             blurDp = 24f,
             cornerDp = cornerDp.value,
             dark = isDark,
-            edge = 1f
+            edge = sheen,
+            refraction = refraction
         )
         PetalGlassWidgetRenderer.renderUri(context, spec, appWidgetId)
     } else {
         null
     }
 
-    // Solid opaque fallback: if liquid glass is on but not yet calibrated, use a clearly
-    // visible surface color — NOT the glass-scheme translucent color, which appears transparent.
-    val effectiveFallback: ColorProvider = if (isLiquidGlass && rect == null) {
+    // Solid opaque fallback: when liquid glass is on but no blurred tile could be generated
+    // (e.g. before calibration, wallpaper permission restricted, or missing cache),
+    // use a rich, solid surface color — NEVER a transparent washed-out color that looks broken.
+    val effectiveFallback: ColorProvider = if (isLiquidGlass && glassUri == null) {
         ColorProvider(
             if (isDark) androidx.compose.ui.graphics.Color(0xFF1C1E27)
             else androidx.compose.ui.graphics.Color(0xFFF0F2FA)
@@ -316,11 +317,16 @@ private fun PetalGlassWidgetCard(
         modifier = rootModifier,
         contentAlignment = Alignment.Center
     ) {
-        // Sheen overlay on top of the blurred wallpaper slice for extra glass depth
-        if (glassUri != null) {
+        // Specular sheen & caustic overlay for genuine liquid glass depth
+        if (isLiquidGlass) {
+            val sheenRes = if (cornerDp >= 26.dp) {
+                R.drawable.widget_glass_sheen_pill
+            } else {
+                R.drawable.widget_glass_sheen_card
+            }
             GlassOverlay(
                 enabled = true,
-                overlayRes = if (isDark) R.drawable.widget_glass_sheen_card else R.drawable.widget_glass_sheen_card,
+                overlayRes = sheenRes,
                 cornerDp = cornerDp.value.toInt()
             )
         }
@@ -591,7 +597,7 @@ private fun Petal1Content(appWidgetId: Int, scheme: androidx.compose.material3.C
     }
 
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+    val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
 
     if (isExpanded) {
         PetalGlassWidgetCard(
@@ -611,7 +617,7 @@ private fun Petal1Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                         .height(48.dp)
                         .cornerRadius(24.dp)
                         .background(
-                            if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x28000000) else Color(0x33FFFFFF))
+                            if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x3D000000) else Color(0x59FFFFFF))
                             else surfaceContainerHighProvider(scheme)
                         )
                         .padding(horizontal = 6.dp),
@@ -637,7 +643,8 @@ private fun Petal1Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                         bgColor = GlanceTheme.colors.primaryContainer,
                         iconTint = GlanceTheme.colors.onPrimaryContainer,
                         action = newTabAction,
-                        modifier = GlanceModifier.defaultWeight()
+                        modifier = GlanceModifier.defaultWeight(),
+                        isLiquidGlass = isLiquidGlass
                     )
 
                     Spacer(modifier = GlanceModifier.width(6.dp))
@@ -648,7 +655,8 @@ private fun Petal1Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                         bgColor = GlanceTheme.colors.secondaryContainer,
                         iconTint = GlanceTheme.colors.onSecondaryContainer,
                         action = bookmarksAction,
-                        modifier = GlanceModifier.defaultWeight()
+                        modifier = GlanceModifier.defaultWeight(),
+                        isLiquidGlass = isLiquidGlass
                     )
 
                     Spacer(modifier = GlanceModifier.width(6.dp))
@@ -659,7 +667,8 @@ private fun Petal1Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                         bgColor = GlanceTheme.colors.tertiaryContainer,
                         iconTint = GlanceTheme.colors.onTertiaryContainer,
                         action = downloadsAction,
-                        modifier = GlanceModifier.defaultWeight()
+                        modifier = GlanceModifier.defaultWeight(),
+                        isLiquidGlass = isLiquidGlass
                     )
 
                     Spacer(modifier = GlanceModifier.width(6.dp))
@@ -670,7 +679,8 @@ private fun Petal1Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                         bgColor = surfaceContainerHighestProvider(scheme),
                         iconTint = GlanceTheme.colors.onSurface,
                         action = incognitoAction,
-                        modifier = GlanceModifier.defaultWeight()
+                        modifier = GlanceModifier.defaultWeight(),
+                        isLiquidGlass = isLiquidGlass
                     )
                 }
             }
@@ -803,7 +813,8 @@ private fun WidgetShortcutTile(
     bgColor: ColorProvider,
     iconTint: ColorProvider,
     action: androidx.glance.action.Action,
-    modifier: GlanceModifier = GlanceModifier
+    modifier: GlanceModifier = GlanceModifier,
+    isLiquidGlass: Boolean = false
 ) {
     Box(
         modifier = modifier
@@ -813,6 +824,14 @@ private fun WidgetShortcutTile(
             .clickable(action),
         contentAlignment = Alignment.Center
     ) {
+        if (isLiquidGlass) {
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .cornerRadius(20.dp)
+                    .background(ImageProvider(R.drawable.widget_glass_tile))
+            ) {}
+        }
         Column(
             horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
             verticalAlignment = Alignment.Vertical.CenterVertically,
@@ -875,8 +894,7 @@ private fun Petal2Content(appWidgetId: Int, scheme: androidx.compose.material3.C
     val incognitoAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO))
     val snapCameraAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA))
 
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+    val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
 
     PetalGlassWidgetCard(
         appWidgetId = appWidgetId,
@@ -895,7 +913,7 @@ private fun Petal2Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                     .defaultWeight()
                     .cornerRadius(22.dp)
                     .background(
-                        if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x28000000) else Color(0x33FFFFFF))
+                        if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x3D000000) else Color(0x59FFFFFF))
                         else surfaceContainerHighProvider(scheme)
                     )
                     .clickable(searchAction)
@@ -930,7 +948,8 @@ private fun Petal2Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                 contentDescription = context.getString(R.string.ui_ai_assistant),
                 containerColor = GlanceTheme.colors.primaryContainer,
                 contentColor = GlanceTheme.colors.onPrimaryContainer,
-                action = aiAction
+                action = aiAction,
+                isLiquidGlass = isLiquidGlass
             )
 
             Spacer(modifier = GlanceModifier.width(6.dp))
@@ -941,7 +960,8 @@ private fun Petal2Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                 contentDescription = context.getString(R.string.ui_incognito_mode),
                 containerColor = GlanceTheme.colors.secondaryContainer,
                 contentColor = GlanceTheme.colors.onSecondaryContainer,
-                action = incognitoAction
+                action = incognitoAction,
+                isLiquidGlass = isLiquidGlass
             )
 
             Spacer(modifier = GlanceModifier.width(6.dp))
@@ -952,7 +972,8 @@ private fun Petal2Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                 contentDescription = context.getString(R.string.ui_visual_camera_scanner),
                 containerColor = GlanceTheme.colors.tertiaryContainer,
                 contentColor = GlanceTheme.colors.onTertiaryContainer,
-                action = snapCameraAction
+                action = snapCameraAction,
+                isLiquidGlass = isLiquidGlass
             )
         }
     }
@@ -964,7 +985,8 @@ private fun SquircleGlanceActionButton(
     contentDescription: String,
     containerColor: ColorProvider,
     contentColor: ColorProvider,
-    action: androidx.glance.action.Action
+    action: androidx.glance.action.Action,
+    isLiquidGlass: Boolean = false
 ) {
     Box(
         modifier = GlanceModifier
@@ -974,6 +996,14 @@ private fun SquircleGlanceActionButton(
             .clickable(action),
         contentAlignment = Alignment.Center
     ) {
+        if (isLiquidGlass) {
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .cornerRadius(18.dp)
+                    .background(ImageProvider(R.drawable.widget_glass_tile))
+            ) {}
+        }
         Image(
             provider = ImageProvider(iconRes),
             contentDescription = contentDescription,
@@ -1032,8 +1062,7 @@ private fun Petal3Content(appWidgetId: Int, scheme: androidx.compose.material3.C
         )
     }
 
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+    val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
 
     PetalGlassWidgetCard(
         appWidgetId = appWidgetId,
@@ -1087,12 +1116,20 @@ private fun Petal3Content(appWidgetId: Int, scheme: androidx.compose.material3.C
                     .size(40.dp)
                     .cornerRadius(20.dp)
                     .background(
-                        if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x28000000) else Color(0x33FFFFFF))
+                        if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x3D000000) else Color(0x59FFFFFF))
                         else GlanceTheme.colors.primaryContainer
                     )
                     .clickable(aiAction),
                 contentAlignment = Alignment.Center
             ) {
+                if (isLiquidGlass) {
+                    Box(
+                        modifier = GlanceModifier
+                            .fillMaxSize()
+                            .cornerRadius(20.dp)
+                            .background(ImageProvider(R.drawable.widget_glass_tile))
+                    ) {}
+                }
                 Image(
                     provider = ImageProvider(R.drawable.widget_ic_sparkle),
                     contentDescription = context.getString(R.string.ui_ask_petal_ai),

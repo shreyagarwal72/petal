@@ -230,9 +230,10 @@ object PetalGlassWidgetRenderer {
                     strokeWidth = strokePx
                 }
 
-                val topAlpha = if (spec.dark) 75 else 160
-                val midAlpha = if (spec.dark) 20 else 40
-                val bottomAlpha = if (spec.dark) 45 else 85
+                val edgeScale = spec.edge.coerceIn(0.1f, 1.5f)
+                val topAlpha = ((if (spec.dark) 75 else 160) * edgeScale).toInt().coerceIn(10, 255)
+                val midAlpha = ((if (spec.dark) 20 else 40) * edgeScale).toInt().coerceIn(5, 150)
+                val bottomAlpha = ((if (spec.dark) 45 else 85) * edgeScale).toInt().coerceIn(10, 200)
 
                 strokePaint.shader = LinearGradient(
                     0f, 0f, 0f, targetH.toFloat(),

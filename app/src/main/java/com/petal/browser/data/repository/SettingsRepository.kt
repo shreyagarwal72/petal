@@ -47,6 +47,7 @@ interface SettingsRepository {
     val liquidGlassBottomNav: Flow<Boolean>
     val liquidGlassAddressBar: Flow<Boolean>
     val liquidGlassOverflowBlurBg: Flow<Boolean>
+    val liquidGlassWidgets: Flow<Boolean>
     val liquidGlassBgMode: Flow<String>
     val liquidGlassBgImageUri: Flow<String>
     val liquidGlassBgDim: Flow<Float>
@@ -163,6 +164,7 @@ interface SettingsRepository {
     suspend fun setLiquidGlassBottomNav(enabled: Boolean)
     suspend fun setLiquidGlassAddressBar(enabled: Boolean)
     suspend fun setLiquidGlassOverflowBlurBg(enabled: Boolean)
+    suspend fun setLiquidGlassWidgets(enabled: Boolean)
     suspend fun setLiquidGlassBgMode(mode: String)
     suspend fun setLiquidGlassBgImageUri(uri: String)
     suspend fun setLiquidGlassBgDim(dim: Float)

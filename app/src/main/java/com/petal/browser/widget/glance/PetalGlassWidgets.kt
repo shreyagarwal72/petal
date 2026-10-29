@@ -65,7 +65,33 @@ object PetalGlassWidgets {
             val bmp = BitmapFactory.decodeFile(file.absolutePath)
             if (bmp != null) return bmp
         }
-        return tryExtractSystemWallpaper(context)
+        val sysBmp = tryExtractSystemWallpaper(context)
+        if (sysBmp != null) return sysBmp
+
+        // Fallback: check if the user selected a custom image for Liquid Glass in settings
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val imageUriStr = sp.getString("sp_liquid_glass_bg_image_uri", null)
+        if (!imageUriStr.isNullOrEmpty()) {
+            try {
+                val uri = android.net.Uri.parse(imageUriStr)
+                val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    android.graphics.ImageDecoder.decodeBitmap(
+                        android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                    ) { decoder, _, _ ->
+                        decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                        decoder.isMutableRequired = true
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    android.provider.MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                }
+                if (bmp != null) {
+                    saveWallpaperBitmap(context, bmp)
+                    return bmp
+                }
+            } catch (_: Throwable) {}
+        }
+        return null
     }
 
     @SuppressLint("MissingPermission")
@@ -202,8 +228,10 @@ object PetalGlassWidgets {
     }
 
     fun isLiquidGlassEnabled(context: Context): Boolean {
-        return PreferenceManager.getDefaultSharedPreferences(context)
-            .getBoolean("sp_liquid_glass_enabled", true)
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val master = sp.getBoolean("sp_liquid_glass_enabled", false)
+        val widgets = sp.getBoolean("sp_liquid_glass_widgets", true)
+        return master && widgets
     }
 
     fun active(context: Context): Boolean {
