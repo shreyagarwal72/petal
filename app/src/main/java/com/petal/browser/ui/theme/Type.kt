@@ -7,6 +7,8 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -63,11 +65,44 @@ object PetalFontHelper {
                 } catch (_: Exception) {}
             }
         }
-        return try {
+        return petalSignatureTypeface(context)
+    }
+
+    @Volatile private var signatureCache: android.graphics.Typeface? = null
+    @Volatile private var signatureKey: String? = null
+
+    /**
+     * Petal Signature for classic Views, notifications and widgets. ResourcesCompat.getFont returns
+     * the variable font at its default axes (plain wght 400), which looks nothing like the
+     * Compose UI, so build it with the current preset's body axes instead.
+     */
+    private fun petalSignatureTypeface(context: android.content.Context): android.graphics.Typeface {
+        val fallback = try {
             androidx.core.content.res.ResourcesCompat.getFont(context, R.font.google_sans_flex_variable)
                 ?: android.graphics.Typeface.DEFAULT
         } catch (_: Exception) {
             android.graphics.Typeface.DEFAULT
+        }
+        return try {
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            val gs = loadGSFlexSettings(sp)
+            val b = if (gs.preset == GSFlexPreset.CUSTOM) gs.body else getPresetFontAxes(gs.preset).third
+            val settings = "'wght' ${b.weight.toInt().coerceIn(1, 1000)}, 'wdth' ${b.width.coerceIn(25f, 150f)}, " +
+                "'opsz' ${b.opsz.coerceIn(6f, 72f)}, 'GRAD' ${b.grade.toInt().coerceIn(-200, 200)}, " +
+                "'slnt' ${b.slant.coerceIn(-10f, 0f)}, 'ROND' ${b.roundness.coerceIn(0f, 100f)}"
+            if (settings == signatureKey) signatureCache?.let { return it }
+            val file = java.io.File(context.cacheDir, "petal_signature.ttf")
+            if (!file.exists() || file.length() == 0L) {
+                context.resources.openRawResource(R.font.google_sans_flex_variable).use { i ->
+                    file.outputStream().use { o -> i.copyTo(o) }
+                }
+            }
+            val tf = android.graphics.Typeface.Builder(file).setFontVariationSettings(settings).build() ?: fallback
+            signatureKey = settings
+            signatureCache = tf
+            tf
+        } catch (_: Throwable) {
+            fallback
         }
     }
 
@@ -385,43 +420,82 @@ fun saveGSFlexSettings(sp: android.content.SharedPreferences, settings: GSFlexSe
         .apply()
 }
 
+/**
+ * Default OpenType features for every Google Sans Flex text style: kerning, standard ligatures,
+ * contextual alternates and mark composition (needed for Devanagari / Hinglish text).
+ */
+private const val FLEX_FEATURES = "kern, liga, calt, ccmp"
+
+/**
+ * One FontFamily per tier. It holds an entry for every weight (100..1000, step 50), each pinned to
+ * the tier's width / grade / slant / roundness and a given optical size. A request for any
+ * FontWeight therefore gets the real wght instance of the variable font. Previously one entry was
+ * pinned to a single wght and Compose faked bold on top of it whenever a style asked for >= 600.
+ */
+@OptIn(ExperimentalTextApi::class)
+private fun flexFamily(axes: FontAxes, opsz: Float): FontFamily {
+    return try {
+        FontFamily((100..1000 step 50).map { w ->
+            Font(
+                resId = R.font.google_sans_flex_variable,
+                weight = FontWeight(w),
+                style = FontStyle.Normal,
+                variationSettings = FontVariation.Settings(
+                    FontVariation.weight(w),
+                    FontVariation.width(axes.width.coerceIn(25f, 150f)),
+                    FontVariation.Setting("opsz", opsz.coerceIn(6f, 72f)),
+                    FontVariation.grade(axes.grade.toInt().coerceIn(-200, 200)),
+                    FontVariation.slant(axes.slant.coerceIn(-10f, 0f)),
+                    FontVariation.Setting("ROND", axes.roundness.coerceIn(0f, 100f))
+                )
+            )
+        })
+    } catch (_: Throwable) {
+        FontFamily.Default
+    }
+}
+
 @OptIn(ExperimentalTextApi::class)
 fun createGsFlexTypography(settings: GSFlexSettings): Typography {
-    val axes = if (settings.preset != GSFlexPreset.CUSTOM) {
-        getPresetFontAxes(settings.preset)
-    } else {
-        Triple(settings.display, settings.headline, settings.body)
+    val custom = settings.preset == GSFlexPreset.CUSTOM
+    val axes = if (!custom) getPresetFontAxes(settings.preset)
+    else Triple(settings.display, settings.headline, settings.body)
+
+    // Optical size: presets follow each style's own point size (what opsz is designed for);
+    // Custom mode uses the value from the Optical Size slider.
+    fun style(a: FontAxes, weight: Float, size: Int, line: Int, spacing: Float): TextStyle {
+        val w = weight.toInt().coerceIn(1, 1000)
+        return TextStyle(
+            fontFamily = flexFamily(a, if (custom) a.opsz else size.toFloat()),
+            fontWeight = FontWeight(w),
+            fontSynthesis = FontSynthesis.None,
+            fontFeatureSettings = FLEX_FEATURES,
+            fontSize = size.sp,
+            lineHeight = line.sp,
+            letterSpacing = spacing.sp
+        )
     }
 
-    val displayFont = FontFamily(Font(
-        resId = R.font.google_sans_flex_variable,
-        variationSettings = axes.first.toVariationSettings()
-    ))
-    val headlineFont = FontFamily(Font(
-        resId = R.font.google_sans_flex_variable,
-        variationSettings = axes.second.toVariationSettings()
-    ))
-    val bodyFont = FontFamily(Font(
-        resId = R.font.google_sans_flex_variable,
-        variationSettings = axes.third.toVariationSettings()
-    ))
-
+    val d = axes.first
+    val h = axes.second
+    val b = axes.third
+    val label = b.weight + 150f
     return Typography(
-        displayLarge = TextStyle(fontFamily = displayFont, fontWeight = FontWeight.Normal, fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
-        displayMedium = TextStyle(fontFamily = displayFont, fontWeight = FontWeight.Normal, fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp),
-        displaySmall = TextStyle(fontFamily = displayFont, fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
-        headlineLarge = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
-        headlineMedium = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp),
-        headlineSmall = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp),
-        titleLarge = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp),
-        titleMedium = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
-        titleSmall = TextStyle(fontFamily = headlineFont, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-        bodyLarge = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.5.sp),
-        bodyMedium = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.25.sp),
-        bodySmall = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
-        labelLarge = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-        labelMedium = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp),
-        labelSmall = TextStyle(fontFamily = bodyFont, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp)
+        displayLarge = style(d, d.weight, 57, 64, -0.25f),
+        displayMedium = style(d, d.weight, 45, 52, 0f),
+        displaySmall = style(d, d.weight, 36, 44, 0f),
+        headlineLarge = style(h, h.weight, 32, 40, 0f),
+        headlineMedium = style(h, h.weight, 28, 36, 0f),
+        headlineSmall = style(h, h.weight, 24, 32, 0f),
+        titleLarge = style(h, h.weight, 22, 28, 0f),
+        titleMedium = style(h, h.weight, 16, 24, 0.15f),
+        titleSmall = style(h, h.weight, 14, 20, 0.1f),
+        bodyLarge = style(b, b.weight, 16, 24, 0.5f),
+        bodyMedium = style(b, b.weight, 14, 20, 0.25f),
+        bodySmall = style(b, b.weight, 12, 16, 0.4f),
+        labelLarge = style(b, label, 14, 20, 0.1f),
+        labelMedium = style(b, label, 12, 16, 0.5f),
+        labelSmall = style(b, label, 11, 16, 0.5f)
     )
 }
 

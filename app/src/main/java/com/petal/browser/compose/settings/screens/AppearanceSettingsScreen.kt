@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
 
@@ -862,7 +864,13 @@ fun AppearanceSettingsScreenContent(
                                 onCheckedChange = { checked ->
                                     val newPreset = if (checked) GSFlexPreset.CUSTOM else lastNonCustomPreset
                                     onGsFlexPresetChange(newPreset)
-                                    onGsFlexSettingsChange(gsFlexSettings.copy(preset = newPreset))
+                                    // Entering Custom starts from the preset that was active, not stale saved axes.
+                                    val seed = if (checked) com.petal.browser.ui.theme.getPresetFontAxes(lastNonCustomPreset) else null
+                                    onGsFlexSettingsChange(
+                                        if (seed != null) gsFlexSettings.copy(
+                                            preset = newPreset, display = seed.first, headline = seed.second, body = seed.third
+                                        ) else gsFlexSettings.copy(preset = newPreset)
+                                    )
                                 }
                             )
 
@@ -1930,6 +1938,7 @@ private fun PaletteSwatchSquare(
     }
 }
 
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 @Composable
 private fun GSFlexVariableSlider(
     label: String,
@@ -1938,6 +1947,20 @@ private fun GSFlexVariableSlider(
     formatter: (Float) -> String = { v -> String.format(java.util.Locale.US, "%.0f", v) },
     onValueChange: (Float) -> Unit
 ) {
+    // The slider owns its value while dragging. Previously every frame wrote all 19 font prefs,
+    // rebuilt the app typography and waited for the prefs flow to hand the value back, so the
+    // thumb lagged, jumped back and fought the finger. Now it stays put and commits (debounced)
+    // plus once when the finger lifts.
+    var local by androidx.compose.runtime.remember { androidx.compose.runtime.mutableFloatStateOf(value) }
+    var dragging by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val latest by androidx.compose.runtime.rememberUpdatedState(onValueChange)
+    androidx.compose.runtime.LaunchedEffect(value) { if (!dragging) local = value }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        androidx.compose.runtime.snapshotFlow { local }
+            .drop(1)
+            .debounce(120)
+            .collect { if (dragging) latest(it) }
+    }
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -1949,13 +1972,14 @@ private fun GSFlexVariableSlider(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f, fill = false),
                 maxLines = 1,
                 softWrap = false
             )
             Text(
-                text = formatter(value),
+                text = formatter(local),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
@@ -1963,8 +1987,9 @@ private fun GSFlexVariableSlider(
             )
         }
         com.petal.browser.ui.components.PetalSlider(
-            value = value,
-            onValueChange = onValueChange,
+            value = local,
+            onValueChange = { dragging = true; local = it },
+            onValueChangeFinished = { dragging = false; latest(local) },
             valueRange = range,
             modifier = Modifier.fillMaxWidth()
         )
