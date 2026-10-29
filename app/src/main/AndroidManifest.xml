@@ -537,7 +537,7 @@
 
         <activity
             android:name="com.petal.browser.widget.glance.PetalWidgetGlassActivity"
-            android:theme="@style/Theme.AppCompat.Translucent"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
             android:taskAffinity="com.petal.browser.widgetglass"
             android:excludeFromRecents="true"
             android:noHistory="true"

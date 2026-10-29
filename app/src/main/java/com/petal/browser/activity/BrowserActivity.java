@@ -634,7 +634,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * The launch ripple, when enabled, still radiates from the icon's centre in both cases.
      */
     private void playSplashExit(androidx.core.splashscreen.SplashScreenViewProvider provider) {
-        if (provider == null) return;
         try {
             playSplashExitInternal(provider);
         } catch (Throwable t) {
@@ -647,44 +646,30 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     private void playSplashExitInternal(androidx.core.splashscreen.SplashScreenViewProvider provider) {
-        if (provider == null) return;
-        final View splashView;
-        try {
-            splashView = provider.getView();
-        } catch (Throwable t) {
-            try { provider.remove(); } catch (Throwable ignored) {}
-            return;
-        }
-        if (splashView == null) {
-            try { provider.remove(); } catch (Throwable ignored) {}
-            return;
-        }
-
+        final View splashView = provider.getView();
         // Android 16 can hand back a splash provider whose icon view has already
         // been detached during the exit callback. Treat it as unavailable and
         // let the ripple fall back to the window centre instead of crashing.
         View iconView;
         try {
             iconView = provider.getIconView();
-        } catch (Throwable ignored) {
+        } catch (RuntimeException ignored) {
             iconView = null;
         }
         final boolean fireRipple = splashRipplePending && !isFinishing() && !isDestroyed();
         splashRipplePending = false;
 
         if (fireRipple) {
-            try {
-                View decor = getWindow().getDecorView();
-                if (iconView != null && iconView.getWidth() > 0) {
-                    int[] loc = new int[2];
-                    iconView.getLocationInWindow(loc);
-                    float cx = loc[0] + iconView.getWidth() / 2f;
-                    float cy = loc[1] + iconView.getHeight() / 2f;
-                    com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor, cx, cy);
-                } else {
-                    com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor);
-                }
-            } catch (Throwable ignored) {}
+            View decor = getWindow().getDecorView();
+            if (iconView != null && iconView.getWidth() > 0) {
+                int[] loc = new int[2];
+                iconView.getLocationInWindow(loc);
+                float cx = loc[0] + iconView.getWidth() / 2f;
+                float cy = loc[1] + iconView.getHeight() / 2f;
+                com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor, cx, cy);
+            } else {
+                com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor);
+            }
         }
 
         final boolean toComposeSplash = splashHandsOffToComposeSplash;
@@ -698,34 +683,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         final Runnable removeOnce = () -> {
             if (!removed[0]) {
                 removed[0] = true;
-                try {
-                    provider.remove();
-                } catch (Throwable ignored) {}
+                provider.remove();
             }
         };
         if (iconView != null) {
             final float target = toComposeSplash ? 1.12f : 1.6f;
-            try {
-                iconView.animate()
-                        .scaleX(target)
-                        .scaleY(target)
-                        .setDuration(duration)
-                        .setInterpolator(toComposeSplash ? emphasizedDecelerate : emphasizedAccelerate)
-                        .start();
-            } catch (Throwable ignored) {}
-        }
-        try {
-            splashView.animate()
-                    .alpha(0f)
+            iconView.animate()
+                    .scaleX(target)
+                    .scaleY(target)
                     .setDuration(duration)
-                    .setInterpolator(toComposeSplash ? fastOutLinearIn : emphasizedAccelerate)
-                    .withEndAction(removeOnce)
+                    .setInterpolator(toComposeSplash ? emphasizedDecelerate : emphasizedAccelerate)
                     .start();
-            // Safety net so the splash can never get stuck if the animation is cancelled.
-            splashView.postDelayed(removeOnce, duration + 400L);
-        } catch (Throwable t) {
-            removeOnce.run();
         }
+        splashView.animate()
+                .alpha(0f)
+                .setDuration(duration)
+                .setInterpolator(toComposeSplash ? fastOutLinearIn : emphasizedAccelerate)
+                .withEndAction(removeOnce)
+                .start();
+        // Safety net so the splash can never get stuck if the animation is cancelled.
+        splashView.postDelayed(removeOnce, duration + 400L);
     }
 
     /** Restores input to the active browser surface after a decor-level transient UI closes. */
@@ -754,13 +731,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        androidx.core.splashscreen.SplashScreen splashScreen = null;
-        try {
-            splashScreen = androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
-        } catch (Throwable t) {
-            Log.w(TAG, "installSplashScreen failed", t);
-        }
-        final androidx.core.splashscreen.SplashScreen activeSplashScreen = splashScreen;
+        final androidx.core.splashscreen.SplashScreen splashScreen =
+                androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         context = this;
         activity = this;
@@ -783,8 +755,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.wallpaper.PetalWallpaperManager.INSTANCE.init(this);
         } catch (Throwable ignored) {}
 
-        // Blend the system launch splash (cookie + pinwheel) into whatever comes next. The exit
-        // listener is installed safely after setContentView so the window decor hierarchy is attached.
+        // Blend the system launch splash (animated cookie + pinwheel) into whatever comes next. The exit
+        // listener is always installed so the hand-off looks the same on every launch; see playSplashExit.
         // The launch ripple radiates from the icon's centre on a fresh launch (same conditions as the
         // fallback below, which is skipped once this is armed). A timed fallback covers launches where no
         // splash is shown.
@@ -801,12 +773,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                 if (splashRipplePending && !isFinishing() && !isDestroyed()) {
                     splashRipplePending = false;
-                    try {
-                        com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
-                    } catch (Throwable ignored) {}
+                    com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
                 }
             }, 2500L);
         }
+        splashScreen.setOnExitAnimationListener(this::playSplashExit);
 
         com.petal.browser.unit.PetalSessionHistoryManager.initSession();
         com.petal.browser.extensions.PetalExtensionManager.attach(context);
@@ -1012,13 +983,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         };
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
-        if (activeSplashScreen != null) {
-            try {
-                activeSplashScreen.setOnExitAnimationListener(this::playSplashExit);
-            } catch (Throwable t) {
-                Log.w(TAG, "Failed to register splash exit animation listener", t);
-            }
-        }
         contentFrame = findViewById(R.id.main_content);
         com.petal.browser.predictive.PetalLiveUnderlay.attach(liveUnderlayHost);
         // Root cause of "back gesture does nothing on every website":
