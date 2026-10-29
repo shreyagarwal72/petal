@@ -137,6 +137,7 @@ object PetalGlassWidgets {
 
             saveWallpaperBitmap(context, croppedBitmap)
             PetalGlassWidgetRenderer.forget()
+            PetalGlassWidgetRenderer.deleteTiles(context)
             changes.value = System.currentTimeMillis()
             PetalSearchGlanceWidgetUpdater.refresh(context)
             true
@@ -162,6 +163,7 @@ object PetalGlassWidgets {
         val value = "${rect.left},${rect.top},${rect.right},${rect.bottom}"
         store(context).edit().putString("$KEY_RECT_PREFIX$appWidgetId", value).apply()
         PetalGlassWidgetRenderer.forget(appWidgetId)
+        PetalGlassWidgetRenderer.deleteTiles(context)
         changes.value = System.currentTimeMillis()
         PetalSearchGlanceWidgetUpdater.refresh(context)
     }

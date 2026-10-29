@@ -10,6 +10,7 @@ import android.graphics.Paint
 import android.graphics.RadialGradient
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Build
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -32,6 +33,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.ImageProvider as GlanceUriImageProvider
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
@@ -231,10 +233,17 @@ private fun isDarkTheme(context: Context): Boolean {
 }
 
 /**
- * Root card container for Petal widgets with Stride-inspired hardware liquid glass rendering.
+ * Root card container for Petal widgets with liquid glass rendering.
  *
  * When liquid glass is enabled and a calibrated crop rect exists, renders the hardware-blurred,
- * tinted, specular-lit wallpaper slice. If not calibrated yet, shows an AlignBadge to launch calibration.
+ * tinted, specular-lit wallpaper slice saved as a PNG file exposed via FileProvider URI —
+ * this avoids the RemoteViews binder 1 MB limit that causes blank / "Can't load widget" state
+ * when passing raw Bitmap objects.
+ *
+ * When liquid glass is enabled but no rect is calibrated yet, falls back to a solid opaque
+ * surface tint (not translucent — transparent fallback looks broken) and shows the AlignBadge.
+ *
+ * When liquid glass is disabled, uses the scheme's [fallbackBackground].
  */
 @Composable
 private fun PetalGlassWidgetCard(
@@ -264,7 +273,10 @@ private fun PetalGlassWidgetCard(
     }
 
     val isDark = isDarkTheme(context)
-    val glassBitmap = if (isLiquidGlass && rect != null) {
+
+    // Use FileProvider URI to avoid RemoteViews binder 1 MB limit.
+    // Raw Bitmap via ImageProvider(bitmap) silently blows the limit on most phones.
+    val glassUri = if (isLiquidGlass && rect != null) {
         val spec = PetalGlassWidgetRenderer.Spec(
             rect = rect,
             blurDp = 24f,
@@ -272,27 +284,47 @@ private fun PetalGlassWidgetCard(
             dark = isDark,
             edge = 1f
         )
-        PetalGlassWidgetRenderer.render(context, spec)
+        PetalGlassWidgetRenderer.renderUri(context, spec, appWidgetId)
     } else {
         null
     }
 
-    val rootModifier = if (glassBitmap != null) {
+    // Solid opaque fallback: if liquid glass is on but not yet calibrated, use a clearly
+    // visible surface color — NOT the glass-scheme translucent color, which appears transparent.
+    val effectiveFallback: ColorProvider = if (isLiquidGlass && rect == null) {
+        ColorProvider(
+            if (isDark) androidx.compose.ui.graphics.Color(0xFF1C1E27)
+            else androidx.compose.ui.graphics.Color(0xFFF0F2FA)
+        )
+    } else {
+        fallbackBackground
+    }
+
+    val rootModifier = if (glassUri != null) {
         modifier
             .fillMaxSize()
             .cornerRadius(cornerDp)
-            .background(ImageProvider(glassBitmap))
+            .background(GlanceUriImageProvider(glassUri))
     } else {
         modifier
             .fillMaxSize()
             .cornerRadius(cornerDp)
-            .background(fallbackBackground)
+            .background(effectiveFallback)
     }
 
     Box(
         modifier = rootModifier,
         contentAlignment = Alignment.Center
     ) {
+        // Sheen overlay on top of the blurred wallpaper slice for extra glass depth
+        if (glassUri != null) {
+            GlassOverlay(
+                enabled = true,
+                overlayRes = if (isDark) R.drawable.widget_glass_sheen_card else R.drawable.widget_glass_sheen_card,
+                cornerDp = cornerDp.value.toInt()
+            )
+        }
+
         content()
 
         if (isLiquidGlass && rect == null && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {

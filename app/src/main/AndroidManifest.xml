@@ -586,6 +586,14 @@
         </activity>
 
         <receiver
+            android:name="com.petal.browser.widget.glance.PetalWallpaperChangedReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.WALLPAPER_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name="com.petal.browser.widget.glance.PetalSearchPetal1WidgetReceiver"
             android:label="@string/widget_search_petal1_name"
             android:exported="true">

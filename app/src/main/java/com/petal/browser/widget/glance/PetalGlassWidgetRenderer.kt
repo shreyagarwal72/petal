@@ -11,6 +11,12 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.util.DisplayMetrics
+import android.net.Uri
+import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.content.FileProvider
+import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.max
 import kotlin.math.min
@@ -21,6 +27,9 @@ import kotlin.math.roundToInt
  *
  * Slices the home wallpaper according to the calibrated launcher coordinates, applies
  * vibrant frosted glass blur, a subtle material luminance tint, and a specular rim highlight stroke.
+ *
+ * Glass bitmaps are saved to filesDir as PNG and exposed via FileProvider URI to avoid
+ * the RemoteViews binder 1 MB limit that causes "Can't load widget" / blank widget state.
  */
 object PetalGlassWidgetRenderer {
 
@@ -39,10 +48,70 @@ object PetalGlassWidgetRenderer {
     private var cachedWallpaper: Bitmap? = null
     private var lastWallpaperStamp: Long = 0L
 
+    /** Provider authority declared in AndroidManifest — matches the existing fileprovider entry. */
+    private const val AUTHORITY_SUFFIX = ".fileprovider"
+
     @Synchronized
     fun forget(appWidgetId: Int? = null) {
         cache.clear()
         cachedWallpaper = null
+    }
+
+    /** Deletes cached PNG tiles from filesDir (call after wallpaper changes). */
+    fun deleteTiles(context: Context) {
+        try {
+            File(context.filesDir, "glass_widget_tiles").listFiles()?.forEach { it.delete() }
+        } catch (_: Throwable) {}
+    }
+
+    /**
+     * Renders a glass card bitmap for the given [Spec], saves it to filesDir, and returns
+     * a FileProvider [Uri] safe to pass to Glance [androidx.glance.appwidget.ImageProvider].
+     *
+     * Returns null if the wallpaper is not cached yet or rendering fails.
+     *
+     * The URI is granted read permission to all installed launchers so the widget host
+     * process can load the image without a SecurityException.
+     */
+    fun renderUri(context: Context, spec: Spec, widgetId: Int): Uri? {
+        val bitmap = render(context, spec) ?: return null
+        return try {
+            val dir = File(context.filesDir, "glass_widget_tiles").also { it.mkdirs() }
+            val file = File(dir, "widget_${widgetId}_glass.png")
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                out.flush()
+            }
+            val uri = FileProvider.getUriForFile(context, context.packageName + AUTHORITY_SUFFIX, file)
+            // Grant read permission to all launchers so the widget host can load the tile
+            grantUriToLaunchers(context, uri)
+            uri
+        } catch (e: Throwable) {
+            android.util.Log.e("PetalGlassRenderer", "Failed saving glass tile for widget $widgetId", e)
+            null
+        }
+    }
+
+    private fun grantUriToLaunchers(context: Context, uri: Uri) {
+        try {
+            val pm = context.packageManager
+            val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+            val resolveFlags = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                PackageManager.MATCH_ALL
+            } else {
+                0
+            }
+            val launchers = pm.queryIntentActivities(launcherIntent, resolveFlags)
+            for (info in launchers) {
+                try {
+                    context.grantUriPermission(
+                        info.activityInfo.packageName,
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Throwable) {}
+            }
+        } catch (_: Throwable) {}
     }
 
     /**
