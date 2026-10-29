@@ -740,7 +740,10 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setForceDarkMode(enabled: Boolean) {
-        sp.edit().putBoolean("sp_force_dark_mode", enabled).apply()
+        sp.edit()
+            .putBoolean("sp_force_dark_mode", enabled)
+            .putBoolean("petal_builtin_dark_webpages", enabled)
+            .apply()
     }
 
     override suspend fun setEnableLiveSuggestions(enabled: Boolean) {

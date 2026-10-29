@@ -101,8 +101,11 @@ fun AppearanceSettingsScreen(
     val liquidGlassSoftRimStrength by viewModel.liquidGlassSoftRimStrength.collectAsStateWithLifecycle()
     val liquidGlassBorderStrength by viewModel.liquidGlassBorderStrength.collectAsStateWithLifecycle()
     val liquidGlassContrast by viewModel.liquidGlassContrast.collectAsStateWithLifecycle()
+    val forceDarkMode by viewModel.forceDarkMode.collectAsStateWithLifecycle()
 
     AppearanceSettingsScreenContent(
+        forceDarkMode = forceDarkMode,
+        onForceDarkModeChange = viewModel::setForceDarkMode,
         appFont = appFont,
         appLanguage = appLanguage,
         matchWebsiteLanguage = matchWebsiteLanguage,
@@ -211,6 +214,7 @@ fun AppearanceSettingsScreenContent(
     paletteId: String,
     dynamicColor: Boolean,
     amoledMode: Boolean,
+    forceDarkMode: Boolean = false,
     themeConfig: ThemeConfig,
     floatingTabBar: Boolean,
     expressiveBgShapes: Boolean,
@@ -258,6 +262,7 @@ fun AppearanceSettingsScreenContent(
     onPaletteIdChange: (String) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
     onAmoledModeChange: (Boolean) -> Unit,
+    onForceDarkModeChange: (Boolean) -> Unit = {},
     onThemeConfigChange: (ThemeConfig) -> Unit,
     onFloatingTabBarChange: (Boolean) -> Unit,
     onExpressiveBgShapesChange: (Boolean) -> Unit,
@@ -741,11 +746,20 @@ fun AppearanceSettingsScreenContent(
                         icon = Icons.Rounded.DarkMode,
                         checked = amoledMode && isDarkTheme,
                         enabled = isDarkTheme,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         onCheckedChange = { newValue ->
                             onAmoledModeChange(newValue)
                             PetalSearchWidgetProvider.updateAllWidgets(context)
                         }
+                    )
+                    // Dark Webpages / Smart Dark Mode Toggle
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.petal_setup_ext_dark),
+                        subtitle = stringResource(R.string.petal_setup_ext_dark_reason),
+                        icon = Icons.Rounded.Nightlight,
+                        checked = forceDarkMode,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                        onCheckedChange = onForceDarkModeChange
                     )
                 }
 

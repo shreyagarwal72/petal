@@ -258,6 +258,11 @@ object PetalBuiltInExtensionManager {
     @JvmStatic
     fun setEnabled(context: Context, prefKey: String, enabled: Boolean) {
         val spec = builtIns.find { it.prefKey == prefKey } ?: return
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        sp.edit().putBoolean(prefKey, enabled).apply()
+        if (prefKey == "petal_builtin_dark_webpages") {
+            sp.edit().putBoolean("sp_force_dark_mode", enabled).apply()
+        }
         val runtime = try { PetalGeckoRuntime.getOrCreate(context.applicationContext) }
                       catch (_: Throwable) { return }
         runtime.webExtensionController.list().accept({ list ->

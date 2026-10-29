@@ -1679,10 +1679,45 @@ class PetalGeckoView @JvmOverloads constructor(
             sp.getBoolean("${profile}_desktop", sp.getBoolean("sp_desktop_site", false))
         }
         applyDesktopMode(desktopEnabled)
+        applyDarkModePolicy()
         applyGeckoBlockingPolicy(currentUrl)
         val enableJs = sp.getBoolean("sp_javascript", sp.getBoolean("${profile}_javascript", sp.getBoolean("profileStandard_javascript", true)))
         session.settings.allowJavascript = enableJs
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    /**
+     * Configures GeckoView's preferred color scheme and website dark mode.
+     * Tells web content (via @media (prefers-color-scheme: dark)) to render native dark themes
+     * without producing inverted negative artifacts on media and images.
+     */
+    private fun applyDarkModePolicy() {
+        try {
+            val forceDark = sp.getBoolean("sp_force_dark_mode", false) ||
+                sp.getBoolean("petal_builtin_dark_webpages", true)
+            val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
+            val isSysDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+            val isDark = when (themeConfig.uppercase()) {
+                "LIGHT" -> forceDark
+                "DARK" -> true
+                else -> isSysDark || forceDark
+            }
+            val targetColorScheme = if (isDark) {
+                GeckoSessionSettings.COLOR_SCHEME_DARK
+            } else {
+                GeckoSessionSettings.COLOR_SCHEME_LIGHT
+            }
+            try {
+                session.settings.preferredColorScheme = targetColorScheme
+            } catch (_: Throwable) {
+                try {
+                    val method = session.settings.javaClass.getMethod("setPreferredColorScheme", Int::class.javaPrimitiveType)
+                    method.invoke(session.settings, targetColorScheme)
+                } catch (_: Throwable) {}
+            }
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalGeckoView", "Failed to apply dark mode policy: ${t.message}")
+        }
     }
 
     /**

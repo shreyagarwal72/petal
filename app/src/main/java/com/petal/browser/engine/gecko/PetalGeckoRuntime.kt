@@ -137,6 +137,11 @@ object PetalGeckoRuntime {
             settingsBuilder.trustedRecursiveResolverUri(dohUri)
         }
 
+        // Android 16 (SDK 36) / modern Android media stability configuration
+        // Prevents native SIGSEGV in GMPThread ConditionVariableImpl::wait by disabling
+        // unsupported desktop GMP plugins and directing media through native MediaCodec.
+        configureMediaAndGmpStability(appContext, settingsBuilder)
+
         // Firefox official memory and performance optimizations
         try {
             // Low-RAM device tuning: constrain content process count and memory caches
@@ -277,5 +282,86 @@ object PetalGeckoRuntime {
                 Log.w(TAG, "Error synchronizing GeckoRuntime preferences: ${e.message}")
             }
         }
+    }
+
+    /**
+     * Android 16 (SDK 36) / modern Android media stability configuration.
+     * Prevents native crashes (SEGV_ACCERR in GMPThread ConditionVariableImpl::wait) by:
+     * 1. Disabling Gecko Media Plugins (GMP) which are unsupported on Android and cause thread stack overflows.
+     * 2. Directing media playback exclusively to Android's native MediaCodec hardware pipeline.
+     * 3. Pre-seeding user.js into all Gecko profile directories so GMP preferences are applied before GMPThread spawns.
+     */
+    private fun configureMediaAndGmpStability(appContext: Context, settingsBuilder: GeckoRuntimeSettings.Builder) {
+        try {
+            val configYaml = java.io.File(appContext.filesDir, "petal-geckoview-config.yaml")
+            val configContent = """
+                env:
+                  MOZ_AVOID_OPENH264: "1"
+                prefs:
+                  media.gmp-provider.enabled: false
+                  media.gmp.decoder.enabled: false
+                  media.gmp-manager.url: ""
+                  media.gmp-manager.updateEnabled: false
+                  media.gmp-widevinecdm.visible: false
+                  media.gmp-widevinecdm.enabled: false
+                  media.gmp-widevinecdm.autoupdate: false
+                  media.gmp-gmpopenh264.visible: false
+                  media.gmp-gmpopenh264.enabled: false
+                  media.gmp-gmpopenh264.autoupdate: false
+                  media.eme.enabled: false
+            """.trimIndent()
+            configYaml.writeText(configContent)
+
+            try {
+                val method = settingsBuilder.javaClass.getMethod("configFilePath", String::class.java)
+                method.invoke(settingsBuilder, configYaml.absolutePath)
+                Log.i(TAG, "Applied GeckoView config file for Android 16 media stability: ${configYaml.absolutePath}")
+            } catch (t: Throwable) {
+                Log.d(TAG, "configFilePath not available on GeckoRuntimeSettings.Builder: ${t.message}")
+            }
+
+            seedProfileUserJs(appContext)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to apply media & GMP stability settings: ${t.message}")
+        }
+    }
+
+    private fun seedProfileUserJs(appContext: Context) {
+        try {
+            val userJsContent = """
+                // Petal Browser Android 16+ Native Stability & GMP Crash Prevention
+                user_pref("media.gmp-provider.enabled", false);
+                user_pref("media.gmp.decoder.enabled", false);
+                user_pref("media.gmp-manager.url", "");
+                user_pref("media.gmp-manager.updateEnabled", false);
+                user_pref("media.gmp-widevinecdm.visible", false);
+                user_pref("media.gmp-widevinecdm.enabled", false);
+                user_pref("media.gmp-widevinecdm.autoupdate", false);
+                user_pref("media.gmp-gmpopenh264.visible", false);
+                user_pref("media.gmp-gmpopenh264.enabled", false);
+                user_pref("media.gmp-gmpopenh264.autoupdate", false);
+                user_pref("media.eme.enabled", false);
+            """.trimIndent()
+
+            val possibleDirs = listOf(
+                java.io.File(appContext.filesDir, "mozilla"),
+                appContext.getDir("mozilla", Context.MODE_PRIVATE),
+                java.io.File(appContext.filesDir, "geckoview")
+            )
+
+            for (dir in possibleDirs) {
+                if (dir.exists() && dir.isDirectory) {
+                    val subdirs = dir.listFiles { f -> f.isDirectory } ?: emptyArray()
+                    for (sub in subdirs) {
+                        try {
+                            val userJs = java.io.File(sub, "user.js")
+                            if (!userJs.exists() || !userJs.readText().contains("media.gmp-provider.enabled")) {
+                                userJs.writeText(userJsContent)
+                            }
+                        } catch (_: Throwable) {}
+                    }
+                }
+            }
+        } catch (_: Throwable) {}
     }
 }

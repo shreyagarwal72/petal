@@ -225,8 +225,8 @@ fun SearchHomeSettingsScreenContent(
                             shape = RoundedCornerShape(14.dp)
                         )
                     }
-                    // Background Media Playback Group
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                    // Background Media Playback & Dark Webpages Group
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
                         when (index) {
                             0 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -247,6 +247,16 @@ fun SearchHomeSettingsScreenContent(
                                     enabled = isPipSupported,
                                     position = position,
                                     onCheckedChange = onAutoPipChange
+                                )
+                            }
+                            2 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.petal_setup_ext_dark),
+                                    subtitle = stringResource(R.string.petal_setup_ext_dark_reason),
+                                    icon = Icons.Rounded.DarkMode,
+                                    checked = forceDarkMode,
+                                    position = position,
+                                    onCheckedChange = onForceDarkModeChange
                                 )
                             }
                         }

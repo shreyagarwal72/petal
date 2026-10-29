@@ -51,6 +51,9 @@ class AppearanceSettingsViewModel @Inject constructor(
     val amoledMode: StateFlow<Boolean> = settingsRepository.amoledMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val forceDarkMode: StateFlow<Boolean> = settingsRepository.forceDarkMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val appLanguage: StateFlow<String> = settingsRepository.appLanguage
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "system")
 
@@ -197,6 +200,10 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setAmoledMode(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setAmoledMode(enabled)
+    }
+
+    fun setForceDarkMode(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setForceDarkMode(enabled)
     }
 
     fun setThemeConfig(config: ThemeConfig) = viewModelScope.launch {
