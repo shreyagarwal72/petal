@@ -290,36 +290,27 @@ object PetalGeckoRuntime {
      * 1. Disabling Gecko Media Plugins (GMP) which are unsupported on Android and cause thread stack overflows.
      * 2. Directing media playback exclusively to Android's native MediaCodec hardware pipeline.
      * 3. Pre-seeding user.js into all Gecko profile directories so GMP preferences are applied before GMPThread spawns.
+     * Note: Avoid using GeckoView's configFilePath YAML mechanism as SnakeYAML's static initializer
+     * crashes with NullPointerException on Package.getName() in Android release builds.
      */
     private fun configureMediaAndGmpStability(appContext: Context, settingsBuilder: GeckoRuntimeSettings.Builder) {
         try {
-            val configYaml = java.io.File(appContext.filesDir, "petal-geckoview-config.yaml")
-            val configContent = """
-                env:
-                  MOZ_AVOID_OPENH264: "1"
-                prefs:
-                  media.gmp-provider.enabled: false
-                  media.gmp.decoder.enabled: false
-                  media.gmp-manager.url: ""
-                  media.gmp-manager.updateEnabled: false
-                  media.gmp-widevinecdm.visible: false
-                  media.gmp-widevinecdm.enabled: false
-                  media.gmp-widevinecdm.autoupdate: false
-                  media.gmp-gmpopenh264.visible: false
-                  media.gmp-gmpopenh264.enabled: false
-                  media.gmp-gmpopenh264.autoupdate: false
-                  media.eme.enabled: false
-            """.trimIndent()
-            configYaml.writeText(configContent)
-
+            // Set environment variable directly to avoid openh264 without relying on SnakeYAML/DebugConfig
             try {
-                val method = settingsBuilder.javaClass.getMethod("configFilePath", String::class.java)
-                method.invoke(settingsBuilder, configYaml.absolutePath)
-                Log.i(TAG, "Applied GeckoView config file for Android 16 media stability: ${configYaml.absolutePath}")
+                android.system.Os.setenv("MOZ_AVOID_OPENH264", "1", true)
             } catch (t: Throwable) {
-                Log.d(TAG, "configFilePath not available on GeckoRuntimeSettings.Builder: ${t.message}")
+                Log.d(TAG, "Failed to setenv MOZ_AVOID_OPENH264: ${t.message}")
             }
 
+            // Clean up any stale YAML config file to prevent GeckoView DebugConfig from attempting to parse it
+            try {
+                val staleYaml = java.io.File(appContext.filesDir, "petal-geckoview-config.yaml")
+                if (staleYaml.exists()) {
+                    staleYaml.delete()
+                }
+            } catch (_: Throwable) {}
+
+            // Pre-seed user.js in all profile directories
             seedProfileUserJs(appContext)
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to apply media & GMP stability settings: ${t.message}")
