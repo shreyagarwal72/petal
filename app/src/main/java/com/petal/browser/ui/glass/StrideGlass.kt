@@ -362,14 +362,42 @@ private fun glassEffect(size: Size, look: GlassLook, radii: FloatArray?): Render
 }
 
 /** Stride's rounded-rect lens alone. Null below Android 13 (no runtime shader). */
-internal fun lensEffect(size: Size, pad: Float, radii: FloatArray, height: Float, amount: Float): RenderEffect? {
+internal fun lensEffect(
+    size: Size,
+    pad: Float,
+    radii: FloatArray,
+    height: Float,
+    amount: Float,
+    tuning: PetalLiquidGlassTuning? = null,
+    shape: Shape? = null
+): RenderEffect? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
-    if (height <= 0f || amount <= 0f) return null
-    return lensShaderEffect(size, pad, radii, height, amount)
+    if (height <= 0f && amount <= 0f && tuning?.refractionEnabled != true) return null
+    return lensShaderEffect(size, pad, radii, height, amount, tuning, shape)
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun lensShaderEffect(size: Size, pad: Float, radii: FloatArray, height: Float, amount: Float): RenderEffect {
+private fun lensShaderEffect(
+    size: Size,
+    pad: Float,
+    radii: FloatArray,
+    height: Float,
+    amount: Float,
+    tuning: PetalLiquidGlassTuning? = null,
+    shape: Shape? = null
+): RenderEffect {
+    if (tuning != null && tuning.refractionEnabled) {
+        val shader = PetalLiquidShaderPool.get()
+        val effShape = shape ?: RoundedCornerShape(radii[0].dp)
+        bindLiquidShaderUniforms(
+            shader = shader,
+            size = size,
+            offset = Offset(-pad, -pad),
+            shape = effShape,
+            tuning = tuning
+        )
+        return RenderEffect.createRuntimeShaderEffect(shader, "content")
+    }
     val shader = LensShaders.plain
     shader.setFloatUniform("size", size.width, size.height)
     shader.setFloatUniform("offset", -pad, -pad)

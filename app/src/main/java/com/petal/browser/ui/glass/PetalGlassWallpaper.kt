@@ -321,9 +321,11 @@ fun Modifier.petalGlassPanel(
     tint: Color,
     edge: Float,
     refractionOverride: Float? = null,
-    refractionWidthOverride: Float? = null
+    refractionWidthOverride: Float? = null,
+    liquidTuning: PetalLiquidGlassTuning? = null
 ): Modifier {
     val tuning = rememberRefractionTuning(refractionOverride, refractionWidthOverride)
+    val advancedTuning = liquidTuning ?: rememberPetalLiquidGlassTuning(refractionOverride, refractionWidthOverride)
     val wallpaper = LocalPetalGlassWallpaper.current ?: return this
     if (!wallpaper.ready) return this
     val place = remember { GlassPanelPlace() }
@@ -347,7 +349,7 @@ fun Modifier.petalGlassPanel(
             val pad = lensAmount + 4.dp.toPx()
             val effect = try {
                 val radii = cornerRadii(shape, size, layoutDirection, this)
-                radii?.let { lensEffect(size, pad, it, lensHeight, lensAmount) }
+                radii?.let { lensEffect(size, pad, it, lensHeight, lensAmount, advancedTuning, shape) }
             } catch (_: Throwable) { null }
             try {
                 glass.renderEffect = effect?.asComposeRenderEffect()

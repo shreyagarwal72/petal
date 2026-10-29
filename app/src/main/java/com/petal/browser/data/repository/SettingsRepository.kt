@@ -51,6 +51,13 @@ interface SettingsRepository {
     val liquidGlassBgImageUri: Flow<String>
     val liquidGlassBgDim: Flow<Float>
     val liquidGlassBgBlur: Flow<Float>
+    val liquidGlassEdgeWidth: Flow<Float>
+    val liquidGlassChromatic: Flow<Float>
+    val liquidGlassRimAngle: Flow<Float>
+    val liquidGlassRimStrength: Flow<Float>
+    val liquidGlassSoftRimStrength: Flow<Float>
+    val liquidGlassBorderStrength: Flow<Float>
+    val liquidGlassContrast: Flow<Float>
 
     // Search & Homepage
     val searchEngineIndex: Flow<String>
@@ -167,6 +174,14 @@ interface SettingsRepository {
     suspend fun setLiquidGlassBgImageUri(uri: String)
     suspend fun setLiquidGlassBgDim(dim: Float)
     suspend fun setLiquidGlassBgBlur(blur: Float)
+    suspend fun setLiquidGlassEdgeWidth(value: Float)
+    suspend fun setLiquidGlassChromatic(value: Float)
+    suspend fun setLiquidGlassRimAngle(value: Float)
+    suspend fun setLiquidGlassRimStrength(value: Float)
+    suspend fun setLiquidGlassSoftRimStrength(value: Float)
+    suspend fun setLiquidGlassBorderStrength(value: Float)
+    suspend fun setLiquidGlassContrast(value: Float)
+    suspend fun resetAdvancedLiquidGlass()
 
     suspend fun setSearchEngineIndex(index: String)
     suspend fun setHomepageType(type: String)

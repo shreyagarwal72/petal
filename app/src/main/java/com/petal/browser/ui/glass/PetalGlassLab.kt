@@ -1,5 +1,6 @@
 package com.petal.browser.ui.glass
 
+import android.os.Build
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
@@ -51,13 +52,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.effect
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.petal.browser.ui.containment.PetalBackdrop
+import com.petal.browser.ui.containment.petalLensSupported
 import com.petal.browser.ui.containment.petalRealGlassSupported
 import com.petal.browser.ui.containment.rememberPetalBackdrop
 import kotlin.math.PI
@@ -71,7 +75,11 @@ data class GlassLabTuning(
     val opacity: Float,
     val sheen: Float,
     val refraction: Float,
-    val refractionWidth: Float
+    val refractionWidth: Float,
+    val chromatic: Float = 0.015f,
+    val rimAngle: Float = 45f,
+    val rimStrength: Float = 1.20f,
+    val edgeWidth: Float = 0.040f
 )
 
 /**
@@ -87,9 +95,22 @@ fun PetalGlassLab(
     refraction: Float,
     refractionWidth: Float,
     fx: GlassFx,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    chromatic: Float = 0.015f,
+    rimAngle: Float = 45f,
+    rimStrength: Float = 1.20f,
+    edgeWidth: Float = 0.040f
 ) {
-    val tuning = GlassLabTuning(opacity, sheen, refraction, refractionWidth)
+    val tuning = GlassLabTuning(
+        opacity = opacity,
+        sheen = sheen,
+        refraction = refraction,
+        refractionWidth = refractionWidth,
+        chromatic = chromatic,
+        rimAngle = rimAngle,
+        rimStrength = rimStrength,
+        edgeWidth = edgeWidth
+    )
     val backdrop = rememberPetalBackdrop()
     val outer = RoundedCornerShape(28.dp)
 
@@ -254,10 +275,34 @@ private fun LabTabs(
                     effects = {
                         if (petalRealGlassSupported && fx.showLens && tuning.refraction > 0.001f) {
                             val p = drag.pressProgress
-                            lens(
-                                (10.dp.toPx() * tuning.refractionWidth * p).coerceAtMost(size.minDimension / 2f),
-                                14.dp.toPx() * tuning.refraction * p
-                            )
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                val liquidEffect = createPetalLiquidRenderEffect(
+                                    size = size,
+                                    offset = Offset.Zero,
+                                    shape = capsule,
+                                    tuning = PetalLiquidGlassTuning(
+                                        refractionStrength = (tuning.refraction * 0.1f * p).coerceIn(0f, 1f),
+                                        edgeWidth = (tuning.edgeWidth * p).coerceIn(0.005f, 0.2f),
+                                        chromaticAberration = tuning.chromatic * p,
+                                        rimAngleDeg = tuning.rimAngle,
+                                        rimStrength = tuning.rimStrength * p
+                                    ),
+                                    scope = this
+                                )
+                                if (liquidEffect != null) {
+                                    effect(liquidEffect.asComposeRenderEffect())
+                                } else {
+                                    lens(
+                                        (10.dp.toPx() * tuning.refractionWidth * p).coerceAtMost(size.minDimension / 2f),
+                                        14.dp.toPx() * tuning.refraction * p
+                                    )
+                                }
+                            } else {
+                                lens(
+                                    (10.dp.toPx() * tuning.refractionWidth * p).coerceAtMost(size.minDimension / 2f),
+                                    14.dp.toPx() * tuning.refraction * p
+                                )
+                            }
                         }
                     },
                     highlight = if (tuning.sheen > 0.01f) {
@@ -300,7 +345,30 @@ private fun Modifier.labGlass(
         effects = {
             vibrancy()
             blur((3f + t.opacity * 9f).dp.toPx())
-            if (t.refraction > 0.001f && t.refractionWidth > 0.001f) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && t.refraction > 0.001f) {
+                val boost = lensBoost()
+                val liquidEffect = createPetalLiquidRenderEffect(
+                    size = size,
+                    offset = Offset.Zero,
+                    shape = shape,
+                    tuning = PetalLiquidGlassTuning(
+                        blurRadiusDp = (3f + t.opacity * 9f),
+                        refractionStrength = (t.refraction * 0.12f * (1f + 0.9f * boost)).coerceIn(0f, 1f),
+                        edgeWidth = (t.edgeWidth * (1f + 0.5f * boost)).coerceIn(0.005f, 0.2f),
+                        chromaticAberration = t.chromatic,
+                        rimAngleDeg = t.rimAngle,
+                        rimStrength = t.rimStrength
+                    ),
+                    scope = this
+                )
+                if (liquidEffect != null) {
+                    effect(liquidEffect.asComposeRenderEffect())
+                } else if (t.refractionWidth > 0.001f) {
+                    val height = (22.dp.toPx() * t.refractionWidth * (1f + 0.5f * boost))
+                        .coerceAtMost(size.minDimension / 2f)
+                    lens(height, 30.dp.toPx() * t.refraction * (1f + 0.9f * boost))
+                }
+            } else if (t.refraction > 0.001f && t.refractionWidth > 0.001f) {
                 val boost = lensBoost()
                 val height = (22.dp.toPx() * t.refractionWidth * (1f + 0.5f * boost))
                     .coerceAtMost(size.minDimension / 2f)

@@ -217,6 +217,34 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getFloat("sp_liquid_glass_bg_blur", 16f)
     }
 
+    override val liquidGlassEdgeWidth: Flow<Float> = preferenceFlow("sp_liquid_glass_edge_width") {
+        sp.getFloat("sp_liquid_glass_edge_width", 0.040f)
+    }
+
+    override val liquidGlassChromatic: Flow<Float> = preferenceFlow("sp_liquid_glass_chromatic") {
+        sp.getFloat("sp_liquid_glass_chromatic", 0.015f)
+    }
+
+    override val liquidGlassRimAngle: Flow<Float> = preferenceFlow("sp_liquid_glass_rim_angle") {
+        sp.getFloat("sp_liquid_glass_rim_angle", 45.0f)
+    }
+
+    override val liquidGlassRimStrength: Flow<Float> = preferenceFlow("sp_liquid_glass_rim_strength") {
+        sp.getFloat("sp_liquid_glass_rim_strength", 1.20f)
+    }
+
+    override val liquidGlassSoftRimStrength: Flow<Float> = preferenceFlow("sp_liquid_glass_soft_rim_strength") {
+        sp.getFloat("sp_liquid_glass_soft_rim_strength", 0.80f)
+    }
+
+    override val liquidGlassBorderStrength: Flow<Float> = preferenceFlow("sp_liquid_glass_border_strength") {
+        sp.getFloat("sp_liquid_glass_border_strength", 0.35f)
+    }
+
+    override val liquidGlassContrast: Flow<Float> = preferenceFlow("sp_liquid_glass_contrast") {
+        sp.getFloat("sp_liquid_glass_contrast", 1.08f)
+    }
+
     // ── Search & Homepage ─────────────────────────────────────────────────────
     override val searchEngineIndex: Flow<String> = preferenceFlow("sp_search_engine") {
         sp.getString("sp_search_engine", "0") ?: "0"
@@ -647,6 +675,46 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLiquidGlassBgBlur(blur: Float) {
         sp.edit().putFloat("sp_liquid_glass_bg_blur", blur).apply()
+    }
+
+    override suspend fun setLiquidGlassEdgeWidth(value: Float) {
+        sp.edit().putFloat("sp_liquid_glass_edge_width", value.coerceIn(0.005f, 0.20f)).apply()
+    }
+
+    override suspend fun setLiquidGlassChromatic(value: Float) {
+        sp.edit().putFloat("sp_liquid_glass_chromatic", value.coerceIn(0f, 0.06f)).apply()
+    }
+
+    override suspend fun setLiquidGlassRimAngle(value: Float) {
+        sp.edit().putFloat("sp_liquid_glass_rim_angle", value.coerceIn(0f, 360f)).apply()
+    }
+
+    override suspend fun setLiquidGlassRimStrength(value: Float) {
+        sp.edit().putFloat("sp_liquid_glass_rim_strength", value.coerceIn(0f, 3.0f)).apply()
+    }
+
+    override suspend fun setLiquidGlassSoftRimStrength(value: Float) {
+        sp.edit().putFloat("sp_liquid_glass_soft_rim_strength", value.coerceIn(0f, 2.5f)).apply()
+    }
+
+    override suspend fun setLiquidGlassBorderStrength(value: Float) {
+        sp.edit().putFloat("sp_liquid_glass_border_strength", value.coerceIn(0f, 1.0f)).apply()
+    }
+
+    override suspend fun setLiquidGlassContrast(value: Float) {
+        sp.edit().putFloat("sp_liquid_glass_contrast", value.coerceIn(0.8f, 1.6f)).apply()
+    }
+
+    override suspend fun resetAdvancedLiquidGlass() {
+        sp.edit()
+            .putFloat("sp_liquid_glass_edge_width", 0.040f)
+            .putFloat("sp_liquid_glass_chromatic", 0.015f)
+            .putFloat("sp_liquid_glass_rim_angle", 45.0f)
+            .putFloat("sp_liquid_glass_rim_strength", 1.20f)
+            .putFloat("sp_liquid_glass_soft_rim_strength", 0.80f)
+            .putFloat("sp_liquid_glass_border_strength", 0.35f)
+            .putFloat("sp_liquid_glass_contrast", 1.08f)
+            .apply()
     }
 
     override suspend fun setSearchEngineIndex(index: String) {
