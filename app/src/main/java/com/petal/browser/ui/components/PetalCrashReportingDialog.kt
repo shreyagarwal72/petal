@@ -166,10 +166,15 @@ fun PetalCrashRecoveryHost(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
+                    val previewShape = RoundedCornerShape(14.dp)
+                    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.fillMaxWidth()
+                        shape = previewShape,
+                        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        tonalElevation = if (isGlass) 0.dp else 1.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(if (isGlass) com.petal.browser.ui.containment.liquidGlassChrome(previewShape, enabled = true, sheenIntensity = 0.35f) else Modifier)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             val firstLines = crashReport.lineSequence().take(4).joinToString("\n")

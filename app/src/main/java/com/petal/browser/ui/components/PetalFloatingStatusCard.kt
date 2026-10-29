@@ -212,11 +212,15 @@ fun PetalFloatingStatusCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .liquidGlassChrome(shape = cardShape, enabled = isGlass)
-                    .shadow(
-                        elevation = if (isGlass) 4.dp else 10.dp,
-                        shape = cardShape,
-                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = if (isGlass) 0.08f else 0.18f),
-                        ambientColor = MaterialTheme.colorScheme.outline.copy(alpha = if (isGlass) 0.05f else 0.12f)
+                    .then(
+                        if (!isGlass) {
+                            Modifier.shadow(
+                                elevation = 10.dp,
+                                shape = cardShape,
+                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                ambientColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                            )
+                        } else Modifier
                     )
                     .clip(cardShape)
                     .then(

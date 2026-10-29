@@ -33,6 +33,9 @@ import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -106,12 +109,17 @@ fun PetalShapedPasswordInput(
         else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val inputShape = RoundedCornerShape(20.dp)
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = containerColor,
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, currentBorderColor),
+        shape = inputShape,
+        color = if (isGlass) petalGroupSurfaceColor() else containerColor,
+        border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.5.dp, currentBorderColor),
+        tonalElevation = if (isGlass) 0.dp else 2.dp,
+        shadowElevation = 0.dp,
         modifier = modifier
             .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(inputShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,

@@ -55,6 +55,11 @@ import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.LocalPetalGlassSource
+import com.petal.browser.ui.glass.PetalGlassContainer
 
 object PetalBrowserPermissionDialog {
     private const val PREF_LAST_PERMISSION_DIALOG_TIME = "sp_last_permission_dialog_time"
@@ -160,14 +165,27 @@ object PetalBrowserPermissionDialog {
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                PetalExpressiveTheme {
-                    BrowserPermissionSheet(
-                        onDone = {
-                            try {
-                                dialog.dismiss()
-                            } catch (_: Exception) {}
+                val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                    ?: activity.findViewById(android.R.id.content)
+                val isLiquidGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                CompositionLocalProvider(
+                    LocalPetalGlassSource provides hostSource
+                ) {
+                    PetalExpressiveTheme {
+                        PetalGlassContainer(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = isLiquidGlass,
+                            live = true
+                        ) {
+                            BrowserPermissionSheet(
+                                onDone = {
+                                    try {
+                                        dialog.dismiss()
+                                    } catch (_: Exception) {}
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
@@ -317,10 +335,16 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
         items
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        modifier = Modifier.fillMaxWidth()
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surface,
+        shape = sheetShape,
+        tonalElevation = if (isGlass) 0.dp else 4.dp,
+        shadowElevation = if (isGlass) 0.dp else 8.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
     ) {
         Column(
             modifier = Modifier

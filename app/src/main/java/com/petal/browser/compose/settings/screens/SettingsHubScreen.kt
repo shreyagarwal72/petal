@@ -156,12 +156,15 @@ fun SettingsHubScreen(
 
             // Typo / Misspelling Suggestion Banner
             if (isSearching && didYouMean != null) {
+                val bannerShape = RoundedCornerShape(16.dp)
+                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 4.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f),
+                        .padding(horizontal = 20.dp, vertical = 4.dp)
+                        .then(if (isGlass) Modifier.liquidGlassChrome(bannerShape, enabled = true, sheenIntensity = 0.40f) else Modifier),
+                    shape = bannerShape,
+                    color = if (isGlass) MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.50f) else MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f),
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                 ) {
                     Row(

@@ -73,7 +73,7 @@ fun rememberPetalLiquidGlassTuning(
     val widthMult = (refractionWidthOverride ?: sp.getFloat(PREF_GLASS_REFRACTION_WIDTH, 1.0f)).coerceIn(0f, 2f)
 
     val baseEdge = (edgeWidthOverride ?: sp.getFloat(PREF_GLASS_EDGE_WIDTH, 0.040f)).coerceIn(0.005f, 0.20f)
-    val baseChromatic = (chromaticOverride ?: sp.getFloat(PREF_GLASS_CHROMATIC, 0.015f)).coerceIn(0f, 0.06f)
+    val baseChromatic = (chromaticOverride ?: sp.getFloat(PREF_GLASS_CHROMATIC, 0.018f)).coerceIn(0f, 0.06f)
     val baseRimAngle = (rimAngleOverride ?: sp.getFloat(PREF_GLASS_RIM_ANGLE, 45.0f)).coerceIn(0f, 360f)
     val baseRimStrength = (rimStrengthOverride ?: sp.getFloat(PREF_GLASS_RIM_STRENGTH, 1.20f)).coerceIn(0f, 3.0f)
     val baseContrast = (contrastOverride ?: sp.getFloat(PREF_GLASS_CONTRAST, 1.08f)).coerceIn(0.8f, 1.6f)

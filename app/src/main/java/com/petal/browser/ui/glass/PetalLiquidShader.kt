@@ -44,7 +44,7 @@ data class PetalLiquidGlassTuning(
     val blurRadiusDp: Float = 24.0f,
     val refractionStrength: Float = 0.085f,
     val edgeWidth: Float = 0.040f,
-    val chromaticAberration: Float = 0.015f,
+    val chromaticAberration: Float = 0.018f,
     val rimAngleDeg: Float = 45.0f,
     val rimStrength: Float = 1.20f,
     val softRimStrength: Float = 0.80f,
@@ -152,11 +152,13 @@ half4 main(float2 coord) {
     if (tint.a >= 0.99) {
         col = half4(half3(tint.rgb), 1.0);
     } else if (chromatic > 0.0001) {
-        float2 disp = nDown * (chromatic * edgeFactor * 0.5) * screenH;
+        float dispBase = chromatic * (edgeFactor * 0.75 + (1.0 - clamp(distanceFactor, 0.0, 1.0)) * 0.25) * screenH;
+        float2 disp = nDown * (dispBase * 1.15);
         half4 center = sampleAt(coord - refPx);
         half rC = sampleAt(coord - refPx + disp).r;
+        half gC = sampleAt(coord - refPx).g;
         half bC = sampleAt(coord - refPx - disp).b;
-        col = half4(rC, center.g, bC, center.a);
+        col = half4(rC, gC, bC, center.a);
     } else {
         col = sampleAt(coord - refPx);
     }
@@ -184,6 +186,11 @@ half4 main(float2 coord) {
             float3 surround = rgb / max(max(rgb.r, max(rgb.g, rgb.b)), 0.05);
             float3 softCol = mix(float3(1.0), clamp(surround, 0.0, 1.0), softRim.z);
             rim = (float3(sharpRim) + softCol * softR * (1.0 - sharpRim)) * rimStrength;
+
+            // iOS 27 Level Caustic Internal Reflection Focus
+            float causticOffset = dist + effEdge * 0.35;
+            float causticLine = exp(-causticOffset * causticOffset * 120.0) * qLight * (effRefr * 3.5);
+            rim += float3(causticLine * 0.45 * rimStrength);
         }
         if (borderStrength > 0.0) {
             borderDarken = edgeMask * smoothstep(0.15, 0.7, qDark) * borderStrength;

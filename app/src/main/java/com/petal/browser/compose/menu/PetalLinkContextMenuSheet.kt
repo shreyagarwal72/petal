@@ -722,24 +722,30 @@ object PetalLinkContextMenuBridge {
                             colorStyle = colorStyle,
                             paletteId = paletteId,
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight(),
-                                contentAlignment = Alignment.Center,
+                            val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                                ?: activity.findViewById(android.R.id.content)
+                            CompositionLocalProvider(
+                                com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
                             ) {
-                                PetalLinkContextMenuSheet(
-                                    linkTitle = linkTitle,
-                                    linkUrl = linkUrl,
-                                    faviconUrl = faviconUrl,
-                                    imageUrl = imageUrl,
-                                    isImage = isImage,
-                                    isVideo = isVideo,
-                                    isAudio = isAudio,
-                                    selectedText = selectedText,
-                                    onDismiss = { dialog.dismiss() },
-                                    handler = handler,
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    PetalLinkContextMenuSheet(
+                                        linkTitle = linkTitle,
+                                        linkUrl = linkUrl,
+                                        faviconUrl = faviconUrl,
+                                        imageUrl = imageUrl,
+                                        isImage = isImage,
+                                        isVideo = isVideo,
+                                        isAudio = isAudio,
+                                        selectedText = selectedText,
+                                        onDismiss = { dialog.dismiss() },
+                                        handler = handler,
+                                    )
+                                }
                             }
                         }
                     }

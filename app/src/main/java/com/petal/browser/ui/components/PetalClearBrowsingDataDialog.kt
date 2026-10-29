@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 @Composable
 fun PetalClearBrowsingDataDialog(
@@ -78,10 +81,15 @@ fun PetalClearBrowsingDataDialog(
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
 
+                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val groupShape = RoundedCornerShape(22.dp)
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    modifier = Modifier.fillMaxWidth()
+                    shape = groupShape,
+                    color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+                    tonalElevation = if (isGlass) 0.dp else 1.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (isGlass) Modifier.liquidGlassChrome(groupShape, enabled = true, sheenIntensity = 0.35f) else Modifier)
                 ) {
                     Column(
                         modifier = Modifier

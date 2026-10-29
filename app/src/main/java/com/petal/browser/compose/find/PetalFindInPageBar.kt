@@ -33,6 +33,9 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.components.bouncyClickable
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 /**
  * PetalFindInPageBar
@@ -69,15 +72,18 @@ fun PetalFindInPageBar(
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
         modifier = modifier
     ) {
+        val barShape = RoundedCornerShape(26.dp)
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            shadowElevation = 8.dp
+                .padding(horizontal = 14.dp, vertical = 8.dp)
+                .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true, sheenIntensity = 0.5f) else Modifier),
+            shape = barShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = if (isGlass) 0.dp else 6.dp,
+            shadowElevation = if (isGlass) 0.dp else 8.dp
         ) {
             Row(
                 modifier = Modifier
