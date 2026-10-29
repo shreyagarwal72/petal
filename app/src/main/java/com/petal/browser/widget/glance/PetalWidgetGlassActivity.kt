@@ -88,8 +88,10 @@ class PetalWidgetGlassActivity : ComponentActivity() {
             AppWidgetManager.INVALID_APPWIDGET_ID
         )
 
-        // Default result is CANCELED unless user saves
-        setResult(Activity.RESULT_CANCELED)
+        // Result is OK from the start: with CANCELED the launcher deletes the widget when the
+        // user backs out, and even after OK it never draws the widget until it gets a first update.
+        setResult(Activity.RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
+        PetalSearchGlanceWidgetUpdater.refresh(this)
 
         setContent {
             MaterialTheme {
@@ -99,13 +101,14 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                 ) {
                     WidgetGlassCalibrationScreen(
                         appWidgetId = appWidgetId,
-                        onClose = { finish() },
+                        onClose = { PetalSearchGlanceWidgetUpdater.refresh(this@PetalWidgetGlassActivity); finish() },
                         onSaved = { rect ->
                             PetalGlassWidgets.setRect(this@PetalWidgetGlassActivity, appWidgetId, rect)
                             val result = Intent().apply {
                                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
                             }
                             setResult(Activity.RESULT_OK, result)
+                            PetalSearchGlanceWidgetUpdater.refresh(this@PetalWidgetGlassActivity)
                             finish()
                         }
                     )
