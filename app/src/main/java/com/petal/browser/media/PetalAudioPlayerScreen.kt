@@ -23,6 +23,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -57,6 +58,13 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.rounded.Album
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -109,6 +117,7 @@ data class AudioTrackMetadata(
     val artist: String,
     val album: String,
     val artwork: Bitmap?,
+    val metaBadge: String? = null,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -137,6 +146,8 @@ fun PetalAudioPlayerScreen(
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
     var showSpeedDialog by remember { mutableStateOf(false) }
     var repeatMode by remember { mutableIntStateOf(Player.REPEAT_MODE_OFF) }
+    var isVinylMode by remember { mutableStateOf(false) }
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
 
     // Audio Metadata State
     var metadata by remember {
@@ -146,6 +157,7 @@ fun PetalAudioPlayerScreen(
                 artist = "Unknown Artist",
                 album = "Audio File",
                 artwork = null,
+                metaBadge = null,
             )
         )
     }
@@ -163,7 +175,21 @@ fun PetalAudioPlayerScreen(
                 val extractedTitle = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
                 val extractedArtist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
                 val extractedAlbum = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
+                val extractedBitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toIntOrNull()
+                val extractedMime = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
                 val pictureBytes = retriever.embeddedPicture
+
+                val bitrateLabel = extractedBitrate?.let { "${it / 1000} kbps" }
+                val uriStr = mediaUri.toString().lowercase()
+                val formatLabel = when {
+                    extractedMime?.contains("flac", ignoreCase = true) == true || uriStr.endsWith(".flac") -> "FLAC"
+                    extractedMime?.contains("wav", ignoreCase = true) == true || uriStr.endsWith(".wav") -> "WAV"
+                    extractedMime?.contains("ogg", ignoreCase = true) == true || uriStr.endsWith(".ogg") -> "OGG"
+                    extractedMime?.contains("aac", ignoreCase = true) == true || uriStr.endsWith(".aac") || uriStr.endsWith(".m4a") -> "AAC"
+                    extractedMime?.contains("opus", ignoreCase = true) == true || uriStr.endsWith(".opus") -> "OPUS"
+                    else -> "MP3"
+                }
+                val badgeText = listOfNotNull(bitrateLabel, formatLabel).joinToString(" • ")
 
                 val artBmp = if (pictureBytes != null) {
                     BitmapFactory.decodeByteArray(pictureBytes, 0, pictureBytes.size)
@@ -175,6 +201,7 @@ fun PetalAudioPlayerScreen(
                         artist = extractedArtist?.takeIf { it.isNotBlank() } ?: "Unknown Artist",
                         album = extractedAlbum?.takeIf { it.isNotBlank() } ?: "Audio File",
                         artwork = artBmp,
+                        metaBadge = badgeText,
                     )
                 }
             } catch (_: Exception) {
@@ -359,61 +386,114 @@ fun PetalAudioPlayerScreen(
 
             Spacer(modifier = Modifier.weight(0.4f))
 
-            // ── Album Artwork / Vinyl Record Disc ──
-            Box(
-                modifier = Modifier
-                    .size(260.dp)
-                    .shadow(16.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                    .border(
-                        width = 8.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (metadata.artwork != null) {
-                    Image(
-                        bitmap = metadata.artwork!!.asImageBitmap(),
-                        contentDescription = stringResource(R.string.ui_album_artwork),
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .rotate(discRotation.value),
-                    )
-                } else {
-                    // Expressive Stylized Turntable Disc Center
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .rotate(discRotation.value)
-                            .background(
-                                Brush.radialGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primaryContainer,
-                                        MaterialTheme.colorScheme.surfaceContainerHighest,
-                                        MaterialTheme.colorScheme.surfaceContainerLowest,
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        // Inner center spindle hole
+            // ── Album Artwork (Squircle Card ↔ Vinyl Disc Mode) ──
+            if (!isVinylMode) {
+                val artShape = RoundedCornerShape(28.dp)
+                Surface(
+                    shape = artShape,
+                    shadowElevation = 16.dp,
+                    tonalElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    modifier = Modifier
+                        .size(270.dp)
+                        .clip(artShape)
+                        .clickable {
+                            isVinylMode = true
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                        }
+                        .then(
+                            if (isGlass) Modifier.liquidGlassChrome(artShape, enabled = true, sheenIntensity = 0.9f)
+                            else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), artShape)
+                        ),
+                ) {
+                    if (metadata.artwork != null) {
+                        Image(
+                            bitmap = metadata.artwork!!.asImageBitmap(),
+                            contentDescription = stringResource(R.string.ui_album_artwork),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
                         Box(
                             modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
-                                .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                                .fillMaxSize()
+                                .background(
+                                    Brush.radialGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.primaryContainer,
+                                            MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        )
+                                    )
+                                ),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                imageVector = if (isPlaying) Icons.Default.GraphicEq else Icons.Default.MusicNote,
+                                imageVector = Icons.Default.MusicNote,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(32.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(72.dp),
                             )
+                        }
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(270.dp)
+                        .shadow(16.dp, CircleShape)
+                        .clip(CircleShape)
+                        .background(Color(0xFF161618))
+                        .border(
+                            width = 6.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                            shape = CircleShape
+                        )
+                        .clickable {
+                            isVinylMode = false
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (metadata.artwork != null) {
+                        Image(
+                            bitmap = metadata.artwork!!.asImageBitmap(),
+                            contentDescription = stringResource(R.string.ui_album_artwork),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .rotate(discRotation.value),
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .rotate(discRotation.value)
+                                .background(
+                                    Brush.radialGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.primaryContainer,
+                                            MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            Color(0xFF101012),
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                                    .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = if (isPlaying) Icons.Default.GraphicEq else Icons.Default.MusicNote,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(32.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -421,7 +501,7 @@ fun PetalAudioPlayerScreen(
 
             Spacer(modifier = Modifier.weight(0.4f))
 
-            // ── Track Metadata ──
+            // ── Track Metadata (PixelPlayer Style) ──
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -436,21 +516,29 @@ fun PetalAudioPlayerScreen(
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.basicMarquee(),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = metadata.artist,
+                    text = "${metadata.artist} • ${metadata.album}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (!metadata.metaBadge.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PetalAudioMetaBadge(
+                        metaText = metadata.metaBadge ?: "",
+                        isLiquidGlass = isGlass,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(0.3f))
 
-            // ── Wavy Seekbar with Timers ──
+            // ── Wavy Seekbar with Timers (PixelPlayer Engine) ──
             PetalSeekbarWithTimers(
                 positionMs = positionMs,
                 durationMs = durationMs,
@@ -464,15 +552,48 @@ fun PetalAudioPlayerScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ── Playback Controls ──
+            // ── Playback Controls (PixelPlayer Dynamic Weights & Morphing) ──
+            PetalAnimatedPlaybackControls(
+                isPlayingProvider = { isPlaying },
+                onPrevious = {
+                    val prev = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
+                    exoPlayer.seekTo(prev)
+                    positionMs = prev
+                },
+                onPlayPause = {
+                    if (exoPlayer.isPlaying) {
+                        exoPlayer.pause()
+                    } else {
+                        exoPlayer.play()
+                    }
+                },
+                onNext = {
+                    val next = (exoPlayer.currentPosition + 10_000L).coerceAtMost(durationMs.coerceAtLeast(0L))
+                    exoPlayer.seekTo(next)
+                    positionMs = next
+                },
+                previousIcon = Icons.Rounded.SkipPrevious,
+                nextIcon = Icons.Rounded.SkipNext,
+                previousContentDescription = stringResource(R.string.ui_rewind_10s),
+                nextContentDescription = stringResource(R.string.ui_forward_10s),
+                isLiquidGlass = isGlass,
+                height = 76.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ── Secondary Tools Row (Repeat, Speed, Vinyl Mode Toggle) ──
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                    .padding(bottom = 20.dp, start = 16.dp, end = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Repeat Mode Button
+                // Repeat Mode Toggle
                 IconButton(
                     onClick = {
                         repeatMode = when (repeatMode) {
@@ -483,91 +604,36 @@ fun PetalAudioPlayerScreen(
                         exoPlayer.repeatMode = repeatMode
                         PetalHapticEngine.getInstance(context).playClick(context)
                     },
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(42.dp),
                 ) {
                     Icon(
-                        imageVector = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
+                        imageVector = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
                         contentDescription = stringResource(R.string.ui_repeat_mode),
                         tint = if (repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
 
-                // Rewind 10s
+                // Speed Capsule
+                PetalSpeedCapsule(
+                    speed = playbackSpeed,
+                    isLiquidGlass = isGlass,
+                    onClick = { showSpeedDialog = !showSpeedDialog },
+                )
+
+                // Vinyl Disc / Squircle Artwork Mode Toggle
                 IconButton(
                     onClick = {
-                        val prev = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
-                        exoPlayer.seekTo(prev)
-                        positionMs = prev
+                        isVinylMode = !isVinylMode
                         PetalHapticEngine.getInstance(context).playClick(context)
                     },
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    modifier = Modifier.size(42.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FastRewind,
-                        contentDescription = stringResource(R.string.ui_rewind_10s),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
-
-                // Play / Pause Floating Button
-                IconButton(
-                    onClick = {
-                        if (exoPlayer.isPlaying) {
-                            exoPlayer.pause()
-                        } else {
-                            exoPlayer.play()
-                        }
-                        PetalHapticEngine.getInstance(context).playClick(context)
-                    },
-                    modifier = Modifier
-                        .size(72.dp)
-                        .shadow(8.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(38.dp),
-                    )
-                }
-
-                // Forward 10s
-                IconButton(
-                    onClick = {
-                        val next = (exoPlayer.currentPosition + 10_000L).coerceAtMost(exoPlayer.duration.coerceAtLeast(0L))
-                        exoPlayer.seekTo(next)
-                        positionMs = next
-                        PetalHapticEngine.getInstance(context).playClick(context)
-                    },
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FastForward,
-                        contentDescription = stringResource(R.string.ui_forward_10s),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
-
-                // Equalizer / Indicator spacer or icon
-                IconButton(
-                    onClick = {},
-                    enabled = false,
-                    modifier = Modifier.size(48.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.GraphicEq,
-                        contentDescription = null,
-                        tint = if (isPlaying) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                        imageVector = if (isVinylMode) Icons.Rounded.Album else Icons.Rounded.GraphicEq,
+                        contentDescription = "Toggle Turntable",
+                        tint = if (isVinylMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
             }

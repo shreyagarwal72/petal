@@ -1,9 +1,12 @@
 package com.petal.browser.media
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -47,17 +50,27 @@ import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,14 +78,20 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
+import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.delay
@@ -510,5 +529,395 @@ fun PetalSpeedCapsule(
                 }
             }
         }
+    }
+}
+
+// ── 5. PixelPlayer-Powered Animated Playback Controls ───────────────────────
+
+enum class PetalPlaybackButtonType { NONE, PREVIOUS, PLAY_PAUSE, NEXT }
+
+/**
+ * Material 3 Expressive Playback Controls adopted from PixelPlayer
+ * (com.theveloper.pixelplay.presentation.components.player.AnimatedPlaybackControls).
+ *
+ * Features:
+ * - Dynamic button weight expansion/compression physics on click.
+ * - Corner morphing on play/pause (60dp pill ↔ 26dp expressive squircle).
+ * - Smooth icon crossfade with MotionScheme.expressive.
+ * - Live liquid glass chrome support (liquidGlassChrome).
+ * - Full tactile haptic feedback.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun PetalAnimatedPlaybackControls(
+    isPlayingProvider: () -> Boolean,
+    onPrevious: () -> Unit,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+    modifier: Modifier = Modifier,
+    height: Dp = 76.dp,
+    baseWeight: Float = 1.0f,
+    expansionWeight: Float = 1.10f,
+    compressionWeight: Float = 0.65f,
+    releaseDelay: Long = 220L,
+    playPauseCornerPlaying: Dp = 60.dp,
+    playPauseCornerPaused: Dp = 26.dp,
+    previousIcon: ImageVector = Icons.Rounded.SkipPrevious,
+    nextIcon: ImageVector = Icons.Rounded.SkipNext,
+    previousContentDescription: String = "Previous",
+    nextContentDescription: String = "Next",
+    isLiquidGlass: Boolean = false,
+    colorOtherButtons: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    colorPlayPause: Color = MaterialTheme.colorScheme.primary,
+    tintPlayPauseIcon: Color = MaterialTheme.colorScheme.onPrimary,
+    tintOtherIcons: Color = MaterialTheme.colorScheme.onSurface,
+    playPauseIconSize: Dp = 36.dp,
+    iconSize: Dp = 28.dp,
+) {
+    val isPlaying = isPlayingProvider()
+    var lastClicked by remember { mutableStateOf<PetalPlaybackButtonType?>(null) }
+    var clickTrigger by remember { mutableIntStateOf(0) }
+    val latestIsPlayingProvider by rememberUpdatedState(isPlayingProvider)
+    val latestLastClicked by rememberUpdatedState(lastClicked)
+    val isPlayPauseLocked =
+        lastClicked == PetalPlaybackButtonType.NEXT || lastClicked == PetalPlaybackButtonType.PREVIOUS
+    var playPauseVisualState by remember { mutableStateOf(isPlaying) }
+    var pendingPlayPauseState by remember { mutableStateOf<Boolean?>(null) }
+    val hapticFeedback = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    val motionScheme = remember { MotionScheme.expressive() }
+    val pressAnimationSpec = remember { motionScheme.fastSpatialSpec<Float>() }
+    val defaultSpatialDpSpec = remember { motionScheme.defaultSpatialSpec<Dp>() }
+
+    LaunchedEffect(lastClicked, clickTrigger) {
+        if (lastClicked != null) {
+            val delayTime = when (lastClicked) {
+                PetalPlaybackButtonType.NEXT, PetalPlaybackButtonType.PREVIOUS -> 500L
+                else -> releaseDelay
+            }
+            delay(delayTime)
+            lastClicked = null
+        }
+    }
+
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            pendingPlayPauseState = true
+            return@LaunchedEffect
+        }
+        val shouldDelay = latestLastClicked != PetalPlaybackButtonType.PLAY_PAUSE
+        if (shouldDelay) {
+            delay(releaseDelay)
+        }
+        if (!latestIsPlayingProvider()) {
+            pendingPlayPauseState = false
+        }
+    }
+
+    LaunchedEffect(isPlayPauseLocked, pendingPlayPauseState) {
+        if (!isPlayPauseLocked) {
+            pendingPlayPauseState?.let {
+                playPauseVisualState = it
+                pendingPlayPauseState = null
+            }
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            fun weightFor(button: PetalPlaybackButtonType): Float = when (lastClicked) {
+                button -> expansionWeight
+                null -> baseWeight
+                else -> compressionWeight
+            }
+
+            // ── Previous / Rewind Button ──
+            val prevWeight by animateFloatAsState(
+                targetValue = weightFor(PetalPlaybackButtonType.PREVIOUS),
+                animationSpec = pressAnimationSpec,
+                label = "prevWeight",
+            )
+            val prevShape = CircleShape
+            val prevModifier = if (isLiquidGlass) {
+                Modifier
+                    .background(colorOtherButtons.copy(alpha = 0.5f), prevShape)
+                    .liquidGlassChrome(prevShape, enabled = true, sheenIntensity = 0.85f, pressFx = true)
+            } else {
+                Modifier
+                    .background(colorOtherButtons, prevShape)
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), prevShape)
+            }
+            Box(
+                modifier = Modifier
+                    .weight(prevWeight)
+                    .fillMaxHeight()
+                    .clip(prevShape)
+                    .then(prevModifier)
+                    .clickable {
+                        lastClicked = PetalPlaybackButtonType.PREVIOUS
+                        clickTrigger++
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        PetalHapticEngine.getInstance(context).playClick(context)
+                        coroutineScope.launch {
+                            delay(140)
+                            onPrevious()
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = previousIcon,
+                    contentDescription = previousContentDescription,
+                    tint = tintOtherIcons,
+                    modifier = Modifier.size(iconSize),
+                )
+            }
+
+            // ── Play / Pause Corner-Morphing Button ──
+            val playWeight by animateFloatAsState(
+                targetValue = weightFor(PetalPlaybackButtonType.PLAY_PAUSE),
+                animationSpec = pressAnimationSpec,
+                label = "playWeight",
+            )
+            val playCorner by animateDpAsState(
+                targetValue = if (!playPauseVisualState) playPauseCornerPlaying else playPauseCornerPaused,
+                animationSpec = defaultSpatialDpSpec,
+                label = "playCorner",
+            )
+            val playShape = RoundedCornerShape(playCorner)
+            val playModifier = if (isLiquidGlass) {
+                Modifier
+                    .background(colorPlayPause.copy(alpha = 0.9f), playShape)
+                    .liquidGlassChrome(playShape, enabled = true, sheenIntensity = 1.0f, pressFx = true)
+            } else {
+                Modifier.background(colorPlayPause, playShape)
+            }
+            Box(
+                modifier = Modifier
+                    .weight(playWeight)
+                    .fillMaxHeight()
+                    .clip(playShape)
+                    .then(playModifier)
+                    .clickable {
+                        lastClicked = PetalPlaybackButtonType.PLAY_PAUSE
+                        clickTrigger++
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        PetalHapticEngine.getInstance(context).playClick(context)
+                        onPlayPause()
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Crossfade(
+                    targetState = playPauseVisualState,
+                    animationSpec = motionScheme.fastEffectsSpec(),
+                    label = "playPauseCrossfade",
+                ) { playing ->
+                    Icon(
+                        imageVector = if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        contentDescription = if (playing) "Pause" else "Play",
+                        tint = tintPlayPauseIcon,
+                        modifier = Modifier.size(playPauseIconSize),
+                    )
+                }
+            }
+
+            // ── Next / Forward Button ──
+            val nextWeight by animateFloatAsState(
+                targetValue = weightFor(PetalPlaybackButtonType.NEXT),
+                animationSpec = pressAnimationSpec,
+                label = "nextWeight",
+            )
+            val nextShape = CircleShape
+            val nextModifier = if (isLiquidGlass) {
+                Modifier
+                    .background(colorOtherButtons.copy(alpha = 0.5f), nextShape)
+                    .liquidGlassChrome(nextShape, enabled = true, sheenIntensity = 0.85f, pressFx = true)
+            } else {
+                Modifier
+                    .background(colorOtherButtons, nextShape)
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), nextShape)
+            }
+            Box(
+                modifier = Modifier
+                    .weight(nextWeight)
+                    .fillMaxHeight()
+                    .clip(nextShape)
+                    .then(nextModifier)
+                    .clickable {
+                        lastClicked = PetalPlaybackButtonType.NEXT
+                        clickTrigger++
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        PetalHapticEngine.getInstance(context).playClick(context)
+                        coroutineScope.launch {
+                            delay(140)
+                            onNext()
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = nextIcon,
+                    contentDescription = nextContentDescription,
+                    tint = tintOtherIcons,
+                    modifier = Modifier.size(iconSize),
+                )
+            }
+        }
+    }
+}
+
+// ── 6. Standalone Pixel Morphing Play/Pause Button ───────────────────────────
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun PetalPixelPlayPauseButton(
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 72.dp,
+    cornerPlaying: Dp = 60.dp,
+    cornerPaused: Dp = 26.dp,
+    isLiquidGlass: Boolean = false,
+    containerColor: Color = MaterialTheme.colorScheme.primary,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    iconSize: Dp = 36.dp,
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val motionScheme = remember { MotionScheme.expressive() }
+    val cornerAnim by animateDpAsState(
+        targetValue = if (isPlaying) cornerPlaying else cornerPaused,
+        animationSpec = motionScheme.defaultSpatialSpec<Dp>(),
+        label = "pixelPlayPauseCorner",
+    )
+    val shape = RoundedCornerShape(cornerAnim)
+    val btnModifier = if (isLiquidGlass) {
+        Modifier
+            .background(containerColor.copy(alpha = 0.9f), shape)
+            .liquidGlassChrome(shape, enabled = true, sheenIntensity = 1.0f, pressFx = true)
+    } else {
+        Modifier.background(containerColor, shape)
+    }
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(shape)
+            .then(btnModifier)
+            .clickable {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                PetalHapticEngine.getInstance(context).playClick(context)
+                onClick()
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Crossfade(
+            targetState = isPlaying,
+            animationSpec = motionScheme.fastEffectsSpec(),
+            label = "pixelPlayPauseIconCrossfade",
+        ) { playing ->
+            Icon(
+                imageVector = if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                contentDescription = if (playing) "Pause" else "Play",
+                tint = contentColor,
+                modifier = Modifier.size(iconSize),
+            )
+        }
+    }
+}
+
+// ── 7. Standalone Pixel Expressive Control Button ────────────────────────────
+
+@Composable
+fun PetalPixelControlButton(
+    icon: ImageVector,
+    contentDescription: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 54.dp,
+    isLiquidGlass: Boolean = false,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    contentColor: Color = Color.White,
+    iconSize: Dp = 28.dp,
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val shape = CircleShape
+    val btnModifier = if (isLiquidGlass) {
+        Modifier
+            .background(containerColor.copy(alpha = 0.5f), shape)
+            .liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.85f, pressFx = true)
+    } else {
+        Modifier
+            .background(containerColor, shape)
+            .border(1.dp, Color.White.copy(alpha = 0.15f), shape)
+    }
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(shape)
+            .then(btnModifier)
+            .clickable {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                PetalHapticEngine.getInstance(context).playClick(context)
+                onClick()
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = contentColor,
+            modifier = Modifier.size(iconSize),
+        )
+    }
+}
+
+// ── 8. Pixel-Style Audio Meta Badge ──────────────────────────────────────────
+
+@Composable
+fun PetalAudioMetaBadge(
+    metaText: String,
+    modifier: Modifier = Modifier,
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    isLiquidGlass: Boolean = false,
+) {
+    if (metaText.isBlank()) return
+    val shape = RoundedCornerShape(999.dp)
+    val badgeModifier = if (isLiquidGlass) {
+        Modifier
+            .background(petalGroupSurfaceColor(), shape)
+            .liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.8f)
+    } else {
+        Modifier.background(textColor.copy(alpha = 0.12f), shape)
+    }
+
+    Surface(
+        shape = shape,
+        color = Color.Transparent,
+        modifier = modifier
+            .clip(shape)
+            .then(badgeModifier)
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+    ) {
+        Text(
+            text = metaText,
+            color = textColor,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            letterSpacing = 0.5.sp,
+        )
     }
 }

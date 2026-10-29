@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,8 +43,9 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
+import androidx.compose.material.icons.rounded.Subtitles
 import com.petal.browser.media.subtitle.PetalSubtitleEngine
 import com.petal.browser.media.subtitle.SubtitleCue
 import com.petal.browser.media.subtitle.PetalSubtitleConfigSheet
@@ -675,86 +677,27 @@ fun PetalVideoPlayerOverlay(
                 }
             }
 
-            // ── Center Action Controls (Rewind 10s, Big Play/Pause, Fast-Forward 10s) ──
-                Row(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalArrangement = Arrangement.spacedBy(36.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val sideBtnShape = CircleShape
-                    val sideBtnModifier = if (isLiquidGlass) {
-                        Modifier
-                            .background(Color.Black.copy(alpha = 0.5f), sideBtnShape)
-                            .liquidGlassChrome(sideBtnShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
-                    } else {
-                        Modifier
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f), sideBtnShape)
-                            .border(1.dp, Color.White.copy(alpha = 0.2f), sideBtnShape)
-                    }
-
-                    IconButton(
-                        onClick = {
-                            onRewind()
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                        },
-                        modifier = Modifier
-                            .size(54.dp)
-                            .clip(sideBtnShape)
-                            .then(sideBtnModifier),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FastRewind,
-                            contentDescription = stringResource(R.string.ui_rewind_10s),
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp),
-                        )
-                    }
-
-                    val playBtnShape = CircleShape
-                    val playBtnModifier = if (isLiquidGlass) {
-                        Modifier
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.9f), playBtnShape)
-                            .liquidGlassChrome(playBtnShape, enabled = true, sheenIntensity = 1.0f, pressFx = true)
-                    } else {
-                        Modifier.background(MaterialTheme.colorScheme.primary, playBtnShape)
-                    }
-
-                    IconButton(
-                        onClick = {
-                            onPlayPauseToggle()
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                        },
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(playBtnShape)
-                            .then(playBtnModifier),
-                    ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(38.dp),
-                        )
-                    }
-
-                    IconButton(
-                        onClick = {
-                            onFastForward()
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                        },
-                        modifier = Modifier
-                            .size(54.dp)
-                            .clip(sideBtnShape)
-                            .then(sideBtnModifier),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FastForward,
-                            contentDescription = stringResource(R.string.ui_forward_10s),
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp),
-                        )
-                    }
-                }
+            // ── Center Action Controls (PixelPlayer Material 3 Expressive Animated Controls) ──
+            PetalAnimatedPlaybackControls(
+                isPlayingProvider = { isPlaying },
+                onPrevious = onRewind,
+                onPlayPause = onPlayPauseToggle,
+                onNext = onFastForward,
+                previousIcon = Icons.Rounded.FastRewind,
+                nextIcon = Icons.Rounded.FastForward,
+                previousContentDescription = stringResource(R.string.ui_rewind_10s),
+                nextContentDescription = stringResource(R.string.ui_forward_10s),
+                isLiquidGlass = isLiquidGlass,
+                height = 76.dp,
+                colorOtherButtons = if (isLiquidGlass) Color.Black.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f),
+                colorPlayPause = MaterialTheme.colorScheme.primary,
+                tintPlayPauseIcon = MaterialTheme.colorScheme.onPrimary,
+                tintOtherIcons = Color.White,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .widthIn(max = 320.dp)
+                    .padding(horizontal = 24.dp),
+            )
 
                 // ── Bottom Seekbar & Controls Area ──────────────────────────
                 val bottomPillShape = RoundedCornerShape(28.dp)
