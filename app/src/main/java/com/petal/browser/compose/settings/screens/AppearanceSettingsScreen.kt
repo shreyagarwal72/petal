@@ -1258,11 +1258,18 @@ fun AppearanceSettingsScreenContent(
                                     .padding(vertical = 4.dp),
                                 verticalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
-                                // Real-time local state so sliding immediately updates on this screen without lag or waiting for disk writes
-                                var liveAlpha by remember(liquidGlassAlpha) { mutableFloatStateOf(liquidGlassAlpha) }
-                                var liveSheen by remember(liquidGlassSheen) { mutableFloatStateOf(liquidGlassSheen) }
-                                var liveRefraction by remember(liquidGlassRefraction) { mutableFloatStateOf(liquidGlassRefraction) }
-                                var liveRefractionWidth by remember(liquidGlassRefractionWidth) { mutableFloatStateOf(liquidGlassRefractionWidth) }
+                                // Real-time local state so sliding immediately updates on this screen and system-wide without lag
+                                val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+                                var liveAlpha by remember { mutableFloatStateOf(liquidGlassAlpha) }
+                                var liveSheen by remember { mutableFloatStateOf(liquidGlassSheen) }
+                                var liveRefraction by remember { mutableFloatStateOf(liquidGlassRefraction) }
+                                var liveRefractionWidth by remember { mutableFloatStateOf(liquidGlassRefractionWidth) }
+
+                                LaunchedEffect(liquidGlassAlpha) { liveAlpha = liquidGlassAlpha }
+                                LaunchedEffect(liquidGlassSheen) { liveSheen = liquidGlassSheen }
+                                LaunchedEffect(liquidGlassRefraction) { liveRefraction = liquidGlassRefraction }
+                                LaunchedEffect(liquidGlassRefractionWidth) { liveRefractionWidth = liquidGlassRefractionWidth }
+
                                 val lensSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
                                 // Live preview: authentic Liquid Glass AGSL over moving colour. Every slider below
@@ -1295,7 +1302,10 @@ fun AppearanceSettingsScreenContent(
                                     }
                                     PetalSlider(
                                         value = liveAlpha,
-                                        onValueChange = { liveAlpha = it },
+                                        onValueChange = {
+                                            liveAlpha = it
+                                            sp.edit().putFloat("sp_liquid_glass_alpha", it).apply()
+                                        },
                                         onValueChangeFinished = { onLiquidGlassAlphaChange(liveAlpha) },
                                         valueRange = 0.10f..0.95f,
                                         modifier = Modifier.fillMaxWidth()
@@ -1322,7 +1332,10 @@ fun AppearanceSettingsScreenContent(
                                     }
                                     PetalSlider(
                                         value = liveSheen,
-                                        onValueChange = { liveSheen = it },
+                                        onValueChange = {
+                                            liveSheen = it
+                                            sp.edit().putFloat("sp_liquid_glass_sheen", it).apply()
+                                        },
                                         onValueChangeFinished = { onLiquidGlassSheenChange(liveSheen) },
                                         valueRange = 0f..1f,
                                         modifier = Modifier.fillMaxWidth()
@@ -1349,7 +1362,10 @@ fun AppearanceSettingsScreenContent(
                                     }
                                     PetalSlider(
                                         value = liveRefraction,
-                                        onValueChange = { liveRefraction = it },
+                                        onValueChange = {
+                                            liveRefraction = it
+                                            sp.edit().putFloat("sp_liquid_glass_refraction", it).apply()
+                                        },
                                         onValueChangeFinished = { onLiquidGlassRefractionChange(liveRefraction) },
                                         valueRange = 0f..2f,
                                         enabled = lensSupported,
@@ -1383,7 +1399,10 @@ fun AppearanceSettingsScreenContent(
                                     }
                                     PetalSlider(
                                         value = liveRefractionWidth,
-                                        onValueChange = { liveRefractionWidth = it },
+                                        onValueChange = {
+                                            liveRefractionWidth = it
+                                            sp.edit().putFloat("sp_liquid_glass_refraction_width", it).apply()
+                                        },
                                         onValueChangeFinished = { onLiquidGlassRefractionWidthChange(liveRefractionWidth) },
                                         valueRange = 0f..2f,
                                         enabled = lensSupported,
@@ -1397,6 +1416,12 @@ fun AppearanceSettingsScreenContent(
                                         liveSheen = 0.60f
                                         liveRefraction = 1f
                                         liveRefractionWidth = 1f
+                                        sp.edit()
+                                            .putFloat("sp_liquid_glass_alpha", 0.70f)
+                                            .putFloat("sp_liquid_glass_sheen", 0.60f)
+                                            .putFloat("sp_liquid_glass_refraction", 1f)
+                                            .putFloat("sp_liquid_glass_refraction_width", 1f)
+                                            .apply()
                                         onLiquidGlassAlphaChange(0.70f)
                                         onLiquidGlassSheenChange(0.60f)
                                         onLiquidGlassRefractionChange(1f)

@@ -4,6 +4,9 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,6 +23,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +52,10 @@ fun PetalSlider(
     /** Number of discrete stops between the ends (0 = continuous). */
     steps: Int = 0,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isDragged by interactionSource.collectIsDraggedAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
+
     Slider(
         value = value,
         onValueChange = onValueChange,
@@ -55,6 +63,7 @@ fun PetalSlider(
         steps = steps,
         enabled = enabled,
         onValueChangeFinished = onValueChangeFinished,
+        interactionSource = interactionSource,
         modifier = modifier.height(TrackHeight),
         // The track draws the thumb too, so it can be positioned inside the pill
         thumb = {},
@@ -64,16 +73,17 @@ fun PetalSlider(
                     (state.valueRange.endInclusive - state.valueRange.start)
                 ).coerceIn(0f, 1f)
 
-            // Springy follow: snappy enough to track a drag, loose enough to
-            // settle with a little life when a preset jumps the value.
-            val fraction by animateFloatAsState(
+            // When actively interacting (dragging/pressing), follow touch 1:1 with zero lag.
+            // When idle (e.g. preset or programmatic update), use snappy spring animation.
+            val animatedFraction by animateFloatAsState(
                 targetValue = target,
                 animationSpec = spring(
                     dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = 900f
+                    stiffness = 1200f
                 ),
                 label = "sliderFraction"
             )
+            val fraction = if (isDragged || isPressed) target else animatedFraction
 
             BoxWithConstraints(
                 modifier = Modifier
@@ -90,10 +100,11 @@ fun PetalSlider(
                 val rollDegrees = (travel.value * fraction / circumference) * 360f
 
                 // Deep filled section — its rounded cap sits just past the thumb
+                val fillWidth = if (fraction <= 0.001f) 0.dp else thumbStart + ThumbSize + ThumbInset
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(thumbStart + ThumbSize + ThumbInset)
+                        .width(fillWidth)
                         .clip(RoundedCornerShape(50))
                         .background(
                             if (enabled) MaterialTheme.colorScheme.primaryContainer
