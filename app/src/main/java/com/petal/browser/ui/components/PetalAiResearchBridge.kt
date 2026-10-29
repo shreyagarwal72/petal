@@ -11,6 +11,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.compose.ai.ResearchMode
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -41,6 +42,8 @@ object PetalAiResearchBridge {
         pageContent: String
     ) {
         try {
+            val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                ?: activity.findViewById<android.view.View>(android.R.id.content)
             var composeView: ComposeView? = null
             composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
@@ -65,51 +68,53 @@ object PetalAiResearchBridge {
 
                     var isVisible by remember { mutableStateOf(true) }
 
-                    PetalExpressiveTheme(
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = appFont,
-                        fontWidth = fontWidthVal,
-                        fontWeight = fontWeightVal,
-                        fontRoundness = fontRoundnessVal,
-                        colorStyle = colorStyle,
-                        paletteId = paletteId
-                    ) {
-                        if (isVisible) {
-                            PetalAiActionDialog(
-                                pageTitle = pageTitle,
-                                onSelectAction = { action, setAsDefault ->
-                                    if (setAsDefault) {
-                                        sp.edit().putString("sp_ai_default_action", action).apply()
-                                    }
-                                    isVisible = false
-                                    (composeView?.parent as? ViewGroup)?.removeView(composeView)
+                    CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                        PetalExpressiveTheme(
+                            dynamicColor = dynamicColor,
+                            useAmoled = isAmoled,
+                            appFont = appFont,
+                            fontWidth = fontWidthVal,
+                            fontWeight = fontWeightVal,
+                            fontRoundness = fontRoundnessVal,
+                            colorStyle = colorStyle,
+                            paletteId = paletteId
+                        ) {
+                            if (isVisible) {
+                                PetalAiActionDialog(
+                                    pageTitle = pageTitle,
+                                    onSelectAction = { action, setAsDefault ->
+                                        if (setAsDefault) {
+                                            sp.edit().putString("sp_ai_default_action", action).apply()
+                                        }
+                                        isVisible = false
+                                        (composeView?.parent as? ViewGroup)?.removeView(composeView)
 
-                                    if (action == "SUMMARIZE") {
-                                        showSummaryBoxDialog(
-                                            activity = activity,
-                                            pageTitle = pageTitle,
-                                            pageUrl = pageUrl,
-                                            pageContent = pageContent
-                                        )
-                                    } else if (action == "AI_SEARCH") {
-                                        PetalAiSearchBridge.showAiSearchResult(activity, "")
-                                    } else {
-                                        showAiResearchSheet(
-                                            activity = activity,
-                                            pageTitle = pageTitle,
-                                            pageUrl = pageUrl,
-                                            pageContent = pageContent,
-                                            initialMode = ResearchMode.CUSTOM,
-                                            autoStart = false
-                                        )
+                                        if (action == "SUMMARIZE") {
+                                            showSummaryBoxDialog(
+                                                activity = activity,
+                                                pageTitle = pageTitle,
+                                                pageUrl = pageUrl,
+                                                pageContent = pageContent
+                                            )
+                                        } else if (action == "AI_SEARCH") {
+                                            PetalAiSearchBridge.showAiSearchResult(activity, "")
+                                        } else {
+                                            showAiResearchSheet(
+                                                activity = activity,
+                                                pageTitle = pageTitle,
+                                                pageUrl = pageUrl,
+                                                pageContent = pageContent,
+                                                initialMode = ResearchMode.CUSTOM,
+                                                autoStart = false
+                                            )
+                                        }
+                                    },
+                                    onDismiss = {
+                                        isVisible = false
+                                        (composeView?.parent as? ViewGroup)?.removeView(composeView)
                                     }
-                                },
-                                onDismiss = {
-                                    isVisible = false
-                                    (composeView?.parent as? ViewGroup)?.removeView(composeView)
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
@@ -140,6 +145,8 @@ object PetalAiResearchBridge {
     ) {
         activity.runOnUiThread {
             try {
+                val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                    ?: activity.findViewById<android.view.View>(android.R.id.content)
                 var composeView: ComposeView? = null
                 composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
@@ -164,28 +171,30 @@ object PetalAiResearchBridge {
 
                         var isVisible by remember { mutableStateOf(true) }
 
-                        PetalExpressiveTheme(
-                            dynamicColor = dynamicColor,
-                            useAmoled = isAmoled,
-                            appFont = appFont,
-                            fontWidth = fontWidthVal,
-                            fontWeight = fontWeightVal,
-                            fontRoundness = fontRoundnessVal,
-                            colorStyle = colorStyle,
-                            paletteId = paletteId
-                        ) {
-                            if (isVisible) {
-                                PetalAiResearchSheet(
-                                    pageTitle = pageTitle,
-                                    pageUrl = pageUrl,
-                                    pageContent = pageContent,
-                                    initialMode = initialMode,
-                                    autoStart = autoStart,
-                                    onDismiss = {
-                                        isVisible = false
-                                        (composeView?.parent as? ViewGroup)?.removeView(composeView)
-                                    }
-                                )
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme(
+                                dynamicColor = dynamicColor,
+                                useAmoled = isAmoled,
+                                appFont = appFont,
+                                fontWidth = fontWidthVal,
+                                fontWeight = fontWeightVal,
+                                fontRoundness = fontRoundnessVal,
+                                colorStyle = colorStyle,
+                                paletteId = paletteId
+                            ) {
+                                if (isVisible) {
+                                    PetalAiResearchSheet(
+                                        pageTitle = pageTitle,
+                                        pageUrl = pageUrl,
+                                        pageContent = pageContent,
+                                        initialMode = initialMode,
+                                        autoStart = autoStart,
+                                        onDismiss = {
+                                            isVisible = false
+                                            (composeView?.parent as? ViewGroup)?.removeView(composeView)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -214,6 +223,8 @@ object PetalAiResearchBridge {
     ) {
         activity.runOnUiThread {
             try {
+                val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                    ?: activity.findViewById<android.view.View>(android.R.id.content)
                 var composeView: ComposeView? = null
                 composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
@@ -238,43 +249,45 @@ object PetalAiResearchBridge {
 
                         var isVisible by remember { mutableStateOf(true) }
 
-                        PetalExpressiveTheme(
-                            dynamicColor = dynamicColor,
-                            useAmoled = isAmoled,
-                            appFont = appFont,
-                            fontWidth = fontWidthVal,
-                            fontWeight = fontWeightVal,
-                            fontRoundness = fontRoundnessVal,
-                            colorStyle = colorStyle,
-                            paletteId = paletteId
-                        ) {
-                            if (isVisible) {
-                                PetalSummaryBoxDialog(
-                                    pageTitle = pageTitle,
-                                    pageUrl = pageUrl,
-                                    pageContent = pageContent,
-                                    onAskQuestion = {
-                                        isVisible = false
-                                        (composeView?.parent as? ViewGroup)?.removeView(composeView)
-                                        showAiResearchSheet(
-                                            activity = activity,
-                                            pageTitle = pageTitle,
-                                            pageUrl = pageUrl,
-                                            pageContent = pageContent,
-                                            initialMode = ResearchMode.CUSTOM,
-                                            autoStart = false
-                                        )
-                                    },
-                                    onOpenSettings = {
-                                        isVisible = false
-                                        (composeView?.parent as? ViewGroup)?.removeView(composeView)
-                                        (activity as? BrowserActivity)?.openApiIntegrationsHub()
-                                    },
-                                    onDismiss = {
-                                        isVisible = false
-                                        (composeView?.parent as? ViewGroup)?.removeView(composeView)
-                                    }
-                                )
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme(
+                                dynamicColor = dynamicColor,
+                                useAmoled = isAmoled,
+                                appFont = appFont,
+                                fontWidth = fontWidthVal,
+                                fontWeight = fontWeightVal,
+                                fontRoundness = fontRoundnessVal,
+                                colorStyle = colorStyle,
+                                paletteId = paletteId
+                            ) {
+                                if (isVisible) {
+                                    PetalSummaryBoxDialog(
+                                        pageTitle = pageTitle,
+                                        pageUrl = pageUrl,
+                                        pageContent = pageContent,
+                                        onAskQuestion = {
+                                            isVisible = false
+                                            (composeView?.parent as? ViewGroup)?.removeView(composeView)
+                                            showAiResearchSheet(
+                                                activity = activity,
+                                                pageTitle = pageTitle,
+                                                pageUrl = pageUrl,
+                                                pageContent = pageContent,
+                                                initialMode = ResearchMode.CUSTOM,
+                                                autoStart = false
+                                            )
+                                        },
+                                        onOpenSettings = {
+                                            isVisible = false
+                                            (composeView?.parent as? ViewGroup)?.removeView(composeView)
+                                            (activity as? BrowserActivity)?.openApiIntegrationsHub()
+                                        },
+                                        onDismiss = {
+                                            isVisible = false
+                                            (composeView?.parent as? ViewGroup)?.removeView(composeView)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

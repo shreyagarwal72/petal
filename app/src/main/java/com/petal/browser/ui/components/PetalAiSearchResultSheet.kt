@@ -267,10 +267,9 @@ fun PetalAiSearchResultSheet(
     }
     Surface(
         shape = sheetShape,
-        color = if (isGlass) {
-            val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-            MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (dark) 0.35f else 0.45f)
-        } else MaterialTheme.colorScheme.surfaceContainerLow,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
             .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = 0.65f)

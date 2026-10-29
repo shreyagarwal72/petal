@@ -116,8 +116,16 @@ object PetalQuickToolsBridge {
                 androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
                 win.statusBarColor = android.graphics.Color.TRANSPARENT
                 win.navigationBarColor = android.graphics.Color.TRANSPARENT
-                win.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            }
+            dialog.setOnShowListener {
+                dialog.window?.let { win ->
+                    val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                    bottomSheet?.background = null
+                    bottomSheet?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
+                    coordinator?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                }
             }
             dialog.setOnDismissListener {
                 com.petal.browser.predictive.PetalContentSnapshot.clear()
@@ -147,21 +155,32 @@ object PetalQuickToolsBridge {
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
-                        com.petal.browser.ui.glass.PetalGlassContainer(
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        val wallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById<android.view.View>(android.R.id.content)
+                            ?: activity.window.decorView
+
+                        CompositionLocalProvider(
+                            com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource,
+                            com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper
                         ) {
-                            PetalQuickToolsSheet(
-                                currentPageUrl = currentUrl,
-                                currentPageTitle = currentTitle,
-                                onToolClicked = { tool ->
-                                    try { dialog.dismiss() } catch (_: Exception) {}
-                                    handleToolClick(activity, currentController, currentUrl, currentTitle, tool)
-                                },
-                                onDismissRequest = {
-                                    try { dialog.dismiss() } catch (_: Exception) {}
+                            Box(Modifier.fillMaxWidth()) {
+                                if (isGlass) {
+                                    com.petal.browser.ui.containment.PetalSheetGlassBackdrop(wallpaper, Modifier.matchParentSize())
                                 }
-                            )
+                                PetalQuickToolsSheet(
+                                    currentPageUrl = currentUrl,
+                                    currentPageTitle = currentTitle,
+                                    onToolClicked = { tool ->
+                                        try { dialog.dismiss() } catch (_: Exception) {}
+                                        handleToolClick(activity, currentController, currentUrl, currentTitle, tool)
+                                    },
+                                    onDismissRequest = {
+                                        try { dialog.dismiss() } catch (_: Exception) {}
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -169,8 +188,6 @@ object PetalQuickToolsBridge {
 
             dialog.setContentView(composeView)
             dialog.show()
-            dialog.window?.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         } catch (e: Exception) {
             e.printStackTrace()
         }

@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 @Composable
 fun PetalAiActionDialog(
@@ -33,20 +36,13 @@ fun PetalAiActionDialog(
     var rememberAsDefault by remember { mutableStateOf(false) }
 
     PetalExpressiveDialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 8.dp,
-            shadowElevation = 12.dp,
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(22.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Header
+            // Header
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -134,7 +130,6 @@ fun PetalAiActionDialog(
                     )
                 }
             }
-        }
     }
 }
 
@@ -145,11 +140,16 @@ private fun AiActionTile(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val tileShape = RoundedCornerShape(20.dp)
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth()
+        shape = tileShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = if (isGlass) 0.dp else 2.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(tileShape, enabled = true, sheenIntensity = 0.45f, pressFx = true) else Modifier)
     ) {
         Row(
             modifier = Modifier

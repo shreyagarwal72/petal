@@ -1574,6 +1574,8 @@ private fun EditShortcutDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
+                val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+
                 // Shape selector horizontal carousel showcasing all 35 M3 Expressive shapes
                 Row(
                     modifier = Modifier
@@ -1591,10 +1593,12 @@ private fun EditShortcutDialog(
                                 .clip(shape)
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primary
+                                    else if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor()
                                     else MaterialTheme.colorScheme.surfaceContainerHighest
                                 )
+                                .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.35f, pressFx = true) else Modifier)
                                 .border(
-                                    width = if (isSelected) 2.dp else 0.5.dp,
+                                    width = if (isSelected) 2.dp else if (isGlass) 0.dp else 0.5.dp,
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                     shape = shape
                                 )
@@ -1612,7 +1616,6 @@ private fun EditShortcutDialog(
                 }
 
                 // Live Preview with 0-padding full-bleed expressive shape
-                val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val previewRowShape = RoundedCornerShape(16.dp)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -1630,11 +1633,11 @@ private fun EditShortcutDialog(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .size(54.dp)
-                            .shadow(elevation = 2.dp, shape = previewTileShape)
+                            .then(if (isGlass) Modifier.liquidGlassChrome(previewTileShape, enabled = true, sheenIntensity = 0.45f) else Modifier.shadow(elevation = 2.dp, shape = previewTileShape))
                             .clip(previewTileShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                            .background(if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
                             .border(
-                                width = 0.75.dp,
+                                width = if (isGlass) 0.dp else 0.75.dp,
                                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                                 shape = previewTileShape
                             )

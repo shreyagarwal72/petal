@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -238,15 +239,9 @@ fun PetalAlertDialog(
     confirmText: String = "OK",
     dismissText: String? = "Cancel",
 ) {
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val dialogShape = RoundedCornerShape(32.dp)
-
-    AlertDialog(
+    PetalMaterialAlertDialog(
         onDismissRequest = onDismissRequest,
-        modifier = modifier.liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
+        modifier = modifier,
         icon = {
             Surface(
                 shape = RoundedCornerShape(18.dp),
@@ -257,8 +252,8 @@ fun PetalAlertDialog(
                 Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(26.dp)) }
             }
         },
-        title = { Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
-        text = { Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        title = { Text(title) },
+        text = { Text(message) },
         confirmButton = {
             Button(
                 onClick = onConfirm,
@@ -267,13 +262,8 @@ fun PetalAlertDialog(
             ) { Text(confirmText, fontWeight = FontWeight.Bold) }
         },
         dismissButton = dismissText?.let { label ->
-            {
-                TextButton(onClick = onDismissRequest, modifier = Modifier.heightIn(min = 48.dp)) { Text(label) }
-            }
-        },
-        shape = dialogShape,
-        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 0.dp,
+            { TextButton(onClick = onDismissRequest, modifier = Modifier.heightIn(min = 48.dp)) { Text(label) } }
+        }
     )
 }
 
@@ -292,29 +282,76 @@ fun PetalMaterialAlertDialog(
     titleContentColor: Color = MaterialTheme.colorScheme.onSurface,
     textContentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     tonalElevation: Dp = 0.dp,
-    properties: DialogProperties = DialogProperties(),
+    properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
 ) {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
-    val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        confirmButton = confirmButton,
-        modifier = modifier.liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
-        dismissButton = dismissButton,
-        icon = icon,
-        title = title,
-        text = text,
-        shape = shape,
-        containerColor = if (isGlass) petalGroupSurfaceColor() else containerColor,
-        iconContentColor = iconContentColor,
-        titleContentColor = titleContentColor,
-        textContentColor = textContentColor,
-        tonalElevation = tonalElevation,
-        properties = properties,
-    )
+    Dialog(onDismissRequest = onDismissRequest, properties = properties) {
+        com.petal.browser.ui.glass.PetalGlassContainer(
+            modifier = modifier
+                .fillMaxWidth(0.92f)
+                .wrapContentHeight(),
+            enabled = isGlass,
+            live = true
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
+                shape = shape,
+                color = if (isGlass) petalGroupSurfaceColor() else containerColor,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 0.dp,
+                shadowElevation = if (isGlass) 0.dp else 12.dp,
+                border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (icon != null) {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CompositionLocalProvider(LocalContentColor provides iconContentColor) {
+                                icon()
+                            }
+                        }
+                    }
+                    if (title != null) {
+                        CompositionLocalProvider(
+                            LocalContentColor provides titleContentColor,
+                            LocalTextStyle provides MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                        ) {
+                            title()
+                        }
+                    }
+                    if (text != null) {
+                        CompositionLocalProvider(
+                            LocalContentColor provides textContentColor,
+                            LocalTextStyle provides MaterialTheme.typography.bodyMedium
+                        ) {
+                            text()
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (dismissButton != null) {
+                            dismissButton()
+                            Spacer(Modifier.width(8.dp))
+                        }
+                        confirmButton()
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

@@ -338,15 +338,17 @@ private fun ExpressiveQuickToolItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
         // Expressive Shaped Icon Container
         Box(
             modifier = Modifier
                 .size(56.dp)
                 .clip(shape)
-                .background(containerColor)
+                .background(if (isGlass) containerColor.copy(alpha = 0.28f) else containerColor)
+                .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.40f, pressFx = true) else Modifier)
                 .border(
                     BorderStroke(
-                        width = if (isReorderMode) 1.5.dp else 0.5.dp,
+                        width = if (isReorderMode) 1.5.dp else if (isGlass) 0.dp else 0.5.dp,
                         color = if (isReorderMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     ),
                     shape = shape
@@ -356,7 +358,7 @@ private fun ExpressiveQuickToolItem(
             Icon(
                 imageVector = tool.icon,
                 contentDescription = tool.title,
-                tint = iconColor,
+                tint = if (isGlass) MaterialTheme.colorScheme.onSurface else iconColor,
                 modifier = Modifier.size(24.dp)
             )
         }

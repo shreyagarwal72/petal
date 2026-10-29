@@ -1,5 +1,6 @@
 package com.petal.browser.ui.glass
 
+import android.graphics.RenderEffect
 import android.os.Build
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
