@@ -1367,7 +1367,7 @@ class PetalGeckoView @JvmOverloads constructor(
                         val visited = BooleanArray(urls.size) { i ->
                             val u = urls[i]
                             if (u.isBlank() || u.startsWith("about:") || u.startsWith("moz-extension://")) false
-                            else action.checkUrl(u, com.petal.browser.database.RecordUnit.TABLE_HISTORY)
+                            else action.checkUrl(u, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
                         }
                         action.close()
                         result.complete(visited)
