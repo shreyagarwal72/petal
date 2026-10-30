@@ -1844,6 +1844,30 @@ class PetalGeckoView @JvmOverloads constructor(
         error: WebRequestError
     ): GeckoResult<String>? {
         Log.w(TAG, "Navigation onLoadError: uri=$uri, category=${error.category}, code=${error.code}")
+        if (uri != null && uri.startsWith("https://", ignoreCase = true)) {
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
+            val host = try { android.net.Uri.parse(uri).host } catch (_: Throwable) { null }
+            if (httpsOnly && !host.isNullOrBlank() && !com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(context, host)) {
+                if (error.category == WebRequestError.ERROR_CATEGORY_SECURITY ||
+                    error.category == WebRequestError.ERROR_CATEGORY_NETWORK) {
+                    val act = getHostActivity() as? com.petal.browser.activity.BrowserActivity
+                    act?.runOnUiThread {
+                        com.petal.browser.view.PetalToast.show(
+                            act,
+                            "HTTPS connection failed for $host (HTTPS-Only Mode)",
+                            com.petal.browser.view.PetalToast.LENGTH_LONG,
+                            "Load via HTTP",
+                            {
+                                com.petal.browser.privacy.PetalHttpsOnlyWhitelist.addBypass(act, host)
+                                val httpUrl = "http://" + uri.substring(8)
+                                act.showAlbum(act.currentAlbumController, httpUrl)
+                            }
+                        )
+                    }
+                }
+            }
+        }
         hideLoadingSkeleton()
         dismissSurfaceCover()
         hasContentfulPaint = true

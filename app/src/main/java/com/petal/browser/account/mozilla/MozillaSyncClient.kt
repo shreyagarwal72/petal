@@ -47,6 +47,9 @@ class MozillaSyncClient(
     /**
      * Exchanges FxA OAuth access token for storage node endpoint and authentication keys.
      */
+    @Volatile
+    private var activeCredentials: TokenServerResponse? = null
+
     fun fetchStorageCredentials(accessToken: String, syncKey: String? = null): SyncClientResult<TokenServerResponse> {
         return try {
             val url = URL(tokenServerUrl)
@@ -77,6 +80,7 @@ class MozillaSyncClient(
                     durationSeconds = json.optLong("duration", 3600L),
                     hashAlgorithm = json.optString("hashalg", "sha256")
                 )
+                activeCredentials = response
                 SyncClientResult.Success(response, backoffSeconds = backoff)
             } else {
                 val errorMsg = extractErrorStream(conn) ?: "TokenServer returned status $statusCode"
@@ -101,7 +105,7 @@ class MozillaSyncClient(
             val url = URL(apiEndpoint.trimEnd('/') + "/info/collections")
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
-                setRequestProperty("Authorization", authToken)
+                setRequestProperty("Authorization", resolveAuthHeader("GET", url, authToken))
                 setRequestProperty("Accept", "application/json")
                 connectTimeout = 8_000
                 readTimeout = 8_000
@@ -151,7 +155,7 @@ class MozillaSyncClient(
             val url = URL(fullUrl)
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
-                setRequestProperty("Authorization", authToken)
+                setRequestProperty("Authorization", resolveAuthHeader("GET", url, authToken))
                 setRequestProperty("Accept", "application/json")
                 connectTimeout = 12_000
                 readTimeout = 15_000
@@ -207,7 +211,7 @@ class MozillaSyncClient(
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
                 doOutput = true
-                setRequestProperty("Authorization", authToken)
+                setRequestProperty("Authorization", resolveAuthHeader("POST", url, authToken))
                 setRequestProperty("Content-Type", "application/json")
                 setRequestProperty("Accept", "application/json")
                 connectTimeout = 15_000
@@ -274,7 +278,28 @@ class MozillaSyncClient(
         }
     }
 
-    private fun generateHawkHeader(token: String, key: String, method: String, url: URL): String {
-        return "Hawk id=\"$token\", ts=\"${System.currentTimeMillis() / 1000}\", nonce=\"${java.util.UUID.randomUUID().toString().take(6)}\", mac=\"dummy_mac\""
+    private fun generateHawkHeader(id: String, key: String, method: String, url: URL): String {
+        val ts = System.currentTimeMillis() / 1000L
+        val nonce = java.util.UUID.randomUUID().toString().replace("-", "").take(10)
+        val host = url.host
+        val port = if (url.port > 0) url.port else (if (url.protocol.equals("https", true)) 443 else 80)
+        val path = if (!url.query.isNullOrBlank()) "${url.path}?${url.query}" else url.path
+
+        val normalized = "hawk.1.header\n$ts\n$nonce\n${method.uppercase()}\n$path\n$host\n$port\n\n\n"
+        val mac = javax.crypto.Mac.getInstance("HmacSHA256")
+        mac.init(javax.crypto.spec.SecretKeySpec(key.toByteArray(Charsets.UTF_8), "HmacSHA256"))
+        val rawMac = mac.doFinal(normalized.toByteArray(Charsets.UTF_8))
+        val macBase64 = android.util.Base64.encodeToString(rawMac, android.util.Base64.NO_WRAP)
+
+        return "Hawk id=\"$id\", ts=\"$ts\", nonce=\"$nonce\", mac=\"$macBase64\""
+    }
+
+    private fun resolveAuthHeader(method: String, url: URL, fallbackAuthToken: String): String {
+        val creds = activeCredentials
+        return if (creds != null && creds.key.isNotBlank()) {
+            generateHawkHeader(creds.id, creds.key, method, url)
+        } else {
+            fallbackAuthToken
+        }
     }
 }

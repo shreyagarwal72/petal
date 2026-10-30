@@ -1658,6 +1658,30 @@ private class ExternalSchemeNavigationDelegate(
         error: org.mozilla.geckoview.WebRequestError
     ): org.mozilla.geckoview.GeckoResult<String>? {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLoadError uri=$uri error=${error.code}")
+        if (uri != null && uri.startsWith("https://", ignoreCase = true)) {
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
+            val host = try { android.net.Uri.parse(uri).host } catch (_: Throwable) { null }
+            if (httpsOnly && !host.isNullOrBlank() && !com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(context, host)) {
+                if (error.category == org.mozilla.geckoview.WebRequestError.ERROR_CATEGORY_SECURITY ||
+                    error.category == org.mozilla.geckoview.WebRequestError.ERROR_CATEGORY_NETWORK) {
+                    val act = resolveActivity() as? com.petal.browser.activity.BrowserActivity
+                    act?.runOnUiThread {
+                        com.petal.browser.view.PetalToast.show(
+                            act,
+                            "HTTPS connection failed for $host (HTTPS-Only Mode)",
+                            com.petal.browser.view.PetalToast.LENGTH_LONG,
+                            "Load via HTTP",
+                            {
+                                com.petal.browser.privacy.PetalHttpsOnlyWhitelist.addBypass(act, host)
+                                val httpUrl = "http://" + uri.substring(8)
+                                act.showAlbum(act.currentAlbumController, httpUrl)
+                            }
+                        )
+                    }
+                }
+            }
+        }
         return try {
             engine.onLoadError(session, uri, error)
         } catch (t: Throwable) {
