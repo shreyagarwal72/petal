@@ -1,0 +1,85 @@
+package com.petal.browser.database;
+
+/**
+ * SQLite database contract for Petal Browser.
+ * Defines table names, column names, and SQL schema strings for bookmarks, history, and domain profiles.
+ * Modernized from legacy FOSS Browser RecordUnit.
+ */
+public class HistoryBookmarkContract {
+
+    public static final String TABLE_START = "GRID";
+    public static final String TABLE_BOOKMARK = "BOOKAMRK";
+    public static final String TABLE_HISTORY = "HISTORY";
+    public static final String TABLE_TRUSTED = "JAVASCRIPT";
+    public static final String TABLE_PROTECTED = "COOKIE";
+    public static final String TABLE_STANDARD = "REMOTE";
+
+    public static final String COLUMN_TITLE = "TITLE";
+    public static final String COLUMN_URL = "URL";
+    public static final String COLUMN_TIME = "TIME";
+    public static final String COLUMN_DOMAIN = "DOMAIN";
+    public static final String COLUMN_FILENAME = "FILENAME";
+    public static final String COLUMN_ORDINAL = "ORDINAL";
+    public static final String COLUMN_IS_READING_LIST = "IS_READING_LIST";
+
+    public static final String CREATE_BOOKMARK = "CREATE TABLE "
+            + TABLE_BOOKMARK
+            + " ("
+            + " " + COLUMN_TITLE + " text,"
+            + " " + COLUMN_URL + " text,"
+            + " " + COLUMN_TIME + " integer,"
+            + " " + COLUMN_IS_READING_LIST + " integer default 0"
+            + ")";
+
+    // Only used by PetalDatabaseOpenHelper.onUpgrade() to add the reading-list flag to an
+    // existing BOOKMARK table without touching already-saved rows; not used on
+    // fresh installs, where CREATE_BOOKMARK above already includes the column.
+    public static final String ALTER_BOOKMARK_ADD_READING_LIST = "ALTER TABLE "
+            + TABLE_BOOKMARK
+            + " ADD COLUMN " + COLUMN_IS_READING_LIST + " integer default 0";
+
+    public static final String CREATE_HISTORY = "CREATE TABLE "
+            + TABLE_HISTORY
+            + " ("
+            + " " + COLUMN_TITLE + " text,"
+            + " " + COLUMN_URL + " text,"
+            + " " + COLUMN_TIME + " integer"
+            + ")";
+
+    public static final String CREATE_TRUSTED = "CREATE TABLE "
+            + TABLE_TRUSTED
+            + " ("
+            + " " + COLUMN_DOMAIN + " text"
+            + ")";
+
+    public static final String CREATE_PROTECTED = "CREATE TABLE "
+            + TABLE_PROTECTED
+            + " ("
+            + " " + COLUMN_DOMAIN + " text"
+            + ")";
+
+    public static final String CREATE_STANDARD = "CREATE TABLE "
+            + TABLE_STANDARD
+            + " ("
+            + " " + COLUMN_DOMAIN + " text"
+            + ")";
+
+    public static final String TABLE_SESSION = "TAB_SESSION";
+    public static final String COLUMN_DATA = "DATA";
+
+    public static final String CREATE_SESSION = "CREATE TABLE IF NOT EXISTS "
+            + TABLE_SESSION
+            + " ("
+            + " " + COLUMN_ORDINAL + " integer primary key,"
+            + " " + COLUMN_DATA + " text"
+            + ")";
+
+    public static final String CREATE_START = "CREATE TABLE "
+            + TABLE_START
+            + " ("
+            + " " + COLUMN_TITLE + " text,"
+            + " " + COLUMN_URL + " text,"
+            + " " + COLUMN_FILENAME + " text,"
+            + " " + COLUMN_ORDINAL + " integer"
+            + ")";
+}

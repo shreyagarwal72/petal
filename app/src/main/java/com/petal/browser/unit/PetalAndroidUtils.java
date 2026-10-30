@@ -1,0 +1,1135 @@
+/*
+    This file is part of the browser WebApp.
+
+    browser WebApp is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    browser WebApp is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with the browser webview app.
+
+    If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.petal.browser.unit;
+
+import static android.content.ContentValues.TAG;
+
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.Dialog;
+import android.app.DownloadManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
+import android.content.res.ColorStateList;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.Icon;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.SystemClock;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.TextPaint;
+import android.text.TextUtils;
+import android.text.style.ClickableSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.webkit.CookieManager;
+import android.webkit.URLUtil;
+import android.webkit.WebSettings;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.core.widget.NestedScrollView;
+import androidx.preference.PreferenceManager;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputLayout;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.function.BooleanSupplier;
+
+import com.petal.browser.R;
+import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.activity.SettingsMenuActivity;
+import com.petal.browser.browser.BrowserController;
+import com.petal.browser.browser.DataURIParser;
+import com.petal.browser.browser.List_standard;
+import com.petal.browser.database.FaviconHelper;
+import com.petal.browser.view.GridItem;
+import com.petal.browser.view.MenuItem;
+import com.petal.browser.view.PetalToast;
+
+public class PetalAndroidUtils {
+
+    private static final int REQUEST_CODE_ASK_PERMISSIONS_1 = 1234;
+    private static final int REQUEST_CODE_ASK_PERMISSIONS_2 = 12345;
+    private static final int REQUEST_CODE_ASK_PERMISSIONS_3 = 123456;
+    private static SharedPreferences sp;
+
+    /** Tracks the single currently-visible Snackbar so we can dismiss it before showing another.
+     *  This prevents the double-stacked FOSS-Browser + Petal M3 snackbar visual bug. */
+    @androidx.annotation.Nullable
+    private static java.lang.ref.WeakReference<Snackbar> sActiveSnackbar;
+
+    /** Dismisses any currently showing Snackbar, then records the new one as active. */
+    private static void trackAndShow(Snackbar snackbar) {
+        if (sActiveSnackbar != null) {
+            Snackbar prev = sActiveSnackbar.get();
+            if (prev != null && prev.isShownOrQueued()) {
+                prev.dismiss();
+            }
+        }
+        sActiveSnackbar = new java.lang.ref.WeakReference<>(snackbar);
+        snackbar.show();
+    }
+
+    public static void grantPermissionsLoc(final Activity activity) {
+        int hasACCESS_FINE_LOCATION = activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+        if (hasACCESS_FINE_LOCATION != PackageManager.PERMISSION_GRANTED) {
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+            builder.setIcon(R.drawable.icon_alert);
+            builder.setTitle(R.string.setting_title_location);
+            builder.setMessage(R.string.app_permission);
+            builder.setPositiveButton(R.string.app_ok, (dialog, whichButton) -> activity.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE_ASK_PERMISSIONS_1));
+            builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
+            AlertDialog dialog = builder.create();
+            dialog.show();
+            HelperUnit.setupDialog(activity, dialog);
+        }
+    }
+
+    public static void grantPermissionsCamera(final Activity activity) {
+        int camera = activity.checkSelfPermission(Manifest.permission.CAMERA);
+        if (camera != PackageManager.PERMISSION_GRANTED) {
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+            builder.setIcon(R.drawable.icon_alert);
+            builder.setTitle(R.string.setting_title_camera);
+            builder.setMessage(R.string.app_permission);
+            builder.setPositiveButton(R.string.app_ok, (dialog, whichButton) -> activity.requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_ASK_PERMISSIONS_2));
+            builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
+            AlertDialog dialog = builder.create();
+            dialog.show();
+            HelperUnit.setupDialog(activity, dialog);
+        }
+    }
+
+    public static void grantPermissionsMic(final Activity activity) {
+        int mic = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO);
+        if (mic != PackageManager.PERMISSION_GRANTED) {
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+            builder.setIcon(R.drawable.icon_alert);
+            builder.setTitle(R.string.setting_title_microphone);
+            builder.setMessage(R.string.app_permission);
+            builder.setPositiveButton(R.string.app_ok, (dialog, whichButton) -> activity.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_CODE_ASK_PERMISSIONS_3));
+            builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
+            AlertDialog dialog = builder.create();
+            dialog.show();
+            HelperUnit.setupDialog(activity, dialog);
+        }
+    }
+
+    public static void saveAs(final Activity activity, final String url, final String name, Dialog dialogParent) {
+        if (BackupUnit.checkPermissionStorage(activity)) {
+
+            try {
+                MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+
+                View dialogView = View.inflate(activity, R.layout.dialog_edit, null);
+                TextInputLayout editBottomLayout = dialogView.findViewById(R.id.editBottomLayout);
+                TextInputLayout editTopLayout = dialogView.findViewById(R.id.editTopLayout);
+                editBottomLayout.setHint(activity.getString(R.string.dialog_extension_hint));
+                editTopLayout.setHint(activity.getString(R.string.dialog_title_hint));
+                EditText editTop = dialogView.findViewById(R.id.editTop);
+                EditText editBottom = dialogView.findViewById(R.id.editBottom);
+
+                String filename = name != null ? name : resolveFileName(url, null, null);
+                int lastDot = filename.lastIndexOf(".");
+                String prefix = lastDot > 0 ? filename.substring(0, lastDot) : filename;
+                String extension = lastDot > 0 ? filename.substring(lastDot) : "";
+
+                editTop.setText(prefix);
+                editBottom.setText(extension);
+
+                builder.setTitle(R.string.menu_save_as);
+                builder.setIcon(R.drawable.icon_menu_save);
+                builder.setView(dialogView);
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                HelperUnit.setupDialog(activity, dialog);
+
+                Button ib_cancel = dialogView.findViewById(R.id.editCancel);
+                ib_cancel.setOnClickListener(view -> dialog.cancel());
+                Button ib_ok = dialogView.findViewById(R.id.editOK);
+                ib_ok.setOnClickListener(view12 -> {
+
+                    String title = editTop.getText().toString().trim();
+                    String extension1 = editBottom.getText().toString().trim();
+                    String finalFileName = title + extension1;
+
+                    if (title.isEmpty() || !extension1.startsWith(".")) {
+                        PetalToast.show(activity, activity.getString(R.string.toast_input_empty));
+                    } else {
+                        try {
+                            if (url.startsWith("data:")) {
+                                DataURIParser dataURIParser = new DataURIParser(url);
+                                File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), finalFileName);
+                                FileOutputStream fos = new FileOutputStream(file);
+                                fos.write(dataURIParser.getImagedata());
+                                fos.flush();
+                                fos.close();
+                                String text = activity.getString(R.string.app_done) + ". " + activity.getString(R.string.menu_download) +"?";
+                                PetalToast.show(activity, text, PetalToast.LENGTH_LONG, activity.getString(R.string.app_ok), () -> {
+                                    if (activity instanceof com.petal.browser.activity.BrowserActivity) {
+                                        ((com.petal.browser.activity.BrowserActivity) activity).showDownloads();
+                                    }
+                                });
+                            } else {
+                                String userAgent = WebSettings.getDefaultUserAgent(activity);
+                                CookieManager cookieManager = CookieManager.getInstance();
+                                String cookie = cookieManager.getCookie(url);
+                                java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
+                                extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+                                extraHeaders.put("Accept-Language", getAcceptLanguage(activity));
+                                // No custom Accept-Encoding: HttpURLConnection (Fetch2's downloader)
+                                // only auto-decompresses gzip when this header is left unset. Setting
+                                // it ourselves caused compressed responses (e.g. server-gzipped zip
+                                // files) to be saved to disk still compressed, producing a "corrupt" file.
+                                extraHeaders.put("Connection", "keep-alive");
+                                extraHeaders.put("Cache-Control", "no-transform");
+                                extraHeaders.put("Referer", url);
+
+                                com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
+                                        activity, url, finalFileName, null, userAgent, cookie, extraHeaders, null, null);
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Error Downloading File: " + e);
+                            PetalToast.show(activity, activity.getString(R.string.app_error) + e.toString().substring(e.toString().indexOf(":")), Toast.LENGTH_LONG);
+                            Log.i(TAG, "shouldOverrideUrlLoading Exception:" + e);
+                        }
+                        try {
+                            dialog.cancel();
+                        } catch (Exception e) {
+                            Log.i("Petal", "SaveAs:" + e);
+                        }
+                        dialogParent.cancel();
+                    }
+                });
+            } catch (Exception e) {
+                Log.i(TAG, "SaveAs:" + e);
+            }
+        } else BackupUnit.requestPermission(activity);
+    }
+
+    public static void createShortcut(Context context, String title, String url) {
+        Icon icon;
+        FaviconHelper faviconHelper = new FaviconHelper(context);
+        Bitmap favicon = faviconHelper.getFavicon(url);
+        if (favicon != null && !favicon.isRecycled()) {
+            icon = Icon.createWithBitmap(favicon);
+        } else {
+            int appIconResId = context.getApplicationInfo().icon;
+            if (appIconResId == 0) {
+                appIconResId = android.R.drawable.sym_def_app_icon;
+            }
+            icon = Icon.createWithResource(context, appIconResId);
+        }
+
+        ShortcutManager shortcutManager = context.getSystemService(ShortcutManager.class);
+        assert shortcutManager != null;
+        if (shortcutManager.isRequestPinShortcutSupported()) {
+            ShortcutInfo pinShortcutInfo =
+                    new ShortcutInfo.Builder(context, url)
+                            .setShortLabel(title)
+                            .setLongLabel(title)
+                            .setIcon(icon)
+                            .setIntent(new Intent(context, BrowserActivity.class).setAction(Intent.ACTION_VIEW).setData(Uri.parse(url)))
+                            .build();
+            shortcutManager.requestPinShortcut(pinShortcutInfo, null);
+        } else System.out.println("failed_to_add");
+    }
+
+    public static boolean isNetworkAvailable(Context context) {
+        if (context == null) return false;
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return false;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                android.net.Network net = cm.getActiveNetwork();
+                if (net == null) return false;
+                android.net.NetworkCapabilities caps = cm.getNetworkCapabilities(net);
+                return caps != null && caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            } else {
+                android.net.NetworkInfo info = cm.getActiveNetworkInfo();
+                return info != null && info.isConnected();
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static String resolveFileName(String url, String contentDisposition, String mimeType) {
+        if (url == null || url.trim().isEmpty()) return "download";
+        return com.petal.browser.download.SafeDownloadValues.fileName(url, contentDisposition, mimeType);
+    }
+
+    public static String domain(String url) {
+        if (url == null) {
+            return "";
+        } else {
+            try {
+                return Objects.requireNonNull(Uri.parse(url).getHost()).replace("www.", "").trim();
+            } catch (Exception e) {
+                return "";
+            }
+        }
+    }
+    public static void initTheme(Activity context) {
+        try {
+            sp = PreferenceManager.getDefaultSharedPreferences(context);
+            context.setTheme(R.style.AppTheme);
+            boolean isDynamicSupported = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S;
+            if (sp.getBoolean("useDynamicColor", isDynamicSupported) && isDynamicSupported) {
+                com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(context);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void addFilterItems(Activity activity, List<GridItem> gridList) {
+        GridItem item_01 = new GridItem(sp.getString("icon_01", activity.getResources().getString(R.string.color_red)), 11);
+        GridItem item_02 = new GridItem(sp.getString("icon_02", activity.getResources().getString(R.string.color_pink)), 10);
+        GridItem item_03 = new GridItem(sp.getString("icon_03", activity.getResources().getString(R.string.color_purple)), 9);
+        GridItem item_04 = new GridItem(sp.getString("icon_04", activity.getResources().getString(R.string.color_blue)), 8);
+        GridItem item_05 = new GridItem(sp.getString("icon_05", activity.getResources().getString(R.string.color_teal)), 7);
+        GridItem item_06 = new GridItem(sp.getString("icon_06", activity.getResources().getString(R.string.color_green)), 6);
+        GridItem item_07 = new GridItem(sp.getString("icon_07", activity.getResources().getString(R.string.color_lime)), 5);
+        GridItem item_08 = new GridItem(sp.getString("icon_08", activity.getResources().getString(R.string.color_yellow)), 4);
+        GridItem item_09 = new GridItem(sp.getString("icon_09", activity.getResources().getString(R.string.color_orange)), 3);
+        GridItem item_10 = new GridItem(sp.getString("icon_10", activity.getResources().getString(R.string.color_brown)), 2);
+        GridItem item_11 = new GridItem(sp.getString("icon_11", activity.getResources().getString(R.string.color_grey)), 1);
+        GridItem item_12 = new GridItem(sp.getString("icon_12", activity.getResources().getString(R.string.setting_theme_system)), 0);
+
+        if (sp.getBoolean("filter_01", true)) gridList.add(gridList.size(), item_01);
+        if (sp.getBoolean("filter_02", true)) gridList.add(gridList.size(), item_02);
+        if (sp.getBoolean("filter_03", true)) gridList.add(gridList.size(), item_03);
+        if (sp.getBoolean("filter_04", true)) gridList.add(gridList.size(), item_04);
+        if (sp.getBoolean("filter_05", true)) gridList.add(gridList.size(), item_05);
+        if (sp.getBoolean("filter_06", true)) gridList.add(gridList.size(), item_06);
+        if (sp.getBoolean("filter_07", true)) gridList.add(gridList.size(), item_07);
+        if (sp.getBoolean("filter_08", true)) gridList.add(gridList.size(), item_08);
+        if (sp.getBoolean("filter_09", true)) gridList.add(gridList.size(), item_09);
+        if (sp.getBoolean("filter_10", true)) gridList.add(gridList.size(), item_10);
+        if (sp.getBoolean("filter_11", true)) gridList.add(gridList.size(), item_11);
+        if (sp.getBoolean("filter_12", true)) gridList.add(gridList.size(), item_12);
+    }
+
+    public static void setFilterIcons(Context context, MaterialCardView ib_icon, long newIcon) {
+        newIcon = newIcon & 15;
+        if (newIcon == 11) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.red, null));
+        else if (newIcon == 10) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.pink, null));
+        else if (newIcon == 9) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.purple, null));
+        else if (newIcon == 8) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.blue, null));
+        else if (newIcon == 7) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.teal, null));
+        else if (newIcon == 6) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.green, null));
+        else if (newIcon == 5) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.lime, null));
+        else if (newIcon == 4) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.yellow, null));
+        else if (newIcon == 3) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.orange, null));
+        else if (newIcon == 2) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.brown, null));
+        else if (newIcon == 1) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.grey, null));
+        else if (newIcon == 0) {
+            TypedValue typedValue = new TypedValue();
+            context.getTheme().resolveAttribute(R.attr.colorSecondaryContainer, typedValue, true);
+            int color = typedValue.data;
+            ib_icon.setCardBackgroundColor(color);
+        }
+    }
+
+    public static void saveDataURI(Activity activity, DataURIParser dataUriParser, Dialog dialogParent) {
+
+        byte[] imagedata = dataUriParser.getImagedata();
+        String filename = dataUriParser.getFilename();
+
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+        View dialogView = View.inflate(activity, R.layout.dialog_edit, null);
+        TextInputLayout editBottomLayout = dialogView.findViewById(R.id.editBottomLayout);
+        TextInputLayout editTopLayout = dialogView.findViewById(R.id.editTopLayout);
+        editBottomLayout.setHint(activity.getString(R.string.dialog_extension_hint));
+        editTopLayout.setHint(activity.getString(R.string.dialog_title_hint));
+        EditText editTop = dialogView.findViewById(R.id.editTop);
+        EditText editBottom = dialogView.findViewById(R.id.editBottom);
+        int lastDot = filename != null ? filename.lastIndexOf(".") : -1;
+        String prefix = (filename != null && lastDot > 0) ? filename.substring(0, lastDot) : (filename != null ? filename : "download");
+        String extension = (filename != null && lastDot > 0) ? filename.substring(lastDot) : "";
+
+        editTop.setText(prefix);
+        editBottom.setText(extension);
+        builder.setView(dialogView);
+        builder.setTitle(R.string.menu_save_as);
+        builder.setIcon(R.drawable.icon_menu_save);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        HelperUnit.setupDialog(activity, dialog);
+
+        Button ib_cancel = dialogView.findViewById(R.id.editCancel);
+        ib_cancel.setOnClickListener(view -> dialog.cancel());
+        Button ib_ok = dialogView.findViewById(R.id.editOK);
+        ib_ok.setOnClickListener(view12 -> {
+
+            String title = editTop.getText().toString().trim();
+            String extension1 = editBottom.getText().toString().trim();
+            String filename1 = title + extension1;
+
+            if (title.isEmpty() || !extension1.startsWith(".")) {
+                PetalToast.show(activity, activity.getString(R.string.toast_input_empty));
+            } else {
+                if (BackupUnit.checkPermissionStorage(activity)) {
+                    File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename1);
+                    try {
+                        try(FileOutputStream fos = new FileOutputStream(file)) {
+                            fos.write(imagedata);
+                        }
+                    } catch (Exception e) {
+                        Log.i(TAG, "Error Downloading File:" + e);
+                    }
+                } else {
+                    BackupUnit.requestPermission(activity);
+                }
+                dialog.cancel();
+                dialogParent.cancel();
+            }
+        });
+    }
+    public static void showSoftKeyboard(EditText editText) {
+        editText.requestFocus();
+        new Handler().postDelayed(() -> {
+            editText.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 0f, 0f, 0));
+            editText.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, 0f, 0f, 0));
+            editText.selectAll();
+        }, 500);
+    }
+
+    public static void hideSoftKeyboard(Context context, View view) {
+        if (context == null) return;
+        InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            if (view != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            } else if (context instanceof android.app.Activity) {
+                View currentFocus = ((android.app.Activity) context).getCurrentFocus();
+                if (currentFocus != null) {
+                    imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
+                }
+            }
+        }
+    }
+
+    private static int getThemeColor(Context context, int attr, int fallback) {
+        TypedValue value = new TypedValue();
+        if (context != null && context.getTheme().resolveAttribute(attr, value, true)) {
+            if (value.resourceId != 0) {
+                try { return context.getResources().getColor(value.resourceId); } catch (Exception ignored) {}
+            }
+            if (value.data != 0) return value.data;
+        }
+        return fallback;
+    }
+
+    public static void setupDialog(Context context, Dialog dialog) {
+        try {
+            if (dialog == null) return;
+            TypedValue typedValue = new TypedValue();
+            context.getTheme().resolveAttribute(R.attr.colorPrimary, typedValue, true);
+            int primaryColor = typedValue.data;
+
+            TypedValue surfaceValue = new TypedValue();
+            context.getTheme().resolveAttribute(R.attr.colorSurfaceContainerHigh, surfaceValue, true);
+            if (surfaceValue.data == 0) {
+                context.getTheme().resolveAttribute(R.attr.colorSurface, surfaceValue, true);
+            }
+            int surfaceColor = surfaceValue.data;
+
+            ImageView imageView = dialog.findViewById(android.R.id.icon);
+            if (imageView != null && primaryColor != 0) {
+                imageView.setColorFilter(primaryColor, PorterDuff.Mode.SRC_IN);
+            }
+
+            if (dialog.getWindow() != null) {
+                android.graphics.drawable.GradientDrawable backgroundDrawable = new android.graphics.drawable.GradientDrawable();
+                backgroundDrawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+                backgroundDrawable.setColor(surfaceColor != 0 ? surfaceColor : android.graphics.Color.parseColor("#1C1B1F"));
+                backgroundDrawable.setCornerRadius(HelperUnit.convertDpToPixel(32f, context));
+                backgroundDrawable.setStroke(HelperUnit.convertDpToPixel(1f, context), getThemeColor(context, com.google.android.material.R.attr.colorOutlineVariant, Color.TRANSPARENT));
+                dialog.getWindow().setBackgroundDrawable(backgroundDrawable);
+                dialog.getWindow().setDimAmount(0.32f);
+                dialog.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                dialog.getWindow().getDecorView().setElevation(HelperUnit.convertDpToPixel(12f, context));
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * This method converts dp unit to equivalent pixels, depending on device density.
+     *
+     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
+     * @param context Context to get resources and device specific display metrics
+     * @return A float value to represent px equivalent to dp depending on device density
+     */
+    public static int convertDpToPixel(float dp, Context context){
+        return Math.round(dp * ((float) context.getResources().getDisplayMetrics().densityDpi / DisplayMetrics.DENSITY_DEFAULT));
+    }
+
+    public static void setHighLightedText(Context context, TextView tv, String url, String textToHighlight) {
+        String tvt = tv.getText().toString().toLowerCase();
+        int ofe = tvt.indexOf(textToHighlight.toLowerCase());
+        Spannable wordToSpan = new SpannableString(tv.getText());
+        List_standard listStandard = new List_standard(context);
+        for (int ofs = 0; ofs < tvt.length() && ofe != -1; ofs = ofe + 1) {
+            ofe = tvt.indexOf(textToHighlight, ofs);
+            if (ofe == -1)
+                break;
+            else {
+                TypedValue typedValue = new TypedValue();
+                context.getTheme().resolveAttribute(R.attr.colorError, typedValue, true);
+                int color = typedValue.data;
+                TypedValue typedValue2 = new TypedValue();
+                context.getTheme().resolveAttribute(R.attr.colorOnSurface, typedValue2, true);
+                int color2 = typedValue2.data;
+                wordToSpan.setSpan(new ForegroundColorSpan(color2), ofe, ofe + textToHighlight.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                tv.setText(wordToSpan, TextView.BufferType.SPANNABLE);
+                try {
+                    if ( listStandard.isWhite(url)) {
+                        wordToSpan.setSpan(new ForegroundColorSpan(color), ofe, ofe + textToHighlight.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        tv.setText(wordToSpan, TextView.BufferType.SPANNABLE);
+                    }
+                } catch (Exception e) {
+                    Log.i(TAG, "Error loading lists:" + e);
+                }
+            }
+        }
+        tv.setEllipsize(TextUtils.TruncateAt.END);
+        tv.setSingleLine(true);
+    }
+
+    public static void setHighLightedTextSearch (Context context, TextView tv, String textToHighlight) {
+        String tvt = tv.getText().toString().toLowerCase();
+        int ofe = tvt.indexOf(textToHighlight.toLowerCase());
+        Spannable wordToSpan = new SpannableString(tv.getText());
+        for (int ofs = 0; ofs < tvt.length() && ofe != -1; ofs = ofe + 1) {
+            ofe = tvt.indexOf(textToHighlight, ofs);
+            if (ofe == -1)
+                break;
+            else {
+                TypedValue typedValue = new TypedValue();
+                context.getTheme().resolveAttribute(R.attr.colorError, typedValue, true);
+                int color = typedValue.data;
+                // set color here
+                wordToSpan.setSpan(new ForegroundColorSpan(color), ofe, ofe + textToHighlight.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                tv.setText(wordToSpan, TextView.BufferType.SPANNABLE);
+            }
+        }
+        tv.setEllipsize(TextUtils.TruncateAt.END);
+        tv.setSingleLine(true);
+    }
+    public static void initAndLoadMenu(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(SettingsMenuActivity.PREF_NAME, Context.MODE_PRIVATE);
+        String json = sharedPreferences.getString(SettingsMenuActivity.KEY_LIST, null);
+        Type type = new TypeToken<ArrayList<MenuItem>>() {}.getType();
+        List<MenuItem> list = new Gson().fromJson(json, type);
+        if (list == null || list.isEmpty()) {
+            list = new ArrayList<>();
+            list.add(new MenuItem(context.getString(R.string.menu_openFav), R.drawable.icon_fav, true));
+            list.add(new MenuItem(context.getString(R.string.menu_fav), R.drawable.icon_fav_plus, true));
+            list.add(new MenuItem(context.getString(R.string.main_menu_new_tabOpen), R.drawable.icon_tab_plus, true));
+            list.add(new MenuItem(context.getString(R.string.main_menu_new_tab), R.drawable.icon_tab_background, true));
+            list.add(new MenuItem(context.getString(R.string.menu_closeTab), R.drawable.icon_tab_remove, true));
+            list.add(new MenuItem(context.getString(R.string.menu_other_searchSite), R.drawable.icon_search_site, true));
+            list.add(new MenuItem(context.getString(R.string.menu_reload), R.drawable.icon_refresh, true));
+            list.add(new MenuItem(context.getString(R.string.menu_share_link), R.drawable.icon_share, true));
+            list.add(new MenuItem(context.getString(R.string.menu_shareClipboard), R.drawable.icon_clipboard, true));
+            list.add(new MenuItem(context.getString(R.string.dialog_postOnWebsite), R.drawable.icon_post, true));
+            list.add(new MenuItem(context.getString(R.string.menu_save_bookmark), R.drawable.icon_bookmark, true));
+            list.add(new MenuItem(context.getString(R.string.menu_save_pdf), R.drawable.icon_file, true));
+            list.add(new MenuItem(context.getString(R.string.menu_save_as), R.drawable.icon_menu_save, true));
+            list.add(new MenuItem(context.getString(R.string.menu_shareOpenWith), R.drawable.icon_share_open_with, true));
+            list.add(new MenuItem(context.getString(R.string.menu_sc), R.drawable.icon_home, true));
+            list.add(new MenuItem(context.getString(R.string.menu_download), R.drawable.icon_download, true));
+            list.add(new MenuItem(context.getString(R.string.setting_label), R.drawable.icon_settings, true));
+            list.add(new MenuItem(context.getString(R.string.menu_restart), R.drawable.icon_restart, true));
+            list.add(new MenuItem(context.getString(R.string.menu_quit), R.drawable.icon_close, true));
+            list.add(new MenuItem(context.getString(R.string.menu_edit), R.drawable.icon_edit, true));
+            list.add(new MenuItem(context.getString(R.string.menu_delete), R.drawable.icon_delete, true));
+            list.add(new MenuItem(context.getString(R.string.menu_delete_entry), R.drawable.icon_delete, true));
+            list.add(new MenuItem(context.getString(R.string.app_help), R.drawable.icon_help, true));
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(SettingsMenuActivity.KEY_LIST, new Gson().toJson(list));
+            editor.apply();
+        }
+    }
+    public static void showCustomSnackbarWithTwoActions(
+            Context context,
+            View parentView,
+            View anchorView,
+            String title,
+            String text,
+            String link,
+            int firstIconResId,
+            BooleanSupplier firstActionListener,
+            int secondIconResId,
+            BooleanSupplier secondActionListener) {
+
+        SpannableStringBuilder snackbarText = new SpannableStringBuilder();
+        if (title != null && !title.isEmpty()) {
+            snackbarText.append(title);
+            snackbarText.setSpan(
+                    new StyleSpan(Typeface.BOLD),
+                    0,
+                    title.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            );
+        }
+        if (text != null && !text.isEmpty()) {
+            if (snackbarText.length() > 0) {
+                snackbarText.append("\n\n");
+            }
+            snackbarText.append(text);
+        }
+
+        // Pull colors straight from the active app theme (day/night, and any
+        // custom/dynamic theme the user has picked) instead of hardcoding hex
+        // values, so this box always matches the rest of the browser chrome.
+        TypedValue typedValue = new TypedValue();
+        context.getTheme().resolveAttribute(R.attr.colorPrimaryInverse, typedValue, true);
+        int color = typedValue.data;
+
+        TypedValue surfaceValue = new TypedValue();
+        context.getTheme().resolveAttribute(R.attr.colorSurfaceContainerHigh, surfaceValue, true);
+        int backgroundColor = surfaceValue.data;
+
+        TypedValue onSurfaceValue = new TypedValue();
+        context.getTheme().resolveAttribute(R.attr.colorOnSurface, onSurfaceValue, true);
+        ColorStateList contentColor = ColorStateList.valueOf(onSurfaceValue.data);
+
+        LayoutInflater inflater = LayoutInflater.from(context);
+        @SuppressLint("InflateParams")
+        View customView = inflater.inflate(R.layout.custom_snackbar, null);
+
+        GradientDrawable shape = new GradientDrawable();
+        shape.setShape(GradientDrawable.RECTANGLE);
+        shape.setColor(backgroundColor);
+        shape.setCornerRadius(60f);
+        customView.setBackground(shape);
+        TextView textView = customView.findViewById(R.id.custom_snackbar_text);
+
+        if (link != null && !link.isEmpty()) {
+            if (snackbarText.length() > 0) {
+                snackbarText.append("\n\n");
+            }
+            snackbarText.append(link);
+            int linkStart = snackbarText.length() - link.length();
+            int linkEnd = snackbarText.length();
+
+            ClickableSpan clickableSpan = new ClickableSpan() {
+                @Override
+                public void onClick(@NonNull View widget) {}
+
+                @Override
+                public void updateDrawState(@NonNull TextPaint ds) {
+                    super.updateDrawState(ds);
+                    ds.setColor(color);
+                    ds.setUnderlineText(true);
+                }
+            };
+            if (!link.startsWith("blob:") && !link.startsWith("data:")) {
+                snackbarText.setSpan(clickableSpan, linkStart, linkEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        }
+
+        Snackbar snackbar = Snackbar.make(parentView, "", Snackbar.LENGTH_LONG);
+        if (anchorView != null) {snackbar.setAnchorView(anchorView);}
+
+        ViewGroup layout = (ViewGroup) snackbar.getView();
+        layout.removeAllViews();
+        layout.setPadding(0, 0, 0, 0);
+        layout.setBackgroundColor(Color.TRANSPARENT);
+
+        NestedScrollView scrollView = customView.findViewById(R.id.snackbar_scrollview);
+
+        if (textView != null) {
+            textView.setText(snackbarText);
+            textView.setTextColor(contentColor.getDefaultColor());
+            textView.setTextIsSelectable(true);
+
+            if (scrollView != null) {
+                int screenHeight = textView.getContext().getResources().getDisplayMetrics().heightPixels;
+                int maxPx = (screenHeight * 2) / 3;
+                scrollView.post(() -> {
+                    if (scrollView.getHeight() > maxPx) {
+                        scrollView.getLayoutParams().height = maxPx;
+                        scrollView.requestLayout();
+                    }
+                });
+            }
+
+            if (link != null && !link.isEmpty() && !link.startsWith("data:")) {
+                textView.setOnClickListener(v -> {
+                    BrowserController browserController = com.petal.browser.view.PetalGeckoView.getBrowserController();
+                    if (browserController != null) {
+                        browserController.hideOverflow();
+                        browserController.showOverflow(null, textView, 1, title, link, null, null, 0);
+                    }
+                    snackbar.dismiss();
+                });
+            }
+        }
+
+        MaterialButton firstButton = customView.findViewById(R.id.custom_btn_one);
+        if (firstButton != null && firstIconResId != 0) {
+            firstButton.setIconResource(firstIconResId);
+            firstButton.setIconTint(contentColor);
+            if (firstActionListener != null) {
+                firstButton.setOnClickListener(v -> {
+                    if (firstActionListener.getAsBoolean()) {
+                        snackbar.dismiss();
+                    }
+                });
+            }
+        }
+
+        MaterialButton secondButton = customView.findViewById(R.id.custom_btn_two);
+        if (secondButton != null && secondIconResId != 0) {
+            secondButton.setIconResource(secondIconResId);
+            secondButton.setIconTint(contentColor);
+            if (secondActionListener != null) {
+                secondButton.setOnClickListener(v -> {
+                    if (secondActionListener.getAsBoolean()) {
+                        snackbar.dismiss();
+                    }
+                });
+            }
+        }
+
+        layout.addView(customView, 0);
+        ViewGroup.LayoutParams rawParams = snackbar.getView().getLayoutParams();
+        if (rawParams instanceof android.view.ViewGroup.MarginLayoutParams) {
+            android.view.ViewGroup.MarginLayoutParams params = (android.view.ViewGroup.MarginLayoutParams) rawParams;
+            params.leftMargin = convertDpToPixel(16, parentView.getContext());
+            params.rightMargin = convertDpToPixel(16, parentView.getContext());
+            params.bottomMargin = convertDpToPixel(8, parentView.getContext());
+            snackbar.getView().setLayoutParams(params);
+        }
+        snackbar.getView().setElevation(convertDpToPixel(8, parentView.getContext()));
+        trackAndShow(snackbar);
+    }
+    /**
+     * Creates every legacy View-system Snackbar through the same Petal M3 Expressive surface.
+     * Keeping this centralized prevents individual features from drifting visually.
+     * Automatically dismisses any previously active Snackbar to prevent double stacking.
+     */
+    public static Snackbar makePetalSnackbar(View parent, CharSequence text, int duration) {
+        // Dismiss any currently showing snackbar first to prevent double-stacking
+        if (sActiveSnackbar != null) {
+            Snackbar prev = sActiveSnackbar.get();
+            if (prev != null && prev.isShownOrQueued()) prev.dismiss();
+            sActiveSnackbar = null;
+        }
+        Snackbar snackbar = Snackbar.make(parent, text, duration);
+        makeSnackbarRound(snackbar);
+        // Track this new snackbar; caller will call .show() on it
+        sActiveSnackbar = new java.lang.ref.WeakReference<>(snackbar);
+        return snackbar;
+    }
+
+    public static Snackbar makePetalSnackbar(View parent, int textResId, int duration) {
+        if (sActiveSnackbar != null) {
+            Snackbar prev = sActiveSnackbar.get();
+            if (prev != null && prev.isShownOrQueued()) prev.dismiss();
+            sActiveSnackbar = null;
+        }
+        Snackbar snackbar = Snackbar.make(parent, textResId, duration);
+        makeSnackbarRound(snackbar);
+        sActiveSnackbar = new java.lang.ref.WeakReference<>(snackbar);
+        return snackbar;
+    }
+
+    public static void makeSnackbarRound(Snackbar snackbar) {
+        View snackbarView = snackbar.getView();
+        Context context = snackbarView.getContext();
+
+        // Material 3 Expressive tonal surface: inverseSurface / dark container pill
+        TypedValue surfaceValue = new TypedValue();
+        context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceInverse, surfaceValue, true);
+        if (surfaceValue.data == 0) {
+            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHighest, surfaceValue, true);
+        }
+        int backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : Color.parseColor("#2F2F33");
+
+        // High contrast on-surface text: colorOnSurfaceInverse / white
+        TypedValue onSurfaceValue = new TypedValue();
+        context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceInverse, onSurfaceValue, true);
+        if (onSurfaceValue.data == 0) {
+            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, onSurfaceValue, true);
+        }
+        int textColor = onSurfaceValue.data != 0 ? onSurfaceValue.data : Color.WHITE;
+
+        // Outline stroke color
+        TypedValue outlineValue = new TypedValue();
+        context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOutlineVariant, outlineValue, true);
+        int strokeColor = outlineValue.data != 0 ? outlineValue.data : Color.parseColor("#44474E");
+
+        TextView textView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (textView != null) {
+            textView.setMaxLines(4);
+            textView.setEllipsize(TextUtils.TruncateAt.END);
+            textView.setTextColor(textColor);
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+            textView.setTypeface(com.petal.browser.ui.theme.PetalFontHelper.INSTANCE.getAppTypeface(context));
+            textView.setGravity(Gravity.CENTER_VERTICAL);
+        }
+
+        TextView actionView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_action);
+        if (actionView != null) {
+            TypedValue primaryInverse = new TypedValue();
+            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorPrimaryInverse, primaryInverse, true);
+            if (primaryInverse.data == 0) {
+                context.getTheme().resolveAttribute(android.R.attr.colorPrimary, primaryInverse, true);
+            }
+            int actionColor = primaryInverse.data != 0 ? primaryInverse.data : Color.parseColor("#FFB1C8");
+            actionView.setTextColor(actionColor);
+            actionView.setTypeface(Typeface.create(com.petal.browser.ui.theme.PetalFontHelper.INSTANCE.getAppTypeface(context), Typeface.BOLD));
+            actionView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+        }
+
+        // Pill shape with subtle outline for Material 3 Expressive popups
+        GradientDrawable background = new GradientDrawable();
+        background.setShape(GradientDrawable.RECTANGLE);
+        float radiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 28, context.getResources().getDisplayMetrics());
+        background.setCornerRadius(radiusPx);
+        background.setColor(backgroundColor);
+        background.setStroke((int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, context.getResources().getDisplayMetrics()), strokeColor);
+        snackbarView.setBackground(background);
+        snackbarView.setElevation(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, context.getResources().getDisplayMetrics()));
+
+        // Inset margins so the snackbar floats cleanly above navigation bars and omnibox
+        int horizontal = convertDpToPixel(20, context);
+        int bottom = convertDpToPixel(24, context);
+        ViewGroup.LayoutParams rawParams = snackbarView.getLayoutParams();
+        if (rawParams instanceof android.view.ViewGroup.MarginLayoutParams) {
+            android.view.ViewGroup.MarginLayoutParams params = (android.view.ViewGroup.MarginLayoutParams) rawParams;
+            params.leftMargin = horizontal;
+            params.rightMargin = horizontal;
+            params.bottomMargin = bottom;
+            snackbarView.setLayoutParams(params);
+        }
+        snackbar.setTextMaxLines(4);
+    }
+
+    public static void copy(Context context, String text) {
+        if (context == null || text == null) return;
+        try {
+            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard != null) {
+                android.content.ClipData clip = android.content.ClipData.newPlainText("text", text);
+                clipboard.setPrimaryClip(clip);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Applies bouncy scale-down and spring-back touch feedback to any Android View.
+     */
+    public static void applyBouncyTouchFeedback(android.view.View view, float scaleDown) {
+        if (view == null) return;
+        view.setOnTouchListener(new android.view.View.OnTouchListener() {
+            @Override
+            public boolean onTouch(android.view.View v, android.view.MotionEvent event) {
+                switch (event.getAction()) {
+                    case android.view.MotionEvent.ACTION_DOWN:
+                        v.animate()
+                                .scaleX(scaleDown)
+                                .scaleY(scaleDown)
+                                .setDuration(100)
+                                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                                .start();
+                        break;
+                    case android.view.MotionEvent.ACTION_UP:
+                    case android.view.MotionEvent.ACTION_CANCEL:
+                        v.animate()
+                                .scaleX(1.0f)
+                                .scaleY(1.0f)
+                                .setDuration(200)
+                                .setInterpolator(new android.view.animation.OvershootInterpolator(2.0f))
+                                .start();
+                        break;
+                }
+                return false;
+            }
+        });
+    }
+
+    public static void applyBouncyTouchFeedback(android.view.View view) {
+        applyBouncyTouchFeedback(view, 0.94f);
+    }
+
+    public static Context applyLanguage(Context context) {
+        if (context == null) return null;
+
+        Locale locale = null;
+        androidx.core.os.LocaleListCompat appLocales = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales();
+        if (!appLocales.isEmpty()) {
+            locale = appLocales.get(0);
+        }
+
+        if (locale == null) {
+            SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+            String lang = sp.getString("sp_app_language", "system");
+            if (lang != null && !lang.equals("system")) {
+                if ("hi-Latn".equalsIgnoreCase(lang) || "hinglish".equalsIgnoreCase(lang)) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        locale = new Locale.Builder().setLanguage("hi").setScript("Latn").build();
+                    } else {
+                        locale = Locale.forLanguageTag("hi-Latn");
+                    }
+                } else {
+                    locale = Locale.forLanguageTag(lang);
+                }
+            }
+        }
+
+        if (locale != null) {
+            Locale.setDefault(locale);
+            Configuration config = new Configuration(context.getResources().getConfiguration());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                config.setLocales(new android.os.LocaleList(locale, Locale.ENGLISH));
+            } else {
+                config.setLocale(locale);
+            }
+            config.setLayoutDirection(locale);
+            return context.createConfigurationContext(config);
+        }
+        return context;
+    }
+
+    public static void setAppLanguage(Context context, String langTag) {
+        if (context == null) return;
+        SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        sp.edit().putString("sp_app_language", langTag).apply();
+
+        androidx.core.os.LocaleListCompat localeList = "system".equals(langTag)
+                ? androidx.core.os.LocaleListCompat.getEmptyLocaleList()
+                : androidx.core.os.LocaleListCompat.forLanguageTags(langTag);
+        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList);
+
+        Locale targetLocale;
+        if ("system".equals(langTag)) {
+            targetLocale = Locale.getDefault();
+        } else if ("hi-Latn".equalsIgnoreCase(langTag) || "hinglish".equalsIgnoreCase(langTag)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                targetLocale = new Locale.Builder().setLanguage("hi").setScript("Latn").build();
+            } else {
+                targetLocale = Locale.forLanguageTag("hi-Latn");
+            }
+            Locale.setDefault(targetLocale);
+        } else {
+            targetLocale = Locale.forLanguageTag(langTag);
+            Locale.setDefault(targetLocale);
+        }
+
+        // Update resources configuration directly so strings update immediately
+        try {
+            android.content.res.Resources res = context.getResources();
+            Configuration config = new Configuration(res.getConfiguration());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                config.setLocales(new android.os.LocaleList(targetLocale, Locale.ENGLISH));
+            } else {
+                config.setLocale(targetLocale);
+            }
+            config.setLayoutDirection(targetLocale);
+            res.updateConfiguration(config, res.getDisplayMetrics());
+
+            Context appCtx = context.getApplicationContext();
+            if (appCtx != null && appCtx != context) {
+                android.content.res.Resources appRes = appCtx.getResources();
+                appRes.updateConfiguration(config, appRes.getDisplayMetrics());
+            }
+        } catch (Exception ignored) {}
+
+        // Recreate the active activity so the UI immediately switches to the selected language
+        Activity activity = null;
+        Context current = context;
+        while (current instanceof android.content.ContextWrapper) {
+            if (current instanceof Activity) {
+                activity = (Activity) current;
+                break;
+            }
+            current = ((android.content.ContextWrapper) current).getBaseContext();
+        }
+        if (activity != null) {
+            final Activity finalActivity = activity;
+            finalActivity.getWindow().getDecorView().post(() -> {
+                try {
+                    finalActivity.recreate();
+                } catch (Exception ignored) {}
+            });
+        }
+    }
+
+    /**
+     * Resolves the Accept-Language header value based on user preference.
+     * When sp_match_website_language is enabled (default: true), formats the user's
+     * chosen app language (and fallbacks) to send to web servers.
+     */
+    public static String getAcceptLanguage(Context context) {
+        if (context == null) {
+            return Locale.getDefault().toLanguageTag();
+        }
+        try {
+            SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+            boolean matchWebsiteLanguage = sp.getBoolean("sp_match_website_language", true);
+            if (!matchWebsiteLanguage) {
+                return Locale.getDefault().toLanguageTag();
+            }
+            String appLang = sp.getString("sp_app_language", "system");
+            if (appLang == null || "system".equalsIgnoreCase(appLang)) {
+                return Locale.getDefault().toLanguageTag() + ",en;q=0.8";
+            }
+            if ("hi-Latn".equalsIgnoreCase(appLang) || "hinglish".equalsIgnoreCase(appLang)) {
+                return "hi-Latn,hi;q=0.9,en;q=0.8";
+            }
+            if ("zh-rTW".equalsIgnoreCase(appLang) || "zh-TW".equalsIgnoreCase(appLang)) {
+                return "zh-TW,zh;q=0.9,en;q=0.8";
+            }
+            return appLang + ",en;q=0.8";
+        } catch (Exception e) {
+            return Locale.getDefault().toLanguageTag();
+        }
+    }
+
+    public static String getSafeString(SharedPreferences sp, String key, String defaultValue) {
+        try {
+            return sp.getString(key, defaultValue);
+        } catch (ClassCastException e) {
+            try {
+                Object val = sp.getAll().get(key);
+                return val != null ? String.valueOf(val) : defaultValue;
+            } catch (Exception ex) {
+                return defaultValue;
+            }
+        }
+    }
+
+    public static boolean getSafeBoolean(SharedPreferences sp, String key, boolean defaultValue) {
+        try {
+            return sp.getBoolean(key, defaultValue);
+        } catch (ClassCastException e) {
+            try {
+                Object val = sp.getAll().get(key);
+                if (val instanceof Boolean) return (Boolean) val;
+                if (val instanceof String) return Boolean.parseBoolean((String) val);
+                if (val instanceof Number) return ((Number) val).intValue() != 0;
+                return defaultValue;
+            } catch (Exception ex) {
+                return defaultValue;
+            }
+        }
+    }
+
+    public static int getSafeInt(SharedPreferences sp, String key, int defaultValue) {
+        try {
+            return sp.getInt(key, defaultValue);
+        } catch (ClassCastException e) {
+            try {
+                Object val = sp.getAll().get(key);
+                if (val instanceof Number) return ((Number) val).intValue();
+                if (val instanceof String) {
+                    try { return Integer.parseInt((String) val); } catch (Exception ignored) {}
+                }
+                return defaultValue;
+            } catch (Exception ex) {
+                return defaultValue;
+            }
+        }
+    }
+
+    public static float getSafeFloat(SharedPreferences sp, String key, float defaultValue) {
+        try {
+            return sp.getFloat(key, defaultValue);
+        } catch (ClassCastException e) {
+            try {
+                Object val = sp.getAll().get(key);
+                if (val instanceof Number) return ((Number) val).floatValue();
+                if (val instanceof String) {
+                    try { return Float.parseFloat((String) val); } catch (Exception ignored) {}
+                }
+                return defaultValue;
+            } catch (Exception ex) {
+                return defaultValue;
+            }
+        }
+    }
+
+    public static int getStatusBarHeight(Context context) {
+        if (context == null) return 0;
+        int result = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        if (result <= 0) {
+            result = (int) convertDpToPixel(24f, context);
+        }
+        return result;
+    }
+}
