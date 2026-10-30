@@ -1856,6 +1856,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.media.BrowserMediaDelegate.triggerSystemPipMode(this);
     }
 
+    public void evaluateJavascriptInActiveTab(String script, android.webkit.ValueCallback<String> callback) {
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).evaluateJavascript(script, callback != null ? res -> { callback.onReceiveValue(res); return kotlin.Unit.INSTANCE; } : null);
+        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).evaluateJavascript(script, callback != null ? res -> { callback.onReceiveValue(res); return kotlin.Unit.INSTANCE; } : null);
+        } else if (activeGeckoView != null) {
+            activeGeckoView.evaluateJavascript(script, callback != null ? res -> { callback.onReceiveValue(res); return kotlin.Unit.INSTANCE; } : null);
+        } else if (callback != null) {
+            callback.onReceiveValue(null);
+        }
+    }
+
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
@@ -1896,8 +1908,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 updatePipParams(isMediaPlaying);
 
                 // Inject CSS into active webview to isolate video frame & remove webpage headers/sidebars/popups in PiP mode
-                if (activeGeckoView != null && customView == null) {
-                    activeGeckoView.evaluateJavascript(
+                if (customView == null) {
+                    evaluateJavascriptInActiveTab(
                         "(function() {" +
                         "   var style = document.getElementById('petal-pip-style');" +
                         "   if (!style) {" +
@@ -1923,14 +1935,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
 
                 // Remove PiP video isolation CSS upon exiting PiP mode
-                if (activeGeckoView != null) {
-                    activeGeckoView.evaluateJavascript(
-                        "(function() {" +
-                        "   var style = document.getElementById('petal-pip-style');" +
-                        "   if (style) style.remove();" +
-                        "})();", null
-                    );
-                }
+                evaluateJavascriptInActiveTab(
+                    "(function() {" +
+                    "   var style = document.getElementById('petal-pip-style');" +
+                    "   if (style) style.remove();" +
+                    "})();", null
+                );
                 updatePersistentBottomNav();
             }
         } catch (Exception e) {
@@ -1940,7 +1950,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void onTabUrlStarted(com.petal.browser.browser.AlbumController webView, String url) {
         runOnUiThread(() -> {
-            if (webView != activeGeckoView) return;
+            if (webView != currentAlbumController && webView != activeGeckoView) return;
 
             boolean isHome = isHomePage(url);
             View albumView = webView != null ? webView.getAlbumView() : null;
@@ -4353,7 +4363,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        if (activeGeckoView == null) {
+        if (currentAlbumController == null && activeGeckoView == null) {
             isAiResearchExtracting = false;
             return;
         }
@@ -4372,7 +4382,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // Truncate inside the page's own JS (before crossing the JS bridge) so
         // very large pages don't serialize megabytes of text back to Java -
         // that marshalling cost was the main cause of the perceived freeze.
-        activeGeckoView.evaluateJavascript(
+        evaluateJavascriptInActiveTab(
             "(function() { " +
             "  try { " +
             "    var title = document.title || ''; " +

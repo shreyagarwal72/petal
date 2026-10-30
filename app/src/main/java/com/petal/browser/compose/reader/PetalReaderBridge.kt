@@ -88,11 +88,14 @@ object PetalReaderBridge {
     }
 
     /**
-     * Toggles native GeckoView Reader View (about:reader?url=...) on a PetalGeckoView instance.
+     * Toggles native GeckoView Reader View (about:reader?url=...) on a PetalGeckoView or PetalTabViewController instance.
      */
     @JvmStatic
-    fun toggleNativeGeckoReader(geckoView: PetalGeckoView, active: Boolean) {
-        geckoView.toggleReaderMode(active)
+    fun toggleNativeGeckoReader(controller: AlbumController?, active: Boolean) {
+        when (controller) {
+            is PetalGeckoView -> controller.toggleReaderMode(active)
+            is com.petal.browser.browser.PetalTabViewController -> controller.toggleReaderMode(active)
+        }
     }
 
     @JvmStatic

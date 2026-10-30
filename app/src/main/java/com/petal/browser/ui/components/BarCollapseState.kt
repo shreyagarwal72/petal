@@ -19,6 +19,7 @@ object BarCollapseState {
 
     /** Boolean flag tracking whether the bars are currently collapsed. */
     var isCollapsed by mutableStateOf(false)
+        private set
 
     /** Extracted domain of the active web page (e.g. "google.com", "wikipedia.org"). */
     var currentDomain by mutableStateOf("")
@@ -51,7 +52,7 @@ object BarCollapseState {
     }
 
     @JvmStatic
-    fun setCollapsed(collapsed: Boolean) {
+    fun updateCollapsed(collapsed: Boolean) {
         isCollapsed = collapsed
         if (!collapsed) {
             collapsedFraction = 0f

@@ -121,6 +121,13 @@ object PetalGeckoRuntime {
             else -> if (forceDark) GeckoRuntimeSettings.COLOR_SCHEME_DARK else GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
         }
 
+        val cookieBannerAutoReject = sp.getBoolean("sp_cookie_banner_auto_reject", true)
+        val cookieBannerMode = if (cookieBannerAutoReject) {
+            ContentBlocking.CookieBannerHandlingMode.REJECT
+        } else {
+            ContentBlocking.CookieBannerHandlingMode.DISABLED
+        }
+
         val allowAboutConfig = sp.getBoolean("sp_enable_about_config", false) || isDebug
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(allowAboutConfig)
@@ -132,6 +139,8 @@ object PetalGeckoRuntime {
                     .cookieBehavior(defaultCookieBehavior)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
                     .enhancedTrackingProtectionLevel(etpLevel)
+                    .cookieBannerHandlingMode(cookieBannerMode)
+                    .cookieBannerHandlingModePrivateBrowsing(cookieBannerMode)
                     .build()
             )
             .javaScriptEnabled(sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true)))

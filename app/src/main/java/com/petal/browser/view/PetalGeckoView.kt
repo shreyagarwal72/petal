@@ -175,19 +175,34 @@ class PetalGeckoView @JvmOverloads constructor(
                             val finalName = confirmedName.ifBlank { fileName }
                             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                                 try {
-                                    val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                                    val targetFile = java.io.File(downloadsDir, finalName)
-                                    bodyStream.use { input ->
-                                        java.io.FileOutputStream(targetFile).use { output ->
-                                            input.copyTo(output)
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                        val contentValues = android.content.ContentValues().apply {
+                                            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, finalName)
+                                            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mimeType ?: "application/octet-stream")
+                                            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
                                         }
+                                        val resolver = activity.contentResolver
+                                        val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                                        if (uri != null) {
+                                            resolver.openOutputStream(uri)?.use { output ->
+                                                bodyStream.use { input -> input.copyTo(output) }
+                                            }
+                                        }
+                                    } else {
+                                        val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                                        val targetFile = java.io.File(downloadsDir, finalName)
+                                        bodyStream.use { input ->
+                                            java.io.FileOutputStream(targetFile).use { output ->
+                                                input.copyTo(output)
+                                            }
+                                        }
+                                        android.media.MediaScannerConnection.scanFile(
+                                            activity,
+                                            arrayOf(targetFile.absolutePath),
+                                            arrayOf(mimeType ?: "application/octet-stream"),
+                                            null
+                                        )
                                     }
-                                    android.media.MediaScannerConnection.scanFile(
-                                        activity,
-                                        arrayOf(targetFile.absolutePath),
-                                        arrayOf(mimeType ?: "application/octet-stream"),
-                                        null
-                                    )
                                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                                         com.petal.browser.view.PetalToast.show(activity, "Download completed: $finalName")
                                     }
@@ -1338,6 +1353,29 @@ class PetalGeckoView @JvmOverloads constructor(
                     recordHistoryVisit(url, currentTitle)
                 }
                 return GeckoResult.fromValue(true)
+            }
+
+            override fun getVisited(
+                session: GeckoSession,
+                urls: Array<out String>
+            ): GeckoResult<BooleanArray>? {
+                val result = GeckoResult<BooleanArray>()
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    try {
+                        val action = com.petal.browser.database.RecordAction(context)
+                        action.open(false)
+                        val visited = BooleanArray(urls.size) { i ->
+                            val u = urls[i]
+                            if (u.isBlank() || u.startsWith("about:") || u.startsWith("moz-extension://")) false
+                            else action.checkUrl(u, com.petal.browser.database.RecordUnit.TABLE_HISTORY)
+                        }
+                        action.close()
+                        result.complete(visited)
+                    } catch (_: Throwable) {
+                        result.complete(BooleanArray(urls.size) { false })
+                    }
+                }
+                return result
             }
         }
 

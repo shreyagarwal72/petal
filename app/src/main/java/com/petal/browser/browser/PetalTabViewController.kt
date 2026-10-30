@@ -607,6 +607,29 @@ class PetalTabViewController private constructor(
                     }
                     return org.mozilla.geckoview.GeckoResult.fromValue(true)
                 }
+
+                override fun getVisited(
+                    session: org.mozilla.geckoview.GeckoSession,
+                    urls: Array<out String>
+                ): org.mozilla.geckoview.GeckoResult<BooleanArray>? {
+                    val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                        try {
+                            val action = com.petal.browser.database.RecordAction(context)
+                            action.open(false)
+                            val visited = BooleanArray(urls.size) { i ->
+                                val u = urls[i]
+                                if (u.isBlank() || u.startsWith("about:") || u.startsWith("moz-extension://")) false
+                                else action.checkUrl(u, com.petal.browser.database.RecordUnit.TABLE_HISTORY)
+                            }
+                            action.close()
+                            result.complete(visited)
+                        } catch (_: Throwable) {
+                            result.complete(BooleanArray(urls.size) { false })
+                        }
+                    }
+                    return result
+                }
             }
         }
         refreshFeature = if (isHostedByBrowserActivity()) null else SwipeRefreshFeature(
@@ -950,6 +973,11 @@ class PetalTabViewController private constructor(
     /** GeckoView-only integration point used for WebExtension delegates. */
     fun getGeckoSession(): org.mozilla.geckoview.GeckoSession? =
         com.petal.browser.view.PetalGeckoView.getEngineGeckoSession(observedSession)
+
+    fun toggleReaderMode(active: Boolean) {
+        val id = tabId ?: return
+        PetalEngineStore.toggleReaderMode(context, id, active)
+    }
 
     fun printToPdf(outputStream: java.io.OutputStream, callback: ((Boolean) -> Unit)? = null) {
         val gs = getGeckoSession()
@@ -1583,6 +1611,20 @@ private class ExternalSchemeNavigationDelegate(
     ) {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChange (4-arg): url=$url gesture=$hasUserGesture")
         if (!url.isNullOrBlank()) {
+            val unbouncedUrl = com.petal.browser.privacy.PetalBounceTrackingProtection.detectAndUnwrapBounceUrl(url)
+            if (unbouncedUrl != null && !unbouncedUrl.equals(url, ignoreCase = true)) {
+                android.util.Log.i("PetalTabNav", "Bounce Tracking detected: bypassing $url -> $unbouncedUrl")
+                session.loadUri(unbouncedUrl)
+                return
+            }
+
+            val deAmpUrl = com.petal.browser.privacy.PetalDeAmpEngine.unwrapAmpUrl(url)
+            if (deAmpUrl != null && !deAmpUrl.equals(url, ignoreCase = true)) {
+                android.util.Log.i("PetalTabNav", "De-AMP triggered: redirecting $url -> $deAmpUrl")
+                session.loadUri(deAmpUrl)
+                return
+            }
+
             onLocationChanged(url)
         }
         try {
@@ -1636,17 +1678,65 @@ private class ExternalSchemeNavigationDelegate(
         }
     }
 
+    private fun resolveActivity(): android.app.Activity? {
+        var ctx: android.content.Context? = context
+        while (ctx is android.content.ContextWrapper) {
+            if (ctx is android.app.Activity) return ctx
+            ctx = ctx.baseContext
+        }
+        return ctx as? android.app.Activity
+    }
+
     override fun onNewSession(
         session: org.mozilla.geckoview.GeckoSession,
         uri: String
     ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.GeckoSession>? {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onNewSession uri=$uri")
-        return try {
-            engine.onNewSession(session, uri)
-        } catch (t: Throwable) {
-            android.util.Log.w("PetalTabNav", "Error forwarding onNewSession: ${t.message}")
-            null
+        val act = resolveActivity() as? com.petal.browser.activity.BrowserActivity
+        if (act == null || act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) {
+            return try {
+                engine.onNewSession(session, uri)
+            } catch (t: Throwable) {
+                null
+            }
         }
+
+        val isPrivate = isIncognitoSupplier()
+        val popupSession = org.mozilla.geckoview.GeckoSession(
+            org.mozilla.geckoview.GeckoSessionSettings.Builder()
+                .usePrivateMode(isPrivate)
+                .allowJavascript(true)
+                .build()
+        )
+        val result = org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.GeckoSession>()
+        result.complete(popupSession)
+
+        val adoptWhenOpened = object : Runnable {
+            private var attempts = 0
+
+            override fun run() {
+                try {
+                    if (act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) {
+                        if (popupSession.isOpen) popupSession.close()
+                        return
+                    }
+                    if (!popupSession.isOpen) {
+                        if (++attempts <= 120) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 16L)
+                        } else {
+                            android.util.Log.w("PetalTabNav", "Popup GeckoSession did not open in time; skipping adoption")
+                        }
+                        return
+                    }
+                    act.adoptPopupGeckoSession(popupSession, uri, isPrivate)
+                } catch (t: Throwable) {
+                    android.util.Log.e("PetalTabNav", "Failed to adopt popup GeckoSession", t)
+                    if (popupSession.isOpen) popupSession.close()
+                }
+            }
+        }
+        act.runOnUiThread(adoptWhenOpened)
+        return result
     }
 
     override fun onLoadRequest(
