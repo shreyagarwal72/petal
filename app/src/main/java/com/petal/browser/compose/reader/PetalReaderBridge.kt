@@ -60,7 +60,13 @@ object PetalReaderBridge {
             })();
         """.trimIndent()
 
-        controller.evaluateJavascript(extractJs) { rawJson ->
+        val evalBlock: (String, (String?) -> Unit) -> Unit = when (controller) {
+            is PetalGeckoView -> { s, cb -> controller.evaluateJavascript(s, cb) }
+            is com.petal.browser.browser.PetalTabViewController -> { s, cb -> controller.evaluateJavascript(s, cb) }
+            else -> { _, cb -> cb(null) }
+        }
+
+        evalBlock(extractJs) { rawJson: String? ->
             try {
                 if (!rawJson.isNullOrBlank() && rawJson != "null") {
                     val unescaped = if (rawJson.startsWith("\"") && rawJson.endsWith("\"")) {
@@ -73,7 +79,7 @@ object PetalReaderBridge {
                     val text = json.optString("text").trim()
                     if (text.isNotBlank()) {
                         callback(ReaderArticleData(extractedTitle, author, domain, leadImg, text))
-                        return@evaluateJavascript
+                        return@evalBlock
                     }
                 }
             } catch (_: Throwable) {}
