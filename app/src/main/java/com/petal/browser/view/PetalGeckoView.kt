@@ -2276,7 +2276,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     override fun getAlbumView(): View = this
 
-    fun getTabView(): View = this
+    override fun getTabView(): View = this
 
     override fun activate() {
         // Give IME/editor actions to GeckoView itself. Focusing the wrapper FrameLayout
