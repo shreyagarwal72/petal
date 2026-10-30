@@ -144,6 +144,10 @@ object PetalTabSuspender {
 
     /**
      * Evaluates all open background tabs and suspends any tabs that exceed the inactivity threshold.
+     *
+     * Collects eligible controllers first (snapshot), then suspends, to avoid modifying
+     * BrowserContainer by index while iterating — BrowserContainer.replace() during iteration
+     * can cause index drift or ConcurrentModificationException if an observer removes tabs.
      */
     @JvmStatic
     fun checkAndSuspendInactiveTabs(context: Context, activeController: AlbumController?) {
@@ -158,6 +162,8 @@ object PetalTabSuspender {
         val timeoutMs = TimeUnit.MINUTES.toMillis(timeoutMinutes)
         val now = System.currentTimeMillis()
 
+        // Snapshot: collect (index, controller) pairs eligible for suspension before modifying.
+        val toSuspend = mutableListOf<Pair<Int, AlbumController>>()
         for (i in 0 until BrowserContainer.size()) {
             val controller = BrowserContainer.get(i)
             if (controller === activeController) continue
@@ -169,8 +175,12 @@ object PetalTabSuspender {
             } ?: continue
             val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, tabId)
             if (lastAccess > 0L && (now - lastAccess) >= timeoutMs) {
-                suspendTab(context, i)
+                toSuspend.add(Pair(i, controller))
             }
+        }
+        // Suspend in reverse index order so earlier indices stay valid as later ones are replaced.
+        for ((index, _) in toSuspend.asReversed()) {
+            suspendTab(context, index)
         }
     }
 

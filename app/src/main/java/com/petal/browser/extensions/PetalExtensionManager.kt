@@ -553,6 +553,11 @@ object PetalExtensionManager {
                                 .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
                                 .build()
                         )
+                        // Attach SessionTabDelegate immediately so browser.tabs.query()/update()/remove()
+                        // work correctly as soon as Gecko registers this session as a tab.
+                        // Without this, extensions like uBlock Origin see no tabs or the wrong active
+                        // tab because the delegate is only wired later in attachSession().
+                        attachTabDelegateToSession(newSession, context)
                         act.adoptPopupGeckoSession(newSession, targetUrl, isPrivate)
                         result.complete(newSession)
                     } catch (t: Throwable) {
@@ -610,31 +615,40 @@ object PetalExtensionManager {
     /**
      * Attaches action delegates for all active extensions to a given tab's GeckoSession,
      * connecting tab-specific extension actions and badges to the active browsing context.
+     *
+     * AddonManagerDelegate callbacks can fire on a background Gecko thread.
+     * BrowserContainer is not thread-safe, so all access is dispatched to the main thread.
      */
     private fun attachExtensionToOpenSessions(extension: WebExtension) {
         val ctx = appContext ?: return
-        val allSessions = mutableSetOf<GeckoSession>()
-        openSessions.filter { it.isOpen }.forEach { allSessions.add(it) }
-        openSessions.retainAll { it.isOpen }
-        BrowserContainer.list().forEach { controller ->
-            val session = geckoSessionFor(controller)
-            if (session != null && session.isOpen) allSessions.add(session)
-        }
-        allSessions.forEach { session ->
+        Handler(Looper.getMainLooper()).post {
             try {
-                session.webExtensionController.setActionDelegate(extension, object : WebExtension.ActionDelegate {
-                    override fun onBrowserAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
-                        rememberAction(ext, eventSession ?: session, action)
+                val allSessions = mutableSetOf<GeckoSession>()
+                openSessions.filter { it.isOpen }.forEach { allSessions.add(it) }
+                openSessions.retainAll { it.isOpen }
+                BrowserContainer.list().forEach { controller ->
+                    val session = geckoSessionFor(controller)
+                    if (session != null && session.isOpen) allSessions.add(session)
+                }
+                allSessions.forEach { session ->
+                    try {
+                        session.webExtensionController.setActionDelegate(extension, object : WebExtension.ActionDelegate {
+                            override fun onBrowserAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
+                                rememberAction(ext, eventSession ?: session, action)
+                            }
+                            override fun onPageAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
+                                rememberAction(ext, eventSession ?: session, action)
+                            }
+                            override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
+                            override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
+                        })
+                        session.webExtensionController.setTabDelegate(extension, createSessionTabDelegate(ctx))
+                    } catch (t: Throwable) {
+                        Log.d(TAG, "Failed to attach newly-installed extension ${extension.id} to tab", t)
                     }
-                    override fun onPageAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
-                        rememberAction(ext, eventSession ?: session, action)
-                    }
-                    override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
-                    override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
-                })
-                session.webExtensionController.setTabDelegate(extension, createSessionTabDelegate(ctx))
+                }
             } catch (t: Throwable) {
-                Log.d(TAG, "Failed to attach newly-installed extension ${extension.id} to tab", t)
+                Log.w(TAG, "attachExtensionToOpenSessions: error iterating sessions for ${extension.id}", t)
             }
         }
     }
@@ -696,6 +710,22 @@ object PetalExtensionManager {
                 session.webExtensionController.setTabDelegate(extItem.raw, createSessionTabDelegate(context))
             } catch (t: Throwable) {
                 Log.d(TAG, "Failed to attach tab delegate for ${extItem.id}", t)
+            }
+        }
+    }
+
+    /**
+     * Attaches the SessionTabDelegate for all installed extensions to a newly-created GeckoSession
+     * immediately at session creation time — before Gecko registers the session as a tab.
+     * This ensures browser.tabs.query({active:true}) and browser.tabs.update/remove() work
+     * correctly from the moment the tab exists, matching Firefox's own tab registration sequence.
+     */
+    private fun attachTabDelegateToSession(session: GeckoSession, context: Context) {
+        for (extItem in _extensions.value) {
+            try {
+                session.webExtensionController.setTabDelegate(extItem.raw, createSessionTabDelegate(context))
+            } catch (t: Throwable) {
+                Log.d(TAG, "Failed to pre-attach tab delegate for ${extItem.id}", t)
             }
         }
     }
@@ -803,7 +833,13 @@ object PetalExtensionManager {
 
     /** Injects a mobile-responsive CSS + viewport fix into extension popup sessions.
      *  Matches omni's injectExtensionPopupResponsiveFix so all extension popups look
-     *  correct on phone-sized screens instead of overflowing at their desktop widths. */
+     *  correct on phone-sized screens instead of overflowing at their desktop widths.
+     *
+     *  NOTE: Uses GeckoSession.evaluateJS() instead of loadUri("javascript:...").
+     *  Extension pages run under their own moz-extension:// CSP which blocks javascript:
+     *  URI navigation — evaluateJS() executes from the native side and bypasses content CSP,
+     *  matching Firefox's own approach for injecting chrome-privileged scripts into
+     *  extension documents. */
     private fun injectExtensionPopupResponsiveFix(session: GeckoSession) {
         val js = """
             (function() {
@@ -829,7 +865,9 @@ object PetalExtensionManager {
             })();
         """.trimIndent().replace("\n", " ")
         try {
-            session.loadUri("javascript:$js")
+            // evaluateJS() bypasses moz-extension:// CSP — do NOT use loadUri("javascript:...")
+            // which is blocked by the extension page's own Content Security Policy.
+            session.evaluateJS(js)
         } catch (ignored: Exception) {}
     }
 

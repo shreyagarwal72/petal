@@ -486,14 +486,48 @@ class PetalGeckoView @JvmOverloads constructor(
                     session: GeckoSession,
                     prompt: GeckoSession.PromptDelegate.BeforeUnloadPrompt
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                    return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+                    // Firefox always shows a "Leave page?" dialog when a site has unsaved form data.
+                    // Silently allowing causes users to lose form data (shopping carts, emails, etc.)
+                    // without any warning — match Firefox's confirmed-ALLOW-only pattern.
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val act = activityProvider() ?: run {
+                        result.complete(prompt.confirm(AllowOrDeny.ALLOW))
+                        return result
+                    }
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+                            act,
+                            act.getString(com.petal.browser.R.string.app_name),
+                            act.getString(com.petal.browser.R.string.hint_before_unload),
+                            { result.complete(prompt.confirm(AllowOrDeny.ALLOW)) },
+                            { result.complete(prompt.confirm(AllowOrDeny.DENY)) }
+                        )
+                    }
+                    return result
                 }
 
                 override fun onRepostConfirmPrompt(
                     session: GeckoSession,
                     prompt: GeckoSession.PromptDelegate.RepostConfirmPrompt
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                    return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+                    // Firefox shows a confirmation dialog before re-sending POST data (e.g. on
+                    // page refresh after a form submit). Silently allowing risks duplicate
+                    // order/payment submissions — match Firefox's confirmed-ALLOW-only pattern.
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val act = activityProvider() ?: run {
+                        result.complete(prompt.confirm(AllowOrDeny.ALLOW))
+                        return result
+                    }
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+                            act,
+                            act.getString(com.petal.browser.R.string.app_name),
+                            act.getString(com.petal.browser.R.string.hint_repost_confirm),
+                            { result.complete(prompt.confirm(AllowOrDeny.ALLOW)) },
+                            { result.complete(prompt.confirm(AllowOrDeny.DENY)) }
+                        )
+                    }
+                    return result
                 }
 
                 override fun onLoginSave(
@@ -840,13 +874,6 @@ class PetalGeckoView @JvmOverloads constructor(
                 currentUrl = url
                 applySettings()
 
-                val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
-                if (httpsOnly && url.startsWith("http://", ignoreCase = true)) {
-                    val secureUrl = "https://" + url.substring(7)
-                    session.loadUri(secureUrl)
-                    return
-                }
-
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
                 com.petal.browser.media.sniffer.PetalNativeSnifferEngine.setActiveTab(tabId, url)
                 updateProgress(10)
@@ -945,7 +972,12 @@ class PetalGeckoView @JvmOverloads constructor(
                     com.petal.browser.ui.components.PetalPermissionType.MICROPHONE
                 }
                 val host = try { android.net.Uri.parse(uri).host ?: uri } catch (_: Exception) { uri }
-                val prefKey = "perm_${permissionType.name.lowercase()}_$host"
+                // Use full origin (scheme + authority) so http:// cannot inherit an https:// grant.
+                val origin = try {
+                    val parsed = android.net.Uri.parse(uri)
+                    "${parsed.scheme ?: "https"}://${parsed.authority ?: host}"
+                } catch (_: Exception) { uri }
+                val prefKey = "perm_${permissionType.name.lowercase()}_$origin"
                 val savedRule = sp.getString(prefKey, null)
                 if ("allow" == savedRule) {
                     if (!video.isNullOrEmpty()) com.petal.browser.unit.HelperUnit.grantPermissionsCamera(activity)
@@ -996,8 +1028,17 @@ class PetalGeckoView @JvmOverloads constructor(
                     GeckoSession.PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS -> "media_key"
                     else -> "other_${perm.permission}"
                 }
-                val prefKey = "perm_${permType}_$host"
-                val sessionKey = "perm_session_${permType}_$host"
+                // Use full origin URI (scheme + host + port) as the preference key so that
+                // http:// and https:// origins are stored separately. Without the scheme, a
+                // MitM attacker on http:// could inherit a grant the user gave to https://.
+                val origin = try {
+                    val parsed = android.net.Uri.parse(perm.uri)
+                    val scheme = parsed.scheme ?: "https"
+                    val authority = parsed.authority ?: host
+                    "$scheme://$authority"
+                } catch (_: Exception) { perm.uri }
+                val prefKey = "perm_${permType}_$origin"
+                val sessionKey = "perm_session_${permType}_$origin"
                 val savedRule = sp.getString(prefKey, null)
                 val sessionRule = sp.getString(sessionKey, null)
 
@@ -1176,6 +1217,23 @@ class PetalGeckoView @JvmOverloads constructor(
                         url = uri,
                         pageUrl = currentUrl
                     )
+                }
+
+                // HTTPS-Only Mode: intercept here (before the request fires) rather than in
+                // onPageStart. onPageStart fires after DNS + TCP are already initiated, so any
+                // enforcement there is too late — cookies/session data can leak over HTTP.
+                // Matching Firefox's NavigationDelegate interception: deny the plain-HTTP load
+                // and immediately reload as HTTPS so no insecure request is ever sent.
+                val httpsOnlyEarly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
+                if (httpsOnlyEarly
+                    && uri.startsWith("http://", ignoreCase = true)
+                    && !uri.startsWith("http://localhost", ignoreCase = true)
+                    && !uri.startsWith("http://127.", ignoreCase = true)
+                    && !uri.startsWith("http://[::1]", ignoreCase = true)) {
+                    val secureUri = "https://" + uri.substring(7)
+                    // Post the reload so we don't mutate session state inside the delegate callback.
+                    post { try { session.loadUri(secureUri) } catch (_: Throwable) {} }
+                    return GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
 
                 if (BrowserUnit.isHomePage(uri)) {

@@ -1704,5 +1704,8 @@
     <string name="badge_bloom_master_hint">Reach level 15</string>
     <string name="badge_grove_keeper_title">Grove Keeper</string>
     <string name="badge_grove_keeper_hint">Reach level 30</string>
+    <!-- BeforeUnload / RepostConfirm prompt messages (Firefox-matching dialog text) -->
+    <string name="hint_before_unload">Leave page? Changes you made may not be saved.</string>
+    <string name="hint_repost_confirm">To display this page, Petal needs to resend information you provided earlier (such as a search or order). If you do this, any action the form performed will be repeated.</string>
 </resources>
 

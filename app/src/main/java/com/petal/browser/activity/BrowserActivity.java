@@ -1358,8 +1358,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL ||
             level >= android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
             try {
-                // Critical memory pressure: preserve only the foreground tab, suspend all others
-                com.petal.browser.engine.gecko.PetalTabSuspender.trimBackgroundTabs(this, currentAlbumController, 0);
+                // Critical memory pressure: preserve foreground tab + 1 adjacent to avoid
+                // suspending the tab the user is about to switch to (minActiveTabs=1 minimum).
+                com.petal.browser.engine.gecko.PetalTabSuspender.trimBackgroundTabs(this, currentAlbumController, 1);
             } catch (Exception e) {
                 Log.e(TAG, "Error trimming background tabs on critical memory", e);
             }
