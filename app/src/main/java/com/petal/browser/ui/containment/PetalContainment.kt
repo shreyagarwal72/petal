@@ -1146,7 +1146,6 @@ fun PetalAssistChip(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = null,
-    trailingIcon: @Composable (() -> Unit)? = null,
     shape: Shape = RoundedCornerShape(14.dp),
     colors: ChipColors? = null,
     border: BorderStroke? = null,
@@ -1176,14 +1175,12 @@ fun PetalAssistChip(
             ),
             enabled = enabled,
             leadingIcon = leadingIcon,
-            trailingIcon = trailingIcon,
             shape = shape,
             colors = colors ?: AssistChipDefaults.assistChipColors(
                 containerColor = if (isGlass) {
                     if (isGlassReady) Color.Transparent else petalGroupSurfaceColor()
                 } else MaterialTheme.colorScheme.surfaceContainerLow,
-                labelColor = MaterialTheme.colorScheme.onSurface,
-                iconColor = MaterialTheme.colorScheme.primary
+                labelColor = MaterialTheme.colorScheme.onSurface
             ),
             border = if (isGlass) {
                 BorderStroke(0.75.dp, Color.White.copy(alpha = 0.18f))
@@ -1233,8 +1230,7 @@ fun PetalSuggestionChip(
                 containerColor = if (isGlass) {
                     if (isGlassReady) Color.Transparent else petalGroupSurfaceColor()
                 } else MaterialTheme.colorScheme.surfaceContainerLow,
-                labelColor = MaterialTheme.colorScheme.onSurface,
-                iconColor = MaterialTheme.colorScheme.primary
+                labelColor = MaterialTheme.colorScheme.onSurface
             ),
             border = if (isGlass) {
                 BorderStroke(0.75.dp, Color.White.copy(alpha = 0.18f))
@@ -1291,8 +1287,7 @@ fun PetalInputChip(
                 selectedContainerColor = if (isGlass) {
                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
                 } else MaterialTheme.colorScheme.primaryContainer,
-                labelColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                leadingIconColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                labelColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
             ),
             border = if (isGlass) {
                 BorderStroke(
