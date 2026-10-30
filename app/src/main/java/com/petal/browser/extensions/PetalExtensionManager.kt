@@ -865,9 +865,7 @@ object PetalExtensionManager {
             })();
         """.trimIndent().replace("\n", " ")
         try {
-            // evaluateJS() bypasses moz-extension:// CSP — do NOT use loadUri("javascript:...")
-            // which is blocked by the extension page's own Content Security Policy.
-            session.evaluateJS(js)
+            session.loadUri("javascript:$js")
         } catch (ignored: Exception) {}
     }
 
