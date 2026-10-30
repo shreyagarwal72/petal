@@ -24,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
@@ -51,18 +52,18 @@ import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 
 /**
- * Petal Material 3 Expressive ContainedLoadingIndicator composable.
- * Displays an indeterminate loading indicator filling available screen bounds.
- *
- * When Liquid Glass is ON: Uses SimpMusic's dynamic polygon-morphing indicator
- * with glass refraction, specular highlight, and translucent container.
- * When Liquid Glass is OFF: Uses the standard Zenith primary contained indicator.
+ * Petal Material 3 Expressive LoadingIndicator composable (from komi-store).
+ * Displays an uncontained indeterminate shape-morphing loading indicator.
  *
  * @param modifier The modifier to be applied to the composable
+ * @param color The tint color for the animated indicator
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
+fun ContainedLoadingIndicator(
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -70,61 +71,88 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         val description = "Loading..."
-        PetalContainedLoadingIndicator(
+        PetalLoadingIndicator(
             modifier = Modifier
                 .requiredSize(44.dp)
-                .semantics { stateDescription = description }
+                .semantics { stateDescription = description },
+            size = 44.dp,
+            color = color
         )
     }
 }
 
 /**
- * Universal Contained Loading Indicator for Petal Browser.
+ * Material 3 Expressive Shape-Morphing Loading Indicator (from komi-store).
  *
- * Uses the official Material 3 Expressive contained loading indicator.
- * For compact sizes (< 30.dp), falls back to CircularProgressIndicator to prevent
- * container bounds clipping and negative layout dimension crashes.
+ * Smoothly morphs between expressive polygons with authentic Material 3 Expressive
+ * rotation and scale transitions.
+ * For compact sizes (< 24.dp), falls back to CircularProgressIndicator to prevent
+ * excessive polygon distortion in dense toolbars/chips.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun PetalLoadingIndicator(
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 40.dp,
+    color: Color = MaterialTheme.colorScheme.primary
+) {
+    val indicatorColor by animateColorAsState(
+        targetValue = color,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "PetalLoadingIndicatorColor"
+    )
+
+    if (size < 24.dp) {
+        androidx.compose.material3.CircularProgressIndicator(
+            modifier = modifier.requiredSize(size),
+            strokeWidth = (size * 0.12f).coerceAtLeast(1.5.dp),
+            color = indicatorColor
+        )
+    } else {
+        androidx.compose.material3.LoadingIndicator(
+            modifier = modifier.requiredSize(size),
+            color = indicatorColor
+        )
+    }
+}
+
+/**
+ * Universal Loading Indicator for Petal Browser.
+ *
+ * Uses the uncontained Material 3 Expressive loader from komi-store with proper
+ * UI and shape-morphing animations everywhere across the app.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PetalContainedLoadingIndicator(
     modifier: Modifier = Modifier,
-    size: androidx.compose.ui.unit.Dp = 40.dp
+    size: androidx.compose.ui.unit.Dp = 40.dp,
+    color: Color = MaterialTheme.colorScheme.primary
 ) {
-    if (size < 30.dp) {
-        androidx.compose.material3.CircularProgressIndicator(
-            modifier = modifier.requiredSize(size),
-            strokeWidth = (size * 0.12f).coerceAtLeast(1.5.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-    } else {
-        ZenithContainedLoadingIndicator(
-            modifier = modifier.requiredSize(size)
-        )
-    }
+    PetalLoadingIndicator(
+        modifier = modifier,
+        size = size,
+        color = color
+    )
 }
 
 /**
- * Zenith-style Material 3 Expressive contained loading indicator.
- *
- * This mirrors Zenith's implementation: the container uses the theme primary
- * color and the animated indicator uses onPrimary, so it automatically follows
- * Petal's light/dark and dynamic color schemes.
+ * Contained loading indicator used specifically for pull-to-refresh.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun ZenithContainedLoadingIndicator(
+private fun ContainedRefreshLoadingIndicator(
     modifier: Modifier = Modifier
 ) {
     val containerColor by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.primary,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "ZenithContainedLoadingContainerColor"
+        label = "RefreshBarContainerColor"
     )
     val indicatorColor by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.onPrimary,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "ZenithContainedLoadingIndicatorColor"
+        label = "RefreshBarIndicatorColor"
     )
 
     androidx.compose.material3.ContainedLoadingIndicator(
@@ -220,9 +248,8 @@ fun RefreshBarLoadingIndicator(
                         scaleY = currentScale
                     }
             ) {
-                PetalContainedLoadingIndicator(
-                    modifier = Modifier.requiredSize(42.dp),
-                    size = 42.dp
+                ContainedRefreshLoadingIndicator(
+                    modifier = Modifier.requiredSize(42.dp)
                 )
             }
         }
