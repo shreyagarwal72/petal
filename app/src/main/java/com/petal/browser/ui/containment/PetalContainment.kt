@@ -97,6 +97,14 @@ import androidx.preference.PreferenceManager
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.SelectableChipColors
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
+import androidx.compose.material3.ChipColors
+import com.petal.browser.haptics.PetalHapticEngine
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.LocalPetalGlassRevision
@@ -1078,23 +1086,32 @@ fun PetalFilterChip(
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = RoundedCornerShape(12.dp),
+    shape: Shape = RoundedCornerShape(14.dp),
     colors: SelectableChipColors? = null,
     border: BorderStroke? = null,
 ) {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val wallpaper = LocalPetalGlassWallpaper.current
+    val isGlassReady = isGlass && wallpaper?.ready == true
+    val context = androidx.compose.ui.platform.LocalContext.current
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentSize provides Dp.Unspecified
     ) {
         FilterChip(
             selected = selected,
-            onClick = onClick,
+            onClick = {
+                try {
+                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.35f)
+                } catch (_: Exception) {}
+                onClick()
+            },
             label = label,
             modifier = modifier.then(
                 if (isGlass) Modifier.liquidGlassChrome(
                     shape = shape,
                     enabled = true,
-                    sheenIntensity = if (selected) 0.5f else 0.25f
+                    sheenIntensity = if (selected) 0.65f else 0.35f,
+                    pressFx = true
                 ) else Modifier
             ),
             enabled = enabled,
@@ -1103,13 +1120,187 @@ fun PetalFilterChip(
             shape = shape,
             colors = colors ?: FilterChipDefaults.filterChipColors(
                 containerColor = if (isGlass) {
-                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f)
+                    if (isGlassReady) Color.Transparent else petalGroupSurfaceColor()
                 } else MaterialTheme.colorScheme.surfaceContainerLow,
                 selectedContainerColor = if (isGlass) {
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
-                } else MaterialTheme.colorScheme.secondaryContainer
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+                } else MaterialTheme.colorScheme.primaryContainer,
+                labelColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                iconColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             ),
-            border = if (isGlass) null else (border ?: FilterChipDefaults.filterChipBorder(enabled = enabled, selected = selected))
+            border = if (isGlass) {
+                BorderStroke(
+                    0.75.dp,
+                    if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    else Color.White.copy(alpha = 0.18f)
+                )
+            } else (border ?: FilterChipDefaults.filterChipBorder(enabled = enabled, selected = selected))
+        )
+    }
+}
+
+@Composable
+fun PetalAssistChip(
+    onClick: () -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    shape: Shape = RoundedCornerShape(14.dp),
+    colors: ChipColors? = null,
+    border: BorderStroke? = null,
+) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val wallpaper = LocalPetalGlassWallpaper.current
+    val isGlassReady = isGlass && wallpaper?.ready == true
+    val context = androidx.compose.ui.platform.LocalContext.current
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentSize provides Dp.Unspecified
+    ) {
+        AssistChip(
+            onClick = {
+                try {
+                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.35f)
+                } catch (_: Exception) {}
+                onClick()
+            },
+            label = label,
+            modifier = modifier.then(
+                if (isGlass) Modifier.liquidGlassChrome(
+                    shape = shape,
+                    enabled = true,
+                    sheenIntensity = 0.40f,
+                    pressFx = true
+                ) else Modifier
+            ),
+            enabled = enabled,
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            shape = shape,
+            colors = colors ?: AssistChipDefaults.assistChipColors(
+                containerColor = if (isGlass) {
+                    if (isGlassReady) Color.Transparent else petalGroupSurfaceColor()
+                } else MaterialTheme.colorScheme.surfaceContainerLow,
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                iconColor = MaterialTheme.colorScheme.primary
+            ),
+            border = if (isGlass) {
+                BorderStroke(0.75.dp, Color.White.copy(alpha = 0.18f))
+            } else (border ?: AssistChipDefaults.assistChipBorder(enabled = enabled))
+        )
+    }
+}
+
+@Composable
+fun PetalSuggestionChip(
+    onClick: () -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: @Composable (() -> Unit)? = null,
+    shape: Shape = RoundedCornerShape(14.dp),
+    colors: ChipColors? = null,
+    border: BorderStroke? = null,
+) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val wallpaper = LocalPetalGlassWallpaper.current
+    val isGlassReady = isGlass && wallpaper?.ready == true
+    val context = androidx.compose.ui.platform.LocalContext.current
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentSize provides Dp.Unspecified
+    ) {
+        SuggestionChip(
+            onClick = {
+                try {
+                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.35f)
+                } catch (_: Exception) {}
+                onClick()
+            },
+            label = label,
+            modifier = modifier.then(
+                if (isGlass) Modifier.liquidGlassChrome(
+                    shape = shape,
+                    enabled = true,
+                    sheenIntensity = 0.35f,
+                    pressFx = true
+                ) else Modifier
+            ),
+            enabled = enabled,
+            icon = icon,
+            shape = shape,
+            colors = colors ?: SuggestionChipDefaults.suggestionChipColors(
+                containerColor = if (isGlass) {
+                    if (isGlassReady) Color.Transparent else petalGroupSurfaceColor()
+                } else MaterialTheme.colorScheme.surfaceContainerLow,
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                iconColor = MaterialTheme.colorScheme.primary
+            ),
+            border = if (isGlass) {
+                BorderStroke(0.75.dp, Color.White.copy(alpha = 0.18f))
+            } else (border ?: SuggestionChipDefaults.suggestionChipBorder(enabled = enabled))
+        )
+    }
+}
+
+@Composable
+fun PetalInputChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    shape: Shape = RoundedCornerShape(14.dp),
+    colors: SelectableChipColors? = null,
+    border: BorderStroke? = null,
+) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val wallpaper = LocalPetalGlassWallpaper.current
+    val isGlassReady = isGlass && wallpaper?.ready == true
+    val context = androidx.compose.ui.platform.LocalContext.current
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentSize provides Dp.Unspecified
+    ) {
+        InputChip(
+            selected = selected,
+            onClick = {
+                try {
+                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.35f)
+                } catch (_: Exception) {}
+                onClick()
+            },
+            label = label,
+            modifier = modifier.then(
+                if (isGlass) Modifier.liquidGlassChrome(
+                    shape = shape,
+                    enabled = true,
+                    sheenIntensity = if (selected) 0.65f else 0.35f,
+                    pressFx = true
+                ) else Modifier
+            ),
+            enabled = enabled,
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            shape = shape,
+            colors = colors ?: InputChipDefaults.inputChipColors(
+                containerColor = if (isGlass) {
+                    if (isGlassReady) Color.Transparent else petalGroupSurfaceColor()
+                } else MaterialTheme.colorScheme.surfaceContainerLow,
+                selectedContainerColor = if (isGlass) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+                } else MaterialTheme.colorScheme.primaryContainer,
+                labelColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                leadingIconColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            border = if (isGlass) {
+                BorderStroke(
+                    0.75.dp,
+                    if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    else Color.White.copy(alpha = 0.18f)
+                )
+            } else (border ?: InputChipDefaults.inputChipBorder(enabled = enabled, selected = selected))
         )
     }
 }

@@ -54,14 +54,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
+import com.petal.browser.ui.containment.PetalFilterChip
+import com.petal.browser.ui.containment.PetalSuggestionChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -453,25 +453,25 @@ object PetalPrivacyShieldSheet {
                         val socialLabel = if (categoryCounts.social > 0) "Social: ${categoryCounts.social}" else "Social: 0"
                         val cookiesLabel = if (categoryCounts.cookies > 0) "Cookies: ${categoryCounts.cookies}" else "Cookies: Iso"
 
-                        SuggestionChip(
+                        PetalSuggestionChip(
                             onClick = {},
                             label = { Text(adsLabel, fontSize = 11.sp, maxLines = 1) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f)
                         )
-                        SuggestionChip(
+                        PetalSuggestionChip(
                             onClick = {},
                             label = { Text(trackersLabel, fontSize = 11.sp, maxLines = 1) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f)
                         )
-                        SuggestionChip(
+                        PetalSuggestionChip(
                             onClick = {},
                             label = { Text(socialLabel, fontSize = 11.sp, maxLines = 1) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f)
                         )
-                        SuggestionChip(
+                        PetalSuggestionChip(
                             onClick = {},
                             label = { Text(cookiesLabel, fontSize = 11.sp, maxLines = 1) },
                             shape = RoundedCornerShape(10.dp),
@@ -589,7 +589,7 @@ object PetalPrivacyShieldSheet {
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            FilterChip(
+                            PetalFilterChip(
                                 selected = siteShieldMode == PetalAdBlockMode.STANDARD,
                                 onClick = {
                                     siteShieldMode = PetalAdBlockMode.STANDARD
@@ -598,9 +598,9 @@ object PetalPrivacyShieldSheet {
                                     onReloadRequested()
                                 },
                                 label = { Text("Standard", fontSize = 11.sp) },
-                                shape = RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(10.dp)
                             )
-                            FilterChip(
+                            PetalFilterChip(
                                 selected = siteShieldMode == PetalAdBlockMode.AGGRESSIVE,
                                 onClick = {
                                     siteShieldMode = PetalAdBlockMode.AGGRESSIVE
@@ -609,7 +609,7 @@ object PetalPrivacyShieldSheet {
                                     onReloadRequested()
                                 },
                                 label = { Text("Aggressive", fontSize = 11.sp) },
-                                shape = RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(10.dp)
                             )
                         }
 

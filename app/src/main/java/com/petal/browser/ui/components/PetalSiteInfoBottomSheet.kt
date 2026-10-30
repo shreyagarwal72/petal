@@ -32,6 +32,8 @@ import com.petal.browser.browser.AlbumController
 import com.petal.browser.view.PetalGeckoView
 import com.petal.browser.ui.glass.captureGlassWallpaper
 import com.petal.browser.ui.components.IconSwitch
+import com.petal.browser.ui.containment.PetalFilterChip
+import com.petal.browser.ui.containment.PetalSuggestionChip
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -372,25 +374,25 @@ fun PetalSiteInfoBottomSheet(
                             val socialLabel = if (categoryCounts.social > 0) "Social: ${categoryCounts.social}" else "Social: 0"
                             val cookiesLabel = if (categoryCounts.cookies > 0) "Cookies: ${categoryCounts.cookies}" else "Cookies: Isolated"
 
-                            SuggestionChip(
+                            PetalSuggestionChip(
                                 onClick = {},
                                 label = { Text(adsLabel, fontSize = 11.sp, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
-                            SuggestionChip(
+                            PetalSuggestionChip(
                                 onClick = {},
                                 label = { Text(trackersLabel, fontSize = 11.sp, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
-                            SuggestionChip(
+                            PetalSuggestionChip(
                                 onClick = {},
                                 label = { Text(socialLabel, fontSize = 11.sp, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
-                            SuggestionChip(
+                            PetalSuggestionChip(
                                 onClick = {},
                                 label = { Text(cookiesLabel, fontSize = 11.sp, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
@@ -495,7 +497,7 @@ fun PetalSiteInfoBottomSheet(
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            FilterChip(
+                            PetalFilterChip(
                                 selected = siteShieldMode == com.petal.browser.browser.PetalAdBlockMode.STANDARD,
                                 onClick = {
                                     siteShieldMode = com.petal.browser.browser.PetalAdBlockMode.STANDARD
@@ -503,9 +505,9 @@ fun PetalSiteInfoBottomSheet(
                                     geckoView?.reloadWithoutInit()
                                 },
                                 label = { Text("Standard", fontSize = 11.sp) },
-                                shape = RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(10.dp)
                             )
-                            FilterChip(
+                            PetalFilterChip(
                                 selected = siteShieldMode == com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE,
                                 onClick = {
                                     siteShieldMode = com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE
@@ -513,7 +515,7 @@ fun PetalSiteInfoBottomSheet(
                                     geckoView?.reloadWithoutInit()
                                 },
                                 label = { Text("Aggressive", fontSize = 11.sp) },
-                                shape = RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(10.dp)
                             )
                         }
                     }

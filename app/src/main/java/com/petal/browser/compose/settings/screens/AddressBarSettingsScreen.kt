@@ -1,6 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -32,6 +33,10 @@ import com.petal.browser.ui.components.*
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.PetalSettingsToggleRow
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.rememberGlassSheen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -310,18 +315,31 @@ fun AddressBarSettingsScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
+                            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                             FilledTonalButton(
-                                onClick = { showAddActionSheetForLeading = true },
+                                onClick = {
+                                    haptics.play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                    showAddActionSheetForLeading = true
+                                },
                                 enabled = totalButtons < BarPrefs.MAX_MERGE_ACTIONS_TOTAL,
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.then(
+                                    if (isGlass) Modifier.liquidGlassChrome(
+                                        shape = RoundedCornerShape(14.dp),
+                                        enabled = true,
+                                        sheenIntensity = 0.40f,
+                                        pressFx = true
+                                    ) else Modifier
+                                ),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Add Leading")
+                                Spacer(Modifier.width(6.dp))
+                                Text("Add Leading", fontWeight = FontWeight.SemiBold)
                             }
                         }
 
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(14.dp))
 
                         // Trailing List Section
                         Text(
@@ -330,7 +348,7 @@ fun AddressBarSettingsScreen(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(6.dp))
                         ActionsEditorList(
                             actions = trailingActions,
                             onMoveUp = { idx ->
@@ -356,18 +374,22 @@ fun AddressBarSettingsScreen(
                             }
                         )
 
+                        Spacer(Modifier.height(8.dp))
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                             TextButton(
                                 onClick = {
                                     haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                     viewModel.setMergeLeading(BarPrefs.DEFAULT_MERGE_LEADING)
                                     viewModel.setMergeTrailing(BarPrefs.DEFAULT_MERGE_TRAILING)
                                     Toast.makeText(context, "Reset toolbar buttons to defaults", Toast.LENGTH_SHORT).show()
-                                }
+                                },
+                                shape = RoundedCornerShape(14.dp)
                             ) {
                                 Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(4.dp))
@@ -375,30 +397,28 @@ fun AddressBarSettingsScreen(
                             }
 
                             FilledTonalButton(
-                                onClick = { showAddActionSheetForLeading = false },
+                                onClick = {
+                                    haptics.play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                    showAddActionSheetForLeading = false
+                                },
                                 enabled = totalButtons < BarPrefs.MAX_MERGE_ACTIONS_TOTAL,
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.then(
+                                    if (isGlass) Modifier.liquidGlassChrome(
+                                        shape = RoundedCornerShape(14.dp),
+                                        enabled = true,
+                                        sheenIntensity = 0.40f,
+                                        pressFx = true
+                                    ) else Modifier
+                                ),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Add Trailing")
+                                Spacer(Modifier.width(6.dp))
+                                Text("Add Trailing", fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
-                }
-
-                // ── Size ─────────────────────────────────────────────────────────────
-                PetalSettingsSection("Size", icon = Icons.Rounded.ViewCompact, cardId = "address_bar_size", targetHighlightId = targetHighlightItemId) {
-                    Text(stringResource(R.string.ui_compact_is_the_recommended_short), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(4.dp))
-                    PetalChoiceButtonGroup(
-                        options = listOf(
-                            PetalButtonGroupItem("COMPACT", "Compact"),
-                            PetalButtonGroupItem("STANDARD", "Standard"),
-                        ),
-                        selected = height.uppercase(),
-                        onSelect = { viewModel.setHeight(it) }
-                    )
                 }
 
                 // ── Right-Side Action (Classic bar only) ──────────────────────────────
@@ -496,6 +516,8 @@ fun AddressBarSettingsScreen(
         val availableCandidates = BarAction.entries.filter { action ->
             action.isAvailable && !leadingActions.contains(action) && !trailingActions.contains(action)
         }
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val sheen = rememberGlassSheen(isGlass)
 
         com.petal.browser.ui.containment.PetalSheet(
             onDismissRequest = { showAddActionSheetForLeading = null }
@@ -503,33 +525,117 @@ fun AddressBarSettingsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 20.dp, vertical = 6.dp)
             ) {
-                Text(
-                    text = if (forLeading) "Add Leading Button" else "Add Trailing Button",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                // Expressive Header Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier
+                                .size(38.dp)
+                                .then(
+                                    if (isGlass) Modifier.liquidGlassChrome(
+                                        shape = RoundedCornerShape(12.dp),
+                                        enabled = true,
+                                        sheenIntensity = 0.40f
+                                    ) else Modifier
+                                )
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.AddCircleOutline,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                text = if (forLeading) "Add Leading Button" else "Add Trailing Button",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (forLeading) "Placed before the URL address pill" else "Placed after the URL address pill",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.then(
+                            if (isGlass) Modifier.liquidGlassChrome(
+                                shape = RoundedCornerShape(50),
+                                enabled = true,
+                                sheenIntensity = 0.35f
+                            ) else Modifier
+                        )
+                    ) {
+                        Text(
+                            text = "${availableCandidates.size} available",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
 
                 if (availableCandidates.isEmpty()) {
-                    Text(
-                        text = "All available actions have already been added.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "All available actions have already been added.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 } else {
+                    // Scrollable Candidates List Container: Resolves overflow & clipping!
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 480.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         availableCandidates.forEach { candidate ->
+                            val cardShape = RoundedCornerShape(18.dp)
                             Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = cardShape,
+                                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.25f else 0.45f)),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(14.dp))
+                                    .clip(cardShape)
+                                    .then(
+                                        if (isGlass) Modifier.liquidGlassChrome(
+                                            shape = cardShape,
+                                            enabled = true,
+                                            sheenIntensity = sheen,
+                                            pressFx = true
+                                        ) else Modifier
+                                    )
                                     .clickable {
                                         haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                         showAddActionSheetForLeading = null
@@ -547,14 +653,14 @@ fun AddressBarSettingsScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(36.dp)
-                                            .clip(CircleShape)
+                                            .size(42.dp)
+                                            .clip(RoundedCornerShape(12.dp))
                                             .background(MaterialTheme.colorScheme.primaryContainer),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -562,28 +668,66 @@ fun AddressBarSettingsScreen(
                                             imageVector = candidate.icon,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(22.dp)
                                         )
                                     }
-                                    Text(
-                                        text = candidate.label,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = candidate.label,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = getActionDescription(candidate),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Add,
+                                            contentDescription = "Add",
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
+                        Spacer(Modifier.height(24.dp))
                     }
                 }
-                Spacer(Modifier.height(16.dp))
             }
         }
     }
 }
 
+private fun getActionDescription(action: BarAction): String = when (action) {
+    BarAction.TABS -> "Switch, view and manage open tabs"
+    BarAction.NEW_TAB -> "Instantly open a fresh new tab"
+    BarAction.HOME -> "Navigate directly to your home start page"
+    BarAction.SEARCH -> "Focus search input and engine picker"
+    BarAction.BACK -> "Navigate back to previous web page"
+    BarAction.FORWARD -> "Navigate forward in browsing history"
+    BarAction.RELOAD -> "Refresh and reload active web page"
+    BarAction.SHARE -> "Share current web link with other apps"
+    BarAction.BOOKMARK -> "Save current web page to bookmarks"
+    BarAction.AI_RESEARCH -> "Deep AI web research and summary"
+    BarAction.READER -> "Distraction-free clean reader mode"
+    BarAction.DOWNLOADS -> "Open downloaded files manager"
+    BarAction.FIND_IN_PAGE -> "Find text and keywords on current page"
+    BarAction.MENU -> "Open browser main overflow menu"
+}
+
 /**
- * Renders an editable action item row with move up/down and remove buttons.
+ * Renders an editable action item row with move up/down and remove buttons in Petal Containment design.
  */
 @Composable
 private fun ActionsEditorList(
@@ -602,30 +746,51 @@ private fun ActionsEditorList(
         return
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = rememberGlassSheen(isGlass)
+
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         actions.forEachIndexed { index, action ->
             val isMenu = action == BarAction.MENU
+            val cardShape = RoundedCornerShape(14.dp)
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                modifier = Modifier.fillMaxWidth()
+                shape = cardShape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.25f else 0.45f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (isGlass) Modifier.liquidGlassChrome(
+                            shape = cardShape,
+                            enabled = true,
+                            sheenIntensity = sheen
+                        ) else Modifier
+                    )
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = action.icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = action.icon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
                     Text(
                         text = action.label,
                         style = MaterialTheme.typography.bodyMedium,
@@ -655,15 +820,16 @@ private fun ActionsEditorList(
                     // Remove
                     if (isMenu) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         ) {
                             Text(
                                 text = "Required",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
                     } else {

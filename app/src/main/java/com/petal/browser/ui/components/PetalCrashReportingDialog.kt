@@ -26,6 +26,7 @@ package com.petal.browser.ui.components
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -56,6 +57,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.logger.PetalAppLogger
 import com.petal.browser.view.PetalToast
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.PetalDialog
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -130,114 +132,202 @@ fun PetalCrashRecoveryHost(
 
     if (showCrashDialog) {
         val crashReport = remember { PetalAppLogger.getLastCrashReport() ?: "" }
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        PetalDialog(
             onDismissRequest = handleDismiss,
-            icon = {
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            // Squircle Icon Badge + Centered Title
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
                 Surface(
-                    shape = CircleShape,
+                    shape = RoundedCornerShape(18.dp),
                     color = MaterialTheme.colorScheme.errorContainer,
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier
+                        .size(56.dp)
+                        .then(
+                            if (isGlass) Modifier.liquidGlassChrome(
+                                shape = RoundedCornerShape(18.dp),
+                                enabled = true,
+                                sheenIntensity = 0.5f
+                            ) else Modifier
+                        )
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Rounded.BugReport,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }
-            },
-            title = {
+
                 Text(
                     text = stringResource(R.string.ui_petal_browser_crashed),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.ui_petal_recovered_from_an_unexpected),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            }
 
-                    val previewShape = RoundedCornerShape(14.dp)
-                    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-                    Surface(
-                        shape = previewShape,
-                        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        tonalElevation = if (isGlass) 0.dp else 1.dp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .then(if (isGlass) Modifier.liquidGlassChrome(previewShape, enabled = true, sheenIntensity = 0.35f) else Modifier)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            val firstLines = crashReport.lineSequence().take(4).joinToString("\n")
-                            Text(
-                                text = firstLines.ifBlank { "Uncaught Exception" },
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 11.sp
-                                ),
-                                color = MaterialTheme.colorScheme.error,
-                                maxLines = 4
-                            )
-                        }
-                    }
+            Text(
+                text = stringResource(R.string.ui_petal_recovered_from_an_unexpected),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Contained crash snippet preview
+            val previewShape = RoundedCornerShape(16.dp)
+            Surface(
+                shape = previewShape,
+                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLowest,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.25f else 0.45f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(previewShape, enabled = true, sheenIntensity = 0.35f) else Modifier)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    val firstLines = crashReport.lineSequence().take(4).joinToString("\n")
+                    Text(
+                        text = firstLines.ifBlank { "Uncaught Exception" },
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 11.sp,
+                            lineHeight = 16.sp
+                        ),
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 4
+                    )
                 }
-            },
-            confirmButton = {
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // Expressive Button Layout: Never squishes or wraps vertically!
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Primary Action: Full Width Report on GitHub Button
                 Button(
                     onClick = {
                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                         PetalAppLogger.openGitHubCrashIssue(context, crashReport)
                         handleDismiss()
                     },
-                    shape = RoundedCornerShape(12.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .then(
+                            if (isGlass) Modifier.liquidGlassChrome(
+                                shape = RoundedCornerShape(16.dp),
+                                enabled = true,
+                                sheenIntensity = 0.65f,
+                                pressFx = true
+                            ) else Modifier
+                        ),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
-                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.ui_report_on_github))
+                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.ui_report_on_github),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-            },
-            dismissButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedButton(
+
+                // Secondary Actions Row: Symmetrical View Log + Dismiss
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilledTonalButton(
                         onClick = {
                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.4f)
                             showFullTraceDialog = true
                         },
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
+                            .then(
+                                if (isGlass) Modifier.liquidGlassChrome(
+                                    shape = RoundedCornerShape(14.dp),
+                                    enabled = true,
+                                    sheenIntensity = 0.35f,
+                                    pressFx = true
+                               ) else Modifier
+                            ),
+                        shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text(stringResource(R.string.ui_view_log))
+                        Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.ui_view_log),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1
+                        )
                     }
-                    TextButton(
-                        onClick = handleDismiss
+
+                    OutlinedButton(
+                        onClick = handleDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
+                            .then(
+                                if (isGlass) Modifier.liquidGlassChrome(
+                                    shape = RoundedCornerShape(14.dp),
+                                    enabled = true,
+                                    sheenIntensity = 0.25f,
+                                    pressFx = true
+                                ) else Modifier
+                            ),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.3f else 0.7f))
                     ) {
-                        Text(stringResource(R.string.ui_dismiss))
+                        Text(
+                            text = stringResource(R.string.ui_dismiss),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1
+                        )
                     }
                 }
-            },
-            shape = RoundedCornerShape(24.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        )
+            }
+        }
     }
 
     if (showFullTraceDialog) {
         val crashReport = remember { PetalAppLogger.getLastCrashReport() ?: "No log found" }
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
         Dialog(onDismissRequest = { showFullTraceDialog = false }) {
             Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shape = RoundedCornerShape(28.dp),
+                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.85f)
+                    .then(
+                        if (isGlass) Modifier.liquidGlassChrome(
+                            shape = RoundedCornerShape(28.dp),
+                            enabled = true,
+                            sheenIntensity = sheen
+                        ) else Modifier
+                    )
             ) {
                 Column(
                     modifier = Modifier
@@ -249,20 +339,40 @@ fun PetalCrashRecoveryHost(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = stringResource(R.string.ui_crash_diagnostics),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.errorContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Terminal,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Text(
+                                text = stringResource(R.string.ui_crash_diagnostics),
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
                         IconButton(onClick = { showFullTraceDialog = false }) {
                             Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                         }
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(14.dp))
 
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        color = if (isGlass) MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceContainerLowest,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
@@ -280,8 +390,8 @@ fun PetalCrashRecoveryHost(
                                 text = crashReport,
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontFamily = FontFamily.Monospace,
-                                    fontSize = 10.5.sp,
-                                    lineHeight = 15.sp
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -292,7 +402,7 @@ fun PetalCrashRecoveryHost(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         OutlinedButton(
                             onClick = {
@@ -304,24 +414,44 @@ fun PetalCrashRecoveryHost(
                                     e.printStackTrace()
                                 }
                             },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .then(
+                                    if (isGlass) Modifier.liquidGlassChrome(
+                                        shape = RoundedCornerShape(14.dp),
+                                        enabled = true,
+                                        sheenIntensity = 0.35f,
+                                        pressFx = true
+                                    ) else Modifier
+                                ),
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.ui_copy))
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.ui_copy), fontWeight = FontWeight.SemiBold)
                         }
 
                         Button(
                             onClick = {
                                 PetalAppLogger.shareLogsZip(context)
                             },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .then(
+                                    if (isGlass) Modifier.liquidGlassChrome(
+                                        shape = RoundedCornerShape(14.dp),
+                                        enabled = true,
+                                        sheenIntensity = 0.65f,
+                                        pressFx = true
+                                    ) else Modifier
+                                ),
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.ui_share_zip))
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.ui_share_zip), fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
