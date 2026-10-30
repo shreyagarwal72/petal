@@ -190,6 +190,14 @@ public class PetalMediaBridge {
         this.activeEngineMediaController = controller;
     }
 
+    public mozilla.components.concept.engine.mediasession.MediaSession.Controller getActiveEngineMediaController() {
+        return activeEngineMediaController;
+    }
+
+    public boolean hasActiveMedia() {
+        return activeGeckoMediaSession != null || activeEngineMediaController != null;
+    }
+
     public void injectMediaHooks() {
         evaluateJavascriptOnTab(MEDIA_JS_INJECTION);
     }

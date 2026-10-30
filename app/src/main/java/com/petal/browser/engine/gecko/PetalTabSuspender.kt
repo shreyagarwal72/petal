@@ -46,7 +46,7 @@ object PetalTabSuspender {
             if (tab.isPlayingAudio() || tab.hasActiveMediaSession()) return false
         } else if (tab is com.petal.browser.browser.PetalTabViewController) {
             val bridge = tab.getMediaBridge()
-            if (bridge?.activeGeckoMediaSession != null || bridge?.activeEngineMediaController != null) return false
+            if (bridge != null && bridge.hasActiveMedia()) return false
         }
         return true
     }

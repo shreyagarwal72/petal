@@ -783,7 +783,6 @@ object PetalExtensionManager {
 
         // Open only after all popup delegates are installed. GeckoSession.open() is
         // asynchronous, so this starts loading without blocking the browser UI.
-        val ctx = appContext ?: return null
         try {
             popupSession.open(PetalGeckoRuntime.getOrCreate(ctx))
         } catch (t: Throwable) {
