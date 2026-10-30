@@ -98,7 +98,7 @@ import java.util.function.BooleanSupplier;
 
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
-import com.petal.browser.activity.Settings_Menu;
+import com.petal.browser.activity.SettingsMenuActivity;
 import com.petal.browser.browser.BrowserController;
 import com.petal.browser.browser.DataURIParser;
 import com.petal.browser.browser.List_standard;
@@ -582,8 +582,8 @@ public class HelperUnit {
         tv.setSingleLine(true);
     }
     public static void initAndLoadMenu(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences(Settings_Menu.PREF_NAME, Context.MODE_PRIVATE);
-        String json = sharedPreferences.getString(Settings_Menu.KEY_LIST, null);
+        SharedPreferences sharedPreferences = context.getSharedPreferences(SettingsMenuActivity.PREF_NAME, Context.MODE_PRIVATE);
+        String json = sharedPreferences.getString(SettingsMenuActivity.KEY_LIST, null);
         Type type = new TypeToken<ArrayList<MenuItem>>() {}.getType();
         List<MenuItem> list = new Gson().fromJson(json, type);
         if (list == null || list.isEmpty()) {
@@ -612,7 +612,7 @@ public class HelperUnit {
             list.add(new MenuItem(context.getString(R.string.menu_delete_entry), R.drawable.icon_delete, true));
             list.add(new MenuItem(context.getString(R.string.app_help), R.drawable.icon_help, true));
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(Settings_Menu.KEY_LIST, new Gson().toJson(list));
+            editor.putString(SettingsMenuActivity.KEY_LIST, new Gson().toJson(list));
             editor.apply();
         }
     }

@@ -5248,8 +5248,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     // Hilfsmethode, um nur ausgewählte Items aus dem lokalen Speicher zu holen
     private List<MenuItem> loadSelectedFromStorage() {
-        SharedPreferences prefs = getSharedPreferences(Settings_Menu.PREF_NAME, Context.MODE_PRIVATE);
-        String json = prefs.getString(Settings_Menu.KEY_LIST, null);
+        SharedPreferences prefs = getSharedPreferences(SettingsMenuActivity.PREF_NAME, Context.MODE_PRIVATE);
+        String json = prefs.getString(SettingsMenuActivity.KEY_LIST, null);
         List<MenuItem> selected = new ArrayList<>();
         if (json != null) {
             Type type = new TypeToken<ArrayList<MenuItem>>() {}.getType();
@@ -5412,7 +5412,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 () -> {
                     View rootView = findViewById(android.R.id.content) != null ? findViewById(android.R.id.content) : getWindow().getDecorView();
                     com.petal.browser.predictive.PetalContentSnapshot.capture(rootView);
-                    startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class));
+                    startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.SettingsDataClearActivity.class));
                 },
                 () -> {
                     showAlbum(currentAlbumController);
@@ -6157,7 +6157,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ib_settings.setOnClickListener(view -> {
                 if (activeGeckoView != null) {
                     dialogFastToggle.cancel();
-                    Intent settings = new Intent(BrowserActivity.this, Settings_Activity.class);
+                    Intent settings = new Intent(BrowserActivity.this, SettingsActivity.class);
                     startActivity(settings);
                 }
             });
@@ -7429,7 +7429,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
             presentComposeScreen(settingsView);
         } catch (Exception e) {
-            startActivity(new Intent(BrowserActivity.this, Settings_Activity.class));
+            startActivity(new Intent(BrowserActivity.this, SettingsActivity.class));
         }
     }
 

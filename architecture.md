@@ -60,7 +60,7 @@ Back gesture dispatching is carefully split between the native Android platform 
 ---
 
 ## 4. Subpackage Directory Structure
-- `com.petal.browser.activity`: Core Android activities (`BrowserActivity`, `Settings_Activity`, `AppLockActivity`).
+- `com.petal.browser.activity`: Core Android activities (`BrowserActivity`, `SettingsActivity`, `AppLockActivity`).
 - `com.petal.browser.browser`: Core browser contracts and controllers (`BrowserController`, `AlbumController`, `BrowserContainer`).
 - `com.petal.browser.view`: Engine rendering views (`PetalGeckoView`).
 - `com.petal.browser.engine`: Low-level engine integrations (`PetalGeckoRuntime`, `ChromiumNativeEngineCore`, `FullscreenVideoRules`).

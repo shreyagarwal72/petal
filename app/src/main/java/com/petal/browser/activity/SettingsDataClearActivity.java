@@ -19,7 +19,7 @@ import com.petal.browser.R;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 
-public class Settings_Delete extends AppCompatActivity {
+public class SettingsDataClearActivity extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

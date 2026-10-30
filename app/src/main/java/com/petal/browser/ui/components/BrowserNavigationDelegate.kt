@@ -8,7 +8,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.activity.Settings_Delete
+import com.petal.browser.activity.SettingsDataClearActivity
 import com.petal.browser.database.RecordAction
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.view.PetalToast
@@ -131,7 +131,7 @@ object BrowserNavigationDelegate {
                 override fun onDeleteBrowsingData() {
                     val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
                     com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
-                    activity.startActivity(Intent(activity, Settings_Delete::class.java))
+                    activity.startActivity(Intent(activity, SettingsDataClearActivity::class.java))
                 }
 
                 override fun onOpenDownloads() {

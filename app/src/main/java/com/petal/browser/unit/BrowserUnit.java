@@ -576,10 +576,10 @@ public class BrowserUnit {
                             ((com.petal.browser.activity.BrowserActivity) activity).openSettingsScreen();
                         }
                     } else {
-                        Intent intent = new Intent(activity, com.petal.browser.activity.Settings_Activity.class);
+                        Intent intent = new Intent(activity, com.petal.browser.activity.SettingsActivity.class);
                         if (uriStr.contains("category=api_integrations") || uriStr.contains("category=ai_research")) {
                             intent.putExtra(
-                                com.petal.browser.activity.Settings_Activity.EXTRA_SETTINGS_CATEGORY,
+                                com.petal.browser.activity.SettingsActivity.EXTRA_SETTINGS_CATEGORY,
                                 com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS.name()
                             );
                         }

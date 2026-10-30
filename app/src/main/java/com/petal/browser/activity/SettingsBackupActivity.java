@@ -6,16 +6,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.petal.browser.compose.settings.SettingsCategory;
 
 /**
- * Modern redirect: routes legacy gesture settings directly to the modern Jetpack Compose
- * Address Bar & Gestures settings screen.
+ * Modern redirect: routes legacy backup settings directly to the modern Jetpack Compose
+ * Data & Backup settings screen.
  */
-public class Settings_Gesture extends AppCompatActivity {
+public class SettingsBackupActivity extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Intent intent = new Intent(this, Settings_Activity.class);
-        intent.putExtra(Settings_Activity.EXTRA_SETTINGS_CATEGORY, SettingsCategory.ADDRESS_BAR.name());
+        Intent intent = new Intent(this, SettingsActivity.class);
+        intent.putExtra(SettingsActivity.EXTRA_SETTINGS_CATEGORY, SettingsCategory.DATA_STORAGE.name());
         startActivity(intent);
         finish();
     }

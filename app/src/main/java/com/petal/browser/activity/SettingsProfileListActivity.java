@@ -37,7 +37,7 @@ import com.petal.browser.unit.RecordUnit;
 import com.petal.browser.view.PetalToast;
 import com.petal.browser.view.AdapterProfileList;
 
-public class Settings_ProfileList extends AppCompatActivity {
+public class SettingsProfileListActivity extends AppCompatActivity {
 
     private List<String> list;
     private List_standard listStandard;
@@ -76,7 +76,7 @@ public class Settings_ProfileList extends AppCompatActivity {
                 deleteEntry.setOnClickListener(v1 -> {
                     String domain = list.get(position);
                     PetalConfirmSheetBridge.showClearDatabaseConfirmation(
-                        Settings_ProfileList.this,
+                        SettingsProfileListActivity.this,
                         getString(R.string.hint_database),
                         "Are you sure you want to remove settings for \"" + domain + "\"?",
                         () -> {
@@ -87,9 +87,9 @@ public class Settings_ProfileList extends AppCompatActivity {
 
                                 // Official Firefox StorageController site data clearing:
                                 // Remove all cookies, DOM storages, IndexedDB, caches, and permissions for this website
-                                com.petal.browser.unit.PetalCacheManager.clearSiteData(Settings_ProfileList.this, domain, true, true);
+                                com.petal.browser.unit.PetalCacheManager.clearSiteData(SettingsProfileListActivity.this, domain, true, true);
 
-                                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(Settings_ProfileList.this);
+                                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(SettingsProfileListActivity.this);
                                 sp.edit()
                                         .remove(domain + "_saveData")
                                         .remove(domain + "_images")
@@ -109,7 +109,7 @@ public class Settings_ProfileList extends AppCompatActivity {
                                         .remove(domain + "_night")
                                         .remove(domain + "_drm")
                                         .remove(domain + "_desktop").apply();
-                                PetalToast.show(Settings_ProfileList.this, R.string.app_done);
+                                PetalToast.show(SettingsProfileListActivity.this, R.string.app_done);
                             } catch (Exception e) {
                                 Log.i(TAG, "dialogCustomSearches:" + e);
                             }

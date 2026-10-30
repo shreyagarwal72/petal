@@ -548,14 +548,29 @@
           WICHTIG ab Android 12+: Müssen explizit android:exported="false" deklariert werden,
           da sie nur App-intern aufgerufen werden und sonst ein Sicherheitsrisiko darstellen!
         -->
-        <activity android:name="com.petal.browser.activity.Settings_Activity" android:label="@string/setting_title_browser" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.Settings_ProfileList" android:label="@string/setting_title_savedWebSites" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.Settings_Delete" android:label="@string/menu_delete" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.Settings_Backup" android:label="@string/setting_title_data" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.Settings_Gesture" android:label="@string/setting_gestures" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.Settings_Filter" android:label="@string/setting_filter" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.Settings_Profile" android:label="@string/setting_title_profiles_standard" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.Settings_Menu" android:label="@string/setting_menu" android:exported="false" />
+        <activity android:name="com.petal.browser.activity.SettingsActivity" android:label="@string/setting_title_browser" android:exported="false" />
+        <activity-alias android:name="com.petal.browser.activity.Settings_Activity" android:targetActivity="com.petal.browser.activity.SettingsActivity" android:exported="false" />
+
+        <activity android:name="com.petal.browser.activity.SettingsProfileListActivity" android:label="@string/setting_title_savedWebSites" android:exported="false" />
+        <activity-alias android:name="com.petal.browser.activity.Settings_ProfileList" android:targetActivity="com.petal.browser.activity.SettingsProfileListActivity" android:exported="false" />
+
+        <activity android:name="com.petal.browser.activity.SettingsDataClearActivity" android:label="@string/menu_delete" android:exported="false" />
+        <activity-alias android:name="com.petal.browser.activity.Settings_Delete" android:targetActivity="com.petal.browser.activity.SettingsDataClearActivity" android:exported="false" />
+
+        <activity android:name="com.petal.browser.activity.SettingsBackupActivity" android:label="@string/setting_title_data" android:exported="false" />
+        <activity-alias android:name="com.petal.browser.activity.Settings_Backup" android:targetActivity="com.petal.browser.activity.SettingsBackupActivity" android:exported="false" />
+
+        <activity android:name="com.petal.browser.activity.SettingsGestureActivity" android:label="@string/setting_gestures" android:exported="false" />
+        <activity-alias android:name="com.petal.browser.activity.Settings_Gesture" android:targetActivity="com.petal.browser.activity.SettingsGestureActivity" android:exported="false" />
+
+        <activity android:name="com.petal.browser.activity.SettingsFilterActivity" android:label="@string/setting_filter" android:exported="false" />
+        <activity-alias android:name="com.petal.browser.activity.Settings_Filter" android:targetActivity="com.petal.browser.activity.SettingsFilterActivity" android:exported="false" />
+
+        <activity android:name="com.petal.browser.activity.SettingsProfileActivity" android:label="@string/setting_title_profiles_standard" android:exported="false" />
+        <activity-alias android:name="com.petal.browser.activity.Settings_Profile" android:targetActivity="com.petal.browser.activity.SettingsProfileActivity" android:exported="false" />
+
+        <activity android:name="com.petal.browser.activity.SettingsMenuActivity" android:label="@string/setting_menu" android:exported="false" />
+        <activity-alias android:name="com.petal.browser.activity.Settings_Menu" android:targetActivity="com.petal.browser.activity.SettingsMenuActivity" android:exported="false" />
 
         <receiver
             android:name="com.petal.browser.compose.downloads.PetalDownloadCancelReceiver"

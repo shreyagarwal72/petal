@@ -19,7 +19,7 @@ import com.petal.browser.unit.HelperUnit;
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
-public class Settings_Activity extends AppCompatActivity {
+public class SettingsActivity extends AppCompatActivity {
 
     /**
      * Optional String extra naming a {@link SettingsCategory} enum constant (e.g.

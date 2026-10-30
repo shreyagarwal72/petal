@@ -28,7 +28,7 @@ import com.petal.browser.unit.HelperUnit;
 import com.petal.browser.view.AdapterSettingsMenu;
 import com.petal.browser.view.MenuItem;
 
-public class Settings_Menu extends AppCompatActivity {
+public class SettingsMenuActivity extends AppCompatActivity {
 
     private List<MenuItem> masterList;
     private AdapterSettingsMenu adapter;

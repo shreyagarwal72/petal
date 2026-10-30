@@ -4,7 +4,7 @@ import android.content.Intent
 import android.util.Log
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.activity.Settings_Activity
+import com.petal.browser.activity.SettingsActivity
 import com.petal.browser.view.PetalToast
 
 /**
@@ -100,7 +100,7 @@ object BrowserGestureHandler {
                 }
             }
             "25" -> {
-                activity.startActivity(Intent(activity, Settings_Activity::class.java))
+                activity.startActivity(Intent(activity, SettingsActivity::class.java))
             }
             "26" -> activity.doubleTapsQuit()
             "27" -> {

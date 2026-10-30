@@ -191,9 +191,9 @@ fun PetalAiSearchResultSheet(
         if (browserActivity != null) {
             browserActivity.openApiIntegrationsHub()
         } else {
-            val intent = Intent(context, com.petal.browser.activity.Settings_Activity::class.java).apply {
+            val intent = Intent(context, com.petal.browser.activity.SettingsActivity::class.java).apply {
                 putExtra(
-                    com.petal.browser.activity.Settings_Activity.EXTRA_SETTINGS_CATEGORY,
+                    com.petal.browser.activity.SettingsActivity.EXTRA_SETTINGS_CATEGORY,
                     com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS.name
                 )
             }
