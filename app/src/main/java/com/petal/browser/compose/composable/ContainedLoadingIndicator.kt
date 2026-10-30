@@ -50,17 +50,6 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
-import androidx.compose.material3.LoadingIndicatorDefaults
-import androidx.compose.material3.toShape
-import androidx.compose.runtime.LaunchedEffect
-import com.petal.browser.ui.containment.isLiquidGlassEnabled
-import com.petal.browser.ui.containment.liquidGlassChrome
-import com.petal.browser.ui.containment.petalGroupSurfaceColor
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-
 /**
  * Petal Material 3 Expressive ContainedLoadingIndicator composable.
  * Displays an indeterminate loading indicator filling available screen bounds.
@@ -92,12 +81,9 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
 /**
  * Universal Contained Loading Indicator for Petal Browser.
  *
- * If Liquid Glass is enabled:
- * - Dynamically morphs between Material 3 Expressive polygons (SimpMusic style).
- * - Applies glass surface color, specular edge reflection, and primary indicator glow.
- *
- * If Liquid Glass is disabled:
- * - Falls back to the classic Zenith-style primary contained indicator.
+ * Uses the official Material 3 Expressive contained loading indicator.
+ * For compact sizes (< 30.dp), falls back to CircularProgressIndicator to prevent
+ * container bounds clipping and negative layout dimension crashes.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -105,58 +91,12 @@ fun PetalContainedLoadingIndicator(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 40.dp
 ) {
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-
-    if (isGlass) {
-        val polygons = remember {
-            try {
-                LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
-            } catch (_: Throwable) {
-                emptyList()
-            }
-        }
-
-        if (polygons.isNotEmpty()) {
-            var containerShape by remember {
-                mutableStateOf(polygons.first())
-            }
-
-            LaunchedEffect(Unit) {
-                while (isActive) {
-                    try {
-                        containerShape = polygons.random()
-                    } catch (_: Throwable) {}
-                    delay(650)
-                }
-            }
-
-            // When Liquid Glass is ON: follow SimpMusic's container & indicator colors (surfaceContainerHighest & onSurfaceVariant)
-            // with liquid glass chrome, instead of Material You / primary colors
-            val glassContainer = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f)
-            val glassIndicator = MaterialTheme.colorScheme.onSurfaceVariant
-            val currentShape = containerShape.toShape()
-
-            Crossfade(
-                targetState = currentShape,
-                animationSpec = tween(400),
-                modifier = modifier,
-                label = "LiquidGlassMorphingCrossfade"
-            ) { shape ->
-                androidx.compose.material3.ContainedLoadingIndicator(
-                    modifier = Modifier
-                        .requiredSize(size)
-                        .liquidGlassChrome(shape = shape, enabled = true),
-                    polygons = polygons,
-                    containerColor = glassContainer,
-                    indicatorColor = glassIndicator,
-                    containerShape = shape
-                )
-            }
-        } else {
-            ZenithContainedLoadingIndicator(
-                modifier = modifier.requiredSize(size)
-            )
-        }
+    if (size < 30.dp) {
+        androidx.compose.material3.CircularProgressIndicator(
+            modifier = modifier.requiredSize(size),
+            strokeWidth = (size * 0.12f).coerceAtLeast(1.5.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
     } else {
         ZenithContainedLoadingIndicator(
             modifier = modifier.requiredSize(size)

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,6 +47,9 @@ import androidx.compose.ui.Alignment
 import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.components.PetalFloatingStatusCard
 import com.petal.browser.ui.components.PetalFloatingStatusCardData
+import com.petal.browser.ui.glass.LocalPetalGlassSource
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -97,6 +101,11 @@ object PetalDownloadBannerBridge {
         activity: ComponentActivity,
         onOpenDownloads: Runnable
     ) {
+        val hostSource = (activity as? com.petal.browser.activity.BrowserActivity)?.let {
+            it.findViewById<android.view.View>(com.petal.browser.R.id.main_content)
+                ?: it.currentAlbumController?.albumView
+        }
+
         composeView.apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
@@ -139,6 +148,9 @@ object PetalDownloadBannerBridge {
                             !dismissedDownloadKeys.contains(nameKey)) {
                             when (activeItem.status) {
                                 DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
+                                    val safeProgress = activeItem.progress?.let { p ->
+                                        (if (p > 1f) p / 100f else p).coerceIn(0f, 1f)
+                                    }
                                     currentBannerData.value = ActiveBannerData(
                                         state = BannerState.DOWNLOADING,
                                         fileName = activeItem.fileName,
@@ -146,7 +158,7 @@ object PetalDownloadBannerBridge {
                                         sourceHost = host,
                                         localUri = safeLocalUri,
                                         downloadId = activeItem.id,
-                                        progress = activeItem.progress,
+                                        progress = safeProgress,
                                         speedBytesPerSec = activeItem.speedBytesPerSec
                                     )
                                 }
@@ -184,25 +196,33 @@ object PetalDownloadBannerBridge {
                     }
                 }
 
-                PetalExpressiveTheme(
-                    dynamicColor = dynamicColor,
-                    useAmoled = isAmoled,
-                    appFont = appFont,
-                    colorStyle = colorStyle,
-                    paletteId = paletteId
+                val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val wallpaper = rememberPetalGlassWallpaper()
+
+                CompositionLocalProvider(
+                    LocalPetalGlassSource provides hostSource,
+                    LocalPetalGlassWallpaper provides wallpaper
                 ) {
-                    com.petal.browser.ui.glass.PetalGlassContainer(
-                        modifier = Modifier,
-                        enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments"),
-                        live = true
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = appFont,
+                        colorStyle = colorStyle,
+                        paletteId = paletteId
                     ) {
-                        PetalDownloadBanner(
-                            bannerData = currentBannerData.value,
-                            onOpenDownloads = { onOpenDownloads.run() },
-                            onDismiss = {
-                                dismissCurrentBanner(currentBannerData.value)
-                            }
-                        )
+                        com.petal.browser.ui.glass.PetalGlassContainer(
+                            modifier = Modifier,
+                            enabled = isGlass,
+                            live = hostSource != null && hostSource.id != com.petal.browser.R.id.main
+                        ) {
+                            PetalDownloadBanner(
+                                bannerData = currentBannerData.value,
+                                onOpenDownloads = { onOpenDownloads.run() },
+                                onDismiss = {
+                                    dismissCurrentBanner(currentBannerData.value)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -282,12 +302,15 @@ fun PetalDownloadBanner(
         icon = if (bannerData.state == BannerState.DOWNLOADING) null else iconVector,
         iconContent = if (bannerData.state == BannerState.DOWNLOADING) {
             {
+                val safeIndicatorProgress = bannerData.progress?.let { p ->
+                    (if (p > 1f) p / 100f else p).coerceIn(0f, 1f)
+                }
                 Box(
                     modifier = Modifier.size(44.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     PetalCircularWavyProgressIndicator(
-                        progress = if (bannerData.progress != null) { { bannerData.progress } } else null,
+                        progress = if (safeIndicatorProgress != null) { { safeIndicatorProgress } } else null,
                         color = MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                         size = 44.dp,
@@ -321,7 +344,9 @@ fun PetalDownloadBanner(
             }
             else -> null
         },
-        progress = if (bannerData.state == BannerState.DOWNLOADING) bannerData.progress else null,
+        progress = if (bannerData.state == BannerState.DOWNLOADING) {
+            bannerData.progress?.let { p -> (if (p > 1f) p / 100f else p).coerceIn(0f, 1f) }
+        } else null,
         isIndeterminateProgress = bannerData.state == BannerState.DOWNLOADING && bannerData.progress == null,
         useWavyProgress = false,
         progressColor = if (bannerData.state == BannerState.COMPLETED) {

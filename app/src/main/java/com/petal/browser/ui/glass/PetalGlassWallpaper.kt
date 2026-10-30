@@ -217,6 +217,8 @@ fun Modifier.liveGlassWallpaper(
     tick: () -> Long
 ): Modifier = liveGlassWallpaperImpl(wallpaper, source, tick, FloatArray(2))
 
+private var isRecordingLiveWallpaper = false
+
 private fun Modifier.liveGlassWallpaperImpl(
     wallpaper: PetalGlassWallpaper,
     source: android.view.View,
@@ -241,12 +243,17 @@ private fun Modifier.liveGlassWallpaperImpl(
         val srcLoc = IntArray(2)
         onDrawWithContent {
             tick() // reading per-frame state redraws (and re-records) every frame
+            if (isRecordingLiveWallpaper) {
+                // Prevent recursive re-entry if source hierarchy includes the calling view
+                return@onDrawWithContent
+            }
             if (source.isAttachedToWindow && source.width > 0 && source.height > 0 && size.width > 0f && size.height > 0f) {
                 try {
                     source.getLocationOnScreen(srcLoc)
                     val dx = srcLoc[0] - boxOnScreen[0]
                     val dy = srcLoc[1] - boxOnScreen[1]
                     try {
+                        isRecordingLiveWallpaper = true
                         wallpaper.sharp.record {
                             drawIntoCanvas { c ->
                                 val nc = c.nativeCanvas
@@ -260,6 +267,8 @@ private fun Modifier.liveGlassWallpaperImpl(
                         wallpaper.hasRecorded = true
                     } catch (_: Throwable) {
                         wallpaper.hasRecorded = false
+                    } finally {
+                        isRecordingLiveWallpaper = false
                     }
                 } catch (_: Throwable) {}
             }

@@ -572,11 +572,16 @@ object PetalFetchDownloadBridge {
                     val connections = if (status == DownloadManager.STATUS_RUNNING) {
                         com.petal.browser.download.PetalParallelStats.connectionsFor(download.url)
                     } else 1
+                    val rawProgress = download.progress
+                    val safeProgress = rawProgress?.let { p ->
+                        val pf = p.toFloat()
+                        (if (pf > 1f) pf / 100f else pf).coerceIn(0f, 1f)
+                    }
                     mozillaDownloadsMap[download.id] = DownloadItem(
                         id = id,
                         fileName = download.fileName ?: "download",
                         fileUrl = download.url,
-                        progress = download.progress,
+                        progress = safeProgress,
                         status = status,
                         bytesDownloaded = download.currentBytesCopied,
                         totalSize = total,
