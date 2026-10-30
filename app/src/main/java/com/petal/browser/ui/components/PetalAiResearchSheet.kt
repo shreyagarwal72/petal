@@ -485,9 +485,10 @@ fun PetalAiResearchSheet(
                 Surface(
                     shape = askShape,
                     color = if (askGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = if (askGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .then(if (askGlass) Modifier.liquidGlassChrome(askShape, enabled = true) else Modifier)
+                        .then(if (askGlass) Modifier.liquidGlassChrome(askShape, enabled = true, sheenIntensity = 0.55f) else Modifier)
                 ) {
                     Row(
                         modifier = Modifier

@@ -369,6 +369,14 @@ fun PetalDialog(
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
+        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        androidx.compose.runtime.SideEffect {
+            dialogWindow?.let { win ->
+                if (isGlass) {
+                    win.setDimAmount(0.12f)
+                }
+            }
+        }
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = modifier
                 .fillMaxWidth(0.92f)
@@ -386,7 +394,7 @@ fun PetalDialog(
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 tonalElevation = 0.dp,
                 shadowElevation = if (isGlass) 0.dp else 12.dp,
-                border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
             ) {
                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
             }

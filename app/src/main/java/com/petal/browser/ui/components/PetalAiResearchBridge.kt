@@ -11,7 +11,10 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.compose.ai.ResearchMode
+import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.glass.LocalPetalGlassSource
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -44,6 +47,8 @@ object PetalAiResearchBridge {
         try {
             val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
                 ?: activity.findViewById<android.view.View>(android.R.id.content)
+                ?: activity.window.decorView
+            PetalContentSnapshot.capture(hostSource)
             var composeView: ComposeView? = null
             composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
@@ -67,8 +72,12 @@ object PetalAiResearchBridge {
                     val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
 
                     var isVisible by remember { mutableStateOf(true) }
+                    val wallpaper = rememberPetalGlassWallpaper()
 
-                    CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                    CompositionLocalProvider(
+                        LocalPetalGlassSource provides hostSource,
+                        LocalPetalGlassWallpaper provides wallpaper
+                    ) {
                         PetalExpressiveTheme(
                             dynamicColor = dynamicColor,
                             useAmoled = isAmoled,
@@ -87,6 +96,7 @@ object PetalAiResearchBridge {
                                             sp.edit().putString("sp_ai_default_action", action).apply()
                                         }
                                         isVisible = false
+                                        PetalContentSnapshot.clear()
                                         (composeView?.parent as? ViewGroup)?.removeView(composeView)
 
                                         if (action == "SUMMARIZE") {
@@ -111,6 +121,7 @@ object PetalAiResearchBridge {
                                     },
                                     onDismiss = {
                                         isVisible = false
+                                        PetalContentSnapshot.clear()
                                         (composeView?.parent as? ViewGroup)?.removeView(composeView)
                                     }
                                 )
@@ -147,6 +158,8 @@ object PetalAiResearchBridge {
             try {
                 val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
                     ?: activity.findViewById<android.view.View>(android.R.id.content)
+                    ?: activity.window.decorView
+                PetalContentSnapshot.capture(hostSource)
                 var composeView: ComposeView? = null
                 composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
@@ -170,8 +183,12 @@ object PetalAiResearchBridge {
                         val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
 
                         var isVisible by remember { mutableStateOf(true) }
+                        val wallpaper = rememberPetalGlassWallpaper()
 
-                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                        CompositionLocalProvider(
+                            LocalPetalGlassSource provides hostSource,
+                            LocalPetalGlassWallpaper provides wallpaper
+                        ) {
                             PetalExpressiveTheme(
                                 dynamicColor = dynamicColor,
                                 useAmoled = isAmoled,
@@ -191,6 +208,7 @@ object PetalAiResearchBridge {
                                         autoStart = autoStart,
                                         onDismiss = {
                                             isVisible = false
+                                            PetalContentSnapshot.clear()
                                             (composeView?.parent as? ViewGroup)?.removeView(composeView)
                                         }
                                     )
@@ -225,6 +243,8 @@ object PetalAiResearchBridge {
             try {
                 val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
                     ?: activity.findViewById<android.view.View>(android.R.id.content)
+                    ?: activity.window.decorView
+                PetalContentSnapshot.capture(hostSource)
                 var composeView: ComposeView? = null
                 composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
@@ -248,8 +268,12 @@ object PetalAiResearchBridge {
                         val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
 
                         var isVisible by remember { mutableStateOf(true) }
+                        val wallpaper = rememberPetalGlassWallpaper()
 
-                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                        CompositionLocalProvider(
+                            LocalPetalGlassSource provides hostSource,
+                            LocalPetalGlassWallpaper provides wallpaper
+                        ) {
                             PetalExpressiveTheme(
                                 dynamicColor = dynamicColor,
                                 useAmoled = isAmoled,
@@ -267,6 +291,7 @@ object PetalAiResearchBridge {
                                         pageContent = pageContent,
                                         onAskQuestion = {
                                             isVisible = false
+                                            PetalContentSnapshot.clear()
                                             (composeView?.parent as? ViewGroup)?.removeView(composeView)
                                             showAiResearchSheet(
                                                 activity = activity,
@@ -279,11 +304,13 @@ object PetalAiResearchBridge {
                                         },
                                         onOpenSettings = {
                                             isVisible = false
+                                            PetalContentSnapshot.clear()
                                             (composeView?.parent as? ViewGroup)?.removeView(composeView)
                                             (activity as? BrowserActivity)?.openApiIntegrationsHub()
                                         },
                                         onDismiss = {
                                             isVisible = false
+                                            PetalContentSnapshot.clear()
                                             (composeView?.parent as? ViewGroup)?.removeView(composeView)
                                         }
                                     )

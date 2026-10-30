@@ -884,6 +884,7 @@ fun PetalGroupListRow(
             containerColor = rowContainerColor,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
+        border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.16f)) else null,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()
@@ -1032,7 +1033,7 @@ fun PetalSheet(
         sheetState = sheetState,
         shape = sheetShape,
         containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
-        scrimColor = if (isGlass) Color.Black.copy(alpha = 0.32f) else BottomSheetDefaults.ScrimColor,
+        scrimColor = if (isGlass) Color.Black.copy(alpha = 0.14f) else BottomSheetDefaults.ScrimColor,
         dragHandle = null,
         contentWindowInsets = { androidx.compose.foundation.layout.WindowInsets(0) },
     ) {
@@ -1357,6 +1358,7 @@ fun PetalHeroCard(
             containerColor = if (isGlass || LocalPetalSectionHighlighted.current) petalGroupSurfaceColor() else containerColor,
             contentColor = if (isGlass) MaterialTheme.colorScheme.onSurface else androidx.compose.material3.contentColorFor(containerColor)
         ),
+        border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         content = content
     )

@@ -6,7 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -94,6 +96,14 @@ fun PetalSummaryBoxDialog(
     val dialogShape = RoundedCornerShape(28.dp)
 
     Dialog(onDismissRequest = onDismiss) {
+        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        androidx.compose.runtime.SideEffect {
+            dialogWindow?.let { win ->
+                if (isGlass) {
+                    win.setDimAmount(0.12f)
+                }
+            }
+        }
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = Modifier
                 .fillMaxWidth()
@@ -106,6 +116,7 @@ fun PetalSummaryBoxDialog(
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = if (isGlass) 0.dp else 8.dp,
                 shadowElevation = if (isGlass) 0.dp else 12.dp,
+                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp)
@@ -130,15 +141,17 @@ fun PetalSummaryBoxDialog(
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
-                                        else MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.size(40.dp)
+                                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
+                                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.22f)) else null,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.5f, pressFx = true) else Modifier)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Rounded.AutoAwesome,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        tint = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -308,6 +321,7 @@ fun PetalSummaryBoxDialog(
                     Button(
                         onClick = onAskQuestion,
                         shape = askButtonShape,
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(askButtonShape, enabled = true, sheenIntensity = 0.65f, pressFx = true) else Modifier,
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
                     ) {
                         Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(18.dp))

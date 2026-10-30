@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,16 +49,20 @@ fun PetalAiActionDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    val isGlassHeader = isLiquidGlassEnabled("sp_liquid_glass_containments")
                     Surface(
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(42.dp)
+                        color = if (isGlassHeader) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
+                        border = if (isGlassHeader) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.22f)) else null,
+                        modifier = Modifier
+                            .size(42.dp)
+                            .then(if (isGlassHeader) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.5f, pressFx = true) else Modifier)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Rounded.AutoAwesome,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                tint = if (isGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -146,10 +152,11 @@ private fun AiActionTile(
         onClick = onClick,
         shape = tileShape,
         color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+        border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
         tonalElevation = if (isGlass) 0.dp else 2.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (isGlass) Modifier.liquidGlassChrome(tileShape, enabled = true, sheenIntensity = 0.45f, pressFx = true) else Modifier)
+            .then(if (isGlass) Modifier.liquidGlassChrome(tileShape, enabled = true, sheenIntensity = 0.50f, pressFx = true) else Modifier)
     ) {
         Row(
             modifier = Modifier
@@ -160,9 +167,12 @@ private fun AiActionTile(
         ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(40.dp)
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
+                contentColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.22f)) else null,
+                modifier = Modifier
+                    .size(40.dp)
+                    .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))

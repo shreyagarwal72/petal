@@ -119,12 +119,13 @@ object PetalAiSearchBridge {
                     val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
                     bottomSheet?.background = null
                     bottomSheet?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    val isLiquidGlass = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                        .getBoolean("sp_liquid_glass_enabled", false)
+                    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                     if (isLiquidGlass && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                         win.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                         win.setBackgroundBlurRadius(36)
-                        win.setDimAmount(0.08f)
+                        win.setDimAmount(0.12f)
+                    } else if (isLiquidGlass) {
+                        win.setDimAmount(0.12f)
                     } else {
                         win.setDimAmount(0.35f)
                     }
@@ -270,6 +271,7 @@ fun PetalAiSearchResultSheet(
         color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
+        border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
         modifier = Modifier
             .fillMaxWidth()
             .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = 0.65f)
@@ -356,9 +358,10 @@ fun PetalAiSearchResultSheet(
             Surface(
                 shape = pillShape,
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .liquidGlassChrome(shape = pillShape, enabled = isGlass)
+                    .liquidGlassChrome(shape = pillShape, enabled = isGlass, sheenIntensity = 0.55f)
             ) {
                 Row(
                     modifier = Modifier

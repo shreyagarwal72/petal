@@ -117,6 +117,7 @@ object PetalQuickToolsBridge {
                 win.statusBarColor = android.graphics.Color.TRANSPARENT
                 win.navigationBarColor = android.graphics.Color.TRANSPARENT
                 win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                win.setDimAmount(0.12f)
             }
             dialog.setOnShowListener {
                 dialog.window?.let { win ->

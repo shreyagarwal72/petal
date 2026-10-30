@@ -157,14 +157,16 @@ fun PetalQuickToolsSheet(
     var isReorderMode by remember { mutableStateOf(false) }
 
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .liquidGlassChrome(shape = sheetShape, enabled = isGlass),
+            .then(if (isGlass) Modifier.liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen) else Modifier),
         shape = sheetShape,
         color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
         tonalElevation = if (isGlass) 0.dp else 6.dp
     ) {
         Column(
@@ -344,12 +346,12 @@ private fun ExpressiveQuickToolItem(
             modifier = Modifier
                 .size(56.dp)
                 .clip(shape)
-                .background(if (isGlass) containerColor.copy(alpha = 0.28f) else containerColor)
-                .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.40f, pressFx = true) else Modifier)
+                .background(if (isGlass) petalGroupSurfaceColor() else containerColor)
+                .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.55f, pressFx = true) else Modifier)
                 .border(
                     BorderStroke(
-                        width = if (isReorderMode) 1.5.dp else if (isGlass) 0.dp else 0.5.dp,
-                        color = if (isReorderMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        width = if (isReorderMode) 1.5.dp else if (isGlass) 0.75.dp else 0.5.dp,
+                        color = if (isReorderMode) MaterialTheme.colorScheme.primary else if (isGlass) Color.White.copy(alpha = 0.22f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     ),
                     shape = shape
                 ),
@@ -358,7 +360,7 @@ private fun ExpressiveQuickToolItem(
             Icon(
                 imageVector = tool.icon,
                 contentDescription = tool.title,
-                tint = if (isGlass) MaterialTheme.colorScheme.onSurface else iconColor,
+                tint = if (isGlass) MaterialTheme.colorScheme.primary else iconColor,
                 modifier = Modifier.size(24.dp)
             )
         }
