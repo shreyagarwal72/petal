@@ -277,7 +277,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    private void reloadCurrentBrowserTab() {
+    public void reloadCurrentBrowserTab() {
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).reload();
         } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
