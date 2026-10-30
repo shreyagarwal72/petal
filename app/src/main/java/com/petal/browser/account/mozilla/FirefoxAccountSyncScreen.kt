@@ -754,7 +754,8 @@ fun FirefoxAccountSyncScreen(
                                                                     PetalShortcut(
                                                                         label = tab.title.ifBlank { tab.url },
                                                                         url = tab.url,
-                                                                        siteId = "synced_tab"
+                                                                        siteId = "synced_tab",
+                                                                        containerColor = Color(0xFFFF9400)
                                                                     )
                                                                 )
                                                                 onBack()
