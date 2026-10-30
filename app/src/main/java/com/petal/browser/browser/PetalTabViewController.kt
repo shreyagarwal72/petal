@@ -155,6 +155,7 @@ class PetalTabViewController private constructor(
             }
             pageUrl = url
             applyPageSettings(url)
+            injectPagePrivacyAndAdBlock()
             tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, url)) }
             publishState()
         }
@@ -172,7 +173,7 @@ class PetalTabViewController private constructor(
             this@PetalTabViewController.progress = progress
             tab?.let { browserStore.dispatch(ContentAction.UpdateProgressAction(it.id, progress)) }
             publishState()
-            if (progress in 85..100) {
+            if (progress in 10..30 || progress in 85..100) {
                 injectPagePrivacyAndAdBlock()
             }
         }
@@ -1729,14 +1730,6 @@ private class SessionStateCapturingProgressDelegate(
 ) : org.mozilla.geckoview.GeckoSession.ProgressDelegate {
 
     override fun onPageStart(session: org.mozilla.geckoview.GeckoSession, url: String) {
-        try {
-            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            val adBlock = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-            if (adBlock && !url.startsWith("about:") && !url.startsWith("chrome:")) {
-                val uboPayload = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(url)
-                evaluateJavascript(uboPayload)
-            }
-        } catch (_: Throwable) {}
         try {
             engine?.onPageStart(session, url)
         } catch (t: Throwable) {
