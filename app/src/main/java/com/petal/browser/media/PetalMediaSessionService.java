@@ -5,8 +5,11 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Binder;
@@ -56,6 +59,36 @@ public class PetalMediaSessionService extends Service {
     private long currentDuration = 0;
     private float currentSpeed = 1.0f;
     private boolean isMuted = false;
+
+    private boolean isNoisyReceiverRegistered = false;
+    private final BroadcastReceiver noisyAudioReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+                Log.i(TAG, "Audio becoming noisy (headset disconnected): pausing playback");
+                if (controlListener != null) {
+                    controlListener.onPause();
+                }
+                updatePlaybackState(false, currentPosition);
+            }
+        }
+    };
+
+    private void registerNoisyReceiver() {
+        if (!isNoisyReceiverRegistered) {
+            registerReceiver(noisyAudioReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+            isNoisyReceiverRegistered = true;
+        }
+    }
+
+    private void unregisterNoisyReceiver() {
+        if (isNoisyReceiverRegistered) {
+            try {
+                unregisterReceiver(noisyAudioReceiver);
+            } catch (Exception ignored) {}
+            isNoisyReceiverRegistered = false;
+        }
+    }
 
     public interface MediaControlListener {
         void onPlay();
@@ -160,8 +193,10 @@ public class PetalMediaSessionService extends Service {
 
         Notification notification = buildNotification();
         if (playing) {
+            registerNoisyReceiver();
             startForeground(NOTIFICATION_ID, notification);
         } else {
+            unregisterNoisyReceiver();
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm != null) {
                 nm.notify(NOTIFICATION_ID, notification);
@@ -325,6 +360,7 @@ public class PetalMediaSessionService extends Service {
 
     @Override
     public void onDestroy() {
+        unregisterNoisyReceiver();
         if (mediaSession != null) {
             mediaSession.setActive(false);
             mediaSession.release();

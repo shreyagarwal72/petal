@@ -12,6 +12,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.MyLocation
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Videocam
@@ -59,6 +60,11 @@ enum class PetalPermissionType(
         title = "Microphone Access",
         description = "wants to access your microphone for voice recording and audio input.",
         icon = Icons.Rounded.Mic
+    ),
+    NOTIFICATION(
+        title = "Web Notifications",
+        description = "wants to send you notifications and updates.",
+        icon = Icons.Rounded.Notifications
     ),
     DRM(
         title = "DRM Protected Media",

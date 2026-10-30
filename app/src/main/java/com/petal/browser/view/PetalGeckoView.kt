@@ -38,11 +38,13 @@ import com.petal.browser.unit.HelperUnit
 import com.petal.browser.unit.TabThumbnailCache
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
+import org.mozilla.geckoview.GeckoRuntimeSettings
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.WebResponse
+import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.MediaSession
 import org.mozilla.geckoview.PanZoomController
 import kotlinx.coroutines.launch
@@ -1129,6 +1131,29 @@ class PetalGeckoView @JvmOverloads constructor(
                             }
                             .show()
                     }
+                } else if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION) {
+                    activity.runOnUiThread {
+                        com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
+                            activity,
+                            com.petal.browser.ui.components.PetalPermissionType.NOTIFICATION,
+                            perm.uri,
+                            { remember ->
+                                if (remember) sp.edit().putString(prefKey, "allow").apply()
+                                result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                            },
+                            { remember ->
+                                if (remember) sp.edit().putString(prefKey, "block").apply()
+                                result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                            }
+                        )
+                    }
+                } else if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS) {
+                    val drmEnabled = sp.getBoolean("${getProfile(context)}_drm", sp.getBoolean("sp_drm", true))
+                    if (!drmEnabled) {
+                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                    } else {
+                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                    }
                 } else {
                     result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
                 }
@@ -1353,6 +1378,21 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
                 act.runOnUiThread(adoptWhenOpened)
                 return result
+            }
+
+            override fun onLoadError(
+                session: GeckoSession,
+                uri: String?,
+                error: WebRequestError
+            ): GeckoResult<String>? {
+                return this@PetalGeckoView.onLoadError(session, uri, error)
+            }
+
+            override fun onSubframeLoadRequest(
+                session: GeckoSession,
+                request: GeckoSession.NavigationDelegate.LoadRequest
+            ): GeckoResult<AllowOrDeny>? {
+                return this@PetalGeckoView.onSubframeLoadRequest(session, request)
             }
         }
 
@@ -1836,19 +1876,54 @@ class PetalGeckoView @JvmOverloads constructor(
                 sp.getBoolean("petal_builtin_dark_webpages", true)
             val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
             val isSysDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
-            val isDark = when (themeConfig.uppercase()) {
-                "LIGHT" -> forceDark
-                "DARK" -> true
-                else -> isSysDark || forceDark
+            val targetColorScheme = when (themeConfig.uppercase()) {
+                "LIGHT" -> GeckoRuntimeSettings.COLOR_SCHEME_LIGHT
+                "DARK" -> GeckoRuntimeSettings.COLOR_SCHEME_DARK
+                else -> if (forceDark || isSysDark) GeckoRuntimeSettings.COLOR_SCHEME_DARK else GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
             }
-            val targetColorScheme = if (isDark) 1 else 0 // 1: COLOR_SCHEME_DARK, 0: COLOR_SCHEME_LIGHT
             try {
-                val method = session.settings.javaClass.getMethod("setPreferredColorScheme", Int::class.javaPrimitiveType)
-                method.invoke(session.settings, targetColorScheme)
-            } catch (_: Throwable) {}
+                PetalGeckoRuntime.getOrCreate(context).settings.preferredColorScheme = targetColorScheme
+            } catch (_: Throwable) {
+                runCatching {
+                    val method = PetalGeckoRuntime.getOrCreate(context).settings.javaClass.getMethod("setPreferredColorScheme", Int::class.javaPrimitiveType)
+                    method.invoke(PetalGeckoRuntime.getOrCreate(context).settings, targetColorScheme)
+                }
+            }
         } catch (t: Throwable) {
             android.util.Log.w("PetalGeckoView", "Failed to apply dark mode policy: ${t.message}")
         }
+    }
+
+    fun onLoadError(
+        session: GeckoSession,
+        uri: String?,
+        error: WebRequestError
+    ): GeckoResult<String>? {
+        Log.w(TAG, "Navigation onLoadError: uri=$uri, category=${error.category}, code=${error.code}")
+        hideLoadingSkeleton()
+        dismissSurfaceCover()
+        hasContentfulPaint = true
+        isStopped = true
+        updateProgress(BrowserUnit.LOADING_STOPPED)
+        val act = getHostActivity()
+        if (act is com.petal.browser.activity.BrowserActivity) {
+            act.runOnUiThread {
+                act.updateOmniBox()
+                act.updateAddressBar()
+            }
+        }
+        return null
+    }
+
+    fun onSubframeLoadRequest(
+        session: GeckoSession,
+        request: GeckoSession.NavigationDelegate.LoadRequest
+    ): GeckoResult<AllowOrDeny>? {
+        val uri = request.uri
+        if (handleDeepLinkOrCustomScheme(uri)) {
+            return GeckoResult.fromValue(AllowOrDeny.DENY)
+        }
+        return GeckoResult.fromValue(AllowOrDeny.ALLOW)
     }
 
     /**

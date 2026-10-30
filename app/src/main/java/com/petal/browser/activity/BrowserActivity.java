@@ -6248,6 +6248,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updatePersistentBottomNav();
 
         if (fullscreen) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             if (SDK_INT >= Build.VERSION_CODES.R) {
                 final WindowInsetsController insetsController = getWindow().getInsetsController();
                 if (insetsController != null) {
@@ -6278,6 +6279,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 Log.w(TAG, "Failed to attach video overlay in setCustomFullscreen: " + e.getMessage());
             }
         } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             if (SDK_INT >= Build.VERSION_CODES.R) {
                 final WindowInsetsController insetsController = getWindow().getInsetsController();
                 if (insetsController != null) {

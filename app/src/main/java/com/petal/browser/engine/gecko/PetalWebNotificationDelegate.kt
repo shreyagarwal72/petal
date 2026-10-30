@@ -110,8 +110,11 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            val displayTitle = notification.title.takeIf { it.isNotBlank() } ?: "Web Notification"
-            val displayText = notification.text ?: notification.source.orEmpty()
+            val titleStr = notification.title
+            val displayTitle = if (!titleStr.isNullOrBlank()) titleStr else "Web Notification"
+            val textStr = notification.text
+            val sourceStr = runCatching { notification.source }.getOrNull()
+            val displayText = if (!textStr.isNullOrBlank()) textStr else (sourceStr ?: "")
 
             val builder = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.icon_live_notification)

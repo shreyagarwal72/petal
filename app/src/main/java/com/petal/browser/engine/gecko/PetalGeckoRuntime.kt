@@ -112,9 +112,19 @@ object PetalGeckoRuntime {
             GeckoRuntimeSettings.TRR_MODE_OFF
         }
 
+        val forceDark = sp.getBoolean("sp_force_dark_mode", false) ||
+            sp.getBoolean("petal_builtin_dark_webpages", true)
+        val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
+        val targetColorScheme = when (themeConfig.uppercase()) {
+            "LIGHT" -> GeckoRuntimeSettings.COLOR_SCHEME_LIGHT
+            "DARK" -> GeckoRuntimeSettings.COLOR_SCHEME_DARK
+            else -> if (forceDark) GeckoRuntimeSettings.COLOR_SCHEME_DARK else GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
+        }
+
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(isDebug)
             .trustedRecursiveResolverMode(trrMode)
+            .preferredColorScheme(targetColorScheme)
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
                     .antiTracking(antiTrackingFlags)
