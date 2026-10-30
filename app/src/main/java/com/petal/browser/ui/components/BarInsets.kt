@@ -81,17 +81,13 @@ object BarInsets {
 
         // Minimized:
         // In HIDE mode: the nav and bottom address bar slide away; top address bar leaves statusBarGap.
-        // In PILL mode: the bar morphs into the 36dp pill. Content is padded so it is never covered by the pill.
+        // In PILL mode: the bar morphs into the compact floating pill over the web content.
+        // The page flows edge-to-edge under the floating pill without creating dead window space.
         val hiddenTop: Int
         val hiddenBottom: Int
         if (pillCollapse && pillHeight > 0) {
-            if (isBottom) {
-                hiddenTop = statusBarGap
-                hiddenBottom = pillHeight + gap + navBarBottomInset
-            } else {
-                hiddenTop = statusBarGap + pillHeight + gap
-                hiddenBottom = 0
-            }
+            hiddenTop = statusBarGap
+            hiddenBottom = 0
         } else {
             hiddenTop = if (isBottom) top else minOf(top, statusBarGap)
             hiddenBottom = maxOf(0, bottom - (if (isBottom) addressHeight else 0) - bottomNavHeight)

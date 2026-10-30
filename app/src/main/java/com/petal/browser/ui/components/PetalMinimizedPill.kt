@@ -54,6 +54,11 @@ fun PetalMinimizedPill(
     val glassBar = rememberGlassBar(glassSource)
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
+    val statusBarTopInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding()
+    val navBarBottomInset = WindowInsets.navigationBars
+        .asPaddingValues().calculateBottomPadding()
+
     val containerColor = when {
         isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
         isGlass -> Color.Transparent
@@ -66,8 +71,10 @@ fun PetalMinimizedPill(
         modifier = modifier
             .fillMaxWidth()
             .padding(
-                horizontal = 16.dp,
-                vertical = if (isBottom) 8.dp else 4.dp
+                start = 16.dp,
+                end = 16.dp,
+                top = if (!isBottom) statusBarTopInset + 6.dp else 4.dp,
+                bottom = if (isBottom) navBarBottomInset + 8.dp else 4.dp
             ),
         contentAlignment = Alignment.Center
     ) {

@@ -230,6 +230,9 @@ object PetalAddressBarBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
+                    val bottomNavContainer = (activity as? BrowserActivity)?.findViewById<android.view.View>(com.petal.browser.R.id.bottom_nav_container)
+                    val hasBottomNav = !isMerge && (bottomNavContainer != null && bottomNavContainer.visibility != android.view.View.GONE)
+
                     if (isMerge) {
                         PetalMergedBar(
                             url = currentUrl,
@@ -337,7 +340,8 @@ object PetalAddressBarBridge {
                             onHardRefresh = { hardRefresh?.run() ?: (activity as? BrowserActivity)?.reloadCurrentBrowserTab() },
                             isReaderEligible = _isReaderEligibleState.value,
                             onReaderClick = { _onReaderClickState.value?.run() },
-                            isBottom = isBottomPosition
+                            isBottom = isBottomPosition,
+                            hasBottomNav = hasBottomNav
                         )
                     }
                 }

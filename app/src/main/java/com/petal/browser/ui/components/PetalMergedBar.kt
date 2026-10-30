@@ -1,9 +1,6 @@
 package com.petal.browser.ui.components
 
 import android.graphics.Bitmap
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -129,40 +127,46 @@ fun PetalMergedBar(
 
     val topBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
 
-    Crossfade(
-        targetState = isFullyCollapsed,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium, dampingRatio = Spring.DampingRatioNoBouncy),
-        label = "merge_pill_morph"
-    ) { collapsed ->
-        if (collapsed) {
-            PetalMinimizedPill(
-                domain = BarCollapseState.currentDomain,
-                isHttps = BarCollapseState.isHttps,
-                isIncognito = isIncognito,
-                isBottom = resolvedIsBottom,
-                glassSource = if (isLiquidGlass) glassSource else null,
-                onExpand = {
-                    BarCollapseState.requestExpand()
-                },
-                modifier = modifier
-            )
-        } else {
+    val statusBarTopInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding()
+    val navBarBottomInset = WindowInsets.navigationBars
+        .asPaddingValues().calculateBottomPadding()
+
+    val collapseProgress = if (isPillCollapse) collapsedFraction.coerceIn(0f, 1f) else 0f
+    val fullBarAlpha = if (isPillCollapse) (1f - collapseProgress * 2f).coerceIn(0f, 1f) else 1f
+    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.35f) / 0.65f).coerceIn(0f, 1f) else 0f
+    val pillScale = 0.85f + 0.15f * pillAlpha
+    val outerBgAlpha = if (isPillCollapse) (1f - collapseProgress * 1.6f).coerceIn(0f, 1f) else 1f
+
+    val animatedContainerColor = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * outerBgAlpha)
+    val animatedElevation = (if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 2.dp else 4.dp) * outerBgAlpha
+    val animatedBorder = if (resolvedIsBottom && !isLiquidGlass && outerBgAlpha > 0.05f) BorderStroke(0.65.dp, topBorderColor.copy(alpha = topBorderColor.alpha * outerBgAlpha)) else null
+
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        if (fullBarAlpha > 0.01f) {
             Surface(
                 shape = containerShape,
-                color = containerColor,
-                tonalElevation = if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 2.dp else 4.dp,
-                shadowElevation = if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 4.dp else 4.dp,
-                border = if (resolvedIsBottom && !isLiquidGlass) BorderStroke(0.65.dp, topBorderColor) else null,
-                modifier = modifier
+                color = animatedContainerColor,
+                tonalElevation = animatedElevation,
+                shadowElevation = animatedElevation,
+                border = animatedBorder,
+                modifier = Modifier
                     .fillMaxWidth()
                     .then(
                         if (resolvedIsBottom) Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
                         else Modifier.padding(horizontal = 12.dp, vertical = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp)
                     )
                     .then(
-                        if (isLiquidGlass) Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
+                        if (isLiquidGlass && outerBgAlpha > 0.05f) Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
                         else Modifier
                     )
+                    .graphicsLayer {
+                        alpha = fullBarAlpha
+                        scaleY = 0.94f + 0.06f * fullBarAlpha
+                    }
                     .combinedClickable(
                         onClick = {},
                         onLongClick = {
@@ -171,6 +175,14 @@ fun PetalMergedBar(
                         }
                     )
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            top = if (!resolvedIsBottom) statusBarTopInset + 2.dp else 2.dp,
+                            bottom = if (resolvedIsBottom) navBarBottomInset + 4.dp else 2.dp
+                        )
+                ) {
                 if (BarPrefs.LAYOUT_STACKED.equals(mergeLayout, ignoreCase = true)) {
                     // STACKED 2-Row Layout: Pill on top, buttons in row below
                     Column(
@@ -318,6 +330,24 @@ fun PetalMergedBar(
                     }
                 }
             }
+        }
+
+        if (pillAlpha > 0.01f) {
+            PetalMinimizedPill(
+                domain = BarCollapseState.currentDomain,
+                isHttps = BarCollapseState.isHttps,
+                isIncognito = isIncognito,
+                isBottom = resolvedIsBottom,
+                glassSource = if (isLiquidGlass) glassSource else null,
+                onExpand = {
+                    BarCollapseState.requestExpand()
+                },
+                modifier = Modifier.graphicsLayer {
+                    alpha = pillAlpha
+                    scaleX = pillScale
+                    scaleY = pillScale
+                }
+            )
         }
     }
 }
