@@ -156,13 +156,13 @@ import com.petal.browser.objects.CustomSearchesHelper;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 import com.petal.browser.unit.RecordUnit;
-import com.petal.browser.view.AdapterCustomSearches;
-import com.petal.browser.view.AdapterMenu;
+import com.petal.browser.view.CustomSearchAdapter;
+import com.petal.browser.view.BrowserMenuAdapter;
 import com.petal.browser.view.GridAdapter;
 import com.petal.browser.view.GridItem;
 import com.petal.browser.view.MenuItem;
 import com.petal.browser.view.PetalToast;
-import com.petal.browser.view.AdapterRecord;
+import com.petal.browser.view.RecordListAdapter;
 import com.petal.browser.view.SwipeTouchListener;
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -171,7 +171,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     // Menus
     public static final int INPUT_FILE_REQUEST_CODE = 1;
-    public AdapterRecord adapter;
+    public RecordListAdapter adapter;
     public ImageButton fab_overview;
     public ListView listView;
 
@@ -3820,7 +3820,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 final List<Record> list;
                 list = action.listBookmark(activity, filter, filterBy);
                 action.close();
-                adapter = new AdapterRecord(context, list);
+                adapter = new RecordListAdapter(context, list);
                 if (listView != null) {
                     listView.setAdapter(adapter);
                     adapter.notifyDataSetChanged();
@@ -3848,7 +3848,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 list = action.listHistory(context);
                 action.close();
                 //noinspection NullableProblems
-                adapter = new AdapterRecord(context, list) {
+                adapter = new RecordListAdapter(context, list) {
                     @Override
                     public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                         View v = super.getView(position, convertView, parent);
@@ -5263,7 +5263,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return selected;
     }
 
-    public void removeItemByName(String name, List<MenuItem> selectedItemsList, AdapterMenu adapter) {
+    public void removeItemByName(String name, List<MenuItem> selectedItemsList, BrowserMenuAdapter adapter) {
         int indexToRemove = -1;
         // 1. Position des Elements in der aktuellen Grid-Liste finden
         for (int i = 0; i < selectedItemsList.size(); i++) {
@@ -5694,7 +5694,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final AdapterRecord adapterRecord, List<Record> recordList, int location) {
+    public void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final RecordListAdapter adapterRecord, List<Record> recordList, int location) {
         showOverflowMenu(view != null ? view : findViewById(R.id.bottom_nav_compose));
     }
 

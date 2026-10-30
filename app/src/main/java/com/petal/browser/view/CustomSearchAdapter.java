@@ -31,12 +31,12 @@ import com.petal.browser.objects.CustomSearchesHelper;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 
-public class AdapterCustomSearches extends RecyclerView.Adapter<RedirectsViewHolder> {
+public class CustomSearchAdapter extends RecyclerView.Adapter<RedirectsViewHolder> {
     final private ArrayList<CustomRedirect> redirects;
     private final Context context;
     private final String url;
 
-    public AdapterCustomSearches(Context context, String url, ArrayList<CustomRedirect> redirects) {
+    public CustomSearchAdapter(Context context, String url, ArrayList<CustomRedirect> redirects) {
         super();
         this.redirects = redirects;
         this.context = context;

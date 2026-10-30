@@ -16,11 +16,11 @@ import java.util.List;
 
 import com.petal.browser.R;
 
-public class AdapterSettingsMenu extends RecyclerView.Adapter<AdapterSettingsMenu.ViewHolder> {
+public class SettingsMenuAdapter extends RecyclerView.Adapter<SettingsMenuAdapter.ViewHolder> {
 
     private final List<MenuItem> itemList;
 
-    public AdapterSettingsMenu(List<MenuItem> itemList) {
+    public SettingsMenuAdapter(List<MenuItem> itemList) {
         this.itemList = itemList;
     }
 

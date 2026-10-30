@@ -24,7 +24,7 @@ import com.petal.browser.database.FaviconHelper;
 import com.petal.browser.database.Record;
 import com.petal.browser.unit.HelperUnit;
 
-public class AdapterRecord extends ArrayAdapter<Record> {
+public class RecordListAdapter extends ArrayAdapter<Record> {
     private final Context context;
     private final int layoutResId;
     private final List<Record> list;
@@ -36,7 +36,7 @@ public class AdapterRecord extends ArrayAdapter<Record> {
         MaterialCardView cardView;
     }
 
-    public AdapterRecord(Context context, List<Record> list) {
+    public RecordListAdapter(Context context, List<Record> list) {
         super(context, R.layout.item_list, list);
         this.context = context;
         this.layoutResId = R.layout.item_list;

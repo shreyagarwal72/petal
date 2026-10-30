@@ -11,7 +11,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.List;
 
 import com.petal.browser.database.Record;
-import com.petal.browser.view.AdapterRecord;
+import com.petal.browser.view.RecordListAdapter;
 
 public interface BrowserController {
     void updateProgress(int progress);
@@ -26,5 +26,5 @@ public interface BrowserController {
     void onHideCustomView();
     void showDialogFastToggle(String title, String url, FloatingActionButton floatingActionButton);
     void setProfileIcon (FloatingActionButton floatingActionButton, String url);
-    void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final AdapterRecord adapterRecord, List<Record> recordList, int location);
+    void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final RecordListAdapter adapterRecord, List<Record> recordList, int location);
 }

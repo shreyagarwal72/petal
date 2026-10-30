@@ -13,12 +13,12 @@ import java.util.List;
 
 import com.petal.browser.R;
 
-public class AdapterProfileList extends ArrayAdapter<String> {
+public class ProfileListAdapter extends ArrayAdapter<String> {
     private final Context context;
     private final int layoutResId;
     private final List<String> list;
 
-    public AdapterProfileList(Context context, List<String> list) {
+    public ProfileListAdapter(Context context, List<String> list) {
         super(context, R.layout.item_list, list);
         this.context = context;
         this.layoutResId = R.layout.item_menu;

@@ -14,7 +14,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.view.AdapterCustomSearches
+import com.petal.browser.view.CustomSearchAdapter
 import com.petal.browser.view.GridAdapter
 import com.petal.browser.objects.CustomSearchesHelper
 import com.petal.browser.objects.CustomRedirect
@@ -102,7 +102,7 @@ object BrowserDialogManager {
         }
 
         var displayUrl = initialUrl
-        val adapter = AdapterCustomSearches(context, displayUrl, redirects)
+        val adapter = CustomSearchAdapter(context, displayUrl, redirects)
         recyclerView.adapter = adapter
 
         if (displayUrl.length > 150) {

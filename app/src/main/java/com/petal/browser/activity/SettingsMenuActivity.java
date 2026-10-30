@@ -25,13 +25,13 @@ import java.util.Objects;
 import com.petal.browser.R;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
-import com.petal.browser.view.AdapterSettingsMenu;
+import com.petal.browser.view.SettingsMenuAdapter;
 import com.petal.browser.view.MenuItem;
 
 public class SettingsMenuActivity extends AppCompatActivity {
 
     private List<MenuItem> masterList;
-    private AdapterSettingsMenu adapter;
+    private SettingsMenuAdapter adapter;
     private SharedPreferences sharedPreferences;
 
     public static final String PREF_NAME = "MenuPreferences";
@@ -54,7 +54,7 @@ public class SettingsMenuActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recyclerViewSettings);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        adapter = new AdapterSettingsMenu(masterList);
+        adapter = new SettingsMenuAdapter(masterList);
         recyclerView.setAdapter(adapter);
 
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(

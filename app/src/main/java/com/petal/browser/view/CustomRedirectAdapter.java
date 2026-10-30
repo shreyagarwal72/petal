@@ -33,11 +33,11 @@ import com.petal.browser.objects.CustomRedirect;
 import com.petal.browser.objects.CustomRedirectsHelper;
 import com.petal.browser.unit.HelperUnit;
 
-public class AdapterCustomRedirect extends RecyclerView.Adapter<RedirectsViewHolder> {
+public class CustomRedirectAdapter extends RecyclerView.Adapter<RedirectsViewHolder> {
     final private ArrayList<CustomRedirect> redirects;
     private final Context context;
 
-    public AdapterCustomRedirect(ArrayList<CustomRedirect> redirects, Context context) {
+    public CustomRedirectAdapter(ArrayList<CustomRedirect> redirects, Context context) {
         super();
         this.redirects = redirects;
         this.context = context;

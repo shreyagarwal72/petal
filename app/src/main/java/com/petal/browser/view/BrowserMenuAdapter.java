@@ -11,7 +11,7 @@ import java.util.List;
 
 import com.petal.browser.R;
 
-public class AdapterMenu extends RecyclerView.Adapter<AdapterMenu.ViewHolder> {
+public class BrowserMenuAdapter extends RecyclerView.Adapter<BrowserMenuAdapter.ViewHolder> {
 
     private final List<MenuItem> gridItems;
     private final OnItemClickListener listener;
@@ -20,7 +20,7 @@ public class AdapterMenu extends RecyclerView.Adapter<AdapterMenu.ViewHolder> {
         void onItemClick(MenuItem item);
     }
 
-    public AdapterMenu(List<MenuItem> gridItems, OnItemClickListener listener) {
+    public BrowserMenuAdapter(List<MenuItem> gridItems, OnItemClickListener listener) {
         this.gridItems = gridItems;
         this.listener = listener;
     }

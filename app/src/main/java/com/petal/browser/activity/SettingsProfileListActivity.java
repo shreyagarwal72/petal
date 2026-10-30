@@ -35,7 +35,7 @@ import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 import com.petal.browser.unit.RecordUnit;
 import com.petal.browser.view.PetalToast;
-import com.petal.browser.view.AdapterProfileList;
+import com.petal.browser.view.ProfileListAdapter;
 
 public class SettingsProfileListActivity extends AppCompatActivity {
 
@@ -60,7 +60,7 @@ public class SettingsProfileListActivity extends AppCompatActivity {
         ListView listView = findViewById(R.id.whitelist);
         listView.setEmptyView(findViewById(R.id.whitelist_empty));
         //noinspection NullableProblems
-        AdapterProfileList adapter = new AdapterProfileList(this, list) {
+        ProfileListAdapter adapter = new ProfileListAdapter(this, list) {
             @Override
             public View getView(final int position, View convertView, @NonNull ViewGroup parent) {
                 View v = super.getView(position, convertView, parent);
