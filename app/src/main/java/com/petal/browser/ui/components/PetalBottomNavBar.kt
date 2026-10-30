@@ -206,9 +206,9 @@ fun PetalBottomNavBar(
     // Everything else (Material 3 Expressive floating/docked, glass docked): search sits in the centre.
     val separateSearch = showSearch && effectiveFloating && glassNavOn
     val centerSearch = showSearch && !separateSearch
-    val flatGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
-    // Glass on the docked bar runs through the gesture-bar area, so no page shows unblurred under it.
-    val flatNavInset = if (flatGlass && !effectiveFloating) {
+    // The docked bar (glass or solid) runs through the gesture-bar area like Brave's, so no
+    // gap shows between the bar and the screen edge and no page shows unblurred under it.
+    val flatNavInset = if (!effectiveFloating) {
         with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
     } else 0.dp
     if (effectiveFloating) {
@@ -277,8 +277,7 @@ fun PetalBottomNavBar(
                     translationY = (1f - entrance.value) * entranceOffsetPx + searchLaunch.value * 22.dp.toPx()
                     alpha = entrance.value.coerceIn(0f, 1f) * (1f - searchLaunch.value)
                 }
-                .fillMaxWidth()
-                .then(if (flatGlass) Modifier else Modifier.navigationBarsPadding()),
+                .fillMaxWidth(),
             contentAlignment = Alignment.BottomCenter
         ) {
             val navBarShape = if (isBottomAddressBar) {
@@ -296,8 +295,10 @@ fun PetalBottomNavBar(
             Surface(
                 shape = navBarShape,
                 color = if (isLiquidGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = if (isLiquidGlass || isBottomAddressBar) 0.dp else 3.dp,
-                shadowElevation = if (isLiquidGlass || isBottomAddressBar) 0.dp else 8.dp,
+                // No tonal lift or drop shadow: the shadow was the dark blur smeared outside the
+                // rounded corners. The bar is a clean flat fill (or glass), rounded or rectangular.
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp + flatNavInset)
