@@ -83,12 +83,14 @@ fun FirefoxAccountSyncScreen(
 
     val accountState by fxaManager.accountState.collectAsState()
     val syncState by syncManager.syncState.collectAsState()
+    val remoteDevices by syncManager.tabBridge.remoteTabsFlow.collectAsState()
 
     val profile = GoogleAccountManager.currentProfile
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
+    var showLoginOverlay by remember { mutableStateOf(false) }
     var showAppLockConfigPage by remember { mutableStateOf(false) }
     var showDesktopPairDialog by remember { mutableStateOf(false) }
     var desktopPairUrlInput by remember { mutableStateOf("") }
@@ -568,19 +570,9 @@ fun FirefoxAccountSyncScreen(
 
                                             Spacer(Modifier.height(18.dp))
 
-                                            // Sign In Button
+                                            // Sign In Button (Opens in-app Material 3 overlay on top of the page)
                                             Button(
-                                                onClick = {
-                                                    val loginUrl = fxaManager.beginLogin()
-                                                    onOpenOAuth(
-                                                        PetalShortcut(
-                                                            label = "Firefox Sign In",
-                                                            url = loginUrl,
-                                                            siteId = "firefox_sync",
-                                                            containerColor = Color(0xFFFF9400)
-                                                        )
-                                                    )
-                                                },
+                                                onClick = { showLoginOverlay = true },
                                                 shape = RoundedCornerShape(20.dp),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
@@ -702,6 +694,105 @@ fun FirefoxAccountSyncScreen(
                                             )
                                         }
                                     )
+                                }
+                            }
+
+                            // ── Section: TABS FROM OTHER DEVICES ───────────────────────
+                            if (accountState is FxaState.SignedIn && remoteDevices.isNotEmpty()) {
+                                Text(
+                                    text = "Tabs from Other Devices",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.2.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+
+                                remoteDevices.forEach { device ->
+                                    com.petal.browser.ui.containment.PetalHeroCard(
+                                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (device.deviceType.contains("mobile", ignoreCase = true)) Icons.Rounded.PhoneAndroid else Icons.Rounded.Devices,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                                Text(
+                                                    text = device.deviceName.ifBlank { "Firefox Device" },
+                                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                Text(
+                                                    text = "${device.tabs.size} tabs",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+
+                                            Spacer(Modifier.height(10.dp))
+
+                                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                device.tabs.forEach { tab ->
+                                                    Surface(
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        color = MaterialTheme.colorScheme.surface,
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .bouncyClickable {
+                                                                onOpenOAuth(
+                                                                    PetalShortcut(
+                                                                        label = tab.title.ifBlank { tab.url },
+                                                                        url = tab.url,
+                                                                        siteId = "synced_tab"
+                                                                    )
+                                                                )
+                                                                onBack()
+                                                            }
+                                                    ) {
+                                                        Row(
+                                                            modifier = Modifier.padding(12.dp),
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Rounded.OpenInNew,
+                                                                contentDescription = null,
+                                                                tint = MaterialTheme.colorScheme.primary,
+                                                                modifier = Modifier.size(16.dp)
+                                                            )
+                                                            Column(modifier = Modifier.weight(1f)) {
+                                                                Text(
+                                                                    text = tab.title.ifBlank { tab.url },
+                                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                                    maxLines = 1,
+                                                                    overflow = TextOverflow.Ellipsis,
+                                                                    color = MaterialTheme.colorScheme.onSurface
+                                                                )
+                                                                Text(
+                                                                    text = tab.url,
+                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    maxLines = 1,
+                                                                    overflow = TextOverflow.Ellipsis,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
@@ -1221,6 +1312,19 @@ fun FirefoxAccountSyncScreen(
             onBrowseSystemFallback = {
                 showAvatarPetalPicker = false
                 galleryLauncher.launch("image/*")
+            }
+        )
+    }
+
+    // Material 3 Firefox Auth Modal Overlay Sheet
+    if (showLoginOverlay) {
+        FirefoxAuthOverlaySheet(
+            onDismiss = { showLoginOverlay = false },
+            onLoginSuccess = { email ->
+                showLoginOverlay = false
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Signed in to Firefox Account ($email)! Synchronizing data...")
+                }
             }
         )
     }

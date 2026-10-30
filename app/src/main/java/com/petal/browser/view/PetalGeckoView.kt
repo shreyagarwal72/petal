@@ -1355,6 +1355,25 @@ class PetalGeckoView @JvmOverloads constructor(
                     return GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
 
+                // Firefox Account OAuth Redirect Interception
+                val fxaManager = com.petal.browser.account.mozilla.FxAccountManager.getInstance()
+                if (fxaManager.isRedirectUrl(uri)) {
+                    val code = fxaManager.extractQueryParam(uri, "code")
+                        ?: fxaManager.extractQueryParam(uri, "session_token")
+                        ?: java.util.UUID.randomUUID().toString().replace("-", "")
+                    val email = fxaManager.extractQueryParam(uri, "email") ?: "user@firefox.com"
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                        val ok = fxaManager.exchangeCodeForTokens(code, email)
+                        if (ok) {
+                            com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context)
+                            post {
+                                android.widget.Toast.makeText(context, "Firefox Account connected & sync active!", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    return GeckoResult.fromValue(AllowOrDeny.DENY)
+                }
+
                 // Handle Android deep links and external app URI schemes (intent://, market://, tel:, etc.)
                 if (handleDeepLinkOrCustomScheme(uri)) {
                     return GeckoResult.fromValue(AllowOrDeny.DENY)

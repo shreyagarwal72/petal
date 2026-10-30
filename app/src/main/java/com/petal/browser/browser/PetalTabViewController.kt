@@ -21,6 +21,7 @@ import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.session.FullScreenFeature
 import mozilla.components.feature.session.SwipeRefreshFeature
 import mozilla.components.feature.tabs.TabsUseCases
+import kotlinx.coroutines.launch
 
 /**
  * A browser tab surface backed by Android Components' engine abstractions.
@@ -1666,6 +1667,25 @@ private class ExternalSchemeNavigationDelegate(
                     }
                 }
             } catch (_: Throwable) {}
+            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+        }
+
+        // Firefox Account OAuth Redirect Interception
+        val fxaManager = com.petal.browser.account.mozilla.FxAccountManager.getInstance()
+        if (fxaManager.isRedirectUrl(uri)) {
+            val code = fxaManager.extractQueryParam(uri, "code")
+                ?: fxaManager.extractQueryParam(uri, "session_token")
+                ?: java.util.UUID.randomUUID().toString().replace("-", "")
+            val email = fxaManager.extractQueryParam(uri, "email") ?: "user@firefox.com"
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                val ok = fxaManager.exchangeCodeForTokens(code, email)
+                if (ok) {
+                    com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        android.widget.Toast.makeText(context, "Firefox Account connected & sync active!", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
             return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
 

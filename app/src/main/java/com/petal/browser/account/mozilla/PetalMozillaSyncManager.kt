@@ -207,11 +207,35 @@ class PetalMozillaSyncManager private constructor(
                         tabBridge.parseRemoteDeviceTabs(fetchResult.data, localDeviceId = deviceId)
                     }
 
-                    if (openTabs.isNotEmpty()) {
+                    val resolvedTabs = if (openTabs.isNotEmpty()) {
+                        openTabs
+                    } else {
+                        try {
+                            val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
+                            store.state.tabs
+                                .filter { !it.content.private && it.content.url.isNotBlank() && !it.content.url.startsWith("about:") }
+                                .map { tab ->
+                                    val lastAccess = try {
+                                        com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, tab.id)
+                                    } catch (_: Throwable) {
+                                        System.currentTimeMillis()
+                                    }
+                                    MozTabInfo(
+                                        title = if (tab.content.title.isNotBlank()) tab.content.title else tab.content.url,
+                                        url = tab.content.url,
+                                        lastAccessed = if (lastAccess > 0L) lastAccess else System.currentTimeMillis()
+                                    )
+                                }
+                        } catch (_: Throwable) {
+                            emptyList()
+                        }
+                    }
+
+                    if (resolvedTabs.isNotEmpty()) {
                         val deviceBso = tabBridge.exportToBsoRecord(
                             deviceId = deviceId,
                             deviceName = accountManager.getDeviceName(),
-                            tabs = openTabs
+                            tabs = resolvedTabs
                         )
                         syncClient.postCollectionRecords(
                             apiEndpoint = apiEndpoint,
@@ -222,10 +246,26 @@ class PetalMozillaSyncManager private constructor(
                     }
                 }
 
+                val finalTabs = if (openTabs.isNotEmpty()) openTabs else {
+                    try {
+                        val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
+                        store.state.tabs
+                            .filter { !it.content.private && it.content.url.isNotBlank() && !it.content.url.startsWith("about:") }
+                            .map { tab ->
+                                MozTabInfo(
+                                    title = if (tab.content.title.isNotBlank()) tab.content.title else tab.content.url,
+                                    url = tab.content.url
+                                )
+                            }
+                    } catch (_: Throwable) {
+                        emptyList()
+                    }
+                }
+
                 // Local persistence snapshot fallback:
                 // Cache exported bookmarks, history, and tabs locally per user account so
                 // restore & sync remain 100% durable even across offline or unauthenticated conditions.
-                persistLocalSyncSnapshot(context, targetEngines, openTabs)
+                persistLocalSyncSnapshot(context, targetEngines, finalTabs)
 
                 val now = System.currentTimeMillis()
                 accountManager.setLastSyncTime(now)
@@ -236,7 +276,22 @@ class PetalMozillaSyncManager private constructor(
             } catch (e: Exception) {
                 // If remote network calls fail, ensure local snapshot sync succeeds seamlessly
                 try {
-                    persistLocalSyncSnapshot(context, targetEngines, openTabs)
+                    val fallbackTabs = if (openTabs.isNotEmpty()) openTabs else {
+                        try {
+                            val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
+                            store.state.tabs
+                                .filter { !it.content.private && it.content.url.isNotBlank() && !it.content.url.startsWith("about:") }
+                                .map { tab ->
+                                    MozTabInfo(
+                                        title = if (tab.content.title.isNotBlank()) tab.content.title else tab.content.url,
+                                        url = tab.content.url
+                                    )
+                                }
+                        } catch (_: Throwable) {
+                            emptyList()
+                        }
+                    }
+                    persistLocalSyncSnapshot(context, targetEngines, fallbackTabs)
                     val now = System.currentTimeMillis()
                     accountManager.setLastSyncTime(now)
                     onMain {
