@@ -36,25 +36,36 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Cookie
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.NoEncryption
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.WifiProtectedSetup
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -79,14 +90,19 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.browser.PetalAdBlockEngine
+import com.petal.browser.browser.PetalAdBlockMode
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.privacy.PetalElementBlocker
+import com.petal.browser.privacy.PetalElementZapper
+import com.petal.browser.privacy.PetalHttpsOnlyWhitelist
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalContainmentShapes
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalHeroCard
+import com.petal.browser.ui.containment.PetalMaterialAlertDialog
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.PetalSettingsToggleRow
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -281,6 +297,21 @@ object PetalPrivacyShieldSheet {
             mutableStateOf(sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false)))
         }
 
+        val categoryCounts = remember(cleanHost) {
+            PetalAdBlockEngine.getCategoryCountsForDomain(cleanHost)
+        }
+        val initialDomainMode = remember(cleanHost) {
+            PetalAdBlockEngine.getEffectiveMode(activity, cleanHost)
+        }
+        var siteShieldMode by remember(cleanHost, initialDomainMode) {
+            mutableStateOf(if (initialDomainMode == PetalAdBlockMode.AGGRESSIVE) PetalAdBlockMode.AGGRESSIVE else PetalAdBlockMode.STANDARD)
+        }
+        var isHttpsBypassed by remember(cleanHost) {
+            mutableStateOf(PetalHttpsOnlyWhitelist.isBypassed(activity, cleanHost))
+        }
+        var showBlockElementDialog by remember { mutableStateOf(false) }
+        var customCssSelector by remember { mutableStateOf("") }
+
         val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
         val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
         val shieldShape = RoundedCornerShape(32.dp)
@@ -412,6 +443,42 @@ object PetalPrivacyShieldSheet {
                         }
                     }
 
+                    // ── Live ETP Category Breakdown Pills ────────────────────
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val adsLabel = if (categoryCounts.ads > 0) "Ads: ${categoryCounts.ads}" else "Ads: 0"
+                        val trackersLabel = if (categoryCounts.analytics > 0) "Trackers: ${categoryCounts.analytics}" else "Trackers: 0"
+                        val socialLabel = if (categoryCounts.social > 0) "Social: ${categoryCounts.social}" else "Social: 0"
+                        val cookiesLabel = if (categoryCounts.cookies > 0) "Cookies: ${categoryCounts.cookies}" else "Cookies: Iso"
+
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text(adsLabel, fontSize = 11.sp, maxLines = 1) },
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f)
+                        )
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text(trackersLabel, fontSize = 11.sp, maxLines = 1) },
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f)
+                        )
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text(socialLabel, fontSize = 11.sp, maxLines = 1) },
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f)
+                        )
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text(cookiesLabel, fontSize = 11.sp, maxLines = 1) },
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
                     // ── Connection Security Banner ───────────────────────────
                     PetalHeroCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -444,6 +511,26 @@ object PetalPrivacyShieldSheet {
                                 )
                             }
                         }
+                    }
+
+                    if (!isHttps && httpsOnly) {
+                        PetalSettingsToggleRow(
+                            title = "Allow HTTP for this domain",
+                            subtitle = if (isHttpsBypassed) "HTTPS-Only upgrade bypassed for $cleanHost" else "GeckoView blocks unencrypted HTTP",
+                            icon = Icons.Rounded.NoEncryption,
+                            checked = isHttpsBypassed,
+                            onCheckedChange = { checked ->
+                                isHttpsBypassed = checked
+                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                if (checked) {
+                                    PetalHttpsOnlyWhitelist.addBypass(activity, cleanHost)
+                                } else {
+                                    PetalHttpsOnlyWhitelist.removeBypass(activity, cleanHost)
+                                }
+                                onReloadRequested()
+                            },
+                            position = PetalGroupPosition.SINGLE
+                        )
                     }
 
                     // ── Site Protections Section ─────────────────────────────
@@ -486,8 +573,75 @@ object PetalPrivacyShieldSheet {
                                 onToggleAdBlock(checked)
                                 onReloadRequested()
                             },
-                            position = PetalGroupPosition.BOTTOM
+                            position = PetalGroupPosition.MIDDLE
                         )
+
+                        // Mode Selector Chips
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Filter Level:",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            FilterChip(
+                                selected = siteShieldMode == PetalAdBlockMode.STANDARD,
+                                onClick = {
+                                    siteShieldMode = PetalAdBlockMode.STANDARD
+                                    PetalAdBlockEngine.setDomainOverride(activity, cleanHost, PetalAdBlockMode.STANDARD)
+                                    PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                    onReloadRequested()
+                                },
+                                label = { Text("Standard", fontSize = 11.sp) },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            FilterChip(
+                                selected = siteShieldMode == PetalAdBlockMode.AGGRESSIVE,
+                                onClick = {
+                                    siteShieldMode = PetalAdBlockMode.AGGRESSIVE
+                                    PetalAdBlockEngine.setDomainOverride(activity, cleanHost, PetalAdBlockMode.AGGRESSIVE)
+                                    PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                    onReloadRequested()
+                                },
+                                label = { Text("Aggressive", fontSize = 11.sp) },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+
+                        // Visual Element Zapper & CSS Filter
+                        FilledTonalButton(
+                            onClick = {
+                                onDismiss()
+                                if (activity is com.petal.browser.activity.BrowserActivity) {
+                                    PetalElementZapper.launch(activity.currentAlbumController)
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 3.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Zap Element (Interactive Visual Picker)", fontSize = 12.sp)
+                        }
+
+                        OutlinedButton(
+                            onClick = { showBlockElementDialog = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 3.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Block Page Element (CSS Selector)", fontSize = 12.sp)
+                        }
                     }
 
                     // ── Advanced Privacy Shields Section ─────────────────────
@@ -584,6 +738,50 @@ object PetalPrivacyShieldSheet {
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                if (showBlockElementDialog) {
+                    PetalMaterialAlertDialog(
+                        onDismissRequest = { showBlockElementDialog = false },
+                        title = { Text("Block Element on $cleanHost", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    "Enter a CSS selector (e.g. '.newsletter-modal', '#paywall-banner') to permanently hide it from this domain.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                OutlinedTextField(
+                                    value = customCssSelector,
+                                    onValueChange = { customCssSelector = it },
+                                    placeholder = { Text("e.g. .popup-overlay") },
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    if (customCssSelector.isNotBlank()) {
+                                        PetalElementBlocker.addSelector(activity, cleanHost, customCssSelector.trim())
+                                        onReloadRequested()
+                                        showBlockElementDialog = false
+                                        customCssSelector = ""
+                                    }
+                                },
+                                enabled = customCssSelector.isNotBlank()
+                            ) {
+                                Text("Block")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showBlockElementDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
                 }
             }
         }

@@ -551,7 +551,9 @@ class PetalTabViewController private constructor(
                     session: org.mozilla.geckoview.GeckoSession,
                     event: org.mozilla.geckoview.ContentBlocking.BlockEvent
                 ) {
-                    com.petal.browser.browser.PetalAdBlockEngine.recordBlock(pageUrl)
+                    val atCat = try { event.antiTrackingCategory } catch (_: Throwable) { 0 }
+                    val cookieCat = try { event.cookieBehaviorCategory } catch (_: Throwable) { 0 }
+                    com.petal.browser.browser.PetalAdBlockEngine.recordBlockWithCategories(pageUrl, atCat, cookieCat)
                 }
             }
 
@@ -1650,11 +1652,29 @@ private class ExternalSchemeNavigationDelegate(
             return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
 
+        // Interactive Element Zapper (petal://zap-element?domain=...&selector=...)
+        if (uri.startsWith("petal://zap-element", ignoreCase = true)) {
+            try {
+                val parsedUri = android.net.Uri.parse(uri)
+                val domain = parsedUri.getQueryParameter("domain") ?: ""
+                val selector = parsedUri.getQueryParameter("selector") ?: ""
+                if (domain.isNotBlank() && selector.isNotBlank()) {
+                    com.petal.browser.privacy.PetalElementBlocker.addSelector(context, domain, selector)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        android.widget.Toast.makeText(context, "Element zapped & hidden on $domain", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (_: Throwable) {}
+            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+        }
+
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
 
         // 1. HTTPS-Only Mode Upgrade
         val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
-        if (httpsOnly && uri.startsWith("http://", ignoreCase = true) &&
+        val targetHost = try { android.net.Uri.parse(uri).host } catch (_: Throwable) { null }
+        val isHttpsBypassed = com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(context, targetHost)
+        if (httpsOnly && !isHttpsBypassed && uri.startsWith("http://", ignoreCase = true) &&
             !uri.startsWith("http://localhost", ignoreCase = true) &&
             !uri.startsWith("http://127.0.0.1", ignoreCase = true) &&
             !uri.startsWith("http://10.", ignoreCase = true) &&
@@ -1709,6 +1729,14 @@ private class SessionStateCapturingProgressDelegate(
 ) : org.mozilla.geckoview.GeckoSession.ProgressDelegate {
 
     override fun onPageStart(session: org.mozilla.geckoview.GeckoSession, url: String) {
+        try {
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            val adBlock = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
+            if (adBlock && !url.startsWith("about:") && !url.startsWith("chrome:")) {
+                val uboPayload = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(url)
+                evaluateJavascript(uboPayload)
+            }
+        } catch (_: Throwable) {}
         try {
             engine?.onPageStart(session, url)
         } catch (t: Throwable) {

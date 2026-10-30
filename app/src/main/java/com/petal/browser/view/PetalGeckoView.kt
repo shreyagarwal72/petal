@@ -922,6 +922,18 @@ class PetalGeckoView @JvmOverloads constructor(
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
                 com.petal.browser.media.sniffer.PetalNativeSnifferEngine.setActiveTab(tabId, url)
                 updateProgress(10)
+
+                // Waterfox-grade Early Cosmetic & Scriptlet Injection (document_start)
+                if (!isInternalBootstrapUrl(url) && !url.startsWith("about:") && !url.startsWith("chrome:")) {
+                    val adBlock = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
+                    if (adBlock) {
+                        try {
+                            val uboPayload = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(url)
+                            evaluateJavascript(uboPayload)
+                        } catch (_: Throwable) {}
+                    }
+                }
+
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, true)
                     com.petal.browser.engine.gecko.PetalEngineStore.updateProgress(context, tabId, 10)
@@ -1324,6 +1336,22 @@ class PetalGeckoView @JvmOverloads constructor(
                     if (uri.equals("about:blank", ignoreCase = true)) {
                         return GeckoResult.fromValue(AllowOrDeny.ALLOW)
                     }
+                    return GeckoResult.fromValue(AllowOrDeny.DENY)
+                }
+
+                // Interactive Element Zapper handler (petal://zap-element?domain=...&selector=...)
+                if (uri.startsWith("petal://zap-element", ignoreCase = true)) {
+                    try {
+                        val parsedUri = android.net.Uri.parse(uri)
+                        val domain = parsedUri.getQueryParameter("domain") ?: ""
+                        val selector = parsedUri.getQueryParameter("selector") ?: ""
+                        if (domain.isNotBlank() && selector.isNotBlank()) {
+                            com.petal.browser.privacy.PetalElementBlocker.addSelector(context, domain, selector)
+                            post {
+                                android.widget.Toast.makeText(context, "Element zapped & hidden on $domain", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (_: Throwable) {}
                     return GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
 
@@ -3104,6 +3132,13 @@ class PetalGeckoView @JvmOverloads constructor(
             }
             sb.append("})();")
             evaluateJavascript(sb.toString())
+
+            // Waterfox-grade cosmetic and anti-adblock scriptlet injection
+            val adBlock = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
+            if (adBlock) {
+                val uboPayload = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(currentUrl)
+                evaluateJavascript(uboPayload)
+            }
         } catch (_: Throwable) {}
     }
 

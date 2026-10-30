@@ -369,6 +369,17 @@ object PetalAdBlockEngine {
      */
     @JvmStatic
     fun getuBlockCosmeticAndScriptletPayload(url: String? = null): String {
+        val cleanHost = try {
+            if (!url.isNullOrBlank()) Uri.parse(url).host?.lowercase(Locale.US)?.removePrefix("www.") ?: "" else ""
+        } catch (_: Exception) { "" }
+
+        val app = com.petal.browser.PetalApplication.instance
+        val userCustomRules = if (app != null && cleanHost.isNotEmpty()) {
+            com.petal.browser.privacy.PetalElementBlocker.getRulesForDomain(app, cleanHost)
+        } else {
+            emptyList()
+        }
+
         val isYouTube = !url.isNullOrBlank() && url.contains("youtube.com")
 
         val ytScriptlet = if (isYouTube) """
@@ -376,8 +387,8 @@ object PetalAdBlockEngine {
             function handleYouTubeAds() {
                 try {
                     const video = document.querySelector('video');
-                    const adContainer = document.querySelector('.ad-container, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-module, ytd-promoted-sparkles-web-renderer');
-                    const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
+                    const adContainer = document.querySelector('.ad-container, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-module, ytd-promoted-sparkles-web-renderer, #player-ads');
+                    const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, .ytp-ad-skip-button-slot');
 
                     if (adContainer || skipBtn || (video && document.querySelector('.ytp-ad-text'))) {
                         if (video) {
@@ -392,7 +403,7 @@ object PetalAdBlockEngine {
                         }
                     }
                     // Remove promo banners & companion ads
-                    const promoElements = document.querySelectorAll('ytd-compact-promoted-item-renderer, ytd-promoted-video-renderer, #masthead-ad, rendered-ad-background');
+                    const promoElements = document.querySelectorAll('ytd-compact-promoted-item-renderer, ytd-promoted-video-renderer, #masthead-ad, rendered-ad-background, .ytd-in-feed-ad-layout-renderer, ytd-ad-slot-renderer');
                     promoElements.forEach(el => el.remove());
                 } catch (e) {}
             }
@@ -410,12 +421,14 @@ object PetalAdBlockEngine {
             }
         }.orEmpty()
 
+        val customSelectorsJson = org.json.JSONArray(userCustomRules).toString()
+
         return """
             javascript:(function() {
                 if (window.__petal_ubo_injected__) return;
                 window.__petal_ubo_injected__ = true;
 
-                // 1. uBO Scriptlets: set-constant & abort-on-property-read
+                // 1. uBO Scriptlets: set-constant, abort-on-property-read & prevent-bab
                 window.uBO = {
                     setConstant: function(obj, prop, val) {
                         try {
@@ -429,53 +442,71 @@ object PetalAdBlockEngine {
                     }
                 };
 
-                // Apply uBO scriptlet constants for common ad networks
+                // Defuse anti-adblock detection scripts & common trackers
                 try {
                     window.google_ad_status = 1;
                     window.canRunAds = true;
                     window.isAdBlockActive = false;
+                    window.adBlocker = false;
+                    window.adsbygoogle = { loaded: true, push: function(){}, length: 0 };
+                    window.BlockAdBlock = function() { this.on = function(){}; this.check = function(){}; };
+                    window.fuckAdBlock = window.blockAdBlock = new window.BlockAdBlock();
                 } catch(e) {}
 
-                // 2. Cosmetic CSS & Procedural Rules (:has, :has-text)
-                const adSelectors = [
+                // 2. High-Performance Native CSS Injection (Early document_start)
+                const baseAdSelectors = [
                     '.ad-container', '.ad-banner', '.ad-wrapper', '.ad-slot', '.ad-unit', '.ad-box',
                     '[id*="google_ads"]', '[id*="taboola"]', '[id*="outbrain"]', '[class*="sponsored"]',
                     'iframe[src*="ads"]', 'iframe[src*="doubleclick"]', 'iframe[src*="adnxs"]',
                     '.popunder', '.popup-overlay', '.adsterra_tag', '[class*="adsterra"]', '[id*="adsterra"]',
-                    '.top-ad', '.bottom-ad', '.sidebar-ad', '.header-ad', 'ins.adsbygoogle', '.native-ad'
+                    '.top-ad', '.bottom-ad', '.sidebar-ad', '.header-ad', 'ins.adsbygoogle', '.native-ad',
+                    '.advertisement', '[data-ad-unit]', '[data-ad-slot]', '[data-ad]', 'div[class*="-ad-"]', 'div[id*="-ad-"]',
+                    '.fc-ab-root', '.adblock-overlay', '.adblock-modal', '[class*="adblock-wall"]', '[id*="adblock-dialog"]'
                 ];
+                const customSelectors = $customSelectorsJson;
+                const allSelectors = baseAdSelectors.concat(customSelectors);
 
-                function applyCosmeticRules() {
+                try {
+                    let styleEl = document.getElementById('petal-native-cosmetic-shield');
+                    if (!styleEl) {
+                        styleEl = document.createElement('style');
+                        styleEl.id = 'petal-native-cosmetic-shield';
+                        styleEl.textContent = allSelectors.join(', ') + ' { display: none !important; visibility: hidden !important; height: 0 !important; max-height: 0 !important; opacity: 0 !important; pointer-events: none !important; margin: 0 !important; padding: 0 !important; }';
+                        (document.head || document.documentElement).appendChild(styleEl);
+                    }
+                } catch(e) {}
+
+                // Procedural :has-text filtering and anti-adblock modal unlocker
+                function cleanAnnoyances() {
                     try {
-                        const elements = document.querySelectorAll(adSelectors.join(', '));
-                        elements.forEach(el => {
-                            el.style.setProperty('display', 'none', 'important');
-                            el.style.setProperty('visibility', 'hidden', 'important');
-                            el.style.setProperty('height', '0px', 'important');
-                            el.style.setProperty('opacity', '0', 'important');
-                            el.style.setProperty('pointer-events', 'none', 'important');
-                        });
-
-                        // Procedural :has-text filter matching
                         const allDivs = document.querySelectorAll('div, section, article');
                         allDivs.forEach(el => {
                             if (el.children.length === 0 && (el.textContent.trim() === 'Sponsored' || el.textContent.trim() === 'Advertisement')) {
                                 if (el.parentElement) el.parentElement.style.setProperty('display', 'none', 'important');
                             }
                         });
+                        // Remove anti-adblock backdrop scrolling locks
+                        const antiAdModals = document.querySelectorAll('.fc-ab-root, .adblock-overlay, .adblock-modal, [class*="adblock-wall"]');
+                        if (antiAdModals.length > 0) {
+                            antiAdModals.forEach(el => el.remove());
+                            if (document.body) {
+                                document.body.style.setProperty('overflow', 'auto', 'important');
+                                document.body.style.setProperty('position', 'static', 'important');
+                            }
+                        }
                     } catch (e) {}
                 }
 
-                applyCosmeticRules();
+                cleanAnnoyances();
 
                 if (document.body) {
-                    const observer = new MutationObserver(() => applyCosmeticRules());
+                    const observer = new MutationObserver(() => cleanAnnoyances());
                     observer.observe(document.body, { childList: true, subtree: true });
                 } else {
                     document.addEventListener('DOMContentLoaded', () => {
-                        applyCosmeticRules();
+                        cleanAnnoyances();
                         if (document.body) {
-                            const observer = new MutationObserver(() => applyCosmeticRules());
+                            const observer = new MutationObserver(() => cleanAnnoyances());
                             observer.observe(document.body, { childList: true, subtree: true });
                         }
                     });

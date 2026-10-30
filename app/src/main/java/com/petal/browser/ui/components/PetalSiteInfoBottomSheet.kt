@@ -415,6 +415,20 @@ fun PetalSiteInfoBottomSheet(
                         )
 
                         Spacer(Modifier.height(8.dp))
+                        FilledTonalButton(
+                            onClick = {
+                                onDismissRequest()
+                                com.petal.browser.privacy.PetalElementZapper.launch(albumController)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Zap Element (Interactive Visual Picker)", fontSize = 12.sp)
+                        }
+
+                        Spacer(Modifier.height(6.dp))
                         var showBlockElementDialog by remember { mutableStateOf(false) }
                         var customCssSelector by remember { mutableStateOf("") }
                         OutlinedButton(
