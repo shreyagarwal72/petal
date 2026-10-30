@@ -119,7 +119,8 @@ object PetalAiSearchBridge {
                     val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
                     bottomSheet?.background = null
                     bottomSheet?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+                    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false) && sp.getBoolean("sp_liquid_glass_containments", true)
                     if (isLiquidGlass && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                         win.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                         win.setBackgroundBlurRadius(36)
