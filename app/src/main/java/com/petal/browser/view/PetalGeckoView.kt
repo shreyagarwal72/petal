@@ -1472,12 +1472,24 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity() ?: return
                 if (act !is com.petal.browser.activity.BrowserActivity) return
 
-                val linkUri = element.linkUri
-                val srcUri = element.srcUri
+                val baseUri = runCatching { element.baseUri }.getOrNull()
+                fun resolveUri(uri: String?): String? {
+                    if (uri.isNullOrBlank()) return null
+                    if (baseUri.isNullOrBlank() || uri.contains("://") || uri.startsWith("data:") || uri.startsWith("blob:") || uri.startsWith("javascript:")) {
+                        return uri
+                    }
+                    return runCatching { java.net.URI(baseUri).resolve(uri).toString() }.getOrDefault(uri)
+                }
+
+                val linkUri = resolveUri(element.linkUri)
+                val srcUri = resolveUri(element.srcUri)
                 val elemType = element.type
-                val linkText = runCatching {
-                    element.javaClass.getField("textContent").get(element) as? String
-                }.getOrNull()
+                val linkText = runCatching { element.linkText }.getOrNull()?.takeIf { it.isNotBlank() }
+                    ?: runCatching { element.title }.getOrNull()?.takeIf { it.isNotBlank() }
+                    ?: runCatching { element.alt }.getOrNull()?.takeIf { it.isNotBlank() }
+                    ?: runCatching { element.javaClass.getField("textContent").get(element) as? String }.getOrNull()
+                val elementTitle = runCatching { element.title }.getOrNull()?.takeIf { it.isNotBlank() }
+                val elementAlt = runCatching { element.alt }.getOrNull()?.takeIf { it.isNotBlank() }
 
                 act.runOnUiThread {
                     com.petal.browser.compose.menu.BrowserContextMenuManager.handleContextMenu(
@@ -1485,7 +1497,11 @@ class PetalGeckoView @JvmOverloads constructor(
                         elemType = elemType,
                         linkUri = linkUri,
                         srcUri = srcUri,
-                        linkText = linkText
+                        linkText = linkText,
+                        title = elementTitle,
+                        alt = elementAlt,
+                        pageUrl = this@PetalGeckoView.currentUrl,
+                        pageTitle = this@PetalGeckoView.title
                     )
                 }
             }

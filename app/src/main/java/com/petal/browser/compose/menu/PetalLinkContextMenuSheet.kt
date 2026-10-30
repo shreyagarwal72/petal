@@ -58,33 +58,71 @@ import kotlinx.coroutines.launch
 
 interface PetalLinkContextMenuHandler {
     fun onOpenInNewTab() {}
+    fun onOpenInBackgroundTab() {}
     fun onOpenInNewTabInGroup() {}
     fun onOpenInIncognitoTab() {}
+    fun onOpenInExternalApp() {}
     fun onPreviewPage() {}
     fun onCopyLinkAddress() {}
     fun onCopyLinkText() {}
     fun onDownloadLink() {}
+    fun onBookmarkLink() {}
+    fun onAddToReadingList() {}
+    fun onShareLink() {}
+
+    // Image actions
+    fun onViewInPetalViewer() {}
     fun onOpenImageInNewTab() {}
+    fun onOpenImageInBackgroundTab() {}
     /** Copies the actual image (pixels) to the clipboard. */
     fun onCopyImage() {}
     /** Copies the image's URL to the clipboard. */
     fun onCopyImageAddress() { onCopyLinkAddress() }
     fun onDownloadImage() {}
-    fun onDownloadVideo() {}
-    fun onDownloadAudio() {}
-    fun onAddToReadingList() {}
-    fun onShareLink() {}
     fun onShareImage() {}
     fun onScanImage() {}
     fun onSearchWithGoogleLens() {}
+    fun onAnalyzeWithPetalAi() {}
+
+    // Video actions
+    fun onOpenVideoInNewTab() {}
+    fun onOpenVideoInBackgroundTab() {}
+    fun onDownloadVideo() {}
+    fun onCopyVideoLink() { onCopyLinkAddress() }
+    fun onShareVideo() { onShareLink() }
+    fun onTogglePictureInPicture() {}
+    fun onOpenInExternalPlayer(mimeType: String = "video/*") {}
+
+    // Audio actions
+    fun onOpenAudioInNewTab() {}
+    fun onOpenAudioInBackgroundTab() {}
+    fun onDownloadAudio() {}
+    fun onCopyAudioLink() { onCopyLinkAddress() }
+    fun onShareAudio() { onShareLink() }
+    fun onOpenInExternalAudioPlayer(mimeType: String = "audio/*") {}
+
+    // Text selection actions
     fun onSearchWebText(text: String) {}
+    fun onSearchWebTextInBackground(text: String) {}
+    fun onResearchWithPetalAi(text: String) {}
+    fun onTranslateText(text: String) {}
     fun onCopySelectedText(text: String) {}
     fun onShareSelectedText(text: String) {}
+
+    // Protocols
     fun onDialPhoneNumber(tel: String) {}
     fun onSendEmail(mailto: String) {}
+    fun onSendSms(smsUri: String) {}
     fun onOpenMapLocation(geo: String) {}
-    /** Opens the image in Petal's built-in full-screen image viewer */
-    fun onViewInPetalViewer() {}
+
+    // Page actions (Blank area long-press)
+    fun onBookmarkPage() {}
+    fun onSharePage() {}
+    fun onPrintPagePdf() {}
+    fun onToggleReaderMode() {}
+    fun onFindInPage() {}
+    fun onViewPageSource() {}
+    fun onAiSummarizePage() {}
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -100,7 +138,9 @@ private enum class MenuKind(val label: String, val icon: ImageVector) {
     TEXT("Selected text", Icons.Rounded.FormatQuote),
     EMAIL("Email address", Icons.Rounded.Email),
     PHONE("Phone number", Icons.Rounded.Phone),
+    SMS("Text message", Icons.Rounded.Sms),
     LOCATION("Location", Icons.Rounded.Place),
+    PAGE("Page actions", Icons.Rounded.Web),
 }
 
 /** Colour role of an action's icon badge. Groups related features visually. */
@@ -124,10 +164,13 @@ private fun menuKindOf(
     isAudio: Boolean,
     selectedText: String?,
     hasLinkAndImage: Boolean = false,
+    isPage: Boolean = false,
 ): MenuKind = when {
     selectedText != null -> MenuKind.TEXT
+    isPage || (linkUrl.isBlank() && !isImage && !isVideo && !isAudio) -> MenuKind.PAGE
     linkUrl.startsWith("mailto:") -> MenuKind.EMAIL
     linkUrl.startsWith("tel:") -> MenuKind.PHONE
+    linkUrl.startsWith("sms:") || linkUrl.startsWith("smsto:") -> MenuKind.SMS
     linkUrl.startsWith("geo:") -> MenuKind.LOCATION
     hasLinkAndImage -> MenuKind.IMAGE_LINK
     isAudio -> MenuKind.AUDIO
@@ -147,10 +190,13 @@ private fun buildSections(
             "Link actions",
             listOf(
                 MenuAction("open_tab", "Open link in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenInNewTab() },
+                MenuAction("open_background_tab", "Open in background tab", Icons.Rounded.OpenInBrowser, MenuTone.OPEN) { handler.onOpenInBackgroundTab() },
                 MenuAction("open_group", "Open in new tab group", Icons.Rounded.Layers, MenuTone.OPEN) { handler.onOpenInNewTabInGroup() },
                 MenuAction("open_incognito", "Open link in private tab", Icons.Rounded.VisibilityOff, MenuTone.OPEN) { handler.onOpenInIncognitoTab() },
+                MenuAction("open_app", "Open in app", Icons.Rounded.OpenInNew, MenuTone.OPEN) { handler.onOpenInExternalApp() },
                 MenuAction("preview", "Preview page", Icons.Rounded.FindInPage, MenuTone.OPEN) { handler.onPreviewPage() },
                 MenuAction("copy_link", "Copy link address", Icons.Rounded.Link, MenuTone.COPY) { handler.onCopyLinkAddress() },
+                MenuAction("bookmark_link", "Bookmark link", Icons.Rounded.BookmarkAdd, MenuTone.SAVE) { handler.onBookmarkLink() },
                 MenuAction("download_link", "Download link target", Icons.Rounded.FileDownload, MenuTone.SAVE) { handler.onDownloadLink() },
                 MenuAction("share_link", "Share link", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareLink() },
             ),
@@ -160,11 +206,14 @@ private fun buildSections(
             listOf(
                 MenuAction("view_image", "View in Petal Viewer", Icons.Rounded.PhotoLibrary, MenuTone.OPEN) { handler.onViewInPetalViewer() },
                 MenuAction("open_image_tab", "Open image in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenImageInNewTab() },
+                MenuAction("open_image_background", "Open image in background tab", Icons.Rounded.OpenInBrowser, MenuTone.OPEN) { handler.onOpenImageInBackgroundTab() },
                 MenuAction("copy_image", "Copy image", Icons.Rounded.Image, MenuTone.COPY) { handler.onCopyImage() },
                 MenuAction("copy_image_address", "Copy image address", Icons.Rounded.Link, MenuTone.COPY) { handler.onCopyImageAddress() },
                 MenuAction("save_image", "Save image", Icons.Rounded.SaveAlt, MenuTone.SAVE) { handler.onDownloadImage() },
                 MenuAction("share_image", "Share image", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareImage() },
+                MenuAction("ai_analyze", "Analyze with Petal AI", Icons.Rounded.AutoAwesome, MenuTone.SEARCH) { handler.onAnalyzeWithPetalAi() },
                 MenuAction("lens", "Search with Google Lens", Icons.Rounded.TravelExplore, MenuTone.SEARCH) { handler.onSearchWithGoogleLens() },
+                MenuAction("scan_qr", "Scan QR / Barcode", Icons.Rounded.QrCodeScanner, MenuTone.SEARCH) { handler.onScanImage() },
             ),
         ),
     )
@@ -172,9 +221,17 @@ private fun buildSections(
         val text = selectedText.orEmpty()
         listOf(
             MenuSection(
-                "Selected text",
+                "Search & AI",
                 listOf(
+                    MenuAction("research_ai", "Research with Petal AI", Icons.Rounded.AutoAwesome, MenuTone.SEARCH) { handler.onResearchWithPetalAi(text) },
                     MenuAction("search_text", "Search the web", Icons.Rounded.Search, MenuTone.SEARCH) { handler.onSearchWebText(text) },
+                    MenuAction("search_background", "Search in background tab", Icons.Rounded.OpenInBrowser, MenuTone.SEARCH) { handler.onSearchWebTextInBackground(text) },
+                    MenuAction("translate_text", "Translate text", Icons.Rounded.Translate, MenuTone.SEARCH) { handler.onTranslateText(text) },
+                ),
+            ),
+            MenuSection(
+                "Copy & share",
+                listOf(
                     MenuAction("copy_text", "Copy text", Icons.Rounded.ContentCopy, MenuTone.COPY) { handler.onCopySelectedText(text) },
                     MenuAction("share_text", "Share text", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareSelectedText(text) },
                 ),
@@ -202,6 +259,16 @@ private fun buildSections(
         ),
     )
 
+    MenuKind.SMS -> listOf(
+        MenuSection(
+            "Text message",
+            listOf(
+                MenuAction("send_sms", "Send message", Icons.Rounded.Sms, MenuTone.OPEN) { handler.onSendSms(linkUrl) },
+                MenuAction("copy_sms_number", "Copy phone number", Icons.Rounded.ContentCopy, MenuTone.COPY) { handler.onCopyLinkAddress() },
+            ),
+        ),
+    )
+
     MenuKind.LOCATION -> listOf(
         MenuSection(
             "Location",
@@ -214,36 +281,47 @@ private fun buildSections(
 
     MenuKind.AUDIO -> listOf(
         MenuSection(
-            "Open",
-            listOf(MenuAction("open_audio", "Open audio in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenInNewTab() }),
+            "Open & playback",
+            listOf(
+                MenuAction("open_audio", "Open audio in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenAudioInNewTab() },
+                MenuAction("open_audio_background", "Open in background tab", Icons.Rounded.OpenInBrowser, MenuTone.OPEN) { handler.onOpenAudioInBackgroundTab() },
+                MenuAction("open_external_audio", "Open in external audio player", Icons.Rounded.Headphones, MenuTone.OPEN) { handler.onOpenInExternalAudioPlayer() },
+                MenuAction("open_audio_incognito", "Open in private tab", Icons.Rounded.VisibilityOff, MenuTone.OPEN) { handler.onOpenInIncognitoTab() },
+            ),
         ),
         MenuSection(
             "Copy",
-            listOf(MenuAction("copy_audio_link", "Copy audio link", Icons.Rounded.Link, MenuTone.COPY) { handler.onCopyLinkAddress() }),
+            listOf(MenuAction("copy_audio_link", "Copy audio link", Icons.Rounded.Link, MenuTone.COPY) { handler.onCopyAudioLink() }),
         ),
         MenuSection(
             "Save & share",
             listOf(
                 MenuAction("download_audio", "Download audio", Icons.Rounded.MusicNote, MenuTone.SAVE) { handler.onDownloadAudio() },
-                MenuAction("share_audio", "Share audio", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareLink() },
+                MenuAction("share_audio", "Share audio", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareAudio() },
             ),
         ),
     )
 
     MenuKind.VIDEO -> listOf(
         MenuSection(
-            "Open",
-            listOf(MenuAction("open_video", "Open video in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenInNewTab() }),
+            "Open & playback",
+            listOf(
+                MenuAction("open_video", "Open video in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenVideoInNewTab() },
+                MenuAction("open_video_background", "Open in background tab", Icons.Rounded.OpenInBrowser, MenuTone.OPEN) { handler.onOpenVideoInBackgroundTab() },
+                MenuAction("pip_video", "Picture-in-Picture", Icons.Rounded.PictureInPictureAlt, MenuTone.OPEN) { handler.onTogglePictureInPicture() },
+                MenuAction("open_external_video", "Open in external video player", Icons.Rounded.PlayCircle, MenuTone.OPEN) { handler.onOpenInExternalPlayer() },
+                MenuAction("open_video_incognito", "Open in private tab", Icons.Rounded.VisibilityOff, MenuTone.OPEN) { handler.onOpenInIncognitoTab() },
+            ),
         ),
         MenuSection(
             "Copy",
-            listOf(MenuAction("copy_video_link", "Copy video link", Icons.Rounded.Link, MenuTone.COPY) { handler.onCopyLinkAddress() }),
+            listOf(MenuAction("copy_video_link", "Copy video link", Icons.Rounded.Link, MenuTone.COPY) { handler.onCopyVideoLink() }),
         ),
         MenuSection(
             "Save & share",
             listOf(
                 MenuAction("download_video", "Download video", Icons.Rounded.Movie, MenuTone.SAVE) { handler.onDownloadVideo() },
-                MenuAction("share_video", "Share video", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareLink() },
+                MenuAction("share_video", "Share video", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareVideo() },
             ),
         ),
     )
@@ -254,6 +332,7 @@ private fun buildSections(
             listOf(
                 MenuAction("view_image", "View in Petal Viewer", Icons.Rounded.PhotoLibrary, MenuTone.OPEN) { handler.onViewInPetalViewer() },
                 MenuAction("open_image_tab", "Open image in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenImageInNewTab() },
+                MenuAction("open_image_background", "Open image in background tab", Icons.Rounded.OpenInBrowser, MenuTone.OPEN) { handler.onOpenImageInBackgroundTab() },
                 MenuAction("open_image_incognito", "Open image in private tab", Icons.Rounded.VisibilityOff, MenuTone.OPEN) { handler.onOpenInIncognitoTab() },
             ),
         ),
@@ -273,9 +352,11 @@ private fun buildSections(
             ),
         ),
         MenuSection(
-            "Search",
+            "Search & AI",
             listOf(
+                MenuAction("ai_analyze", "Analyze with Petal AI", Icons.Rounded.AutoAwesome, MenuTone.SEARCH) { handler.onAnalyzeWithPetalAi() },
                 MenuAction("lens", "Search with Google Lens", Icons.Rounded.TravelExplore, MenuTone.SEARCH) { handler.onSearchWithGoogleLens() },
+                MenuAction("scan_qr", "Scan QR / Barcode", Icons.Rounded.QrCodeScanner, MenuTone.SEARCH) { handler.onScanImage() },
             ),
         ),
     )
@@ -285,8 +366,10 @@ private fun buildSections(
             "Open",
             listOf(
                 MenuAction("open_tab", "Open in new tab", Icons.Rounded.Tab, MenuTone.OPEN) { handler.onOpenInNewTab() },
+                MenuAction("open_background_tab", "Open in background tab", Icons.Rounded.OpenInBrowser, MenuTone.OPEN) { handler.onOpenInBackgroundTab() },
                 MenuAction("open_group", "Open in new tab group", Icons.Rounded.Layers, MenuTone.OPEN) { handler.onOpenInNewTabInGroup() },
                 MenuAction("open_incognito", "Open in private tab", Icons.Rounded.VisibilityOff, MenuTone.OPEN) { handler.onOpenInIncognitoTab() },
+                MenuAction("open_app", "Open in app", Icons.Rounded.OpenInNew, MenuTone.OPEN) { handler.onOpenInExternalApp() },
                 MenuAction("preview", "Preview page", Icons.Rounded.FindInPage, MenuTone.OPEN) { handler.onPreviewPage() },
             ),
         ),
@@ -300,9 +383,25 @@ private fun buildSections(
         MenuSection(
             "Save & share",
             listOf(
+                MenuAction("bookmark_link", "Bookmark link", Icons.Rounded.BookmarkAdd, MenuTone.SAVE) { handler.onBookmarkLink() },
                 MenuAction("download_link", "Download link", Icons.Rounded.FileDownload, MenuTone.SAVE) { handler.onDownloadLink() },
                 MenuAction("reading_list", "Add to reading list", Icons.Rounded.MenuBook, MenuTone.SAVE) { handler.onAddToReadingList() },
                 MenuAction("share_link", "Share link", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareLink() },
+            ),
+        ),
+    )
+
+    MenuKind.PAGE -> listOf(
+        MenuSection(
+            "Page actions",
+            listOf(
+                MenuAction("bookmark_page", "Bookmark this page", Icons.Rounded.BookmarkAdd, MenuTone.SAVE) { handler.onBookmarkPage() },
+                MenuAction("share_page", "Share page", Icons.Rounded.Share, MenuTone.SAVE) { handler.onSharePage() },
+                MenuAction("print_page", "Save as PDF / Print", Icons.Rounded.Print, MenuTone.SAVE) { handler.onPrintPagePdf() },
+                MenuAction("reader_mode", "Toggle Reader Mode", Icons.Rounded.MenuBook, MenuTone.OPEN) { handler.onToggleReaderMode() },
+                MenuAction("find_in_page", "Find in page", Icons.Rounded.FindInPage, MenuTone.SEARCH) { handler.onFindInPage() },
+                MenuAction("ai_summary", "AI Page Summary", Icons.Rounded.AutoAwesome, MenuTone.SEARCH) { handler.onAiSummarizePage() },
+                MenuAction("view_source", "View page source", Icons.Rounded.Code, MenuTone.OPEN) { handler.onViewPageSource() },
             ),
         ),
     )
@@ -347,6 +446,7 @@ fun PetalLinkContextMenuSheet(
     isVideo: Boolean = false,
     isAudio: Boolean = false,
     selectedText: String? = null,
+    isPage: Boolean = false,
     onDismiss: () -> Unit,
     handler: PetalLinkContextMenuHandler,
 ) {
@@ -355,8 +455,8 @@ fun PetalLinkContextMenuSheet(
     var selectedId by remember { mutableStateOf<String?>(null) }
 
     val hasLinkAndImage = !imageUrl.isNullOrBlank() && linkUrl.isNotBlank() && isImage
-    val kind = remember(linkUrl, isImage, isVideo, isAudio, selectedText, hasLinkAndImage) {
-        menuKindOf(linkUrl, isImage, isVideo, isAudio, selectedText, hasLinkAndImage)
+    val kind = remember(linkUrl, isImage, isVideo, isAudio, selectedText, hasLinkAndImage, isPage) {
+        menuKindOf(linkUrl, isImage, isVideo, isAudio, selectedText, hasLinkAndImage, isPage)
     }
     val sections = remember(kind, linkUrl, selectedText, handler) {
         buildSections(kind, linkUrl, selectedText, handler)
@@ -375,16 +475,19 @@ fun PetalLinkContextMenuSheet(
     }
 
     val title = when (kind) {
+        MenuKind.PAGE -> linkTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(linkUrl) ?: "Current page"
         MenuKind.TEXT -> "Selected text"
         MenuKind.EMAIL -> linkUrl.removePrefix("mailto:").substringBefore('?')
         MenuKind.PHONE -> linkUrl.removePrefix("tel:")
+        MenuKind.SMS -> linkUrl.removePrefix("sms:").removePrefix("smsto:").substringBefore('?')
         MenuKind.LOCATION -> "Map location"
         MenuKind.IMAGE_LINK -> linkTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(linkUrl) ?: linkUrl
         else -> linkTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(linkUrl) ?: linkUrl
     }
     val subtitle = when (kind) {
+        MenuKind.PAGE -> linkUrl.ifBlank { null }
         MenuKind.TEXT -> selectedText
-        MenuKind.EMAIL, MenuKind.PHONE -> null
+        MenuKind.EMAIL, MenuKind.PHONE, MenuKind.SMS -> null
         MenuKind.LOCATION -> linkUrl.removePrefix("geo:")
         else -> linkUrl.ifBlank { "about:blank" }
     }
@@ -425,7 +528,7 @@ fun PetalLinkContextMenuSheet(
                 title = title,
                 subtitle = subtitle,
                 imageUrl = if (kind == MenuKind.IMAGE || kind == MenuKind.IMAGE_LINK) (imageUrl ?: linkUrl) else null,
-                faviconUrl = if (kind == MenuKind.LINK || kind == MenuKind.IMAGE_LINK) faviconUrl else null,
+                faviconUrl = if (kind == MenuKind.LINK || kind == MenuKind.IMAGE_LINK || kind == MenuKind.PAGE) faviconUrl else null,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .petalStaggerIn(0),
@@ -692,6 +795,7 @@ object PetalLinkContextMenuBridge {
         isVideo: Boolean = false,
         isAudio: Boolean = false,
         selectedText: String? = null,
+        isPage: Boolean = false,
         handler: PetalLinkContextMenuHandler,
     ) {
         activity.runOnUiThread {
@@ -742,6 +846,7 @@ object PetalLinkContextMenuBridge {
                                         isVideo = isVideo,
                                         isAudio = isAudio,
                                         selectedText = selectedText,
+                                        isPage = isPage,
                                         onDismiss = { dialog.dismiss() },
                                         handler = handler,
                                     )

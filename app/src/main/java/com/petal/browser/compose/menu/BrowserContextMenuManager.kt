@@ -1,14 +1,18 @@
 package com.petal.browser.compose.menu
 
+import android.app.PictureInPictureParams
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.webkit.URLUtil
 import androidx.lifecycle.lifecycleScope
 import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.compose.ai.ResearchMode
+import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
-import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import com.petal.browser.download.DownloadFileNameResolver
+import com.petal.browser.ui.components.PetalAiResearchBridge
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.unit.ImageActionHelper
@@ -16,20 +20,13 @@ import com.petal.browser.view.PetalToast
 
 /**
  * Kotlin Manager encapsulating long-press context menus for BrowserActivity.
- * Fulfills Material 3 Expressive menu handlers for image, link, and video targets.
+ * Fulfills Material 3 Expressive menu handlers for image, link, video, audio, text, and page targets.
  */
 object BrowserContextMenuManager {
 
     /**
      * Launches [targetUrl] in a second, independent Android window using freeform/
      * adjacent multi-window mode (FLAG_ACTIVITY_NEW_TASK + MULTIPLE_TASK + LAUNCH_ADJACENT).
-     * BrowserActivity is declared singleTask in the manifest for its VIEW/BROWSABLE
-     * entry point, which on its own blocks a second instance; MULTIPLE_TASK is what
-     * overrides that and allows a genuinely separate task/window to be created here.
-     * Whether this actually renders as a floating/freeform window, a split-screen
-     * pane, or (on phones with no multi-window support) just focuses/reuses the
-     * existing window depends on the device and launcher - this requests freeform,
-     * it does not force it, since no such guarantee exists in the public API.
      */
     private fun launchInNewWindow(activity: BrowserActivity, targetUrl: String) {
         try {
@@ -43,17 +40,54 @@ object BrowserContextMenuManager {
             }
             activity.startActivity(intent)
         } catch (e: Exception) {
-            // Freeform/adjacent launch not supported on this device/launcher -
-            // fall back to a normal foreground tab rather than doing nothing.
             activity.addAlbum(HelperUnit.domain(targetUrl), targetUrl, true)
         }
     }
 
+    /**
+     * Resolves external app handler for [targetUrl] or opens the system intent chooser.
+     */
+    private fun openInExternalApp(activity: BrowserActivity, targetUrl: String) {
+        try {
+            val uri = Uri.parse(targetUrl)
+            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            val resolveInfos = activity.packageManager.queryIntentActivities(intent, 0)
+            val external = resolveInfos.filter { it.activityInfo.packageName != activity.packageName }
+            if (external.isNotEmpty()) {
+                val chooser = Intent.createChooser(intent, "Open with")
+                activity.startActivity(chooser)
+            } else {
+                PetalToast.show(activity, "No external app found for this link")
+            }
+        } catch (e: Exception) {
+            PetalToast.show(activity, "Cannot open link in external app")
+        }
+    }
+
+    /**
+     * Forwards audio/video to an external player application via ACTION_VIEW.
+     */
+    private fun openInExternalPlayer(activity: BrowserActivity, mediaUrl: String, mimeType: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(Uri.parse(mediaUrl), mimeType)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            activity.startActivity(Intent.createChooser(intent, "Play with"))
+        } catch (e: Exception) {
+            PetalToast.show(activity, "No external player found")
+        }
+    }
+
     @JvmStatic
-    fun showImageContextMenu(activity: BrowserActivity, imageURL: String) {
+    @JvmOverloads
+    fun showImageContextMenu(activity: BrowserActivity, imageURL: String, title: String? = null) {
+        val displayTitle = title?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(imageURL)
         PetalLinkContextMenuBridge.show(
             activity = activity,
-            linkTitle = HelperUnit.domain(imageURL),
+            linkTitle = displayTitle,
             linkUrl = imageURL,
             faviconUrl = imageURL,
             imageUrl = imageURL,
@@ -61,21 +95,30 @@ object BrowserContextMenuManager {
             isVideo = false,
             handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false)
+                    activity.addAlbum(displayTitle, imageURL, true)
+                }
+
+                override fun onOpenInBackgroundTab() {
+                    activity.addAlbum(displayTitle, imageURL, false)
+                    PetalToast.show(activity, "Opened in background tab")
                 }
 
                 override fun onOpenImageInNewTab() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false)
+                    activity.addAlbum(displayTitle, imageURL, true)
+                }
+
+                override fun onOpenImageInBackgroundTab() {
+                    activity.addAlbum(displayTitle, imageURL, false)
+                    PetalToast.show(activity, "Opened in background tab")
                 }
 
                 override fun onOpenInNewTabInGroup() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false)
+                    activity.addAlbum(displayTitle, imageURL, true)
                 }
 
                 override fun onOpenInIncognitoTab() {
-                    activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false, true)
+                    activity.addAlbum(displayTitle, imageURL, true, true)
                 }
-
 
                 override fun onPreviewPage() {
                     PetalPagePreviewBridge.show(activity, imageURL)
@@ -100,8 +143,12 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyLinkText() {
-                    HelperUnit.copy(activity, HelperUnit.domain(imageURL))
-                    PetalToast.show(activity, "Domain copied")
+                    HelperUnit.copy(activity, displayTitle)
+                    PetalToast.show(activity, "Title copied")
+                }
+
+                override fun onBookmarkLink() {
+                    activity.saveBookmark(displayTitle, imageURL)
                 }
 
                 override fun onDownloadLink() {
@@ -127,13 +174,28 @@ object BrowserContextMenuManager {
                     try {
                         val action = RecordAction(activity)
                         action.open(true)
-                        val record = Record(HelperUnit.domain(imageURL), imageURL, System.currentTimeMillis(), 0)
+                        val record = Record(displayTitle, imageURL, System.currentTimeMillis(), 0)
                         record.isReadingList = true
                         action.addBookmark(record)
                         action.close()
                         PetalToast.show(activity, "Added to reading list")
                     } catch (e: Exception) {
                         e.printStackTrace()
+                    }
+                }
+
+                override fun onAnalyzeWithPetalAi() {
+                    if (imageURL.isNotBlank()) {
+                        PetalAiResearchBridge.showAiResearchSheet(
+                            activity = activity,
+                            pageTitle = "Image Analysis",
+                            pageUrl = imageURL,
+                            pageContent = "Please analyze this image and explain what it depicts, key details, and context: $imageURL",
+                            initialMode = ResearchMode.DEEP_RESEARCH,
+                            autoStart = true
+                        )
+                    } else {
+                        PetalToast.show(activity, "No valid image URL found")
                     }
                 }
 
@@ -162,10 +224,8 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onShareLink() {
-                    activity.shareLink(HelperUnit.domain(imageURL), imageURL)
+                    activity.shareLink(displayTitle, imageURL)
                 }
-
-                override fun onDownloadVideo() {}
 
                 override fun onViewInPetalViewer() {
                     if (imageURL.isNotBlank()) {
@@ -173,7 +233,7 @@ object BrowserContextMenuManager {
                             val view = com.petal.browser.compose.downloads.PetalImageViewerBridge.createWebViewerView(
                                 activity,
                                 imageURL,
-                                HelperUnit.domain(imageURL)
+                                displayTitle
                             ) {
                                 activity.runOnUiThread { activity.performBackNavigation() }
                             }
@@ -192,9 +252,11 @@ object BrowserContextMenuManager {
         val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
             "${parsed.scheme}://${parsed.authority}/favicon.ico"
         } else null
+        val displayTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(urlResult)
+
         PetalLinkContextMenuBridge.show(
             activity = activity,
-            linkTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(urlResult),
+            linkTitle = displayTitle,
             linkUrl = urlResult,
             faviconUrl = faviconUrl,
             imageUrl = null,
@@ -202,7 +264,12 @@ object BrowserContextMenuManager {
             isVideo = false,
             handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(HelperUnit.domain(urlResult), urlResult, false)
+                    activity.addAlbum(displayTitle, urlResult, true)
+                }
+
+                override fun onOpenInBackgroundTab() {
+                    activity.addAlbum(displayTitle, urlResult, false)
+                    PetalToast.show(activity, "Opened in background tab")
                 }
 
                 override fun onOpenInNewTabInGroup() {
@@ -217,17 +284,8 @@ object BrowserContextMenuManager {
                     } else null
 
                     if (existingGroup != null) {
-                        // addAlbumInGroup creates the new tab, then registers its real tab
-                        // ID (from setWebView's return value, not currentAlbumController)
-                        // into the existing group's persisted membership list.
-                        activity.addAlbumInGroup(HelperUnit.domain(urlResult), urlResult, false, existingGroup.id, existingGroup.title)
+                        activity.addAlbumInGroup(displayTitle, urlResult, true, existingGroup.id, existingGroup.title)
                     } else {
-                        // No group yet: create one seeded with the current tab, then open
-                        // the new tab and register its real ID into that same group. The
-                        // group is created with only the current tab as a member here -
-                        // addAlbumInGroup below adds the new tab once it actually exists,
-                        // rather than seeding the group with a placeholder ID for a tab
-                        // that doesn't exist yet.
                         if (currentTabId != null) {
                             val currentTab = com.petal.browser.compose.tabs.PetalTabItem(
                                 id = currentTabId,
@@ -239,19 +297,20 @@ object BrowserContextMenuManager {
                             currentTabSurface?.setTabGroupTitle(newGroup.title)
                             currentGeckoView?.setTabGroupId(newGroup.id)
                             currentGeckoView?.setTabGroupTitle(newGroup.title)
-                            activity.addAlbumInGroup(HelperUnit.domain(urlResult), urlResult, false, newGroup.id, newGroup.title)
+                            activity.addAlbumInGroup(displayTitle, urlResult, true, newGroup.id, newGroup.title)
                         } else {
-                            // No identifiable current tab to group with - fall back to a
-                            // plain new tab rather than creating a group with no real members.
-                            activity.addAlbum(HelperUnit.domain(urlResult), urlResult, false)
+                            activity.addAlbum(displayTitle, urlResult, true)
                         }
                     }
                 }
 
                 override fun onOpenInIncognitoTab() {
-                    activity.addAlbum(HelperUnit.domain(urlResult), urlResult, false, true)
+                    activity.addAlbum(displayTitle, urlResult, true, true)
                 }
 
+                override fun onOpenInExternalApp() {
+                    openInExternalApp(activity, urlResult)
+                }
 
                 override fun onPreviewPage() {
                     PetalPagePreviewBridge.show(activity, urlResult)
@@ -270,6 +329,10 @@ object BrowserContextMenuManager {
                     } else {
                         PetalToast.show(activity, "This link has no text")
                     }
+                }
+
+                override fun onBookmarkLink() {
+                    activity.saveBookmark(displayTitle, urlResult)
                 }
 
                 override fun onDownloadLink() {
@@ -293,7 +356,7 @@ object BrowserContextMenuManager {
                     try {
                         val action = RecordAction(activity)
                         action.open(true)
-                        val record = Record(HelperUnit.domain(urlResult), urlResult, System.currentTimeMillis(), 0)
+                        val record = Record(displayTitle, urlResult, System.currentTimeMillis(), 0)
                         record.isReadingList = true
                         action.addBookmark(record)
                         action.close()
@@ -310,7 +373,7 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onShareLink() {
-                    activity.shareLink(HelperUnit.domain(urlResult), urlResult)
+                    activity.shareLink(displayTitle, urlResult)
                 }
 
                 override fun onScanImage() {
@@ -327,7 +390,7 @@ object BrowserContextMenuManager {
 
                 override fun onSendEmail(mailto: String) {
                     try {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO, Uri.parse(mailto))
+                        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(mailto))
                         activity.startActivity(intent)
                     } catch (e: Exception) {
                         PetalToast.show(activity, "No email client found")
@@ -336,34 +399,40 @@ object BrowserContextMenuManager {
 
                 override fun onDialPhoneNumber(tel: String) {
                     try {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_DIAL, Uri.parse(tel))
+                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse(tel))
                         activity.startActivity(intent)
                     } catch (e: Exception) {
                         PetalToast.show(activity, "No phone app found")
                     }
                 }
 
+                override fun onSendSms(smsUri: String) {
+                    try {
+                        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(smsUri))
+                        activity.startActivity(intent)
+                    } catch (e: Exception) {
+                        PetalToast.show(activity, "No SMS app found")
+                    }
+                }
+
                 override fun onOpenMapLocation(geo: String) {
                     try {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(geo))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(geo))
                         activity.startActivity(intent)
                     } catch (e: Exception) {
                         PetalToast.show(activity, "No maps app found")
                     }
                 }
-
-                override fun onOpenImageInNewTab() {}
-                override fun onCopyImage() {}
-                override fun onDownloadVideo() {}
             }
         )
     }
 
     @JvmStatic
     fun showVideoContextMenu(activity: BrowserActivity, cleanVideoUrl: String) {
+        val title = HelperUnit.domain(cleanVideoUrl)
         PetalLinkContextMenuBridge.show(
             activity = activity,
-            linkTitle = HelperUnit.domain(cleanVideoUrl),
+            linkTitle = title,
             linkUrl = cleanVideoUrl,
             faviconUrl = null,
             imageUrl = null,
@@ -371,7 +440,36 @@ object BrowserContextMenuManager {
             isVideo = true,
             handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(HelperUnit.domain(cleanVideoUrl), cleanVideoUrl, false)
+                    activity.addAlbum(title, cleanVideoUrl, true)
+                }
+
+                override fun onOpenVideoInNewTab() {
+                    activity.addAlbum(title, cleanVideoUrl, true)
+                }
+
+                override fun onOpenVideoInBackgroundTab() {
+                    activity.addAlbum(title, cleanVideoUrl, false)
+                    PetalToast.show(activity, "Video opened in background tab")
+                }
+
+                override fun onOpenInIncognitoTab() {
+                    activity.addAlbum(title, cleanVideoUrl, true, true)
+                }
+
+                override fun onTogglePictureInPicture() {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        try {
+                            activity.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
+                        } catch (e: Exception) {
+                            PetalToast.show(activity, "PiP not supported on this device")
+                        }
+                    } else {
+                        PetalToast.show(activity, "PiP requires Android 8.0+")
+                    }
+                }
+
+                override fun onOpenInExternalPlayer(mimeType: String) {
+                    openInExternalPlayer(activity, cleanVideoUrl, mimeType)
                 }
 
                 override fun onDownloadVideo() {
@@ -385,34 +483,33 @@ object BrowserContextMenuManager {
                     }
                 }
 
+                override fun onCopyVideoLink() {
+                    HelperUnit.copy(activity, cleanVideoUrl)
+                    PetalToast.show(activity, "Video link copied")
+                }
+
                 override fun onCopyLinkAddress() {
                     HelperUnit.copy(activity, cleanVideoUrl)
                     PetalToast.show(activity, "Video link copied")
                 }
 
-                override fun onShareLink() {
-                    activity.shareLink(HelperUnit.domain(cleanVideoUrl), cleanVideoUrl)
+                override fun onShareVideo() {
+                    activity.shareLink(title, cleanVideoUrl)
                 }
 
-                override fun onOpenInNewTabInGroup() {}
-                override fun onOpenInIncognitoTab() {}
-                override fun onDownloadLink() {}
-                override fun onOpenImageInNewTab() {}
-                override fun onCopyImage() {}
-                override fun onDownloadImage() {}
-                override fun onAddToReadingList() {}
-                override fun onShareImage() {}
-                override fun onScanImage() {}
-                override fun onSearchWithGoogleLens() {}
+                override fun onShareLink() {
+                    activity.shareLink(title, cleanVideoUrl)
+                }
             }
         )
     }
 
     @JvmStatic
     fun showAudioContextMenu(activity: BrowserActivity, audioUrl: String) {
+        val title = HelperUnit.domain(audioUrl)
         PetalLinkContextMenuBridge.show(
             activity = activity,
-            linkTitle = HelperUnit.domain(audioUrl),
+            linkTitle = title,
             linkUrl = audioUrl,
             faviconUrl = null,
             isImage = false,
@@ -421,12 +518,29 @@ object BrowserContextMenuManager {
             selectedText = null,
             handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(HelperUnit.domain(audioUrl), audioUrl, false)
+                    activity.addAlbum(title, audioUrl, true)
+                }
+
+                override fun onOpenAudioInNewTab() {
+                    activity.addAlbum(title, audioUrl, true)
+                }
+
+                override fun onOpenAudioInBackgroundTab() {
+                    activity.addAlbum(title, audioUrl, false)
+                    PetalToast.show(activity, "Audio opened in background tab")
+                }
+
+                override fun onOpenInIncognitoTab() {
+                    activity.addAlbum(title, audioUrl, true, true)
+                }
+
+                override fun onOpenInExternalAudioPlayer(mimeType: String) {
+                    openInExternalPlayer(activity, audioUrl, mimeType)
                 }
 
                 override fun onDownloadAudio() {
                     try {
-                        DownloadFileNameResolver.resolve(activity.lifecycleScope, audioUrl) { fileName, mimeType ->
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, audioUrl, fallbackMimeType = "audio/mpeg") { fileName, mimeType ->
                             BrowserUnit.download(activity, audioUrl, fileName, mimeType)
                             PetalToast.show(activity, "Audio download started")
                         }
@@ -435,13 +549,22 @@ object BrowserContextMenuManager {
                     }
                 }
 
+                override fun onCopyAudioLink() {
+                    HelperUnit.copy(activity, audioUrl)
+                    PetalToast.show(activity, "Audio link copied")
+                }
+
                 override fun onCopyLinkAddress() {
                     HelperUnit.copy(activity, audioUrl)
                     PetalToast.show(activity, "Audio link copied")
                 }
 
+                override fun onShareAudio() {
+                    activity.shareLink(title, audioUrl)
+                }
+
                 override fun onShareLink() {
-                    activity.shareLink(HelperUnit.domain(audioUrl), audioUrl)
+                    activity.shareLink(title, audioUrl)
                 }
             }
         )
@@ -462,7 +585,35 @@ object BrowserContextMenuManager {
             handler = object : PetalLinkContextMenuHandler {
                 override fun onSearchWebText(text: String) {
                     val query = BrowserUnit.queryWrapper(activity, text)
+                    activity.addAlbum(text.take(24), query, true)
+                }
+
+                override fun onSearchWebTextInBackground(text: String) {
+                    val query = BrowserUnit.queryWrapper(activity, text)
                     activity.addAlbum(text.take(24), query, false)
+                    PetalToast.show(activity, "Search opened in background tab")
+                }
+
+                override fun onResearchWithPetalAi(text: String) {
+                    PetalAiResearchBridge.showAiResearchSheet(
+                        activity = activity,
+                        pageTitle = "Selected Text Research",
+                        pageUrl = "",
+                        pageContent = text,
+                        initialMode = ResearchMode.DEEP_RESEARCH,
+                        autoStart = true
+                    )
+                }
+
+                override fun onTranslateText(text: String) {
+                    PetalAiResearchBridge.showAiResearchSheet(
+                        activity = activity,
+                        pageTitle = "Translate Text",
+                        pageUrl = "",
+                        pageContent = "Please translate the following text to English:\n\n$text",
+                        initialMode = ResearchMode.CUSTOM,
+                        autoStart = true
+                    )
                 }
 
                 override fun onCopySelectedText(text: String) {
@@ -478,15 +629,126 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
+    fun showSmsContextMenu(activity: BrowserActivity, smsUri: String) {
+        val number = smsUri.removePrefix("sms:").removePrefix("smsto:").substringBefore('?')
+        PetalLinkContextMenuBridge.show(
+            activity = activity,
+            linkTitle = number.ifBlank { "Text message" },
+            linkUrl = smsUri,
+            faviconUrl = null,
+            imageUrl = null,
+            isImage = false,
+            isVideo = false,
+            isAudio = false,
+            selectedText = null,
+            handler = object : PetalLinkContextMenuHandler {
+                override fun onSendSms(smsUri: String) {
+                    try {
+                        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(smsUri))
+                        activity.startActivity(intent)
+                    } catch (e: Exception) {
+                        PetalToast.show(activity, "No SMS app found")
+                    }
+                }
+
+                override fun onCopyLinkAddress() {
+                    val cleanNumber = smsUri.removePrefix("sms:").removePrefix("smsto:").substringBefore('?')
+                    HelperUnit.copy(activity, cleanNumber)
+                    PetalToast.show(activity, "Phone number copied")
+                }
+            }
+        )
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun showPageContextMenu(
+        activity: BrowserActivity,
+        pageUrl: String,
+        pageTitle: String? = null,
+    ) {
+        val parsed = Uri.parse(pageUrl)
+        val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
+            "${parsed.scheme}://${parsed.authority}/favicon.ico"
+        } else null
+
+        val title = pageTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(pageUrl) ?: "Current Page"
+
+        PetalLinkContextMenuBridge.show(
+            activity = activity,
+            linkTitle = title,
+            linkUrl = pageUrl,
+            faviconUrl = faviconUrl,
+            imageUrl = null,
+            isImage = false,
+            isVideo = false,
+            isAudio = false,
+            selectedText = null,
+            isPage = true,
+            handler = object : PetalLinkContextMenuHandler {
+                override fun onBookmarkPage() {
+                    activity.saveBookmark(title, pageUrl)
+                }
+
+                override fun onSharePage() {
+                    activity.shareLink(title, pageUrl)
+                }
+
+                override fun onPrintPagePdf() {
+                    try {
+                        activity.createWebPrintJob(null)
+                    } catch (e: Exception) {
+                        PetalToast.show(activity, "Print not supported for this page")
+                    }
+                }
+
+                override fun onToggleReaderMode() {
+                    try {
+                        activity.showReaderMode()
+                    } catch (e: Exception) {
+                        PetalToast.show(activity, "Reader mode unavailable")
+                    }
+                }
+
+                override fun onFindInPage() {
+                    activity.searchOnSite()
+                }
+
+                override fun onViewPageSource() {
+                    val sourceUrl = if (pageUrl.startsWith("view-source:")) pageUrl else "view-source:$pageUrl"
+                    activity.addAlbum("Source: " + HelperUnit.domain(pageUrl), sourceUrl, true)
+                }
+
+                override fun onAiSummarizePage() {
+                    try {
+                        PetalAiResearchBridge.showAiResearchSheet(
+                            activity = activity,
+                            pageTitle = title,
+                            pageUrl = pageUrl,
+                            pageContent = "Summarize this web page and extract key takeaways:\n\nTitle: $title\nURL: $pageUrl",
+                            initialMode = ResearchMode.SUMMARY,
+                            autoStart = true
+                        )
+                    } catch (e: Exception) {
+                        PetalToast.show(activity, "Petal AI summary unavailable")
+                    }
+                }
+            }
+        )
+    }
+
+    @JvmStatic
+    @JvmOverloads
     fun showImageLinkContextMenu(activity: BrowserActivity, linkUrl: String, imageUrl: String, linkText: String? = null) {
         val parsed = Uri.parse(linkUrl)
         val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
             "${parsed.scheme}://${parsed.authority}/favicon.ico"
         } else null
+        val displayTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(linkUrl)
 
         PetalLinkContextMenuBridge.show(
             activity = activity,
-            linkTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(linkUrl),
+            linkTitle = displayTitle,
             linkUrl = linkUrl,
             faviconUrl = faviconUrl,
             imageUrl = imageUrl,
@@ -496,7 +758,12 @@ object BrowserContextMenuManager {
             selectedText = null,
             handler = object : PetalLinkContextMenuHandler {
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(HelperUnit.domain(linkUrl), linkUrl, false)
+                    activity.addAlbum(displayTitle, linkUrl, true)
+                }
+
+                override fun onOpenInBackgroundTab() {
+                    activity.addAlbum(displayTitle, linkUrl, false)
+                    PetalToast.show(activity, "Opened in background tab")
                 }
 
                 override fun onOpenInNewTabInGroup() {
@@ -511,7 +778,7 @@ object BrowserContextMenuManager {
                     } else null
 
                     if (existingGroup != null) {
-                        activity.addAlbumInGroup(HelperUnit.domain(linkUrl), linkUrl, false, existingGroup.id, existingGroup.title)
+                        activity.addAlbumInGroup(displayTitle, linkUrl, true, existingGroup.id, existingGroup.title)
                     } else {
                         if (currentTabId != null) {
                             val currentTab = com.petal.browser.compose.tabs.PetalTabItem(
@@ -524,15 +791,19 @@ object BrowserContextMenuManager {
                             currentTabSurface?.setTabGroupTitle(newGroup.title)
                             currentGeckoView?.setTabGroupId(newGroup.id)
                             currentGeckoView?.setTabGroupTitle(newGroup.title)
-                            activity.addAlbumInGroup(HelperUnit.domain(linkUrl), linkUrl, false, newGroup.id, newGroup.title)
+                            activity.addAlbumInGroup(displayTitle, linkUrl, true, newGroup.id, newGroup.title)
                         } else {
-                            activity.addAlbum(HelperUnit.domain(linkUrl), linkUrl, false)
+                            activity.addAlbum(displayTitle, linkUrl, true)
                         }
                     }
                 }
 
                 override fun onOpenInIncognitoTab() {
-                    activity.addAlbum(HelperUnit.domain(linkUrl), linkUrl, false, true)
+                    activity.addAlbum(displayTitle, linkUrl, true, true)
+                }
+
+                override fun onOpenInExternalApp() {
+                    openInExternalApp(activity, linkUrl)
                 }
 
                 override fun onPreviewPage() {
@@ -542,6 +813,20 @@ object BrowserContextMenuManager {
                 override fun onCopyLinkAddress() {
                     HelperUnit.copy(activity, linkUrl)
                     PetalToast.show(activity, "Link address copied")
+                }
+
+                override fun onCopyLinkText() {
+                    val text = linkText?.trim().orEmpty()
+                    if (text.isNotEmpty()) {
+                        HelperUnit.copy(activity, text)
+                        PetalToast.show(activity, "Link text copied")
+                    } else {
+                        PetalToast.show(activity, "This link has no text")
+                    }
+                }
+
+                override fun onBookmarkLink() {
+                    activity.saveBookmark(displayTitle, linkUrl)
                 }
 
                 override fun onDownloadLink() {
@@ -556,7 +841,7 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onShareLink() {
-                    activity.shareLink(HelperUnit.domain(linkUrl), linkUrl)
+                    activity.shareLink(displayTitle, linkUrl)
                 }
 
                 override fun onViewInPetalViewer() {
@@ -565,7 +850,7 @@ object BrowserContextMenuManager {
                             val view = com.petal.browser.compose.downloads.PetalImageViewerBridge.createWebViewerView(
                                 activity,
                                 imageUrl,
-                                HelperUnit.domain(imageUrl)
+                                displayTitle
                             ) {
                                 activity.runOnUiThread { activity.performBackNavigation() }
                             }
@@ -575,7 +860,12 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onOpenImageInNewTab() {
+                    activity.addAlbum(HelperUnit.domain(imageUrl), imageUrl, true)
+                }
+
+                override fun onOpenImageInBackgroundTab() {
                     activity.addAlbum(HelperUnit.domain(imageUrl), imageUrl, false)
+                    PetalToast.show(activity, "Image opened in background tab")
                 }
 
                 override fun onCopyImage() {
@@ -607,6 +897,21 @@ object BrowserContextMenuManager {
                     }
                 }
 
+                override fun onAnalyzeWithPetalAi() {
+                    if (imageUrl.isNotBlank()) {
+                        PetalAiResearchBridge.showAiResearchSheet(
+                            activity = activity,
+                            pageTitle = "Image Analysis",
+                            pageUrl = imageUrl,
+                            pageContent = "Please analyze this image and explain what it depicts, key details, and context: $imageUrl",
+                            initialMode = ResearchMode.DEEP_RESEARCH,
+                            autoStart = true
+                        )
+                    } else {
+                        PetalToast.show(activity, "No valid image URL found")
+                    }
+                }
+
                 override fun onSearchWithGoogleLens() {
                     if (imageUrl.isNotBlank()) {
                         com.petal.browser.lens.PetalLensManager.searchImageWithGoogleLens(activity, imageUrl)
@@ -629,27 +934,35 @@ object BrowserContextMenuManager {
     /**
      * Unified entry point for GeckoSession.ContentDelegate.onContextMenu.
      * Dynamically determines whether the targeted element is an image, link, image-in-link,
-     * video, audio, or fallback.
+     * video, audio, phone, email, sms, or page context menu.
      */
     @JvmStatic
+    @JvmOverloads
     fun handleContextMenu(
         activity: BrowserActivity,
         elemType: Int,
         linkUri: String?,
         srcUri: String?,
-        linkText: String? = null
+        linkText: String? = null,
+        title: String? = null,
+        alt: String? = null,
+        pageUrl: String? = null,
+        pageTitle: String? = null,
     ) {
         val hasLink = !linkUri.isNullOrBlank()
         val hasSrc = !srcUri.isNullOrBlank()
+        val effectiveText = linkText?.trim()?.takeIf { it.isNotEmpty() }
+            ?: title?.trim()?.takeIf { it.isNotEmpty() }
+            ?: alt?.trim()?.takeIf { it.isNotEmpty() }
 
         when {
             // Combined Image inside a Link (<a href="..."><img src="..."></a>)
             hasLink && (hasSrc || elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE) -> {
-                showImageLinkContextMenu(activity, linkUri!!, srcUri ?: linkUri, linkText)
+                showImageLinkContextMenu(activity, linkUri!!, srcUri ?: linkUri, effectiveText)
             }
             // Explicit Image or non-empty image source
             elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE || (hasSrc && elemType != org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO && elemType != org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO) -> {
-                showImageContextMenu(activity, srcUri ?: linkUri.orEmpty())
+                showImageContextMenu(activity, srcUri ?: linkUri.orEmpty(), effectiveText)
             }
             // Video element
             elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO -> {
@@ -659,13 +972,25 @@ object BrowserContextMenuManager {
             elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO -> {
                 showAudioContextMenu(activity, srcUri ?: linkUri.orEmpty())
             }
+            // SMS scheme (sms: or smsto:)
+            hasLink && (linkUri!!.startsWith("sms:") || linkUri.startsWith("smsto:")) -> {
+                showSmsContextMenu(activity, linkUri)
+            }
             // Plain Link
             hasLink -> {
-                showLinkContextMenu(activity, linkUri!!, linkText)
+                showLinkContextMenu(activity, linkUri!!, effectiveText)
             }
             // Fallback if srcUri is present
             hasSrc -> {
-                showImageContextMenu(activity, srcUri!!)
+                showImageContextMenu(activity, srcUri!!, effectiveText)
+            }
+            // Blank / Page Context Menu (Firefox parity: long press on empty web area)
+            else -> {
+                val effectivePageUrl = pageUrl?.takeIf { it.isNotBlank() }
+                    ?: activity.currentAlbumController?.url.orEmpty()
+                val effectivePageTitle = pageTitle?.takeIf { it.isNotBlank() }
+                    ?: activity.currentAlbumController?.title.orEmpty()
+                showPageContextMenu(activity, effectivePageUrl, effectivePageTitle)
             }
         }
     }
