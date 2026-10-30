@@ -310,7 +310,7 @@ object PetalAddressBarBridge {
                             onReaderClick = { _onReaderClickState.value?.run() },
                             onCustomizeClick = {
                                 (activity as? BrowserActivity)?.let { act ->
-                                    com.petal.browser.ui.components.BrowserNavigationDelegate.openSettings(act)
+                                    act.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR)
                                 }
                             },
                             isBottom = isBottomPosition
