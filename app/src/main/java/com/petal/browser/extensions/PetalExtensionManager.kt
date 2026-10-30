@@ -542,6 +542,7 @@ object PetalExtensionManager {
                 val targetUrl = createDetails.url?.takeIf { it.isNotBlank() } ?: "about:blank"
                 val currentSession = currentBrowserSession(context)
                 val isPrivate = (currentSession?.settings?.usePrivateMode ?: false) && source.metaData.allowedInPrivateBrowsing
+                val shouldActivate = createDetails.active ?: true
 
                 val result = GeckoResult<GeckoSession>()
                 act.runOnUiThread {
@@ -555,10 +556,8 @@ object PetalExtensionManager {
                         )
                         // Attach SessionTabDelegate immediately so browser.tabs.query()/update()/remove()
                         // work correctly as soon as Gecko registers this session as a tab.
-                        // Without this, extensions like uBlock Origin see no tabs or the wrong active
-                        // tab because the delegate is only wired later in attachSession().
                         attachTabDelegateToSession(newSession, context)
-                        act.adoptPopupGeckoSession(newSession, targetUrl, isPrivate)
+                        act.adoptPopupGeckoSession(newSession, targetUrl, isPrivate, shouldActivate)
                         result.complete(newSession)
                     } catch (t: Throwable) {
                         Log.e(TAG, "Failed to handle onNewTab from extension ${source.id}", t)
@@ -754,6 +753,24 @@ object PetalExtensionManager {
             } catch (e: Exception) {
                 Log.d(TAG, "Failed to attach extension delegates for ${ext.id}", e)
             }
+        }
+    }
+
+    /**
+     * Unregisters a closed or suspended GeckoSession from the extension manager.
+     * Prevents strong-reference memory leaks in [sessionActionByExtensionId] and [openSessions].
+     */
+    @JvmStatic
+    fun detachSession(session: GeckoSession?) {
+        if (session == null) return
+        try {
+            openSessions.remove(session)
+            sessionActionByExtensionId.remove(session)
+            // Periodic hygiene cleanup of closed sessions
+            openSessions.retainAll { it.isOpen }
+            sessionActionByExtensionId.keys.retainAll { it.isOpen }
+        } catch (t: Throwable) {
+            Log.d(TAG, "detachSession cleanup error", t)
         }
     }
 
@@ -1337,6 +1354,14 @@ object PetalExtensionManager {
             _extensions.value = items
             synchronized(actionByExtensionId) {
                 actionByExtensionId.keys.retainAll(items.map { it.id }.toSet())
+            }
+            // Re-bind all open sessions on main thread so tabs created during cold start
+            // (before the asynchronous extension list finished loading) get delegates attached.
+            Handler(Looper.getMainLooper()).post {
+                val sessionsToAttach = openSessions.filter { it.isOpen }.toSet()
+                for (s in sessionsToAttach) {
+                    attachSession(s)
+                }
             }
             // Load icons asynchronously and patch them in once ready (best-effort, 96px).
             list?.forEach { ext ->

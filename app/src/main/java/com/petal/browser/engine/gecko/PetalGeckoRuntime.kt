@@ -100,7 +100,9 @@ object PetalGeckoRuntime {
         if (adBlockEnabled || etpStrict) {
             antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or ContentBlocking.AntiTracking.STP
         }
-        val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
+        // Match official Firefox default: STRICT when strict/ad-blocking is requested,
+        // or DEFAULT (standard tracking protection) baseline instead of NONE.
+        val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
 
         val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PrivateDnsUnit.DNS_OFF)
         val dohUri = com.petal.browser.unit.PrivateDnsUnit.getDnsEndpointUrl(sp)
@@ -237,7 +239,7 @@ object PetalGeckoRuntime {
                 // 2. Enhanced Tracking Protection & AdBlock
                 val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
                 val etpStrict = sp.getBoolean("sp_etp_strict", true)
-                val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.NONE
+                val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
                 rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)
                 rt.settings.contentBlocking.setStrictSocialTrackingProtection(adBlockEnabled || etpStrict)
 

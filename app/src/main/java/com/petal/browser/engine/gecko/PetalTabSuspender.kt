@@ -82,11 +82,21 @@ object PetalTabSuspender {
                 isIncognito = controller.isIncognito()
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
+                // Persist engine back/forward state before releasing the view (matches official Firefox session suspension)
+                try {
+                    controller.captureEngineState()?.let { state ->
+                        if (!isIncognito && url.isNotBlank() && !com.petal.browser.unit.BrowserUnit.isHomePage(url)) {
+                            com.petal.browser.unit.PetalTabStateStore.write(context, tabId, state)
+                        }
+                    }
+                } catch (_: Throwable) {}
+
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
                 try {
                     controller.deactivate()
                     val session = controller.session
+                    com.petal.browser.extensions.PetalExtensionManager.detachSession(session)
                     if (session.isOpen) {
                         controller.geckoView.releaseSession()
                         session.close()
@@ -118,6 +128,7 @@ object PetalTabSuspender {
 
                 try {
                     controller.deactivate()
+                    com.petal.browser.extensions.PetalExtensionManager.detachSession(controller.getGeckoSession())
                     controller.destroy()
                 } catch (t: Throwable) {
                     Log.w(TAG, "Error destroying PetalTabViewController during suspension: ${t.message}")

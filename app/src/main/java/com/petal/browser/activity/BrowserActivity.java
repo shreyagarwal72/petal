@@ -7241,16 +7241,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public synchronized void adoptPopupGeckoSession(org.mozilla.geckoview.GeckoSession popupSession,
                                                     String targetUrl,
                                                     boolean isIncognito) {
+        adoptPopupGeckoSession(popupSession, targetUrl, isIncognito, true);
+    }
+
+    public synchronized void adoptPopupGeckoSession(org.mozilla.geckoview.GeckoSession popupSession,
+                                                    String targetUrl,
+                                                    boolean isIncognito,
+                                                    boolean activate) {
         try {
             String popupUrl = targetUrl == null || targetUrl.trim().isEmpty()
                     ? "about:blank" : targetUrl;
+            // Pass popupSession directly as adoptedSession so no throwaway GeckoSession is constructed or closed
             com.petal.browser.view.PetalGeckoView geckoView =
                 com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
-                    this, getString(R.string.app_name), popupUrl, true, isIncognito
+                    this, getString(R.string.app_name), popupUrl, activate, isIncognito, popupSession, null
                 );
-            // Replace the auto-created session with the one GeckoView opened for us.
-            // adoptSession() swaps the underlying session without calling open() again.
-            geckoView.adoptPopupSession(popupSession);
 
             geckoView.setBrowserController(this);
             // Gecko has already started loading the requested popup URL. Keep that URL in
@@ -7271,10 +7276,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             geckoView.setBrowserController(this);
-            hideOverview();
-            geckoView.activate();
-            if (dialogOverview != null) dialogOverview.cancel();
-            showAlbum(geckoView);
+            if (activate) {
+                hideOverview();
+                geckoView.activate();
+                if (dialogOverview != null) dialogOverview.cancel();
+                showAlbum(geckoView);
+            } else {
+                geckoView.deactivate();
+            }
 
             try {
                 com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
@@ -7283,7 +7292,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     popupUrl,
                     getString(R.string.app_name),
                     isIncognito,
-                    true
+                    activate
                 );
             } catch (Throwable ignored) {}
 

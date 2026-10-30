@@ -1146,6 +1146,7 @@ class PetalTabViewController private constructor(
             removedTabId?.let(TabThumbnailCache::remove)
         }
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
+        com.petal.browser.extensions.PetalExtensionManager.detachSession(getGeckoSession())
         refreshFeature?.stop()
         refreshFeature = null
         fullScreenFeature?.stop()

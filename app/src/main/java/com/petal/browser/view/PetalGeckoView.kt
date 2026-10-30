@@ -897,6 +897,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onPageStop(session: GeckoSession, success: Boolean) {
                 hideLoadingSkeleton()
+                dismissSurfaceCover()
                 isStopped = true
                 updateProgress(BrowserUnit.LOADING_STOPPED)
                 if (hasContentfulPaint) schedulePreviewCapture(150L)
@@ -1449,7 +1450,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
                 val act = getHostActivity() ?: return
-                handleExternalResponse(act, response)
+                handleExternalResponse(act, response, this@PetalGeckoView.isIncognito, this@PetalGeckoView.currentUrl)
             }
             override fun onKill(session: GeckoSession) {
                 // The OS/Gecko killed the content process (almost always a routine low-memory
@@ -2619,6 +2620,7 @@ class PetalGeckoView @JvmOverloads constructor(
         stopLoading()
         try { session.setActive(false) } catch (_: Throwable) {}
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(session, null)
+        com.petal.browser.extensions.PetalExtensionManager.detachSession(session)
         // Detach GeckoView before closing its session. Closing an attached session can
         // race GeckoView's compositor teardown and is particularly fragile on cold start
         // and during Activity destruction.
