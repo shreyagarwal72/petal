@@ -181,6 +181,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public View findInPageCompose;
     public boolean isFindInPageShowing = false;
     public String findInPageQuery = "";
+    public int findInPageCurrentMatch = 0;
+    public int findInPageTotalMatches = 0;
     @Deprecated
     public static com.petal.browser.view.PetalGeckoView activeGeckoView = null;
 
@@ -4805,49 +4807,52 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void updateFindInPageCompose() {
         if (!(findInPageCompose instanceof androidx.compose.ui.platform.ComposeView)) return;
         androidx.compose.ui.platform.ComposeView cv = (androidx.compose.ui.platform.ComposeView) findInPageCompose;
+        kotlin.jvm.functions.Function2<Integer, Integer, kotlin.Unit> onResult = (cur, tot) -> {
+            findInPageCurrentMatch = cur;
+            findInPageTotalMatches = tot;
+            runOnUiThread(this::updateFindInPageCompose);
+            return kotlin.Unit.INSTANCE;
+        };
         com.petal.browser.compose.find.PetalFindInPageBridge.setupFindInPage(
             cv,
             isFindInPageShowing,
             findInPageQuery,
+            findInPageCurrentMatch,
+            findInPageTotalMatches,
             query -> {
                 findInPageQuery = query;
-                updateFindInPageCompose();
-                if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
-                    com.petal.browser.browser.PetalTabViewController surface = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
-                    if (query.isEmpty()) surface.clearFindMatches(); else surface.findAll(query);
-                } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                    if (query.isEmpty()) {
-                        gv.clearMatches();
-                    } else {
-                        gv.findAllAsync(query);
+                if (query.isEmpty()) {
+                    findInPageCurrentMatch = 0;
+                    findInPageTotalMatches = 0;
+                    updateFindInPageCompose();
+                    if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                        ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).clearFindMatches();
+                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).clearMatches();
                     }
-                } else if (activeGeckoView != null) {
-                    if (query.isEmpty()) {
-                        activeGeckoView.clearMatches();
-                    } else {
-                        activeGeckoView.findAllAsync(query);
+                } else {
+                    updateFindInPageCompose();
+                    if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                        ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).findAllAsync(query, onResult);
+                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findAllAsync(query, onResult);
                     }
                 }
             },
             () -> {
                 // Find Next
                 if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
-                    ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).findNext(true);
+                    ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).findNext(true, onResult);
                 } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(true);
-                } else if (activeGeckoView != null) {
-                    activeGeckoView.findNext(true);
+                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(true, onResult);
                 }
             },
             () -> {
                 // Find Previous
                 if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
-                    ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).findNext(false);
+                    ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).findNext(false, onResult);
                 } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(false);
-                } else if (activeGeckoView != null) {
-                    activeGeckoView.findNext(false);
+                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(false, onResult);
                 }
             },
             this::closeFindInPage
@@ -4858,6 +4863,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (!isFindInPageShowing) return;
         isFindInPageShowing = false;
         findInPageQuery = "";
+        findInPageCurrentMatch = 0;
+        findInPageTotalMatches = 0;
         updateFindInPageCompose();
         if (findInPageCompose != null) {
             findInPageCompose.postDelayed(() -> {
@@ -7452,13 +7459,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void createWebPrintJob(WebView webView) {
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView || currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             try {
                 java.io.File cacheDir = getCacheDir();
                 java.io.File pdfFile = new java.io.File(cacheDir, "print_temp.pdf");
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(pdfFile);
-                gv.printToPdf(fos, success -> {
+                kotlin.jvm.functions.Function1<Boolean, kotlin.Unit> callback = success -> {
                     if (success) {
                         runOnUiThread(() -> {
                             try {
@@ -7519,7 +7525,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         });
                     }
                     return kotlin.Unit.INSTANCE;
-                });
+                };
+
+                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).printToPdf(fos, callback);
+                } else {
+                    ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).printToPdf(fos, callback);
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Error generating print job via GeckoView", e);
             }

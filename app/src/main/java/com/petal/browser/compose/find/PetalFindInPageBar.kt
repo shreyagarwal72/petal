@@ -48,6 +48,8 @@ import com.petal.browser.ui.containment.petalGroupSurfaceColor
 fun PetalFindInPageBar(
     visible: Boolean,
     query: String,
+    currentMatch: Int = 0,
+    totalMatches: Int = 0,
     onQueryChange: (String) -> Unit,
     onFindNext: () -> Unit,
     onFindPrevious: () -> Unit,
@@ -108,34 +110,54 @@ fun PetalFindInPageBar(
                     )
                 }
 
-                // Text Input Field
-                Box(
+                // Text Input Field & Match Counter Badge
+                Row(
                     modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (query.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.ui_find_in_page_2),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (query.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.ui_find_in_page_2),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        }
+
+                        BasicTextField(
+                            value = query,
+                            onValueChange = onQueryChange,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester),
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            singleLine = true,
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { onFindNext() })
                         )
                     }
 
-                    BasicTextField(
-                        value = query,
-                        onValueChange = onQueryChange,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(focusRequester),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        singleLine = true,
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { onFindNext() })
-                    )
+                    if (query.isNotEmpty()) {
+                        Spacer(Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (totalMatches > 0) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                            contentColor = if (totalMatches > 0) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onErrorContainer
+                        ) {
+                            Text(
+                                text = "$currentMatch/$totalMatches",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
                 }
 
                 // Navigation Controls (Previous, Next)
@@ -188,10 +210,13 @@ fun PetalFindInPageBar(
  */
 object PetalFindInPageBridge {
     @JvmStatic
+    @JvmOverloads
     fun setupFindInPage(
         composeView: androidx.compose.ui.platform.ComposeView,
         visible: Boolean,
         query: String,
+        currentMatch: Int = 0,
+        totalMatches: Int = 0,
         onQueryChange: java.util.function.Consumer<String>,
         onFindNext: Runnable,
         onFindPrevious: Runnable,
@@ -202,6 +227,8 @@ object PetalFindInPageBridge {
                 PetalFindInPageBar(
                     visible = visible,
                     query = query,
+                    currentMatch = currentMatch,
+                    totalMatches = totalMatches,
                     onQueryChange = { onQueryChange.accept(it) },
                     onFindNext = { onFindNext.run() },
                     onFindPrevious = { onFindPrevious.run() },
@@ -209,6 +236,19 @@ object PetalFindInPageBridge {
                 )
             }
         }
+    }
+
+    @JvmStatic
+    fun setupFindInPage(
+        composeView: androidx.compose.ui.platform.ComposeView,
+        visible: Boolean,
+        query: String,
+        onQueryChange: java.util.function.Consumer<String>,
+        onFindNext: Runnable,
+        onFindPrevious: Runnable,
+        onClose: Runnable
+    ) {
+        setupFindInPage(composeView, visible, query, 0, 0, onQueryChange, onFindNext, onFindPrevious, onClose)
     }
 }
 

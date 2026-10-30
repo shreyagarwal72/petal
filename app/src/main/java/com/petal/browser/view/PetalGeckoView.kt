@@ -162,6 +162,46 @@ class PetalGeckoView @JvmOverloads constructor(
                 it.key.equals("Content-Length", ignoreCase = true)
             }?.value?.toLongOrNull() ?: 0L
 
+            val isBlobOrData = responseUrl.startsWith("blob:", ignoreCase = true) || responseUrl.startsWith("data:", ignoreCase = true)
+            if (isBlobOrData) {
+                val bodyStream = response.body
+                if (bodyStream != null) {
+                    activity.runOnUiThread {
+                        com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
+                            activity, responseUrl, contentDisposition, mimeType, contentLength
+                        ) { confirmedName ->
+                            val finalName = confirmedName.ifBlank { fileName }
+                            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                                try {
+                                    val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                                    val targetFile = java.io.File(downloadsDir, finalName)
+                                    bodyStream.use { input ->
+                                        java.io.FileOutputStream(targetFile).use { output ->
+                                            input.copyTo(output)
+                                        }
+                                    }
+                                    android.media.MediaScannerConnection.scanFile(
+                                        activity,
+                                        arrayOf(targetFile.absolutePath),
+                                        arrayOf(mimeType ?: "application/octet-stream"),
+                                        null
+                                    )
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        com.petal.browser.view.PetalToast.show(activity, "Download completed: $finalName")
+                                    }
+                                } catch (e: Exception) {
+                                    android.util.Log.e("PetalDownload", "Error downloading blob/data stream", e)
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        com.petal.browser.view.PetalToast.show(activity, "Download failed")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return
+                }
+            }
+
             if (com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, responseUrl, fileName, mimeType)) {
                 return
             }
@@ -1390,6 +1430,7 @@ class PetalGeckoView @JvmOverloads constructor(
                         }
                     }
                     if (it.isNotBlank() && it != "Petal Start" && it != "Petal Home" && currentUrl.isNotBlank()) {
+                        recordHistoryVisit(currentUrl, it, force = true)
                     }
                 }
             }
@@ -1688,9 +1729,12 @@ class PetalGeckoView @JvmOverloads constructor(
      * Records or updates a history entry for the currently visited page, ensuring
      * fallback titles when empty and capturing single-page application (SPA) navigations.
      */
-    private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null) {
+    private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null, force: Boolean = false) {
         if (isIncognito || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) ||
             targetUrl.startsWith("about:", ignoreCase = true) || BrowserUnit.isHomePage(targetUrl)) {
+            return
+        }
+        if (!force && targetUrl == lastRecordedHistoryUrl) {
             return
         }
         val rawTitle = titleToRecord ?: currentTitle
@@ -2127,14 +2171,26 @@ class PetalGeckoView @JvmOverloads constructor(
         com.petal.browser.engine.gecko.PetalEngineStore.clearFindResults(context, tabId)
     }
 
-    fun findAllAsync(query: String) {
+    @JvmOverloads
+    fun findAllAsync(query: String, callback: ((current: Int, total: Int) -> Unit)? = null) {
         // Match standard browser search behavior (case-insensitive by default)
-        session.finder.find(query, 0)
+        session.finder.find(query, 0).then({ result ->
+            val cur = result?.current ?: 0
+            val tot = result?.total ?: 0
+            callback?.invoke(cur, tot)
+            GeckoResult.fromValue(result)
+        })
     }
 
-    fun findNext(forward: Boolean) {
+    @JvmOverloads
+    fun findNext(forward: Boolean, callback: ((current: Int, total: Int) -> Unit)? = null) {
         val flags = if (forward) 0 else GeckoSession.FINDER_FIND_BACKWARDS
-        session.finder.find(null, flags)
+        session.finder.find(null, flags).then({ result ->
+            val cur = result?.current ?: 0
+            val tot = result?.total ?: 0
+            callback?.invoke(cur, tot)
+            GeckoResult.fromValue(result)
+        })
     }
 
     fun setUserAgent(customUserAgent: String?) {

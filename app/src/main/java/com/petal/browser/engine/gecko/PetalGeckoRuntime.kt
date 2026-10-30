@@ -178,6 +178,14 @@ object PetalGeckoRuntime {
             Log.w(TAG, "Could not register autocomplete delegate: ${t.message}")
         }
 
+        try {
+            newRuntime.webNotificationDelegate =
+                PetalWebNotificationDelegate(appContext)
+            Log.i(TAG, "Registered PetalWebNotificationDelegate as web notification delegate")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Could not register web notification delegate: ${t.message}")
+        }
+
         runtime = newRuntime
         Log.i(TAG, "Initialized GeckoRuntime with standard tracking protection and high-performance pipeline")
         return newRuntime

@@ -418,7 +418,9 @@ class PetalTabViewController private constructor(
                                 reload()
                             } catch (_: Throwable) {}
                         }
-                    }
+                    },
+                    pageUrlProvider = { pageUrl },
+                    pageTitleProvider = { pageTitle }
                 )
             }
 
@@ -944,6 +946,72 @@ class PetalTabViewController private constructor(
     fun getGeckoSession(): org.mozilla.geckoview.GeckoSession? =
         com.petal.browser.view.PetalGeckoView.getEngineGeckoSession(observedSession)
 
+    fun printToPdf(outputStream: java.io.OutputStream, callback: ((Boolean) -> Unit)? = null) {
+        val gs = getGeckoSession()
+        if (gs == null) {
+            callback?.invoke(false)
+            return
+        }
+        try {
+            val result = gs.saveAsPdf()
+            if (result == null) {
+                callback?.invoke(false)
+                return
+            }
+            result.accept(
+                { pdfStream ->
+                    val ok = try {
+                        if (pdfStream == null) {
+                            false
+                        } else {
+                            pdfStream.use { input -> outputStream.use { out -> input.copyTo(out) } }
+                            true
+                        }
+                    } catch (t: Throwable) {
+                        false
+                    }
+                    callback?.invoke(ok)
+                },
+                { _ -> callback?.invoke(false) }
+            )
+        } catch (e: Exception) {
+            callback?.invoke(false)
+        }
+    }
+
+    @JvmOverloads
+    fun findAllAsync(query: String, callback: ((current: Int, total: Int) -> Unit)? = null) {
+        val gs = getGeckoSession()
+        if (gs != null) {
+            gs.finder.find(query, 0).then({ result ->
+                val cur = result?.current ?: 0
+                val tot = result?.total ?: 0
+                callback?.invoke(cur, tot)
+                org.mozilla.geckoview.GeckoResult.fromValue(result)
+            })
+        } else {
+            findAll(query)
+            callback?.invoke(0, 0)
+        }
+    }
+
+    @JvmOverloads
+    fun findNext(forward: Boolean, callback: ((current: Int, total: Int) -> Unit)? = null) {
+        val gs = getGeckoSession()
+        if (gs != null) {
+            val flags = if (forward) 0 else org.mozilla.geckoview.GeckoSession.FINDER_FIND_BACKWARDS
+            gs.finder.find(null, flags).then({ result ->
+                val cur = result?.current ?: 0
+                val tot = result?.total ?: 0
+                callback?.invoke(cur, tot)
+                org.mozilla.geckoview.GeckoResult.fromValue(result)
+            })
+        } else {
+            findNext(forward)
+            callback?.invoke(0, 0)
+        }
+    }
+
     /**
      * Serialized GeckoView session state (history stack, scroll, zoom, form data) for persistence,
      * or null when none is available yet or the tab is private (private tabs are never persisted).
@@ -1349,7 +1417,9 @@ private class PetalContentDelegateWrapper(
     private val contextProvider: () -> android.content.Context,
     private val isPrivateProvider: () -> Boolean = { false },
     private val referrerProvider: () -> String? = { null },
-    private val onCrashCallback: (() -> Unit)? = null
+    private val onCrashCallback: (() -> Unit)? = null,
+    private val pageUrlProvider: () -> String? = { null },
+    private val pageTitleProvider: () -> String? = { null }
 ) : org.mozilla.geckoview.GeckoSession.ContentDelegate {
 
     private fun resolveActivity(): android.app.Activity? {
@@ -1438,8 +1508,8 @@ private class PetalContentDelegateWrapper(
                     linkText = linkText,
                     title = elementTitle,
                     alt = elementAlt,
-                    pageUrl = this@PetalTabViewController.pageUrl,
-                    pageTitle = this@PetalTabViewController.pageTitle
+                    pageUrl = pageUrlProvider(),
+                    pageTitle = pageTitleProvider()
                 )
             }
         }

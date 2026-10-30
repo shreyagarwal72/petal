@@ -577,6 +577,10 @@
             android:exported="false" />
 
         <receiver
+            android:name="com.petal.browser.engine.gecko.WebNotificationActionReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name="com.petal.browser.compose.downloads.PetalDownloadBootReceiver"
             android:exported="false">
             <intent-filter>
