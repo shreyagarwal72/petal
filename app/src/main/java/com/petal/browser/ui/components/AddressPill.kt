@@ -260,6 +260,26 @@ fun AddressPill(
                     }
                 }
 
+                val hasActiveSensors = remember(url) {
+                    try {
+                        val host = Uri.parse(url).host ?: url
+                        val origin = "https://$host"
+                        PetalActiveMediaSensors.hasAnyActive(origin) || PetalActiveMediaSensors.hasAnyActive(url)
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+
+                if (hasActiveSensors) {
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF00E676))
+                    )
+                }
+
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(

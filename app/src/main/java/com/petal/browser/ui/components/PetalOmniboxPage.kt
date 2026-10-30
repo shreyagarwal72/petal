@@ -98,12 +98,14 @@ import java.net.URI
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
-enum class SuggestionSource { RECENT_SEARCH, BROWSING_HISTORY, SEARCH_ENGINE }
+enum class SuggestionSource { RECENT_SEARCH, BROWSING_HISTORY, SEARCH_ENGINE, SWITCH_TO_TAB }
 
 data class OmniboxSuggestion(
     val query: String,
     val isHistory: Boolean,
-    val source: SuggestionSource = SuggestionSource.SEARCH_ENGINE
+    val source: SuggestionSource = SuggestionSource.SEARCH_ENGINE,
+    val targetUrl: String? = null,
+    val tabIndex: Int = -1
 )
 
 /**
@@ -310,6 +312,38 @@ fun PetalOmniboxPage(
     }
     val focusRequester = remember { FocusRequester() }
 
+    var currentEngineIndexStr by remember {
+        mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0")
+    }
+    val showEngineSelector = remember {
+        sp.getBoolean("sp_show_search_engine_selector_in_omnibox", true)
+    }
+    var showEngineMenu by remember { mutableStateOf(false) }
+
+    val allEngines = remember(context, currentEngineIndexStr) {
+        allSearchEngines(context)
+    }
+    val currentEngine = remember(currentEngineIndexStr, allEngines) {
+        val idx = currentEngineIndexStr.toIntOrNull() ?: 0
+        allEngines.find { it.index == idx } ?: availableSearchEngines.first()
+    }
+
+    val openTabs = remember(isIncognito) {
+        try {
+            com.petal.browser.browser.PetalTabRegistry.list().mapIndexedNotNull { index, controller ->
+                if (controller != null && controller.isIncognito == isIncognito) {
+                    val title = controller.title ?: ""
+                    val url = controller.url ?: ""
+                    if (title.isNotBlank() || url.isNotBlank()) {
+                        Triple(title, url, index)
+                    } else null
+                } else null
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     val cleanPageUrl = remember(pageUrl) {
         val trimmed = pageUrl.trim()
         if (trimmed.equals("about:blank", ignoreCase = true) || trimmed.startsWith("about:", ignoreCase = true) || trimmed.startsWith("petal:", ignoreCase = true)) {
@@ -365,7 +399,7 @@ fun PetalOmniboxPage(
     }
 
     // Debounced search query handler with robust long multi-word query support
-    LaunchedEffect(queryState.text, removedSuggestions, isIncognito) {
+    LaunchedEffect(queryState.text, removedSuggestions, isIncognito, currentEngineIndexStr) {
         val currentText = queryState.text.trim()
         val savedQueries = getSavedSearchHistory()
         if (currentText.isEmpty()) {
@@ -385,10 +419,26 @@ fun PetalOmniboxPage(
             suggestions = recentSearchItems + browsingHistoryItems
         } else {
             val queryTokens = currentText.lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
+            val lowerCurrent = currentText.lowercase()
+
+            val matchedTabs = openTabs.filter { (title, url, _) ->
+                (title.lowercase().contains(lowerCurrent) || url.lowercase().contains(lowerCurrent) ||
+                        queryTokens.all { title.lowercase().contains(it) || url.lowercase().contains(it) }) &&
+                        !removedSuggestions.contains(title)
+            }.take(2).map { (title, url, index) ->
+                OmniboxSuggestion(
+                    query = title.ifBlank { url },
+                    isHistory = false,
+                    source = SuggestionSource.SWITCH_TO_TAB,
+                    targetUrl = url,
+                    tabIndex = index
+                )
+            }
+
             val savedMatches = savedQueries
                 .filter { query ->
                     val lower = query.lowercase()
-                    (lower.contains(currentText.lowercase()) || queryTokens.all { lower.contains(it) }) && !removedSuggestions.contains(query)
+                    (lower.contains(lowerCurrent) || queryTokens.all { lower.contains(it) }) && !removedSuggestions.contains(query)
                 }
                 .take(4)
                 .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.RECENT_SEARCH) }
@@ -396,7 +446,7 @@ fun PetalOmniboxPage(
             val localMatches = localHistoryList
                 .filter { title ->
                     val lower = title.lowercase()
-                    (lower.contains(currentText.lowercase()) || queryTokens.all { lower.contains(it) }) &&
+                    (lower.contains(lowerCurrent) || queryTokens.all { lower.contains(it) }) &&
                             !removedSuggestions.contains(title) &&
                             savedMatches.none { it.query.equals(title, ignoreCase = true) }
                 }
@@ -404,14 +454,16 @@ fun PetalOmniboxPage(
                 .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.BROWSING_HISTORY) }
 
             val historyMatches = savedMatches + localMatches
-            suggestions = historyMatches
 
-            val liveSuggestionsEnabled = true
-            if (liveSuggestionsEnabled) {
-                delay(200)
-                val searchEngine = sp.getString("sp_search_engine", "0")
-                SearchSuggestionsManager.fetchSuggestionsForEngine(searchEngine, currentText) { engineResults ->
+            val liveSuggestionsEnabled = sp.getBoolean("sp_enable_live_suggestions", true)
+            val privateSuggestionsEnabled = sp.getBoolean("sp_search_suggestions_private", false)
+            val shouldFetchRemote = liveSuggestionsEnabled && (!isIncognito || privateSuggestionsEnabled)
+
+            if (shouldFetchRemote) {
+                delay(180)
+                SearchSuggestionsManager.fetchSuggestionsForEngine(context, currentEngineIndexStr, currentText) { engineResults ->
                     val combined = mutableListOf<OmniboxSuggestion>()
+                    combined.addAll(matchedTabs)
                     combined.addAll(historyMatches)
                     engineResults.forEach { res ->
                         val trimmedRes = res.trim()
@@ -419,16 +471,20 @@ fun PetalOmniboxPage(
                             combined.add(OmniboxSuggestion(trimmedRes, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
                         }
                     }
-                    // For longer searches, ensure the exact query is presented as an actionable direct search row if not already present
+                    // For direct searches, ensure the exact query is presented as an actionable row if not already present
                     if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && combined.none { it.query.equals(currentText, ignoreCase = true) }) {
                         combined.add(0, OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
                     }
                     suggestions = combined
                 }
             } else {
+                val combined = mutableListOf<OmniboxSuggestion>()
+                combined.addAll(matchedTabs)
                 if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && historyMatches.none { it.query.equals(currentText, ignoreCase = true) }) {
-                    suggestions = listOf(OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE)) + historyMatches
+                    combined.add(OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
                 }
+                combined.addAll(historyMatches)
+                suggestions = combined
             }
         }
     }
@@ -501,22 +557,6 @@ fun PetalOmniboxPage(
                                 .padding(horizontal = 8.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            var currentEngineIndexStr by remember {
-                                mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0")
-                            }
-                            val showEngineSelector = remember {
-                                sp.getBoolean("sp_show_search_engine_selector_in_omnibox", true)
-                            }
-                            var showEngineMenu by remember { mutableStateOf(false) }
-
-                            val allEngines = remember(context, currentEngineIndexStr) {
-                                allSearchEngines(context)
-                            }
-                            val currentEngine = remember(currentEngineIndexStr, allEngines) {
-                                val idx = currentEngineIndexStr.toIntOrNull() ?: 0
-                                allEngines.find { it.index == idx } ?: availableSearchEngines.first()
-                            }
-
                             OutlinedTextField(
                                 value = queryState,
                                 onValueChange = { queryState = it },
@@ -1048,6 +1088,7 @@ fun PetalOmniboxPage(
                                                 is SuggestionSource -> {
                                                     // Section header
                                                     val headerLabel = when (payload) {
+                                                        SuggestionSource.SWITCH_TO_TAB -> stringResource(R.string.ui_switch_to_tab)
                                                         SuggestionSource.RECENT_SEARCH -> "Recent Searches"
                                                         SuggestionSource.BROWSING_HISTORY -> "From Browsing History"
                                                         SuggestionSource.SEARCH_ENGINE -> stringResource(R.string.ui_search_suggestions)
@@ -1075,16 +1116,19 @@ fun PetalOmniboxPage(
 
                                                     // Icon and tint per source group
                                                     val badgeIcon = when (payload.source) {
+                                                        SuggestionSource.SWITCH_TO_TAB -> Icons.Rounded.Tab
                                                         SuggestionSource.RECENT_SEARCH -> Icons.Filled.History
                                                         SuggestionSource.BROWSING_HISTORY -> Icons.Filled.History
                                                         SuggestionSource.SEARCH_ENGINE -> Icons.Filled.Search
                                                     }
                                                     val badgeContainer = when (payload.source) {
+                                                        SuggestionSource.SWITCH_TO_TAB -> MaterialTheme.colorScheme.tertiaryContainer
                                                         SuggestionSource.RECENT_SEARCH -> MaterialTheme.colorScheme.secondaryContainer
                                                         SuggestionSource.BROWSING_HISTORY -> MaterialTheme.colorScheme.tertiaryContainer
                                                         SuggestionSource.SEARCH_ENGINE -> MaterialTheme.colorScheme.primaryContainer
                                                     }
                                                     val badgeTint = when (payload.source) {
+                                                        SuggestionSource.SWITCH_TO_TAB -> MaterialTheme.colorScheme.onTertiaryContainer
                                                         SuggestionSource.RECENT_SEARCH -> MaterialTheme.colorScheme.onSecondaryContainer
                                                         SuggestionSource.BROWSING_HISTORY -> MaterialTheme.colorScheme.onTertiaryContainer
                                                         SuggestionSource.SEARCH_ENGINE -> MaterialTheme.colorScheme.onPrimaryContainer
@@ -1095,8 +1139,19 @@ fun PetalOmniboxPage(
                                                         minHeight = 48.dp,
                                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                                                         onClick = {
-                                                            val trimmed = payload.query.trim()
-                                                            if (trimmed.isNotEmpty()) submitSearch(trimmed)
+                                                            if (payload.source == SuggestionSource.SWITCH_TO_TAB && payload.tabIndex >= 0) {
+                                                                try {
+                                                                    val target = com.petal.browser.browser.PetalTabRegistry.get(payload.tabIndex)
+                                                                    (activity as? com.petal.browser.activity.BrowserActivity)?.showAlbum(target)
+                                                                    onBackPress()
+                                                                } catch (_: Exception) {
+                                                                    val trimmed = payload.targetUrl?.trim() ?: payload.query.trim()
+                                                                    if (trimmed.isNotEmpty()) submitSearch(trimmed)
+                                                                }
+                                                            } else {
+                                                                val trimmed = payload.query.trim()
+                                                                if (trimmed.isNotEmpty()) submitSearch(trimmed)
+                                                            }
                                                         },
                                                         onLongClick = {
                                                             try {
@@ -1128,18 +1183,28 @@ fun PetalOmniboxPage(
                                                             )
                                                         },
                                                         content = {
-                                                            // Compact Brave-style bodyMedium (13.5sp) with 2-line wrapped text support
-                                                            Text(
-                                                                displayText,
-                                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                                    fontSize = 13.5.sp,
-                                                                    lineHeight = 17.sp
-                                                                ),
-                                                                fontWeight = FontWeight.Medium,
-                                                                color = MaterialTheme.colorScheme.onSurface,
-                                                                maxLines = 2,
-                                                                overflow = TextOverflow.Ellipsis
-                                                            )
+                                                            Column {
+                                                                Text(
+                                                                    displayText,
+                                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                                        fontSize = 13.5.sp,
+                                                                        lineHeight = 17.sp
+                                                                    ),
+                                                                    fontWeight = FontWeight.Medium,
+                                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                                    maxLines = 2,
+                                                                    overflow = TextOverflow.Ellipsis
+                                                                )
+                                                                if (payload.source == SuggestionSource.SWITCH_TO_TAB && !payload.targetUrl.isNullOrBlank()) {
+                                                                    Text(
+                                                                        text = smartEllipsize(payload.targetUrl, true, maxChars = 60),
+                                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                                                        color = MaterialTheme.colorScheme.primary,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis
+                                                                    )
+                                                                }
+                                                            }
                                                         },
                                                         trailing = {
                                                             IconButton(
@@ -1155,6 +1220,77 @@ fun PetalOmniboxPage(
                                         }
                                     }
 
+                                    // One-off quick search engine chips ("Search with...")
+                                    val quickEngines = remember(allEngines) { allEngines.take(8) }
+                                    if (quickEngines.isNotEmpty()) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                                        )
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.ui_search_with, "").trimEnd(),
+                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                                                modifier = Modifier.padding(end = 8.dp)
+                                            )
+                                            LazyRow(
+                                                modifier = Modifier.weight(1f),
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                contentPadding = PaddingValues(horizontal = 2.dp)
+                                            ) {
+                                                items(quickEngines) { eng ->
+                                                    val isSelected = eng.index == (currentEngineIndexStr.toIntOrNull() ?: 0)
+                                                    FilterChip(
+                                                        selected = isSelected,
+                                                        onClick = {
+                                                            currentEngineIndexStr = eng.index.toString()
+                                                            sp.edit().putString("sp_search_engine", eng.index.toString()).apply()
+                                                            val q = queryState.text.trim()
+                                                            if (q.isNotEmpty()) {
+                                                                submitSearch(q, saveToHistory = true)
+                                                            }
+                                                        },
+                                                        label = {
+                                                            Text(
+                                                                eng.name,
+                                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                                    fontSize = 11.sp
+                                                                )
+                                                            )
+                                                        },
+                                                        leadingIcon = {
+                                                            val iconVector = when (eng.name.lowercase()) {
+                                                                "google" -> Icons.Rounded.Search
+                                                                "duckduckgo" -> Icons.Rounded.Shield
+                                                                "brave search", "brave" -> Icons.Rounded.Security
+                                                                "bing" -> Icons.Rounded.Search
+                                                                "startpage" -> Icons.Rounded.VpnKey
+                                                                "searxng", "searx" -> Icons.Rounded.ManageSearch
+                                                                "qwant" -> Icons.Rounded.TravelExplore
+                                                                "ecosia" -> Icons.Rounded.Eco
+                                                                else -> Icons.Rounded.Search
+                                                            }
+                                                            Icon(iconVector, contentDescription = null, modifier = Modifier.size(13.dp))
+                                                        },
+                                                        shape = RoundedCornerShape(10.dp),
+                                                        colors = FilterChipDefaults.filterChipColors(
+                                                            containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

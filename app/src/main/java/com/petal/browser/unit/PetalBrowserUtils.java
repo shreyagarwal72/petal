@@ -131,6 +131,9 @@ public class PetalBrowserUtils {
 
             if (!prefix.isEmpty()) {
                 switch (prefix) {
+                    case "@g":
+                    case "@google":
+                        return "https://www.google.com/search?client=firefox-b-m&q=" + encodedQuery;
                     case "@yt":
                     case "@youtube":
                         return "https://m.youtube.com/results?search_query=" + encodedQuery;
@@ -143,10 +146,23 @@ public class PetalBrowserUtils {
                     case "@reddit":
                         return "https://www.reddit.com/search/?q=" + encodedQuery;
                     case "@ddg":
+                    case "@duckduckgo":
                         return "https://duckduckgo.com/?q=" + encodedQuery;
                     case "@b":
                     case "@bing":
                         return "https://www.bing.com/search?q=" + encodedQuery;
+                    case "@brave":
+                        return "https://search.brave.com/search?q=" + encodedQuery;
+                    case "@ecosia":
+                        return "https://www.ecosia.org/search?q=" + encodedQuery;
+                    case "@qwant":
+                        return "https://www.qwant.com/?q=" + encodedQuery;
+                    case "@searx":
+                    case "@searxng":
+                        return "https://searx.space/search?q=" + encodedQuery;
+                    case "@sp":
+                    case "@startpage":
+                        return "https://www.startpage.com/sp/search?query=" + encodedQuery;
                 }
             }
 

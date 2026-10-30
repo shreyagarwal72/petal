@@ -250,6 +250,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_enable_live_suggestions", true)
     }
 
+    override val searchSuggestionsPrivate: Flow<Boolean> = preferenceFlow("sp_search_suggestions_private") {
+        sp.getBoolean("sp_search_suggestions_private", false)
+    }
+
     override val showSearchEngineSelectorInOmnibox: Flow<Boolean> = preferenceFlow("sp_show_search_engine_selector_in_omnibox") {
         sp.getBoolean("sp_show_search_engine_selector_in_omnibox", true)
     }
@@ -709,6 +713,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setEnableLiveSuggestions(enabled: Boolean) {
         sp.edit().putBoolean("sp_enable_live_suggestions", enabled).apply()
+    }
+
+    override suspend fun setSearchSuggestionsPrivate(enabled: Boolean) {
+        sp.edit().putBoolean("sp_search_suggestions_private", enabled).apply()
     }
 
     override suspend fun setShowSearchEngineSelectorInOmnibox(enabled: Boolean) {

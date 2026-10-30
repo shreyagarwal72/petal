@@ -38,7 +38,8 @@ data class SearchEngineItem(
     val name: String,
     val description: String,
     val url: String,
-    val custom: Boolean = false
+    val custom: Boolean = false,
+    val suggestUrl: String = ""
 )
 
 val availableSearchEngines = listOf(
@@ -65,8 +66,9 @@ fun getCustomSearchEngines(context: Context): List<SearchEngineItem> {
                 val id = item.optInt("id", CUSTOM_ID_START + i)
                 val name = item.optString("name").trim()
                 val url = item.optString("url").trim()
+                val suggestUrl = item.optString("suggestUrl", "").trim()
                 if (name.isNotEmpty() && (url.startsWith("http://") || url.startsWith("https://"))) {
-                    add(SearchEngineItem(id, name, "Custom search engine", url, true))
+                    add(SearchEngineItem(id, name, "Custom search engine", url, true, suggestUrl))
                 }
             }
         }
@@ -82,6 +84,9 @@ private fun saveCustomSearchEngines(context: Context, engines: List<SearchEngine
             put("id", it.index)
             put("name", it.name)
             put("url", it.url)
+            if (it.suggestUrl.isNotEmpty()) {
+                put("suggestUrl", it.suggestUrl)
+            }
         })
     }
     PreferenceManager.getDefaultSharedPreferences(context).edit().putString(CUSTOM_ENGINES_KEY, json.toString()).apply()
@@ -163,6 +168,7 @@ fun PetalSearchEngineSheetContent(
         val editing = editingEngine
         var name by remember(editing?.index) { mutableStateOf(editing?.name ?: "") }
         var url by remember(editing?.index) { mutableStateOf(editing?.url ?: "") }
+        var suggestUrl by remember(editing?.index) { mutableStateOf(editing?.suggestUrl ?: "") }
         var error by remember(editing?.index) { mutableStateOf<String?>(null) }
 
         com.petal.browser.ui.containment.PetalMaterialAlertDialog(
@@ -177,12 +183,19 @@ fun PetalSearchEngineSheetContent(
                         supportingText = { Text(stringResource(R.string.ui_use_s_or_searchterms_where)) },
                         singleLine = true
                     )
+                    OutlinedTextField(
+                        suggestUrl, { suggestUrl = it },
+                        label = { Text(stringResource(R.string.ui_search_suggest_url)) },
+                        supportingText = { Text(stringResource(R.string.ui_search_suggest_url_summary)) },
+                        singleLine = true
+                    )
                     if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     val normalized = url.trim()
+                    val normalizedSuggest = suggestUrl.trim()
                     val validScheme = normalized.startsWith("https://") || normalized.startsWith("http://")
                     val hasToken = normalized.contains("%s") || normalized.contains("{searchTerms}")
                     if (name.trim().isEmpty()) error = "Enter a name."
@@ -190,7 +203,7 @@ fun PetalSearchEngineSheetContent(
                     else if (!hasToken) error = "Add %s or {searchTerms} to the URL."
                     else {
                         val id = editing?.index ?: ((customEngines.maxOfOrNull { it.index } ?: (CUSTOM_ID_START - 1)) + 1)
-                        val item = SearchEngineItem(id, name.trim(), "Custom search engine", normalized, true)
+                        val item = SearchEngineItem(id, name.trim(), "Custom search engine", normalized, true, normalizedSuggest)
                         customEngines = if (editing == null) customEngines + item else customEngines.map { if (it.index == id) item else it }
                         saveCustomSearchEngines(context, customEngines)
                         selectedIndex = id

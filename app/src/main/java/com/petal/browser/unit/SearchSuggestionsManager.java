@@ -1,5 +1,7 @@
 package com.petal.browser.unit;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -47,9 +49,18 @@ public class SearchSuggestionsManager {
 
     /**
      * Dispatch suggestion query based on search engine index configured in preferences:
-     * 0: Google, 1: DuckDuckGo, 2: Startpage, 3: Brave, 4: Bing, 5: Searx, 6: Qwant, 7: Ecosia
+     * 0: Google, 1: DuckDuckGo, 2: Startpage, 3: Brave, 4: Bing, 5: Searx, 6: Qwant, 7: Ecosia, >=1000: Custom
      */
     public static void fetchSuggestionsForEngine(
+            @Nullable String engineIndex,
+            @NonNull String query,
+            @NonNull SuggestionCallback callback
+    ) {
+        fetchSuggestionsForEngine(null, engineIndex, query, callback);
+    }
+
+    public static void fetchSuggestionsForEngine(
+            @Nullable Context context,
             @Nullable String engineIndex,
             @NonNull String query,
             @NonNull SuggestionCallback callback
@@ -64,6 +75,30 @@ public class SearchSuggestionsManager {
             if (engineIndex != null) index = Integer.parseInt(engineIndex);
         } catch (Exception ignored) {}
 
+        if (index >= 1000) {
+            String suggestTemplate = null;
+            if (context != null) {
+                try {
+                    SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                    String customJson = sp.getString("sp_custom_search_engines", "[]");
+                    JSONArray engines = new JSONArray(customJson);
+                    for (int n = 0; n < engines.length(); n++) {
+                        JSONObject engine = engines.optJSONObject(n);
+                        if (engine != null && engine.optInt("id", -1) == index) {
+                            suggestTemplate = engine.optString("suggestUrl", "").trim();
+                            break;
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+            if (suggestTemplate != null && !suggestTemplate.isEmpty()) {
+                fetchCustomSuggestions(suggestTemplate, query, callback);
+            } else {
+                callback.onSuggestionsFetched(new ArrayList<>());
+            }
+            return;
+        }
+
         switch (index) {
             case 1:
                 fetchDuckDuckGoSuggestions(query, callback);
@@ -77,6 +112,9 @@ public class SearchSuggestionsManager {
             case 4:
                 fetchBingSuggestions(query, callback);
                 break;
+            case 5:
+                fetchSearxSuggestions(query, callback);
+                break;
             case 6:
                 fetchQwantSuggestions(query, callback);
                 break;
@@ -84,7 +122,6 @@ public class SearchSuggestionsManager {
                 fetchEcosiaSuggestions(query, callback);
                 break;
             case 0:
-            case 5:
             default:
                 fetchGoogleSuggestions(query, callback);
                 break;
@@ -366,6 +403,82 @@ public class SearchSuggestionsManager {
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Startpage suggestions failed for: " + query, e);
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+
+            dispatchCallback(callback, results, seq);
+        });
+    }
+
+    /**
+     * SearXNG OpenSearch Autocomplete endpoint:
+     * https://searx.space/autocompleter?q={query}
+     */
+    public static void fetchSearxSuggestions(final String query, final SuggestionCallback callback) {
+        if (query == null || query.trim().isEmpty()) {
+            if (callback != null) callback.onSuggestionsFetched(new ArrayList<>());
+            return;
+        }
+
+        final long seq = querySequence.incrementAndGet();
+        executor.execute(() -> {
+            List<String> results = new ArrayList<>();
+            HttpURLConnection connection = null;
+            try {
+                String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name());
+                String urlString = "https://searx.space/autocompleter?q=" + encodedQuery;
+                URL url = new URL(urlString);
+
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(2500);
+                connection.setReadTimeout(2500);
+                connection.setRequestProperty("User-Agent", FIREFOX_MOBILE_UA);
+
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    results = parseOpenSearchJson(connection);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "SearXNG suggestions failed for: " + query, e);
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+
+            dispatchCallback(callback, results, seq);
+        });
+    }
+
+    /**
+     * Custom OpenSearch Suggestion endpoint:
+     * Replaces `%s` or `{searchTerms}` with URL-encoded query.
+     */
+    public static void fetchCustomSuggestions(final String suggestUrlTemplate, final String query, final SuggestionCallback callback) {
+        if (query == null || query.trim().isEmpty() || suggestUrlTemplate == null || suggestUrlTemplate.trim().isEmpty()) {
+            if (callback != null) callback.onSuggestionsFetched(new ArrayList<>());
+            return;
+        }
+
+        final long seq = querySequence.incrementAndGet();
+        executor.execute(() -> {
+            List<String> results = new ArrayList<>();
+            HttpURLConnection connection = null;
+            try {
+                String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name());
+                String urlString = suggestUrlTemplate.replace("{searchTerms}", encodedQuery).replace("%s", encodedQuery);
+                URL url = new URL(urlString);
+
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(2500);
+                connection.setReadTimeout(2500);
+                connection.setRequestProperty("User-Agent", FIREFOX_MOBILE_UA);
+
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    results = parseOpenSearchJson(connection);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Custom suggestions failed for: " + query, e);
             } finally {
                 if (connection != null) connection.disconnect();
             }

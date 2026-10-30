@@ -48,6 +48,7 @@ fun SearchHomeSettingsScreen(
     val autoPip by viewModel.autoPip.collectAsStateWithLifecycle()
     val forceDarkMode by viewModel.forceDarkMode.collectAsStateWithLifecycle()
     val enableLiveSuggestions by viewModel.enableLiveSuggestions.collectAsStateWithLifecycle()
+    val searchSuggestionsPrivate by viewModel.searchSuggestionsPrivate.collectAsStateWithLifecycle()
     val showSearchEngineSelectorInOmnibox by viewModel.showSearchEngineSelectorInOmnibox.collectAsStateWithLifecycle()
 
     SearchHomeSettingsScreenContent(
@@ -58,6 +59,7 @@ fun SearchHomeSettingsScreen(
         autoPip = autoPip,
         forceDarkMode = forceDarkMode,
         enableLiveSuggestions = enableLiveSuggestions,
+        searchSuggestionsPrivate = searchSuggestionsPrivate,
         showSearchEngineSelectorInOmnibox = showSearchEngineSelectorInOmnibox,
         onSearchEngineIndexChange = viewModel::setSearchEngineIndex,
         onHomepageTypeChange = viewModel::setHomepageType,
@@ -66,6 +68,7 @@ fun SearchHomeSettingsScreen(
         onAutoPipChange = viewModel::setAutoPip,
         onForceDarkModeChange = viewModel::setForceDarkMode,
         onEnableLiveSuggestionsChange = viewModel::setEnableLiveSuggestions,
+        onSearchSuggestionsPrivateChange = viewModel::setSearchSuggestionsPrivate,
         onShowSearchEngineSelectorInOmniboxChange = viewModel::setShowSearchEngineSelectorInOmnibox,
         onNavigateBack = onNavigateBack,
         onNavigateToAddressBarSettings = onNavigateToAddressBarSettings,
@@ -84,6 +87,7 @@ fun SearchHomeSettingsScreenContent(
     autoPip: Boolean,
     forceDarkMode: Boolean,
     enableLiveSuggestions: Boolean,
+    searchSuggestionsPrivate: Boolean,
     showSearchEngineSelectorInOmnibox: Boolean,
     onSearchEngineIndexChange: (String) -> Unit,
     onHomepageTypeChange: (String) -> Unit,
@@ -92,6 +96,7 @@ fun SearchHomeSettingsScreenContent(
     onAutoPipChange: (Boolean) -> Unit,
     onForceDarkModeChange: (Boolean) -> Unit,
     onEnableLiveSuggestionsChange: (Boolean) -> Unit,
+    onSearchSuggestionsPrivateChange: (Boolean) -> Unit,
     onShowSearchEngineSelectorInOmniboxChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToAddressBarSettings: () -> Unit = {},
@@ -154,7 +159,7 @@ fun SearchHomeSettingsScreenContent(
                         allSearchEngines(context).find { it.index == idx }?.name ?: "Google"
                     }
 
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
                         when (index) {
                             0 -> {
                                 com.petal.browser.ui.containment.PetalGroupRow(
@@ -180,6 +185,27 @@ fun SearchHomeSettingsScreenContent(
                                     checked = showSearchEngineSelectorInOmnibox,
                                     position = position,
                                     onCheckedChange = onShowSearchEngineSelectorInOmniboxChange
+                                )
+                            }
+                            2 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_show_search_suggestions),
+                                    subtitle = stringResource(R.string.ui_show_search_suggestions_summary),
+                                    icon = Icons.Rounded.TravelExplore,
+                                    checked = enableLiveSuggestions,
+                                    position = position,
+                                    onCheckedChange = onEnableLiveSuggestionsChange
+                                )
+                            }
+                            3 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_search_suggestions_in_private),
+                                    subtitle = stringResource(R.string.ui_search_suggestions_in_private_summary),
+                                    icon = Icons.Rounded.VpnLock,
+                                    checked = searchSuggestionsPrivate && enableLiveSuggestions,
+                                    enabled = enableLiveSuggestions,
+                                    position = position,
+                                    onCheckedChange = onSearchSuggestionsPrivateChange
                                 )
                             }
                         }

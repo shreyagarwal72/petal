@@ -206,6 +206,13 @@ object PetalFetchDownloadBridge {
         ensureInitialized(context)
         // responseHeaders are the SERVER'S reply headers; they are only useful for naming (already
         // resolved by the caller) and must never be copied onto the outgoing request.
+        val outgoingHeaders = mutableMapOf<String, String>()
+        try {
+            val cookies = android.webkit.CookieManager.getInstance().getCookie(url)
+            if (!cookies.isNullOrBlank()) {
+                outgoingHeaders["Cookie"] = cookies
+            }
+        } catch (_: Exception) {}
         val started = enqueueMozillaDownload(
             context = context,
             url = url,
@@ -213,7 +220,7 @@ object PetalFetchDownloadBridge {
             mimeType = mimeType,
             referrerUrl = referrerUrl,
             isPrivate = isPrivate,
-            extraHeaders = emptyMap(),
+            extraHeaders = outgoingHeaders,
             onEnqueued = onEnqueued
         )
         if (!started) onFailed?.invoke()

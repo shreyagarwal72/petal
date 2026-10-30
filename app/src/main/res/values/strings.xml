@@ -356,6 +356,14 @@
     <string name="ui_insert_into_search">Insert into search</string>
     <string name="ui_frequently_visited">Frequently Visited</string>
     <string name="ui_search_suggestions">Search Suggestions</string>
+    <string name="ui_show_search_suggestions">Show search suggestions</string>
+    <string name="ui_show_search_suggestions_summary">Show search suggestions as you type in the address bar</string>
+    <string name="ui_search_suggestions_in_private">Show in private sessions</string>
+    <string name="ui_search_suggestions_in_private_summary">Search suggestions send what you type to your search engine</string>
+    <string name="ui_switch_to_tab">Switch to tab</string>
+    <string name="ui_search_with">Search with %1$s</string>
+    <string name="ui_search_suggest_url">Suggestion URL (Optional)</string>
+    <string name="ui_search_suggest_url_summary">OpenSearch suggestion endpoint with %s or {searchTerms}</string>
     <string name="ui_insert_query_into_omnibox">Insert query into omnibox</string>
     <string name="ui_remove_suggestion">Remove Suggestion?</string>
     <string name="ui_remove_from_search_suggestions">Remove \"%1$s\" from search suggestions? %2$s</string>

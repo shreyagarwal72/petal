@@ -7,6 +7,31 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.unit.HelperUnit
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * Tracks active hardware camera & microphone streams across web origins.
+ */
+object PetalActiveMediaSensors {
+    private val activeSensors = ConcurrentHashMap<String, MutableSet<PetalPermissionType>>()
+
+    @JvmStatic
+    fun setRecording(origin: String, type: PetalPermissionType, isRecording: Boolean) {
+        val set = activeSensors.getOrPut(origin) { Collections.newSetFromMap(ConcurrentHashMap()) }
+        if (isRecording) set.add(type) else set.remove(type)
+    }
+
+    @JvmStatic
+    fun isRecording(origin: String, type: PetalPermissionType): Boolean {
+        return activeSensors[origin]?.contains(type) == true
+    }
+
+    @JvmStatic
+    fun hasAnyActive(origin: String): Boolean {
+        return !activeSensors[origin].isNullOrEmpty()
+    }
+}
 
 /**
  * PetalGeckoPermissionDelegate
@@ -54,8 +79,14 @@ class PetalGeckoPermissionDelegate(
         val savedRule = sp.getString(prefKey, null)
 
         if ("allow" == savedRule) {
-            if (!video.isNullOrEmpty()) HelperUnit.grantPermissionsCamera(activity)
-            if (!audio.isNullOrEmpty()) HelperUnit.grantPermissionsMic(activity)
+            if (!video.isNullOrEmpty()) {
+                HelperUnit.grantPermissionsCamera(activity)
+                PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, true)
+            }
+            if (!audio.isNullOrEmpty()) {
+                HelperUnit.grantPermissionsMic(activity)
+                PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, true)
+            }
             callback.grant(video?.firstOrNull(), audio?.firstOrNull())
             return
         } else if ("block" == savedRule) {
@@ -70,8 +101,14 @@ class PetalGeckoPermissionDelegate(
                 uri,
                 onAllow = { remember ->
                     if (remember) sp.edit().putString(prefKey, "allow").apply()
-                    if (!video.isNullOrEmpty()) HelperUnit.grantPermissionsCamera(activity)
-                    if (!audio.isNullOrEmpty()) HelperUnit.grantPermissionsMic(activity)
+                    if (!video.isNullOrEmpty()) {
+                        HelperUnit.grantPermissionsCamera(activity)
+                        PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, true)
+                    }
+                    if (!audio.isNullOrEmpty()) {
+                        HelperUnit.grantPermissionsMic(activity)
+                        PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, true)
+                    }
                     callback.grant(video?.firstOrNull(), audio?.firstOrNull())
                 },
                 onDeny = { remember ->
