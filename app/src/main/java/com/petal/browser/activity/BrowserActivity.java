@@ -2990,7 +2990,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             final int addressHeight = addressBar.getVisibility() == GONE ? 0 : (addressBar.getHeight() > 0 ? addressBar.getHeight() : (int) HelperUnit.convertDpToPixel(60f, context));
-            updateDynamicToolbarHeights(addressHeight);
             // Use the actual Compose bottom-nav height, NOT the container height.
             // The bottom_nav_container (a RelativeLayout with wrap_content height) can
             // incorrectly measure at the full screen height when RelativeLayout resolves
@@ -3058,6 +3057,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean liquidGlassTopOn = sp.getBoolean("sp_liquid_glass_enabled", false) &&
                     (!isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true));
             int reservedNavHeight = (isFloatingNavStyle && !isBottom) ? 0 : bottomNavHeight;
+            // Gecko must only be told about a dynamic toolbar when the bar really overlays the page.
+            // When the page area is already padded below the bar, a non-zero value makes Gecko treat
+            // the bottom of the view as covered, so a page's fixed-bottom bar floats mid-screen
+            // (and a blank strip shows at the bottom).
+            updateDynamicToolbarHeights((!isBottom && liquidGlassTopOn) ? addressHeight : 0);
             boolean reserveBarSpace = !isNonWebSurface;
             int topInset = reserveBarSpace
                     ? (!isBottom ? (liquidGlassTopOn ? resolvedStatusBarGap : addressHeight + gap) : resolvedStatusBarGap)
