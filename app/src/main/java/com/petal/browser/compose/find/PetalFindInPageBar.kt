@@ -237,18 +237,5 @@ object PetalFindInPageBridge {
             }
         }
     }
-
-    @JvmStatic
-    fun setupFindInPage(
-        composeView: androidx.compose.ui.platform.ComposeView,
-        visible: Boolean,
-        query: String,
-        onQueryChange: java.util.function.Consumer<String>,
-        onFindNext: Runnable,
-        onFindPrevious: Runnable,
-        onClose: Runnable
-    ) {
-        setupFindInPage(composeView, visible, query, 0, 0, onQueryChange, onFindNext, onFindPrevious, onClose)
-    }
 }
 

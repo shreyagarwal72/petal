@@ -704,10 +704,6 @@ class PetalTabViewController private constructor(
         observedSession?.findAll(query)
     }
 
-    fun findNext(forward: Boolean) {
-        observedSession?.findNext(forward)
-    }
-
     fun clearFindMatches() {
         observedSession?.clearFindMatches()
     }
@@ -1007,7 +1003,7 @@ class PetalTabViewController private constructor(
                 org.mozilla.geckoview.GeckoResult.fromValue(result)
             })
         } else {
-            findNext(forward)
+            observedSession?.findNext(forward)
             callback?.invoke(0, 0)
         }
     }
