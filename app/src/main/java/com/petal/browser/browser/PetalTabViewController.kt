@@ -471,6 +471,11 @@ class PetalTabViewController private constructor(
                 }
             }
 
+            // Universal Live Liquid Glass & Material 3 Expressive Permission Delegate
+            gs.permissionDelegate = com.petal.browser.ui.components.PetalGeckoPermissionDelegate(context) {
+                resolveActivity(context)
+            }
+
             gs.selectionActionDelegate = object : org.mozilla.geckoview.GeckoSession.SelectionActionDelegate {
                 override fun onShowActionRequest(
                     session: org.mozilla.geckoview.GeckoSession,

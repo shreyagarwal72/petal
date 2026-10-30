@@ -41,6 +41,25 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
         androidPhotoPicker = null
     )
     fun start() {
+        // Suppress stock Mozilla SitePermissionsDialogFragment so only Petal's Live Liquid Glass overlay renders
+        activity.supportFragmentManager.registerFragmentLifecycleCallbacks(
+            object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+                override fun onFragmentAttached(
+                    fm: androidx.fragment.app.FragmentManager,
+                    f: androidx.fragment.app.Fragment,
+                    context: android.content.Context
+                ) {
+                    if (f.javaClass.simpleName.contains("SitePermissions", ignoreCase = true)) {
+                        try {
+                            if (f is androidx.fragment.app.DialogFragment) {
+                                f.dismissAllowingStateLoss()
+                            }
+                        } catch (_: Throwable) {}
+                    }
+                }
+            },
+            true
+        )
         sitePermissions.start()
         mediaFullscreen.start()
         prompts.start()
