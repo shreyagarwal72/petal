@@ -248,13 +248,13 @@ object PetalAddressBarBridge {
                                     val ctrl = act.currentAlbumController
                                     if (ctrl is com.petal.browser.browser.PetalTabViewController) ctrl.goForward()
                                     else if (ctrl is com.petal.browser.view.PetalGeckoView) ctrl.goForward()
-                                    else act.activeGeckoView?.goForward()
+                                    else BrowserActivity.activeGeckoView?.goForward()
                                 }
                             },
                             onReloadClick = {
                                 reloadClick?.run() ?: (activity as? BrowserActivity)?.reloadCurrentBrowserTab()
                             },
-                            onShareClick = { shareClick?.run() ?: (activity as? BrowserActivity)?.onShareClick() },
+                            onShareClick = { shareClick?.run() },
                             onAddressClick = { addressClick?.run() ?: (activity as? BrowserActivity)?.showOmniboxPage(currentUrl) },
                             onHomeClick = {
                                 homeClick?.run() ?: run {
@@ -325,7 +325,7 @@ object PetalAddressBarBridge {
                             isLoading = currentLoading,
                             canGoBack = currentCanGoBack,
                             onBackClick = { backClick?.run() ?: (activity as? BrowserActivity)?.performBackNavigation() },
-                            onShareClick = { shareClick?.run() ?: (activity as? BrowserActivity)?.onShareClick() },
+                            onShareClick = { shareClick?.run() },
                             onAddressClick = { addressClick?.run() ?: (activity as? BrowserActivity)?.showOmniboxPage(currentUrl) },
                             onAiResearchClick = { aiResearchClick?.run() },
                             onMediaClick = {
