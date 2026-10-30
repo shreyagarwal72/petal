@@ -1423,10 +1423,11 @@ private class PetalContentDelegateWrapper(
             val elemType = element.type
             val linkText = runCatching { element.linkText }.getOrNull()?.takeIf { it.isNotBlank() }
                 ?: runCatching { element.title }.getOrNull()?.takeIf { it.isNotBlank() }
-                ?: runCatching { element.alt }.getOrNull()?.takeIf { it.isNotBlank() }
+                ?: runCatching { element.javaClass.getField("alt").get(element) as? String }.getOrNull()?.takeIf { it.isNotBlank() }
                 ?: runCatching { element.javaClass.getField("textContent").get(element) as? String }.getOrNull()
             val elementTitle = runCatching { element.title }.getOrNull()?.takeIf { it.isNotBlank() }
-            val elementAlt = runCatching { element.alt }.getOrNull()?.takeIf { it.isNotBlank() }
+            val elementAlt = runCatching { element.javaClass.getField("alt").get(element) as? String }.getOrNull()?.takeIf { it.isNotBlank() }
+                ?: runCatching { element.javaClass.getField("altText").get(element) as? String }.getOrNull()?.takeIf { it.isNotBlank() }
 
             act.runOnUiThread {
                 com.petal.browser.compose.menu.BrowserContextMenuManager.handleContextMenu(
