@@ -1059,16 +1059,15 @@ fun PetalOmniboxPage(
                                     )
 
                                     // Build a flat list interleaving section header entries and suggestion row entries.
-                                    // `remember` is valid here — we are inside the Column composable scope.
+                                    // Grouped by source so each header is only added once, with guaranteed unique keys.
                                     val listEntries = remember(suggestions) {
                                         buildList {
-                                            var lastSrc: SuggestionSource? = null
-                                            suggestions.forEach { item ->
-                                                if (item.source != lastSrc) {
-                                                    lastSrc = item.source
-                                                    add("header_${item.source.name}" to item.source)
+                                            val grouped = suggestions.groupBy { it.source }
+                                            grouped.forEach { (source, items) ->
+                                                add("header_${source.name}" to source)
+                                                items.forEachIndexed { itemIdx, item ->
+                                                    add("item_${source.name}_${itemIdx}_${item.query.hashCode()}" to item)
                                                 }
-                                                add("item_${item.source.name}_${item.query}" to item)
                                             }
                                         }
                                     }
@@ -1082,7 +1081,7 @@ fun PetalOmniboxPage(
                                     ) {
                                         itemsIndexed(
                                             items = listEntries,
-                                            key = { _, entry -> entry.first }
+                                            key = { index, entry -> "${index}_${entry.first}" }
                                         ) { entryIndex, entry ->
                                             when (val payload = entry.second) {
                                                 is SuggestionSource -> {
@@ -1220,77 +1219,7 @@ fun PetalOmniboxPage(
                                         }
                                     }
 
-                                    // One-off quick search engine chips ("Search with...")
-                                    val quickEngines = remember(allEngines) { allEngines.take(8) }
-                                    if (quickEngines.isNotEmpty()) {
-                                        HorizontalDivider(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                                        )
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 10.dp, vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = stringResource(R.string.ui_search_with, "").trimEnd(),
-                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
-                                                modifier = Modifier.padding(end = 8.dp)
-                                            )
-                                            LazyRow(
-                                                modifier = Modifier.weight(1f),
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                contentPadding = PaddingValues(horizontal = 2.dp)
-                                            ) {
-                                                items(quickEngines) { eng ->
-                                                    val isSelected = eng.index == (currentEngineIndexStr.toIntOrNull() ?: 0)
-                                                    FilterChip(
-                                                        selected = isSelected,
-                                                        onClick = {
-                                                            currentEngineIndexStr = eng.index.toString()
-                                                            sp.edit().putString("sp_search_engine", eng.index.toString()).apply()
-                                                            val q = queryState.text.trim()
-                                                            if (q.isNotEmpty()) {
-                                                                submitSearch(q, saveToHistory = true)
-                                                            }
-                                                        },
-                                                        label = {
-                                                            Text(
-                                                                eng.name,
-                                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                                    fontSize = 11.sp
-                                                                )
-                                                            )
-                                                        },
-                                                        leadingIcon = {
-                                                            val iconVector = when (eng.name.lowercase()) {
-                                                                "google" -> Icons.Rounded.Search
-                                                                "duckduckgo" -> Icons.Rounded.Shield
-                                                                "brave search", "brave" -> Icons.Rounded.Security
-                                                                "bing" -> Icons.Rounded.Search
-                                                                "startpage" -> Icons.Rounded.VpnKey
-                                                                "searxng", "searx" -> Icons.Rounded.ManageSearch
-                                                                "qwant" -> Icons.Rounded.TravelExplore
-                                                                "ecosia" -> Icons.Rounded.Eco
-                                                                else -> Icons.Rounded.Search
-                                                            }
-                                                            Icon(iconVector, contentDescription = null, modifier = Modifier.size(13.dp))
-                                                        },
-                                                        shape = RoundedCornerShape(10.dp),
-                                                        colors = FilterChipDefaults.filterChipColors(
-                                                            containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                                        )
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
+
                                 }
                             }
                         }
