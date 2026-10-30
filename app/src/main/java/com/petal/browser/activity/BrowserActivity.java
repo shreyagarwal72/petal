@@ -4271,6 +4271,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     } else if (activeGeckoView != null) {
                         activeGeckoView.reload();
                     }
+                },
+                isCurrentPageReaderEligible,
+                () -> {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
+                    showReaderMode();
                 }
         );
         if (refreshState != null && refreshState.isRefreshing()) {
@@ -4280,6 +4285,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (refreshBarCompose != null) {
                 refreshBarCompose.setVisibility(GONE);
             }
+        }
+    }
+
+    private boolean isCurrentPageReaderEligible = false;
+
+    public void setReaderModeEligible(com.petal.browser.browser.AlbumController controller, boolean eligible) {
+        if (controller == currentAlbumController || controller == activeGeckoView) {
+            this.isCurrentPageReaderEligible = eligible;
+            updateAddressBar();
         }
     }
 

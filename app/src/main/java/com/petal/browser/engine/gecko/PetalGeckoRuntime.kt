@@ -121,8 +121,9 @@ object PetalGeckoRuntime {
             else -> if (forceDark) GeckoRuntimeSettings.COLOR_SCHEME_DARK else GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
         }
 
+        val allowAboutConfig = sp.getBoolean("sp_enable_about_config", false) || isDebug
         val settingsBuilder = GeckoRuntimeSettings.Builder()
-            .aboutConfigEnabled(isDebug)
+            .aboutConfigEnabled(allowAboutConfig)
             .trustedRecursiveResolverMode(trrMode)
             .preferredColorScheme(targetColorScheme)
             .contentBlocking(

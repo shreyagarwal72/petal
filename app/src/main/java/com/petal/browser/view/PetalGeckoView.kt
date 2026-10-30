@@ -732,6 +732,8 @@ class PetalGeckoView @JvmOverloads constructor(
     private var isIncognito: Boolean = initialIncognito
     private var isForegroundTab: Boolean = false
     private var isStopped: Boolean = false
+    @Volatile
+    var isReaderEligible: Boolean = false
     private var isMediaPlaying: Boolean = false
     private var previewRevision: Long = 0L
     private var capturedPreviewRevision: Long = -1L
@@ -910,6 +912,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 showSurfaceCover()
                 previewRetryCount = 0
                 isStopped = false
+                isReaderEligible = false
                 currentScrollY = 0
                 currentScrollX = 0
                 com.petal.browser.media.sniffer.PetalMediaSniffer.clear()
@@ -952,6 +955,18 @@ class PetalGeckoView @JvmOverloads constructor(
                 if (success && !currentUrl.isNullOrBlank() && !com.petal.browser.media.sniffer.PetalNativeSnifferEngine.isSearchOrInternalUrl(currentUrl)) {
                     evaluateJavascript(com.petal.browser.media.sniffer.PetalNativeSnifferEngine.DOM_SCAN_JS) { result ->
                         com.petal.browser.media.sniffer.PetalNativeSnifferEngine.parseDomScanResult(tabId, currentUrl, result)
+                    }
+
+                    // Firefox-style Article Detection for dynamic Reader View indicator
+                    evaluateJavascript("Boolean(document.querySelector('article, [itemprop=\"articleBody\"], .entry-content, .post-content') || (document.querySelectorAll('p').length > 3 && document.body && document.body.innerText.length > 800))") { result ->
+                        val isArticle = result?.trim()?.equals("true", ignoreCase = true) == true
+                        this@PetalGeckoView.isReaderEligible = isArticle
+                        val hostAct = getHostActivity()
+                        if (hostAct is com.petal.browser.activity.BrowserActivity) {
+                            hostAct.runOnUiThread {
+                                hostAct.setReaderModeEligible(this@PetalGeckoView, isArticle)
+                            }
+                        }
                     }
                 }
 
@@ -1291,7 +1306,10 @@ class PetalGeckoView @JvmOverloads constructor(
                 // Matching Firefox's NavigationDelegate interception: deny the plain-HTTP load
                 // and immediately reload as HTTPS so no insecure request is ever sent.
                 val httpsOnlyEarly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
+                val targetHost = try { android.net.Uri.parse(uri).host } catch (_: Throwable) { null }
+                val isBypassed = com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(context, targetHost)
                 if (httpsOnlyEarly
+                    && !isBypassed
                     && uri.startsWith("http://", ignoreCase = true)
                     && !uri.startsWith("http://localhost", ignoreCase = true)
                     && !uri.startsWith("http://127.", ignoreCase = true)
@@ -1592,7 +1610,9 @@ class PetalGeckoView @JvmOverloads constructor(
         // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)
         session.contentBlockingDelegate = object : ContentBlocking.Delegate {
             override fun onContentBlocked(session: GeckoSession, event: ContentBlocking.BlockEvent) {
-                com.petal.browser.browser.PetalAdBlockEngine.recordBlock(currentUrl)
+                val atCat = try { event.antiTrackingCategory } catch (_: Throwable) { 0 }
+                val cookieCat = try { event.cookieBehaviorCategory } catch (_: Throwable) { 0 }
+                com.petal.browser.browser.PetalAdBlockEngine.recordBlockWithCategories(currentUrl, atCat, cookieCat)
             }
         }
 

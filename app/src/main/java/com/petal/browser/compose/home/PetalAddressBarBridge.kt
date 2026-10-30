@@ -35,6 +35,8 @@ object PetalAddressBarBridge {
     private val _onSwipePrevTabState = mutableStateOf<Runnable?>(null)
     private val _onPasteAndGoState = mutableStateOf<((String) -> Unit)?>(null)
     private val _onHardRefreshState = mutableStateOf<Runnable?>(null)
+    private val _isReaderEligibleState = mutableStateOf(false)
+    private val _onReaderClickState = mutableStateOf<Runnable?>(null)
 
     @JvmStatic
     fun updateProgressValue(progress: Int) {
@@ -62,7 +64,9 @@ object PetalAddressBarBridge {
         onSwipeNextTab: Runnable? = null,
         onSwipePrevTab: Runnable? = null,
         onPasteAndGo: ((String) -> Unit)? = null,
-        onHardRefresh: Runnable? = null
+        onHardRefresh: Runnable? = null,
+        isReaderEligible: Boolean = false,
+        onReaderClick: Runnable? = null
     ) {
         _urlState.value = url
         _titleState.value = title
@@ -79,6 +83,8 @@ object PetalAddressBarBridge {
         _onSwipePrevTabState.value = onSwipePrevTab
         _onPasteAndGoState.value = onPasteAndGo
         _onHardRefreshState.value = onHardRefresh
+        _isReaderEligibleState.value = isReaderEligible
+        _onReaderClickState.value = onReaderClick
 
         if (composeView.tag == "PetalAddressBarBound") {
             return
@@ -189,6 +195,8 @@ object PetalAddressBarBridge {
                         onSwipePrevTab = { swipePrevTab?.run() },
                         onPasteAndGo = { pasteAndGo?.invoke(it) },
                         onHardRefresh = { hardRefresh?.run() },
+                        isReaderEligible = _isReaderEligibleState.value,
+                        onReaderClick = { _onReaderClickState.value?.run() },
                         isBottom = isBottomPosition
                     )
                 }

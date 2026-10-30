@@ -105,6 +105,7 @@ fun PetalSiteInfoBottomSheet(
     val isDomainWhitelisted = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.isDomainWhitelisted(domain) }
     var trackingProtectionEnabled by remember(domain, isDomainWhitelisted) { mutableStateOf(!isDomainWhitelisted) }
     val blockedCount = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.getBlockedCountForDomain(domain) }
+    val categoryCounts = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.getCategoryCountsForDomain(domain) }
     val initialDomainMode = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(context, domain) }
     var siteShieldMode by remember(domain, initialDomainMode) {
         mutableStateOf(if (initialDomainMode == com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE) com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE else com.petal.browser.browser.PetalAdBlockMode.STANDARD)
@@ -364,23 +365,34 @@ fun PetalSiteInfoBottomSheet(
                         Spacer(Modifier.height(12.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            val adsLabel = if (categoryCounts.ads > 0) "Ads: ${categoryCounts.ads}" else "Ads: 0"
+                            val trackersLabel = if (categoryCounts.analytics > 0) "Trackers: ${categoryCounts.analytics}" else "Trackers: 0"
+                            val socialLabel = if (categoryCounts.social > 0) "Social: ${categoryCounts.social}" else "Social: 0"
+                            val cookiesLabel = if (categoryCounts.cookies > 0) "Cookies: ${categoryCounts.cookies}" else "Cookies: Isolated"
+
                             SuggestionChip(
                                 onClick = {},
-                                label = { Text(stringResource(R.string.ui_cross_site_cookies), fontSize = 11.sp) },
+                                label = { Text(adsLabel, fontSize = 11.sp, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
                             SuggestionChip(
                                 onClick = {},
-                                label = { Text(stringResource(R.string.ui_cryptominers), fontSize = 11.sp) },
+                                label = { Text(trackersLabel, fontSize = 11.sp, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
                             SuggestionChip(
                                 onClick = {},
-                                label = { Text(stringResource(R.string.ui_fingerprinters), fontSize = 11.sp) },
+                                label = { Text(socialLabel, fontSize = 11.sp, maxLines = 1) },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.weight(1f)
+                            )
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text(cookiesLabel, fontSize = 11.sp, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )

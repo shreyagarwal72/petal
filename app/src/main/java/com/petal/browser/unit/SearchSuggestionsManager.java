@@ -71,6 +71,9 @@ public class SearchSuggestionsManager {
             case 2:
                 fetchStartpageSuggestions(query, callback);
                 break;
+            case 3:
+                fetchBraveSuggestions(query, callback);
+                break;
             case 4:
                 fetchBingSuggestions(query, callback);
                 break;
@@ -81,7 +84,6 @@ public class SearchSuggestionsManager {
                 fetchEcosiaSuggestions(query, callback);
                 break;
             case 0:
-            case 3:
             case 5:
             default:
                 fetchGoogleSuggestions(query, callback);
@@ -212,6 +214,44 @@ public class SearchSuggestionsManager {
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Bing suggestions failed for: " + query, e);
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+
+            dispatchCallback(callback, results, seq);
+        });
+    }
+
+    /**
+     * Official Brave Search Suggestion API:
+     * https://search.brave.com/api/suggest?q={query}
+     * Returns standard OpenSearch JSON format.
+     */
+    public static void fetchBraveSuggestions(final String query, final SuggestionCallback callback) {
+        if (query == null || query.trim().isEmpty()) {
+            if (callback != null) callback.onSuggestionsFetched(new ArrayList<>());
+            return;
+        }
+
+        final long seq = querySequence.incrementAndGet();
+        executor.execute(() -> {
+            List<String> results = new ArrayList<>();
+            HttpURLConnection connection = null;
+            try {
+                String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name());
+                String urlString = "https://search.brave.com/api/suggest?q=" + encodedQuery;
+                URL url = new URL(urlString);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(2500);
+                connection.setReadTimeout(2500);
+                connection.setRequestProperty("User-Agent", FIREFOX_MOBILE_UA);
+
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    results = parseOpenSearchJson(connection);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Brave suggestions failed for: " + query, e);
             } finally {
                 if (connection != null) connection.disconnect();
             }

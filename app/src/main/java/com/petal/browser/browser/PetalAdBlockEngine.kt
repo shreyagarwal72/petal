@@ -270,6 +270,16 @@ object PetalAdBlockEngine {
         return false
     }
 
+    data class BlockedCategoryCounts(
+        val ads: Int = 0,
+        val analytics: Int = 0,
+        val social: Int = 0,
+        val content: Int = 0,
+        val cookies: Int = 0
+    )
+
+    private val domainCategoryCounts = ConcurrentHashMap<String, BlockedCategoryCounts>()
+
     fun recordBlock(pageUrl: String?) {
         totalBlockedCount.incrementAndGet()
         if (!pageUrl.isNullOrBlank()) {
@@ -290,6 +300,40 @@ object PetalAdBlockEngine {
                 )
             } catch (_: Throwable) {}
         }
+    }
+
+    @JvmStatic
+    fun recordBlockWithCategories(pageUrl: String?, antiTrackingCategory: Int, cookieCategory: Int = 0) {
+        recordBlock(pageUrl)
+        if (pageUrl.isNullOrBlank()) return
+        val pageHost = try { Uri.parse(pageUrl).host ?: "" } catch (e: Exception) { "" }
+        val cleanHost = pageHost.lowercase(Locale.US).removePrefix("www.")
+        if (cleanHost.isEmpty()) return
+
+        domainCategoryCounts.compute(cleanHost) { _, current ->
+            val prev = current ?: BlockedCategoryCounts()
+            var ads = prev.ads
+            var analytics = prev.analytics
+            var social = prev.social
+            var content = prev.content
+            var cookies = prev.cookies
+
+            // Check Mozilla ContentBlocking.AntiTracking flags
+            if ((antiTrackingCategory and org.mozilla.geckoview.ContentBlocking.AntiTracking.AD) != 0) ads++
+            if ((antiTrackingCategory and org.mozilla.geckoview.ContentBlocking.AntiTracking.ANALYTIC) != 0) analytics++
+            if ((antiTrackingCategory and org.mozilla.geckoview.ContentBlocking.AntiTracking.SOCIAL) != 0) social++
+            if ((antiTrackingCategory and org.mozilla.geckoview.ContentBlocking.AntiTracking.CONTENT) != 0) content++
+            if (cookieCategory != 0) cookies++
+
+            BlockedCategoryCounts(ads, analytics, social, content, cookies)
+        }
+    }
+
+    @JvmStatic
+    fun getCategoryCountsForDomain(domain: String?): BlockedCategoryCounts {
+        if (domain.isNullOrBlank()) return BlockedCategoryCounts()
+        val cleanHost = domain.lowercase(Locale.US).removePrefix("www.")
+        return domainCategoryCounts[cleanHost] ?: BlockedCategoryCounts()
     }
 
     @JvmStatic

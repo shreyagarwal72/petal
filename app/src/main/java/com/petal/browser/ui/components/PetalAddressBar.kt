@@ -75,6 +75,8 @@ fun PetalAddressBar(
     onSwipePrevTab: () -> Unit = {},
     onPasteAndGo: (String) -> Unit = {},
     onHardRefresh: () -> Unit = {},
+    isReaderEligible: Boolean = false,
+    onReaderClick: () -> Unit = {},
     isBottom: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -393,6 +395,21 @@ fun PetalAddressBar(
                             imageVector = if (addressBarAction.equals("AI", true)) Icons.Rounded.AutoAwesome else if (isBookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
                             contentDescription = if (addressBarAction.equals("AI", true)) "Petal AI" else if (isBookmarked) "Remove bookmark" else "Bookmark",
                             tint = if (addressBarAction.equals("AI", true)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                // Firefox Dynamic Reader Mode Button
+                if (isReaderEligible) {
+                    IconButton(
+                        onClick = onReaderClick,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.MenuBook,
+                            contentDescription = "Reader View",
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(22.dp)
                         )
                     }

@@ -28,7 +28,6 @@ import com.petal.browser.browser.AlbumController
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.HelperUnit
-import com.petal.browser.unit.ReaderModeManager
 import com.petal.browser.view.PetalGeckoView
 
 object PetalReaderBridge {
@@ -44,14 +43,41 @@ object PetalReaderBridge {
         val title = controller.title ?: "Article"
         val domain = HelperUnit.domain(url) ?: ""
 
-        // Prefer offline extraction directly via ReaderModeManager
-        ReaderModeManager.parseArticle(url) { parsed ->
-            if (parsed != null && parsed.contentHtml.isNotBlank()) {
-                val cleanText = parsed.contentHtml.replace(Regex("<[^>]*>"), " ").trim()
-                callback(ReaderArticleData(parsed.title.ifEmpty { title }, parsed.author, parsed.domain.ifEmpty { domain }, parsed.leadImageUrl, cleanText))
-            } else {
-                callback(ReaderArticleData(title, "", domain, "", "Unable to extract article text from this page."))
-            }
+        // Offline client-side DOM readability extraction without external network calls
+        val extractJs = """
+            (function() {
+                try {
+                    var el = document.querySelector('article, [itemprop="articleBody"], .entry-content, .post-content, main, #content') || document.body;
+                    var t = (document.querySelector('h1') ? document.querySelector('h1').innerText : document.title) || '';
+                    var by = (document.querySelector('[rel="author"], .author, .byline, [itemprop="author"]') ? document.querySelector('[rel="author"], .author, .byline, [itemprop="author"]').innerText : '') || '';
+                    var img = document.querySelector('article img, [itemprop="image"], meta[property="og:image"]');
+                    var lead = img ? (img.src || img.content || '') : '';
+                    var bodyText = el ? el.innerText : '';
+                    return JSON.stringify({ title: t, author: by, lead: lead, text: bodyText });
+                } catch(e) {
+                    return JSON.stringify({ title: '', author: '', lead: '', text: document.body ? document.body.innerText : '' });
+                }
+            })();
+        """.trimIndent()
+
+        controller.evaluateJavascript(extractJs) { rawJson ->
+            try {
+                if (!rawJson.isNullOrBlank() && rawJson != "null") {
+                    val unescaped = if (rawJson.startsWith("\"") && rawJson.endsWith("\"")) {
+                        org.json.JSONTokener(rawJson).nextValue().toString()
+                    } else rawJson
+                    val json = org.json.JSONObject(unescaped)
+                    val extractedTitle = json.optString("title").ifBlank { title }
+                    val author = json.optString("author")
+                    val leadImg = json.optString("lead")
+                    val text = json.optString("text").trim()
+                    if (text.isNotBlank()) {
+                        callback(ReaderArticleData(extractedTitle, author, domain, leadImg, text))
+                        return@evaluateJavascript
+                    }
+                }
+            } catch (_: Throwable) {}
+            callback(ReaderArticleData(title, "", domain, "", "Unable to extract article text from this page."))
         }
     }
 
