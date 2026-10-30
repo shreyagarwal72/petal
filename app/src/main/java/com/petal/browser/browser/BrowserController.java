@@ -17,6 +17,16 @@ public interface BrowserController {
     void updateProgress(int progress);
     void showAlbum(AlbumController albumController);
     void removeAlbum(AlbumController albumController);
+    default void selectTab(PetalTabController tabController) {
+        if (tabController instanceof AlbumController) {
+            showAlbum((AlbumController) tabController);
+        }
+    }
+    default void closeTab(PetalTabController tabController) {
+        if (tabController instanceof AlbumController) {
+            removeAlbum((AlbumController) tabController);
+        }
+    }
     void showFileChooser(ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams);
     void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback);
     void showOverview();

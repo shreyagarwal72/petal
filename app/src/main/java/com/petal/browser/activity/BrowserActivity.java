@@ -2212,6 +2212,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         showAlbum(controller, null);
     }
 
+    public synchronized void selectTab(AlbumController controller) {
+        showAlbum(controller, null);
+    }
+
+    public synchronized void closeTab(AlbumController controller) {
+        removeAlbum(controller);
+    }
+
     public synchronized void showAlbum(AlbumController controller, String overrideUrl) {
         if (controller == null) {
             if (BrowserContainer.size() > 0) {
