@@ -101,6 +101,11 @@ interface SettingsRepository {
     val addressBarQuickActions: Flow<Boolean>
     val addressBarHeight: Flow<String>
     val addressBarAction: Flow<String>
+    val addressBarStyle: Flow<String>
+    val mergeLeading: Flow<String>
+    val mergeTrailing: Flow<String>
+    val mergeLayout: Flow<String>
+    val barCollapseStyle: Flow<String>
 
     // Experimental & Miscellaneous
     val appLanguage: Flow<String>
@@ -215,6 +220,11 @@ interface SettingsRepository {
     suspend fun setAddressBarQuickActions(enabled: Boolean)
     suspend fun setAddressBarHeight(height: String)
     suspend fun setAddressBarAction(action: String)
+    suspend fun setAddressBarStyle(style: String)
+    suspend fun setMergeLeading(leading: String)
+    suspend fun setMergeTrailing(trailing: String)
+    suspend fun setMergeLayout(layout: String)
+    suspend fun setBarCollapseStyle(style: String)
 
     suspend fun setAppLanguage(language: String)
     suspend fun setMatchWebsiteLanguage(enabled: Boolean)

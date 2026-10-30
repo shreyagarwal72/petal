@@ -398,6 +398,26 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString("sp_address_bar_action", if (sp.getBoolean("sp_ai_search_address_bar", true)) "AI" else "NONE") ?: "AI"
     }
 
+    override val addressBarStyle: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_ADDRESS_BAR_STYLE) {
+        sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_ADDRESS_BAR_STYLE, com.petal.browser.ui.components.BarPrefs.STYLE_CLASSIC) ?: com.petal.browser.ui.components.BarPrefs.STYLE_CLASSIC
+    }
+
+    override val mergeLeading: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_MERGE_LEADING) {
+        sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_MERGE_LEADING, com.petal.browser.ui.components.BarPrefs.DEFAULT_MERGE_LEADING) ?: com.petal.browser.ui.components.BarPrefs.DEFAULT_MERGE_LEADING
+    }
+
+    override val mergeTrailing: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_MERGE_TRAILING) {
+        sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_MERGE_TRAILING, com.petal.browser.ui.components.BarPrefs.DEFAULT_MERGE_TRAILING) ?: com.petal.browser.ui.components.BarPrefs.DEFAULT_MERGE_TRAILING
+    }
+
+    override val mergeLayout: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_MERGE_LAYOUT) {
+        sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_MERGE_LAYOUT, com.petal.browser.ui.components.BarPrefs.LAYOUT_SINGLE) ?: com.petal.browser.ui.components.BarPrefs.LAYOUT_SINGLE
+    }
+
+    override val barCollapseStyle: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_BAR_COLLAPSE_STYLE) {
+        sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_BAR_COLLAPSE_STYLE, com.petal.browser.ui.components.BarPrefs.COLLAPSE_PILL) ?: com.petal.browser.ui.components.BarPrefs.COLLAPSE_PILL
+    }
+
     // ── Experimental & Miscellaneous ──────────────────────────────────────────
     override val appLanguage: Flow<String> = preferenceFlow("sp_app_language") {
         sp.getString("sp_app_language", "system") ?: "system"
@@ -858,6 +878,26 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setAddressBarAction(action: String) {
         sp.edit().putString("sp_address_bar_action", action).apply()
+    }
+
+    override suspend fun setAddressBarStyle(style: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_ADDRESS_BAR_STYLE, style).apply()
+    }
+
+    override suspend fun setMergeLeading(leading: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_MERGE_LEADING, leading).apply()
+    }
+
+    override suspend fun setMergeTrailing(trailing: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_MERGE_TRAILING, trailing).apply()
+    }
+
+    override suspend fun setMergeLayout(layout: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_MERGE_LAYOUT, layout).apply()
+    }
+
+    override suspend fun setBarCollapseStyle(style: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_BAR_COLLAPSE_STYLE, style).apply()
     }
 
     override suspend fun setAppLanguage(language: String) {

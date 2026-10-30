@@ -1519,7 +1519,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val density = context.resources.displayMetrics.density
-                    val hideAfterPx = 48f * density
+                    val hideAfterPx = 24f * density
                     val showAfterPx = 16f * density
                     val deltaY = scrollY - lastAddressBarScrollY
                     lastAddressBarScrollY = scrollY

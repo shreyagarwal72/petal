@@ -753,6 +753,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         
         sp = PreferenceManager.getDefaultSharedPreferences(context);
         try {
+            sp.registerOnSharedPreferenceChangeListener(toolbarPrefsListener);
+        } catch (Throwable ignored) {}
+        try {
             com.petal.browser.profile.PetalProfileManager.INSTANCE.init(this);
             com.petal.browser.wallpaper.PetalWallpaperManager.INSTANCE.init(this);
         } catch (Throwable ignored) {}
@@ -1294,6 +1297,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onDestroy() {
+        try {
+            if (sp != null) sp.unregisterOnSharedPreferenceChangeListener(toolbarPrefsListener);
+        } catch (Throwable ignored) {}
         activeGeckoView = null;
         com.petal.browser.predictive.PetalLiveUnderlay.detach(liveUnderlayHost);
         try {
@@ -2767,7 +2773,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (bnv != null) bnv.setVisibility(GONE);
                 return;
             }
-            if (isOverlayScreenShowing || isCustomFullscreenState || videoOverlayBridge != null || customView != null) {
+            if (isOverlayScreenShowing || isCustomFullscreenState || videoOverlayBridge != null || customView != null
+                    || com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp)) {
                 View bnc = findViewById(R.id.bottom_nav_container);
                 View bnv = findViewById(R.id.bottom_nav_compose);
                 if (bnc != null) bnc.setVisibility(GONE);
@@ -2894,7 +2901,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (container == null) return;
 
-        if (inPip || pwa || isOverlayScreenShowing || isCustomFullscreenState || videoOverlayBridge != null || customView != null) {
+        if (inPip || pwa || isOverlayScreenShowing || isCustomFullscreenState || videoOverlayBridge != null || customView != null
+                || com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp)) {
             container.setVisibility(GONE);
             if (compose != null) compose.setVisibility(GONE);
             return;
@@ -3000,6 +3008,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // leaves zero (or negative) available height for GeckoView/ComposeView
             // children, producing the blank/black-screen bug.
             View bottomNavComposeView = findViewById(R.id.bottom_nav_compose);
+            if (com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp)) {
+                if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
+                if (bottomNavComposeView != null) bottomNavComposeView.setVisibility(GONE);
+            }
             final int bottomNavHeight;
             if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
                 // Prefer the measured height of the actual Compose nav view — it always
@@ -3080,13 +3092,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     glassBackdropView.setVisibility(GONE);
                 }
             }
+            boolean isPillCollapse = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
+            int pillHeightPx = (int) HelperUnit.convertDpToPixel(36f, context);
             com.petal.browser.ui.components.BarInsets.Result insets = com.petal.browser.ui.components.BarInsets.compute(
                     isBottom, reserveBarSpace, addressHeight, bottomNavHeight, gap, resolvedStatusBarGap,
                     legacyUnder && liquidGlassTopOn,
-                    legacyUnder && liquidGlassOn && !wallpaperBackdrop);
+                    legacyUnder && liquidGlassOn && !wallpaperBackdrop,
+                    isPillCollapse, pillHeightPx, navigationBarBottomInset);
             int topInset = insets.getTop();
             int bottomInset = insets.getBottom();
             mainContent.setPadding(0, topInset, 0, bottomInset);
+
+            com.petal.browser.ui.components.BarCollapseState.updatePage(curUrl, currentAlbumController != null && currentAlbumController.isIncognito());
 
             // Remember where the page area sits with the bars shown and with them minimized.
             barsShownTop = topInset;
@@ -4187,6 +4204,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             currentProgressFraction = activeGeckoView.getProgress() / 100f;
         }
 
+        boolean canGoForward = false;
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            canGoForward = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).canGoForward();
+        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            canGoForward = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).canGoForward();
+        }
+        int currentTabCount = isIncognito ? BrowserContainer.getIncognitoCount() : BrowserContainer.getNormalCount();
+        com.petal.browser.compose.home.PetalAddressBarBridge.updateNavState(canGoForward, currentTabCount);
+        com.petal.browser.ui.components.BarCollapseState.updatePage(currentUrl, isIncognito);
+
         boolean isNonWebSurface = !isActualWebPage(currentUrl) || isPetalHomeSurfaceShowing || isHomePage(currentUrl)
                 || isOverlayScreenShowing || hasNonTabTopContent()
                 || isCustomFullscreenState || videoOverlayBridge != null || customView != null;
@@ -4402,6 +4429,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private boolean barInsetsKnown = false;
     private int barsShownTop = 0, barsShownBottom = 0, barsHiddenTop = 0, barsHiddenBottom = 0;
     private final java.util.WeakHashMap<View, androidx.dynamicanimation.animation.SpringAnimation> barSprings = new java.util.WeakHashMap<>();
+    private android.animation.ValueAnimator pillMorphAnimator = null;
+
+    private final android.content.SharedPreferences.OnSharedPreferenceChangeListener toolbarPrefsListener = (sharedPreferences, key) -> {
+        if (com.petal.browser.ui.components.BarPrefs.KEY_ADDRESS_BAR_STYLE.equals(key)
+                || com.petal.browser.ui.components.BarPrefs.KEY_ADDRESS_BAR_POSITION.equals(key)
+                || com.petal.browser.ui.components.BarPrefs.KEY_MERGE_LAYOUT.equals(key)
+                || com.petal.browser.ui.components.BarPrefs.KEY_BAR_COLLAPSE_STYLE.equals(key)
+                || com.petal.browser.ui.components.BarPrefs.KEY_MERGE_LEADING.equals(key)
+                || com.petal.browser.ui.components.BarPrefs.KEY_MERGE_TRAILING.equals(key)) {
+            runOnUiThread(() -> {
+                applyAddressBarPosition();
+                updatePersistentBottomNav();
+                updateAddressBar();
+            });
+        }
+    };
+
+    private void animatePillFraction(boolean collapse, boolean animate) {
+        if (pillMorphAnimator != null) pillMorphAnimator.cancel();
+        float target = collapse ? 1f : 0f;
+        float current = com.petal.browser.ui.components.BarCollapseState.INSTANCE.getCollapsedFraction();
+        if (!animate) {
+            com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(target);
+            return;
+        }
+        pillMorphAnimator = android.animation.ValueAnimator.ofFloat(current, target);
+        pillMorphAnimator.setDuration(260);
+        pillMorphAnimator.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
+        pillMorphAnimator.addUpdateListener(anim -> {
+            float f = (Float) anim.getAnimatedValue();
+            com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(f);
+        });
+        pillMorphAnimator.start();
+    }
 
     /** Whether the bars may be minimized right now. Showing them again is never blocked. */
     private boolean canCollapseBars() {
@@ -4481,6 +4542,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (addressBar == null) return;
 
         boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
+        boolean isPillMode = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
         float dp16 = HelperUnit.convertDpToPixel(16f, context);
         int screenH = getResources().getDisplayMetrics().heightPixels;
 
@@ -4497,7 +4559,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         float addrOff = 0f, navOff = 0f, dockedOff = 0f;
         if (hidden) {
             navOff = navTarget != null ? navH + dp16 : 0f;
-            if (isBottom) {
+            if (isPillMode) {
+                addrOff = 0f;
+                dockedOff = isBottom ? addrH + navH + dp16 : -(addrH + HelperUnit.convertDpToPixel(40f, context));
+            } else if (isBottom) {
                 addrOff = addrH + navH + dp16;
                 dockedOff = addrOff;
             } else {
@@ -4509,6 +4574,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Coming back: make sure nothing stays INVISIBLE (see the hide-complete step below).
             if (addressBar.getVisibility() == INVISIBLE) addressBar.setVisibility(VISIBLE);
             if (navContainer != null && navContainer.getVisibility() == INVISIBLE) navContainer.setVisibility(VISIBLE);
+        }
+
+        if (isPillMode) {
+            animatePillFraction(hidden, animate);
+        } else {
+            animatePillFraction(false, false);
         }
 
         View[] docked = new View[] {
@@ -4541,7 +4612,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (bubble != null) {
-            if (hidden) {
+            if (isPillMode) {
+                bubble.setVisibility(GONE);
+            } else if (hidden) {
                 styleFabBubbleForLiquidGlass(bubble);
                 placeBubble(bubble, true, addrH, navH);
                 bubble.setVisibility(VISIBLE);
@@ -4579,7 +4652,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (!isAddressBarCollapsed) return;
                 View a = findViewById(R.id.compose_address_bar);
                 View n = findViewById(R.id.bottom_nav_container);
-                if (a != null && a.getVisibility() == VISIBLE) a.setVisibility(INVISIBLE);
+                if (!isPillMode && a != null && a.getVisibility() == VISIBLE) a.setVisibility(INVISIBLE);
                 if (n != null && n.getVisibility() == VISIBLE) n.setVisibility(INVISIBLE);
             }, animate ? 520 : 0);
         }

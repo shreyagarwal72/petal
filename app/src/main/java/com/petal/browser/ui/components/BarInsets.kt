@@ -47,8 +47,12 @@ object BarInsets {
      *   guard against the container measuring at full-screen height.
      * @param legacyUnderTop / [legacyUnderBottom] only true when the legacy pref is on AND the
      *   old code would have let the page run under that edge.
+     * @param pillCollapse whether PILL collapse mode is active instead of HIDE.
+     * @param pillHeight measured height of the minimized pill.
+     * @param navBarBottomInset gesture navigation bar inset at the bottom of the screen.
      */
     @JvmStatic
+    @JvmOverloads
     fun compute(
         isBottom: Boolean,
         reserveBarSpace: Boolean,
@@ -57,7 +61,10 @@ object BarInsets {
         gap: Int,
         statusBarGap: Int,
         legacyUnderTop: Boolean,
-        legacyUnderBottom: Boolean
+        legacyUnderBottom: Boolean,
+        pillCollapse: Boolean = false,
+        pillHeight: Int = 0,
+        navBarBottomInset: Int = 0
     ): Result {
         if (!reserveBarSpace) return Result(0, 0, 0, 0)
 
@@ -72,10 +79,23 @@ object BarInsets {
             else -> bottomNavHeight
         }
 
-        // Minimized: the nav and a bottom address bar slide away; a top address bar leaves
-        // only the status bar strip.
-        val hiddenTop = if (isBottom) top else minOf(top, statusBarGap)
-        val hiddenBottom = maxOf(0, bottom - (if (isBottom) addressHeight else 0) - bottomNavHeight)
+        // Minimized:
+        // In HIDE mode: the nav and bottom address bar slide away; top address bar leaves statusBarGap.
+        // In PILL mode: the bar morphs into the 36dp pill. Content is padded so it is never covered by the pill.
+        val hiddenTop: Int
+        val hiddenBottom: Int
+        if (pillCollapse && pillHeight > 0) {
+            if (isBottom) {
+                hiddenTop = statusBarGap
+                hiddenBottom = pillHeight + gap + navBarBottomInset
+            } else {
+                hiddenTop = statusBarGap + pillHeight + gap
+                hiddenBottom = 0
+            }
+        } else {
+            hiddenTop = if (isBottom) top else minOf(top, statusBarGap)
+            hiddenBottom = maxOf(0, bottom - (if (isBottom) addressHeight else 0) - bottomNavHeight)
+        }
         return Result(top, bottom, hiddenTop, hiddenBottom)
     }
 }
