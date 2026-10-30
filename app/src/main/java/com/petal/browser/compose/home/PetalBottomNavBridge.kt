@@ -148,9 +148,11 @@ object PetalBottomNavBridge {
                     ) {
                         // Flat (non-floating) liquid glass shows the set wallpaper behind the bar;
                         // a floating bar keeps sampling the live page.
-                        val flatNavBar = !floatingTabBar || isBottomAddressBar
                         val navGlassOn = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
-                        val useWallpaperSource = flatNavBar && navGlassOn
+                        val useWallpaperSource = navGlassOn && com.petal.browser.ui.components.BarInsets.glassSamplesWallpaper(
+                            androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity),
+                            isBottomAddressBar, floatingTabBar, true
+                        )
                         val glassSource = remember(useWallpaperSource) {
                             activity.findViewById<android.view.View>(
                                 if (useWallpaperSource) com.petal.browser.R.id.glass_wallpaper_backdrop

@@ -3056,26 +3056,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     (sp.getBoolean("sp_liquid_glass_bottom_nav", true) || (isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true)));
             boolean liquidGlassTopOn = sp.getBoolean("sp_liquid_glass_enabled", false) &&
                     (!isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true));
-            int reservedNavHeight = (isFloatingNavStyle && !isBottom) ? 0 : bottomNavHeight;
             // Gecko must only be told about a dynamic toolbar when the bar really overlays the page.
-            // When the page area is already padded below the bar, a non-zero value makes Gecko treat
-            // the bottom of the view as covered, so a page's fixed-bottom bar floats mid-screen
-            // (and a blank strip shows at the bottom).
-            updateDynamicToolbarHeights((!isBottom && liquidGlassTopOn) ? addressHeight : 0);
+            // At rest the page is padded below the bars, so this is 0 (GeckoView only takes a single,
+            // top-anchored toolbar height; there is no bottom variant, so padding covers the bottom).
+            // Only the hidden legacy pref (sp_glass_page_under_bars) lets the top glass bar overlay.
+            final boolean legacyUnder = com.petal.browser.ui.components.BarInsets.legacyPageUnderBars(sp);
+            updateDynamicToolbarHeights((!isBottom && liquidGlassTopOn && legacyUnder) ? addressHeight : 0);
             boolean reserveBarSpace = !isNonWebSurface;
-            int topInset = reserveBarSpace
-                    ? (!isBottom ? (liquidGlassTopOn ? resolvedStatusBarGap : addressHeight + gap) : resolvedStatusBarGap)
-                    : 0;
-            // When liquid glass is enabled, allow web content to extend all the way to the edges
-            // of the viewport so liquid glass can refract and blur the live webpage behind both bars.
-            // Flat (non-floating) liquid glass bars show the set wallpaper, not the page, so the page
-            // must stop above them (same gap the plain Material bar has). Floating glass bars keep
-            // the page running underneath.
-            boolean glassMaster = sp.getBoolean("sp_liquid_glass_enabled", false);
-            boolean flatNavBar = isBottom || !isFloatingNavStyle;
-            boolean navGlassFlat = glassMaster && flatNavBar && sp.getBoolean("sp_liquid_glass_bottom_nav", true);
-            boolean addrGlassFlat = glassMaster && isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true);
-            boolean wallpaperBackdrop = navGlassFlat || addrGlassFlat;
+            // Every padded glass bar sits over the wallpaper backdrop (top address bar included);
+            // the legacy pref restores "only flat bars use it".
+            boolean navGlassBackdrop = sp.getBoolean("sp_liquid_glass_bottom_nav", true)
+                    && com.petal.browser.ui.components.BarInsets.glassSamplesWallpaper(sp, isBottom, isFloatingNavStyle, true);
+            boolean addrGlassBackdrop = sp.getBoolean("sp_liquid_glass_address_bar", true)
+                    && com.petal.browser.ui.components.BarInsets.glassSamplesWallpaper(sp, isBottom, isFloatingNavStyle, false);
+            boolean wallpaperBackdrop = navGlassBackdrop || addrGlassBackdrop;
             View glassBackdropView = findViewById(R.id.glass_wallpaper_backdrop);
             if (glassBackdropView instanceof androidx.compose.ui.platform.ComposeView) {
                 if (wallpaperBackdrop) {
@@ -3086,22 +3080,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     glassBackdropView.setVisibility(GONE);
                 }
             }
-            boolean pageRunsUnderBars = liquidGlassOn && !wallpaperBackdrop;
-            int bottomInset = (reserveBarSpace && !pageRunsUnderBars) ? (isBottom ? addressHeight + bottomNavHeight : reservedNavHeight)
-                    : 0;
+            com.petal.browser.ui.components.BarInsets.Result insets = com.petal.browser.ui.components.BarInsets.compute(
+                    isBottom, reserveBarSpace, addressHeight, bottomNavHeight, gap, resolvedStatusBarGap,
+                    legacyUnder && liquidGlassTopOn,
+                    legacyUnder && liquidGlassOn && !wallpaperBackdrop);
+            int topInset = insets.getTop();
+            int bottomInset = insets.getBottom();
             mainContent.setPadding(0, topInset, 0, bottomInset);
 
             // Remember where the page area sits with the bars shown and with them minimized.
-            int hiddenTopInset = topInset;
-            int hiddenBottomInset = bottomInset;
-            if (reserveBarSpace) {
-                if (!isBottom) hiddenTopInset = Math.min(topInset, resolvedStatusBarGap);
-                hiddenBottomInset = Math.max(0, bottomInset - (isBottom ? addressHeight : 0) - (flatNavBar ? bottomNavHeight : 0));
-            }
             barsShownTop = topInset;
             barsShownBottom = bottomInset;
-            barsHiddenTop = hiddenTopInset;
-            barsHiddenBottom = hiddenBottomInset;
+            barsHiddenTop = insets.getHiddenTop();
+            barsHiddenBottom = insets.getHiddenBottom();
             barInsetsKnown = true;
 
             // The strip above the page (status bar + top address bar) has no page content, so
