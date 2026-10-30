@@ -74,7 +74,8 @@ fun PetalAddressBar(
 
     val resolvedIsBottom = isBottom || "BOTTOM".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true)
     val isPillCollapse = BarPrefs.COLLAPSE_PILL.equals(collapseStyle, ignoreCase = true)
-    val isFullyCollapsed = isPillCollapse && (BarCollapseState.collapsedFraction >= 0.95f || BarCollapseState.isCollapsed)
+    val collapsedFraction = BarCollapseState.collapsedFraction
+    val isFullyCollapsed = isPillCollapse && (collapsedFraction >= 0.95f || BarCollapseState.isCollapsed)
 
     val containerShape = if (resolvedIsBottom) {
         RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp)

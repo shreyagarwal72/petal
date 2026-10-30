@@ -331,8 +331,9 @@ fun PetalMergedBar(
                 }
             }
         }
+    }
 
-        if (pillAlpha > 0.01f) {
+    if (pillAlpha > 0.01f) {
             PetalMinimizedPill(
                 domain = BarCollapseState.currentDomain,
                 isHttps = BarCollapseState.isHttps,
