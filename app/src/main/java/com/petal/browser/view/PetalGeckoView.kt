@@ -1551,19 +1551,26 @@ class PetalGeckoView @JvmOverloads constructor(
             // Scroll gathered in the current direction. Hiding needs a longer push than showing,
             // so a small flick back always brings the bars back, but reading never hides them.
             private var scrollRun: Int = 0
+            private var isFrameScheduled: Boolean = false
+            private var pendingScrollY: Int = 0
 
             override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
                 currentScrollX = scrollX
                 currentScrollY = scrollY
-                val act = getHostActivity() ?: return
-                act.runOnUiThread {
+                pendingScrollY = scrollY
+                if (isFrameScheduled) return
+                isFrameScheduled = true
+                android.view.Choreographer.getInstance().postFrameCallback {
+                    isFrameScheduled = false
+                    val latestY = pendingScrollY
+                    val act = getHostActivity() ?: return@postFrameCallback
                     val density = context.resources.displayMetrics.density
                     val hideAfterPx = 24f * density
                     val showAfterPx = 16f * density
-                    val deltaY = scrollY - lastAddressBarScrollY
-                    lastAddressBarScrollY = scrollY
-                    onScrollChangeListener?.onScrollPositionChanged(scrollY, height)
-                    if (scrollY <= 2) {
+                    val deltaY = latestY - lastAddressBarScrollY
+                    lastAddressBarScrollY = latestY
+                    onScrollChangeListener?.onScrollPositionChanged(latestY, height)
+                    if (latestY <= 2) {
                         // At the top of the page: bars are always shown.
                         scrollRun = 0
                         onScrollChangeListener?.onScrollUp()
@@ -1581,8 +1588,8 @@ class PetalGeckoView @JvmOverloads constructor(
 
                     // Tactile haptics: only check when enabled, with spaced interval
                     if (com.petal.browser.haptics.PetalHapticEngine.isScrollHapticsEnabled(context)) {
-                        if (Math.abs(scrollY - lastScrollHapticY) > 64) {
-                            lastScrollHapticY = scrollY
+                        if (Math.abs(latestY - lastScrollHapticY) > 64) {
+                            lastScrollHapticY = latestY
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
                                 .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.40f, 50L)
                         }

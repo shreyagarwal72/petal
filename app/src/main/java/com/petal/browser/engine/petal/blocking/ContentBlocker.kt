@@ -214,12 +214,12 @@ class ContentBlocker(context: Context) {
     }
 
     private fun readAssetOrEmpty(assetName: String): String = runCatching {
-        appContext.assets.open(assetName).bufferedReader().use { it.readText() }
+        openAssetStream(appContext, assetName).bufferedReader().use { it.readText() }
     }.getOrDefault("")
 
     private fun loadConsentCss(context: Context): ByteArray = ByteArrayOutputStream().use { output ->
         listOf("easylist_cookie_banner.css", "cookie_banner_overrides.css").forEach { assetName ->
-            context.assets.open(assetName).use { it.copyTo(output) }
+            openAssetStream(context, assetName).use { it.copyTo(output) }
             output.write('\n'.code)
         }
         output.toByteArray()

@@ -34,9 +34,6 @@ import android.os.SystemClock
 import android.view.PixelCopy
 import android.view.View
 import android.view.Window
-import androidx.core.view.drawToBitmap
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 /**
  * Shared holder for capturing and storing the current browser content view snapshot (Bitmap).
@@ -45,6 +42,12 @@ import java.util.concurrent.TimeUnit
 object PetalContentSnapshot {
     @Volatile
     private var _current: Bitmap? = null
+
+    /** Shared background thread for non-blocking PixelCopy requests */
+    private val copyThread by lazy {
+        HandlerThread("PetalPixelCopyThread").apply { start() }
+    }
+    private val copyHandler by lazy { Handler(copyThread.looper) }
 
     /**
      * Guarded read: every caller across the 15+ screens that use this (Settings,
@@ -79,13 +82,38 @@ object PetalContentSnapshot {
     /** Cleanups that land right after a new capture belong to the screen that was just replaced. */
     private const val CLEAR_GRACE_MS = 600L
 
+    /** Scale factor for the background blur snapshot: 0.5x resolution saves 75% RAM with identical visual blur */
+    private const val SNAPSHOT_SCALE = 0.5f
+
     /**
      * Captures the visible page BEFORE the host hides it (app bar, tab surfaces, home...) to show an
-     * overlay. Overlay bridges used to screenshot after those views were already hidden, so the
-     * predictive-back underlay was a black frame. The next [capture] consumes this preview.
+     * overlay. Kicked off asynchronously on the background copy handler without blocking the main thread.
      */
     @JvmStatic
     fun capturePreview(rootView: View) {
+        val width = (rootView.width * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
+        val height = (rootView.height * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val window = findWindow(rootView)
+            if (window != null) {
+                try {
+                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+                    PixelCopy.request(window, bitmap, { result ->
+                        if (result == PixelCopy.SUCCESS) {
+                            preview = bitmap
+                            previewAt = SystemClock.uptimeMillis()
+                            _current = bitmap
+                        } else {
+                            bitmap.recycle()
+                        }
+                    }, copyHandler)
+                    return
+                } catch (t: Throwable) {
+                    // Fall back to immediate grab
+                }
+            }
+        }
         preview = try { grab(rootView) } catch (e: Throwable) { null }
         previewAt = SystemClock.uptimeMillis()
     }
@@ -102,58 +130,22 @@ object PetalContentSnapshot {
     }
 
     private fun grab(rootView: View): Bitmap {
-        val width = rootView.width.coerceAtLeast(1)
-        val height = rootView.height.coerceAtLeast(1)
+        val width = (rootView.width * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
+        val height = (rootView.height * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
 
-        var captured: Bitmap? = null
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val window = findWindow(rootView)
-            if (window != null) {
-                try {
-                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                    val latch = CountDownLatch(1)
-                    var copyResult = PixelCopy.ERROR_UNKNOWN
-
-                    val thread = HandlerThread("PetalPixelCopyThread")
-                    thread.start()
-                    val handler = Handler(thread.looper)
-
-                    PixelCopy.request(window, bitmap, { result ->
-                        copyResult = result
-                        latch.countDown()
-                    }, handler)
-
-                    val success = latch.await(200, TimeUnit.MILLISECONDS)
-                    thread.quitSafely()
-
-                    if (success && copyResult == PixelCopy.SUCCESS) {
-                        captured = bitmap
-                    } else {
-                        bitmap.recycle()
-                    }
-                } catch (e: Throwable) {
-                    captured = null
-                }
+        return try {
+            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+            val canvas = Canvas(bmp)
+            canvas.scale(SNAPSHOT_SCALE, SNAPSHOT_SCALE)
+            rootView.draw(canvas)
+            bmp
+        } catch (e: Throwable) {
+            try {
+                Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565)
+            } catch (e2: Throwable) {
+                Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
             }
         }
-
-        if (captured == null) {
-            captured = try {
-                rootView.drawToBitmap(Bitmap.Config.ARGB_8888)
-            } catch (e: Throwable) {
-                try {
-                    val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                    val canvas = Canvas(bmp)
-                    rootView.draw(canvas)
-                    bmp
-                } catch (e2: Throwable) {
-                    Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-                }
-            }
-        }
-
-        return captured
     }
 
     @JvmStatic
