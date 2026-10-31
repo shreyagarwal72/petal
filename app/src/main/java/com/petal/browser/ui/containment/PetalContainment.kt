@@ -1044,10 +1044,11 @@ fun PetalSheet(
     ) {
         val density = androidx.compose.ui.platform.LocalDensity.current
         val view = androidx.compose.ui.platform.LocalView.current
-        val statusTopPx = androidx.compose.runtime.remember(view) {
+        val fallbackStatusTop = WindowInsets.statusBars.getTop(density)
+        val statusTopPx = androidx.compose.runtime.remember(view, fallbackStatusTop) {
             androidx.core.view.ViewCompat.getRootWindowInsets(view)
                 ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())?.top
-                ?: WindowInsets.statusBars.getTop(density)
+                ?: fallbackStatusTop
         }
         var statusOverlapPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
         CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides activeWallpaper) {
