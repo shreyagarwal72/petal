@@ -93,6 +93,17 @@ fun PetalQrScannerScreen(
     val coroutineScope = rememberCoroutineScope()
     var isDecodingGallery by remember { mutableStateOf(false) }
 
+    fun vibrateSuccess() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                (context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)
+                    ?.vibrate(VibrationEffect.createOneShot(70, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                PetalHapticEngine.getInstance(context).playClick(context)
+            }
+        } catch (_: Exception) {}
+    }
+
     fun processChosenImageUri(uri: android.net.Uri) {
         isDecodingGallery = true
         coroutineScope.launch(Dispatchers.IO) {
@@ -128,17 +139,6 @@ fun PetalQrScannerScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: android.net.Uri? ->
         if (uri != null) processChosenImageUri(uri)
-    }
-
-    fun vibrateSuccess() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                (context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)
-                    ?.vibrate(VibrationEffect.createOneShot(70, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                PetalHapticEngine.getInstance(context).playClick(context)
-            }
-        } catch (_: Exception) {}
     }
 
     DisposableEffect(Unit) {
