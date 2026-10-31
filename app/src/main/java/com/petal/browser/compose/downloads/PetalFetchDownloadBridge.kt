@@ -480,7 +480,7 @@ object PetalFetchDownloadBridge {
             val path = item.localUri?.removePrefix("file://")
             if (!path.isNullOrEmpty()) {
                 val file = File(path)
-                if (file.exists() && (deleteFile || item.status == DownloadManager.STATUS_RUNNING || item.status == DownloadManager.STATUS_PENDING)) {
+                if (file.exists() && (deleteFile || item.status == DownloadStatus.STATUS_RUNNING || item.status == DownloadStatus.STATUS_PENDING)) {
                     file.delete()
                 }
                 // Also clean up Fetch temporary .download or .tmp files
@@ -528,9 +528,9 @@ object PetalFetchDownloadBridge {
         val items = fetchItems + synchronized(mozillaDownloadsMap) { mozillaDownloadsMap.values.toList() }
             .sortedWith(
                 compareByDescending<DownloadItem> { item ->
-                    item.status == DownloadManager.STATUS_RUNNING ||
-                    item.status == DownloadManager.STATUS_PAUSED ||
-                    item.status == DownloadManager.STATUS_PENDING
+                    item.status == DownloadStatus.STATUS_RUNNING ||
+                    item.status == DownloadStatus.STATUS_PAUSED ||
+                    item.status == DownloadStatus.STATUS_PENDING
                 }.thenByDescending { it.timestampMs }
             )
         _downloadItems.value = items
@@ -538,7 +538,7 @@ object PetalFetchDownloadBridge {
         // Hold the CPU/Wi-Fi awake for every engine's transfers, so nothing stalls on screen-off.
         applicationContext?.let { ctx ->
             // Only bytes-in-flight count. A queued/offline (PENDING) item must not pin the CPU awake.
-            val moving = items.count { it.status == DownloadManager.STATUS_RUNNING }
+            val moving = items.count { it.status == DownloadStatus.STATUS_RUNNING }
             com.petal.browser.download.PetalDownloadKeepAlive.update(ctx, moving)
         }
     }
@@ -554,7 +554,7 @@ object PetalFetchDownloadBridge {
         tickerJob = tickerScope.launch {
             while (isActive) {
                 delay(1000L)
-                if (_downloadItems.value.any { it.status == DownloadManager.STATUS_RUNNING }) publish()
+                if (_downloadItems.value.any { it.status == DownloadStatus.STATUS_RUNNING }) publish()
             }
         }
     }
