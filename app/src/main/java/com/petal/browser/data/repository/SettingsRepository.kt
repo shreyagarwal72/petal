@@ -86,6 +86,7 @@ interface SettingsRepository {
     val customDohUrl: Flow<String>
 
     // Accessibility & Display
+    val immersiveFullScreen: Flow<Boolean>
     val touchHaptics: Flow<Boolean>
     val scrollHaptics: Flow<Boolean>
     val predictiveBack: Flow<Boolean>
@@ -207,6 +208,7 @@ interface SettingsRepository {
     suspend fun setCustomDohUrl(url: String)
 
     suspend fun setTouchHaptics(enabled: Boolean)
+    suspend fun setImmersiveFullScreen(enabled: Boolean)
     suspend fun setScrollHaptics(enabled: Boolean)
     suspend fun setPredictiveBack(enabled: Boolean)
     suspend fun setDepthBlur(enabled: Boolean)

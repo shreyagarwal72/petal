@@ -1043,6 +1043,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             statusBarTopInset = systemBars.top;
             navigationBarBottomInset = systemBars.bottom;
             imeVisibleForBars = isKeyboardVisible;
+            applyImmersiveFullScreenMode();
             v.setPadding(systemBars.left, 0, systemBars.right, isKeyboardVisible ? keyboardHeight : 0);
 
             View addressBar = findViewById(R.id.compose_address_bar);
@@ -1236,6 +1237,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onResume();
         predictiveBackStartedOnOverlay = false;
         resetRefreshState();
+        applyImmersiveFullScreenMode();
         applyAddressBarPosition();
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             ((com.petal.browser.view.PetalGeckoView) currentAlbumController).onResume();
@@ -2934,6 +2936,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public void applyImmersiveFullScreenMode() {
+        boolean immersiveEnabled = sp != null && sp.getBoolean("sp_immersive_fullscreen", false);
+        boolean pwaMode = getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false);
+        boolean shouldBeFullscreen = immersiveEnabled || pwaMode;
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (controller != null) {
+            if (shouldBeFullscreen) {
+                controller.hide(WindowInsetsCompat.Type.systemBars());
+                controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            } else if (!isCustomFullscreenState) {
+                controller.show(WindowInsetsCompat.Type.systemBars());
+            }
+        }
+    }
+
     public void applyAddressBarPosition() {
         android.os.Trace.beginSection("BrowserActivity:applyAddressBarPosition");
         try {
@@ -4424,6 +4441,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 applyAddressBarPosition();
                 updatePersistentBottomNav();
                 updateAddressBar();
+            });
+        }
+        if ("sp_immersive_fullscreen".equals(key)) {
+            runOnUiThread(() -> {
+                applyImmersiveFullScreenMode();
+                applyAddressBarPosition();
+                updatePersistentBottomNav();
             });
         }
     };
@@ -6344,13 +6368,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         } else {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            if (SDK_INT >= Build.VERSION_CODES.R) {
-                final WindowInsetsController insetsController = getWindow().getInsetsController();
-                if (insetsController != null) {
-                    insetsController.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                    insetsController.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE); }
-            }
-            else getWindow().setFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN, WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+            applyImmersiveFullScreenMode();
 
             // Detach Petal native video player overlay when exiting fullscreen
             if (videoOverlayBridge != null && customView == null && fullscreenHolder == null) {
@@ -7098,8 +7116,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus && !isAppLockLocked && pendingWidgetAction != null && contentFrame != null) {
-            contentFrame.post(this::consumePendingWidgetAction);
+        if (hasFocus) {
+            applyImmersiveFullScreenMode();
+            if (!isAppLockLocked && pendingWidgetAction != null && contentFrame != null) {
+                contentFrame.post(this::consumePendingWidgetAction);
+            }
         }
     }
 

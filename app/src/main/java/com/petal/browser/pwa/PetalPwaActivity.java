@@ -21,6 +21,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.petal.browser.R;
@@ -149,16 +151,14 @@ public class PetalPwaActivity extends AppCompatActivity {
             // would otherwise draw the WebView content and controls straight under the bars.
             WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
-            boolean isFullscreen = "fullscreen".equalsIgnoreCase(displayMode);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = getWindow().getInsetsController();
-                if (controller != null) {
-                    if (isFullscreen) {
-                        controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                        controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-                    } else {
-                        controller.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                    }
+            boolean isFullscreen = isPwaFullscreenMode();
+            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+            if (insetsController != null) {
+                if (isFullscreen) {
+                    insetsController.hide(WindowInsetsCompat.Type.systemBars());
+                    insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                } else {
+                    insetsController.show(WindowInsetsCompat.Type.systemBars());
                 }
             } else if (isFullscreen) {
                 getWindow().getDecorView().setSystemUiVisibility(
@@ -169,9 +169,20 @@ public class PetalPwaActivity extends AppCompatActivity {
             } else {
                 getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
             }
+
+            if (fabBubbleView != null) {
+                fabBubbleView.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
+                fabBubbleView.setAlpha(isFullscreen ? 0f : 0.4f);
+            }
         } catch (Exception e) {
             // Fallback gracefully
         }
+    }
+
+    private boolean isPwaFullscreenMode() {
+        return "fullscreen".equalsIgnoreCase(displayMode)
+                || PreferenceManager.getDefaultSharedPreferences(this).getBoolean("sp_pwa_default_fullscreen", true)
+                || PreferenceManager.getDefaultSharedPreferences(this).getBoolean("sp_immersive_fullscreen", false);
     }
 
     /**
@@ -185,7 +196,8 @@ public class PetalPwaActivity extends AppCompatActivity {
 
         ViewCompat.setOnApplyWindowInsetsListener(pwaRoot, (v, windowInsets) -> {
             Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            boolean isFullscreen = "fullscreen".equalsIgnoreCase(displayMode);
+            boolean isFullscreen = isPwaFullscreenMode();
+            boolean isBarsVisible = windowInsets.isVisible(WindowInsetsCompat.Type.systemBars());
 
             int topInset = isFullscreen ? 0 : systemBars.top;
             int bottomInset = isFullscreen ? 0 : systemBars.bottom;
@@ -200,11 +212,28 @@ public class PetalPwaActivity extends AppCompatActivity {
                         progressBarComposeView.getPaddingLeft(), topInset,
                         progressBarComposeView.getPaddingRight(), progressBarComposeView.getPaddingBottom());
             }
-            if (fabBubbleView != null && fabBubbleView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
-                ViewGroup.MarginLayoutParams fabParams =
-                        (ViewGroup.MarginLayoutParams) fabBubbleView.getLayoutParams();
-                fabParams.bottomMargin = fabBaseMarginPx + bottomInset;
-                fabBubbleView.setLayoutParams(fabParams);
+            if (fabBubbleView != null) {
+                if (isFullscreen) {
+                    if (isBarsVisible) {
+                        fabBubbleView.setVisibility(View.VISIBLE);
+                        fabBubbleView.animate().alpha(0.85f).setDuration(220).start();
+                    } else {
+                        fabBubbleView.animate().alpha(0f).setDuration(220).withEndAction(() -> {
+                            if (fabBubbleView != null && isPwaFullscreenMode()) {
+                                fabBubbleView.setVisibility(View.GONE);
+                            }
+                        }).start();
+                    }
+                } else {
+                    fabBubbleView.setVisibility(View.VISIBLE);
+                    fabBubbleView.setAlpha(0.4f);
+                }
+                if (fabBubbleView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                    ViewGroup.MarginLayoutParams fabParams =
+                            (ViewGroup.MarginLayoutParams) fabBubbleView.getLayoutParams();
+                    fabParams.bottomMargin = fabBaseMarginPx + bottomInset;
+                    fabBubbleView.setLayoutParams(fabParams);
+                }
             }
 
             return windowInsets;

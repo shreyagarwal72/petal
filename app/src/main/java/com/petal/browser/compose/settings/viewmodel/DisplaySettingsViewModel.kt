@@ -18,6 +18,9 @@ class DisplaySettingsViewModel @Inject constructor(
     val touchHaptics: StateFlow<Boolean> = settingsRepository.touchHaptics
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val immersiveFullScreen: StateFlow<Boolean> = settingsRepository.immersiveFullScreen
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val scrollHaptics: StateFlow<Boolean> = settingsRepository.scrollHaptics
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -53,6 +56,10 @@ class DisplaySettingsViewModel @Inject constructor(
 
     fun setTouchHaptics(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setTouchHaptics(enabled)
+    }
+
+    fun setImmersiveFullScreen(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setImmersiveFullScreen(enabled)
     }
 
     fun setScrollHaptics(enabled: Boolean) = viewModelScope.launch {

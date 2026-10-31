@@ -336,6 +336,10 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     // ── Accessibility & Display ───────────────────────────────────────────────
+    override val immersiveFullScreen: Flow<Boolean> = preferenceFlow("sp_immersive_fullscreen") {
+        sp.getBoolean("sp_immersive_fullscreen", false)
+    }
+
     override val touchHaptics: Flow<Boolean> = preferenceFlow("sp_touch_haptics") {
         sp.getBoolean("sp_touch_haptics", true)
     }
@@ -822,6 +826,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setCustomDohUrl(url: String) {
         sp.edit().putString("sp_custom_doh_url", url).apply()
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setImmersiveFullScreen(enabled: Boolean) {
+        withContext(Dispatchers.IO) {
+            sp.edit().putBoolean("sp_immersive_fullscreen", enabled).apply()
+        }
     }
 
     override suspend fun setTouchHaptics(enabled: Boolean) {

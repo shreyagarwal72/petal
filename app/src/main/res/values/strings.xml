@@ -1090,6 +1090,8 @@
     <string name="ui_blur_spread_radius">Blur Spread Radius</string>
     <string name="ui_glass_frost_darkening">Glass Frost Darkening</string>
     <string name="ui_accessibility_display_options">Accessibility &amp; Display Options</string>
+    <string name="ui_immersive_fullscreen">Immersive Full Screen</string>
+    <string name="ui_immersive_fullscreen_summary">Hide status bar and navigation bar for an uninterrupted, edge-to-edge view</string>
     <string name="ui_predictive_back_animations">Predictive Back Animations</string>
     <string name="ui_enable_fluid_predictive_back_gesture">Enable fluid predictive back gesture scaling and slide transitions across all screens</string>
     <string name="ui_back_style_title">Back animation style</string>

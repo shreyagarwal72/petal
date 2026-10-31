@@ -42,6 +42,7 @@ fun DisplaySettingsScreen(
     viewModel: DisplaySettingsViewModel = hiltViewModel()
 ) {
     val touchHaptics by viewModel.touchHaptics.collectAsStateWithLifecycle()
+    val immersiveFullScreen by viewModel.immersiveFullScreen.collectAsStateWithLifecycle()
     val scrollHaptics by viewModel.scrollHaptics.collectAsStateWithLifecycle()
     val predictiveBack by viewModel.predictiveBack.collectAsStateWithLifecycle()
     val depthBlur by viewModel.depthBlur.collectAsStateWithLifecycle()
@@ -69,6 +70,7 @@ fun DisplaySettingsScreen(
 
     DisplaySettingsScreenContent(
         touchHaptics = touchHaptics,
+        immersiveFullScreen = immersiveFullScreen,
         scrollHaptics = scrollHaptics,
         predictiveBack = predictiveBack,
         depthBlur = depthBlur,
@@ -93,6 +95,7 @@ fun DisplaySettingsScreen(
         appleDuoCurrentHinge = appleDuoCurrentHinge,
         appleDuoHasSensor = appleDuoHasSensor,
         onTouchHapticsChange = viewModel::setTouchHaptics,
+        onImmersiveFullScreenChange = viewModel::setImmersiveFullScreen,
         onScrollHapticsChange = viewModel::setScrollHaptics,
         onPredictiveBackChange = viewModel::setPredictiveBack,
         onDepthBlurChange = viewModel::setDepthBlur,
@@ -123,6 +126,7 @@ fun DisplaySettingsScreen(
 @Composable
 fun DisplaySettingsScreenContent(
     touchHaptics: Boolean,
+    immersiveFullScreen: Boolean = false,
     scrollHaptics: Boolean,
     predictiveBack: Boolean,
     depthBlur: Boolean,
@@ -147,6 +151,7 @@ fun DisplaySettingsScreenContent(
     appleDuoCurrentHinge: Float,
     appleDuoHasSensor: Boolean,
     onTouchHapticsChange: (Boolean) -> Unit,
+    onImmersiveFullScreenChange: (Boolean) -> Unit = {},
     onScrollHapticsChange: (Boolean) -> Unit,
     onPredictiveBackChange: (Boolean) -> Unit,
     onDepthBlurChange: (Boolean) -> Unit,
@@ -219,13 +224,21 @@ fun DisplaySettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Navigation Safeguards Card
+                // Display & Navigation Card
                 PetalSettingsSection(
-                    title = stringResource(R.string.ui_navigation_safeguards),
-                    icon = Icons.Rounded.ExitToApp,
-                    cardId = "nav_safeguards",
+                    title = "Display & Navigation",
+                    icon = Icons.Rounded.Fullscreen,
+                    cardId = "display_navigation",
                     targetHighlightId = targetHighlightItemId
                 ) {
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_immersive_fullscreen),
+                        subtitle = stringResource(R.string.ui_immersive_fullscreen_summary),
+                        icon = Icons.Rounded.Fullscreen,
+                        checked = immersiveFullScreen,
+                        onCheckedChange = onImmersiveFullScreenChange
+                    )
+
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = stringResource(R.string.ui_double_back_to_exit),
                         subtitle = stringResource(R.string.ui_press_back_twice_quickly_to),
