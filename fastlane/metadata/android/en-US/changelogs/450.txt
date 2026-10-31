@@ -1,0 +1,10 @@
+Petal Browser v4.5 Release:
+- Unified Mozilla Firefox Download Pipeline: Completely modernized downloads to run exclusively on Mozilla's official Firefox/Fenix engine (Android Components feature-downloads & GeckoViewFetchClient) with Range segmenting, speed metering, and pause/resume.
+- Elimination of Android System DownloadManager: Removed legacy system DownloadManager dependencies, leaked receivers, and replaced integer status codes with clean DownloadStatus constants.
+- Context-Aware Session Downloads: Context menu actions (Save Image, Download Video, Save Audio, Download Link) pass authenticated cookies, Referer, and incognito isolation (isPrivate) from active tabs.
+- AndroidX FileProvider Integration: In-app opening and sharing directly resolve files from public Downloads via FileProvider.
+- Codebase & Architecture Normalization: Renamed misnamed files (ChromeAccountSyncScreen -> PetalUserProfileScreen, GoogleAccountManager -> PetalUserProfileManager, List_standard -> StandardDomainWhitelist, PetalOptionsDialog -> PetalOptionsSheet, PetalWelcomeDialog -> PetalWelcomeScreen, PetalFilePicker -> PetalFilePickerScreen), and eliminated dead Chromium native core stubs.
+- Torrays Torrent Search & Extensions: Integrated Torrays as an open-source, ad-free torrent search engine with Omnibox quick search, built-in WebExtension injection, and an Extensions toggle with official site credits.
+- Pure & Live Liquid Glass UI: Granular refraction sliders (strength & width), 7dp calibrated frost, and per-frame live backdrops across sheets and menus.
+- Predictive Back Gestures: 5 customizable animation styles (Petal, AOSP, MIUIX, Scale, Classic) with real-time depth blur.
+- Performance: Asynchronous cold start for filter lists, yt-dlp, and ffmpeg with low-overhead domain lookups.

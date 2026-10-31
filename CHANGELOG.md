@@ -1,58 +1,46 @@
-### Unreleased — Liquid glass refraction controls
+### v4.5 — 🦊 Unified Mozilla Firefox Download Pipeline, Architectural Cleanup & Pure Liquid Glass
 
-#### 🫧 Liquid Glass
-- **Refraction sliders**: Appearance → Liquid Glass UI now has *Refraction Strength* and *Refraction Width* (0–200%, default 100%). Strength sets how far the rim pulls the image; width sets how far in from the rim the glass bends. 0% turns the lens off. They apply live to panels, the nav bar, the selection slab, headers and the selection toolbar, and show in the preview card. On Android 12 and older the sliders are disabled, since the lens needs Android 13.
-- **Visible refraction**: The shared frosted wallpaper now uses the documented 7 dp blur instead of 20 dp, which flattened the image before the lens could bend it.
-- **Headers follow settings live**: Backdrop-based headers and the master glass check now update when any liquid glass setting changes, not only wallpaper panels.
-- **Selection toolbar** follows opacity and sheen changes live.
-- **Nav bar shape changes**: A same-size shape change no longer keeps stale corner radii.
-- Lens padding scales with refraction strength so a strong lens no longer clamps at the rim.
+> *"Milestone v4.5 unifies all download pipelines under Mozilla's official Firefox/Fenix engine with Range segmenting, eliminates the Android system DownloadManager, purges legacy third-party brand misnomers (Chrome/Google/Chromium) across the codebase, integrates Torrays torrent search, and elevates Pure & Live Liquid Glass with interactive refraction controls."*
 
-### Unreleased — Predictive back styles
+#### ⬇️ Unified Mozilla Firefox Download Pipeline
+- **Single Download Gateway (`PetalDownloadRouter`)**: Replaced fragmented legacy download paths with a unified gateway that validates URLs, verifies runtime storage permissions, respects external download manager preferences, and routes directly into Mozilla's download infrastructure.
+- **Official Firefox/Fenix Engine (`AbstractFetchDownloadService`)**: All downloads (browser links, media sniffer captures, images, videos, audio, web-seeds, and torrents) now run exclusively on Mozilla's official download pipeline (Android Components `feature-downloads` 158.0 over `GeckoViewFetchClient`).
+- **Context-Aware Session Downloads**: Context menu downloads ("Save Image", "Download Video", "Save Audio", "Download Link") pass authenticated session cookies, `Referer`, `User-Agent`, and incognito privacy flags (`isPrivate`) from the active tab, preventing hotlink blocks or failed authenticated downloads.
+- **Incognito Download Isolation**: Private browsing downloads are marked private and omitted from persistent history, matching Firefox desktop and mobile privacy guarantees.
+- **Elimination of `android.app.DownloadManager`**: Completely removed obsolete legacy WebView download listeners, leaked notification receivers in `BrowserActivity`, and broken system manager queries. Replaced integer status constants with standalone `DownloadStatus` constants.
+- **AndroidX FileProvider File Resolution**: Opening and sharing downloaded files now directly resolves files from the public Downloads directory via AndroidX `FileProvider`, eliminating failures caused by querying Android's system `DownloadManager`.
+- **External Download Manager Routing**: Full compatibility retained for external download managers (1DM, ADM, AB DM, Navi) when configured in Download Settings.
 
-#### 🎞️ Animations
-- **Back animation style slider**: With *Predictive Back Animations* on, Display settings now shows a slider with five styles: **Petal** (the previous animation), **AOSP**, **MIUIX**, **Scale** and **Classic**. The choice applies to every screen immediately.
-- **Live preview**: A looping mini-phone plays the selected style (commit, then cancel, from alternating edges) with your depth-blur setting applied, so you can compare styles while sliding.
-- **Depth blur combines with every style**: The revealed screen is blurred and dimmed in each style and clears as the gesture completes.
-- **Scale exit direction**: The Scale style can follow the gesture or always exit right or left.
-- **Live underlay follows the style**: The real browsing surface revealed behind an overlay uses the selected style's pose.
-- AOSP, MIUIX, Scale and Classic are ported from InstallerX Revived's predictive back transitions (GPL-3.0).
+#### 🧹 Codebase & Architecture Normalization
+- **Petal User Profile Modernization**: Renamed `ChromeAccountSyncScreen.kt` ➔ `PetalUserProfileScreen.kt` and `GoogleAccountManager.kt` ➔ `PetalUserProfileManager.kt` (with data model `GoogleUserProfile` ➔ `PetalUserProfile`), removing misleading third-party brand names from Petal's offline FOSS user personalization and avatar preset store.
+- **Chromium Artifact Purge**: Removed dead stub `ChromiumNativeEngineCore.java` and obsolete `.github/workflows/chromium_core.yml` from the GeckoView codebase.
+- **Java Syntax & Convention Fix**: Renamed `List_standard.java` ➔ `StandardDomainWhitelist.java` to adhere to standard UpperCamelCase naming conventions and Petal architecture.
+- **UI Screen & Component Suffix Alignment**:
+  - `PetalOptionsDialog.kt` ➔ `PetalOptionsSheet.kt` (ModalBottomSheet)
+  - `PetalWelcomeDialog.kt` ➔ `PetalWelcomeScreen.kt` (Full-screen onboarding experience)
+  - `PetalFilePicker.kt` ➔ `PetalFilePickerScreen.kt` (Full-screen file browser)
+  - `PetalBiometricExpressiveOverlay.kt` ➔ `PetalBiometricExpressiveSheet.kt` (Modal authentication sheet)
 
-### Unreleased — Official Mozilla download engine
+#### 🔍 Torrays Torrent Search & Extension Integration
+- **Torrays Integration**: Integrated [Torrays](https://torrays.vercel.app/) as an open-source, privacy-respecting torrent search index.
+- **Omnibox & Search Engine**: Available as a default or quick search engine option in the Omnibox.
+- **Extension Controls & Credits**: Added a toggle switch in Petal Extensions to toggle Torrays in search engines on or off, accompanied by a dedicated information dialog with links to the official site and repository.
+- **Automated Web Search Injection**: Added built-in WebExtension and in-page execution to ensure instant search trigger upon opening Torrays.
 
-#### ⬇️ Downloads
-- **Firefox/Fenix download pipeline**: Browser, media-grabber, image and legacy WebView downloads now run on Mozilla's `AbstractFetchDownloadService` (Android Components `feature-downloads` 158.0) instead of Fetch2.
-- **Gecko network stack**: The service fetches with `GeckoViewFetchClient`, so Gecko cookies (logins), private mode and proxy settings apply. Per-download headers from the media sniffer are applied on top of it.
-- **Private tabs**: Downloads started in a private tab are marked private and are not saved to download history.
-- **History survives restarts**: Downloads state is restored from Mozilla's storage at startup.
-- **One notification per download**: Mozilla's service posts the progress and completion notifications; Petal's live alerts skip those downloads. The Downloads screen and banner show speed and ETA for them too.
+#### 🫧 Pure & Live Liquid Glass UI
+- **Refraction Controls**: Added *Refraction Strength* and *Refraction Width* sliders (0–200%, default 100%) under **Settings → Appearance → Liquid Glass UI**, allowing granular control over rim lens distortion and edge refraction width.
+- **Crisp Layering**: Single sharp wallpaper layer combined with a calibrated 7dp frost blur and per-pane edge-refraction lens for maximum text clarity.
+- **Live Backdrops**: Modal bottom sheets, popup menus, and the QR scanner record dynamic backdrops every frame to refract underlying page content, animations, or live camera feeds.
 
-#### ⚡ Performance
-- **Faster page loads**: Ad-block domain checks now look up each parent domain in a set instead of scanning every rule on every request.
-- **Faster cold start**: Subscription lists, yt-dlp and ffmpeg now load off the main thread. The main thread never waits for the bundled filter lists.
-- **Smoother downloads UI**: The Downloads list now updates only when downloads change, not on every tab or title update, and it now actually refreshes for Mozilla downloads. Notification and progress updates are throttled.
+#### 🎞️ Predictive Back Gestures & Animation Styles
+- **Predictive Back Styles**: Added 5 customizable gesture animation styles under Display settings: **Petal**, **AOSP**, **MIUIX**, **Scale**, and **Classic**, complete with a looping mini-phone live preview.
+- **Real-Time Depth Blur**: Background screens smoothly blur and dim as back gestures progress and clear cleanly on gesture completion.
 
-### v4.5 — 🫧 Pure & Live Liquid Glass + GeckoView 158
+#### ⚡ Performance & Resource Optimizations
+- **Faster Cold Start**: Subscription lists, yt-dlp, and ffmpeg initialize asynchronously off the main thread.
+- **Low-Overhead Ad-Block Domain Lookup**: Replaced linear rule scans with parent-domain set lookups.
+- **Smoother Downloads UI**: Downloads list renders updates only when transfer state changes, avoiding unnecessary recompositions.
 
-> *"Liquid Glass is now pure and live: one sharp wallpaper, one shared frost, a per-pane edge lens, and live backdrops that refract the page, the camera and the screen behind every sheet and menu. Powered by the latest Mozilla GeckoView 158."*
-
-#### 🌐 Engine & Core Upgrades
-- **Mozilla GeckoView 158.0**: Upgraded the engine to the current stable release (`158.0.20261007201254`), with the matching Mozilla Android Components 158.0 (`browser-engine-gecko` and related modules).
-
-#### 🫧 Pure Liquid Glass
-- **One-switch setup**: Turn on **Settings → Appearance → Liquid Glass UI**, then pick the **Liquid Glass Background Layer**: *Glass* (Stride-style palette pools with a contour wallpaper, the new default), *Morphs* (Petal's animated background) or your own image. Saved background choices are kept.
-- **Sharp by design**: A single sharp wallpaper layer sits behind a single shared 7 dp frosted layer. Cards reuse that frost instead of blurring the screen one by one, and text and icons are drawn after the effect, so they always stay crisp.
-- **Edge-refraction lens**: Each pane gets its own refraction pass at the edge (24/56 dp lens), with a 22% dark / 32% light tint and a white rim light. The wallpaper stays fixed behind each pane while you scroll.
-- **Your controls**: The opacity and sheen sliders change the glass material live.
-- **Wide coverage**: Settings rows, hero and action cards, headers, sheets, dialogs and popup menus all use the same glass. The browser address bar and navigation bar sample the website behind them, with a stronger tint for contrast. The incognito address bar stays solid.
-
-#### ⚡ Live Glass
-- **Live backdrops**: Sheets and popup menus record what is behind them every frame, so the glass refracts the page, the screen or the camera as it moves.
-- **Live camera glass**: The QR scanner refracts the live camera preview.
-- **Per-window backdrops**: Every sheet, dialog and menu owns its own backdrop, so glass never shows a ghost panel or an offset rectangle.
-
-#### 📱 Compatibility
-- **Android 12+**: real backdrop blur. **Android 13+**: runtime lens shader (refraction). **Older versions**: a stronger tint keeps everything readable. No new dependencies were added.
 
 ---
 
