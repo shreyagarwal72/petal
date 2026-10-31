@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -32,6 +33,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -336,12 +338,13 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
     }
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val sheetShape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
     Surface(
         color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surface,
         shape = sheetShape,
         tonalElevation = if (isGlass) 0.dp else 4.dp,
         shadowElevation = if (isGlass) 0.dp else 8.dp,
+        border = if (isGlass) androidx.compose.foundation.BorderStroke(0.75.dp, androidx.compose.ui.graphics.Color.White.copy(alpha = 0.20f)) else null,
         modifier = Modifier
             .fillMaxWidth()
             .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
@@ -366,18 +369,30 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
 
             Spacer(Modifier.height(18.dp))
 
-            // Zenith-style header shield icon
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
+            // Expressive header: slowly turning scalloped badge behind a steady shield icon.
+            val spin = androidx.compose.animation.core.rememberInfiniteTransition(label = "perm_sheet_spin")
+            val angle by spin.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                    androidx.compose.animation.core.tween(28000, easing = androidx.compose.animation.core.LinearEasing),
+                    androidx.compose.animation.core.RepeatMode.Restart
+                ),
+                label = "perm_sheet_angle"
+            )
+            Box(modifier = Modifier.size(84.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { rotationZ = angle }
+                        .clip(ScallopShape())
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                )
                 Icon(
                     imageVector = Icons.Outlined.Security,
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    modifier = Modifier.size(36.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
 
@@ -386,7 +401,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             Text(
                 text = stringResource(R.string.ui_permissions_required),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
@@ -401,7 +416,38 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(14.dp))
+
+            // Progress: how many are already set up.
+            val readyCount = permissionItems.count { it.isGranted }
+            val animatedProgress by androidx.compose.animation.core.animateFloatAsState(
+                targetValue = if (permissionItems.isEmpty()) 0f else readyCount.toFloat() / permissionItems.size,
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 300f),
+                label = "perm_sheet_progress"
+            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                LinearProgressIndicator(
+                    progress = { animatedProgress },
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .height(8.dp)
+                        .clip(CircleShape),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                )
+                Text(
+                    text = "$readyCount of ${permissionItems.size} ready",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             // Zenith-style grouped permission list with connected shapes
             PetalGroup(rowCount = permissionItems.size, modifier = Modifier.fillMaxWidth()) { index, position ->
@@ -431,38 +477,13 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Action Button: Zenith dynamic styling
-            Button(
+            PermissionActionButton(
+                text = if (allGranted) "Everything is ready" else "Continue",
+                icon = if (allGranted) Icons.Outlined.CheckCircle else Icons.Outlined.Check,
+                filled = true,
                 onClick = onDone,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                AnimatedVisibility(
-                    visible = allGranted,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Outlined.CheckCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                    }
-                }
-                Text(
-                    text = if (allGranted) "Everything is Ready!" else "Continue",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(Modifier.height(8.dp))
         }
@@ -498,7 +519,7 @@ private fun ZenithPermissionItemRow(
             if (isGranted) {
                 Icon(Icons.Outlined.CheckCircle, contentDescription = stringResource(R.string.ui_granted), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             } else {
-                FilledTonalButton(onClick = onGrant, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
+                FilledTonalButton(onClick = onGrant, shape = CircleShape, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)) {
                     Text(actionText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                 }
             }
