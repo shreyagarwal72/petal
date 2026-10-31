@@ -1012,6 +1012,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 injectClientPrivacyProtections()
                 if (success) {
                     com.petal.browser.compose.store.PetalStoreScriptInjector.inject(session, context, currentUrl)
+                    injectTorraysAutoSearch(currentUrl)
                 }
             }
 
@@ -2917,6 +2918,53 @@ class PetalGeckoView @JvmOverloads constructor(
         } catch (t: Throwable) {
             callback?.invoke("ERROR: ${t.message}")
         }
+    }
+
+    private fun injectTorraysAutoSearch(url: String?) {
+        if (url.isNullOrBlank()) return
+        if (!url.contains("torrays.vercel.app", ignoreCase = true) || !url.contains("q=")) return
+        if (!com.petal.browser.extensions.PetalBuiltInExtensionManager.isTorraysEnabled(context)) return
+
+        val script = """
+            (function() {
+                try {
+                    var u = new URL(window.location.href);
+                    var q = u.searchParams.get('q');
+                    if (!q || !q.trim()) return;
+                    var trimmed = q.trim();
+                    var count = 0;
+                    function run() {
+                        count++;
+                        var input = document.querySelector('input.search-input') || document.querySelector('input[type="text"]');
+                        var form = document.querySelector('form.search-form') || document.querySelector('form');
+                        if (input && form) {
+                            if (input.dataset.petalSearched === trimmed) return;
+                            var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+                            if (setter && setter.set) { setter.set.call(input, trimmed); } else { input.value = trimmed; }
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                            input.dataset.petalSearched = trimmed;
+                            setTimeout(function() {
+                                var btn = form.querySelector('button.search-button') || form.querySelector('button[type="submit"]');
+                                if (btn && !btn.disabled) { btn.click(); }
+                                else if (form.requestSubmit) { form.requestSubmit(); }
+                                else { form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); }
+                            }, 120);
+                        } else if (count < 20) {
+                            setTimeout(run, 200);
+                        }
+                    }
+                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                        run();
+                    } else {
+                        document.addEventListener('DOMContentLoaded', run, { once: true });
+                        window.addEventListener('load', run, { once: true });
+                    }
+                } catch(e) {}
+            })();
+        """.trimIndent()
+
+        evaluateJavascript(script)
     }
 
     /**

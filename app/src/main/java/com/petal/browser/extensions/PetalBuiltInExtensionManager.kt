@@ -158,7 +158,7 @@ object PetalBuiltInExtensionManager {
             prefKey     = "petal_builtin_brave_news"
         ),
         BuiltInSpec(
-            assetPath   = "",
+            assetPath   = "web_extensions/petal_torrays/",
             extensionId = "petal-torrays@petalbrowser.app",
             label       = "Torrays",
             description = "Open-source, ad-free torrent and media search index with instant magnet links.",

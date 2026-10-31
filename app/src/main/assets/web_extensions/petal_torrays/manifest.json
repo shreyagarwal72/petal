@@ -1,0 +1,25 @@
+{
+    "manifest_version": 2,
+    "name": "Petal Torrays Search",
+    "version": "1.0.0",
+    "description": "Auto-populates and executes search queries on Torrays when opened with ?q=",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "petal-torrays@petalbrowser.app"
+        }
+    },
+    "permissions": [
+        "*://torrays.vercel.app/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "*://torrays.vercel.app/*"
+            ],
+            "js": [
+                "torrays_search.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ]
+}
