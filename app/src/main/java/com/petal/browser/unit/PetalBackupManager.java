@@ -40,7 +40,6 @@ import androidx.preference.PreferenceManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-import android.app.DownloadManager;
 import android.content.Intent;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -583,21 +582,8 @@ public class PetalBackupManager {
                 // Register with system Downloads and MediaScanner
                 if (targetFile != null && targetFile.exists()) {
                     final File finalFile = targetFile;
+                    // MediaScanner ensures file shows in file managers and Downloads
                     MediaScannerConnection.scanFile(context, new String[]{finalFile.getAbsolutePath()}, new String[]{"application/json"}, null);
-                    try {
-                        DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-                        if (dm != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                            dm.addCompletedDownload(
-                                    finalFile.getName(),
-                                    "Petal Browser Backup",
-                                    true,
-                                    "application/json",
-                                    finalFile.getAbsolutePath(),
-                                    finalFile.length(),
-                                    true
-                            );
-                        }
-                    } catch (Throwable ignored) {}
                 }
 
                 final String savedName = fileName;

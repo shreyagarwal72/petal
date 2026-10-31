@@ -2,7 +2,6 @@ package com.petal.browser.browser;
 
 import com.petal.browser.view.PetalToast;
 import android.app.Activity;
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Environment;
@@ -171,7 +170,7 @@ public class WebAppInterface {
                 ((com.petal.browser.activity.BrowserActivity) mContext).showDownloads();
             } else {
                 try {
-                    mContext.startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                    mContext.startActivity(new Intent("android.intent.action.VIEW_DOWNLOADS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                 } catch (Exception ignored) {}
             }
         });

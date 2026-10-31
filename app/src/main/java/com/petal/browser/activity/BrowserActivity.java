@@ -21,7 +21,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import androidx.appcompat.app.AppCompatDelegate;
 import android.app.Dialog;
-import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.SearchManager;
@@ -1071,24 +1070,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         bottom_navigation = dialogViewOverview.findViewById(R.id.bottom_navigation);
         tab_container = dialogViewOverview.findViewById(R.id.listTabs);
         HelperUnit.setupDialog(context, dialogOverview);
-
-        BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                try {
-                    String text = getString(R.string.app_done) + ". " + getString(R.string.menu_download) + "?";
-                    com.petal.browser.view.PetalToast.show(context, text, com.petal.browser.view.PetalToast.LENGTH_LONG, context.getString(R.string.app_ok), () -> showDownloads());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-
-        if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(downloadReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), RECEIVER_EXPORTED);
-        } else {
-            registerReceiver(downloadReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
-        }
 
         initOmniBox();
         initSearchOnSite();

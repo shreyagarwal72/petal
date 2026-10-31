@@ -226,7 +226,7 @@ class PetalGeckoView @JvmOverloads constructor(
             // If external download manager is preferred (1DM, ADM, AB Download Manager, Navi, or Auto),
             // skip the in-app confirmation popup and launch directly into the chosen manager.
             if (com.petal.browser.unit.ExternalDownloadManagerHelper.isExternalPreferred(activity)) {
-                com.petal.browser.unit.BrowserUnit.download(activity, responseUrl, fileName, mimeType)
+                com.petal.browser.download.PetalDownloadRouter.download(activity, responseUrl, fileName, mimeType, referrerUrl = referrerUrl, isPrivate = isPrivate)
                 return
             }
 
@@ -1972,7 +1972,14 @@ class PetalGeckoView @JvmOverloads constructor(
         if (isApkMirrorDownload) {
             val activity = getHostActivity()
             if (activity != null) {
-                BrowserUnit.download(activity, targetUrl, HelperUnit.resolveFileName(targetUrl, null, "application/vnd.android.package-archive"), "application/vnd.android.package-archive")
+                com.petal.browser.download.PetalDownloadRouter.download(
+                    activity,
+                    targetUrl,
+                    HelperUnit.resolveFileName(targetUrl, null, "application/vnd.android.package-archive"),
+                    "application/vnd.android.package-archive",
+                    referrerUrl = currentUrl,
+                    isPrivate = isIncognito
+                )
                 return
             }
         }

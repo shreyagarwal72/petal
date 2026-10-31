@@ -5,7 +5,6 @@ import static android.content.ContentValues.TAG;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.DownloadManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -238,64 +237,9 @@ public class PetalBrowserUtils {
         if (context == null || url == null || url.trim().isEmpty()) {
             return;
         }
-        // Sicherstellen, dass das Protokoll für den Android-Uri-Parser passt
-        String verifiedUrl = url;
-        if (!url.toLowerCase(Locale.US).startsWith("http://") && !url.toLowerCase(Locale.US).startsWith("https://")) {
-            verifiedUrl = "https://" + url;
-        }
-
-        // If user set external download manager as preferred in Settings, redirect to external manager
-        if (com.petal.browser.unit.ExternalDownloadManagerHelper.isExternalPreferred(context)) {
-            boolean launched = com.petal.browser.unit.ExternalDownloadManagerHelper.launchDownloadInExternalManager(
-                    context, verifiedUrl, fileName, mimeType, null
-            );
-            if (launched) {
-                return;
-            }
-        }
-
-        // Berechtigungsprüfung (Ab Android 10/Q wird WRITE_EXTERNAL_STORAGE für Downloads nicht mehr benötigt)
-        boolean hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || BackupUnit.checkPermissionStorage(context);
-        if (hasPermission) {
-            try {
-                String userAgent = WebSettings.getDefaultUserAgent(context);
-                CookieManager cookieManager = CookieManager.getInstance();
-                String cookie = cookieManager.getCookie(verifiedUrl);
-
-                java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
-                extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-                extraHeaders.put("Accept-Language", HelperUnit.getAcceptLanguage(context));
-                // Do NOT set a custom Accept-Encoding header here. HttpURLConnection (used by
-                // Fetch2's HttpUrlConnectionDownloader) only performs transparent gzip
-                // decompression when the app does not set this header itself. Setting it
-                // manually (as before, "gzip, deflate, br, identity") tells the server it's
-                // free to compress the response, but Fetch2 then writes the raw compressed
-                // bytes straight to disk without decoding them - so a downloaded "file.zip"
-                // was actually a gzip/br-compressed stream and failed to open as a valid zip.
-                // Leaving Accept-Encoding unset lets the platform negotiate and decode gzip
-                // transparently, so downloaded files (zip, pdf, images, etc.) land on disk intact.
-                extraHeaders.put("Connection", "keep-alive");
-                extraHeaders.put("Cache-Control", "no-transform");
-                extraHeaders.put("Referer", verifiedUrl);
-
-                // Downloads run on Mozilla's official download service (Android Components
-                // feature-downloads). Notifications and progress come from that pipeline.
-                com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
-                        context, verifiedUrl, fileName, null, userAgent, cookie, extraHeaders, null, null);
-            } catch (Exception e) {
-                // Sicherer Umgang mit Fehlermeldungen ohne StringIndexOutOfBoundsException
-                String errorMessage = e.getMessage() != null ? e.getMessage() : e.toString();
-                PetalToast.show(context, context.getString(R.string.app_error) + ": " + errorMessage, Toast.LENGTH_LONG);
-                Log.e(TAG, "Petal: Error Downloading File", e);
-            }
-        } else {
-            // Sicherer Cast zu Activity nur, wenn der Context tatsächlich eine ist
-            if (context instanceof Activity) {
-                BackupUnit.requestPermission((Activity) context);
-            } else {
-                Log.e(TAG, "Cannot request permission: Context is not an Activity");
-            }
-        }
+        com.petal.browser.download.PetalDownloadRouter.download(
+                context, url, fileName, mimeType, null, false, null, null, java.util.Collections.emptyMap(), null, null
+        );
     }
 
     public static void clearBookmark(Context context) {

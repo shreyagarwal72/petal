@@ -74,9 +74,9 @@ class PetalDownloadService : Service() {
             isActive(item.status) && !PetalFetchDownloadBridge.isMozillaOwned(item.id)
 
         private fun isActive(status: Int): Boolean =
-            status == android.app.DownloadManager.STATUS_RUNNING ||
-            status == android.app.DownloadManager.STATUS_PENDING ||
-            status == android.app.DownloadManager.STATUS_PAUSED
+            status == DownloadStatus.STATUS_RUNNING ||
+            status == DownloadStatus.STATUS_PENDING ||
+            status == DownloadStatus.STATUS_PAUSED
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -186,7 +186,7 @@ class PetalDownloadService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val isPaused = item.status == android.app.DownloadManager.STATUS_PAUSED
+        val isPaused = item.status == DownloadStatus.STATUS_PAUSED
         val toggleIntent = Intent(applicationContext, PetalDownloadCancelReceiver::class.java).apply {
             action = if (isPaused) PetalDownloadCancelReceiver.ACTION_RESUME_DOWNLOAD else PetalDownloadCancelReceiver.ACTION_PAUSE_DOWNLOAD
             putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, item.id)

@@ -1,6 +1,5 @@
 package com.petal.browser.unit;
 
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -26,6 +25,10 @@ public class ImageActionHelper {
         .build();
 
     public static void downloadImage(Context context, String imageUrl) {
+        downloadImage(context, imageUrl, null, false);
+    }
+
+    public static void downloadImage(Context context, String imageUrl, String referrerUrl, boolean isPrivate) {
         if (context == null || imageUrl == null || imageUrl.trim().isEmpty()) {
             return;
         }
@@ -33,15 +36,18 @@ public class ImageActionHelper {
         try {
             String scheme = Uri.parse(imageUrl).getScheme();
             if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
-                // Resolve the real filename/extension from the server's actual headers
-                // before enqueueing - PetalDownloadEngine hands the destination filename
-                // to Fetch2 up front and never renames the file afterward, so guessing
-                // "image/jpeg" here previously mislabeled PNG/WebP/GIF/AVIF images that
-                // don't have a clean extension in their URL.
                 new Thread(() -> {
                     String resolvedFileName;
                     try {
-                        Request headRequest = new Request.Builder().url(imageUrl).head().build();
+                        Request.Builder headBuilder = new Request.Builder().url(imageUrl).head();
+                        if (referrerUrl != null && !referrerUrl.trim().isEmpty()) {
+                            headBuilder.header("Referer", referrerUrl.trim());
+                        }
+                        String cookies = android.webkit.CookieManager.getInstance().getCookie(imageUrl);
+                        if (cookies != null && !cookies.trim().isEmpty()) {
+                            headBuilder.header("Cookie", cookies.trim());
+                        }
+                        Request headRequest = headBuilder.build();
                         okhttp3.Response response = okHttpClient.newCall(headRequest).execute();
                         String contentDisposition = response.header("Content-Disposition");
                         String contentType = response.header("Content-Type");
@@ -49,8 +55,6 @@ public class ImageActionHelper {
                         resolvedFileName = com.petal.browser.download.SafeDownloadValues.fileName(
                             imageUrl, contentDisposition, contentType != null ? contentType : "image/jpeg");
                     } catch (Exception e) {
-                        // HEAD request failed (timeout, blocked, offline) - fall back to the
-                        // previous URL-only guess rather than blocking/failing the download.
                         String fallback = URLUtil.guessFileName(imageUrl, null, "image/jpeg");
                         if (!fallback.contains(".")) {
                             fallback += ".jpg";
@@ -58,13 +62,9 @@ public class ImageActionHelper {
                         resolvedFileName = fallback;
                     }
                     String finalFileName = resolvedFileName;
-                    // Use the browser download entry point so the request carries the
-                    // WebView's cookies, user agent, permission handling, and the same
-                    // retry/notification pipeline as normal downloads. Directly
-                    // enqueueing here omitted those headers, which breaks hotlinked,
-                    // signed, and authenticated image URLs even though they display in
-                    // the page.
-                    BrowserUnit.download(context, imageUrl, finalFileName, "image/*");
+                    com.petal.browser.download.PetalDownloadRouter.download(
+                        context, imageUrl, finalFileName, "image/*", referrerUrl, isPrivate, null, null, java.util.Collections.emptyMap(), null, null
+                    );
                     if (context instanceof android.app.Activity) {
                         ((android.app.Activity) context).runOnUiThread(() ->
                             PetalToast.show(context, "Image download started"));

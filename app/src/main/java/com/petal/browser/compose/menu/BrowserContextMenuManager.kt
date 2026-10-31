@@ -153,8 +153,18 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadLink() {
                     try {
+                        val controller = activity.currentAlbumController
+                        val referrerUrl = controller?.url
+                        val isPrivate = controller?.isIncognito ?: false
                         DownloadFileNameResolver.resolve(activity.lifecycleScope, imageURL) { fileName, mimeType ->
-                            BrowserUnit.download(activity, imageURL, fileName, mimeType)
+                            com.petal.browser.download.PetalDownloadRouter.download(
+                                context = activity,
+                                url = imageURL,
+                                fileName = fileName,
+                                mimeType = mimeType,
+                                referrerUrl = referrerUrl,
+                                isPrivate = isPrivate
+                            )
                             PetalToast.show(activity, "Download started")
                         }
                     } catch (e: Exception) {
@@ -164,7 +174,10 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadImage() {
                     if (imageURL.isNotBlank()) {
-                        ImageActionHelper.downloadImage(activity, imageURL)
+                        val controller = activity.currentAlbumController
+                        val referrerUrl = controller?.url
+                        val isPrivate = controller?.isIncognito ?: false
+                        ImageActionHelper.downloadImage(activity, imageURL, referrerUrl, isPrivate)
                     } else {
                         PetalToast.show(activity, "No valid image URL found")
                     }
@@ -337,8 +350,18 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadLink() {
                     try {
+                        val controller = activity.currentAlbumController
+                        val referrerUrl = controller?.url
+                        val isPrivate = controller?.isIncognito ?: false
                         DownloadFileNameResolver.resolve(activity.lifecycleScope, urlResult) { fileName, mimeType ->
-                            BrowserUnit.download(activity, urlResult, fileName, mimeType)
+                            com.petal.browser.download.PetalDownloadRouter.download(
+                                context = activity,
+                                url = urlResult,
+                                fileName = fileName,
+                                mimeType = mimeType,
+                                referrerUrl = referrerUrl,
+                                isPrivate = isPrivate
+                            )
                             PetalToast.show(activity, "Download started")
                         }
                     } catch (e: Exception) {
@@ -348,7 +371,10 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadImage() {
                     if (urlResult.isNotBlank()) {
-                        ImageActionHelper.downloadImage(activity, urlResult)
+                        val controller = activity.currentAlbumController
+                        val referrerUrl = controller?.url
+                        val isPrivate = controller?.isIncognito ?: false
+                        ImageActionHelper.downloadImage(activity, urlResult, referrerUrl, isPrivate)
                     }
                 }
 
@@ -474,8 +500,18 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadVideo() {
                     try {
+                        val controller = activity.currentAlbumController
+                        val referrerUrl = controller?.url
+                        val isPrivate = controller?.isIncognito ?: false
                         DownloadFileNameResolver.resolve(activity.lifecycleScope, cleanVideoUrl, fallbackMimeType = "video/mp4") { fileName, mimeType ->
-                            BrowserUnit.download(activity, cleanVideoUrl, fileName, mimeType)
+                            com.petal.browser.download.PetalDownloadRouter.download(
+                                context = activity,
+                                url = cleanVideoUrl,
+                                fileName = fileName,
+                                mimeType = mimeType,
+                                referrerUrl = referrerUrl,
+                                isPrivate = isPrivate
+                            )
                             PetalToast.show(activity, "Video download started")
                         }
                     } catch (e: Exception) {
@@ -540,8 +576,18 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadAudio() {
                     try {
+                        val controller = activity.currentAlbumController
+                        val referrerUrl = controller?.url
+                        val isPrivate = controller?.isIncognito ?: false
                         DownloadFileNameResolver.resolve(activity.lifecycleScope, audioUrl, fallbackMimeType = "audio/mpeg") { fileName, mimeType ->
-                            BrowserUnit.download(activity, audioUrl, fileName, mimeType)
+                            com.petal.browser.download.PetalDownloadRouter.download(
+                                context = activity,
+                                url = audioUrl,
+                                fileName = fileName,
+                                mimeType = mimeType,
+                                referrerUrl = referrerUrl,
+                                isPrivate = isPrivate
+                            )
                             PetalToast.show(activity, "Audio download started")
                         }
                     } catch (e: Exception) {
@@ -831,8 +877,18 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadLink() {
                     try {
+                        val controller = activity.currentAlbumController
+                        val referrerUrl = controller?.url
+                        val isPrivate = controller?.isIncognito ?: false
                         DownloadFileNameResolver.resolve(activity.lifecycleScope, linkUrl) { fileName, mimeType ->
-                            BrowserUnit.download(activity, linkUrl, fileName, mimeType)
+                            com.petal.browser.download.PetalDownloadRouter.download(
+                                context = activity,
+                                url = linkUrl,
+                                fileName = fileName,
+                                mimeType = mimeType,
+                                referrerUrl = referrerUrl,
+                                isPrivate = isPrivate
+                            )
                             PetalToast.show(activity, "Download started")
                         }
                     } catch (e: Exception) {
@@ -883,7 +939,10 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadImage() {
                     if (imageUrl.isNotBlank()) {
-                        ImageActionHelper.downloadImage(activity, imageUrl)
+                        val controller = activity.currentAlbumController
+                        val referrerUrl = controller?.url
+                        val isPrivate = controller?.isIncognito ?: false
+                        ImageActionHelper.downloadImage(activity, imageUrl, referrerUrl, isPrivate)
                     } else {
                         PetalToast.show(activity, "No valid image URL found")
                     }

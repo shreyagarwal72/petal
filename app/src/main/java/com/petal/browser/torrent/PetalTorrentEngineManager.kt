@@ -99,7 +99,7 @@ object PetalTorrentEngineManager {
                 val webSeed = uri.getQueryParameter("ws")
                 
                 if (!webSeed.isNullOrBlank()) {
-                    BrowserUnit.download(activity, webSeed, topic, null)
+                    com.petal.browser.download.PetalDownloadRouter.download(activity, webSeed, topic, null)
                     PetalToast.show(activity, "Downloading Torrent via WebSeed: $topic")
                 } else {
                     // Open with system torrent handler intent as fallback
@@ -110,7 +110,7 @@ object PetalTorrentEngineManager {
                 }
             } else {
                 val guessedName = fileName ?: "download.torrent"
-                BrowserUnit.download(activity, url, guessedName, "application/x-bittorrent")
+                com.petal.browser.download.PetalDownloadRouter.download(activity, url, guessedName, "application/x-bittorrent")
                 PetalToast.show(activity, "Downloading Torrent File: $guessedName")
             }
             return true

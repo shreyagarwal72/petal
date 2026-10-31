@@ -10,7 +10,7 @@ package com.petal.browser.compose.downloads
 import com.petal.browser.ui.components.scrollMotionBlur
 
 import com.petal.browser.view.PetalToast;
-import android.app.DownloadManager
+import android.os.Environment
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -425,10 +425,10 @@ fun PetalDownloadManagerScreen(
 
                 compareBy<DownloadItem> {
                     when (it.status) {
-                        DownloadManager.STATUS_RUNNING -> 0
-                        DownloadManager.STATUS_PAUSED -> 1
-                        DownloadManager.STATUS_PENDING -> 2
-                        DownloadManager.STATUS_SUCCESSFUL -> 3
+                        DownloadStatus.STATUS_RUNNING -> 0
+                        DownloadStatus.STATUS_PAUSED -> 1
+                        DownloadStatus.STATUS_PENDING -> 2
+                        DownloadStatus.STATUS_SUCCESSFUL -> 3
                         else -> 4
                     }
                 }.thenByDescending { it.timestampMs }
@@ -484,7 +484,7 @@ fun PetalDownloadManagerScreen(
     // available, but do not render a second completed-image row.
     val listDownloads = remember(sortedDownloadList, autoPreviewDownloadedImages) {
         if (autoPreviewDownloadedImages) {
-            sortedDownloadList.filterNot { it.status == DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) }
+            sortedDownloadList.filterNot { it.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) }
         } else sortedDownloadList
     }
     val groupedDownloads = remember(listDownloads, sortOption) {
@@ -670,7 +670,7 @@ fun PetalDownloadManagerScreen(
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {
-                    if (downloadList.any { it.status == DownloadManager.STATUS_RUNNING }) {
+                    if (downloadList.any { it.status == DownloadStatus.STATUS_RUNNING }) {
                         item(key = "active_summary") {
                             ActiveDownloadsSummary(
                                 items = downloadList,
@@ -782,8 +782,8 @@ fun PetalDownloadManagerScreen(
                                 onOpenFile = {
                                     PetalContainerSource.set(rowBounds[item.id])
                                     val activity = context as? com.petal.browser.activity.BrowserActivity
-                                    if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName)) {
-                                        val allImages = sortedDownloadList.filter { it.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }
+                                    if (activity != null && item.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(item.fileName)) {
+                                        val allImages = sortedDownloadList.filter { it.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }
                                         activity.pendingOverlayBackAction = Runnable {
                                             activity.runOnUiThread { activity.showDownloads() }
                                         }
@@ -791,7 +791,7 @@ fun PetalDownloadManagerScreen(
                                             activity.runOnUiThread { activity.performBackNavigation() }
                                         }
                                         activity.runOnUiThread { activity.presentComposeScreen(view) }
-                                    } else if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isUniversalViewable(item.fileName)) {
+                                    } else if (activity != null && item.status == DownloadStatus.STATUS_SUCCESSFUL && isUniversalViewable(item.fileName)) {
                                         val rawUri = item.localUri?.let { Uri.parse(it) }
                                         val targetUri = if (rawUri != null && (rawUri.scheme == "file" || rawUri.scheme == null)) {
                                             val file = java.io.File(rawUri.path ?: item.localUri!!.removePrefix("file://"))
@@ -864,7 +864,7 @@ private fun DownloadedImagePreviewStrip(
 ) {
     val context = LocalContext.current
     var menuItem by remember { mutableStateOf<DownloadItem?>(null) }
-    val images = downloads.filter { it.status == DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }.take(6)
+    val images = downloads.filter { it.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }.take(6)
     if (images.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(stringResource(R.string.ui_downloaded_images), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -1050,7 +1050,7 @@ private fun DownloadRowItem(
         selected = isSelected,
         onClick = {
             if (isSelectionMode) onToggleSelect()
-            else if (item.status == DownloadManager.STATUS_SUCCESSFUL) onOpenFile()
+            else if (item.status == DownloadStatus.STATUS_SUCCESSFUL) onOpenFile()
         },
         onLongClick = onLongClick,
         modifier = modifier.fillMaxWidth(),
@@ -1073,9 +1073,9 @@ private fun DownloadRowItem(
                     isSelectionMode = isSelectionMode,
                     onTogglePauseResume = {
                         when (item.status) {
-                            DownloadManager.STATUS_RUNNING -> PetalLiveAlertManager.pauseDownload(context, item.id)
-                            DownloadManager.STATUS_PAUSED -> PetalLiveAlertManager.resumeDownload(context, item.id)
-                            DownloadManager.STATUS_FAILED -> PetalLiveAlertManager.retryDownload(context, item.id)
+                            DownloadStatus.STATUS_RUNNING -> PetalLiveAlertManager.pauseDownload(context, item.id)
+                            DownloadStatus.STATUS_PAUSED -> PetalLiveAlertManager.resumeDownload(context, item.id)
+                            DownloadStatus.STATUS_FAILED -> PetalLiveAlertManager.retryDownload(context, item.id)
                             else -> {}
                         }
                     }
@@ -1105,7 +1105,7 @@ private fun DownloadRowItem(
                     val subtitleText = remember(item, domain, formattedSize, timeStr) {
                         val parts = mutableListOf<String>()
                         when (item.status) {
-                            DownloadManager.STATUS_RUNNING -> {
+                            DownloadStatus.STATUS_RUNNING -> {
                                 val percentStr = if (item.progress != null) "${(item.progress * 100).toInt()}%" else ""
                                 parts.add("${formatBytes(item.bytesDownloaded)} of $formattedSize")
                                 if (percentStr.isNotEmpty()) parts.add(percentStr)
@@ -1114,13 +1114,13 @@ private fun DownloadRowItem(
                                 if (item.etaSeconds > 0) parts.add("${formatEta(item.etaSeconds)} left")
                                 if (item.connections > 1) parts.add("×${item.connections} connections")
                             }
-                            DownloadManager.STATUS_FAILED -> parts.add("Failed • $formattedSize")
-                            DownloadManager.STATUS_PAUSED -> parts.add("Paused • $formattedSize")
+                            DownloadStatus.STATUS_FAILED -> parts.add("Failed • $formattedSize")
+                            DownloadStatus.STATUS_PAUSED -> parts.add("Paused • $formattedSize")
                             else -> parts.add(formattedSize)
                         }
                         // A running row already carries progress, speed and ETA; adding time and
                         // domain would only get everything truncated by the single-line ellipsis.
-                        if (item.status != DownloadManager.STATUS_RUNNING) {
+                        if (item.status != DownloadStatus.STATUS_RUNNING) {
                             if (timeStr.isNotEmpty()) parts.add(timeStr)
                             if (domain.isNotEmpty()) parts.add(domain)
                         }
@@ -1160,7 +1160,7 @@ private fun DownloadRowItem(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
-                        if (item.status == DownloadManager.STATUS_RUNNING) {
+                        if (item.status == DownloadStatus.STATUS_RUNNING) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = stringResource(R.string.ui_pause),
                                 leadingIcon = { Icon(Icons.Rounded.Pause, contentDescription = null) },
@@ -1170,7 +1170,7 @@ private fun DownloadRowItem(
                                 }
                             )
                         }
-                        if (item.status == DownloadManager.STATUS_PAUSED) {
+                        if (item.status == DownloadStatus.STATUS_PAUSED) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = stringResource(R.string.ui_resume),
                                 leadingIcon = { Icon(Icons.Rounded.PlayArrow, contentDescription = null) },
@@ -1180,7 +1180,7 @@ private fun DownloadRowItem(
                                 }
                             )
                         }
-                        if (item.status == DownloadManager.STATUS_FAILED) {
+                        if (item.status == DownloadStatus.STATUS_FAILED) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = stringResource(R.string.ui_retry),
                                 leadingIcon = { Icon(Icons.Rounded.Refresh, contentDescription = null) },
@@ -1190,7 +1190,7 @@ private fun DownloadRowItem(
                                 }
                             )
                         }
-                        if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
+                        if (item.status == DownloadStatus.STATUS_SUCCESSFUL) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = stringResource(R.string.ui_open),
                                 leadingIcon = { Icon(Icons.Rounded.OpenInNew, contentDescription = null) },
@@ -1247,9 +1247,9 @@ private fun DownloadRowItem(
 /** Aggregate card shown while anything is downloading: count, combined speed, overall ETA and progress. */
 @Composable
 private fun ActiveDownloadsSummary(items: List<DownloadItem>, modifier: Modifier = Modifier) {
-    val running = items.filter { it.status == DownloadManager.STATUS_RUNNING }
+    val running = items.filter { it.status == DownloadStatus.STATUS_RUNNING }
     if (running.isEmpty()) return
-    val waiting = items.count { it.status == DownloadManager.STATUS_PENDING }
+    val waiting = items.count { it.status == DownloadStatus.STATUS_PENDING }
     val totalSpeed = running.sumOf { it.speedBytesPerSec }
     // Only downloads with a known size can contribute to an honest overall percentage.
     val sized = running.filter { it.totalSize > 0L }
@@ -1370,10 +1370,10 @@ private fun DownloadProgressRing(
     isSelectionMode: Boolean,
     onTogglePauseResume: () -> Unit
 ) {
-    val isRunning = item.status == DownloadManager.STATUS_RUNNING
-    val isPaused = item.status == DownloadManager.STATUS_PAUSED
-    val isPending = item.status == DownloadManager.STATUS_PENDING
-    val isFailed = item.status == DownloadManager.STATUS_FAILED
+    val isRunning = item.status == DownloadStatus.STATUS_RUNNING
+    val isPaused = item.status == DownloadStatus.STATUS_PAUSED
+    val isPending = item.status == DownloadStatus.STATUS_PENDING
+    val isFailed = item.status == DownloadStatus.STATUS_FAILED
     val showRing = (isRunning || isPaused || isPending) && !isSelected
 
     val ringColor = when {
@@ -1493,27 +1493,28 @@ internal fun openDownloadedFile(context: Context, item: DownloadItem) {
             }
         }
 
-        if (contentUri == null) {
+        if (contentUri == null && item.fileName.isNotBlank()) {
             try {
-                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                contentUri = dm.getUriForDownloadedFile(item.id)
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val file = java.io.File(downloadsDir, item.fileName)
+                if (file.exists()) {
+                    contentUri = androidx.core.content.FileProvider.getUriForFile(
+                        context,
+                        context.packageName + ".fileprovider",
+                        file
+                    )
+                }
             } catch (e: Exception) { e.printStackTrace() }
         }
 
         if (contentUri != null) {
             com.petal.browser.download.PetalFileOpener.openFile(context, contentUri, item.fileName, mimeType)
         } else {
-            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            dm.openDownloadedFile(item.id)
+            PetalToast.show(context, "File not found: ${item.fileName}", android.widget.Toast.LENGTH_SHORT)
         }
     } catch (e: Exception) {
         e.printStackTrace()
-        try {
-            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            dm.openDownloadedFile(item.id)
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        }
+        PetalToast.show(context, "Unable to open file: ${e.message}", android.widget.Toast.LENGTH_SHORT)
     }
 }
 
@@ -1579,10 +1580,17 @@ internal fun shareDownloadedFile(context: Context, item: DownloadItem) {
                 contentUri = rawUri
             }
         }
-        if (contentUri == null) {
+        if (contentUri == null && item.fileName.isNotBlank()) {
             try {
-                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                contentUri = dm.getUriForDownloadedFile(item.id)
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val file = java.io.File(downloadsDir, item.fileName)
+                if (file.exists()) {
+                    contentUri = androidx.core.content.FileProvider.getUriForFile(
+                        context,
+                        context.packageName + ".fileprovider",
+                        file
+                    )
+                }
             } catch (e: Exception) { e.printStackTrace() }
         }
 
@@ -1636,10 +1644,17 @@ private fun shareMultipleFiles(context: Context, items: List<DownloadItem>) {
                     contentUri = rawUri
                 }
             }
-            if (contentUri == null) {
+            if (contentUri == null && item.fileName.isNotBlank()) {
                 try {
-                    val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                    contentUri = dm.getUriForDownloadedFile(item.id)
+                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    val file = java.io.File(downloadsDir, item.fileName)
+                    if (file.exists()) {
+                        contentUri = androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            context.packageName + ".fileprovider",
+                            file
+                        )
+                    }
                 } catch (e: Exception) { e.printStackTrace() }
             }
             if (contentUri != null) {

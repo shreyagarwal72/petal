@@ -12,10 +12,10 @@
 
 package com.petal.browser.compose.downloads
 
-import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Environment
 import android.webkit.MimeTypeMap
 import androidx.activity.ComponentActivity
 import androidx.compose.material.icons.Icons
@@ -147,7 +147,7 @@ object PetalDownloadBannerBridge {
                             !dismissedDownloadKeys.contains(idKey) && 
                             !dismissedDownloadKeys.contains(nameKey)) {
                             when (activeItem.status) {
-                                DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
+                                DownloadStatus.STATUS_RUNNING, DownloadStatus.STATUS_PENDING -> {
                                     val safeProgress = activeItem.progress?.let { p ->
                                         (if (p > 1f) p / 100f else p).coerceIn(0f, 1f)
                                     }
@@ -162,7 +162,7 @@ object PetalDownloadBannerBridge {
                                         speedBytesPerSec = activeItem.speedBytesPerSec
                                     )
                                 }
-                                DownloadManager.STATUS_SUCCESSFUL -> {
+                                DownloadStatus.STATUS_SUCCESSFUL -> {
                                     currentBannerData.value = ActiveBannerData(
                                         state = BannerState.COMPLETED,
                                         fileName = activeItem.fileName,
@@ -174,7 +174,7 @@ object PetalDownloadBannerBridge {
                                         speedBytesPerSec = 0L
                                     )
                                 }
-                                DownloadManager.STATUS_FAILED -> {
+                                DownloadStatus.STATUS_FAILED -> {
                                     currentBannerData.value = ActiveBannerData(
                                         state = BannerState.FAILED,
                                         fileName = activeItem.fileName,
@@ -406,10 +406,17 @@ private fun openDownloadedFile(context: Context, data: ActiveBannerData) {
             }
         }
 
-        if (contentUri == null && data.downloadId > 0L) {
+        if (contentUri == null && data.fileName.isNotBlank()) {
             try {
-                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                contentUri = dm.getUriForDownloadedFile(data.downloadId)
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val file = File(downloadsDir, data.fileName)
+                if (file.exists()) {
+                    contentUri = FileProvider.getUriForFile(
+                        context,
+                        context.packageName + ".fileprovider",
+                        file
+                    )
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }

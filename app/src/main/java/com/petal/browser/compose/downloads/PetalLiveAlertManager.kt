@@ -1,6 +1,5 @@
 package com.petal.browser.compose.downloads
 
-import android.app.DownloadManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -65,9 +64,9 @@ object PetalLiveAlertManager {
                         // (official Firefox notifications). Posting here too would duplicate them.
                         val items = allItems.filter { !PetalFetchDownloadBridge.isMozillaOwned(it.id) }
                         val activeItems = items.filter {
-                            it.status == DownloadManager.STATUS_RUNNING ||
-                            it.status == DownloadManager.STATUS_PENDING ||
-                            it.status == DownloadManager.STATUS_PAUSED
+                            it.status == DownloadStatus.STATUS_RUNNING ||
+                            it.status == DownloadStatus.STATUS_PENDING ||
+                            it.status == DownloadStatus.STATUS_PAUSED
                         }
 
                         // Fetch2 can briefly publish an empty snapshot while the app is
@@ -87,7 +86,7 @@ object PetalLiveAlertManager {
                         val now = System.currentTimeMillis()
                         items.forEach { item ->
                             when (item.status) {
-                                DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
+                                DownloadStatus.STATUS_RUNNING, DownloadStatus.STATUS_PENDING -> {
                                     handledTerminalStatusMap.remove(item.id)
                                     val lastTime = lastNotifTimeMap[item.id] ?: 0L
                                     if (now - lastTime >= 400L || lastTime == 0L) {
@@ -103,22 +102,22 @@ object PetalLiveAlertManager {
                                         )
                                     }
                                 }
-                                DownloadManager.STATUS_PAUSED -> {
-                                    if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_PAUSED) {
-                                        handledTerminalStatusMap[item.id] = DownloadManager.STATUS_PAUSED
+                                DownloadStatus.STATUS_PAUSED -> {
+                                    if (handledTerminalStatusMap[item.id] != DownloadStatus.STATUS_PAUSED) {
+                                        handledTerminalStatusMap[item.id] = DownloadStatus.STATUS_PAUSED
                                         showPausedNotification(context, item.id)
                                     }
                                 }
-                                DownloadManager.STATUS_SUCCESSFUL -> {
-                                    if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_SUCCESSFUL) {
-                                        handledTerminalStatusMap[item.id] = DownloadManager.STATUS_SUCCESSFUL
+                                DownloadStatus.STATUS_SUCCESSFUL -> {
+                                    if (handledTerminalStatusMap[item.id] != DownloadStatus.STATUS_SUCCESSFUL) {
+                                        handledTerminalStatusMap[item.id] = DownloadStatus.STATUS_SUCCESSFUL
                                         lastNotifTimeMap.remove(item.id)
                                         showCompletionNotification(context, item.id, item.fileName, item.totalSize)
                                     }
                                 }
-                                DownloadManager.STATUS_FAILED -> {
-                                    if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_FAILED) {
-                                        handledTerminalStatusMap[item.id] = DownloadManager.STATUS_FAILED
+                                DownloadStatus.STATUS_FAILED -> {
+                                    if (handledTerminalStatusMap[item.id] != DownloadStatus.STATUS_FAILED) {
+                                        handledTerminalStatusMap[item.id] = DownloadStatus.STATUS_FAILED
                                         lastNotifTimeMap.remove(item.id)
                                         showFailureNotification(context, item.id, item.fileName)
                                     }

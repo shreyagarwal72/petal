@@ -15,7 +15,6 @@
 
 package com.petal.browser.compose.downloads
 
-import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.media.MediaScannerConnection
@@ -280,11 +279,14 @@ object PetalFetchDownloadBridge {
     }
 
     @JvmStatic
-    fun enqueueMediaDownload(
+    @JvmOverloads
+    fun enqueueUnifiedDownload(
         context: Context,
         url: String,
         fileName: String,
         mimeType: String? = null,
+        referrerUrl: String? = null,
+        isPrivate: Boolean = false,
         userAgent: String? = null,
         cookie: String? = null,
         headers: Map<String, String> = emptyMap(),
@@ -296,19 +298,15 @@ object PetalFetchDownloadBridge {
             onFailed?.invoke()
             return
         }
-        // Collect the per-download request headers; PetalMozillaFetchClient applies them on top of
-        // Gecko's own request when Mozilla's service fetches this URL.
         val extra = LinkedHashMap<String, String>()
         SafeDownloadValues.header(userAgent, 4096)?.let { extra["User-Agent"] = it }
-        // Do not send cookies or custom auth headers to presigned CDN / S3 URLs (e.g. github-production-release-asset)
-        // as AWS S3 rejects requests with SignatureDoesNotMatch if extra headers are present.
         val isS3OrCdn = url.contains(".s3.amazonaws.com", ignoreCase = true) ||
             url.contains(".githubusercontent.com", ignoreCase = true) ||
             url.contains("github-production-release-asset", ignoreCase = true)
         if (!isS3OrCdn) {
             SafeDownloadValues.header(cookie, 16384)?.let { extra["Cookie"] = it }
         }
-        var referrer: String? = null
+        var referrer = referrerUrl
         headers.forEach { (name, value) ->
             if (name.isBlank() || value.isBlank()) return@forEach
             if (name.equals("Referer", true)) { referrer = value }
@@ -328,11 +326,38 @@ object PetalFetchDownloadBridge {
             fileName = fileName,
             mimeType = mimeType,
             referrerUrl = referrer,
-            isPrivate = false,
+            isPrivate = isPrivate,
             extraHeaders = extra,
             onEnqueued = onEnqueued
         )
         if (!started) onFailed?.invoke()
+    }
+
+    @JvmStatic
+    fun enqueueMediaDownload(
+        context: Context,
+        url: String,
+        fileName: String,
+        mimeType: String? = null,
+        userAgent: String? = null,
+        cookie: String? = null,
+        headers: Map<String, String> = emptyMap(),
+        onEnqueued: ((Long) -> Unit)? = null,
+        onFailed: (() -> Unit)? = null
+    ) {
+        enqueueUnifiedDownload(
+            context = context,
+            url = url,
+            fileName = fileName,
+            mimeType = mimeType,
+            referrerUrl = headers["Referer"],
+            isPrivate = false,
+            userAgent = userAgent,
+            cookie = cookie,
+            headers = headers,
+            onEnqueued = onEnqueued,
+            onFailed = onFailed
+        )
     }
 
     @JvmStatic
@@ -552,24 +577,24 @@ object PetalFetchDownloadBridge {
                     }
                     val id = download.id.hashCode().toLong()
                     val status = when (download.status) {
-                        mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING -> DownloadManager.STATUS_RUNNING
-                        mozilla.components.browser.state.state.content.DownloadState.Status.PAUSED -> DownloadManager.STATUS_PAUSED
-                        mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED -> DownloadManager.STATUS_PENDING
-                        mozilla.components.browser.state.state.content.DownloadState.Status.COMPLETED -> DownloadManager.STATUS_SUCCESSFUL
-                        else -> DownloadManager.STATUS_FAILED
+                        mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING -> DownloadStatus.STATUS_RUNNING
+                        mozilla.components.browser.state.state.content.DownloadState.Status.PAUSED -> DownloadStatus.STATUS_PAUSED
+                        mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED -> DownloadStatus.STATUS_PENDING
+                        mozilla.components.browser.state.state.content.DownloadState.Status.COMPLETED -> DownloadStatus.STATUS_SUCCESSFUL
+                        else -> DownloadStatus.STATUS_FAILED
                     }
                     val total = download.contentLength ?: 0L
                     val nowMs = System.currentTimeMillis()
                     val copied = download.currentBytesCopied
                     var speed = 0L
-                    if (status == DownloadManager.STATUS_RUNNING) {
+                    if (status == DownloadStatus.STATUS_RUNNING) {
                         val meter = mozillaMeters.getOrPut(download.id) { com.petal.browser.download.PetalSpeedMeter() }
                         speed = meter.update(nowMs, copied)
                     } else {
                         mozillaMeters.remove(download.id)
                     }
                     val etaSec = com.petal.browser.download.PetalSpeedMeter.etaSeconds(total - copied, speed)
-                    val connections = if (status == DownloadManager.STATUS_RUNNING) {
+                    val connections = if (status == DownloadStatus.STATUS_RUNNING) {
                         com.petal.browser.download.PetalParallelStats.connectionsFor(download.url)
                     } else 1
                     val rawProgress = download.progress
@@ -633,27 +658,19 @@ object PetalFetchDownloadBridge {
     }
 
     private fun mapStatus(status: Status): Int = when (status) {
-        Status.DOWNLOADING -> DownloadManager.STATUS_RUNNING
-        Status.PAUSED -> DownloadManager.STATUS_PAUSED
-        Status.COMPLETED -> DownloadManager.STATUS_SUCCESSFUL
-        Status.QUEUED, Status.ADDED, Status.NONE -> DownloadManager.STATUS_PENDING
-        else -> DownloadManager.STATUS_FAILED // FAILED, CANCELLED, REMOVED, DELETED
+        Status.DOWNLOADING -> DownloadStatus.STATUS_RUNNING
+        Status.PAUSED -> DownloadStatus.STATUS_PAUSED
+        Status.COMPLETED -> DownloadStatus.STATUS_SUCCESSFUL
+        Status.QUEUED, Status.ADDED, Status.NONE -> DownloadStatus.STATUS_PENDING
+        else -> DownloadStatus.STATUS_FAILED // FAILED, CANCELLED, REMOVED, DELETED
     }
 
-    /** Makes the finished file visible to the system Downloads app / other apps, same as before. */
+    /** Makes the finished file visible to the system Downloads app / other apps via MediaScanner. */
     private fun registerWithSystemDownloads(context: Context, download: Download) {
         try {
             val file = File(download.file)
             if (!file.exists()) return
             MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), null, null)
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
-                val ext = MimeTypeMap.getFileExtensionFromUrl(file.name)?.lowercase(Locale.US)
-                val mime = if (!ext.isNullOrEmpty()) {
-                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
-                } else "*/*"
-                dm.addCompletedDownload(file.name, file.name, true, mime, file.absolutePath, file.length(), true)
-            }
         } catch (e: Throwable) {
             e.printStackTrace()
         }

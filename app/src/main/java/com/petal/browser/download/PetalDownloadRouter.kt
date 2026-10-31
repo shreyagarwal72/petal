@@ -1,0 +1,116 @@
+package com.petal.browser.download
+
+import android.app.Activity
+import android.content.Context
+import android.net.Uri
+import android.os.Build
+import android.webkit.CookieManager
+import android.webkit.WebSettings
+import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
+import com.petal.browser.unit.BackupUnit
+import com.petal.browser.unit.ExternalDownloadManagerHelper
+import com.petal.browser.unit.HelperUnit
+import com.petal.browser.view.PetalToast
+
+/**
+ * PetalDownloadRouter
+ * ─────────────────────────────────────────────────────────────────────────
+ * The single authoritative entry point for all downloads in Petal Browser.
+ *
+ * Directs all downloads through Mozilla's official Firefox/Fenix download pipeline
+ * (Android Components feature-downloads / AbstractFetchDownloadService with
+ * GeckoViewFetchClient and parallel Range segmenting), completely replacing the
+ * legacy Android system DownloadManager.
+ *
+ * If the user configured an external download manager (1DM, ADM, AB Download Manager,
+ * Navi, or Auto), requests are routed with full headers, cookies, referer, and user-agent.
+ */
+object PetalDownloadRouter {
+
+    @JvmStatic
+    @JvmOverloads
+    fun download(
+        context: Context,
+        url: String,
+        fileName: String? = null,
+        mimeType: String? = null,
+        referrerUrl: String? = null,
+        isPrivate: Boolean = false,
+        userAgent: String? = null,
+        cookie: String? = null,
+        headers: Map<String, String> = emptyMap(),
+        onEnqueued: ((Long) -> Unit)? = null,
+        onFailed: (() -> Unit)? = null
+    ) {
+        if (url.isBlank()) {
+            onFailed?.invoke()
+            return
+        }
+
+        val verifiedUrl = if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) {
+            "https://$url"
+        } else {
+            url
+        }
+
+        // 1. External Download Manager preference check (1DM, ADM, AB Download Manager, Navi, Auto)
+        if (ExternalDownloadManagerHelper.isExternalPreferred(context)) {
+            val launched = ExternalDownloadManagerHelper.launchDownloadInExternalManager(
+                context, verifiedUrl, fileName, mimeType, null
+            )
+            if (launched) {
+                return
+            }
+        }
+
+        // 2. Storage permission check for Android 9 and older
+        val hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || BackupUnit.checkPermissionStorage(context)
+        if (!hasPermission) {
+            if (context is Activity) {
+                BackupUnit.requestPermission(context)
+            }
+            onFailed?.invoke()
+            return
+        }
+
+        // 3. Resolve context parameters (cookies, user-agent, referer)
+        val effectiveUa = userAgent?.takeIf { it.isNotBlank() } ?: runCatching { WebSettings.getDefaultUserAgent(context) }.getOrNull()
+        val effectiveCookie = cookie?.takeIf { it.isNotBlank() } ?: runCatching { CookieManager.getInstance().getCookie(verifiedUrl) }.getOrNull()
+
+        val extraHeaders = LinkedHashMap<String, String>()
+        extraHeaders["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+        extraHeaders["Accept-Language"] = HelperUnit.getAcceptLanguage(context)
+        extraHeaders["Connection"] = "keep-alive"
+        extraHeaders["Cache-Control"] = "no-transform"
+        if (!referrerUrl.isNullOrBlank()) {
+            extraHeaders["Referer"] = referrerUrl
+        } else {
+            extraHeaders["Referer"] = verifiedUrl
+        }
+        headers.forEach { (k, v) ->
+            if (k.isNotBlank() && v.isNotBlank()) extraHeaders[k] = v
+        }
+
+        val resolvedFileName = SafeDownloadValues.fileName(
+            url = verifiedUrl,
+            contentDisposition = null,
+            mimeType = mimeType,
+            preferredFileName = fileName
+        ).ifBlank { "download" }
+
+        // 4. Dispatch exclusively via Mozilla's official Firefox/Fenix download pipeline
+        PetalFetchDownloadBridge.enqueueUnifiedDownload(
+            context = context,
+            url = verifiedUrl,
+            fileName = resolvedFileName,
+            mimeType = mimeType,
+            referrerUrl = referrerUrl ?: verifiedUrl,
+            isPrivate = isPrivate,
+            userAgent = effectiveUa,
+            cookie = effectiveCookie,
+            headers = extraHeaders,
+            onEnqueued = onEnqueued,
+            onFailed = onFailed
+        )
+    }
+}
