@@ -84,7 +84,7 @@ android {
             // R8: shrink, optimise and obfuscate. Keep rules live in proguard-rules.pro;
             // the mapping for de-obfuscating crash traces is in build/outputs/mapping/release.
             minifyEnabled true
-            shrinkResources true
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
