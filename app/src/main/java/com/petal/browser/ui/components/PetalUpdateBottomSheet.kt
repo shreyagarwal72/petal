@@ -328,7 +328,7 @@ object PetalUpdateSheetBridge {
                             var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
                                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                                val dismissAction = {
+                                val dismissAction: () -> Unit = {
                                     val isDownloading = PetalUpdateManager.downloadState.value is PetalUpdateManager.UpdateDownloadState.Downloading
                                     if (isDownloading) {
                                         PetalToast.show(activity, "Update downloading in background. You can keep browsing.")
