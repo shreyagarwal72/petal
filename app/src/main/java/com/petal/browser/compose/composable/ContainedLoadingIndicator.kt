@@ -46,6 +46,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
@@ -82,12 +83,12 @@ fun ContainedLoadingIndicator(
 }
 
 /**
- * Material 3 Expressive Shape-Morphing Loading Indicator (from komi-store).
+ * Material 3 Expressive Circular Wavy Loading Indicator (from komi-store).
  *
- * Smoothly morphs between expressive polygons with authentic Material 3 Expressive
- * rotation and scale transitions.
- * For compact sizes (< 24.dp), falls back to CircularProgressIndicator to prevent
- * excessive polygon distortion in dense toolbars/chips.
+ * Displays the Material 3 Expressive circular wavy progress indicator (a ring with
+ * a darker track and a wavy moving arc) across Petal.
+ * Compact sizes (< 24.dp) use a thinner stroke (~2.dp) and shorter wavelength via
+ * [PetalCircularWavyProgressIndicator], while sizes >= 24.dp use komi-store's defaults.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -102,25 +103,18 @@ fun PetalLoadingIndicator(
         label = "PetalLoadingIndicatorColor"
     )
 
-    if (size < 24.dp) {
-        androidx.compose.material3.CircularProgressIndicator(
-            modifier = modifier.requiredSize(size),
-            strokeWidth = (size * 0.12f).coerceAtLeast(1.5.dp),
-            color = indicatorColor
-        )
-    } else {
-        androidx.compose.material3.LoadingIndicator(
-            modifier = modifier.requiredSize(size),
-            color = indicatorColor
-        )
-    }
+    PetalCircularWavyProgressIndicator(
+        modifier = modifier.requiredSize(size),
+        size = size,
+        color = indicatorColor
+    )
 }
 
 /**
  * Universal Loading Indicator for Petal Browser.
  *
- * Uses the uncontained Material 3 Expressive loader from komi-store with proper
- * UI and shape-morphing animations everywhere across the app.
+ * Uses the uncontained Material 3 Expressive wavy loader from komi-store with proper
+ * UI animations everywhere across the app.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

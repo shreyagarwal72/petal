@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.petal.browser.R
+import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.containment.PetalSheet
 import kotlinx.coroutines.launch
 
@@ -154,9 +155,10 @@ fun FirefoxAuthOverlaySheet(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        CircularProgressIndicator(
+                        PetalCircularWavyProgressIndicator(
                             color = Color(0xFFFF9400),
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(48.dp),
+                            size = 48.dp
                         )
                         Text(
                             text = "Connecting to Firefox Account...",

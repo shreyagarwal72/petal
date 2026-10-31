@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -312,7 +313,7 @@ fun PetalImageCropDialog(
                         }
                     }
                 } else {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    PetalCircularWavyProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             }
         }

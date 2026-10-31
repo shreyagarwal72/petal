@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.IconSwitch
+import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -87,9 +88,9 @@ fun PetalApkInstallSheet(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            CircularProgressIndicator(
+                            PetalCircularWavyProgressIndicator(
                                 modifier = Modifier.size(44.dp),
-                                strokeWidth = 4.dp
+                                size = 44.dp
                             )
                             Text(
                                 text = "Inspecting package...",
@@ -151,9 +152,9 @@ fun PetalApkInstallSheet(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CircularProgressIndicator(
+                        PetalCircularWavyProgressIndicator(
                             modifier = Modifier.size(36.dp),
-                            strokeWidth = 3.5.dp
+                            size = 36.dp
                         )
                         Spacer(Modifier.width(16.dp))
                         Text(
@@ -517,7 +518,7 @@ private fun InsideThisApkCard(
                     fontWeight = FontWeight.SemiBold
                 )
                 if (insights == null && isInspecting) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.5.dp)
+                    PetalCircularWavyProgressIndicator(modifier = Modifier.size(20.dp), size = 20.dp)
                 } else {
                     Icon(
                         Icons.Rounded.ChevronRight,

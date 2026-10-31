@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
@@ -212,10 +213,10 @@ fun PetalFuelTheCodeSheet(
                 when (state) {
                     "checking" -> {
                         Spacer(Modifier.height(32.dp))
-                        CircularProgressIndicator(
+                        PetalCircularWavyProgressIndicator(
                             modifier = Modifier.size(56.dp),
                             color = cs.primary,
-                            strokeWidth = 4.dp
+                            size = 56.dp
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
@@ -522,10 +523,10 @@ fun PetalFuelTheCodeSheet(
 
                     "loading" -> {
                         Spacer(Modifier.height(32.dp))
-                        CircularProgressIndicator(
+                        PetalCircularWavyProgressIndicator(
                             modifier = Modifier.size(64.dp),
                             color = cs.primary,
-                            strokeWidth = 5.dp
+                            size = 64.dp
                         )
                         Spacer(Modifier.height(20.dp))
                         Text(

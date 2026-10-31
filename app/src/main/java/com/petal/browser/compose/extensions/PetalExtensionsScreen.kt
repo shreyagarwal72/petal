@@ -71,6 +71,7 @@ import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.components.PetalLiquidButton
 import com.petal.browser.ui.components.PetalButtonVariant
 import com.petal.browser.ui.containment.PetalGroupListRow
@@ -1062,7 +1063,7 @@ private fun AddExtensionSheet(
                                     modifier = Modifier.fillMaxWidth().padding(8.dp),
                                     horizontalArrangement = Arrangement.Center
                                 ) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    PetalCircularWavyProgressIndicator(modifier = Modifier.size(24.dp), size = 24.dp)
                                 }
                             }
 

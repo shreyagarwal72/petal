@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.petal.browser.R
 import com.petal.browser.ui.components.PetalButtonVariant
+import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.components.PetalLiquidButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -257,7 +258,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     if (isProcessing) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        PetalCircularWavyProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     } else {
                         PetalLiquidButton(
                             onClick = onAutoDetect,

@@ -23,18 +23,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Expressive Circular Wavy Progress Indicator.
+ * Expressive Circular Wavy Progress Indicator (ported from komi-store).
  *
- * Implements the official Material 3 Expressive wavy circular progress indicator
- * (as seen in RvSystem-Monitor MemoryStorageProgressRow).
+ * Implements the Material 3 Expressive circular wavy progress indicator (a ring with
+ * a darker track and a wavy moving arc) used as the universal loading indicator throughout Petal.
  *
- * Provides smooth determinate progress or continuously rotating wavy ripples when indeterminate.
+ * Indeterminate when [progress] is null, determinate when a [progress] lambda is passed.
+ * For sizes >= 24.dp, matches komi-store defaults (default stroke, track, and wavelength).
+ * For small sizes under 24.dp (e.g. 14, 16, 18, 20 dp inside buttons, chips, and rows),
+ * passes a thinner stroke of about 2 dp and a shorter wavelength so the wave still reads and
+ * nothing looks clipped.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -42,47 +49,108 @@ fun PetalCircularWavyProgressIndicator(
     progress: (() -> Float)? = null,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
-    trackColor: Color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
-    size: Dp = 44.dp,
-    strokeWidth: Dp = 4.dp,
-    wavelength: Dp = 18.dp,
-    waveAmplitude: Dp = 2.5.dp
+    trackColor: Color = Color.Unspecified,
+    size: Dp = 40.dp,
+    strokeWidth: Dp? = null,
+    wavelength: Dp? = null,
+    waveAmplitude: Dp? = null
 ) {
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    val customStroke = remember(density, strokeWidth) {
-        with(density) {
-            Stroke(
-                width = strokeWidth.toPx(),
-                cap = StrokeCap.Round,
-            )
-        }
-    }
+    val isSmall = size < 24.dp
+    val density = LocalDensity.current
+    val hasCustomStroke = isSmall || strokeWidth != null || wavelength != null
 
     Box(
-        modifier = modifier.size(size),
+        modifier = modifier
+            .size(size)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "Loading"
+            },
         contentAlignment = Alignment.Center
     ) {
-        if (progress != null) {
-            // Determinate Wavy Circular Progress
-            CircularWavyProgressIndicator(
-                progress = progress,
-                color = color,
-                trackColor = trackColor,
-                stroke = customStroke,
-                trackStroke = customStroke,
-                wavelength = wavelength,
-                modifier = Modifier.fillMaxSize()
-            )
+        if (hasCustomStroke) {
+            val effStrokeWidth = strokeWidth ?: if (isSmall) 2.dp else 4.dp
+            val effWavelength = wavelength ?: if (isSmall) 10.dp else 20.dp
+            val stroke = remember(density, effStrokeWidth) {
+                with(density) {
+                    Stroke(
+                        width = effStrokeWidth.toPx(),
+                        cap = StrokeCap.Round,
+                    )
+                }
+            }
+
+            if (progress != null) {
+                if (trackColor != Color.Unspecified) {
+                    CircularWavyProgressIndicator(
+                        progress = progress,
+                        color = color,
+                        trackColor = trackColor,
+                        stroke = stroke,
+                        trackStroke = stroke,
+                        wavelength = effWavelength,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    CircularWavyProgressIndicator(
+                        progress = progress,
+                        color = color,
+                        stroke = stroke,
+                        trackStroke = stroke,
+                        wavelength = effWavelength,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            } else {
+                if (trackColor != Color.Unspecified) {
+                    CircularWavyProgressIndicator(
+                        color = color,
+                        trackColor = trackColor,
+                        stroke = stroke,
+                        trackStroke = stroke,
+                        wavelength = effWavelength,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    CircularWavyProgressIndicator(
+                        color = color,
+                        stroke = stroke,
+                        trackStroke = stroke,
+                        wavelength = effWavelength,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
         } else {
-            // Indeterminate Wavy Circular Progress
-            CircularWavyProgressIndicator(
-                color = color,
-                trackColor = trackColor,
-                stroke = customStroke,
-                trackStroke = customStroke,
-                wavelength = wavelength,
-                modifier = Modifier.fillMaxSize()
-            )
+            // For 24 dp and above: use komi-store defaults
+            if (progress != null) {
+                if (trackColor != Color.Unspecified) {
+                    CircularWavyProgressIndicator(
+                        progress = progress,
+                        color = color,
+                        trackColor = trackColor,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    CircularWavyProgressIndicator(
+                        progress = progress,
+                        color = color,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            } else {
+                if (trackColor != Color.Unspecified) {
+                    CircularWavyProgressIndicator(
+                        color = color,
+                        trackColor = trackColor,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    CircularWavyProgressIndicator(
+                        color = color,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
         }
     }
 }
