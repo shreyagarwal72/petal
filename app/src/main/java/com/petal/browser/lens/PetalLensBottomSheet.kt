@@ -88,7 +88,7 @@ fun PetalLensBottomSheet(
 
     fun openImageWithSelectedScanner(uri: Uri) {
         if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.PETAL_SCANNER) {
-            PetalImageScannerBridge.show(context as androidx.activity.ComponentActivity, uri.toString())
+            PetalImageScannerBridge.show(context, uri.toString())
         } else {
             PetalLensManager.launchLensForImageUri(context, uri)
         }
@@ -118,7 +118,7 @@ fun PetalLensBottomSheet(
         val uri = cameraTempUriString?.let { Uri.parse(it) }
         if (success && uri != null) {
             if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.PETAL_SCANNER) {
-                PetalImageScannerBridge.show(context as androidx.activity.ComponentActivity, uri.toString())
+                PetalImageScannerBridge.show(context, uri.toString())
             } else PetalLensManager.launchLensForImageUri(context, uri)
             onDismissRequest()
         }

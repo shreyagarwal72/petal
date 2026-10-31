@@ -9,6 +9,10 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Size
+import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.petal.browser.view.PetalToast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -86,6 +90,45 @@ fun PetalQrScannerScreen(
     var isCapturing by remember { mutableStateOf(false) }
     var detectedValue by remember { mutableStateOf<String?>(null) }
     val executor = remember { Executors.newSingleThreadExecutor() }
+    val coroutineScope = rememberCoroutineScope()
+    var isDecodingGallery by remember { mutableStateOf(false) }
+
+    fun processChosenImageUri(uri: android.net.Uri) {
+        isDecodingGallery = true
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                val bitmap = com.petal.browser.compose.mlkit.PetalImageScannerManager.decodeSampledBitmap(context, uri, 1600)
+                val decoded = bitmap?.let { decodePetalBitmap(it) }
+                withContext(Dispatchers.Main) {
+                    isDecodingGallery = false
+                    if (!decoded.isNullOrBlank()) {
+                        scanLocked = true
+                        vibrateSuccess()
+                        detectedValue = decoded
+                    } else {
+                        PetalToast.show(context, "No QR code or barcode found in photo", Toast.LENGTH_SHORT)
+                    }
+                }
+            } catch (_: Throwable) {
+                withContext(Dispatchers.Main) {
+                    isDecodingGallery = false
+                    PetalToast.show(context, "Unable to read selected photo", Toast.LENGTH_SHORT)
+                }
+            }
+        }
+    }
+
+    val galleryPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) processChosenImageUri(uri)
+    }
+
+    val galleryChooserFallbackLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) processChosenImageUri(uri)
+    }
 
     fun vibrateSuccess() {
         try {
@@ -310,14 +353,34 @@ fun PetalQrScannerScreen(
                     modifier = Modifier
                         .size(44.dp)
                         .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
+                        .bouncyClickable(enabled = !isDecodingGallery) {
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                            try {
+                                galleryPickerLauncher.launch(
+                                    androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            } catch (_: Throwable) {
+                                try {
+                                    galleryChooserFallbackLauncher.launch("image/*")
+                                } catch (_: Throwable) {
+                                    PetalToast.show(context, "Unable to launch photo picker", Toast.LENGTH_SHORT)
+                                }
+                            }
+                        }
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.QrCodeScanner,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(22.dp)
-                        )
+                        if (isDecodingGallery) {
+                            com.petal.browser.compose.composable.PetalContainedLoadingIndicator(
+                                size = 20.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Rounded.PhotoLibrary,
+                                contentDescription = stringResource(R.string.ui_browse_photos_files),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -647,18 +710,43 @@ fun PetalQrScannerScreen(
 }
 
 private fun decodePetalBitmap(bitmap: Bitmap): String? {
-    val scaled = Bitmap.createScaledBitmap(
-        bitmap,
-        bitmap.width.coerceAtMost(1600),
-        (bitmap.height * 1600f / bitmap.width).toInt().coerceAtLeast(1),
-        true
-    )
-    val pixels = IntArray(scaled.width * scaled.height)
-    scaled.getPixels(pixels, 0, scaled.width, 0, 0, scaled.width, scaled.height)
-    return runCatching {
-        MultiFormatReader().apply {
-            setHints(mapOf(DecodeHintType.TRY_HARDER to true))
-        }.decode(BinaryBitmap(HybridBinarizer(RGBLuminanceSource(scaled.width, scaled.height, pixels)))).text
-    }.getOrNull()
+    return try {
+        val maxDim = 1600
+        val maxSide = maxOf(bitmap.width, bitmap.height)
+        val scale = if (maxSide > maxDim) maxDim.toFloat() / maxSide else 1.0f
+        val targetW = (bitmap.width * scale).toInt().coerceAtLeast(1)
+        val targetH = (bitmap.height * scale).toInt().coerceAtLeast(1)
+        val scaled = if (scale < 1.0f) Bitmap.createScaledBitmap(bitmap, targetW, targetH, true) else bitmap
+        val pixels = IntArray(scaled.width * scaled.height)
+        scaled.getPixels(pixels, 0, scaled.width, 0, 0, scaled.width, scaled.height)
+        val source = RGBLuminanceSource(scaled.width, scaled.height, pixels)
+        val hints = mapOf(
+            DecodeHintType.TRY_HARDER to true,
+            DecodeHintType.POSSIBLE_FORMATS to listOf(
+                com.google.zxing.BarcodeFormat.QR_CODE,
+                com.google.zxing.BarcodeFormat.DATA_MATRIX,
+                com.google.zxing.BarcodeFormat.AZTEC,
+                com.google.zxing.BarcodeFormat.PDF_417,
+                com.google.zxing.BarcodeFormat.EAN_13,
+                com.google.zxing.BarcodeFormat.EAN_8,
+                com.google.zxing.BarcodeFormat.UPC_A,
+                com.google.zxing.BarcodeFormat.UPC_E,
+                com.google.zxing.BarcodeFormat.CODE_39,
+                com.google.zxing.BarcodeFormat.CODE_93,
+                com.google.zxing.BarcodeFormat.CODE_128,
+                com.google.zxing.BarcodeFormat.ITF,
+                com.google.zxing.BarcodeFormat.CODABAR
+            )
+        )
+        val result = runCatching {
+            MultiFormatReader().apply { setHints(hints) }.decode(BinaryBitmap(HybridBinarizer(source))).text
+        }.getOrNull()
+        if (scaled != bitmap) {
+            scaled.recycle()
+        }
+        result
+    } catch (_: Throwable) {
+        null
+    }
 }
 

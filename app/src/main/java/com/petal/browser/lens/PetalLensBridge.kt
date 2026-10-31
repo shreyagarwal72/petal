@@ -133,6 +133,12 @@ object PetalLensBridge {
     @JvmStatic
     fun showPetalScannerDirectly(activity: ComponentActivity) {
         activity.runOnUiThread {
+            val host = BottomSheetDialog(activity)
+            host.setOnShowListener {
+                host.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            }
+
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
@@ -158,6 +164,12 @@ object PetalLensBridge {
                     }
 
                     var showScanner by remember { mutableStateOf(true) }
+
+                    LaunchedEffect(showScanner) {
+                        if (!showScanner) {
+                            try { if (host.isShowing) host.dismiss() } catch (_: Exception) {}
+                        }
+                    }
 
                     PetalExpressiveTheme(
                         darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
@@ -200,10 +212,11 @@ object PetalLensBridge {
                 }
             }
 
-            // We need a host window — attach a transparent dialog to own the ComposeView lifecycle
-            val host = BottomSheetDialog(activity)
+            host.setOnDismissListener {
+                composeView.clearFocus()
+                (activity as? com.petal.browser.activity.BrowserActivity)?.restoreBrowserInputFocus()
+            }
             host.setContentView(composeView)
-            // The Dialog inside setContent will handle its own dismissal; dismiss host when scanner closes
             host.show()
         }
     }
