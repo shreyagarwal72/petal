@@ -54,9 +54,24 @@ class PetalApkInstallActivity : ComponentActivity() {
         }
     }
 
+    private val shizukuPermissionListener = rikka.shizuku.Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
+        if (requestCode == 1001 && grantResult == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            val current = step
+            val apk = when (current) {
+                is ApkStep.Ready -> current.apk
+                is ApkStep.Failed -> current.apk
+                else -> null
+            }
+            if (apk != null) {
+                performInstall(apk)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        runCatching { rikka.shizuku.Shizuku.addRequestPermissionResultListener(shizukuPermissionListener) }
 
         readIntent(intent)
 
@@ -83,17 +98,6 @@ class PetalApkInstallActivity : ComponentActivity() {
                         val current = step
                         if (current is ApkStep.Inspect) {
                             step = ApkStep.Ready(current.apk)
-                        }
-                    },
-                    onScanVirusTotal = {
-                        val current = step
-                        val apk = when (current) {
-                            is ApkStep.Ready -> current.apk
-                            is ApkStep.Inspect -> current.apk
-                            else -> null
-                        }
-                        if (apk != null) {
-                            scanWithVirusTotal(apk)
                         }
                     },
                     onInstall = {
@@ -129,6 +133,7 @@ class PetalApkInstallActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        runCatching { rikka.shizuku.Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener) }
         cleanCurrentFile()
         super.onDestroy()
     }
@@ -216,16 +221,44 @@ class PetalApkInstallActivity : ComponentActivity() {
     }
 
     private fun performInstall(apk: PetalApkInstallerEngine.ApkMeta) {
-        val isRoot = fastRoute?.first == "root"
-        val hasElevatedFlags = selectedOptions.isNotEmpty()
+        val isShizuku = fastRoute?.first == "shizuku" || PetalApkInstallerEngine.isShizukuAvailable() || PetalApkInstallerEngine.isShizukuRunning()
+        val isRoot = fastRoute?.first == "root" || (!isShizuku && selectedOptions.isNotEmpty())
 
-        if (isRoot && hasElevatedFlags) {
+        val fullOptions = selectedOptions + listOfNotNull(
+            customInstaller.takeIf { "installer" in selectedOptions && it.isNotBlank() }
+                ?.let { "installer=$it" }
+        )
+
+        if (isShizuku) {
+            if (!PetalApkInstallerEngine.isShizukuAvailable()) {
+                // Shizuku is running but permission not yet granted; request it
+                runCatching {
+                    rikka.shizuku.Shizuku.requestPermission(1001)
+                }.onFailure {
+                    // Fallback to system package installer if request fails
+                    val installIntent = PetalApkInstallerEngine.createSystemInstallIntent(this, apk.file)
+                    installerLauncher.launch(installIntent)
+                }
+                return
+            }
+
             step = ApkStep.Installing(apk)
             lifecycleScope.launch {
-                val fullOptions = selectedOptions + listOfNotNull(
-                    customInstaller.takeIf { "installer" in selectedOptions && it.isNotBlank() }
-                        ?.let { "installer=$it" }
-                )
+                val result = PetalApkInstallerEngine.installWithShizuku(apk.file, fullOptions, packageName)
+                if (result.isSuccess) {
+                    apk.file.delete()
+                    step = ApkStep.Done(apk)
+                } else {
+                    step = ApkStep.Failed(
+                        apk,
+                        "Shizuku install failed",
+                        result.exceptionOrNull()?.message ?: "An unknown error occurred during Shizuku installation."
+                    )
+                }
+            }
+        } else if (isRoot) {
+            step = ApkStep.Installing(apk)
+            lifecycleScope.launch {
                 val result = PetalApkInstallerEngine.installWithRoot(apk.file, fullOptions, packageName)
                 if (result.isSuccess) {
                     apk.file.delete()
@@ -242,23 +275,6 @@ class PetalApkInstallActivity : ComponentActivity() {
             // Standard system PackageInstaller route via FileProvider
             val installIntent = PetalApkInstallerEngine.createSystemInstallIntent(this, apk.file)
             installerLauncher.launch(installIntent)
-        }
-    }
-
-    private fun scanWithVirusTotal(apk: PetalApkInstallerEngine.ApkMeta) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val hash = PetalApkInstallerEngine.sha256(apk.file)
-            if (!hash.isNullOrBlank()) {
-                val vtUrl = "https://www.virustotal.com/gui/file/$hash"
-                withContext(Dispatchers.Main) {
-                    val browserIntent = Intent(this@PetalApkInstallActivity, BrowserActivity::class.java).apply {
-                        action = Intent.ACTION_VIEW
-                        data = Uri.parse(vtUrl)
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    runCatching { startActivity(browserIntent) }
-                }
-            }
         }
     }
 }

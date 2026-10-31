@@ -62,3 +62,10 @@
 # ---- PDFBox ---------------------------------------------------------------------------------
 # JPEG 2000 support is an optional dependency that is not bundled.
 -dontwarn com.gemalto.jp2.**
+
+# ---- Shizuku --------------------------------------------------------------------------------
+-keep class rikka.shizuku.** { *; }
+-keep interface rikka.shizuku.** { *; }
+-keep class moe.shizuku.** { *; }
+-dontwarn rikka.shizuku.**
+

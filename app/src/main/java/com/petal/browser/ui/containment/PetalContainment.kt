@@ -1011,6 +1011,8 @@ fun PetalSheet(
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ownsGlassBackdrop: Boolean = true,
+    containerColor: Color? = null,
+    scrimColor: Color? = null,
     dragHandle: (@Composable () -> Unit)? = {
         Box(Modifier.padding(vertical = 12.dp).size(width = 36.dp, height = 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)))
     },
@@ -1027,21 +1029,26 @@ fun PetalSheet(
     val ownWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val activeWallpaper = if (isGlass && ownsGlassBackdrop) ownWallpaper else com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
 
+    val resolvedContainerColor = containerColor ?: if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow
+    val resolvedScrimColor = scrimColor ?: if (isGlass) Color.Black.copy(alpha = 0.14f) else BottomSheetDefaults.ScrimColor
+
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         sheetState = sheetState,
         shape = sheetShape,
-        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
-        scrimColor = if (isGlass) Color.Black.copy(alpha = 0.14f) else BottomSheetDefaults.ScrimColor,
+        containerColor = resolvedContainerColor,
+        scrimColor = resolvedScrimColor,
         dragHandle = null,
         contentWindowInsets = { androidx.compose.foundation.layout.WindowInsets(0) },
     ) {
-        // contentWindowInsets is 0 (the glass must reach the screen edges), so a sheet that grows
-        // up to the top would put its header under the status bar. Measure how far the sheet
-        // overlaps the status bar and pad by exactly that much.
         val density = androidx.compose.ui.platform.LocalDensity.current
-        val statusTopPx = WindowInsets.statusBars.getTop(density)
+        val view = androidx.compose.ui.platform.LocalView.current
+        val statusTopPx = androidx.compose.runtime.remember(view) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(view)
+                ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())?.top
+                ?: WindowInsets.statusBars.getTop(density)
+        }
         var statusOverlapPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
         CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides activeWallpaper) {
             Box(
@@ -1052,7 +1059,7 @@ fun PetalSheet(
                         statusOverlapPx = (statusTopPx - top).toInt().coerceIn(0, statusTopPx)
                     }
             ) {
-                if (isGlass) {
+                if (isGlass && containerColor == null) {
                     if (ownsGlassBackdrop) PetalSheetGlassBackdrop(ownWallpaper, Modifier.matchParentSize())
                     val ready = activeWallpaper?.ready == true
                     Box(

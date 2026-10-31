@@ -221,28 +221,86 @@ object PetalApkInstallerEngine {
 
     /** Checks whether Shizuku is running and authorized via reflection without hard dependencies. */
     fun isShizukuAvailable(): Boolean = runCatching {
+        if (!isShizukuRunning()) return false
+        val clazz = try {
+            Class.forName("rikka.shizuku.Shizuku")
+        } catch (e: ClassNotFoundException) {
+            Class.forName("moe.shizuku.api.Shizuku")
+        }
+        val checkMethod = clazz.getMethod("checkSelfPermission")
+        val perm = checkMethod.invoke(null) as? Int ?: -1
+        perm == PackageManager.PERMISSION_GRANTED
+    }.getOrDefault(false)
+
+    /** Checks whether Shizuku service / binder is alive and reachable. */
+    fun isShizukuRunning(): Boolean = runCatching {
         val clazz = try {
             Class.forName("rikka.shizuku.Shizuku")
         } catch (e: ClassNotFoundException) {
             Class.forName("moe.shizuku.api.Shizuku")
         }
         val pingMethod = clazz.getMethod("pingBinder")
-        val isPing = pingMethod.invoke(null) as? Boolean ?: false
-        if (!isPing) return false
-        val checkMethod = clazz.getMethod("checkSelfPermission")
-        val perm = checkMethod.invoke(null) as? Int ?: -1
-        perm == PackageManager.PERMISSION_GRANTED
+        pingMethod.invoke(null) as? Boolean ?: false
     }.getOrDefault(false)
 
     /** Determines the preferred fast route available on the device. */
     suspend fun detectFastRoute(): Pair<String, String>? = withContext(Dispatchers.IO) {
-        if (isRootAvailable()) {
-            return@withContext "root" to "Installs with Root, no prompts and no 24-hour wait"
+        if (isShizukuAvailable() || isShizukuRunning()) {
+            return@withContext "shizuku" to "Direct install via Shizuku without prompts"
         }
-        if (isShizukuAvailable()) {
-            return@withContext "shizuku" to "Installs through Shizuku, no prompts and no 24-hour wait"
+        if (isRootAvailable()) {
+            return@withContext "root" to "Direct install via Root without prompts"
         }
         null
+    }
+
+    /** Performs installation via Shizuku shell streaming directly into `pm install`. */
+    suspend fun installWithShizuku(
+        file: File,
+        options: Collection<String>,
+        ownerPackage: String = "com.petal.browser"
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val args = buildInstallArgs(options, Build.VERSION.SDK_INT, ownerPackage)
+            val cmd = "pm install -r $args -S ${file.length()}"
+            val clazz = try {
+                Class.forName("rikka.shizuku.Shizuku")
+            } catch (e: ClassNotFoundException) {
+                Class.forName("moe.shizuku.api.Shizuku")
+            }
+            val newProcessMethod = clazz.getMethod(
+                "newProcess",
+                Array<String>::class.java,
+                Array<String>::class.java,
+                String::class.java
+            )
+            val process = newProcessMethod.invoke(null, arrayOf("sh", "-c", cmd), null, null) as java.lang.Process
+
+            val outExecutor = java.util.concurrent.Executors.newFixedThreadPool(2)
+            val stdoutFuture = outExecutor.submit(java.util.concurrent.Callable {
+                process.inputStream.bufferedReader().readText()
+            })
+            val stderrFuture = outExecutor.submit(java.util.concurrent.Callable {
+                process.errorStream.bufferedReader().readText()
+            })
+
+            file.inputStream().use { input ->
+                process.outputStream.use { output ->
+                    input.copyTo(output)
+                    output.flush()
+                }
+            }
+
+            val exitCode = process.waitFor()
+            val stdout = runCatching { stdoutFuture.get(5, TimeUnit.SECONDS) }.getOrDefault("")
+            val stderr = runCatching { stderrFuture.get(5, TimeUnit.SECONDS) }.getOrDefault("")
+            outExecutor.shutdown()
+
+            if (exitCode != 0 || "Failure" in stdout || "Failure" in stderr) {
+                val detail = (stdout.trim() + " " + stderr.trim()).trim()
+                throw IllegalStateException(if (detail.isNotEmpty()) detail else "Shizuku install failed with exit code $exitCode")
+            }
+        }
     }
 
     /** Performs installation via elevated root shell streaming directly into `pm install`. */

@@ -3,9 +3,9 @@ package com.petal.browser.apk
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -57,7 +58,6 @@ fun PetalApkInstallSheet(
     onCustomInstallerChange: (String) -> Unit,
     onOpenInspect: () -> Unit,
     onCloseInspect: () -> Unit,
-    onScanVirusTotal: () -> Unit,
     onInstall: () -> Unit,
     onOpenInstalledApp: (String) -> Unit,
     onDismiss: () -> Unit
@@ -67,174 +67,224 @@ fun PetalApkInstallSheet(
 
     PetalSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        scrimColor = Color.Black.copy(alpha = 0.55f),
+        ownsGlassBackdrop = false
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 20.dp)
-        ) {
-            when (step) {
-                ApkStep.Reading -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            PetalCircularWavyProgressIndicator(
-                                modifier = Modifier.size(44.dp),
-                                size = 44.dp
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 20.dp)
+            ) {
+                AnimatedContent(
+                    targetState = step,
+                    transitionSpec = {
+                        (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                scaleIn(initialScale = 0.95f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)))
+                            .togetherWith(
+                                fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                        scaleOut(targetScale = 0.95f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                             )
-                            Text(
-                                text = "Inspecting package...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                is ApkStep.Ready -> {
-                    ReadyContent(
-                        apk = step.apk,
-                        insights = insights,
-                        isInspecting = isInspecting,
-                        fastRoute = fastRoute,
-                        selectedOptions = selectedOptions,
-                        customInstaller = customInstaller,
-                        onOptionToggle = onOptionToggle,
-                        onCustomInstallerChange = onCustomInstallerChange,
-                        onOpenInspect = onOpenInspect,
-                        onScanVirusTotal = onScanVirusTotal,
-                        onInstall = onInstall,
-                        onDismiss = onDismiss
-                    )
-                }
-
-                is ApkStep.Inspect -> {
-                    Header(step.apk)
-                    if (insights != null) {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f, fill = false)
-                                .padding(top = 8.dp)
-                                .verticalScroll(rememberScrollState())
-                        ) {
-                            InspectPage(insights)
-                        }
-                    }
-                    TextButton(
-                        onClick = {
-                            PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
-                            onCloseInspect()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                    ) {
-                        Text("Back to install", style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-
-                is ApkStep.Installing -> {
-                    Header(step.apk)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 36.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        PetalCircularWavyProgressIndicator(
-                            modifier = Modifier.size(36.dp),
-                            size = 36.dp
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        Text(
-                            text = "Installing ${step.apk.label}...",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
-
-                is ApkStep.Done -> {
-                    Header(step.apk)
-                    NoteCard(
-                        icon = Icons.Rounded.CheckCircle,
-                        title = "Installed",
-                        body = "${step.apk.label} is ready to launch.",
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = onDismiss,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
-                            Text("Done")
-                        }
-                        Button(
-                            onClick = { onOpenInstalledApp(step.apk.packageName) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
-                            Icon(Icons.Rounded.Launch, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Open", maxLines = 1)
-                        }
-                    }
-                }
-
-                is ApkStep.Failed -> {
-                    if (step.apk != null) Header(step.apk)
-                    NoteCard(
-                        icon = Icons.Rounded.ErrorOutline,
-                        title = step.title,
-                        body = step.body,
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = onDismiss,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
-                            Text("Dismiss")
-                        }
-                        if (step.apk != null) {
-                            Button(
-                                onClick = onInstall,
+                    },
+                    label = "ApkStepTransition"
+                ) { currentStep ->
+                    when (currentStep) {
+                        ApkStep.Reading -> {
+                            Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp),
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    PetalCircularWavyProgressIndicator(
+                                        modifier = Modifier.size(44.dp),
+                                        size = 44.dp
+                                    )
+                                    Text(
+                                        text = "Inspecting package...",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        is ApkStep.Ready -> {
+                            ReadyContent(
+                                apk = currentStep.apk,
+                                insights = insights,
+                                isInspecting = isInspecting,
+                                fastRoute = fastRoute,
+                                selectedOptions = selectedOptions,
+                                customInstaller = customInstaller,
+                                onOptionToggle = onOptionToggle,
+                                onCustomInstallerChange = onCustomInstallerChange,
+                                onOpenInspect = onOpenInspect,
+                                onInstall = onInstall,
+                                onDismiss = onDismiss
+                            )
+                        }
+
+                        is ApkStep.Inspect -> {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                        onCloseInspect()
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Rounded.ArrowBack,
+                                        contentDescription = "Back",
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "Inside this APK",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Header(currentStep.apk)
+                            if (insights != null) {
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f, fill = false)
+                                        .padding(vertical = 4.dp)
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+                                    InspectPage(insights)
+                                }
+                            }
+                            Button(
+                                onClick = {
+                                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                    onCloseInspect()
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .padding(top = 12.dp),
                                 shape = RoundedCornerShape(24.dp)
                             ) {
-                                Text("Try again")
+                                Text("Back to install", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+
+                        is ApkStep.Installing -> {
+                            Header(currentStep.apk)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 36.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                PetalCircularWavyProgressIndicator(
+                                    modifier = Modifier.size(54.dp),
+                                    size = 54.dp
+                                )
+                                Text(
+                                    text = "Installing ${currentStep.apk.label}...",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (fastRoute?.first == "shizuku") "Direct installation in progress via Shizuku..." else "Direct installation in progress...",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        is ApkStep.Done -> {
+                            Header(currentStep.apk)
+                            NoteCard(
+                                icon = Icons.Rounded.CheckCircle,
+                                title = "Installed",
+                                body = "${currentStep.apk.label} is ready to launch.",
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 20.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = onDismiss,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(48.dp),
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Text("Done")
+                                }
+                                Button(
+                                    onClick = { onOpenInstalledApp(currentStep.apk.packageName) },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(48.dp),
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Launch, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Open", maxLines = 1)
+                                }
+                            }
+                        }
+
+                        is ApkStep.Failed -> {
+                            if (currentStep.apk != null) Header(currentStep.apk)
+                            NoteCard(
+                                icon = Icons.Rounded.ErrorOutline,
+                                title = currentStep.title,
+                                body = currentStep.body,
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 20.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = onDismiss,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(48.dp),
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Text("Dismiss")
+                                }
+                                if (currentStep.apk != null) {
+                                    Button(
+                                        onClick = onInstall,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(48.dp),
+                                        shape = RoundedCornerShape(24.dp)
+                                    ) {
+                                        Text("Try again")
+                                    }
+                                }
                             }
                         }
                     }
@@ -255,7 +305,6 @@ private fun ColumnScope.ReadyContent(
     onOptionToggle: (String, Boolean) -> Unit,
     onCustomInstallerChange: (String) -> Unit,
     onOpenInspect: () -> Unit,
-    onScanVirusTotal: () -> Unit,
     onInstall: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -339,27 +388,11 @@ private fun ColumnScope.ReadyContent(
         )
     }
 
-    // VirusTotal Scan Pill Button
-    FilledTonalButton(
-        onClick = {
-            PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.8f)
-            onScanVirusTotal()
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Icon(Icons.Rounded.Security, contentDescription = null, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        Text("Scan with VirusTotal", style = MaterialTheme.typography.labelLarge)
-    }
-
     // Action buttons: Cancel / Install
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
+            .padding(top = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         OutlinedButton(
@@ -438,6 +471,7 @@ private fun Header(apk: PetalApkInstallerEngine.ApkMeta) {
                 text = apk.label,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
+                color = cs.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
