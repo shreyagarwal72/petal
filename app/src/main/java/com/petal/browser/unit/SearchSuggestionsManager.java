@@ -121,6 +121,10 @@ public class SearchSuggestionsManager {
             case 7:
                 fetchEcosiaSuggestions(query, callback);
                 break;
+            case 8:
+                // Torrays search suggestions: empty for now or fallback
+                if (callback != null) callback.onSuggestionsFetched(new ArrayList<>());
+                break;
             case 0:
             default:
                 fetchGoogleSuggestions(query, callback);

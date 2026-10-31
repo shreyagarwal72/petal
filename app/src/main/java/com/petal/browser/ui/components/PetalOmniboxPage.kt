@@ -588,6 +588,7 @@ fun PetalOmniboxPage(
                                                     "searxng", "searx" -> Icons.Rounded.ManageSearch
                                                     "qwant" -> Icons.Rounded.TravelExplore
                                                     "ecosia" -> Icons.Rounded.Eco
+                                                    "torrays" -> Icons.Rounded.CloudDownload
                                                     else -> Icons.Rounded.Search
                                                 }
                                                 Icon(

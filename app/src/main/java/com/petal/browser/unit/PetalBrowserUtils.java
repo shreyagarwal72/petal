@@ -205,6 +205,7 @@ public class PetalBrowserUtils {
                     case 5: return "https://searx.space/search?q=" + encodedQuery;
                     case 6: return "https://www.qwant.com/?q=" + encodedQuery;
                     case 7: return "https://www.ecosia.org/search?q=" + encodedQuery;
+                    case 8: return "https://torrays.vercel.app/?q=" + encodedQuery;
                     default: return "https://www.google.com/search?client=firefox-b-m&q=" + encodedQuery;
                 }
             }

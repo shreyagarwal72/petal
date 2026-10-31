@@ -53,6 +53,23 @@ val availableSearchEngines = listOf(
     SearchEngineItem(7, "Ecosia", "Search engine that supports climate action", "https://www.ecosia.org/search?q=%s")
 )
 
+val torraysSearchEngine = SearchEngineItem(
+    8,
+    "Torrays",
+    "Open-source, ad-free torrent search index",
+    "https://torrays.vercel.app/?q=%s"
+)
+
+fun getStandardSearchEngines(context: Context): List<SearchEngineItem> {
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val isTorraysEnabled = sp.getBoolean("petal_builtin_torrays", true)
+    return if (isTorraysEnabled) {
+        availableSearchEngines + torraysSearchEngine
+    } else {
+        availableSearchEngines
+    }
+}
+
 private const val CUSTOM_ENGINES_KEY = "sp_custom_search_engines"
 private const val CUSTOM_ID_START = 1000
 
@@ -93,7 +110,7 @@ private fun saveCustomSearchEngines(context: Context, engines: List<SearchEngine
 }
 
 fun allSearchEngines(context: Context): List<SearchEngineItem> =
-    availableSearchEngines + getCustomSearchEngines(context)
+    getStandardSearchEngines(context) + getCustomSearchEngines(context)
 
 object PetalSearchEngineBridge {
     @JvmStatic
@@ -218,7 +235,7 @@ fun PetalSearchEngineSheetContent(
         )
     }
 
-    val engines = availableSearchEngines + customEngines
+    val engines = remember(context, customEngines) { getStandardSearchEngines(context) + customEngines }
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
@@ -243,11 +260,23 @@ fun PetalSearchEngineSheetContent(
             PetalGroup(rowCount = engines.size, modifier = Modifier.fillMaxWidth()) { index, position ->
                 val engine = engines[index]
                 val isSelected = engine.index == selectedIndex
+                val badgeIcon = when (engine.name.lowercase()) {
+                    "google" -> Icons.Rounded.Search
+                    "duckduckgo" -> Icons.Rounded.Shield
+                    "startpage" -> Icons.Rounded.VpnKey
+                    "brave search", "brave" -> Icons.Rounded.Security
+                    "bing" -> Icons.Rounded.Search
+                    "searxng", "searx" -> Icons.Rounded.ManageSearch
+                    "qwant" -> Icons.Rounded.TravelExplore
+                    "ecosia" -> Icons.Rounded.Eco
+                    "torrays" -> Icons.Rounded.CloudDownload
+                    else -> if (engine.custom) Icons.Rounded.Tune else Icons.Rounded.Search
+                }
                 PetalGroupListRow(
                     position = position,
                     selected = isSelected,
                     onClick = { selectedIndex = engine.index },
-                    leading = { PetalGroupIconBadge(if (engine.custom) Icons.Rounded.Tune else Icons.Rounded.Search, size = 40.dp, iconSize = 20.dp) },
+                    leading = { PetalGroupIconBadge(badgeIcon, size = 40.dp, iconSize = 20.dp) },
                     content = {
                         Text(engine.name, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                         Text(engine.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -156,6 +156,14 @@ object PetalBuiltInExtensionManager {
             label       = "Petal Feeds & News",
             description = "Brave-style privacy RSS news aggregator with custom sources and rich thumbnails.",
             prefKey     = "petal_builtin_brave_news"
+        ),
+        BuiltInSpec(
+            assetPath   = "",
+            extensionId = "petal-torrays@petalbrowser.app",
+            label       = "Torrays",
+            description = "Open-source, ad-free torrent and media search index with instant magnet links.",
+            prefKey     = "petal_builtin_torrays",
+            defaultOn   = true
         )
     )
 
@@ -223,7 +231,7 @@ object PetalBuiltInExtensionManager {
         enabled: Boolean
     ) {
         // Special case for Mozilla WebCompat: it does not exist as an APK asset; ignore ensureBuiltIn error
-        if (spec.extensionId == "webcompat@mozilla.org") {
+        if (spec.extensionId == "webcompat@mozilla.org" || spec.assetPath.isEmpty()) {
             return
         }
 
@@ -262,6 +270,9 @@ object PetalBuiltInExtensionManager {
         sp.edit().putBoolean(prefKey, enabled).apply()
         if (prefKey == "petal_builtin_dark_webpages") {
             sp.edit().putBoolean("sp_force_dark_mode", enabled).apply()
+        }
+        if (spec.assetPath.isEmpty()) {
+            return
         }
         val runtime = try { PetalGeckoRuntime.getOrCreate(context.applicationContext) }
                       catch (_: Throwable) { return }
@@ -315,5 +326,19 @@ object PetalBuiltInExtensionManager {
     fun setDarkWebpagesContrast(context: Context, contrast: Int) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         sp.edit().putInt(PREF_DARK_CONTRAST, contrast).apply()
+    }
+
+    const val PREF_TORRAYS = "petal_builtin_torrays"
+
+    @JvmStatic
+    fun isTorraysEnabled(context: Context): Boolean {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        return sp.getBoolean(PREF_TORRAYS, true)
+    }
+
+    @JvmStatic
+    fun setTorraysEnabled(context: Context, enabled: Boolean) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        sp.edit().putBoolean(PREF_TORRAYS, enabled).apply()
     }
 }

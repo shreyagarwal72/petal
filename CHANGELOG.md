@@ -58,7 +58,12 @@
 
 ### v4.4 — 🌸 Material 3 Expressive 3-Dot Menus, Feature Explainers & Smooth Performance
 
-> *"Major UI & UX milestone introducing Material 3 Expressive 3-dot menus with bouncy rotation physics, animated live feature explainer dialogs, Android 14 predictive back with blur across viewers, full Petal Autofill redesign, and zero-allocation anti-jank rendering."*
+> *"Major UI & UX milestone introducing Material 3 Expressive 3-dot menus with bouncy rotation physics, animated live feature explainer dialogs, Android 14 predictive back with blur across viewers, full Petal Autofill redesign, Torrays torrent index integration, and zero-allocation anti-jank rendering."*
+
+#### 🔍 Torrays Torrent Search & Extension Integration
+- **Torrays Integration**: Integrated [Torrays](https://torrays.vercel.app/) as an open-source, ad-free torrent search index.
+- **Search Engine & Omnibox**: Added Torrays as a quick search provider in Omnibox and default search engines with dedicated icon branding.
+- **Extensions Controls & Credits**: Added a toggle switch in Petal Extensions to dynamically enable/disable Torrays across search engines, plus an interactive information and credits dialog linking to the official site and repository.
 
 #### 🎨 Material 3 Expressive 3-Dot Menus & Bouncy Motion
 - **Unified Expressive Menus (`PetalPopupMenu`)**: Redesigned all secondary and item action menus app-wide (Bookmarks, Downloads, Extensions, File Picker, PDF Viewer, Tab Switcher, and Custom Tabs) with:

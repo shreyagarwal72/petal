@@ -487,6 +487,7 @@ private fun BuiltInExtensionsList(
                             "petal_builtin_google_search_fixer" -> Icons.Filled.Search
                             "petal_builtin_media_grabber" -> Icons.Filled.VideoLibrary
                             "petal_builtin_brave_news" -> Icons.Rounded.Newspaper
+                            "petal_builtin_torrays" -> Icons.Filled.CloudDownload
                             else -> Icons.Filled.Extension
                         })
                 },
@@ -901,6 +902,11 @@ private fun BuiltInExtensionSettingsDialog(
                 onDismissRequest = onDismiss
             )
         }
+        "petal_builtin_torrays" -> {
+            TorraysExtensionDialog(
+                onDismiss = onDismiss
+            )
+        }
         else -> {
             com.petal.browser.ui.containment.PetalMaterialAlertDialog(
                 onDismissRequest = onDismiss,
@@ -920,6 +926,202 @@ private fun BuiltInExtensionSettingsDialog(
                 }
             )
         }
+    }
+}
+
+@Composable
+private fun TorraysExtensionDialog(
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    var isEnabled by remember {
+        mutableStateOf(sp.getBoolean(PetalBuiltInExtensionManager.PREF_TORRAYS, true))
+    }
+
+    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.CloudDownload, contentDescription = null) },
+        title = { Text("Torrays") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "A clean, ad-free torrent and media search index aggregating verified releases from YTS, 1377x, and Nyaa.si with rich media metadata from TMDB and AniList.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Search engine toggle row
+                com.petal.browser.ui.containment.PetalGroup(rowCount = 1, modifier = Modifier.fillMaxWidth()) { _, position ->
+                    PetalGroupListRow(
+                        position = position,
+                        onClick = {
+                            val next = !isEnabled
+                            isEnabled = next
+                            PetalBuiltInExtensionManager.setTorraysEnabled(context, next)
+                        },
+                        leading = {
+                            PetalGroupIconBadge(
+                                icon = Icons.Rounded.Search,
+                                size = 40.dp,
+                                iconSize = 20.dp
+                            )
+                        },
+                        content = {
+                            Text(
+                                text = "Show in Search Engines",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Show Torrays in Omnibox & search engine list",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        trailing = {
+                            IconSwitch(
+                                checked = isEnabled,
+                                icon = Icons.Rounded.Check,
+                                onCheckedChange = { checked ->
+                                    isEnabled = checked
+                                    PetalBuiltInExtensionManager.setTorraysEnabled(context, checked)
+                                }
+                            )
+                        }
+                    )
+                }
+
+                Text(
+                    text = "Credits & Official Links",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                // Links group
+                com.petal.browser.ui.containment.PetalGroup(rowCount = 2, modifier = Modifier.fillMaxWidth()) { index, position ->
+                    when (index) {
+                        0 -> {
+                            PetalGroupListRow(
+                                position = position,
+                                onClick = {
+                                    openTorraysUrl(context, "https://torrays.vercel.app/")
+                                    onDismiss()
+                                },
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Language,
+                                        size = 40.dp,
+                                        iconSize = 20.dp
+                                    )
+                                },
+                                content = {
+                                    Text(
+                                        text = "Official Website",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "https://torrays.vercel.app/",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                },
+                                trailing = {
+                                    Icon(
+                                        Icons.Rounded.OpenInNew,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            )
+                        }
+                        1 -> {
+                            PetalGroupListRow(
+                                position = position,
+                                onClick = {
+                                    openTorraysUrl(context, "https://github.com/Abhinav-Abster/torrays")
+                                    onDismiss()
+                                },
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Code,
+                                        size = 40.dp,
+                                        iconSize = 20.dp
+                                    )
+                                },
+                                content = {
+                                    Text(
+                                        text = "GitHub Repository",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "Abhinav-Abster / torrays",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailing = {
+                                    Icon(
+                                        Icons.Rounded.OpenInNew,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.ui_done))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                openTorraysUrl(context, "https://torrays.vercel.app/")
+                onDismiss()
+            }) {
+                Text("Visit Site")
+            }
+        }
+    )
+}
+
+private fun openTorraysUrl(context: Context, url: String) {
+    try {
+        val activity = context as? com.petal.browser.activity.BrowserActivity
+        if (activity != null) {
+            val ctrl = activity.currentAlbumController
+            if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                ctrl.loadUrl(url)
+                activity.showAlbum(ctrl, url)
+            } else {
+                activity.addAlbum(null, url, true)
+            }
+        } else {
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }
+    } catch (_: Exception) {
+        try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (_: Exception) {}
     }
 }
 

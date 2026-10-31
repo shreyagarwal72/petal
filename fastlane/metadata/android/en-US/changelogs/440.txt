@@ -1,4 +1,5 @@
 Petal Browser v4.4 Release:
+- Torrays Torrent Search Integration: Added Torrays as an ad-free torrent search engine with Omnibox quick search and an Extensions toggle with official site credits.
 - Material 3 Expressive 3-Dot Menus: Redesigned all 3-dot overflow and item action menus across Bookmarks, Downloads, Extensions, Files, PDF Viewer, Tabs, and Custom Tabs with tonal elevation, squircle icon badges, and bouncy spring rotation animations.
 - Interactive Feature Explainers: Added Material 3 Expressive info icons with animated interactive preview dialogs for complex settings (Apple Duo 3D fold, Address Bar ergonomics, Trie AdBlock Shield, Morphing Shapes, Motion Blur).
 - Android 14 Predictive Back Navigation: Full predictive back gesture adoption with real-time scaling and background blur effects across all viewer screens and secure vault.
