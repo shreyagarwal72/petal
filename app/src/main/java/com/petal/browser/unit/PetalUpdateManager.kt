@@ -38,8 +38,21 @@ object PetalUpdateManager {
 
     sealed class UpdateDownloadState {
         object Idle : UpdateDownloadState()
-        data class Downloading(val progress: Int, val version: String, val downloadId: Long) : UpdateDownloadState()
-        data class Paused(val progress: Int, val version: String, val downloadId: Long) : UpdateDownloadState()
+        data class Downloading(
+            val progress: Int,
+            val version: String,
+            val downloadId: Long,
+            val downloadedBytes: Long = 0L,
+            val totalBytes: Long = 0L,
+            val bytesPerSecond: Long = 0L
+        ) : UpdateDownloadState()
+        data class Paused(
+            val progress: Int,
+            val version: String,
+            val downloadId: Long,
+            val downloadedBytes: Long = 0L,
+            val totalBytes: Long = 0L
+        ) : UpdateDownloadState()
         data class Completed(val version: String, val apkFile: File) : UpdateDownloadState()
         data class Failed(val error: String, val version: String) : UpdateDownloadState()
     }
@@ -135,7 +148,14 @@ object PetalUpdateManager {
                 if (download.id == targetId) {
                     val progress = download.progress.coerceIn(0, 100)
                     val version = sp.getString(PREF_KEY_UPDATE_VERSION, "") ?: ""
-                    _downloadState.value = UpdateDownloadState.Downloading(progress, version, download.id.toLong())
+                    _downloadState.value = UpdateDownloadState.Downloading(
+                        progress = progress,
+                        version = version,
+                        downloadId = download.id.toLong(),
+                        downloadedBytes = download.downloaded,
+                        totalBytes = download.total,
+                        bytesPerSecond = downloadedBytesPerSecond
+                    )
                 }
             }
 
@@ -143,7 +163,13 @@ object PetalUpdateManager {
                 if (download.id == targetId) {
                     val progress = download.progress.coerceIn(0, 100)
                     val version = sp.getString(PREF_KEY_UPDATE_VERSION, "") ?: ""
-                    _downloadState.value = UpdateDownloadState.Paused(progress, version, download.id.toLong())
+                    _downloadState.value = UpdateDownloadState.Paused(
+                        progress = progress,
+                        version = version,
+                        downloadId = download.id.toLong(),
+                        downloadedBytes = download.downloaded,
+                        totalBytes = download.total
+                    )
                 }
             }
 
@@ -151,7 +177,14 @@ object PetalUpdateManager {
                 if (download.id == targetId) {
                     val progress = download.progress.coerceIn(0, 100)
                     val version = sp.getString(PREF_KEY_UPDATE_VERSION, "") ?: ""
-                    _downloadState.value = UpdateDownloadState.Downloading(progress, version, download.id.toLong())
+                    _downloadState.value = UpdateDownloadState.Downloading(
+                        progress = progress,
+                        version = version,
+                        downloadId = download.id.toLong(),
+                        downloadedBytes = download.downloaded,
+                        totalBytes = download.total,
+                        bytesPerSecond = 0L
+                    )
                 }
             }
 

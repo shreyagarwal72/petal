@@ -100,11 +100,20 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
                     apkFile
                 )
 
-                val installIntent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(apkUri, "application/vnd.android.package-archive")
+                // Launch Petal's native Material 3 Expressive APK Installer
+                val installIntent = Intent(context, com.petal.browser.apk.PetalApkInstallActivity::class.java).apply {
+                    data = apkUri
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                context.startActivity(installIntent)
+                try {
+                    context.startActivity(installIntent)
+                } catch (_: Exception) {
+                    val fallbackIntent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(apkUri, "application/vnd.android.package-archive")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(fallbackIntent)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error installing APK", e)
                 PetalToast.show(context, "Failed to launch installer: ${e.message}")

@@ -6,6 +6,8 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -14,9 +16,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -26,6 +32,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.preference.PreferenceManager
 import com.petal.browser.compose.composable.ContainedLoadingIndicator
+import com.petal.browser.compose.downloads.formatBytes
+import com.petal.browser.compose.downloads.formatSpeed
 import com.petal.browser.compose.settings.viewmodel.MiscSettingsViewModel
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.logger.PetalAppLogger
@@ -57,6 +65,7 @@ fun UpdaterSettingsScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun UpdaterSettingsScreenContent(
     checkUpdateOnLaunch: Boolean,
@@ -193,104 +202,203 @@ fun UpdaterSettingsScreenContent(
                             when (val state = activeUpdateState) {
                                 is PetalUpdateManager.UpdateDownloadState.Downloading -> {
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        shape = RoundedCornerShape(18.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Column(
-                                            modifier = Modifier.padding(12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            modifier = Modifier.padding(14.dp),
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
                                         ) {
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(8.dp)
+                                                            .clip(CircleShape)
+                                                            .background(MaterialTheme.colorScheme.primary)
+                                                    )
+                                                    Text(
+                                                        text = "Downloading v${state.version}",
+                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
                                                 Text(
-                                                    text = "Downloading Update ${state.version} (${state.progress}%)",
-                                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                    text = "${state.progress}%",
+                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                                    color = MaterialTheme.colorScheme.primary
                                                 )
-                                                TextButton(onClick = { PetalUpdateManager.pauseUpdateDownload(context) }) {
-                                                    Text("Pause", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                            }
+                                            LinearWavyProgressIndicator(
+                                                progress = { (state.progress / 100f).coerceIn(0f, 1f) },
+                                                modifier = Modifier.fillMaxWidth().height(8.dp),
+                                                color = MaterialTheme.colorScheme.primary,
+                                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                                            )
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                val downloadedStr = formatBytes(state.downloadedBytes)
+                                                val totalStr = if (state.totalBytes > 0) formatBytes(state.totalBytes) else "..."
+                                                Text(
+                                                    text = "$downloadedStr / $totalStr",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Text(
+                                                    text = if (state.bytesPerSecond > 0) formatSpeed(state.bytesPerSecond) else "Connecting...",
+                                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.End
+                                            ) {
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                                        PetalUpdateManager.pauseUpdateDownload(context)
+                                                    },
+                                                    shape = RoundedCornerShape(12.dp)
+                                                ) {
+                                                    Icon(Icons.Rounded.PauseCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                    Spacer(Modifier.width(6.dp))
+                                                    Text("Pause")
                                                 }
                                             }
-                                            LinearProgressIndicator(
-                                                progress = { state.progress / 100f },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                color = MaterialTheme.colorScheme.primary,
-                                                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
-                                            )
                                         }
                                     }
                                 }
                                 is PetalUpdateManager.UpdateDownloadState.Paused -> {
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = RoundedCornerShape(18.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Column(
-                                            modifier = Modifier.padding(12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            modifier = Modifier.padding(14.dp),
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
                                         ) {
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Text(
-                                                    text = "Update Paused (${state.progress}%)",
-                                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Row {
-                                                    TextButton(onClick = { PetalUpdateManager.resumeUpdateDownload(context) }) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(8.dp)
+                                                            .clip(CircleShape)
+                                                            .background(MaterialTheme.colorScheme.tertiary)
+                                                    )
+                                                    Text(
+                                                        text = "Update Paused (${state.progress}%)",
+                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                    Button(
+                                                        onClick = {
+                                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                                            PetalUpdateManager.resumeUpdateDownload(context)
+                                                        },
+                                                        shape = RoundedCornerShape(12.dp)
+                                                    ) {
+                                                        Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                        Spacer(Modifier.width(4.dp))
                                                         Text("Resume")
                                                     }
-                                                    TextButton(onClick = { PetalUpdateManager.cancelUpdateDownload(context) }) {
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                                            PetalUpdateManager.cancelUpdateDownload(context)
+                                                        },
+                                                        shape = RoundedCornerShape(12.dp)
+                                                    ) {
                                                         Text("Cancel")
                                                     }
                                                 }
                                             }
-                                            LinearProgressIndicator(
-                                                progress = { state.progress / 100f },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                color = MaterialTheme.colorScheme.outline,
-                                                trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                                            LinearWavyProgressIndicator(
+                                                progress = { (state.progress / 100f).coerceIn(0f, 1f) },
+                                                modifier = Modifier.fillMaxWidth().height(8.dp),
+                                                color = MaterialTheme.colorScheme.tertiary,
+                                                trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f)
                                             )
                                         }
                                     }
                                 }
                                 is PetalUpdateManager.UpdateDownloadState.Completed -> {
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = RoundedCornerShape(18.dp),
+                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(12.dp),
+                                                .padding(14.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(
-                                                    text = "Update Ready to Install",
-                                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                                )
-                                                Text(
-                                                    text = "Version ${state.version} downloaded",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                                                )
+                                            Row(
+                                                modifier = Modifier.weight(1f),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(32.dp)
+                                                        .background(Color(0xFF2E7D32).copy(alpha = 0.15f), CircleShape),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.CheckCircle,
+                                                        contentDescription = null,
+                                                        tint = Color(0xFF2E7D32),
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                                Column {
+                                                    Text(
+                                                        text = "Update Ready to Install",
+                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                    )
+                                                    Text(
+                                                        text = "Petal v${state.version} downloaded",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                                    )
+                                                }
                                             }
                                             Button(
-                                                onClick = { PetalUpdateManager.installActiveUpdate(context) },
-                                                shape = RoundedCornerShape(8.dp)
+                                                onClick = {
+                                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                                    PetalUpdateManager.installActiveUpdate(context)
+                                                },
+                                                shape = RoundedCornerShape(12.dp)
                                             ) {
+                                                Icon(Icons.Rounded.DownloadDone, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(6.dp))
                                                 Text("Install")
                                             }
                                         }

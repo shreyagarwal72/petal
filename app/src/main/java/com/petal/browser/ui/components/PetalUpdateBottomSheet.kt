@@ -57,6 +57,10 @@ import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.haptics.PetalHapticEngine
+import androidx.compose.ui.text.style.TextAlign
+import com.petal.browser.view.PetalToast
+import com.petal.browser.compose.downloads.formatBytes
+import com.petal.browser.compose.downloads.formatSpeed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -324,21 +328,23 @@ object PetalUpdateSheetBridge {
                             var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
                                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                                val dismissAction = {
+                                    val isDownloading = PetalUpdateManager.downloadState.value is PetalUpdateManager.UpdateDownloadState.Downloading
+                                    if (isDownloading) {
+                                        PetalToast.show(activity, "Update downloading in background. You can keep browsing.")
+                                    }
+                                    showSheet = false
+                                    val parent = composeView?.parent as? android.view.ViewGroup
+                                    parent?.removeView(composeView)
+                                }
                                 com.petal.browser.ui.containment.PetalSheet(
-                                    onDismissRequest = {
-                                        showSheet = false
-                                        val parent = composeView?.parent as? android.view.ViewGroup
-                                        parent?.removeView(composeView)
-                                    },
+                                    onDismissRequest = dismissAction,
                                     sheetState = sheetState,
+                                    dragHandle = null,
                                 ) {
                                     PetalUpdateSheetContent(
                                         updateInfo = updateInfo,
-                                        onDismiss = {
-                                            showSheet = false
-                                            val parent = composeView?.parent as? android.view.ViewGroup
-                                            parent?.removeView(composeView)
-                                        }
+                                        onDismiss = dismissAction
                                     )
                                 }
                             }
@@ -375,6 +381,7 @@ object PetalUpdateSheetBridge {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PetalUpdateSheetContent(
     updateInfo: PetalUpdateInfo,
@@ -383,7 +390,18 @@ fun PetalUpdateSheetContent(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    val currentVersion = remember(context) {
+        try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "4.4"
+        } catch (_: Exception) {
+            "4.4"
+        }
+    }
 
+    val liveUpdateState by PetalUpdateManager.downloadState.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) {
+        PetalUpdateManager.initialize(context)
+    }
 
     var fetchedNotes by remember(updateInfo.releaseNotes) { mutableStateOf<String?>(null) }
     var isFetchingNotes by remember(updateInfo.releaseNotes) { mutableStateOf(false) }
@@ -412,63 +430,447 @@ fun PetalUpdateSheetContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 8.dp),
+                .padding(horizontal = 24.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Header Icon Badge
-            Surface(
-                shape = CircleShape,
-                color = if (updateInfo.isUpdateAvailable) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                modifier = Modifier.size(60.dp)
+            // Top Bar: Centered drag handle & Top-right Cross (✕) button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 2.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 36.dp, height = 4.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                )
+
+                IconButton(
+                    onClick = {
+                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                        onDismiss()
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(36.dp)
+                ) {
                     Icon(
-                        imageVector = if (updateInfo.isUpdateAvailable) Icons.Rounded.SystemUpdate else Icons.Rounded.CheckCircle,
-                        contentDescription = null,
-                        tint = if (updateInfo.isUpdateAvailable) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.size(30.dp)
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "Dismiss",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            // Title & Subtitle
+            // Status-driven Hero styling (Orion-Store Expressive look)
+            val (heroTint, heroIcon, eyebrowText) = when (val state = liveUpdateState) {
+                is PetalUpdateManager.UpdateDownloadState.Downloading -> {
+                    Triple(MaterialTheme.colorScheme.primary, Icons.Rounded.Downloading, "Update Downloading")
+                }
+                is PetalUpdateManager.UpdateDownloadState.Paused -> {
+                    Triple(MaterialTheme.colorScheme.tertiary, Icons.Rounded.PauseCircle, "Download Paused")
+                }
+                is PetalUpdateManager.UpdateDownloadState.Completed -> {
+                    Triple(Color(0xFF2E7D32), Icons.Rounded.CheckCircle, "Ready to Install")
+                }
+                is PetalUpdateManager.UpdateDownloadState.Failed -> {
+                    Triple(MaterialTheme.colorScheme.error, Icons.Rounded.ErrorOutline, "Download Failed")
+                }
+                else -> {
+                    if (updateInfo.isUpdateAvailable) {
+                        Triple(MaterialTheme.colorScheme.primary, Icons.Rounded.SystemUpdate, "New Update Available")
+                    } else {
+                        Triple(MaterialTheme.colorScheme.secondary, Icons.Rounded.Verified, "All Caught Up")
+                    }
+                }
+            }
+
+            // Hero Badge with 96dp Cookie9Sided shape
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .background(
+                        color = heroTint.copy(alpha = 0.16f),
+                        shape = PetalMaterialShapes.Cookie9Sided.toShape()
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = heroIcon,
+                    contentDescription = null,
+                    tint = heroTint,
+                    modifier = Modifier.size(46.dp)
+                )
+            }
+
+            // Eyebrow, Title & Version Transition Pill
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = if (updateInfo.isUpdateAvailable) "Update Available" else "Petal Browser is Up to Date",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = eyebrowText.uppercase(),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.2.sp
+                    ),
+                    color = heroTint
                 )
 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    modifier = Modifier.padding(top = 2.dp)
-                ) {
-                    Text(
-                        text = updateInfo.versionName,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
+                Text(
+                    text = if (updateInfo.isUpdateAvailable) {
+                        "Petal Browser ${updateInfo.versionName}"
+                    } else {
+                        "Petal Browser is Up to Date"
+                    },
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+
+                // Version Transition Pill (Orion-Store style)
+                if (updateInfo.isUpdateAvailable) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "v$currentVersion",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "v${updateInfo.versionName.replace(Regex("^[vV]"), "")}",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                } else {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        Text(
+                            text = "v$currentVersion (Current)",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        )
+                    }
                 }
 
                 Text(
-                    text = if (updateInfo.isUpdateAvailable) "Squashed bugs, added magic. Ready to download & install!" else "Running the latest release with all the newest features.",
+                    text = if (updateInfo.isUpdateAvailable) {
+                        "Squashed bugs, added magic. Ready to download & install!"
+                    } else {
+                        "Running the latest release with all the newest features."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
 
-            // Release Notes Container
+            // Live Download Card (When Downloading, Paused, or Completed)
+            when (val state = liveUpdateState) {
+                is PetalUpdateManager.UpdateDownloadState.Downloading -> {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primary)
+                                    )
+                                    Text(
+                                        text = "Downloading update...",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                Text(
+                                    text = "${state.progress}%",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            LinearWavyProgressIndicator(
+                                progress = { (state.progress / 100f).coerceIn(0f, 1f) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(10.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val downloadedStr = formatBytes(state.downloadedBytes)
+                                val totalStr = if (state.totalBytes > 0) formatBytes(state.totalBytes) else "..."
+                                Text(
+                                    text = "$downloadedStr / $totalStr",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = if (state.bytesPerSecond > 0) formatSpeed(state.bytesPerSecond) else "Connecting...",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                        PetalUpdateManager.pauseUpdateDownload(context)
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Icon(Icons.Rounded.PauseCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Pause")
+                                }
+                                FilledTonalButton(
+                                    onClick = {
+                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                        onDismiss()
+                                        PetalToast.show(context, "Update downloading in background. You can keep browsing.")
+                                    },
+                                    modifier = Modifier.weight(1.2f),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Text("Keep Browsing")
+                                }
+                            }
+                        }
+                    }
+                }
+                is PetalUpdateManager.UpdateDownloadState.Paused -> {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.tertiary)
+                                    )
+                                    Text(
+                                        text = "Download paused",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                Text(
+                                    text = "${state.progress}%",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            LinearWavyProgressIndicator(
+                                progress = { (state.progress / 100f).coerceIn(0f, 1f) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(10.dp),
+                                color = MaterialTheme.colorScheme.tertiary,
+                                trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f)
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                        PetalUpdateManager.resumeUpdateDownload(context)
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Resume")
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                        PetalUpdateManager.cancelUpdateDownload(context)
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Text("Cancel")
+                                }
+                            }
+                        }
+                    }
+                }
+                is PetalUpdateManager.UpdateDownloadState.Completed -> {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(Color(0xFF2E7D32).copy(alpha = 0.15f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF2E7D32),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Download Complete",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Petal v${state.version} is ready to be inspected & installed.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Button(
+                                onClick = {
+                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                    PetalUpdateManager.installActiveUpdate(context)
+                                },
+                                shape = RoundedCornerShape(18.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp)
+                            ) {
+                                Icon(Icons.Rounded.DownloadDone, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Install Update", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
+                        Button(
+                            onClick = {
+                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                PetalUpdateManager.startUpdateDownload(
+                                    context = context,
+                                    downloadUrl = updateInfo.downloadUrl,
+                                    version = updateInfo.versionName
+                                )
+                            },
+                            shape = RoundedCornerShape(18.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp)
+                        ) {
+                            Icon(Icons.Rounded.FileDownload, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Download & Install Update",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Release Notes / What's New Container
             val notesToDisplay = fetchedNotes ?: updateInfo.releaseNotes
             if (isFetchingNotes) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     LinearWavyProgressIndicator(
@@ -491,7 +893,7 @@ fun PetalUpdateSheetContent(
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
-                    val notesShape = RoundedCornerShape(28.dp)
+                    val notesShape = RoundedCornerShape(24.dp)
                     Surface(
                         shape = notesShape,
                         color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
@@ -513,172 +915,6 @@ fun PetalUpdateSheetContent(
                 }
             }
 
-            // Action Buttons
-            if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
-                val liveUpdateState by PetalUpdateManager.downloadState.collectAsStateWithLifecycle()
-                LaunchedEffect(Unit) {
-                    PetalUpdateManager.initialize(context)
-                }
-
-                when (val state = liveUpdateState) {
-                    is PetalUpdateManager.UpdateDownloadState.Downloading -> {
-                        com.petal.browser.ui.containment.PetalHeroCard(
-                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                LinearWavyProgressIndicator(
-                                    progress = { state.progress / 100f },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.ui_downloading_update, state.progress),
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    TextButton(
-                                        onClick = {
-                                            PetalUpdateManager.pauseUpdateDownload(context)
-                                        }
-                                    ) {
-                                        Text("Pause")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    is PetalUpdateManager.UpdateDownloadState.Paused -> {
-                        com.petal.browser.ui.containment.PetalHeroCard(
-                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                LinearWavyProgressIndicator(
-                                    progress = { state.progress / 100f },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    color = MaterialTheme.colorScheme.outline,
-                                    trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "Update paused (${state.progress}%)",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Row {
-                                        TextButton(onClick = { PetalUpdateManager.resumeUpdateDownload(context) }) {
-                                            Text("Resume")
-                                        }
-                                        TextButton(onClick = { PetalUpdateManager.cancelUpdateDownload(context) }) {
-                                            Text("Cancel")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    is PetalUpdateManager.UpdateDownloadState.Completed -> {
-                        Button(
-                            onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                                PetalUpdateManager.installActiveUpdate(context)
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth().height(50.dp)
-                        ) {
-                            Icon(Icons.Rounded.DownloadDone, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Install Downloaded Update", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    else -> {
-                        // Idle or Failed
-                        var updateSplitExpanded by remember { mutableStateOf(false) }
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            ExpressiveSplitButton(
-                                label = stringResource(R.string.ui_download_install_update),
-                                onPrimaryClick = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                                    PetalUpdateManager.startUpdateDownload(
-                                        context = context,
-                                        downloadUrl = updateInfo.downloadUrl,
-                                        version = updateInfo.versionName
-                                    )
-                                },
-                                onMenuClick = { updateSplitExpanded = !updateSplitExpanded },
-                                icon = Icons.Rounded.FileDownload,
-                                isMenuExpanded = updateSplitExpanded,
-                                variant = SplitButtonVariant.FILLED,
-                                height = 50.dp,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            com.petal.browser.ui.containment.PetalPopupMenu(
-                                expanded = updateSplitExpanded,
-                                onDismissRequest = { updateSplitExpanded = false },
-                                shape = RoundedCornerShape(20.dp),
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                            ) {
-                                com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                    text = { Text(stringResource(R.string.ui_download_in_background)) },
-                                    leadingIcon = {
-                                        Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                    },
-                                    onClick = {
-                                        updateSplitExpanded = false
-                                        PetalUpdateManager.startUpdateDownload(
-                                            context = context,
-                                            downloadUrl = updateInfo.downloadUrl,
-                                            version = updateInfo.versionName
-                                        )
-                                    }
-                                )
-                                if (updateInfo.releaseUrl.isNotBlank()) {
-                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                        text = { Text(stringResource(R.string.ui_open_github_releases)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Rounded.OpenInBrowser, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                        },
-                                        onClick = {
-                                            updateSplitExpanded = false
-                                            try {
-                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
-                                                context.startActivity(intent)
-                                            } catch (_: Exception) {}
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             if (updateInfo.releaseUrl.isNotBlank()) {
                 OutlinedButton(
                     onClick = {
@@ -690,8 +926,10 @@ fun PetalUpdateSheetContent(
                             e.printStackTrace()
                         }
                     },
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth().height(46.dp)
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
                 ) {
                     Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
