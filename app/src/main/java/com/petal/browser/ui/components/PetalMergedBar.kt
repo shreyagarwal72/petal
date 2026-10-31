@@ -71,6 +71,7 @@ fun PetalMergedBar(
     onReaderClick: () -> Unit = {},
     onCustomizeClick: () -> Unit = {},
     isBottom: Boolean = false,
+    isPreview: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -99,9 +100,9 @@ fun PetalMergedBar(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
-    val resolvedIsBottom = isBottom || "BOTTOM".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true)
-    val isPillCollapse = BarPrefs.COLLAPSE_PILL.equals(collapseStyle, ignoreCase = true)
-    val collapsedFraction = BarCollapseState.collapsedFraction
+    val resolvedIsBottom = if (isPreview) isBottom else (isBottom || "BOTTOM".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true))
+    val isPillCollapse = if (isPreview) false else BarPrefs.COLLAPSE_PILL.equals(collapseStyle, ignoreCase = true)
+    val collapsedFraction = if (isPreview) 0f else BarCollapseState.collapsedFraction
     val isFullyCollapsed = isPillCollapse && (collapsedFraction >= 0.95f || BarCollapseState.isCollapsed)
 
     val containerShape = if (resolvedIsBottom) {
@@ -111,9 +112,9 @@ fun PetalMergedBar(
     }
 
     LocalPetalGlassRevision.current
-    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") && !isIncognito
+    val isLiquidGlass = !isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") && !isIncognito
     val samplesWallpaper = BarInsets.glassSamplesWallpaper(sp, resolvedIsBottom, sp.getBoolean("sp_floating_tab_bar", true), false)
-    val glassSource = LocalView.current.rootView.findViewById<android.view.View>(
+    val glassSource = if (isPreview) null else LocalView.current.rootView.findViewById<android.view.View>(
         if (samplesWallpaper) com.petal.browser.R.id.glass_wallpaper_backdrop else com.petal.browser.R.id.main_content
     )
     val glassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
@@ -127,9 +128,9 @@ fun PetalMergedBar(
 
     val topBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
 
-    val statusBarTopInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+    val statusBarTopInset = if (isPreview) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding()
-    val navBarBottomInset = WindowInsets.navigationBars
+    val navBarBottomInset = if (isPreview) 0.dp else WindowInsets.navigationBars
         .asPaddingValues().calculateBottomPadding()
 
     val collapseProgress = if (isPillCollapse) collapsedFraction.coerceIn(0f, 1f) else 0f
@@ -186,7 +187,7 @@ fun PetalMergedBar(
                         .fillMaxWidth()
                         .padding(
                             top = 2.dp,
-                            bottom = if (resolvedIsBottom) navBarBottomInset + 4.dp else 2.dp
+                            bottom = if (resolvedIsBottom && !isPreview) navBarBottomInset + 4.dp else 2.dp
                         )
                 ) {
                 if (BarPrefs.LAYOUT_STACKED.equals(mergeLayout, ignoreCase = true)) {
@@ -339,7 +340,7 @@ fun PetalMergedBar(
         }
     }
 
-    if (pillAlpha > 0.01f) {
+    if (!isPreview && pillAlpha > 0.01f) {
             PetalMinimizedPill(
                 domain = BarCollapseState.currentDomain,
                 isHttps = BarCollapseState.isHttps,

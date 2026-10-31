@@ -159,6 +159,7 @@ fun AddressBarSettingsScreen(
                                 onSwipePrevTab = {},
                                 isReaderEligible = true,
                                 isBottom = "BOTTOM".equals(position, ignoreCase = true),
+                                isPreview = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
@@ -178,6 +179,7 @@ fun AddressBarSettingsScreen(
                                 onSwipePrevTab = {},
                                 isReaderEligible = true,
                                 isBottom = "BOTTOM".equals(position, ignoreCase = true),
+                                isPreview = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

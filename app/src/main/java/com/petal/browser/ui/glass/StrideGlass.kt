@@ -53,6 +53,10 @@ class GlassBackdrop internal constructor(private val source: View) {
     private val bars = LinkedHashSet<GlassBar>()
     private val sourceLoc = IntArray(2)
     private var listening: ViewTreeObserver? = null
+    private var isRecording = false
+
+    internal val isRecordingBackdrop: Boolean
+        get() = isRecording
 
     private val preDraw = ViewTreeObserver.OnPreDrawListener {
         refresh()
@@ -66,6 +70,8 @@ class GlassBackdrop internal constructor(private val source: View) {
     }
 
     internal fun attach(bar: GlassBar) {
+        val h = bar.host
+        if (h != null && isAncestor(source, h)) return
         bars += bar
         if (listening == null || listening?.isAlive != true) {
             listening = source.viewTreeObserver.also { it.addOnPreDrawListener(preDraw) }
@@ -91,43 +97,49 @@ class GlassBackdrop internal constructor(private val source: View) {
     }
 
     internal fun recordSource(): Boolean {
+        if (isRecording) return false
         val w = source.width
         val h = source.height
         if (!source.isAttachedToWindow || w <= 0 || h <= 0) return false
-        node.setPosition(0, 0, w, h)
-        val canvas = node.beginRecording(w, h)
+        isRecording = true
         try {
-            // Background plus each child's display list, by reference.
-            source.draw(canvas)
-            // A top bar sits over the strip main_content reserves above the page, which is
-            // empty (the window shows black there). Fill it with the page's first rows,
-            // mirrored about the strip's lower edge, so the glass has real content to bend.
-            val strip = source.paddingTop
-            if (strip in 1 until h) {
-                val save = canvas.save()
-                canvas.clipRect(0, 0, w, strip)
-                canvas.translate(0f, 2f * strip)
-                canvas.scale(1f, -1f)
+            node.setPosition(0, 0, w, h)
+            val canvas = node.beginRecording(w, h)
+            try {
+                // Background plus each child's display list, by reference.
                 source.draw(canvas)
-                canvas.restoreToCount(save)
+                // A top bar sits over the strip main_content reserves above the page, which is
+                // empty (the window shows black there). Fill it with the page's first rows,
+                // mirrored about the strip's lower edge, so the glass has real content to bend.
+                val strip = source.paddingTop
+                if (strip in 1 until h) {
+                    val save = canvas.save()
+                    canvas.clipRect(0, 0, w, strip)
+                    canvas.translate(0f, 2f * strip)
+                    canvas.scale(1f, -1f)
+                    source.draw(canvas)
+                    canvas.restoreToCount(save)
+                }
+                // Same for a bottom bar (docked nav, bottom address bar): the padded strip below the
+                // page is empty, so fill it with the page's last rows, mirrored about the strip's
+                // upper edge. The glass frosts and bends that instead of showing a hole or wallpaper.
+                val bottomStrip = source.paddingBottom
+                if (bottomStrip in 1 until h) {
+                    val edge = h - bottomStrip
+                    val save = canvas.save()
+                    canvas.clipRect(0, edge, w, h)
+                    canvas.translate(0f, 2f * edge)
+                    canvas.scale(1f, -1f)
+                    source.draw(canvas)
+                    canvas.restoreToCount(save)
+                }
+            } catch (_: Throwable) {
+                // A child that cannot be drawn twice must not take the bar down with it.
+            } finally {
+                node.endRecording()
             }
-            // Same for a bottom bar (docked nav, bottom address bar): the padded strip below the
-            // page is empty, so fill it with the page's last rows, mirrored about the strip's
-            // upper edge. The glass frosts and bends that instead of showing a hole or wallpaper.
-            val bottomStrip = source.paddingBottom
-            if (bottomStrip in 1 until h) {
-                val edge = h - bottomStrip
-                val save = canvas.save()
-                canvas.clipRect(0, edge, w, h)
-                canvas.translate(0f, 2f * edge)
-                canvas.scale(1f, -1f)
-                source.draw(canvas)
-                canvas.restoreToCount(save)
-            }
-        } catch (_: Throwable) {
-            // A child that cannot be drawn twice must not take the bar down with it.
         } finally {
-            node.endRecording()
+            isRecording = false
         }
         return true
     }
@@ -264,6 +276,7 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
 
     /** Re-records the bar and its slab from the latest backdrop and geometry. */
     internal fun record() {
+        if (backdrop.isRecordingBackdrop) return
         val look = look ?: return
         val outline = outline ?: return
         val host = host ?: return
@@ -481,3 +494,13 @@ half4 main(float2 coord) {
     return content.eval(refractedCoord);
 }
 """
+
+private fun isAncestor(ancestor: View, descendant: View): Boolean {
+    if (ancestor === descendant) return true
+    var p = descendant.parent
+    while (p != null) {
+        if (p === ancestor) return true
+        p = p.parent
+    }
+    return false
+}

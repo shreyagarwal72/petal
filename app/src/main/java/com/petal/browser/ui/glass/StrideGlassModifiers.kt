@@ -44,6 +44,7 @@ object StrideGlassPrefs {
 fun rememberGlassBar(source: View?): GlassBar? {
     if (source == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
     val host = LocalView.current
+    if (isAncestor(source, host)) return null
     val bar = remember(source) { GlassBackdrop.of(source)?.let { GlassBar(it) } } ?: return null
     bar.host = host
     DisposableEffect(bar) {
@@ -51,6 +52,16 @@ fun rememberGlassBar(source: View?): GlassBar? {
         onDispose { bar.detach() }
     }
     return bar
+}
+
+private fun isAncestor(ancestor: View, descendant: View): Boolean {
+    if (ancestor === descendant) return true
+    var p = descendant.parent
+    while (p != null) {
+        if (p === ancestor) return true
+        p = p.parent
+    }
+    return false
 }
 
 /**
