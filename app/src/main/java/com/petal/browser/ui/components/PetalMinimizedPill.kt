@@ -60,14 +60,16 @@ fun PetalMinimizedPill(
     val glassBar = rememberGlassBar(glassSource)
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
-    val statusBarTopInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+    val rawStatusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val isImmersive = rawStatusTop == 0.dp
+    val statusBarTopInset = if (isImmersive) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding()
     val navBarBottomInset = WindowInsets.navigationBars
         .asPaddingValues().calculateBottomPadding()
 
     val containerColor = when {
         isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
-        isGlass -> Color.Transparent
+        isGlass -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.88f)
         else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
@@ -86,7 +88,7 @@ fun PetalMinimizedPill(
             .padding(
                 start = 16.dp,
                 end = 16.dp,
-                top = if (!isBottom) statusBarTopInset + 6.dp else 4.dp,
+                top = if (!isBottom) (if (isImmersive) 10.dp else statusBarTopInset + 6.dp) else 4.dp,
                 bottom = if (isBottom) navBarBottomInset + 8.dp else 4.dp
             ),
         contentAlignment = Alignment.Center
@@ -94,9 +96,9 @@ fun PetalMinimizedPill(
         Surface(
             shape = pillShape,
             color = containerColor,
-            tonalElevation = if (isGlass) 0.dp else 3.dp,
-            shadowElevation = if (isGlass) 0.dp else 4.dp,
-            border = if (!isGlass) BorderStroke(0.8.dp, outlineColor) else null,
+            tonalElevation = 4.dp,
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.dp, outlineColor.copy(alpha = if (isGlass) 0.55f else 0.45f)),
             modifier = Modifier
                 .height(40.dp)
                 .wrapContentWidth()
@@ -150,7 +152,7 @@ fun PetalMinimizedPill(
                         else -> Icons.Rounded.Lock
                     },
                     contentDescription = if (isHttps) "Secure connection" else "Not secure",
-                    tint = if (isHttps && !isIncognito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (isHttps && !isIncognito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(15.dp)
                 )
 
@@ -159,7 +161,11 @@ fun PetalMinimizedPill(
                     text = domain.ifBlank { "Search or type URL" },
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                            blurRadius = 4f
+                        )
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

@@ -104,7 +104,9 @@ fun PetalAddressBar(
 
     val topBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
 
-    val statusBarTopInset = if (isPreview) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
+    val rawStatusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val isImmersive = rawStatusTop == 0.dp
+    val statusBarTopInset = if (isPreview || isImmersive) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding()
     val navBarBottomInset = if (isPreview) 0.dp else WindowInsets.navigationBars
         .asPaddingValues().calculateBottomPadding()

@@ -737,6 +737,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onCreate(savedInstanceState);
         context = this;
         activity = this;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -3066,7 +3070,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addressBar.setLayoutParams(addrParams);
             }
 
-            int resolvedStatusBarGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this);
+            boolean isImmersive = (sp != null && sp.getBoolean("sp_immersive_fullscreen", false)) || isCustomFullscreenState;
+            int resolvedStatusBarGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this));
             // For bottom address bar (Firefox style):
             // When address bar is at the bottom, it docks flush right above the bottom nav (if visible) or parent bottom.
             // Reserved bottom padding for mainContent ensures webpage content sits flush above the bottom toolbar.
@@ -3098,7 +3103,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     isBottom, reserveBarSpace, addressHeight, bottomNavHeight, gap, resolvedStatusBarGap,
                     legacyUnder && liquidGlassTopOn,
                     (legacyUnder && liquidGlassOn) || floatingNavGlass,
-                    isPillCollapse, pillHeightPx, navigationBarBottomInset);
+                    isPillCollapse, pillHeightPx, navigationBarBottomInset, isImmersive);
             int topInset = insets.getTop();
             int bottomInset = insets.getBottom();
             mainContent.setPadding(0, topInset, 0, bottomInset);
@@ -3119,7 +3124,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     && sp.getBoolean("sp_liquid_glass_address_bar", true);
             View rootForStrip = findViewById(R.id.main);
             if (rootForStrip != null) {
-                if (topBarGlass) {
+                if (topBarGlass && !isImmersive) {
                     rootForStrip.setBackgroundColor(com.google.android.material.color.MaterialColors.getColor(
                             rootForStrip, com.google.android.material.R.attr.colorSurface));
                 } else {
@@ -4572,7 +4577,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addrOff = addrH + navH + dp16;
                 dockedOff = addrOff;
             } else {
-                int statusGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this);
+                boolean isImmersive = (sp != null && sp.getBoolean("sp_immersive_fullscreen", false)) || isCustomFullscreenState;
+                int statusGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this));
                 addrOff = -(addrH + HelperUnit.convertDpToPixel(40f, context));
                 dockedOff = -Math.max(0f, addrH - statusGap);
             }
@@ -5019,7 +5025,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
                     int targetTopMargin;
                     if (isBottom) {
-                        int resolvedStatusBarGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(BrowserActivity.this);
+                        boolean isImmersive = (sp != null && sp.getBoolean("sp_immersive_fullscreen", false)) || isCustomFullscreenState;
+                        int resolvedStatusBarGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(BrowserActivity.this));
                         targetTopMargin = resolvedStatusBarGap;
                     } else {
                         int[] loc = new int[2];

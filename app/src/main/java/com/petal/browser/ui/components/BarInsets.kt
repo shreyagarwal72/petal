@@ -62,13 +62,16 @@ object BarInsets {
         legacyUnderBottom: Boolean,
         pillCollapse: Boolean = false,
         pillHeight: Int = 0,
-        navBarBottomInset: Int = 0
+        navBarBottomInset: Int = 0,
+        isImmersive: Boolean = false
     ): Result {
         if (!reserveBarSpace) return Result(0, 0, 0, 0)
 
+        val effectiveStatusBarGap = if (isImmersive) 0 else statusBarGap
         val top = when {
-            isBottom -> statusBarGap
-            legacyUnderTop -> statusBarGap
+            isImmersive -> 0
+            isBottom -> effectiveStatusBarGap
+            legacyUnderTop -> effectiveStatusBarGap
             else -> addressHeight + gap
         }
         val bottom = when {
@@ -84,10 +87,10 @@ object BarInsets {
         val hiddenTop: Int
         val hiddenBottom: Int
         if (pillCollapse && pillHeight > 0) {
-            hiddenTop = statusBarGap
+            hiddenTop = if (isImmersive) 0 else effectiveStatusBarGap
             hiddenBottom = 0
         } else {
-            hiddenTop = if (isBottom) top else minOf(top, statusBarGap)
+            hiddenTop = if (isBottom) (if (isImmersive) 0 else top) else minOf(top, effectiveStatusBarGap)
             hiddenBottom = maxOf(0, bottom - (if (isBottom) addressHeight else 0) - bottomNavHeight)
         }
         return Result(top, bottom, hiddenTop, hiddenBottom)
