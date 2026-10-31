@@ -71,6 +71,35 @@ class PetalTabViewController private constructor(
     }
     private var backAvailable = false
     private var forwardAvailable = false
+
+    // True from the moment saved history is restored into a fresh session until the first real page has
+    // finished loading. In that window Gecko has not reported its history yet, so backAvailable is still
+    // false even though the restored tab can go back. While pending, Back is sent to Gecko anyway instead
+    // of falling through to Home.
+    @Volatile
+    private var historyPending = false
+
+    private val statePersistHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val statePersistRunnable = Runnable { persistEngineStateNow() }
+
+    private fun onGeckoStateChanged(state: org.mozilla.geckoview.GeckoSession.SessionState) {
+        latestGeckoState = state
+        if (isIncognito()) return
+        // Debounced: Gecko reports state very often; one write shortly after navigation settles is enough.
+        statePersistHandler.removeCallbacks(statePersistRunnable)
+        statePersistHandler.postDelayed(statePersistRunnable, 1500L)
+    }
+
+    private fun persistEngineStateNow() {
+        val id = boundTabId ?: return
+        if (isIncognito()) return
+        val url = pageUrl
+        if (url.isBlank() || url.equals("about:blank", ignoreCase = true) ||
+            com.petal.browser.unit.BrowserUnit.isHomePage(url)) return
+        val serialized = captureEngineState() ?: return
+        val appCtx = appContext
+        STATE_WRITER.execute { com.petal.browser.unit.PetalTabStateStore.write(appCtx, id, serialized) }
+    }
     private var loading = false
     private var progress = 0
     private var isSecure = false
@@ -180,6 +209,11 @@ class PetalTabViewController private constructor(
         }
 
         override fun onLoadingStateChange(loading: Boolean) {
+            if (!loading && historyPending && !isStaleInitialBlank(pageUrl) &&
+                !pageUrl.equals("about:blank", ignoreCase = true)) {
+                // Gecko has now reported its real history; trust backAvailable again.
+                historyPending = false
+            }
             if (this@PetalTabViewController.loading != loading && loading) {
                 previewRevision++
                 previewRetryCount = 0
@@ -390,6 +424,8 @@ class PetalTabViewController private constructor(
         applyPageSettings(pageUrl)
         backAvailable = false
         forwardAvailable = false
+        historyPending = false
+        statePersistHandler.removeCallbacks(statePersistRunnable)
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
         engineView.render(session)
         session.register(observer)
@@ -464,10 +500,10 @@ class PetalTabViewController private constructor(
             // be persisted and restored after the app process is killed. See PetalTabStateStore.
             val engineProgress = gs.progressDelegate
             if (engineProgress is SessionStateCapturingProgressDelegate) {
-                engineProgress.onState = { state -> latestGeckoState = state }
+                engineProgress.onState = { state -> onGeckoStateChanged(state) }
             } else {
                 gs.progressDelegate = SessionStateCapturingProgressDelegate(engineProgress) { state ->
-                    latestGeckoState = state
+                    onGeckoStateChanged(state)
                 }
             }
 
@@ -808,6 +844,9 @@ class PetalTabViewController private constructor(
                     userInteraction
                 )
             )
+        } else if (historyPending) {
+            // Restored history that Gecko has not reported yet: ask the engine directly.
+            try { getGeckoSession()?.goBack(userInteraction) } catch (_: Throwable) {}
         }
     }
 
@@ -832,11 +871,11 @@ class PetalTabViewController private constructor(
         if (fullScreenFeature?.onBackPressed() == true) return
         session.processBackPressed { handled ->
             if (handled) return@processBackPressed
-            if (backAvailable) goBack() else onUnhandled()
+            if (backAvailable || historyPending) goBack() else onUnhandled()
         }
     }
 
-    fun canGoBack(): Boolean = backAvailable
+    fun canGoBack(): Boolean = backAvailable || historyPending
 
     fun canGoForward(): Boolean = forwardAvailable
 
@@ -1077,11 +1116,23 @@ class PetalTabViewController private constructor(
             pendingNavSince = android.os.SystemClock.uptimeMillis()
             gs.restoreState(state)
             latestGeckoState = state
+            historyPending = restoredStateHasHistory(serializedState)
             true
         } catch (t: Throwable) {
             pendingNavUrl = null
             android.util.Log.w("PetalTabNav", "restoreEngineState failed: ${t.message}")
             false
+        }
+    }
+
+    /** False only when the saved state clearly holds a single entry; unknown formats count as "has history". */
+    private fun restoredStateHasHistory(serialized: String): Boolean {
+        return try {
+            val root = org.json.JSONObject(serialized)
+            val list = root.optJSONArray("history") ?: root.optJSONArray("entries") ?: return true
+            list.length() > 1
+        } catch (_: Throwable) {
+            true
         }
     }
 
@@ -1915,3 +1966,8 @@ private class SessionStateCapturingProgressDelegate(
         onState(sessionState)
     }
 }
+
+
+/** Single background thread for tab-state file writes, so history saving never blocks the UI. */
+private val STATE_WRITER: java.util.concurrent.ExecutorService =
+    java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "PetalTabStateWriter").apply { isDaemon = true } }
