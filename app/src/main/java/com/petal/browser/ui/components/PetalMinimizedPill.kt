@@ -35,7 +35,7 @@ import com.petal.browser.ui.glass.rememberGlassBar
 /**
  * Chrome Android-style compact minimized toolbar pill shown on downward scroll.
  *
- * Displays `[Lock/Privacy] domain.com ›` in a 36dp rounded container. Tapping the pill
+ * Displays `[Lock/Privacy] domain.com ›` in a 40dp rounded container. Tapping the pill
  * or swiping expands the full toolbar back into place.
  */
 @Composable
@@ -49,7 +49,7 @@ fun PetalMinimizedPill(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val pillShape = RoundedCornerShape(18.dp)
+    val pillShape = RoundedCornerShape(20.dp)
     val isGlass = glassSource != null
     val glassBar = rememberGlassBar(glassSource)
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -85,7 +85,7 @@ fun PetalMinimizedPill(
             shadowElevation = if (isGlass) 0.dp else 4.dp,
             border = if (!isGlass) BorderStroke(0.8.dp, outlineColor) else null,
             modifier = Modifier
-                .height(36.dp)
+                .height(40.dp)
                 .wrapContentWidth()
                 .then(
                     if (isGlass) {
@@ -121,7 +121,7 @@ fun PetalMinimizedPill(
         ) {
             Row(
                 modifier = Modifier
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                    .padding(horizontal = 18.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {

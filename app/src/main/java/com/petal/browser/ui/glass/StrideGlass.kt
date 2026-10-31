@@ -111,6 +111,19 @@ class GlassBackdrop internal constructor(private val source: View) {
                 source.draw(canvas)
                 canvas.restoreToCount(save)
             }
+            // Same for a bottom bar (docked nav, bottom address bar): the padded strip below the
+            // page is empty, so fill it with the page's last rows, mirrored about the strip's
+            // upper edge. The glass frosts and bends that instead of showing a hole or wallpaper.
+            val bottomStrip = source.paddingBottom
+            if (bottomStrip in 1 until h) {
+                val edge = h - bottomStrip
+                val save = canvas.save()
+                canvas.clipRect(0, edge, w, h)
+                canvas.translate(0f, 2f * edge)
+                canvas.scale(1f, -1f)
+                source.draw(canvas)
+                canvas.restoreToCount(save)
+            }
         } catch (_: Throwable) {
             // A child that cannot be drawn twice must not take the bar down with it.
         } finally {

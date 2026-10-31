@@ -3084,29 +3084,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             final boolean legacyUnder = com.petal.browser.ui.components.BarInsets.legacyPageUnderBars(sp);
             updateDynamicToolbarHeights((!isBottom && liquidGlassTopOn && legacyUnder) ? addressHeight : 0);
             boolean reserveBarSpace = !isNonWebSurface;
-            // Every padded glass bar sits over the wallpaper backdrop (top address bar included);
-            // the legacy pref restores "only flat bars use it".
-            boolean navGlassBackdrop = sp.getBoolean("sp_liquid_glass_bottom_nav", true)
-                    && com.petal.browser.ui.components.BarInsets.glassSamplesWallpaper(sp, isBottom, isFloatingNavStyle, true);
-            boolean addrGlassBackdrop = sp.getBoolean("sp_liquid_glass_address_bar", true)
-                    && com.petal.browser.ui.components.BarInsets.glassSamplesWallpaper(sp, isBottom, isFloatingNavStyle, false);
-            boolean wallpaperBackdrop = navGlassBackdrop || addrGlassBackdrop;
+            // Glass bars always sample the live page. Padded strips are filled with the page's
+            // mirrored edge rows inside GlassBackdrop, so the wallpaper backdrop is never shown.
             View glassBackdropView = findViewById(R.id.glass_wallpaper_backdrop);
-            if (glassBackdropView instanceof androidx.compose.ui.platform.ComposeView) {
-                if (wallpaperBackdrop) {
-                    com.petal.browser.compose.home.PetalGlassBackdropBridge.bind(
-                            (androidx.compose.ui.platform.ComposeView) glassBackdropView, this);
-                    glassBackdropView.setVisibility(VISIBLE);
-                } else {
-                    glassBackdropView.setVisibility(GONE);
-                }
-            }
+            if (glassBackdropView != null) glassBackdropView.setVisibility(GONE);
+            // A floating glass nav lets the page run edge to edge underneath it, so its glass shows
+            // the real, live page. Docked bars keep their padding (the page stays clear of them).
+            boolean floatingNavGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+                    && sp.getBoolean("sp_liquid_glass_bottom_nav", true)
+                    && isFloatingNavStyle && !isBottom
+                    && !com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp);
             boolean isPillCollapse = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
-            int pillHeightPx = (int) HelperUnit.convertDpToPixel(36f, context);
+            int pillHeightPx = (int) HelperUnit.convertDpToPixel(40f, context);
             com.petal.browser.ui.components.BarInsets.Result insets = com.petal.browser.ui.components.BarInsets.compute(
                     isBottom, reserveBarSpace, addressHeight, bottomNavHeight, gap, resolvedStatusBarGap,
                     legacyUnder && liquidGlassTopOn,
-                    legacyUnder && liquidGlassOn && !wallpaperBackdrop,
+                    (legacyUnder && liquidGlassOn) || floatingNavGlass,
                     isPillCollapse, pillHeightPx, navigationBarBottomInset);
             int topInset = insets.getTop();
             int bottomInset = insets.getBottom();

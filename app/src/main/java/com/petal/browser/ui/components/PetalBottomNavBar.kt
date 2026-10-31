@@ -280,7 +280,10 @@ fun PetalBottomNavBar(
                 .fillMaxWidth(),
             contentAlignment = Alignment.BottomCenter
         ) {
-            val navBarShape = if (isBottomAddressBar) {
+            // A docked glass bar is square-edged: its glass frosts the page's mirrored edge rows
+            // across the whole strip, so rounded top corners would only reveal an empty window.
+            val glassNavShape = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+            val navBarShape = if (isBottomAddressBar || glassNavShape) {
                 RoundedCornerShape(0.dp)
             } else {
                 RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)

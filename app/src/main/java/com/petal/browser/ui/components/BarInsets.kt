@@ -24,21 +24,19 @@ object BarInsets {
         sp.getBoolean(PREF_GLASS_PAGE_UNDER_BARS, false)
 
     /**
-     * Which view a glass bar samples. When the page is padded away from the bars, every glass
-     * bar (top address bar, bottom address bar, nav) sits over the wallpaper backdrop. With the
-     * legacy pref on, the old rule applies: only flat bars sample the backdrop.
+     * Glass bars always sample the live page (main_content), never the wallpaper. Where the page
+     * is padded away from a bar, [com.petal.browser.ui.glass.GlassBackdrop] fills that padding
+     * with the page's nearest rows, mirrored, so the glass still has real site content to frost
+     * and bend. Kept as a function so every caller reads one rule; always false.
      */
     @JvmStatic
+    @Suppress("UNUSED_PARAMETER")
     fun glassSamplesWallpaper(
         sp: SharedPreferences,
         isBottomAddressBar: Boolean,
         floatingNav: Boolean,
         forNav: Boolean
-    ): Boolean {
-        if (!sp.getBoolean("sp_liquid_glass_enabled", false)) return false
-        if (!legacyPageUnderBars(sp)) return true
-        return if (forNav) (isBottomAddressBar || !floatingNav) else isBottomAddressBar
-    }
+    ): Boolean = false
 
     /**
      * @param addressHeight measured height of the address bar; it already includes the status

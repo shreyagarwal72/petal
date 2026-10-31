@@ -157,7 +157,13 @@ fun PetalMergedBar(
                     .fillMaxWidth()
                     .then(
                         if (resolvedIsBottom) Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
-                        else Modifier.padding(horizontal = 12.dp, vertical = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp)
+                        else Modifier.padding(
+                                start = 12.dp,
+                                end = 12.dp,
+                                // The status bar gap sits OUTSIDE the glass, so the glass is just the bar.
+                                top = statusBarTopInset + (if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp),
+                                bottom = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp
+                            )
                     )
                     .then(
                         if (isLiquidGlass && outerBgAlpha > 0.05f) Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
@@ -179,7 +185,7 @@ fun PetalMergedBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
-                            top = if (!resolvedIsBottom) statusBarTopInset + 2.dp else 2.dp,
+                            top = 2.dp,
                             bottom = if (resolvedIsBottom) navBarBottomInset + 4.dp else 2.dp
                         )
                 ) {
