@@ -215,7 +215,7 @@ fun PetalBottomNavBar(
     val collapsedFraction = BarCollapseState.collapsedFraction
     val collapseAlpha = (1f - collapsedFraction * 1.6f).coerceIn(0f, 1f)
     val collapseScale = 0.92f + 0.08f * collapseAlpha
-    val collapseOffsetY = (1f - collapseAlpha) * 16.dp
+    val collapseOffsetY = 16.dp * (1f - collapseAlpha)
 
     if (effectiveFloating) {
         // Stride's floating glass nav bar (see PetalStrideNavBar): the tab pill sits in the
