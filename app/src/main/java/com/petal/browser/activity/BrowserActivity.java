@@ -4437,8 +4437,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
         pillMorphAnimator = android.animation.ValueAnimator.ofFloat(current, target);
-        pillMorphAnimator.setDuration(260);
-        pillMorphAnimator.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
+        pillMorphAnimator.setDuration(320);
+        pillMorphAnimator.setInterpolator(new PathInterpolator(0.2f, 0f, 0f, 1f));
         pillMorphAnimator.addUpdateListener(anim -> {
             float f = (Float) anim.getAnimatedValue();
             com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(f);
@@ -4573,9 +4573,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         };
 
         if (animate) {
-            springTranslateY(addressBar, addrOff, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-            if (navTarget != null) springTranslateY(navTarget, navOff, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-            for (View v : docked) if (v != null) springTranslateY(v, dockedOff, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+            springTranslateY(addressBar, addrOff, 550f, 0.88f);
+            if (navTarget != null) springTranslateY(navTarget, navOff, 550f, 0.88f);
+            for (View v : docked) if (v != null) springTranslateY(v, dockedOff, 550f, 0.88f);
         } else {
             setBarTranslationNow(addressBar, addrOff);
             if (navTarget != null) setBarTranslationNow(navTarget, navOff);
@@ -4604,8 +4604,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     bubble.setScaleX(0f);
                     bubble.setScaleY(0f);
                     bubble.setAlpha(0f);
-                    springScale(bubble, 1f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                    springAlpha(bubble, 1f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                    springScale(bubble, 1f, 550f, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                    springAlpha(bubble, 1f, 550f, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
                 } else {
                     bubble.setScaleX(1f);
                     bubble.setScaleY(1f);
@@ -4613,14 +4613,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             } else if (animate) {
                 final float fAddrH = addrH, fNavH = navH;
-                springScale(bubble, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                springAlpha(bubble, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springScale(bubble, 0f, 550f, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springAlpha(bubble, 0f, 550f, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
                 bubble.postDelayed(() -> {
                     if (!isAddressBarCollapsed) {
                         bubble.setVisibility(GONE);
                         placeBubble(bubble, false, fAddrH, fNavH);
                     }
-                }, 350);
+                }, 320);
             } else {
                 bubble.setVisibility(GONE);
                 placeBubble(bubble, false, addrH, navH);
@@ -4743,8 +4743,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         applied[0] = startOffset;
         final android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofFloat(1f, 0f);
         contentPaddingAnimator = anim;
-        anim.setDuration(240L);
-        anim.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
+        anim.setDuration(300L);
+        anim.setInterpolator(new PathInterpolator(0.2f, 0f, 0f, 1f));
         anim.addUpdateListener(a -> {
             float target = startOffset * (float) a.getAnimatedValue();
             float delta = target - applied[0];

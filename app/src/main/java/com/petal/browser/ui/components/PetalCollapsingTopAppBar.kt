@@ -47,14 +47,24 @@ fun PetalCollapsingTopAppBar(
     title: String,
     onNavigateBack: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior,
+    modifier: Modifier = Modifier,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
+    val collapsedFraction = scrollBehavior.state.collapsedFraction
+    val titleStartPadding = animateDpAsState(
+        targetValue = if (collapsedFraction > 0.5f) 8.dp else 0.dp,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "petalHeaderTitleStartPadding",
+    )
+    val buttonScale by animateFloatAsState(
+        targetValue = if (collapsedFraction > 0.5f) 1.0f else 0.94f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "petalHeaderBackButtonScale"
+    )
+
     MediumTopAppBar(
+        modifier = modifier,
         title = {
-            val titleStartPadding = animateDpAsState(
-                targetValue = if (scrollBehavior.state.collapsedFraction > 0.5f) 6.dp else 0.dp,
-                animationSpec = tween(250),
-                label = "petalHeaderTitleStartPadding",
-            )
             // Zenith-style: fade + scale transition when the title text changes
             // (e.g., switching from "Settings" overview → a sub-page title).
             AnimatedContent(
@@ -88,21 +98,26 @@ fun PetalCollapsingTopAppBar(
         },
         navigationIcon = {
             Crossfade(
-                targetState = scrollBehavior.state.collapsedFraction > 0.5f,
-                animationSpec = tween(500),
+                targetState = collapsedFraction > 0.5f,
+                animationSpec = tween(320),
                 label = "petalHeaderBackButtonMorph",
             ) { scrolled ->
+                val btnModifier = Modifier.graphicsLayer {
+                    scaleX = buttonScale
+                    scaleY = buttonScale
+                }
                 if (scrolled) {
-                    FilledIconButton(onClick = onNavigateBack) {
+                    FilledIconButton(onClick = onNavigateBack, modifier = btnModifier) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 } else {
-                    FilledTonalIconButton(onClick = onNavigateBack) {
+                    FilledTonalIconButton(onClick = onNavigateBack, modifier = btnModifier) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 }
             }
         },
+        actions = actions,
         scrollBehavior = scrollBehavior,
     )
 }

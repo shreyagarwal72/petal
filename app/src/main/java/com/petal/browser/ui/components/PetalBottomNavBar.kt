@@ -211,14 +211,22 @@ fun PetalBottomNavBar(
     val flatNavInset = if (!effectiveFloating) {
         with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
     } else 0.dp
+
+    val collapsedFraction = BarCollapseState.collapsedFraction
+    val collapseAlpha = (1f - collapsedFraction * 1.6f).coerceIn(0f, 1f)
+    val collapseScale = 0.92f + 0.08f * collapseAlpha
+    val collapseOffsetY = (1f - collapseAlpha) * 16.dp
+
     if (effectiveFloating) {
         // Stride's floating glass nav bar (see PetalStrideNavBar): the tab pill sits in the
         // middle, and search is its own glass button on the right.
         Row(
             modifier = modifier
                 .graphicsLayer {
-                    translationY = (1f - entrance.value) * entranceOffsetPx
-                    alpha = entrance.value.coerceIn(0f, 1f)
+                    translationY = (1f - entrance.value) * entranceOffsetPx + collapseOffsetY.toPx()
+                    scaleX = collapseScale
+                    scaleY = collapseScale
+                    alpha = entrance.value.coerceIn(0f, 1f) * collapseAlpha
                 }
                 .fillMaxWidth()
                 .navigationBarsPadding()
@@ -274,8 +282,10 @@ fun PetalBottomNavBar(
         Box(
             modifier = modifier
                 .graphicsLayer {
-                    translationY = (1f - entrance.value) * entranceOffsetPx + searchLaunch.value * 22.dp.toPx()
-                    alpha = entrance.value.coerceIn(0f, 1f) * (1f - searchLaunch.value)
+                    translationY = (1f - entrance.value) * entranceOffsetPx + searchLaunch.value * 22.dp.toPx() + collapseOffsetY.toPx()
+                    scaleX = collapseScale
+                    scaleY = collapseScale
+                    alpha = entrance.value.coerceIn(0f, 1f) * (1f - searchLaunch.value) * collapseAlpha
                 }
                 .fillMaxWidth(),
             contentAlignment = Alignment.BottomCenter

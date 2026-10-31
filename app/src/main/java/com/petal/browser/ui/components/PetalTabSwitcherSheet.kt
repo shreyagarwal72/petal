@@ -673,6 +673,7 @@ fun PetalTabSwitcherContent(
                         ) { tab ->
                             TabCard(
                                 tab = tab,
+                                modifier = Modifier.animateItem(),
                                 onSelect = { onSelectTab(tab) },
                                 onClose = {
                                     lastClosedTab = tab
@@ -816,7 +817,8 @@ private fun EmptyStateIllustration() {
 fun TabCard(
     tab: TabModel,
     onSelect: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val borderColor = if (tab.isActive) MaterialTheme.colorScheme.primary else Color.Transparent
     val borderWidth = if (tab.isActive) 2.dp else 0.dp
@@ -826,7 +828,7 @@ fun TabCard(
         shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
         containerColor = if (tab.isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
         else MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(105.dp)
             .border(borderWidth, borderColor, com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner)

@@ -1,10 +1,14 @@
 package com.petal.browser.ui.components
 
 import android.view.View
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -17,11 +21,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +72,13 @@ fun PetalMinimizedPill(
     }
 
     val outlineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "pill_press_scale"
+    )
 
     Box(
         modifier = modifier
@@ -87,6 +100,10 @@ fun PetalMinimizedPill(
             modifier = Modifier
                 .height(40.dp)
                 .wrapContentWidth()
+                .graphicsLayer {
+                    scaleX = pressScale
+                    scaleY = pressScale
+                }
                 .then(
                     if (isGlass) {
                         Modifier.liquidGlass(pillShape, baseGlassColor, glassBar)
@@ -112,7 +129,7 @@ fun PetalMinimizedPill(
                     )
                 }
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = interactionSource,
                     indication = ripple(bounded = true)
                 ) {
                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)

@@ -134,9 +134,19 @@ fun PetalMergedBar(
         .asPaddingValues().calculateBottomPadding()
 
     val collapseProgress = if (isPillCollapse) collapsedFraction.coerceIn(0f, 1f) else 0f
-    val fullBarAlpha = if (isPillCollapse) (1f - collapseProgress * 2f).coerceIn(0f, 1f) else 1f
-    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.35f) / 0.65f).coerceIn(0f, 1f) else 0f
-    val pillScale = 0.85f + 0.15f * pillAlpha
+    val fullBarAlpha = if (isPillCollapse) (1f - collapseProgress * 1.54f).coerceIn(0f, 1f) else 1f
+    val fullBarScaleX = if (isPillCollapse) (0.92f + 0.08f * fullBarAlpha) else 1f
+    val fullBarScaleY = if (isPillCollapse) (0.90f + 0.10f * fullBarAlpha) else 1f
+    val fullBarTranslationY = if (isPillCollapse) ((if (resolvedIsBottom) 8.dp else (-8).dp) * collapseProgress) else 0.dp
+
+    val sideButtonAlpha = if (isPillCollapse) (1f - collapseProgress * 2.5f).coerceIn(0f, 1f) else 1f
+    val sideButtonScale = if (isPillCollapse) (0.75f + 0.25f * sideButtonAlpha) else 1f
+    val leftButtonOffset = if (isPillCollapse) ((-16).dp * collapseProgress) else 0.dp
+    val rightButtonOffset = if (isPillCollapse) (16.dp * collapseProgress) else 0.dp
+
+    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.25f) / 0.75f).coerceIn(0f, 1f) else 0f
+    val pillScale = 0.88f + 0.12f * pillAlpha
+    val pillTranslationY = (if (resolvedIsBottom) (-8).dp else 8.dp) * (1f - pillAlpha)
     val outerBgAlpha = if (isPillCollapse) (1f - collapseProgress * 1.6f).coerceIn(0f, 1f) else 1f
 
     val animatedContainerColor = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * outerBgAlpha)
@@ -172,7 +182,9 @@ fun PetalMergedBar(
                     )
                     .graphicsLayer {
                         alpha = fullBarAlpha
-                        scaleY = 0.94f + 0.06f * fullBarAlpha
+                        scaleX = fullBarScaleX
+                        scaleY = fullBarScaleY
+                        translationY = fullBarTranslationY.toPx()
                     }
                     .combinedClickable(
                         onClick = {},
@@ -224,7 +236,13 @@ fun PetalMergedBar(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(44.dp),
+                                .height(44.dp)
+                                .graphicsLayer {
+                                    alpha = sideButtonAlpha
+                                    scaleX = sideButtonScale
+                                    scaleY = sideButtonScale
+                                    translationY = (if (resolvedIsBottom) 12.dp else (-12).dp).toPx() * collapseProgress
+                                },
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -263,28 +281,38 @@ fun PetalMergedBar(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Leading Buttons
-                        leadingActions.forEach { action ->
-                            BarActionButton(
-                                action = action,
-                                isLoading = isLoading,
-                                canGoBack = canGoBack,
-                                canGoForward = canGoForward,
-                                tabCount = tabCount,
-                                onBackClick = onBackClick,
-                                onForwardClick = onForwardClick,
-                                onReloadClick = onReloadClick,
-                                onShareClick = onShareClick,
-                                onHomeClick = onHomeClick,
-                                onNewTabClick = onNewTabClick,
-                                onTabsClick = onTabsClick,
-                                onMenuClick = onMenuClick,
-                                onSearchClick = onSearchClick,
-                                onDownloadsClick = onDownloadsClick,
-                                onFindInPageClick = onFindInPageClick,
-                                onBookmarkClick = onBookmarkClick,
-                                onAiResearchClick = onAiResearchClick,
-                                onReaderClick = onReaderClick
-                            )
+                        Row(
+                            modifier = Modifier.graphicsLayer {
+                                alpha = sideButtonAlpha
+                                scaleX = sideButtonScale
+                                scaleY = sideButtonScale
+                                translationX = leftButtonOffset.toPx()
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            leadingActions.forEach { action ->
+                                BarActionButton(
+                                    action = action,
+                                    isLoading = isLoading,
+                                    canGoBack = canGoBack,
+                                    canGoForward = canGoForward,
+                                    tabCount = tabCount,
+                                    onBackClick = onBackClick,
+                                    onForwardClick = onForwardClick,
+                                    onReloadClick = onReloadClick,
+                                    onShareClick = onShareClick,
+                                    onHomeClick = onHomeClick,
+                                    onNewTabClick = onNewTabClick,
+                                    onTabsClick = onTabsClick,
+                                    onMenuClick = onMenuClick,
+                                    onSearchClick = onSearchClick,
+                                    onDownloadsClick = onDownloadsClick,
+                                    onFindInPageClick = onFindInPageClick,
+                                    onBookmarkClick = onBookmarkClick,
+                                    onAiResearchClick = onAiResearchClick,
+                                    onReaderClick = onReaderClick
+                                )
+                            }
                         }
 
                         // Center URL Pill
@@ -311,28 +339,38 @@ fun PetalMergedBar(
                         )
 
                         // Trailing Buttons
-                        trailingActions.forEach { action ->
-                            BarActionButton(
-                                action = action,
-                                isLoading = isLoading,
-                                canGoBack = canGoBack,
-                                canGoForward = canGoForward,
-                                tabCount = tabCount,
-                                onBackClick = onBackClick,
-                                onForwardClick = onForwardClick,
-                                onReloadClick = onReloadClick,
-                                onShareClick = onShareClick,
-                                onHomeClick = onHomeClick,
-                                onNewTabClick = onNewTabClick,
-                                onTabsClick = onTabsClick,
-                                onMenuClick = onMenuClick,
-                                onSearchClick = onSearchClick,
-                                onDownloadsClick = onDownloadsClick,
-                                onFindInPageClick = onFindInPageClick,
-                                onBookmarkClick = onBookmarkClick,
-                                onAiResearchClick = onAiResearchClick,
-                                onReaderClick = onReaderClick
-                            )
+                        Row(
+                            modifier = Modifier.graphicsLayer {
+                                alpha = sideButtonAlpha
+                                scaleX = sideButtonScale
+                                scaleY = sideButtonScale
+                                translationX = rightButtonOffset.toPx()
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            trailingActions.forEach { action ->
+                                BarActionButton(
+                                    action = action,
+                                    isLoading = isLoading,
+                                    canGoBack = canGoBack,
+                                    canGoForward = canGoForward,
+                                    tabCount = tabCount,
+                                    onBackClick = onBackClick,
+                                    onForwardClick = onForwardClick,
+                                    onReloadClick = onReloadClick,
+                                    onShareClick = onShareClick,
+                                    onHomeClick = onHomeClick,
+                                    onNewTabClick = onNewTabClick,
+                                    onTabsClick = onTabsClick,
+                                    onMenuClick = onMenuClick,
+                                    onSearchClick = onSearchClick,
+                                    onDownloadsClick = onDownloadsClick,
+                                    onFindInPageClick = onFindInPageClick,
+                                    onBookmarkClick = onBookmarkClick,
+                                    onAiResearchClick = onAiResearchClick,
+                                    onReaderClick = onReaderClick
+                                )
+                            }
                         }
                     }
                 }
@@ -354,6 +392,7 @@ fun PetalMergedBar(
                     alpha = pillAlpha
                     scaleX = pillScale
                     scaleY = pillScale
+                    translationY = pillTranslationY.toPx()
                 }
             )
         }

@@ -554,7 +554,8 @@ fun PetalOmniboxPage(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .statusBarsPadding()
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .entrance(index = 0),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             OutlinedTextField(
@@ -711,6 +712,7 @@ fun PetalOmniboxPage(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 4.dp)
+                                    .entrance(index = 1)
                                     .liquidGlassChrome(shape = qaShape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
                             ) {
                                 Row(
@@ -870,6 +872,7 @@ fun PetalOmniboxPage(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 12.dp, vertical = 6.dp)
+                                        .entrance(index = 2)
                                         .liquidGlassChrome(shape = pasteShape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
                                 ) {
                                     Row(

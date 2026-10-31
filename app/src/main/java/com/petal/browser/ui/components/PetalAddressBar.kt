@@ -110,9 +110,19 @@ fun PetalAddressBar(
         .asPaddingValues().calculateBottomPadding()
 
     val collapseProgress = if (isPillCollapse) collapsedFraction.coerceIn(0f, 1f) else 0f
-    val fullBarAlpha = if (isPillCollapse) (1f - collapseProgress * 2f).coerceIn(0f, 1f) else 1f
-    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.35f) / 0.65f).coerceIn(0f, 1f) else 0f
-    val pillScale = 0.85f + 0.15f * pillAlpha
+    val fullBarAlpha = if (isPillCollapse) (1f - collapseProgress * 1.54f).coerceIn(0f, 1f) else 1f
+    val fullBarScaleX = if (isPillCollapse) (0.92f + 0.08f * fullBarAlpha) else 1f
+    val fullBarScaleY = if (isPillCollapse) (0.90f + 0.10f * fullBarAlpha) else 1f
+    val fullBarTranslationY = if (isPillCollapse) ((if (resolvedIsBottom) 8.dp else (-8).dp) * collapseProgress) else 0.dp
+
+    val sideButtonAlpha = if (isPillCollapse) (1f - collapseProgress * 2.5f).coerceIn(0f, 1f) else 1f
+    val sideButtonScale = if (isPillCollapse) (0.75f + 0.25f * sideButtonAlpha) else 1f
+    val leftButtonOffset = if (isPillCollapse) ((-16).dp * collapseProgress) else 0.dp
+    val rightButtonOffset = if (isPillCollapse) (16.dp * collapseProgress) else 0.dp
+
+    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.25f) / 0.75f).coerceIn(0f, 1f) else 0f
+    val pillScale = 0.88f + 0.12f * pillAlpha
+    val pillTranslationY = (if (resolvedIsBottom) (-8).dp else 8.dp) * (1f - pillAlpha)
     val outerBgAlpha = if (isPillCollapse) (1f - collapseProgress * 1.6f).coerceIn(0f, 1f) else 1f
 
     val animatedContainerColor = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * outerBgAlpha)
@@ -152,7 +162,9 @@ fun PetalAddressBar(
                     )
                     .graphicsLayer {
                         alpha = fullBarAlpha
-                        scaleY = 0.94f + 0.06f * fullBarAlpha
+                        scaleX = fullBarScaleX
+                        scaleY = fullBarScaleY
+                        translationY = fullBarTranslationY.toPx()
                     }
             ) {
                 Box(
@@ -178,7 +190,14 @@ fun PetalAddressBar(
                         IconButton(
                             onClick = onBackClick,
                             enabled = isLeftEnabled,
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier
+                                .size(48.dp)
+                                .graphicsLayer {
+                                    alpha = sideButtonAlpha
+                                    scaleX = sideButtonScale
+                                    scaleY = sideButtonScale
+                                    translationX = leftButtonOffset.toPx()
+                                }
                         ) {
                             Icon(
                                 imageVector = leftIcon,
@@ -218,7 +237,14 @@ fun PetalAddressBar(
                         // Far Right: Share Icon Button
                         IconButton(
                             onClick = onShareClick,
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier
+                                .size(48.dp)
+                                .graphicsLayer {
+                                    alpha = sideButtonAlpha
+                                    scaleX = sideButtonScale
+                                    scaleY = sideButtonScale
+                                    translationX = rightButtonOffset.toPx()
+                                }
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Share,
@@ -246,6 +272,7 @@ fun PetalAddressBar(
                     alpha = pillAlpha
                     scaleX = pillScale
                     scaleY = pillScale
+                    translationY = pillTranslationY.toPx()
                 }
             )
         }
