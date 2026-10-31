@@ -829,9 +829,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setImmersiveFullScreen(enabled: Boolean) {
-        withContext(Dispatchers.IO) {
-            sp.edit().putBoolean("sp_immersive_fullscreen", enabled).apply()
-        }
+        sp.edit().putBoolean("sp_immersive_fullscreen", enabled).apply()
     }
 
     override suspend fun setTouchHaptics(enabled: Boolean) {
