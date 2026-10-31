@@ -1,5 +1,5 @@
 /*
- * PetalFilePicker.kt
+ * PetalFilePickerScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Built-in native Material 3 Expressive File Selector & Browser for Petal Browser.
  * Inspired by Morphe-Manager's file browser and enhanced with:

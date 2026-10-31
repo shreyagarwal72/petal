@@ -48,8 +48,8 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.AsyncImage
 import com.petal.browser.compose.home.PetalShortcut
 import com.petal.browser.account.AvatarType
-import com.petal.browser.account.GoogleAccountManager
-import com.petal.browser.account.GoogleUserProfile
+import com.petal.browser.account.PetalUserProfileManager
+import com.petal.browser.account.PetalUserProfile
 import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.account.getPresetMaterialIcon
 import com.petal.browser.account.PetalAvatarCropSheet
@@ -85,7 +85,7 @@ fun FirefoxAccountSyncScreen(
     val syncState by syncManager.syncState.collectAsState()
     val remoteDevices by syncManager.tabBridge.remoteTabsFlow.collectAsState()
 
-    val profile = GoogleAccountManager.currentProfile
+    val profile = PetalUserProfileManager.currentProfile
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -287,7 +287,7 @@ fun FirefoxAccountSyncScreen(
                                             }
                                         }
 
-                                        GoogleAccountManager.builtinAvatarPresets.forEach { (presetId, label) ->
+                                        PetalUserProfileManager.builtinAvatarPresets.forEach { (presetId, label) ->
                                             val isSelected = profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == presetId
                                             Surface(
                                                 shape = CircleShape,
@@ -295,7 +295,7 @@ fun FirefoxAccountSyncScreen(
                                                 border = if (isSelected) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else null,
                                                 modifier = Modifier
                                                     .size(52.dp)
-                                                    .bouncyClickable { GoogleAccountManager.updateAvatarPreset(context, presetId) }
+                                                    .bouncyClickable { PetalUserProfileManager.updateAvatarPreset(context, presetId) }
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
                                                     val iconVec = getPresetMaterialIcon(presetId)
@@ -1189,7 +1189,7 @@ fun FirefoxAccountSyncScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        GoogleAccountManager.updateDisplayName(context, nameInput)
+                        PetalUserProfileManager.updateDisplayName(context, nameInput)
                         showEditNameDialog = false
                     },
                     shape = RoundedCornerShape(20.dp),

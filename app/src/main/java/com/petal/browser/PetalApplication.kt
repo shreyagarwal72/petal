@@ -12,7 +12,6 @@ import android.os.Bundle
 import android.os.Process
 import android.util.Log
 import androidx.preference.PreferenceManager
-import com.petal.browser.engine.ChromiumNativeEngineCore
 import com.petal.browser.predictive.PetalPredictiveJunction
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.TabThumbnailCache
@@ -24,7 +23,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Custom Application class for Petal Browser written in Kotlin.
- * Initializes ChromiumNativeEngineCore and predictive junctions during early app process launch.
+ * Initializes predictive junctions and Gecko runtime during early app process launch.
  */
 @HiltAndroidApp
 class PetalApplication : Application() {

@@ -15,7 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.preference.PreferenceManager
-import com.petal.browser.account.GoogleAccountManager
+import com.petal.browser.account.PetalUserProfileManager
 import org.json.JSONArray
 import java.util.UUID
 
@@ -55,8 +55,8 @@ object PetalProfileManager {
         val savedActiveId = sp.getString(KEY_ACTIVE_PROFILE_ID, PetalProfile.DEFAULT_PROFILE.id)
         activeProfile = loadedProfiles.find { it.id == savedActiveId } ?: loadedProfiles.first()
 
-        // Sync with GoogleAccountManager display name if default
-        GoogleAccountManager.init(context)
+        // Sync with PetalUserProfileManager display name if default
+        PetalUserProfileManager.init(context)
     }
 
     fun switchProfile(context: Context, profileId: String) {

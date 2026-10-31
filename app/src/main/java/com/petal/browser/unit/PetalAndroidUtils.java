@@ -100,7 +100,7 @@ import com.petal.browser.activity.BrowserActivity;
 import com.petal.browser.activity.SettingsMenuActivity;
 import com.petal.browser.browser.BrowserController;
 import com.petal.browser.browser.DataURIParser;
-import com.petal.browser.browser.List_standard;
+import com.petal.browser.browser.StandardDomainWhitelist;
 import com.petal.browser.database.FaviconHelper;
 import com.petal.browser.view.GridItem;
 import com.petal.browser.view.MenuItem;
@@ -532,7 +532,7 @@ public class PetalAndroidUtils {
         String tvt = tv.getText().toString().toLowerCase();
         int ofe = tvt.indexOf(textToHighlight.toLowerCase());
         Spannable wordToSpan = new SpannableString(tv.getText());
-        List_standard listStandard = new List_standard(context);
+        StandardDomainWhitelist listStandard = new StandardDomainWhitelist(context);
         for (int ofs = 0; ofs < tvt.length() && ofe != -1; ofs = ofe + 1) {
             ofe = tvt.indexOf(textToHighlight, ofs);
             if (ofe == -1)

@@ -7,10 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.preference.PreferenceManager
 
-/** Local profile/avatar state for the FOSS build. No Google or Play Services code is used. */
+/** Local profile and avatar state for Petal Browser. Purely offline, FOSS user personalization. */
 enum class AvatarType { PRESET, GALLERY_URI, GOOGLE_URL }
 
-data class GoogleUserProfile(
+data class PetalUserProfile(
     val email: String,
     val displayName: String,
     val avatarUrl: String? = null,
@@ -22,12 +22,12 @@ data class GoogleUserProfile(
     val avatarTimestamp: Long = System.currentTimeMillis()
 )
 
-sealed class GoogleSignInResult {
-    data class Success(val profile: GoogleUserProfile) : GoogleSignInResult()
-    data class Failure(val message: String) : GoogleSignInResult()
+sealed class PetalSignInResult {
+    data class Success(val profile: PetalUserProfile) : PetalSignInResult()
+    data class Failure(val message: String) : PetalSignInResult()
 }
 
-object GoogleAccountManager {
+object PetalUserProfileManager {
     private const val KEY_EMAIL = "sp_google_account_email"
     private const val KEY_DISPLAY_NAME = "sp_google_account_display_name"
     private const val KEY_AVATAR_TYPE = "sp_user_avatar_type"
@@ -41,7 +41,7 @@ object GoogleAccountManager {
         "sparkle" to "Sparkles", "bot_avatar" to "Cyber Bot"
     )
 
-    var currentProfile by mutableStateOf(GoogleUserProfile("user@petalbrowser.org", "Petal Explorer"))
+    var currentProfile by mutableStateOf(PetalUserProfile("user@petalbrowser.org", "Petal Explorer"))
         private set
 
     fun init(context: Context) {
@@ -87,3 +87,8 @@ object GoogleAccountManager {
             customAvatarUri = uriString, avatarTimestamp = System.currentTimeMillis())
     }
 }
+
+// Backward-compatible type aliases
+typealias GoogleUserProfile = PetalUserProfile
+typealias GoogleAccountManager = PetalUserProfileManager
+typealias GoogleSignInResult = PetalSignInResult

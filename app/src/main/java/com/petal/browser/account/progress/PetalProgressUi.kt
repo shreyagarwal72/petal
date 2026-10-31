@@ -40,7 +40,7 @@ import com.petal.browser.ui.components.PetalButtonVariant
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
-import com.petal.browser.account.GoogleUserProfile
+import com.petal.browser.account.PetalUserProfile
 import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
@@ -73,7 +73,7 @@ private fun fmt(n: Long): String = NumberFormat.getIntegerInstance().format(n)
 
 @Composable
 fun PetalProfileCard(
-    profile: GoogleUserProfile,
+    profile: PetalUserProfile,
     onAvatarClick: () -> Unit,
     onEditName: () -> Unit,
     modifier: Modifier = Modifier,

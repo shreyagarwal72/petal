@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Objects;
 
 import com.petal.browser.R;
-import com.petal.browser.browser.List_standard;
+import com.petal.browser.browser.StandardDomainWhitelist;
 import com.petal.browser.database.RecordAction;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
@@ -40,7 +40,7 @@ import com.petal.browser.view.ProfileListAdapter;
 public class SettingsProfileListActivity extends AppCompatActivity {
 
     private List<String> list;
-    private List_standard listStandard;
+    private StandardDomainWhitelist listStandard;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -52,7 +52,7 @@ public class SettingsProfileListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
 
-        listStandard = new List_standard(this);
+        listStandard = new StandardDomainWhitelist(this);
         RecordAction action = new RecordAction(this);
         action.open(false);
         list = action.listDomains(RecordUnit.TABLE_STANDARD);

@@ -63,7 +63,7 @@ Back gesture dispatching is carefully split between the native Android platform 
 - `com.petal.browser.activity`: Core Android activities (`BrowserActivity`, `SettingsActivity`, `AppLockActivity`).
 - `com.petal.browser.browser`: Core browser contracts and controllers (`BrowserController`, `AlbumController`, `BrowserContainer`).
 - `com.petal.browser.view`: Engine rendering views (`PetalGeckoView`).
-- `com.petal.browser.engine`: Low-level engine integrations (`PetalGeckoRuntime`, `ChromiumNativeEngineCore`, `FullscreenVideoRules`).
+- `com.petal.browser.engine`: Low-level engine integrations (`PetalGeckoRuntime`, `FullscreenVideoRules`).
 - `com.petal.browser.compose`: Jetpack Compose UI surfaces (settings, tabs, omnibox, context menus, video player).
 - `com.petal.browser.predictive`: Predictive back gesture coordination, blur snapshots, and transition curves.
 - `com.petal.browser.media`: Video overlays, PiP coordination (`BrowserMediaDelegate`), and `PetalMediaBridge`.

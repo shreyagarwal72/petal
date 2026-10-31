@@ -39,8 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
-import com.petal.browser.account.GoogleAccountManager
-import com.petal.browser.account.GoogleUserProfile
+import com.petal.browser.account.PetalUserProfileManager
+import com.petal.browser.account.PetalUserProfile
 import com.petal.browser.account.PetalAvatarCropSheet
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.profile.PetalProfile
@@ -446,7 +446,7 @@ fun PetalProfileSwitchSheet(
             onSaveBitmap = { bitmap ->
                 val targetProfileId = pendingAvatarTargetProfileId
                 if (targetProfileId == PetalProfile.DEFAULT_PROFILE.id) {
-                    GoogleAccountManager.saveCroppedAvatar(context, bitmap)
+                    PetalUserProfileManager.saveCroppedAvatar(context, bitmap)
                 } else {
                     val avatarUri = savePetalProfileAvatarBitmap(context, bitmap)
                     if (targetProfileId != null) {

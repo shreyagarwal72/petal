@@ -47,7 +47,7 @@ import java.util.regex.Pattern;
 
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
-import com.petal.browser.browser.List_standard;
+import com.petal.browser.browser.StandardDomainWhitelist;
 import com.petal.browser.database.RecordAction;
 import com.petal.browser.objects.CustomRedirect;
 import com.petal.browser.objects.CustomRedirectsHelper;
@@ -319,7 +319,7 @@ public class PetalBrowserUtils {
         }
         if (clearSettings) {
             clearSettingsSafely(sp);
-            List_standard listStandard = new List_standard(context);
+            StandardDomainWhitelist listStandard = new StandardDomainWhitelist(context);
             listStandard.clearDomains();
         }
         // ONLY clear cookies and logins if the user explicitly commanded manual cookie deletion

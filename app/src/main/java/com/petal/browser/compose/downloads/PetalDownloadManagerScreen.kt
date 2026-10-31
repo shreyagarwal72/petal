@@ -1,5 +1,5 @@
 /*
- * PetalDownloadManager.kt
+ * PetalDownloadManagerScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Native Inbuilt Download Manager UI for Petal Browser featuring Chrome-style
  * grouped downloads, sticky date headers, file type avatars, 2-line title/subtitle

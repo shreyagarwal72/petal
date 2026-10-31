@@ -69,7 +69,7 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 
 import com.petal.browser.R;
-import com.petal.browser.browser.List_standard;
+import com.petal.browser.browser.StandardDomainWhitelist;
 import com.petal.browser.database.Record;
 import com.petal.browser.database.RecordAction;
 import com.petal.browser.view.PetalToast;
@@ -811,7 +811,7 @@ public class PetalBackupManager {
                         try {
                             org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
                             RecordAction action = new RecordAction(context);
-                            List_standard listStandard = new List_standard(context);
+                            StandardDomainWhitelist listStandard = new StandardDomainWhitelist(context);
                             action.open(true);
                             for (int i = 0; i < sitesArray.length(); i++) {
                                 String domain = sitesArray.optString(i, "");
@@ -1056,7 +1056,7 @@ public class PetalBackupManager {
                         try {
                             org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
                             RecordAction action = new RecordAction(context);
-                            List_standard listStandard = new List_standard(context);
+                            StandardDomainWhitelist listStandard = new StandardDomainWhitelist(context);
                             action.open(true);
                             for (int i = 0; i < sitesArray.length(); i++) {
                                 String domain = sitesArray.optString(i, "");

@@ -145,7 +145,7 @@ import com.petal.browser.browser.AlbumController;
 import com.petal.browser.browser.BrowserContainer;
 import com.petal.browser.browser.BrowserController;
 import com.petal.browser.browser.DataURIParser;
-import com.petal.browser.browser.List_standard;
+import com.petal.browser.browser.StandardDomainWhitelist;
 import com.petal.browser.database.FaviconHelper;
 import com.petal.browser.database.Record;
 import com.petal.browser.database.RecordAction;
@@ -228,7 +228,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @SuppressLint("StaticFieldLeak")
     public static Context context;
     public SharedPreferences sp;
-    public List_standard listStandard;
+    public StandardDomainWhitelist listStandard;
     public long newIcon;
     public long filterBy;
     public boolean filter;
@@ -901,7 +901,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(context);
         } catch (Exception ignored) {}
         HelperUnit.initTheme(activity);
-        com.petal.browser.account.GoogleAccountManager.INSTANCE.init(this);
+        com.petal.browser.account.PetalUserProfileManager.INSTANCE.init(this);
         com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance().initialize(this);
         com.petal.browser.unit.BackupUnit.performAutoVersionBackup(this);
 
@@ -1124,7 +1124,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         petalBrowserFeatures.start();
         try {
-            com.petal.browser.account.GoogleAccountManager.INSTANCE.init(this);
+            com.petal.browser.account.PetalUserProfileManager.INSTANCE.init(this);
             com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance().initialize(this);
         } catch (Exception e) {
             e.printStackTrace();
@@ -5779,7 +5779,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void showDialogFastToggle(String title, String url, FloatingActionButton floatingActionButton) {
 
-        listStandard = new List_standard(context);
+        listStandard = new StandardDomainWhitelist(context);
         
 
         String profile;
@@ -6285,7 +6285,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             floatingActionButton.setImageResource(R.drawable.icon_profile_changed);
             fab_menu.setImageResource(R.drawable.icon_profile_changed);
         }
-        listStandard = new List_standard(context);
+        listStandard = new StandardDomainWhitelist(context);
         if (listStandard.isWhite(url)) {
             floatingActionButton.getDrawable().mutate().setTint(color);
             fab_menu.getDrawable().mutate().setTint(color);
@@ -6372,7 +6372,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void shareLink(String title, String url) {
         String cleanUrl = com.petal.browser.privacy.PetalUrlCleaner.cleanUrl(url);
         hideOverview();
-        List_standard listStandard = new List_standard(context);
+        StandardDomainWhitelist listStandard = new StandardDomainWhitelist(context);
         String profile = sp.getString("profile", "profileStandard");
         if (listStandard.isWhite(cleanUrl)) profile = HelperUnit.domain(cleanUrl);
 

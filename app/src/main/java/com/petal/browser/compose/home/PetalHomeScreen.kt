@@ -61,8 +61,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
-import com.petal.browser.account.GoogleAccountManager
-import com.petal.browser.account.GoogleUserProfile
+import com.petal.browser.account.PetalUserProfileManager
+import com.petal.browser.account.PetalUserProfile
 import com.petal.browser.profile.PetalProfileAvatar
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
@@ -447,7 +447,7 @@ fun ComposeView.setupExpressiveHomeScreen(
 @Composable
 fun PetalHomeScreen(
     backgroundSnapshot: ImageBitmap? = null,
-    profile: GoogleUserProfile = GoogleAccountManager.currentProfile,
+    profile: PetalUserProfile = PetalUserProfileManager.currentProfile,
     onSearch: (String) -> Unit = {},
     onOpenShortcutUrl: (String) -> Unit = {},
     onOpenAccountSync: () -> Unit = {},
@@ -1331,7 +1331,7 @@ private object PetalSessionGreeting {
 }
 
 @Composable
-private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserProfile) {
+private fun PetalGreetingTagline(profile: com.petal.browser.account.PetalUserProfile) {
     val context = LocalContext.current
     val username = profile.displayName.ifBlank { "Petal Explorer" }
 

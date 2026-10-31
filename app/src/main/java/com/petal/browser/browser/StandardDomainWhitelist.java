@@ -9,12 +9,12 @@ import com.petal.browser.database.RecordAction;
 import com.petal.browser.unit.HelperUnit;
 import com.petal.browser.unit.RecordUnit;
 
-public class List_standard {
+public class StandardDomainWhitelist {
 
     private static final List<String> listStandard = new ArrayList<>();
     private final Context context;
 
-    public List_standard(Context context) {
+    public StandardDomainWhitelist(Context context) {
         this.context = context;
         loadDomains(context);
     }

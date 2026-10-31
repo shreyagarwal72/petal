@@ -14,7 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.petal.browser.account.GoogleAccountManager
+import com.petal.browser.account.PetalUserProfileManager
 import com.petal.browser.account.ProfileAvatarDisplay
 
 /** Shows the account-page avatar for the default profile and the saved gallery avatar for others. */
@@ -27,7 +27,7 @@ fun PetalProfileAvatar(
 ) {
     if (profile.isDefault) {
         ProfileAvatarDisplay(
-            profile = GoogleAccountManager.currentProfile,
+            profile = PetalUserProfileManager.currentProfile,
             sizeDp = size.value.toInt().coerceAtLeast(1),
             modifier = modifier,
         )

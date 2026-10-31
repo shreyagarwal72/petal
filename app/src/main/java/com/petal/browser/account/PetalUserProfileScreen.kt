@@ -72,7 +72,7 @@ import com.petal.browser.R
 
 @Composable
 fun ProfileAvatarDisplay(
-    profile: GoogleUserProfile,
+    profile: PetalUserProfile,
     sizeDp: Int = 72,
     modifier: Modifier = Modifier
 ) {
@@ -172,7 +172,7 @@ fun PetalUserProfileScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val profile = GoogleAccountManager.currentProfile
+    val profile = PetalUserProfileManager.currentProfile
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var isLoading by remember { mutableStateOf(false) }
@@ -181,7 +181,7 @@ fun PetalUserProfileScreen(
     var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
 
     LaunchedEffect(Unit) {
-        GoogleAccountManager.init(context)
+        PetalUserProfileManager.init(context)
     }
 
     DisposableEffect(sp) {
@@ -252,7 +252,7 @@ fun PetalUserProfileScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RenderUserProfileContent(
-    profile: GoogleUserProfile,
+    profile: PetalUserProfile,
     isLoading: Boolean,
     isExpressiveFeatureTiles: Boolean,
     snackbarHostState: SnackbarHostState,
@@ -478,7 +478,7 @@ private fun RenderUserProfileContent(
                         }
 
                         // Built-in Presets
-                        GoogleAccountManager.builtinAvatarPresets.forEach { (presetId, label) ->
+                        PetalUserProfileManager.builtinAvatarPresets.forEach { (presetId, label) ->
                             val isSelected = profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == presetId
                             Surface(
                                 shape = CircleShape,
@@ -486,7 +486,7 @@ private fun RenderUserProfileContent(
                                 border = if (isSelected) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else null,
                                 modifier = Modifier
                                     .size(52.dp)
-                                    .bouncyClickable { GoogleAccountManager.updateAvatarPreset(context, presetId) }
+                                    .bouncyClickable { PetalUserProfileManager.updateAvatarPreset(context, presetId) }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     val iconVec = getPresetMaterialIcon(presetId)
@@ -789,7 +789,7 @@ private fun RenderUserProfileContent(
                     confirmButton = {
                         Button(
                             onClick = {
-                                GoogleAccountManager.updateDisplayName(context, nameInput)
+                                PetalUserProfileManager.updateDisplayName(context, nameInput)
                                 showEditNameDialog = false
                             },
                             shape = RoundedCornerShape(20.dp),
@@ -820,7 +820,7 @@ private fun RenderUserProfileContent(
                     sourceUri = pendingCropUri!!,
                     onDismiss = { showCropDialog = false },
                     onCropSuccess = { croppedUriString ->
-                        GoogleAccountManager.updateAvatarGalleryUri(context, croppedUriString)
+                        PetalUserProfileManager.updateAvatarGalleryUri(context, croppedUriString)
                         showCropDialog = false
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar("Profile picture cropped and updated!")

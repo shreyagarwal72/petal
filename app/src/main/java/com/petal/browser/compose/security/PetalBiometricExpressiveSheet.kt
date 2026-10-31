@@ -1,5 +1,5 @@
 /*
- * PetalBiometricExpressiveOverlay.kt
+ * PetalBiometricExpressiveSheet.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Material 3 Expressive Biometric Authentication Dialog/Overlay for Petal Browser.
  * Enhances the system biometric unlock experience with:

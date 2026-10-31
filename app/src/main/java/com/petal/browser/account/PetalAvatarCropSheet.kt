@@ -223,7 +223,7 @@ fun PetalAvatarCropSheet(
                         if (onSaveBitmap != null) {
                             onSaveBitmap(cropped)
                         } else {
-                            GoogleAccountManager.saveCroppedAvatar(context, cropped)
+                            PetalUserProfileManager.saveCroppedAvatar(context, cropped)
                         }
                         PetalHapticEngine.getInstance(context).playClick(context)
                         onAvatarCropped()
