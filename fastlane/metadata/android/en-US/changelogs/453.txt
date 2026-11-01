@@ -1,4 +1,6 @@
 Petal Browser v4.5.3 Release:
+- Live Liquid Glass Minimized Address Bar: Restored transparent refractive Liquid Glass in the compact minimized pill over live scrolling webpages.
+- Material 3 Expressive Minimization Motion: Upgraded toolbar minimize and expand transitions to physical spring physics with fluid spatial morphing.
 - Distribution Variants: Dedicated Google Play AAB bundle variant with stripped sensitive permissions (Shizuku, battery exemption) and native Google Play In-App Updates.
 - Preserved APK Installer: Kept REQUEST_INSTALL_PACKAGES for Petal's built-in package installer.
 - Battery Optimization Policy: Removed restricted battery exemption popup dialog in Play build, falling back to standard settings.

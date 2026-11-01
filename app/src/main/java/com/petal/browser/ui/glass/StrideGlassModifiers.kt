@@ -90,7 +90,9 @@ private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?):
     val density = LocalDensity.current
     val dark = tint.luminance() < 0.5f
     val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
-    val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+    val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") ||
+            com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") ||
+            com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val alphaPref = prefs.getFloat("sp_liquid_glass_alpha", .70f).coerceIn(.10f, .95f)
     val opacity = if (themeGlass) (0.25f + alphaPref * 1.05f) else 1f
     val baseEdge = if (themeGlass) (prefs.getFloat("sp_liquid_glass_sheen", .60f).coerceIn(0f, 1f) / .60f) else 1f
@@ -215,7 +217,9 @@ fun Modifier.glassTile(
     }
     if (bar == null) {
         val wallpaper = LocalPetalGlassWallpaper.current
-        val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+        val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") ||
+                com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") ||
+                com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
         val isGlass = (wallpaper != null && wallpaper.ready) || themeGlass
         val solid = if (isGlass) tint.copy(alpha = 0.28f) else tint.copy(alpha = 0.16f)
         val place = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }

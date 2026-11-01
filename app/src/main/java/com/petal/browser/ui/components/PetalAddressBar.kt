@@ -89,11 +89,16 @@ fun PetalAddressBar(
     val samplesWallpaper = BarInsets.glassSamplesWallpaper(
         sp, resolvedIsBottom, sp.getBoolean("sp_floating_tab_bar", true), false
     )
-    val glassSource = if (isPreview) null else LocalView.current.rootView.findViewById<android.view.View>(
+    val activity = LocalContext.current as? android.app.Activity
+    val glassSource = if (isPreview) null else activity?.findViewById<android.view.View>(
+        if (samplesWallpaper) com.petal.browser.R.id.glass_wallpaper_backdrop
+        else com.petal.browser.R.id.main_content
+    ) ?: LocalView.current.rootView.findViewById<android.view.View>(
         if (samplesWallpaper) com.petal.browser.R.id.glass_wallpaper_backdrop
         else com.petal.browser.R.id.main_content
     )
     val glassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
+    val pillGlassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
     val containerColor = when {
@@ -112,20 +117,20 @@ fun PetalAddressBar(
         .asPaddingValues().calculateBottomPadding()
 
     val collapseProgress = if (isPillCollapse) collapsedFraction.coerceIn(0f, 1f) else 0f
-    val fullBarAlpha = if (isPillCollapse) (1f - collapseProgress * 1.54f).coerceIn(0f, 1f) else 1f
-    val fullBarScaleX = if (isPillCollapse) (0.92f + 0.08f * fullBarAlpha) else 1f
-    val fullBarScaleY = if (isPillCollapse) (0.90f + 0.10f * fullBarAlpha) else 1f
-    val fullBarTranslationY = if (isPillCollapse) ((if (resolvedIsBottom) 8.dp else (-8).dp) * collapseProgress) else 0.dp
+    val fullBarAlpha = if (isPillCollapse) ((1f - collapseProgress) / 0.65f).coerceIn(0f, 1f) else 1f
+    val fullBarScaleX = if (isPillCollapse) (0.94f + 0.06f * (1f - collapseProgress)) else 1f
+    val fullBarScaleY = if (isPillCollapse) (0.90f + 0.10f * (1f - collapseProgress)) else 1f
+    val fullBarTranslationY = if (isPillCollapse) ((if (resolvedIsBottom) 10.dp else (-10).dp) * collapseProgress) else 0.dp
 
-    val sideButtonAlpha = if (isPillCollapse) (1f - collapseProgress * 2.5f).coerceIn(0f, 1f) else 1f
-    val sideButtonScale = if (isPillCollapse) (0.75f + 0.25f * sideButtonAlpha) else 1f
-    val leftButtonOffset = if (isPillCollapse) ((-16).dp * collapseProgress) else 0.dp
-    val rightButtonOffset = if (isPillCollapse) (16.dp * collapseProgress) else 0.dp
+    val sideButtonAlpha = if (isPillCollapse) (1f - collapseProgress * 1.8f).coerceIn(0f, 1f) else 1f
+    val sideButtonScale = if (isPillCollapse) (0.80f + 0.20f * sideButtonAlpha) else 1f
+    val leftButtonOffset = if (isPillCollapse) ((-12).dp * collapseProgress) else 0.dp
+    val rightButtonOffset = if (isPillCollapse) (12.dp * collapseProgress) else 0.dp
 
-    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.25f) / 0.75f).coerceIn(0f, 1f) else 0f
-    val pillScale = 0.88f + 0.12f * pillAlpha
-    val pillTranslationY = (if (resolvedIsBottom) (-8).dp else 8.dp) * (1f - pillAlpha)
-    val outerBgAlpha = if (isPillCollapse) (1f - collapseProgress * 1.6f).coerceIn(0f, 1f) else 1f
+    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.20f) / 0.80f).coerceIn(0f, 1f) else 0f
+    val pillScale = if (isPillCollapse) (0.88f + 0.12f * pillAlpha) else 1f
+    val pillTranslationY = if (isPillCollapse) ((if (resolvedIsBottom) (-10).dp else 10.dp) * (1f - pillAlpha)) else 0.dp
+    val outerBgAlpha = if (isPillCollapse) (1f - collapseProgress * 1.5f).coerceIn(0f, 1f) else 1f
 
     val animatedContainerColor = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * outerBgAlpha)
     val animatedElevation = (if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 2.dp else 4.dp) * outerBgAlpha
@@ -260,13 +265,15 @@ fun PetalAddressBar(
             }
         }
 
-        if (!isPreview && pillAlpha > 0.01f) {
+        if (!isPreview && isPillCollapse && pillAlpha > 0.005f) {
             PetalMinimizedPill(
                 domain = BarCollapseState.currentDomain,
                 isHttps = BarCollapseState.isHttps,
                 isIncognito = isIncognito,
                 isBottom = resolvedIsBottom,
                 glassSource = if (isLiquidGlass) glassSource else null,
+                isLiquidGlass = isLiquidGlass,
+                glassBar = pillGlassBar,
                 onExpand = {
                     BarCollapseState.requestExpand()
                 },

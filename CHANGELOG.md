@@ -2,6 +2,16 @@
 
 > *"Work-in-progress release cycle for Petal Browser v4.5.3."*
 
+#### 💎 Live Liquid Glass in Minimized Address Bar & Expressive Morph Animations
+- **True Live Liquid Glass in Minimized Pill**:
+  - Eliminated opaque container masking (`surfaceContainerHighest.copy(alpha = 0.88f)`) and flat tonal elevation tints in `PetalMinimizedPill`, making the compact pill completely transparent to reveal the authentic, live blurred webpage content scrolling underneath.
+  - Allocated dedicated, pre-primed `GlassBar` render targets for the minimized pill in both `PetalAddressBar` and `PetalMergedBar`, guaranteeing instant 120fps refraction rendering without runtime shader recompilation or teardown stalls.
+  - Broadened liquid glass preference evaluation in `StrideGlassModifiers` to support `sp_liquid_glass_address_bar` alongside bottom navigation and containment toggles.
+- **Material 3 Expressive Spring Minimization Motion**:
+  - Replaced linear ValueAnimators with physical `SpringAnimation` (`stiffness = 420f`, `dampingRatio = 0.82f` / Low Bouncy) via `FloatValueHolder` for toolbar minimization and expansion.
+  - Engineered fluid spatial morphing between the full address bar and the floating compact pill, replacing abrupt cutoffs with smooth scale, alpha, and translation dynamics.
+  - Added directional expand indicator (`KeyboardArrowUp` for bottom address bar, `KeyboardArrowDown` for top bar) and improved domain text clarity with subtle drop shadows over refractive glass.
+
 #### 📦 Distribution Variants (AAB vs. Standalone APKs)
 - **Dedicated Google Play Bundle Variant (`play`)**:
   - Automatically strips sensitive permissions (`API_V23` Shizuku, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) from the Google Play `.aab` manifest via dedicated `app/src/play/AndroidManifest.xml`.

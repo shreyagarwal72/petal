@@ -4435,6 +4435,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private int barsShownTop = 0, barsShownBottom = 0, barsHiddenTop = 0, barsHiddenBottom = 0;
     private final java.util.WeakHashMap<View, androidx.dynamicanimation.animation.SpringAnimation> barSprings = new java.util.WeakHashMap<>();
     private android.animation.ValueAnimator pillMorphAnimator = null;
+    private androidx.dynamicanimation.animation.SpringAnimation pillSpringAnim = null;
 
     private final android.content.SharedPreferences.OnSharedPreferenceChangeListener toolbarPrefsListener = (sharedPreferences, key) -> {
         if (com.petal.browser.ui.components.BarPrefs.KEY_ADDRESS_BAR_STYLE.equals(key)
@@ -4459,21 +4460,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     };
 
     private void animatePillFraction(boolean collapse, boolean animate) {
-        if (pillMorphAnimator != null) pillMorphAnimator.cancel();
+        if (pillMorphAnimator != null) {
+            pillMorphAnimator.cancel();
+            pillMorphAnimator = null;
+        }
+        if (pillSpringAnim != null && pillSpringAnim.isRunning()) {
+            pillSpringAnim.cancel();
+        }
         float target = collapse ? 1f : 0f;
         float current = com.petal.browser.ui.components.BarCollapseState.INSTANCE.getCollapsedFraction();
-        if (!animate) {
+        if (!animate || Math.abs(current - target) < 0.005f) {
             com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(target);
             return;
         }
-        pillMorphAnimator = android.animation.ValueAnimator.ofFloat(current, target);
-        pillMorphAnimator.setDuration(320);
-        pillMorphAnimator.setInterpolator(new PathInterpolator(0.2f, 0f, 0f, 1f));
-        pillMorphAnimator.addUpdateListener(anim -> {
-            float f = (Float) anim.getAnimatedValue();
-            com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(f);
+        androidx.dynamicanimation.animation.FloatValueHolder holder =
+                new androidx.dynamicanimation.animation.FloatValueHolder(current);
+        pillSpringAnim = new androidx.dynamicanimation.animation.SpringAnimation(holder);
+        pillSpringAnim.setSpring(new androidx.dynamicanimation.animation.SpringForce(target)
+                .setStiffness(420f)
+                .setDampingRatio(androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY));
+        pillSpringAnim.addUpdateListener((animation, value, velocity) -> {
+            com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(value);
         });
-        pillMorphAnimator.start();
+        pillSpringAnim.start();
     }
 
     /** Whether the bars may be minimized right now. Showing them again is never blocked. */

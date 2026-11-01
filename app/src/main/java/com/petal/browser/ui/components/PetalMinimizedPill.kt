@@ -12,7 +12,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Icon
@@ -35,14 +36,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.glass.GlassBar
 import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.glass.rememberGlassBar
 
 /**
  * Chrome Android-style compact minimized toolbar pill shown on downward scroll.
  *
- * Displays `[Lock/Privacy] domain.com ›` in a 40dp rounded container. Tapping the pill
- * or swiping expands the full toolbar back into place.
+ * Displays `[Lock/Privacy] domain.com ⌄` in a 40dp rounded container with live Liquid Glass
+ * blur and optical lens refraction over the actively scrolling webpage.
+ * Tapping or swiping the pill smoothly springs the full toolbar back into place.
  */
 @Composable
 fun PetalMinimizedPill(
@@ -51,13 +54,15 @@ fun PetalMinimizedPill(
     isIncognito: Boolean,
     isBottom: Boolean,
     glassSource: View? = null,
+    isLiquidGlass: Boolean = glassSource != null,
+    glassBar: GlassBar? = null,
     onExpand: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val pillShape = RoundedCornerShape(20.dp)
-    val isGlass = glassSource != null
-    val glassBar = rememberGlassBar(glassSource)
+    val isGlass = isLiquidGlass && !isIncognito
+    val resolvedGlassBar = glassBar ?: rememberGlassBar(if (isGlass) glassSource else null)
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
     val rawStatusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -69,7 +74,7 @@ fun PetalMinimizedPill(
 
     val containerColor = when {
         isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
-        isGlass -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.88f)
+        isGlass -> Color.Transparent
         else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
@@ -78,7 +83,10 @@ fun PetalMinimizedPill(
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressScale by animateFloatAsState(
         targetValue = if (isPressed) 0.94f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
         label = "pill_press_scale"
     )
 
@@ -96,9 +104,9 @@ fun PetalMinimizedPill(
         Surface(
             shape = pillShape,
             color = containerColor,
-            tonalElevation = 4.dp,
-            shadowElevation = 8.dp,
-            border = BorderStroke(1.dp, outlineColor.copy(alpha = if (isGlass) 0.55f else 0.45f)),
+            tonalElevation = 0.dp,
+            shadowElevation = if (isGlass) 0.dp else 4.dp,
+            border = if (isGlass) null else BorderStroke(1.dp, outlineColor),
             modifier = Modifier
                 .height(40.dp)
                 .wrapContentWidth()
@@ -108,7 +116,7 @@ fun PetalMinimizedPill(
                 }
                 .then(
                     if (isGlass) {
-                        Modifier.liquidGlass(pillShape, baseGlassColor, glassBar)
+                        Modifier.liquidGlass(pillShape, baseGlassColor, resolvedGlassBar, pressFx = true)
                     } else Modifier
                 )
                 .clip(pillShape)
@@ -117,8 +125,7 @@ fun PetalMinimizedPill(
                     detectVerticalDragGestures(
                         onDragStart = { dragAccum = 0f },
                         onDragEnd = {
-                            // Any significant upward or downward drag triggers expansion
-                            if (Math.abs(dragAccum) > 12.dp.toPx()) {
+                            if (Math.abs(dragAccum) > 10.dp.toPx()) {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                 onExpand()
                             }
@@ -140,9 +147,9 @@ fun PetalMinimizedPill(
         ) {
             Row(
                 modifier = Modifier
-                    .padding(horizontal = 18.dp, vertical = 6.dp),
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Security / Incognito Icon
                 Icon(
@@ -162,21 +169,23 @@ fun PetalMinimizedPill(
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
-                        shadow = androidx.compose.ui.graphics.Shadow(
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-                            blurRadius = 4f
-                        )
+                        shadow = if (isGlass) {
+                            androidx.compose.ui.graphics.Shadow(
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
+                                blurRadius = 6f
+                            )
+                        } else null
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                // Chevron icon indicating tap-to-expand
+                // Expand indicator matching bar position
                 Icon(
-                    imageVector = Icons.Rounded.ChevronRight,
+                    imageVector = if (isBottom) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                     contentDescription = "Expand toolbar",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     modifier = Modifier.size(16.dp)
                 )
             }
