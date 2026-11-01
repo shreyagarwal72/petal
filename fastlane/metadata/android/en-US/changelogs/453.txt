@@ -1,2 +1,5 @@
 Petal Browser v4.5.3 Release:
-- Ongoing optimizations, UI refinements, and stability improvements.
+- Distribution Variants: Dedicated Google Play AAB bundle variant with stripped sensitive permissions (Shizuku, battery exemption) and native Google Play In-App Updates.
+- Preserved APK Installer: Kept REQUEST_INSTALL_PACKAGES for Petal's built-in package installer.
+- Battery Optimization Policy: Removed restricted battery exemption popup dialog in Play build, falling back to standard settings.
+- Standalone Release Variant: Retained full elevated Shizuku support and direct GitHub Release updater for sideloaded APKs.

@@ -2,8 +2,16 @@
 
 > *"Work-in-progress release cycle for Petal Browser v4.5.3."*
 
-#### 🚀 Features & Enhancements
-- Ongoing improvements, UI refinements, and stability updates.
+#### 📦 Distribution Variants (AAB vs. Standalone APKs)
+- **Dedicated Google Play Bundle Variant (`play`)**:
+  - Automatically strips sensitive permissions (`API_V23` Shizuku, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) from the Google Play `.aab` manifest via dedicated `app/src/play/AndroidManifest.xml`.
+  - Preserves `REQUEST_INSTALL_PACKAGES` across both builds to power Petal's built-in APK installer.
+  - Suppressed the background battery optimization dialog in the AAB build to comply with Play Store policies, falling back directly to standard settings without restricted popups.
+- **Google Play In-App Updates Engine**:
+  - Automatically routes update checks in the Play Store build through `PetalPlayUpdateManager` (`com.google.android.play:app-update`), providing official in-app flexible and immediate update flows.
+  - Updates channel tagline to display `Channel: Google Play` and hides manual external APK download progress.
+- **Standalone GitHub Variant (`github`)**:
+  - Retains full elevated Shizuku capabilities, one-tap battery optimization background protection dialog, and direct GitHub Release APK updates.
 
 ---
 

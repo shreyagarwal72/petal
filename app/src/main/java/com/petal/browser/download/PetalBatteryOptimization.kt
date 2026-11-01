@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
+import com.petal.browser.BuildConfig
 
 /**
  * Battery-optimization ("Doze whitelist") exemption for background downloads.
@@ -18,9 +19,7 @@ import android.util.Log
  * single most effective fix for "downloads stop when the screen turns off".
  *
  * Play Store note: REQUEST_IGNORE_BATTERY_OPTIMIZATIONS is restricted by Google Play policy.
- * This repository is the FOSS/GitHub variant, where it is allowed. When porting to the Play
- * variant, drop the permission from the manifest: [requestExemption] then falls through to the
- * permission-free settings-list intent automatically.
+ * In the Google Play (AAB) build, the permission and direct popup dialog are omitted.
  */
 object PetalBatteryOptimization {
     private const val TAG = "PetalBatteryOpt"
@@ -38,9 +37,15 @@ object PetalBatteryOptimization {
         true
     }
 
-    /** Whether the Downloads page should show the permission prompt right now. */
+    /**
+     * Whether the Downloads page should show the permission prompt right now.
+     * Always false on Google Play / AAB builds to avoid restricted dialogs.
+     */
     @JvmStatic
-    fun shouldPrompt(context: Context): Boolean = !promptedThisProcess && !isExempt(context)
+    fun shouldPrompt(context: Context): Boolean {
+        if (BuildConfig.IS_PLAY_STORE_BUILD) return false
+        return !promptedThisProcess && !isExempt(context)
+    }
 
     @JvmStatic
     fun markPrompted() {
@@ -48,18 +53,25 @@ object PetalBatteryOptimization {
     }
 
     /**
-     * Launches the system UI for the exemption. Tries the one-tap system dialog first, then the
-     * battery-optimization list, then the app's details page. Returns false only if none opened.
+     * Launches the system UI for the exemption. Tries the one-tap system dialog first (GitHub build),
+     * or the battery-optimization settings list / app details page (Play Store build).
      */
     @JvmStatic
     @SuppressLint("BatteryLife")
     fun requestExemption(context: Context): Boolean {
         val pkg = context.applicationContext.packageName
-        val attempts = listOf(
-            Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$pkg")),
-            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
-            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))
-        )
+        val attempts = if (BuildConfig.IS_PLAY_STORE_BUILD) {
+            listOf(
+                Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))
+            )
+        } else {
+            listOf(
+                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$pkg")),
+                Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))
+            )
+        }
         for (intent in attempts) {
             try {
                 if (context !is Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

@@ -99,22 +99,14 @@ jobs:
             -storepass "$KEYSTORE_STORE_PASS" \
             -alias "$KEYSTORE_ALIAS" >/dev/null
 
-          ./gradlew :app:assembleRelease :app:bundleRelease \
+          ./gradlew :app:assembleGithubRelease :app:bundlePlayRelease \
             -PRELEASE_STORE_FILE="$KEYSTORE_PATH" \
             -PRELEASE_STORE_PASSWORD="$KEYSTORE_STORE_PASS" \
             -PRELEASE_KEY_ALIAS="$KEYSTORE_ALIAS" \
             -PRELEASE_KEY_PASSWORD="$KEYSTORE_KEY_PASS" \
             --build-cache --parallel --stacktrace
-          for apk in app/build/outputs/apk/release/*.apk; do
-            if [ -f "$apk" ]; then
-              cp "$apk" raw_apks/
-            fi
-          done
-          for aab in app/build/outputs/bundle/release/*.aab; do
-            if [ -f "$aab" ]; then
-              cp "$aab" raw_aabs/
-            fi
-          done
+          find app/build/outputs/apk/ -name "*.apk" -exec cp {} raw_apks/ \;
+          find app/build/outputs/bundle/ -name "*.aab" -exec cp {} raw_aabs/ \;
 
       - name: Sign & ZipAlign Release APKs & AAB
         run: |

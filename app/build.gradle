@@ -32,6 +32,20 @@ android {
         resConfigs "ar", "b+hi+Latn", "b+sr+Latn", "cs", "de", "el", "es", "et", "fa", "fr", "he", "hi", "hu", "id", "it", "ja", "nl", "pl", "pt", "ro", "ru", "sr", "sv", "tr", "uk", "vi", "zh", "zh-rTW"
     }
 
+    flavorDimensions = ["distribution"]
+    productFlavors {
+        github {
+            dimension "distribution"
+            buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "false"
+            buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"github\""
+        }
+        play {
+            dimension "distribution"
+            buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "true"
+            buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"play\""
+        }
+    }
+
     splits {
         abi {
             enable true

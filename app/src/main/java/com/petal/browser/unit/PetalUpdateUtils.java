@@ -65,6 +65,15 @@ public class PetalUpdateUtils {
             return;
         }
 
+        if (com.petal.browser.BuildConfig.IS_PLAY_STORE_BUILD) {
+            if (activity instanceof androidx.activity.ComponentActivity) {
+                com.petal.browser.update.PetalPlayUpdateManager.getInstance(activity)
+                        .checkForUpdates((androidx.activity.ComponentActivity) activity, isLaunchCheck);
+            }
+            if (onComplete != null) onComplete.run();
+            return;
+        }
+
         final Context context = activity.getApplicationContext();
         final SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
 

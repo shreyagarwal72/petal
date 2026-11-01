@@ -326,6 +326,7 @@ fun PetalDownloadManagerScreen(
     var batteryExempt by remember { mutableStateOf(PetalBatteryOptimization.isExempt(context)) }
     var notificationCheckDone by remember { mutableStateOf(false) }
     fun maybePromptBattery() {
+        if (com.petal.browser.BuildConfig.IS_PLAY_STORE_BUILD) return
         if (notificationCheckDone && !showNotificationPermissionDialog && !showBatteryDialog &&
             PetalBatteryOptimization.shouldPrompt(context)
         ) {

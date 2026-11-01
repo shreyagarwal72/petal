@@ -184,8 +184,13 @@ fun UpdaterSettingsScreenContent(
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
+                                    val channelSubtitle = if (com.petal.browser.BuildConfig.IS_PLAY_STORE_BUILD) {
+                                        "Channel: Google Play • Last Checked: $formattedLastCheck"
+                                    } else {
+                                        stringResource(R.string.ui_channel_github_official_last_checked, formattedLastCheck)
+                                    }
                                     Text(
-                                        text = stringResource(R.string.ui_channel_github_official_last_checked, formattedLastCheck),
+                                        text = channelSubtitle,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
@@ -194,217 +199,219 @@ fun UpdaterSettingsScreenContent(
                                 }
                             }
 
-                            val activeUpdateState by PetalUpdateManager.downloadState.collectAsStateWithLifecycle()
-                            LaunchedEffect(Unit) {
-                                PetalUpdateManager.initialize(context)
-                            }
-
-                            when (val state = activeUpdateState) {
-                                is PetalUpdateManager.UpdateDownloadState.Downloading -> {
-                                    Surface(
-                                        shape = RoundedCornerShape(18.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(14.dp),
-                                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(8.dp)
-                                                            .clip(CircleShape)
-                                                            .background(MaterialTheme.colorScheme.primary)
-                                                    )
-                                                    Text(
-                                                        text = "Downloading v${state.version}",
-                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                }
-                                                Text(
-                                                    text = "${state.progress}%",
-                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            LinearWavyProgressIndicator(
-                                                progress = { (state.progress / 100f).coerceIn(0f, 1f) },
-                                                modifier = Modifier.fillMaxWidth().height(8.dp),
-                                                color = MaterialTheme.colorScheme.primary,
-                                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                                            )
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                val downloadedStr = formatBytes(state.downloadedBytes)
-                                                val totalStr = if (state.totalBytes > 0) formatBytes(state.totalBytes) else "..."
-                                                Text(
-                                                    text = "$downloadedStr / $totalStr",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = if (state.bytesPerSecond > 0) formatSpeed(state.bytesPerSecond) else "Connecting...",
-                                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.End
-                                            ) {
-                                                OutlinedButton(
-                                                    onClick = {
-                                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
-                                                        PetalUpdateManager.pauseUpdateDownload(context)
-                                                    },
-                                                    shape = RoundedCornerShape(12.dp)
-                                                ) {
-                                                    Icon(Icons.Rounded.PauseCircle, contentDescription = null, modifier = Modifier.size(16.dp))
-                                                    Spacer(Modifier.width(6.dp))
-                                                    Text("Pause")
-                                                }
-                                            }
-                                        }
-                                    }
+                            if (!com.petal.browser.BuildConfig.IS_PLAY_STORE_BUILD) {
+                                val activeUpdateState by PetalUpdateManager.downloadState.collectAsStateWithLifecycle()
+                                LaunchedEffect(Unit) {
+                                    PetalUpdateManager.initialize(context)
                                 }
-                                is PetalUpdateManager.UpdateDownloadState.Paused -> {
-                                    Surface(
-                                        shape = RoundedCornerShape(18.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(14.dp),
-                                            verticalArrangement = Arrangement.spacedBy(10.dp)
+
+                                when (val state = activeUpdateState) {
+                                    is PetalUpdateManager.UpdateDownloadState.Downloading -> {
+                                        Surface(
+                                            shape = RoundedCornerShape(18.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                                            modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
+                                            Column(
+                                                modifier = Modifier.padding(14.dp),
+                                                verticalArrangement = Arrangement.spacedBy(10.dp)
                                             ) {
                                                 Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(8.dp)
-                                                            .clip(CircleShape)
-                                                            .background(MaterialTheme.colorScheme.tertiary)
-                                                    )
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    ) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(8.dp)
+                                                                .clip(CircleShape)
+                                                                .background(MaterialTheme.colorScheme.primary)
+                                                        )
+                                                        Text(
+                                                            text = "Downloading v${state.version}",
+                                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                    }
                                                     Text(
-                                                        text = "Update Paused (${state.progress}%)",
-                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.onSurface
+                                                        text = "${state.progress}%",
+                                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                                        color = MaterialTheme.colorScheme.primary
                                                     )
                                                 }
-                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                    Button(
-                                                        onClick = {
-                                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                                            PetalUpdateManager.resumeUpdateDownload(context)
-                                                        },
-                                                        shape = RoundedCornerShape(12.dp)
-                                                    ) {
-                                                        Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
-                                                        Spacer(Modifier.width(4.dp))
-                                                        Text("Resume")
-                                                    }
+                                                LinearWavyProgressIndicator(
+                                                    progress = { (state.progress / 100f).coerceIn(0f, 1f) },
+                                                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                                                )
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    val downloadedStr = formatBytes(state.downloadedBytes)
+                                                    val totalStr = if (state.totalBytes > 0) formatBytes(state.totalBytes) else "..."
+                                                    Text(
+                                                        text = "$downloadedStr / $totalStr",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Text(
+                                                        text = if (state.bytesPerSecond > 0) formatSpeed(state.bytesPerSecond) else "Connecting...",
+                                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.End
+                                                ) {
                                                     OutlinedButton(
                                                         onClick = {
                                                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
-                                                            PetalUpdateManager.cancelUpdateDownload(context)
+                                                            PetalUpdateManager.pauseUpdateDownload(context)
                                                         },
                                                         shape = RoundedCornerShape(12.dp)
                                                     ) {
-                                                        Text("Cancel")
+                                                        Icon(Icons.Rounded.PauseCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                        Spacer(Modifier.width(6.dp))
+                                                        Text("Pause")
                                                     }
                                                 }
                                             }
-                                            LinearWavyProgressIndicator(
-                                                progress = { (state.progress / 100f).coerceIn(0f, 1f) },
-                                                modifier = Modifier.fillMaxWidth().height(8.dp),
-                                                color = MaterialTheme.colorScheme.tertiary,
-                                                trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f)
-                                            )
                                         }
                                     }
-                                }
-                                is PetalUpdateManager.UpdateDownloadState.Completed -> {
-                                    Surface(
-                                        shape = RoundedCornerShape(18.dp),
-                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(14.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
+                                    is PetalUpdateManager.UpdateDownloadState.Paused -> {
+                                        Surface(
+                                            shape = RoundedCornerShape(18.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(14.dp),
+                                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    ) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(8.dp)
+                                                                .clip(CircleShape)
+                                                                .background(MaterialTheme.colorScheme.tertiary)
+                                                        )
+                                                        Text(
+                                                            text = "Update Paused (${state.progress}%)",
+                                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                    }
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                        Button(
+                                                            onClick = {
+                                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                                                PetalUpdateManager.resumeUpdateDownload(context)
+                                                            },
+                                                            shape = RoundedCornerShape(12.dp)
+                                                        ) {
+                                                            Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                            Spacer(Modifier.width(4.dp))
+                                                            Text("Resume")
+                                                        }
+                                                        OutlinedButton(
+                                                            onClick = {
+                                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                                                PetalUpdateManager.cancelUpdateDownload(context)
+                                                            },
+                                                            shape = RoundedCornerShape(12.dp)
+                                                        ) {
+                                                            Text("Cancel")
+                                                        }
+                                                    }
+                                                }
+                                                LinearWavyProgressIndicator(
+                                                    progress = { (state.progress / 100f).coerceIn(0f, 1f) },
+                                                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    is PetalUpdateManager.UpdateDownloadState.Completed -> {
+                                        Surface(
+                                            shape = RoundedCornerShape(18.dp),
+                                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                                            modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Row(
-                                                modifier = Modifier.weight(1f),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(14.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(32.dp)
-                                                        .background(Color(0xFF2E7D32).copy(alpha = 0.15f), CircleShape),
-                                                    contentAlignment = Alignment.Center
+                                                Row(
+                                                    modifier = Modifier.weight(1f),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                                 ) {
-                                                    Icon(
-                                                        Icons.Rounded.CheckCircle,
-                                                        contentDescription = null,
-                                                        tint = Color(0xFF2E7D32),
-                                                        modifier = Modifier.size(18.dp)
-                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(32.dp)
+                                                            .background(Color(0xFF2E7D32).copy(alpha = 0.15f), CircleShape),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Rounded.CheckCircle,
+                                                            contentDescription = null,
+                                                            tint = Color(0xFF2E7D32),
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                    Column {
+                                                        Text(
+                                                            text = "Update Ready to Install",
+                                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                        )
+                                                        Text(
+                                                            text = "Petal v${state.version} downloaded",
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                                        )
+                                                    }
                                                 }
-                                                Column {
-                                                    Text(
-                                                        text = "Update Ready to Install",
-                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                                    )
-                                                    Text(
-                                                        text = "Petal v${state.version} downloaded",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                                                    )
+                                                Button(
+                                                    onClick = {
+                                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                                        PetalUpdateManager.installActiveUpdate(context)
+                                                    },
+                                                    shape = RoundedCornerShape(12.dp)
+                                                ) {
+                                                    Icon(Icons.Rounded.DownloadDone, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                    Spacer(Modifier.width(6.dp))
+                                                    Text("Install")
                                                 }
-                                            }
-                                            Button(
-                                                onClick = {
-                                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                                                    PetalUpdateManager.installActiveUpdate(context)
-                                                },
-                                                shape = RoundedCornerShape(12.dp)
-                                            ) {
-                                                Icon(Icons.Rounded.DownloadDone, contentDescription = null, modifier = Modifier.size(16.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text("Install")
                                             }
                                         }
                                     }
+                                    else -> {}
                                 }
-                                else -> {}
                             }
 
                             Row(
