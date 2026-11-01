@@ -69,7 +69,11 @@ interface LiveActionActionListener {
 object PetalLiveActionBus {
 
     private val _state = MutableStateFlow(LiveActionBusState())
+    @get:JvmStatic
     val state: StateFlow<LiveActionBusState> = _state.asStateFlow()
+
+    @JvmStatic
+    fun getCurrentState(): LiveActionBusState = _state.value
 
     @Volatile
     private var actionListener: LiveActionActionListener? = null

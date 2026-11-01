@@ -5100,7 +5100,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                         @Override
                         public void onMediaTogglePlayPause() {
-                            com.petal.browser.live.LiveActionBusState busState = com.petal.browser.live.PetalLiveActionBus.getState().getValue();
+                            com.petal.browser.live.LiveActionBusState busState = com.petal.browser.live.PetalLiveActionBus.getCurrentState();
                             boolean playing = false;
                             if (busState.getPrimary() instanceof com.petal.browser.live.LiveActionItem.Media) {
                                 playing = ((com.petal.browser.live.LiveActionItem.Media) busState.getPrimary()).isPlaying();
