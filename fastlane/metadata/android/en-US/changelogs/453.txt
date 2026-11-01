@@ -1,0 +1,2 @@
+Petal Browser v4.5.3 Release:
+- Ongoing optimizations, UI refinements, and stability improvements.

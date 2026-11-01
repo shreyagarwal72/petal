@@ -1,0 +1,5 @@
+Petal Browser v4.5.2 Release:
+- Live Liquid Glass APK Installer & Layout Fixes: Fixed Box layout stacking collisions inside AnimatedContent by enclosing steps in dedicated full-width columns, preventing overlap between header, insights, and action buttons.
+- True Live Liquid Glass Containment: Restored live transparent modal containment, active wallpaper backdrop refraction, and nested liquidGlassChrome across cards, chips, and warnings.
+- Glass Backdrop Refraction Fallback: Supported safe browser screen snapshot and procedural frosted glass pattern refraction on standalone installer dialogs.
+- Automatic Shizuku Elevation on Start: Added on-start Shizuku detection and sticky binder listener in PetalApkInstallActivity and BrowserActivity to request Shizuku authorization immediately when installed.

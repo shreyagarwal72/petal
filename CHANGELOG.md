@@ -1,3 +1,12 @@
+### v4.5.3 — 🚀 In Development
+
+> *"Work-in-progress release cycle for Petal Browser v4.5.3."*
+
+#### 🚀 Features & Enhancements
+- Ongoing improvements, UI refinements, and stability updates.
+
+---
+
 ### v4.5.2 — 💎 Live Liquid Glass APK Installer & Shizuku On-Start Elevation
 
 > *"Release v4.5.2 fixes APK installer layout stacking and overlap bugs, restores full live Liquid Glass refraction with transparent modal containment and background blur reflection, and automatically requests Shizuku authorization on start whenever Shizuku is installed."*

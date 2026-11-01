@@ -1,0 +1,6 @@
+Petal Browser v4.5.1 Release:
+- Android 16 Live Actions (API 36 Rich Ongoing Notifications): Status Bar Live Action Chips (setShortCriticalText) promoting active downloads and media playback with dynamic themed segments and FLAG_PROMOTED_ONGOING.
+- Standalone Expressive Cutout Interoperability: Bundled standard progress and alert extras for expressive-cutout companion app.
+- Material 3 Expressive Dynamic Cutout Island: Fluid punch-hole island for Android 10-15 non-supported devices with compact pill, media equalizer, split satellite bubbles, and expanded detail cards.
+- Reference Motion Physics: Real-time tactile tap "boop", spring stiffness (Slow/Default/Fast), bounce damping overshoot, and animated sinusoidal liquid wavy progress bar.
+- Dedicated Download Manager Settings: Interactive motion preview card, mode switching (Auto / Always Island / Notifications Only), and spring physics tuners.
