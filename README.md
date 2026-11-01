@@ -16,7 +16,7 @@ No telemetry, no tracking, no bloat — built for ultimate speed and aesthetics.
 
 <br><br>
 
-[Why Petal](#why-another-browser) · [Features](#whats-inside) · [Install](#install) · [Build](#build-it-yourself) · [Under the Hood](#under-the-hood) · [License](#license)
+[Why Petal](#why-another-browser) · [Screenshots](#screenshots) · [Features](#whats-inside) · [Install](#install) · [Build](#build-it-yourself) · [Under the Hood](#under-the-hood) · [License](#license)
 
 </div>
 
@@ -27,6 +27,18 @@ No telemetry, no tracking, no bloat — built for ultimate speed and aesthetics.
 Most browsers on Android are Chromium wrappers loaded with account sign-ins, news feeds, telemetry, and background trackers that drain battery and collect your browsing habits.
 
 **Petal** is built differently. Powered by a modern **GeckoView 158** engine, it delivers desktop-grade standards compliance, native ad blocking, and a fluid user experience adhering strictly to **Material 3 Expressive** guidelines. Featuring authentic adaptive morphing surfaces, smooth motion physics, and dynamic color palettes, Petal combines state-of-the-art aesthetics with zero-compromise privacy.
+
+---
+
+## Screenshots
+
+<div align="center">
+  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-1.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-1.png" width="19%" alt="Petal Screenshot 1" /></a>
+  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-2.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-2.png" width="19%" alt="Petal Screenshot 2" /></a>
+  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-3.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-3.png" width="19%" alt="Petal Screenshot 3" /></a>
+  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-4.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-4.png" width="19%" alt="Petal Screenshot 4" /></a>
+  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-5.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-5.png" width="19%" alt="Petal Screenshot 5" /></a>
+</div>
 
 ---
 
