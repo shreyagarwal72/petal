@@ -54,16 +54,39 @@ class PetalApkInstallActivity : ComponentActivity() {
         }
     }
 
+    private var isUserInstallInitiated = false
+
     private val shizukuPermissionListener = rikka.shizuku.Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
         if (requestCode == 1001 && grantResult == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            val current = step
-            val apk = when (current) {
-                is ApkStep.Ready -> current.apk
-                is ApkStep.Failed -> current.apk
-                else -> null
+            fastRoute = "shizuku" to "Direct install via Shizuku without prompts"
+            if (isUserInstallInitiated) {
+                val current = step
+                val apk = when (current) {
+                    is ApkStep.Ready -> current.apk
+                    is ApkStep.Failed -> current.apk
+                    else -> null
+                }
+                if (apk != null) {
+                    performInstall(apk)
+                }
             }
-            if (apk != null) {
-                performInstall(apk)
+        }
+    }
+
+    private val shizukuBinderReceivedListener = rikka.shizuku.Shizuku.OnBinderReceivedListener {
+        checkAndRequestShizuku()
+    }
+
+    private fun checkAndRequestShizuku() {
+        if (PetalApkInstallerEngine.isShizukuInstalled(this) || PetalApkInstallerEngine.isShizukuRunning()) {
+            if (PetalApkInstallerEngine.isShizukuRunning()) {
+                if (PetalApkInstallerEngine.isShizukuAvailable()) {
+                    fastRoute = "shizuku" to "Direct install via Shizuku without prompts"
+                } else {
+                    runCatching {
+                        rikka.shizuku.Shizuku.requestPermission(1001)
+                    }
+                }
             }
         }
     }
@@ -72,6 +95,8 @@ class PetalApkInstallActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         runCatching { rikka.shizuku.Shizuku.addRequestPermissionResultListener(shizukuPermissionListener) }
+        runCatching { rikka.shizuku.Shizuku.addBinderReceivedListenerSticky(shizukuBinderReceivedListener) }
+        checkAndRequestShizuku()
 
         readIntent(intent)
 
@@ -101,6 +126,7 @@ class PetalApkInstallActivity : ComponentActivity() {
                         }
                     },
                     onInstall = {
+                        isUserInstallInitiated = true
                         val current = step
                         val apk = when (current) {
                             is ApkStep.Ready -> current.apk
@@ -134,6 +160,7 @@ class PetalApkInstallActivity : ComponentActivity() {
 
     override fun onDestroy() {
         runCatching { rikka.shizuku.Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener) }
+        runCatching { rikka.shizuku.Shizuku.removeBinderReceivedListener(shizukuBinderReceivedListener) }
         cleanCurrentFile()
         super.onDestroy()
     }
@@ -232,6 +259,7 @@ class PetalApkInstallActivity : ComponentActivity() {
         if (isShizuku) {
             if (!PetalApkInstallerEngine.isShizukuAvailable()) {
                 // Shizuku is running but permission not yet granted; request it
+                isUserInstallInitiated = true
                 runCatching {
                     rikka.shizuku.Shizuku.requestPermission(1001)
                 }.onFailure {

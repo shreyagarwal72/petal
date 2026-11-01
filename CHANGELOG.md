@@ -1,3 +1,18 @@
+### v4.5.2 — 💎 Live Liquid Glass APK Installer & Shizuku On-Start Elevation
+
+> *"Release v4.5.2 fixes APK installer layout stacking and overlap bugs, restores full live Liquid Glass refraction with transparent modal containment and background blur reflection, and automatically requests Shizuku authorization on start whenever Shizuku is installed."*
+
+#### 💎 Live Liquid Glass Installer & Layout Fixes
+- **Layout Stacking & Box Overlap Resolution**: Fixed root container layout inside `AnimatedContent` for `PetalApkInstallSheet`, enclosing every step (`Ready`, `Inspect`, `Installing`, `Done`, `Failed`) in dedicated `Column(modifier = Modifier.fillMaxWidth())` to eliminate accidental (0, 0) Box overlay collisions between the app header, insights card, and action buttons.
+- **True Live Liquid Glass Containment**: Enabled true refractive Liquid Glass for `PetalSheet` by defaulting to dynamic glass containment colors, active wallpaper backdrop capture, and nested `liquidGlassChrome` surfaces across cards, chips, and warnings.
+- **Glass Backdrop Fallback**: Added safe window fallback in `PetalSheetGlassBackdrop` so standalone and transparent activities like `PetalApkInstallActivity` seamlessly refract underlying browser snapshots or procedural frosted patterns without black clipping.
+
+#### ⚡ Shizuku Automatic Elevation on Start
+- **On-Start Permission Discovery**: Added `checkAndRequestShizuku()` on startup in both `PetalApkInstallActivity` and `BrowserActivity` to check if Shizuku is installed on the device and prompt for authorization immediately.
+- **Sticky Binder Integration**: Listens for Shizuku binder arrival with `addBinderReceivedListenerSticky` and refreshes elevated fast install routes automatically.
+
+---
+
 ### v4.5.1 — 🏝️ Android 16 Live Actions & Expressive Dynamic Cutout Island
 
 > *"Milestone v4.5.1 delivers native support for Android 16 (API 36 Baklava) Live Actions and Rich Ongoing Notifications, introducing real-time status bar live activity chips. For non-supported devices (Android 10–15 and OEM ROMs), Petal integrates a full Material 3 Expressive Dynamic Cutout Island adapted from expressive-cutout with spatial spring physics, interactive motion previews, and dedicated settings."*

@@ -1,5 +1,6 @@
 package com.petal.browser.apk
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
@@ -219,7 +220,19 @@ object PetalApkInstallerEngine {
         }.getOrDefault(false)
     }
 
+    /** Checks whether the Shizuku manager app is installed on the device. */
+    @JvmStatic
+    fun isShizukuInstalled(context: Context): Boolean = runCatching {
+        val pm = context.packageManager
+        try {
+            pm.getPackageInfo("moe.shizuku.privileged.api", 0) != null
+        } catch (e: PackageManager.NameNotFoundException) {
+            pm.getPackageInfo("rikka.shizuku", 0) != null
+        }
+    }.getOrDefault(false) || isShizukuRunning()
+
     /** Checks whether Shizuku is running and authorized via reflection without hard dependencies. */
+    @JvmStatic
     fun isShizukuAvailable(): Boolean = runCatching {
         if (!isShizukuRunning()) return false
         val clazz = try {
@@ -233,6 +246,7 @@ object PetalApkInstallerEngine {
     }.getOrDefault(false)
 
     /** Checks whether Shizuku service / binder is alive and reachable. */
+    @JvmStatic
     fun isShizukuRunning(): Boolean = runCatching {
         val clazz = try {
             Class.forName("rikka.shizuku.Shizuku")
@@ -241,6 +255,17 @@ object PetalApkInstallerEngine {
         }
         val pingMethod = clazz.getMethod("pingBinder")
         pingMethod.invoke(null) as? Boolean ?: false
+    }.getOrDefault(false)
+
+    /** Prompts for Shizuku authorization if Shizuku is installed/running on the device. */
+    @JvmStatic
+    fun checkAndRequestShizuku(activity: Activity): Boolean = runCatching {
+        if ((isShizukuInstalled(activity) || isShizukuRunning()) && isShizukuRunning() && !isShizukuAvailable()) {
+            rikka.shizuku.Shizuku.requestPermission(1001)
+            true
+        } else {
+            false
+        }
     }.getOrDefault(false)
 
     /** Determines the preferred fast route available on the device. */

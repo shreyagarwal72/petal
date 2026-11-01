@@ -969,9 +969,11 @@ internal fun PetalSheetGlassBackdrop(
         if (hostSource != null) return@remember hostSource
         var c: android.content.Context? = context
         while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
-        (c as? android.app.Activity)?.let {
-            it.findViewById<android.view.View>(com.petal.browser.R.id.main)
-                ?: it.findViewById<android.view.View>(android.R.id.content)
+        (c as? android.app.Activity)?.let { act ->
+            act.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                ?: if (act !is com.petal.browser.apk.PetalApkInstallActivity) {
+                    act.findViewById<android.view.View>(android.R.id.content)
+                } else null
         }
     }
     val frameTick = remember { androidx.compose.runtime.mutableLongStateOf(0L) }

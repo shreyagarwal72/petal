@@ -761,6 +761,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             com.petal.browser.profile.PetalProfileManager.INSTANCE.init(this);
             com.petal.browser.wallpaper.PetalWallpaperManager.INSTANCE.init(this);
+            com.petal.browser.apk.PetalApkInstallerEngine.checkAndRequestShizuku(this);
         } catch (Throwable ignored) {}
 
         // Blend the system launch splash (animated cookie + pinwheel) into whatever comes next. The exit

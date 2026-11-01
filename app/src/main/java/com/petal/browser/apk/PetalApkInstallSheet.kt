@@ -67,10 +67,7 @@ fun PetalApkInstallSheet(
 
     PetalSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        scrimColor = Color.Black.copy(alpha = 0.55f),
-        ownsGlassBackdrop = false
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Column(
@@ -133,156 +130,165 @@ fun PetalApkInstallSheet(
                         }
 
                         is ApkStep.Inspect -> {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                IconButton(
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                            onCloseInspect()
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.AutoMirrored.Rounded.ArrowBack,
+                                            contentDescription = "Back",
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = "Inside this APK",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                Header(currentStep.apk)
+                                if (insights != null) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .weight(1f, fill = false)
+                                            .padding(vertical = 4.dp)
+                                            .verticalScroll(rememberScrollState())
+                                    ) {
+                                        InspectPage(insights)
+                                    }
+                                }
+                                Button(
                                     onClick = {
                                         PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                                         onCloseInspect()
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Rounded.ArrowBack,
-                                        contentDescription = "Back",
-                                        tint = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    text = "Inside this APK",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            Header(currentStep.apk)
-                            if (insights != null) {
-                                Column(
+                                    },
                                     modifier = Modifier
-                                        .weight(1f, fill = false)
-                                        .padding(vertical = 4.dp)
-                                        .verticalScroll(rememberScrollState())
+                                        .fillMaxWidth()
+                                        .height(48.dp)
+                                        .padding(top = 12.dp),
+                                    shape = RoundedCornerShape(24.dp)
                                 ) {
-                                    InspectPage(insights)
+                                    Text("Back to install", style = MaterialTheme.typography.labelLarge)
                                 }
-                            }
-                            Button(
-                                onClick = {
-                                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
-                                    onCloseInspect()
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp)
-                                    .padding(top = 12.dp),
-                                shape = RoundedCornerShape(24.dp)
-                            ) {
-                                Text("Back to install", style = MaterialTheme.typography.labelLarge)
                             }
                         }
 
                         is ApkStep.Installing -> {
-                            Header(currentStep.apk)
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 36.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                PetalCircularWavyProgressIndicator(
-                                    modifier = Modifier.size(54.dp),
-                                    size = 54.dp
-                                )
-                                Text(
-                                    text = "Installing ${currentStep.apk.label}...",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = if (fastRoute?.first == "shizuku") "Direct installation in progress via Shizuku..." else "Direct installation in progress...",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Header(currentStep.apk)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 36.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    PetalCircularWavyProgressIndicator(
+                                        modifier = Modifier.size(54.dp),
+                                        size = 54.dp
+                                    )
+                                    Text(
+                                        text = "Installing ${currentStep.apk.label}...",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = if (fastRoute?.first == "shizuku") "Direct installation in progress via Shizuku..." else "Direct installation in progress...",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
 
                         is ApkStep.Done -> {
-                            Header(currentStep.apk)
-                            NoteCard(
-                                icon = Icons.Rounded.CheckCircle,
-                                title = "Installed",
-                                body = "${currentStep.apk.label} is ready to launch.",
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 20.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                OutlinedButton(
-                                    onClick = onDismiss,
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Header(currentStep.apk)
+                                NoteCard(
+                                    icon = Icons.Rounded.CheckCircle,
+                                    title = "Installed",
+                                    body = "${currentStep.apk.label} is ready to launch.",
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Row(
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .height(48.dp),
-                                    shape = RoundedCornerShape(24.dp)
+                                        .fillMaxWidth()
+                                        .padding(top = 20.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    Text("Done")
-                                }
-                                Button(
-                                    onClick = { onOpenInstalledApp(currentStep.apk.packageName) },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(48.dp),
-                                    shape = RoundedCornerShape(24.dp)
-                                ) {
-                                    Icon(Icons.Rounded.Launch, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Open", maxLines = 1)
-                                }
-                            }
-                        }
-
-                        is ApkStep.Failed -> {
-                            if (currentStep.apk != null) Header(currentStep.apk)
-                            NoteCard(
-                                icon = Icons.Rounded.ErrorOutline,
-                                title = currentStep.title,
-                                body = currentStep.body,
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 20.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                OutlinedButton(
-                                    onClick = onDismiss,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(48.dp),
-                                    shape = RoundedCornerShape(24.dp)
-                                ) {
-                                    Text("Dismiss")
-                                }
-                                if (currentStep.apk != null) {
-                                    Button(
-                                        onClick = onInstall,
+                                    OutlinedButton(
+                                        onClick = onDismiss,
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(48.dp),
                                         shape = RoundedCornerShape(24.dp)
                                     ) {
-                                        Text("Try again")
+                                        Text("Done")
+                                    }
+                                    Button(
+                                        onClick = { onOpenInstalledApp(currentStep.apk.packageName) },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(48.dp),
+                                        shape = RoundedCornerShape(24.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.Launch, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Open", maxLines = 1)
+                                    }
+                                }
+                            }
+                        }
+
+                        is ApkStep.Failed -> {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                if (currentStep.apk != null) Header(currentStep.apk)
+                                NoteCard(
+                                    icon = Icons.Rounded.ErrorOutline,
+                                    title = currentStep.title,
+                                    body = currentStep.body,
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 20.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = onDismiss,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(48.dp),
+                                        shape = RoundedCornerShape(24.dp)
+                                    ) {
+                                        Text("Dismiss")
+                                    }
+                                    if (currentStep.apk != null) {
+                                        Button(
+                                            onClick = onInstall,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(48.dp),
+                                            shape = RoundedCornerShape(24.dp)
+                                        ) {
+                                            Text("Try again")
+                                        }
                                     }
                                 }
                             }
@@ -295,7 +301,7 @@ fun PetalApkInstallSheet(
 }
 
 @Composable
-private fun ColumnScope.ReadyContent(
+private fun ReadyContent(
     apk: PetalApkInstallerEngine.ApkMeta,
     insights: PetalApkInsights.Report?,
     isInspecting: Boolean,
@@ -311,121 +317,124 @@ private fun ColumnScope.ReadyContent(
     val context = LocalContext.current
     var beyondInstallExpanded by remember { mutableStateOf(false) }
 
-    Header(apk)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Header(apk)
 
-    Column(
-        modifier = Modifier
-            .weight(1f, fill = false)
-            .verticalScroll(rememberScrollState())
-    ) {
-        // Clash & Compatibility warnings
-        apk.clash?.let { clash ->
-            val (warnTitle, warnBody) = when (clash) {
-                PetalApkInstallerEngine.ClashType.SYSTEM -> "System application" to "This package exists as a system app; updates must be signed by the system or ROM vendor."
-                PetalApkInstallerEngine.ClashType.SIGNATURE_MISMATCH -> "Signature mismatch" to "This APK is signed with a different key than the installed version. You must uninstall the existing app first."
-                PetalApkInstallerEngine.ClashType.HIDDEN -> "Uninstalled profile copy" to "This package is still present in another profile or user space on this device."
-            }
-            NoteCard(
-                icon = Icons.Rounded.Security,
-                title = warnTitle,
-                body = warnBody,
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer
-            )
-        }
-
-        insights?.let { rep ->
-            val deviceSdk = android.os.Build.VERSION.SDK_INT
-            if (rep.minSdk > deviceSdk) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Clash & Compatibility warnings
+            apk.clash?.let { clash ->
+                val (warnTitle, warnBody) = when (clash) {
+                    PetalApkInstallerEngine.ClashType.SYSTEM -> "System application" to "This package exists as a system app; updates must be signed by the system or ROM vendor."
+                    PetalApkInstallerEngine.ClashType.SIGNATURE_MISMATCH -> "Signature mismatch" to "This APK is signed with a different key than the installed version. You must uninstall the existing app first."
+                    PetalApkInstallerEngine.ClashType.HIDDEN -> "Uninstalled profile copy" to "This package is still present in another profile or user space on this device."
+                }
                 NoteCard(
-                    icon = Icons.Rounded.ErrorOutline,
-                    title = "Needs Android ${PetalApkInsights.androidName(rep.minSdk)}+",
-                    body = "This device runs Android ${PetalApkInsights.androidName(deviceSdk)}; this package requires a newer Android OS.",
+                    icon = Icons.Rounded.Security,
+                    title = warnTitle,
+                    body = warnBody,
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
-            if (!rep.runsHere) {
+
+            insights?.let { rep ->
+                val deviceSdk = android.os.Build.VERSION.SDK_INT
+                if (rep.minSdk > deviceSdk) {
+                    NoteCard(
+                        icon = Icons.Rounded.ErrorOutline,
+                        title = "Needs Android ${PetalApkInsights.androidName(rep.minSdk)}+",
+                        body = "This device runs Android ${PetalApkInsights.androidName(deviceSdk)}; this package requires a newer Android OS.",
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+                if (!rep.runsHere) {
+                    NoteCard(
+                        icon = Icons.Rounded.WarningAmber,
+                        title = "ABI Incompatibility",
+                        body = "This package carries ${rep.abis.joinToString()} libraries; your device expects ${android.os.Build.SUPPORTED_ABIS.first()}.",
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+
+            // Fast Install Note
+            if (fastRoute != null) {
                 NoteCard(
-                    icon = Icons.Rounded.WarningAmber,
-                    title = "ABI Incompatibility",
-                    body = "This package carries ${rep.abis.joinToString()} libraries; your device expects ${android.os.Build.SUPPORTED_ABIS.first()}.",
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    icon = Icons.Rounded.Bolt,
+                    title = "Fast install",
+                    body = fastRoute.second,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
-        }
 
-        // Fast Install Note
-        if (fastRoute != null) {
-            NoteCard(
-                icon = Icons.Rounded.Bolt,
-                title = "Fast install",
-                body = fastRoute.second,
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            // "Inside this APK" Card
+            InsideThisApkCard(
+                insights = insights,
+                isInspecting = isInspecting,
+                onClick = onOpenInspect
+            )
+
+            // "Beyond install" Card
+            BeyondInstallCard(
+                expanded = beyondInstallExpanded,
+                selectedOptions = selectedOptions,
+                customInstaller = customInstaller,
+                onExpandToggle = {
+                    beyondInstallExpanded = !beyondInstallExpanded
+                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.TICK, 0.7f)
+                },
+                onOptionToggle = onOptionToggle,
+                onCustomInstallerChange = onCustomInstallerChange
             )
         }
 
-        // "Inside this APK" Card
-        InsideThisApkCard(
-            insights = insights,
-            isInspecting = isInspecting,
-            onClick = onOpenInspect
-        )
-
-        // "Beyond install" Card
-        BeyondInstallCard(
-            expanded = beyondInstallExpanded,
-            selectedOptions = selectedOptions,
-            customInstaller = customInstaller,
-            onExpandToggle = {
-                beyondInstallExpanded = !beyondInstallExpanded
-                PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.TICK, 0.7f)
-            },
-            onOptionToggle = onOptionToggle,
-            onCustomInstallerChange = onCustomInstallerChange
-        )
-    }
-
-    // Action buttons: Cancel / Install
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        OutlinedButton(
-            onClick = {
-                PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
-                onDismiss()
-            },
+        // Action buttons: Cancel / Install
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .height(48.dp),
-            shape = RoundedCornerShape(24.dp)
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text("Cancel", style = MaterialTheme.typography.labelLarge)
-        }
-
-        Button(
-            onClick = {
-                PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
-                onInstall()
-            },
-            modifier = Modifier
-                .weight(1f)
-                .height(48.dp),
-            shape = RoundedCornerShape(24.dp)
-        ) {
-            Icon(Icons.Rounded.InstallMobile, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            val actionLabel = when {
-                !apk.isInstalled -> "Install"
-                apk.isOlderThanInstalled -> "Reinstall"
-                else -> "Update"
+            OutlinedButton(
+                onClick = {
+                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                    onDismiss()
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Text("Cancel", style = MaterialTheme.typography.labelLarge)
             }
-            Text(actionLabel, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+
+            Button(
+                onClick = {
+                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
+                    onInstall()
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Icon(Icons.Rounded.InstallMobile, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                val actionLabel = when {
+                    !apk.isInstalled -> "Install"
+                    apk.isOlderThanInstalled -> "Reinstall"
+                    else -> "Update"
+                }
+                Text(actionLabel, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+            }
         }
     }
 }
@@ -685,7 +694,7 @@ private fun BeyondInstallCard(
                         Surface(
                             onClick = { onOptionToggle(opt.id, !isChecked) },
                             shape = RoundedCornerShape(14.dp),
-                            color = if (isChecked) cs.primaryContainer else cs.surfaceContainerHighest,
+                            color = if (isChecked) cs.primaryContainer else if (isGlass) cs.surfaceContainerHighest.copy(alpha = 0.45f) else cs.surfaceContainerHighest,
                             contentColor = if (isChecked) cs.onPrimaryContainer else cs.onSurface
                         ) {
                             Row(
@@ -742,7 +751,12 @@ private fun ExpressiveChip(
     warn: Boolean = false
 ) {
     val cs = MaterialTheme.colorScheme
-    val bgColor = if (warn) cs.tertiaryContainer else cs.surfaceContainerHighest
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val bgColor = when {
+        warn -> cs.tertiaryContainer
+        isGlass -> cs.surfaceContainerHighest.copy(alpha = 0.5f)
+        else -> cs.surfaceContainerHighest
+    }
     val fgColor = if (warn) cs.onTertiaryContainer else cs.onSurface
 
     Surface(
@@ -773,12 +787,17 @@ private fun NoteCard(
     containerColor: Color,
     contentColor: Color
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp),
+            .padding(top = 12.dp)
+            .then(
+                if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(20.dp), enabled = true)
+                else Modifier
+            ),
         shape = RoundedCornerShape(20.dp),
-        color = containerColor,
+        color = if (isGlass) containerColor.copy(alpha = 0.45f) else containerColor,
         contentColor = contentColor
     ) {
         Row(
@@ -800,6 +819,7 @@ private fun InspectPage(rep: PetalApkInsights.Report) {
     val cs = MaterialTheme.colorScheme
     val ty = MaterialTheme.typography
     val context = LocalContext.current
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     var allPerms by remember { mutableStateOf(false) }
     var allLibs by remember { mutableStateOf(false) }
 
@@ -813,9 +833,14 @@ private fun InspectPage(rep: PetalApkInsights.Report) {
             fontWeight = FontWeight.Bold
         )
         Surface(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(20.dp), enabled = true)
+                    else Modifier
+                ),
             shape = RoundedCornerShape(20.dp),
-            color = cs.surfaceContainerHigh
+            color = if (isGlass) petalGroupSurfaceColor() else cs.surfaceContainerHigh
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
