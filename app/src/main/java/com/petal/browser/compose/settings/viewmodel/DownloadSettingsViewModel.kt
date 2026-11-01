@@ -31,6 +31,21 @@ class DownloadSettingsViewModel @Inject constructor(
     val liveUpdates: StateFlow<Boolean> = settingsRepository.liveUpdates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val islandMode: StateFlow<String> = settingsRepository.islandMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "AUTO")
+
+    val islandAnimationStyle: StateFlow<String> = settingsRepository.islandAnimationStyle
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "EXPRESSIVE")
+
+    val islandAnimationSpeed: StateFlow<String> = settingsRepository.islandAnimationSpeed
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "DEFAULT")
+
+    val islandAnimationBounce: StateFlow<String> = settingsRepository.islandAnimationBounce
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "NORMAL")
+
+    val islandWavyProgress: StateFlow<Boolean> = settingsRepository.islandWavyProgress
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     fun setDownloadManagerMode(mode: String) = viewModelScope.launch {
         settingsRepository.setDownloadManagerMode(mode)
     }
@@ -49,5 +64,25 @@ class DownloadSettingsViewModel @Inject constructor(
 
     fun setLiveUpdates(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setLiveUpdates(enabled)
+    }
+
+    fun setIslandMode(mode: String) = viewModelScope.launch {
+        settingsRepository.setIslandMode(mode)
+    }
+
+    fun setIslandAnimationStyle(style: String) = viewModelScope.launch {
+        settingsRepository.setIslandAnimationStyle(style)
+    }
+
+    fun setIslandAnimationSpeed(speed: String) = viewModelScope.launch {
+        settingsRepository.setIslandAnimationSpeed(speed)
+    }
+
+    fun setIslandAnimationBounce(bounce: String) = viewModelScope.launch {
+        settingsRepository.setIslandAnimationBounce(bounce)
+    }
+
+    fun setIslandWavyProgress(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setIslandWavyProgress(enabled)
     }
 }

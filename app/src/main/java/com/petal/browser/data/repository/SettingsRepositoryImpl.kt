@@ -491,6 +491,27 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_live_updates", true)
     }
 
+    // ── Expressive Cutout Island & Live Actions ──────────────────────────────
+    override val islandMode: Flow<String> = preferenceFlow("sp_island_mode") {
+        sp.getString("sp_island_mode", "AUTO") ?: "AUTO"
+    }
+
+    override val islandAnimationStyle: Flow<String> = preferenceFlow("sp_island_anim_style") {
+        sp.getString("sp_island_anim_style", "EXPRESSIVE") ?: "EXPRESSIVE"
+    }
+
+    override val islandAnimationSpeed: Flow<String> = preferenceFlow("sp_island_anim_speed") {
+        sp.getString("sp_island_anim_speed", "DEFAULT") ?: "DEFAULT"
+    }
+
+    override val islandAnimationBounce: Flow<String> = preferenceFlow("sp_island_anim_bounce") {
+        sp.getString("sp_island_anim_bounce", "NORMAL") ?: "NORMAL"
+    }
+
+    override val islandWavyProgress: Flow<Boolean> = preferenceFlow("sp_island_wavy_progress") {
+        sp.getBoolean("sp_island_wavy_progress", true)
+    }
+
     // ── Apple Duo (BETA) Animation ───────────────────────────────────────────
     override val appleDuoEnabled: Flow<Boolean> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_ENABLED) {
         sp.getBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_ENABLED, false)
@@ -978,6 +999,26 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLiveUpdates(enabled: Boolean) {
         sp.edit().putBoolean("sp_live_updates", enabled).apply()
+    }
+
+    override suspend fun setIslandMode(mode: String) {
+        sp.edit().putString("sp_island_mode", mode).apply()
+    }
+
+    override suspend fun setIslandAnimationStyle(style: String) {
+        sp.edit().putString("sp_island_anim_style", style).apply()
+    }
+
+    override suspend fun setIslandAnimationSpeed(speed: String) {
+        sp.edit().putString("sp_island_anim_speed", speed).apply()
+    }
+
+    override suspend fun setIslandAnimationBounce(bounce: String) {
+        sp.edit().putString("sp_island_anim_bounce", bounce).apply()
+    }
+
+    override suspend fun setIslandWavyProgress(enabled: Boolean) {
+        sp.edit().putBoolean("sp_island_wavy_progress", enabled).apply()
     }
 
     override suspend fun setAppleDuoEnabled(enabled: Boolean) {

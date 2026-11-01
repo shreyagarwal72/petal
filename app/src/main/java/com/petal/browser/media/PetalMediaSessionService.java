@@ -27,6 +27,8 @@ import androidx.media.session.MediaButtonReceiver;
 
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.compose.downloads.LiveUpdateNotificationManager;
+import com.petal.browser.live.PetalLiveActionBus;
 
 /**
  * PetalMediaSessionService
@@ -146,6 +148,7 @@ public class PetalMediaSessionService extends Service {
                     break;
                 case ACTION_STOP:
                     if (controlListener != null) controlListener.onStop();
+                    PetalLiveActionBus.dismissMedia();
                     stopForeground(true);
                     stopSelf();
                     break;
@@ -190,6 +193,16 @@ public class PetalMediaSessionService extends Service {
 
         updateMetadata();
         updatePlaybackState(playing, positionMs);
+
+        // Update unified PetalLiveActionBus for Android 16 and Custom Cutout Island
+        PetalLiveActionBus.updateMedia(
+                this.currentTitle,
+                this.currentArtist,
+                playing,
+                positionMs,
+                durationMs,
+                null
+        );
 
         Notification notification = buildNotification();
         if (playing) {
@@ -310,7 +323,13 @@ public class PetalMediaSessionService extends Service {
             builder.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
         }
 
-        return builder.build();
+        Notification notification = builder.build();
+        if (isPlaying && LiveUpdateNotificationManager.canPostPromotedNotifications(this)) {
+            try {
+                notification.flags |= 0x00000200; // FLAG_PROMOTED_ONGOING in Android 16+
+            } catch (Throwable ignored) {}
+        }
+        return notification;
     }
 
     private void createNotificationChannel() {
@@ -360,6 +379,7 @@ public class PetalMediaSessionService extends Service {
 
     @Override
     public void onDestroy() {
+        PetalLiveActionBus.dismissMedia();
         unregisterNoisyReceiver();
         if (mediaSession != null) {
             mediaSession.setActive(false);

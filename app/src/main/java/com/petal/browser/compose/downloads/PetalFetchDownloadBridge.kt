@@ -394,6 +394,16 @@ object PetalFetchDownloadBridge {
     }
 
     @JvmStatic
+    fun togglePauseResume(context: Context, id: Long) {
+        val item = _downloadItems.value.firstOrNull { it.id == id } ?: return
+        if (item.status == DownloadStatus.STATUS_PAUSED) {
+            resume(context, id)
+        } else {
+            pause(context, id)
+        }
+    }
+
+    @JvmStatic
     fun resume(context: Context, id: Long) {
         ensureInitialized(context)
         if (sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_RESUME)) return
@@ -534,6 +544,19 @@ object PetalFetchDownloadBridge {
                 }.thenByDescending { it.timestampMs }
             )
         _downloadItems.value = items
+
+        // Forward to Petal Live Actions & Custom Cutout Island Hub
+        try {
+            val active = items.firstOrNull {
+                it.status == DownloadStatus.STATUS_RUNNING || it.status == DownloadStatus.STATUS_PAUSED
+            }
+            if (active != null) {
+                com.petal.browser.live.PetalLiveActionBus.updateDownload(active)
+            } else {
+                items.filter { it.status == DownloadStatus.STATUS_SUCCESSFUL || it.status == DownloadStatus.STATUS_FAILED }
+                    .forEach { com.petal.browser.live.PetalLiveActionBus.dismiss("dl_${it.id}") }
+            }
+        } catch (ignored: Throwable) {}
 
         // Hold the CPU/Wi-Fi awake for every engine's transfers, so nothing stalls on screen-off.
         applicationContext?.let { ctx ->

@@ -34,7 +34,16 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.ExternalDownloadManagerHelper
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.sp
 import com.petal.browser.R
+import com.petal.browser.island.IslandAnimationStyle
+import com.petal.browser.island.IslandAnimationSpeed
+import com.petal.browser.island.IslandAnimationBounce
+import com.petal.browser.island.IslandMotion
+import com.petal.browser.island.PetalWavyProgressBar
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun DownloadSettingsScreen(
@@ -48,6 +57,11 @@ fun DownloadSettingsScreen(
     val deleteDownloadFile by viewModel.deleteDownloadFile.collectAsStateWithLifecycle()
     val autoPreviewDownloadedImages by viewModel.autoPreviewDownloadedImages.collectAsStateWithLifecycle()
     val liveUpdates by viewModel.liveUpdates.collectAsStateWithLifecycle()
+    val islandMode by viewModel.islandMode.collectAsStateWithLifecycle()
+    val islandAnimationStyle by viewModel.islandAnimationStyle.collectAsStateWithLifecycle()
+    val islandAnimationSpeed by viewModel.islandAnimationSpeed.collectAsStateWithLifecycle()
+    val islandAnimationBounce by viewModel.islandAnimationBounce.collectAsStateWithLifecycle()
+    val islandWavyProgress by viewModel.islandWavyProgress.collectAsStateWithLifecycle()
 
     DownloadSettingsScreenContent(
         downloadManagerMode = downloadManagerMode,
@@ -55,11 +69,21 @@ fun DownloadSettingsScreen(
         deleteFromStorage = deleteDownloadFile,
         autoPreviewDownloadedImages = autoPreviewDownloadedImages,
         liveUpdates = liveUpdates,
+        islandMode = islandMode,
+        islandAnimationStyle = islandAnimationStyle,
+        islandAnimationSpeed = islandAnimationSpeed,
+        islandAnimationBounce = islandAnimationBounce,
+        islandWavyProgress = islandWavyProgress,
         onDownloadManagerModeChange = viewModel::setDownloadManagerMode,
         onConfirmFileDeleteChange = viewModel::setConfirmDownloadDelete,
         onDeleteFromStorageChange = viewModel::setDeleteDownloadFile,
         onAutoPreviewDownloadedImagesChange = viewModel::setAutoPreviewDownloadedImages,
         onLiveUpdatesChange = viewModel::setLiveUpdates,
+        onIslandModeChange = viewModel::setIslandMode,
+        onIslandAnimationStyleChange = viewModel::setIslandAnimationStyle,
+        onIslandAnimationSpeedChange = viewModel::setIslandAnimationSpeed,
+        onIslandAnimationBounceChange = viewModel::setIslandAnimationBounce,
+        onIslandWavyProgressChange = viewModel::setIslandWavyProgress,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -73,11 +97,21 @@ fun DownloadSettingsScreenContent(
     deleteFromStorage: Boolean,
     autoPreviewDownloadedImages: Boolean,
     liveUpdates: Boolean,
+    islandMode: String,
+    islandAnimationStyle: String,
+    islandAnimationSpeed: String,
+    islandAnimationBounce: String,
+    islandWavyProgress: Boolean,
     onDownloadManagerModeChange: (String) -> Unit,
     onConfirmFileDeleteChange: (Boolean) -> Unit,
     onDeleteFromStorageChange: (Boolean) -> Unit,
     onAutoPreviewDownloadedImagesChange: (Boolean) -> Unit,
     onLiveUpdatesChange: (Boolean) -> Unit,
+    onIslandModeChange: (String) -> Unit,
+    onIslandAnimationStyleChange: (String) -> Unit,
+    onIslandAnimationSpeedChange: (String) -> Unit,
+    onIslandAnimationBounceChange: (String) -> Unit,
+    onIslandWavyProgressChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -167,47 +201,276 @@ fun DownloadSettingsScreenContent(
                     val notificationsAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { rowIndex, rowPosition ->
-                    if (rowIndex == 0) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_auto_preview_downloaded_images),
-                        subtitle = stringResource(R.string.ui_show_downloaded_photos_in_the),
-                        icon = Icons.Rounded.Image,
-                        checked = autoPreviewDownloadedImages,
-                        position = rowPosition,
-                        onCheckedChange = onAutoPreviewDownloadedImagesChange
-                    )
-                    } else {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_live_updates_alerts),
-                        subtitle = stringResource(R.string.ui_show_live_progress_chip_in),
-                        icon = Icons.Rounded.NotificationsActive,
-                        checked = liveUpdates && notificationsAllowed,
-                        position = rowPosition,
-                        onCheckedChange = { enabled ->
-                            if (enabled) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    val hasPermission = ContextCompat.checkSelfPermission(
-                                        context,
-                                        Manifest.permission.POST_NOTIFICATIONS
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                    if (hasPermission) {
-                                        onLiveUpdatesChange(true)
-                                        if (Build.VERSION.SDK_INT >= 36 && !LiveUpdateNotificationManager.canPostPromotedNotifications(context)) {
-                                            showPromotedSettingsDialog = true
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 1) { _, rowPosition ->
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            title = stringResource(R.string.ui_auto_preview_downloaded_images),
+                            subtitle = stringResource(R.string.ui_show_downloaded_photos_in_the),
+                            icon = Icons.Rounded.Image,
+                            checked = autoPreviewDownloadedImages,
+                            position = rowPosition,
+                            onCheckedChange = onAutoPreviewDownloadedImagesChange
+                        )
+                    }
+                }
+
+                // Live Actions & Expressive Cutout Island (Android 16 & Non-Supported Fallback)
+                PetalSettingsSection(
+                    title = "Live Actions & Cutout Island",
+                    icon = Icons.Rounded.DynamicFeed,
+                    cardId = "live_actions_cutout_island",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    var showPermissionDialog by remember { mutableStateOf(false) }
+                    var showPromotedSettingsDialog by remember { mutableStateOf(false) }
+
+                    val notifPermissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { isGranted ->
+                        if (isGranted) {
+                            onLiveUpdatesChange(true)
+                            if (Build.VERSION.SDK_INT >= 36 && !LiveUpdateNotificationManager.canPostPromotedNotifications(context)) {
+                                showPromotedSettingsDialog = true
+                            }
+                        } else {
+                            onLiveUpdatesChange(false)
+                        }
+                    }
+
+                    val notificationsAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
+                    // Master Toggle
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 1) { _, rowPosition ->
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            title = stringResource(R.string.ui_live_updates_alerts),
+                            subtitle = "Promoted status bar chip on Android 16 & expressive dynamic island on non-supported devices",
+                            icon = Icons.Rounded.NotificationsActive,
+                            checked = liveUpdates && notificationsAllowed,
+                            position = rowPosition,
+                            onCheckedChange = { enabled ->
+                                if (enabled) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                        val hasPermission = ContextCompat.checkSelfPermission(
+                                            context,
+                                            Manifest.permission.POST_NOTIFICATIONS
+                                        ) == PackageManager.PERMISSION_GRANTED
+                                        if (hasPermission) {
+                                            onLiveUpdatesChange(true)
+                                            if (Build.VERSION.SDK_INT >= 36 && !LiveUpdateNotificationManager.canPostPromotedNotifications(context)) {
+                                                showPromotedSettingsDialog = true
+                                            }
+                                        } else {
+                                            showPermissionDialog = true
                                         }
                                     } else {
-                                        showPermissionDialog = true
+                                        onLiveUpdatesChange(true)
                                     }
                                 } else {
-                                    onLiveUpdatesChange(true)
+                                    onLiveUpdatesChange(false)
                                 }
-                            } else {
-                                onLiveUpdatesChange(false)
+                            }
+                        )
+                    }
+
+                    if (liveUpdates && notificationsAllowed) {
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Interactive Motion Preview Card
+                        IslandAnimationPreviewCard(
+                            style = islandAnimationStyle,
+                            speed = islandAnimationSpeed,
+                            bounce = islandAnimationBounce,
+                            wavy = islandWavyProgress
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Display Mode Group
+                        Text(
+                            text = "Presentation Mode",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+
+                        val modes = listOf(
+                            Triple("AUTO", "Auto (Recommended)", "Android 16 status bar chip on supported, Cutout Island on others"),
+                            Triple("ALWAYS_ISLAND", "Always Cutout Island", "Force the Material 3 Expressive dynamic island on all devices"),
+                            Triple("NOTIFICATION_ONLY", "Notification Bar Only", "Standard notification shade alerts without cutout island")
+                        )
+
+                        com.petal.browser.ui.containment.PetalGroup(rowCount = modes.size) { index, position ->
+                            val (key, title, subtitle) = modes[index]
+                            val isSelected = islandMode.equals(key, ignoreCase = true)
+                            com.petal.browser.ui.containment.PetalGroupListRow(
+                                position = position,
+                                selected = isSelected,
+                                onClick = { onIslandModeChange(key) },
+                                leading = {
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = if (key == "ALWAYS_ISLAND") Icons.Rounded.SmartDisplay else if (key == "AUTO") Icons.Rounded.AutoAwesome else Icons.Rounded.Notifications,
+                                        variant = if (isSelected) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailing = {
+                                    RadioButton(
+                                        selected = isSelected,
+                                        onClick = { onIslandModeChange(key) }
+                                    )
+                                }
+                            )
+                        }
+
+                        if (!islandMode.equals("NOTIFICATION_ONLY", ignoreCase = true)) {
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "Motion & Spring Physics",
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+
+                            // Animation Style Group
+                            val styles = listOf(
+                                Pair("EXPRESSIVE", "Expressive (Spatial Springs & Bounce)"),
+                                Pair("EASE_IN_OUT", "Standard (Ease In/Out)")
+                            )
+                            com.petal.browser.ui.containment.PetalGroup(rowCount = styles.size) { index, position ->
+                                val (key, label) = styles[index]
+                                val isSelected = islandAnimationStyle.equals(key, ignoreCase = true)
+                                com.petal.browser.ui.containment.PetalGroupListRow(
+                                    position = position,
+                                    selected = isSelected,
+                                    onClick = { onIslandAnimationStyleChange(key) },
+                                    leading = {
+                                        com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                            icon = Icons.Rounded.Animation,
+                                            variant = if (isSelected) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                        )
+                                    },
+                                    content = {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                    },
+                                    trailing = {
+                                        RadioButton(
+                                            selected = isSelected,
+                                            onClick = { onIslandAnimationStyleChange(key) }
+                                        )
+                                    }
+                                )
+                            }
+
+                            if (islandAnimationStyle.equals("EXPRESSIVE", ignoreCase = true)) {
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                                    if (index == 0) {
+                                        val speeds = listOf("SLOW", "DEFAULT", "FAST")
+                                        val currentSpeed = islandAnimationSpeed.uppercase(Locale.US)
+                                        com.petal.browser.ui.containment.PetalGroupListRow(
+                                            position = position,
+                                            onClick = {
+                                                val nextIdx = (speeds.indexOf(currentSpeed) + 1) % speeds.size
+                                                onIslandAnimationSpeedChange(speeds[nextIdx])
+                                            },
+                                            leading = {
+                                                com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                                    icon = Icons.Rounded.Speed,
+                                                    variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                                )
+                                            },
+                                            content = {
+                                                Text("Spring Stiffness & Pace", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                                Text(
+                                                    when (currentSpeed) {
+                                                        "SLOW" -> "Slow (Gentle 170f stiffness)"
+                                                        "FAST" -> "Fast (Snappy 800f stiffness)"
+                                                        else -> "Default (Balanced 380f stiffness)"
+                                                    },
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            },
+                                            trailing = {
+                                                AssistChip(
+                                                    onClick = {
+                                                        val nextIdx = (speeds.indexOf(currentSpeed) + 1) % speeds.size
+                                                        onIslandAnimationSpeedChange(speeds[nextIdx])
+                                                    },
+                                                    label = { Text(currentSpeed) }
+                                                )
+                                            }
+                                        )
+                                    } else {
+                                        val bounces = listOf("SMALL", "NORMAL", "BIG")
+                                        val currentBounce = islandAnimationBounce.uppercase(Locale.US)
+                                        com.petal.browser.ui.containment.PetalGroupListRow(
+                                            position = position,
+                                            onClick = {
+                                                val nextIdx = (bounces.indexOf(currentBounce) + 1) % bounces.size
+                                                onIslandAnimationBounceChange(bounces[nextIdx])
+                                            },
+                                            leading = {
+                                                com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                                    icon = Icons.Rounded.Gesture,
+                                                    variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                                )
+                                            },
+                                            content = {
+                                                Text("Spring Damping & Overshoot", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                                Text(
+                                                    when (currentBounce) {
+                                                        "SMALL" -> "Small (~1.5% overshoot)"
+                                                        "BIG" -> "Big (~20% distinct springy bounce)"
+                                                        else -> "Normal (~9% overshoot)"
+                                                    },
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            },
+                                            trailing = {
+                                                AssistChip(
+                                                    onClick = {
+                                                        val nextIdx = (bounces.indexOf(currentBounce) + 1) % bounces.size
+                                                        onIslandAnimationBounceChange(bounces[nextIdx])
+                                                    },
+                                                    label = { Text(currentBounce) }
+                                                )
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            com.petal.browser.ui.containment.PetalGroup(rowCount = 1) { _, position ->
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = "Liquid Wavy Progress Bar",
+                                    subtitle = "Animated travelling sinusoidal wave along active download progress",
+                                    icon = Icons.Rounded.Waves,
+                                    checked = islandWavyProgress,
+                                    position = position,
+                                    onCheckedChange = onIslandWavyProgressChange
+                                )
                             }
                         }
-                    )
-                    }
                     }
 
                     if (showPermissionDialog) {
@@ -257,7 +520,6 @@ fun DownloadSettingsScreenContent(
                                         try {
                                             context.startActivity(LiveUpdateNotificationManager.getLiveNotificationSettingsIntent(context))
                                         } catch (e: Exception) {
-                                            // Fallback to app settings
                                             val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                                                 data = android.net.Uri.parse("package:${context.packageName}")
                                                 addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -276,6 +538,7 @@ fun DownloadSettingsScreenContent(
                             }
                         )
                     }
+                }
 
                 }
 
@@ -505,6 +768,142 @@ fun DownloadSettingsScreenContent(
                 }
 
                 Spacer(Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun IslandAnimationPreviewCard(
+    style: String,
+    speed: String,
+    bounce: String,
+    wavy: Boolean
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val scale = remember { androidx.compose.animation.core.Animatable(1f) }
+
+    val motion = remember(style, speed, bounce) {
+        val s = if ("EASE_IN_OUT".equals(style, ignoreCase = true)) IslandAnimationStyle.EASE_IN_OUT else IslandAnimationStyle.EXPRESSIVE
+        val spd = when (speed.uppercase(Locale.US)) {
+            "SLOW" -> IslandAnimationSpeed.SLOW
+            "FAST" -> IslandAnimationSpeed.FAST
+            else -> IslandAnimationSpeed.DEFAULT
+        }
+        val bnc = when (bounce.uppercase(Locale.US)) {
+            "SMALL" -> IslandAnimationBounce.SMALL
+            "BIG" -> IslandAnimationBounce.BIG
+            else -> IslandAnimationBounce.NORMAL
+        }
+        IslandMotion(style = s, speed = spd, bounce = bnc)
+    }
+
+    val width by androidx.compose.animation.core.animateDpAsState(
+        targetValue = if (isExpanded) 280.dp else 160.dp,
+        animationSpec = motion.dp(),
+        label = "previewWidth"
+    )
+    val height by androidx.compose.animation.core.animateDpAsState(
+        targetValue = if (isExpanded) 96.dp else 38.dp,
+        animationSpec = motion.dp(),
+        label = "previewHeight"
+    )
+    val cornerRadius by androidx.compose.animation.core.animateDpAsState(
+        targetValue = if (isExpanded) 24.dp else 19.dp,
+        animationSpec = motion.dp(),
+        label = "previewCorner"
+    )
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "Interactive Motion Preview (Tap to toggle)",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(96.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .size(width, height)
+                        .graphicsLayer {
+                            scaleX = scale.value
+                            scaleY = scale.value
+                        }
+                        .clip(RoundedCornerShape(cornerRadius))
+                        .clickable {
+                            scope.launch {
+                                scale.animateTo(0.93f, motion.boop())
+                                scale.animateTo(1f, motion.boop())
+                            }
+                            isExpanded = !isExpanded
+                        },
+                    shape = RoundedCornerShape(cornerRadius),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    tonalElevation = 6.dp,
+                    shadowElevation = 4.dp
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!isExpanded) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.ArrowDownward,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text("68%", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("8.4 MB/s", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("ubuntu-24.04.iso", fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                    Text("8.4 MB/s", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                                }
+                                PetalWavyProgressBar(
+                                    progress = 0.68f,
+                                    waveColor = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                    isWavy = wavy,
+                                    animated = wavy
+                                )
+                                Text("2.4 GB / 3.8 GB • 00:48 remaining", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

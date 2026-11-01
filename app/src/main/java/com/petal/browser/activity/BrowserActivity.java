@@ -5082,6 +5082,59 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.ui.components.PetalSnackbarDispatcher.INSTANCE.attachComposeView(this, snackbarCompose);
         }
 
+        androidx.compose.ui.platform.ComposeView customIslandCompose = findViewById(R.id.petal_custom_island_compose);
+        if (customIslandCompose != null) {
+            com.petal.browser.island.PetalCutoutIslandBridge.attachIsland(
+                    this,
+                    customIslandCompose,
+                    new com.petal.browser.live.LiveActionActionListener() {
+                        @Override
+                        public void onDownloadTogglePause(long downloadId) {
+                            com.petal.browser.compose.downloads.PetalFetchDownloadBridge.togglePauseResume(BrowserActivity.this, downloadId);
+                        }
+
+                        @Override
+                        public void onDownloadCancel(long downloadId) {
+                            com.petal.browser.compose.downloads.PetalFetchDownloadBridge.cancel(BrowserActivity.this, downloadId);
+                        }
+
+                        @Override
+                        public void onMediaTogglePlayPause() {
+                            com.petal.browser.live.LiveActionBusState busState = com.petal.browser.live.PetalLiveActionBus.getState().getValue();
+                            boolean playing = false;
+                            if (busState.getPrimary() instanceof com.petal.browser.live.LiveActionItem.Media) {
+                                playing = ((com.petal.browser.live.LiveActionItem.Media) busState.getPrimary()).isPlaying();
+                            } else if (busState.getSecondary() instanceof com.petal.browser.live.LiveActionItem.Media) {
+                                playing = ((com.petal.browser.live.LiveActionItem.Media) busState.getSecondary()).isPlaying();
+                            }
+                            com.petal.browser.media.PetalMediaBridge bridge = getActiveMediaBridge();
+                            if (bridge != null) {
+                                if (playing) bridge.pauseMedia();
+                                else bridge.playMedia();
+                            }
+                        }
+
+                        @Override
+                        public void onMediaSkip(int seconds) {
+                            com.petal.browser.media.PetalMediaBridge bridge = getActiveMediaBridge();
+                            if (bridge != null) {
+                                bridge.skip(seconds);
+                            }
+                        }
+
+                        @Override
+                        public void onOpenDownloads() {
+                            showDownloads();
+                        }
+
+                        @Override
+                        public void onOpenBrowser() {
+                            // Active in browser
+                        }
+                    }
+            );
+        }
+
         if (contentFrame == null) return;
 
         // Pull distance 80dp with 120dp top touch area threshold matching omni-browser

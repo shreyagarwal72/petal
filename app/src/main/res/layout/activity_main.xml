@@ -158,4 +158,13 @@
         android:layout_alignParentBottom="true"
         android:elevation="40dp" />
 
+    <!-- Material 3 Expressive Dynamic Cutout Island (Android 16 Live Actions & Non-Supported Fallback Island) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/petal_custom_island_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:elevation="45dp"
+        android:translationZ="45dp" />
+
 </RelativeLayout>

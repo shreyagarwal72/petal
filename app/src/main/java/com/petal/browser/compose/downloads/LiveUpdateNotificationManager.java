@@ -229,6 +229,9 @@ public class LiveUpdateNotificationManager {
             extras.putBoolean("android.promotedOngoing", !isPaused);
             extras.putString("android.shortCriticalText", chipText);
             extras.putInt("android.accentColor", themeAccentColor);
+            extras.putInt("android.progress", clampedProgress);
+            extras.putInt("android.progressMax", 100);
+            extras.putBoolean("android.progressIndeterminate", isIndeterminate);
             builder.setExtras(extras);
 
             try {
@@ -289,6 +292,9 @@ public class LiveUpdateNotificationManager {
             extras.putBoolean("android.promotedOngoing", !isPaused && promoteLiveUpdate);
             extras.putString("android.shortCriticalText", chipText);
             extras.putInt("android.accentColor", accentColor);
+            extras.putInt("android.progress", clampedProgress);
+            extras.putInt("android.progressMax", 100);
+            extras.putBoolean("android.progressIndeterminate", isIndeterminate);
             builder.addExtras(extras);
 
             if (togglePendingIntent != null) {

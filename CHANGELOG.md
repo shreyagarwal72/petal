@@ -1,3 +1,34 @@
+### v4.5.1 — 🏝️ Android 16 Live Actions & Expressive Dynamic Cutout Island
+
+> *"Milestone v4.5.1 delivers native support for Android 16 (API 36 Baklava) Live Actions and Rich Ongoing Notifications, introducing real-time status bar live activity chips. For non-supported devices (Android 10–15 and OEM ROMs), Petal integrates a full Material 3 Expressive Dynamic Cutout Island adapted from expressive-cutout with spatial spring physics, interactive motion previews, and dedicated settings."*
+
+#### ⚡ Android 16 Live Actions (API 36 Rich Ongoing Notifications)
+- **Status Bar Live Action Chips (`setShortCriticalText`)**: Promotes active downloads and background web media sessions directly into the Android 16 status bar chip capsule adjacent to the camera cutout and clock, displaying live velocity and progress percentages.
+- **ProgressStyle with Themed Segments**: Leverages Android 16's `Notification.ProgressStyle`, tinted dynamically with Material You dynamic colors or Petal signature palette, complete with styled progress tracker icons.
+- **Promoted Ongoing Support**: Automatically flags running downloads and media sessions with `FLAG_PROMOTED_ONGOING` and verifies system-level live alert permissions via `NotificationManager.canPostPromotedNotifications()`.
+- **Standalone Expressive Cutout Interoperability**: Bundles standard `android.progress`, `android.progressMax`, `android.progressIndeterminate`, and `android.liveAlertText` extras, allowing the standalone `expressive-cutout` companion app to mirror Petal transfers system-wide with zero extra configuration.
+
+#### 🏝️ Material 3 Expressive Dynamic Cutout Island (Adapted from `expressive-cutout`)
+- **Seamless Non-Supported Fallback**: For devices on Android 10–15 or custom OEM distributions without status bar chip support, Petal renders a fluid Material 3 Expressive cutout island directly anchored around the hardware punch hole.
+- **Compact & Split Satellite Modes**:
+  - *Download Pill*: Displays animated progress arrow, completion percentage, live download velocity chip, and a breathing activity dot.
+  - *Media Pill*: Shows track title, musical badge, and real-time jumping audio soundwave equalizer bars.
+  - *Split Satellite Bubble*: When both media and a download are active simultaneously, splits into a primary capsule and a circular secondary satellite bubble.
+- **Expanded Expressive Card**: Tapping the island springs open an expanded Material 3 card featuring rich metadata, interactive Pause/Resume and Cancel actions, ETA and transfer counters, and direct access to the downloads manager.
+- **Hardware Cutout & Bezel Geometry (`CutoutMetrics` & `NotchShape`)**: Queries `DisplayCutout`, `cutoutPath`, and display corner radii to accurately anchor around centered or offset punch-holes, with flared concave ear geometry hugging top bezels.
+
+#### 🎛️ Reference App Motion Physics & Animations (`IslandMotion`)
+- **Tactile Tap "Boop"**: Authentic spring-driven scale compression to 0.95f under touch and bouncy recovery on release.
+- **Spring Stiffness & Damping Controls**: Support for `SLOW` (170f), `DEFAULT` (380f), and `FAST` (800f) spatial springs with customizable damping (`SMALL`, `NORMAL`, and `BIG` overshoot).
+- **Liquid Travelling Wavy Progress Bar**: Sinusoidal wavy progress bar with continuous phase shifts and smooth amplitude morphing.
+
+#### ⚙️ Dedicated Download Manager Settings
+- **Live Actions & Cutout Island Settings**: Added a new settings group under **Settings → Downloads → Live Actions & Cutout Island**.
+- **Interactive Motion Preview**: A live interactive preview card allowing users to tap and test the cutout island's spring boop, expansion animation, and wavy progress in real time.
+- **Mode & Motion Selectors**: Instant switching between *Auto*, *Always Cutout Island*, and *Notification Bar Only*, with granular controls over spring speed, damping bounce, and wavy vs. solid progress bars.
+
+---
+
 ### v4.5 — 🦊 Unified Mozilla Firefox Download Pipeline, Architectural Cleanup & Pure Liquid Glass
 
 > *"Milestone v4.5 unifies all download pipelines under Mozilla's official Firefox/Fenix engine with Range segmenting, eliminates the Android system DownloadManager, purges legacy third-party brand misnomers (Chrome/Google/Chromium) across the codebase, integrates Torrays torrent search, and elevates Pure & Live Liquid Glass with interactive refraction controls."*

@@ -127,6 +127,13 @@ interface SettingsRepository {
     val autoPreviewDownloadedImages: Flow<Boolean>
     val liveUpdates: Flow<Boolean>
 
+    // Expressive Cutout Island & Live Actions Settings
+    val islandMode: Flow<String>
+    val islandAnimationStyle: Flow<String>
+    val islandAnimationSpeed: Flow<String>
+    val islandAnimationBounce: Flow<String>
+    val islandWavyProgress: Flow<Boolean>
+
     // Apple Duo (BETA) Animation
     val appleDuoEnabled: Flow<Boolean>
     val appleDuoWebsites: Flow<Boolean>
@@ -246,6 +253,12 @@ interface SettingsRepository {
     suspend fun setDeleteDownloadFile(enabled: Boolean)
     suspend fun setAutoPreviewDownloadedImages(enabled: Boolean)
     suspend fun setLiveUpdates(enabled: Boolean)
+
+    suspend fun setIslandMode(mode: String)
+    suspend fun setIslandAnimationStyle(style: String)
+    suspend fun setIslandAnimationSpeed(speed: String)
+    suspend fun setIslandAnimationBounce(bounce: String)
+    suspend fun setIslandWavyProgress(enabled: Boolean)
 
     suspend fun setAppleDuoEnabled(enabled: Boolean)
     suspend fun setAppleDuoWebsites(enabled: Boolean)
