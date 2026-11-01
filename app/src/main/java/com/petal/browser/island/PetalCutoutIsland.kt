@@ -142,7 +142,7 @@ fun PetalCutoutIsland(
                         scaleX = scale.value
                         scaleY = scale.value
                     }
-                    .animateContentSize(animationSpec = motion.dp())
+                    .animateContentSize(animationSpec = motion.intSize())
                     .clip(shape)
                     .liquidGlassChrome(shape = shape, enabled = isGlass)
                     .clickable(

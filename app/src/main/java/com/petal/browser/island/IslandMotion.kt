@@ -1,6 +1,5 @@
 package com.petal.browser.island
 
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
@@ -9,6 +8,7 @@ import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import kotlin.math.roundToInt
 
 enum class IslandAnimationStyle { EXPRESSIVE, EASE_IN_OUT }
@@ -30,23 +30,27 @@ class IslandMotion(
 
     private fun scaled(baseMs: Int) = (baseMs * animScale).roundToInt()
 
-    fun float(baseMs: Int = BASE_TRANSITION_MS): AnimationSpec<Float> =
+    fun float(baseMs: Int = BASE_TRANSITION_MS): FiniteAnimationSpec<Float> =
         if (expressive) spatialSpec(speed, bounce, visibilityThreshold = 0.001f)
         else tween(durationMillis = scaled(baseMs), easing = EaseInOutEasing)
 
-    fun dp(): AnimationSpec<Dp> =
+    fun dp(): FiniteAnimationSpec<Dp> =
         if (expressive) spatialSpec(speed, bounce, visibilityThreshold = Dp.VisibilityThreshold)
         else tween(durationMillis = scaled(BASE_TRANSITION_MS), easing = EaseInOutEasing)
 
-    fun dpSmooth(): AnimationSpec<Dp> =
+    fun intSize(): FiniteAnimationSpec<IntSize> =
+        if (expressive) spatialSpec(speed, bounce, visibilityThreshold = IntSize.VisibilityThreshold)
+        else tween(durationMillis = scaled(BASE_TRANSITION_MS), easing = EaseInOutEasing)
+
+    fun dpSmooth(): FiniteAnimationSpec<Dp> =
         if (expressive) spring(dampingRatio = 1f, stiffness = spatialStiffness(speed), visibilityThreshold = Dp.VisibilityThreshold)
         else tween(durationMillis = scaled(BASE_TRANSITION_MS), easing = EaseInOutEasing)
 
-    fun dpFirm(): AnimationSpec<Dp> =
+    fun dpFirm(): FiniteAnimationSpec<Dp> =
         if (expressive) spring(dampingRatio = FIRM_DAMPING, stiffness = spatialStiffness(speed), visibilityThreshold = Dp.VisibilityThreshold)
         else tween(durationMillis = scaled(BASE_TRANSITION_MS), easing = EaseInOutEasing)
 
-    fun boop(): AnimationSpec<Float> =
+    fun boop(): FiniteAnimationSpec<Float> =
         if (expressive) spring(dampingRatio = 1f, stiffness = boopStiffness(speed), visibilityThreshold = 0.0005f)
         else tween(durationMillis = scaled(140), easing = EaseInOutEasing)
 
@@ -69,7 +73,7 @@ class IslandMotion(
 
         val Default = IslandMotion()
 
-        fun spatialSpec<T>(
+        fun <T> spatialSpec(
             speed: IslandAnimationSpeed,
             bounce: IslandAnimationBounce,
             visibilityThreshold: T? = null
