@@ -12,6 +12,11 @@
   - Engineered fluid spatial morphing between the full address bar and the floating compact pill, replacing abrupt cutoffs with smooth scale, alpha, and translation dynamics.
   - Added directional expand indicator (`KeyboardArrowUp` for bottom address bar, `KeyboardArrowDown` for top bar) and improved domain text clarity with subtle drop shadows over refractive glass.
 
+#### 🔍 Find in Page Bar Alignment & Refractive Liquid Glass
+- **Dynamic Slot Matching**: Find-in-page bar now dynamically slots into the address bar's position (top or bottom above navigation bar / keyboard) and sets the address bar to transparent while active to prevent overlapping.
+- **Live Liquid Glass Support**: Adapted `PetalFindInPageBar` to sample live webpage content with `Modifier.liquidGlass`, matching the address bar's exact shape, insets, and curvature.
+- **Position-Aware Transitions**: Slide-in and slide-out animations now naturally slide from the top or bottom depending on toolbar placement.
+
 #### 📦 Distribution Variants (AAB vs. Standalone APKs)
 - **Dedicated Google Play Bundle Variant (`play`)**:
   - Automatically strips sensitive permissions (`API_V23` Shizuku, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) from the Google Play `.aab` manifest via dedicated `app/src/play/AndroidManifest.xml`.

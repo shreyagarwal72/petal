@@ -1876,7 +1876,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
                 if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
                 if (bottomNavCompose != null) bottomNavCompose.setVisibility(GONE);
-                if (refreshBarCompose != null) refreshBarCompose.setVisibility(GONE);
+                if (refreshBarCompose != null) refreshBarCompose.setVisibility(View.INVISIBLE);
                 if (mainProgressBar != null) mainProgressBar.setVisibility(GONE);
                 if (downloadBannerCompose != null) downloadBannerCompose.setVisibility(GONE);
                 closeFindInPage();
@@ -1913,7 +1913,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else {
                 applyAddressBarPosition();
                 applyBottomBarVisibilityForSurface();
-                if (refreshBarCompose != null) refreshBarCompose.setVisibility(VISIBLE);
+                if (refreshBarCompose != null) refreshBarCompose.setVisibility(View.INVISIBLE);
                 if (mainProgressBar != null) mainProgressBar.setVisibility(VISIBLE);
 
                 // Restore video player overlay if returning from PiP
@@ -3108,6 +3108,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             int topInset = insets.getTop();
             int bottomInset = insets.getBottom();
             mainContent.setPadding(0, topInset, 0, bottomInset);
+            layoutFindInPageBar(isBottom, bottomNavHeight, isNonWebSurface);
 
             com.petal.browser.ui.components.BarCollapseState.updatePage(curUrl, currentAlbumController != null && currentAlbumController.isIncognito());
 
@@ -4311,7 +4312,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             refreshState.setPullProgress(0f);
             View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
             if (refreshBarCompose != null) {
-                refreshBarCompose.setVisibility(GONE);
+                refreshBarCompose.setVisibility(View.INVISIBLE);
             }
         }
     }
@@ -4963,9 +4964,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         );
     }
 
+    /**
+     * Puts the find bar in the address bar's own slot (top, or bottom above the bottom nav /
+     * keyboard) and hides the address bar underneath while find is open, so they never overlap.
+     */
+    private void layoutFindInPageBar(boolean isBottom, int bottomNavHeight, boolean nonWebSurface) {
+        if (isFindInPageShowing && nonWebSurface) {
+            // Find is for web pages only; leaving the page (home, settings...) closes it.
+            closeFindInPage();
+            return;
+        }
+        View find = findViewById(R.id.find_in_page_compose);
+        if (find != null && find.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) find.getLayoutParams();
+            lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+            lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            if (isBottom) {
+                lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                lp.bottomMargin = bottomNavHeight;
+            } else {
+                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                lp.bottomMargin = 0;
+            }
+            find.setLayoutParams(lp);
+            if (isFindInPageShowing) find.bringToFront();
+        }
+        View addressBar = findViewById(R.id.compose_address_bar);
+        if (addressBar != null) addressBar.setAlpha(isFindInPageShowing ? 0f : 1f);
+    }
+
     public void closeFindInPage() {
         if (!isFindInPageShowing) return;
         isFindInPageShowing = false;
+        View addressBarForFind = findViewById(R.id.compose_address_bar);
+        if (addressBarForFind != null) addressBarForFind.setAlpha(1f);
         findInPageQuery = "";
         findInPageCurrentMatch = 0;
         findInPageTotalMatches = 0;
@@ -5025,7 +5057,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // transparent touch surface above the WebView and steal the next
             // pull gesture. It is made visible only after PullToRefreshFrameLayout
             // has already captured a real pull gesture.
-            refreshBarCompose.setVisibility(GONE);
+            refreshBarCompose.setVisibility(View.INVISIBLE);
             refreshBarCompose.bringToFront();
 
             if (addressBarForMargin != null) {
@@ -5191,7 +5223,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     finalRefreshView.bringToFront();
                 } else if (!refreshState.isRefreshing()) {
-                    finalRefreshView.setVisibility(GONE);
+                    finalRefreshView.setVisibility(View.INVISIBLE);
                 }
             }
             float prevProgress = refreshState.getPullProgress();
@@ -5206,7 +5238,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (!triggered) {
                 refreshState.setPullProgress(0f);
                 if (finalRefreshView != null) {
-                    finalRefreshView.setVisibility(GONE);
+                    finalRefreshView.setVisibility(View.INVISIBLE);
                 }
                 return;
             }
@@ -5244,6 +5276,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * (or showing stale progress) on top of a screen that isn't an actual webpage.
      */
     public void hideRefreshAndProgressOverlays() {
+        if (isFindInPageShowing) closeFindInPage();
         if (contentFrame != null) {
             contentFrame.removeCallbacks(refreshTimeoutWatchdog);
             contentFrame.reset();
@@ -5254,7 +5287,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         if (refreshBarCompose != null) {
-            refreshBarCompose.setVisibility(GONE);
+            refreshBarCompose.setVisibility(View.INVISIBLE);
         }
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
         if (progressBarCompose != null) {
@@ -5282,7 +5315,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
             if (refreshBarCompose != null) {
-                refreshBarCompose.setVisibility(GONE);
+                refreshBarCompose.setVisibility(View.INVISIBLE);
             }
         });
     }
@@ -6661,6 +6694,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             findInPageCompose.setVisibility(VISIBLE);
         }
         updateFindInPageCompose();
+        applyAddressBarPosition();
         updateBackCallbackState();
     }
     public void saveBookmark(String title, String url) {

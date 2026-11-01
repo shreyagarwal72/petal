@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
@@ -33,9 +34,13 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.components.bouncyClickable
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.preference.PreferenceManager
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
-import com.petal.browser.ui.containment.liquidGlassChrome
-import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.LocalPetalGlassRevision
+import com.petal.browser.ui.glass.liquidGlass
+import com.petal.browser.ui.glass.rememberGlassBar
 
 /**
  * PetalFindInPageBar
@@ -68,24 +73,48 @@ fun PetalFindInPageBar(
         }
     }
 
+    // The find bar takes the address bar's slot, so it follows the address bar's position,
+    // height, shape, insets and glass (same live glass that samples the page).
+    val context = LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val isBottom = "BOTTOM".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true)
+    val isCompact = "COMPACT".equals(sp.getString("sp_address_bar_height", "COMPACT"), ignoreCase = true)
+
+    LocalPetalGlassRevision.current
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar")
+    val glassSource = LocalView.current.rootView.findViewById<android.view.View>(R.id.main_content)
+    val glassBar = rememberGlassBar(if (isGlass) glassSource else null)
+    val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
+
+    val rawStatusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val statusBarTopInset = if (rawStatusTop == 0.dp) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding()
+
+    val barShape = if (isBottom) {
+        RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+    } else {
+        RoundedCornerShape(if (isCompact) 24.dp else 28.dp)
+    }
+    val vGap = if (isCompact) 3.dp else 5.dp
+
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        enter = slideInVertically(initialOffsetY = { if (isBottom) it else -it }) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { if (isBottom) it else -it }) + fadeOut(),
         modifier = modifier
     ) {
-        val barShape = RoundedCornerShape(26.dp)
-        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 14.dp, vertical = 8.dp)
-                .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true, sheenIntensity = 0.5f) else Modifier),
+                .then(
+                    if (isBottom) Modifier
+                    else Modifier.padding(start = 12.dp, end = 12.dp, top = statusBarTopInset + vGap, bottom = vGap)
+                )
+                .then(if (isGlass) Modifier.liquidGlass(barShape, baseGlassColor, glassBar) else Modifier),
             shape = barShape,
-            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = if (isGlass) 0.dp else 6.dp,
-            shadowElevation = if (isGlass) 0.dp else 8.dp
+            color = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = if (isGlass) 0.dp else if (isBottom) 2.dp else 4.dp,
+            shadowElevation = if (isGlass) 0.dp else if (isBottom) 2.dp else 4.dp
         ) {
             Row(
                 modifier = Modifier
