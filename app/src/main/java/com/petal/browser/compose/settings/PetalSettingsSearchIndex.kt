@@ -459,6 +459,13 @@ object PetalSettingsSearchIndex {
             subtitle = "Perform lightweight HEAD check on sniffing URLs to filter out expired or non-playable links",
             category = SettingsCategory.MEDIA,
             keywords = listOf("validate media", "head request", "filter streams", "playable")
+        ),
+        SettingsSearchItem(
+            id = "media_cutout_island",
+            title = "Expressive Cutout Island & Live Updates",
+            subtitle = "Display media playback, downloads, and file viewer status around hardware camera cutout with AMOLED protection",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("island", "cutout", "camera cutout", "punch hole", "notch", "live updates", "amoled", "burn protection", "dynamic island")
         )
     )
 

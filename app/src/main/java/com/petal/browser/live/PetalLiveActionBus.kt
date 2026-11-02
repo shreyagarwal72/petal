@@ -41,6 +41,13 @@ sealed class LiveActionItem(open val id: String) {
         val albumArt: Bitmap? = null
     ) : LiveActionItem("media_playback")
 
+    data class FileViewer(
+        val fileName: String,
+        val fileType: String,
+        val subtitle: String,
+        val active: Boolean = true
+    ) : LiveActionItem("file_viewer")
+
     data class Task(
         val taskId: String,
         val taskName: String,
@@ -64,6 +71,7 @@ interface LiveActionActionListener {
     fun onMediaSkip(seconds: Int)
     fun onOpenDownloads()
     fun onOpenBrowser()
+    fun onOpenFileViewer() {}
 }
 
 object PetalLiveActionBus {
@@ -144,6 +152,26 @@ object PetalLiveActionBus {
     @JvmStatic
     fun dismissMedia() {
         dismiss("media_playback")
+    }
+
+    @JvmStatic
+    fun updateFileViewer(
+        fileName: String,
+        fileType: String,
+        subtitle: String
+    ) {
+        val fileAction = LiveActionItem.FileViewer(
+            fileName = fileName,
+            fileType = fileType,
+            subtitle = subtitle,
+            active = true
+        )
+        promoteOrUpdate(fileAction)
+    }
+
+    @JvmStatic
+    fun dismissFileViewer() {
+        dismiss("file_viewer")
     }
 
     @JvmStatic

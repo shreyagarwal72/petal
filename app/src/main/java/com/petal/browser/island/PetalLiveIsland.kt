@@ -104,6 +104,14 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.live.LiveActionActionListener
 import com.petal.browser.live.LiveActionBusState
 import com.petal.browser.live.LiveActionItem
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.OpenInNew
+import com.petal.browser.media.PetalAudioColorEngine
+import com.petal.browser.media.PetalCookieShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -121,16 +129,35 @@ private class IslandPalette(
 )
 
 @Composable
-private fun islandPalette(): IslandPalette {
+private fun islandPalette(primaryItem: LiveActionItem?): IslandPalette {
+    val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
+    val isOled = remember(context) { PetalBurnProtection.isOledDisplay(context) }
     val c = MaterialTheme.colorScheme
+
+    val mediaArt = (primaryItem as? LiveActionItem.Media)?.albumArt
+    val audioPalette = remember(mediaArt) {
+        if (mediaArt != null) PetalAudioColorEngine.extractPalette(mediaArt) else null
+    }
+
+    val surfaceColor = when {
+        isOled && isDark -> Color(0xFF000000)
+        isDark -> c.surfaceContainerLowest
+        else -> c.surfaceContainerHighest
+    }
+
+    val accentColor = audioPalette?.primary ?: c.primary
+    val contentColor = if (isDark) Color(0xFFE6E1E5) else c.onSurface
+    val contentMuted = if (isDark) Color(0xFFCAC4D0) else c.onSurfaceVariant
+
     return IslandPalette(
-        surface = c.inverseSurface,
-        content = c.inverseOnSurface,
-        contentMuted = c.inverseOnSurface.copy(alpha = 0.68f),
-        accent = c.inversePrimary,
-        onAccent = c.inverseSurface,
-        accentSoft = c.inversePrimary.copy(alpha = 0.20f),
-        track = c.inverseOnSurface.copy(alpha = 0.18f)
+        surface = surfaceColor,
+        content = contentColor,
+        contentMuted = contentMuted,
+        accent = accentColor,
+        onAccent = audioPalette?.onPrimary ?: c.onPrimary,
+        accentSoft = accentColor.copy(alpha = 0.20f),
+        track = if (isDark) Color.White.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.12f)
     )
 }
 
@@ -142,11 +169,12 @@ fun PetalLiveIsland(
     modifier: Modifier = Modifier,
     /** Applied to the island's own row (e.g. status-bar padding), so a hidden island takes no space. */
     contentModifier: Modifier = Modifier,
+    /** Dynamic horizontal offset in dp for physical cutout alignment. */
+    cutoutOffsetXDp: Float = 0f,
     /** Lets a host window grow/shrink with the island (used by the overlay). */
     onExpandedChange: (Boolean) -> Unit = {}
 ) {
     val motion = remember(settings.animStyle, settings.animSpeed, settings.animBounce) { settings.motion }
-    val palette = islandPalette()
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
@@ -156,6 +184,12 @@ fun PetalLiveIsland(
     val shown = lastState.value
     val primary = shown.primary
     val secondary = shown.secondary
+
+    val palette = islandPalette(primary)
+
+    // Built-in automatic AMOLED burn-in protection: cyclic micro-shift & luminance clamping
+    val burnShift by PetalBurnProtection.rememberOrbiterShift(state.hasActiveAction)
+    val oledLuminance = PetalBurnProtection.rememberOledLuminanceAlpha()
 
     var expanded by remember { mutableStateOf(false) }
     var focusSecondary by remember { mutableStateOf(false) }
@@ -184,13 +218,27 @@ fun PetalLiveIsland(
         }
     }
 
-    // Shape morph: pill -> card.
+    // Smooth placement animation for cutout alignment and vertical offset
+    val targetOffsetX = if (expanded) 0f else cutoutOffsetXDp
+    val animatedOffsetX by animateFloatAsState(targetOffsetX, animationSpec = motion.float(), label = "islandOffsetX")
+    val targetOffsetY = if (expanded) 0f else settings.offsetYDp.toFloat()
+    val animatedOffsetY by animateFloatAsState(targetOffsetY, animationSpec = motion.float(), label = "islandOffsetY")
+
+    // Shape morph: pill -> card, or notch with concave flare ears.
     val corner by animateDpAsState(
         targetValue = if (expanded) 32.dp else 22.dp,
         animationSpec = motion.dp(),
         label = "islandCorner"
     )
-    val shape = RoundedCornerShape(corner)
+    val shape: androidx.compose.ui.graphics.Shape = if (settings.isNotch && !expanded) {
+        NotchShape(
+            flare = settings.notchFlareDp.dp,
+            bottomLeft = corner,
+            bottomRight = corner
+        )
+    } else {
+        RoundedCornerShape(corner)
+    }
 
     // Wrap the listener so every button press counts as "still using it".
     val touchListener = remember(listener) {
@@ -201,6 +249,7 @@ fun PetalLiveIsland(
             override fun onMediaSkip(seconds: Int) { touches++; listener?.onMediaSkip(seconds) }
             override fun onOpenDownloads() { listener?.onOpenDownloads() }
             override fun onOpenBrowser() { listener?.onOpenBrowser() }
+            override fun onOpenFileViewer() { listener?.onOpenFileViewer() }
         }
     }
 
@@ -218,7 +267,13 @@ fun PetalLiveIsland(
         val expandedItem = if (focusSecondary && secondary != null) secondary else primary
 
         Row(
-            modifier = contentModifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            modifier = contentModifier
+                .graphicsLayer {
+                    translationX = animatedOffsetX + burnShift.x
+                    translationY = animatedOffsetY + burnShift.y
+                    alpha = oledLuminance
+                }
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -370,6 +425,37 @@ private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
                     color = palette.accent
                 )
             }
+
+            is LiveActionItem.FileViewer -> {
+                val icon = when (item.fileType) {
+                    "PDF" -> Icons.Rounded.PictureAsPdf
+                    "IMAGE" -> Icons.Rounded.Image
+                    "CODE", "KT", "JS", "PY", "HTML" -> Icons.Rounded.Code
+                    else -> Icons.Rounded.Description
+                }
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(palette.accentSoft),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = null, tint = palette.accent, modifier = Modifier.size(18.dp))
+                }
+                Text(
+                    text = item.fileName,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                    modifier = Modifier.widthIn(max = 130.dp),
+                    color = palette.content
+                )
+                Text(
+                    text = item.fileType,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = palette.accent
+                )
+            }
         }
     }
 }
@@ -402,6 +488,14 @@ private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClic
                     palette = palette,
                     size = 32
                 )
+                is LiveActionItem.FileViewer -> {
+                    val icon = when (item.fileType) {
+                        "PDF" -> Icons.Rounded.PictureAsPdf
+                        "IMAGE" -> Icons.Rounded.Image
+                        else -> Icons.Rounded.Description
+                    }
+                    Icon(icon, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
+                }
             }
         }
     }
@@ -586,6 +680,47 @@ private fun ExpandedCard(
                 )
                 Text(item.statusText, style = MaterialTheme.typography.bodySmall, color = palette.contentMuted)
             }
+
+            is LiveActionItem.FileViewer -> {
+                val icon = when (item.fileType) {
+                    "PDF" -> Icons.Rounded.PictureAsPdf
+                    "IMAGE" -> Icons.Rounded.Image
+                    "CODE", "KT", "JS", "PY", "HTML" -> Icons.Rounded.Code
+                    else -> Icons.Rounded.Description
+                }
+                CardHeader(
+                    leading = {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(palette.accentSoft),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(icon, contentDescription = null, tint = palette.accent, modifier = Modifier.size(26.dp))
+                        }
+                    },
+                    title = item.fileName,
+                    subtitle = "${item.fileType} • ${item.subtitle}",
+                    palette = palette,
+                    onCollapse = onCollapse
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilledTonalButton(
+                        onClick = { listener.onOpenFileViewer(); onCollapse() },
+                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = palette.accent, contentColor = palette.onAccent)
+                    ) {
+                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Return to File")
+                    }
+                }
+            }
         }
     }
 }
@@ -673,10 +808,15 @@ private fun ProgressBadge(
 @Composable
 private fun MediaArt(item: LiveActionItem.Media, palette: IslandPalette, size: Int, corner: Int) {
     val art = item.albumArt
+    val artShape: androidx.compose.ui.graphics.Shape = if (item.isPlaying) {
+        PetalCookieShape(sides = 8, curve = 0.08, rotation = 0f)
+    } else {
+        RoundedCornerShape(corner.dp)
+    }
     Box(
         modifier = Modifier
             .size(size.dp)
-            .clip(RoundedCornerShape(corner.dp))
+            .clip(artShape)
             .background(palette.accentSoft),
         contentAlignment = Alignment.Center
     ) {

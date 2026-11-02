@@ -459,6 +459,11 @@ private fun PetalPdfViewerScreenImpl(
                 pdfRenderer = renderer
                 pageCount = renderer.pageCount
                 isLoading = false
+                com.petal.browser.live.PetalLiveActionBus.updateFileViewer(
+                    fileName = title,
+                    fileType = "PDF",
+                    subtitle = "$pageCount Pages"
+                )
             } else {
                 loadError = "Unable to open PDF document descriptor"
                 isLoading = false
@@ -473,6 +478,7 @@ private fun PetalPdfViewerScreenImpl(
             try {
                 pdfRenderer?.close()
                 pfd?.close()
+                com.petal.browser.live.PetalLiveActionBus.dismissFileViewer()
             } catch (e: Exception) {
                 e.printStackTrace()
             }

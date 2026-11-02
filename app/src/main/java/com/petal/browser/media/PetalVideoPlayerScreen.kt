@@ -87,17 +87,33 @@ fun PetalVideoPlayerScreen(
         activity.isInPictureInPictureMode
     } else false
 
-    // Synchronize ExoPlayer events
+    // Synchronize ExoPlayer events and update PetalLiveActionBus
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
+                com.petal.browser.live.PetalLiveActionBus.updateMedia(
+                    title = title,
+                    artist = "Video Playback",
+                    isPlaying = playing,
+                    positionMs = exoPlayer.currentPosition,
+                    durationMs = exoPlayer.duration.coerceAtLeast(0L),
+                    albumArt = null
+                )
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) {
                     val dur = exoPlayer.duration
                     durationMs = if (dur > 0) dur else 0L
+                    com.petal.browser.live.PetalLiveActionBus.updateMedia(
+                        title = title,
+                        artist = "Video Playback",
+                        isPlaying = exoPlayer.isPlaying,
+                        positionMs = exoPlayer.currentPosition,
+                        durationMs = durationMs,
+                        albumArt = null
+                    )
                 }
             }
 
@@ -113,6 +129,7 @@ fun PetalVideoPlayerScreen(
         onDispose {
             exoPlayer.removeListener(listener)
             exoPlayer.release()
+            com.petal.browser.live.PetalLiveActionBus.dismissMedia()
         }
     }
 

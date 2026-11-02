@@ -260,6 +260,18 @@ fun PetalFileViewerScreen(
         return
     }
 
+    DisposableEffect(fileUri, displayName) {
+        val cleanName = displayName.ifEmpty { fileUri.lastPathSegment ?: "Document" }
+        com.petal.browser.live.PetalLiveActionBus.updateFileViewer(
+            fileName = cleanName,
+            fileType = extension.uppercase(Locale.US),
+            subtitle = category.name
+        )
+        onDispose {
+            com.petal.browser.live.PetalLiveActionBus.dismissFileViewer()
+        }
+    }
+
     var isEditing by remember { mutableStateOf(false) }
     var isWordWrap by remember { mutableStateOf(false) }
     var onSaveRequested by remember { mutableStateOf<(() -> Unit)?>(null) }

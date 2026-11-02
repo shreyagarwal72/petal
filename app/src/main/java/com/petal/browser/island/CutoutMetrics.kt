@@ -26,6 +26,17 @@ object CutoutMetrics {
     }
 
     /**
+     * Calculates the horizontal offset from the display center in dp.
+     * Positive = camera is right of center; Negative = camera is left of center; 0 = dead center.
+     */
+    fun cutoutHorizontalOffsetDp(view: View): Float {
+        val center = cutoutCenterPx(view) ?: return 0f
+        val screenWidthPx = view.resources.displayMetrics.widthPixels
+        val density = view.resources.displayMetrics.density.coerceAtLeast(1f)
+        return (center.x - screenWidthPx / 2f) / density
+    }
+
+    /**
      * The camera cutout's bounding box in display pixel coordinates.
      */
     fun displayCutoutBoundsPx(context: Context): RectF? {

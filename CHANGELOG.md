@@ -1,3 +1,34 @@
+### v4.5.6 — 🏝️ Expressive Cutout Island Overhaul, AMOLED Burn-In Shield & Unified Services
+
+> *"Milestone v4.5.6 elevates Petal Browser's dynamic cutout island with hardware-calibrated placement, adaptive Light/Dark & OLED theming, automatic zero-configuration AMOLED burn-in protection, full native service integration across Petal Media & File Viewers, and relocation of Island settings to Media Settings."*
+
+#### 🏝️ Expressive Cutout Island & Placement Calibration
+- **Physical Camera Cutout Alignment (`CutoutMetrics.kt`)**:
+  - Dynamically calculates physical hardware camera offset from center in dp (`cutoutHorizontalOffsetDp`), matching left-punch, center-hole, or right-punch displays accurately.
+  - Added placement mode customization (`ALIGN_AUTO`, `CENTER`, `LEFT`, `RIGHT`) with fine-tuning offsets ($X \pm 120\text{dp}$, $Y +0..40\text{dp}$).
+  - Introduced notch flare mode (`NotchShape`) for notch displays with seamless status bar integration and configurable flare curve width.
+
+#### 🛡️ Built-in Zero-Configuration AMOLED Burn-In Shield (`PetalBurnProtection.kt`)
+- **Automatic Display Detection & Pixel Orbiter**:
+  - Automatically identifies OLED/AMOLED hardware panels using display HDR capabilities and system properties without requiring any user toggles.
+  - Implements a continuous 90-second cyclical micro-translation drift ($\pm 1\text{px}$ to $\pm 2\text{px}$) preventing static phosphors from wearing unevenly.
+  - Automatically clamps peak white luminance on pure OLED displays (`#000000` deep black backdrop with calibrated contrast safety).
+
+#### 📁 Seamless Petal Services & Live Actions Integration
+- **Full File Viewer & Media Player Live Updates**:
+  - Integrated `PetalAudioPlayerScreen` with live playback status, artwork streaming, and cookie shape icon updates.
+  - Integrated `PetalVideoPlayerScreen` with video playback state, resolution badge, and direct resume actions.
+  - Added unified `LiveActionItem.FileViewer` across `PetalPdfViewerScreen` (page count / title), `PetalImageViewerScreen` (gallery index / resolution), and `PetalFileViewerScreen` (code / text document viewer).
+  - Tapping on the active island expands or returns seamlessly to the corresponding viewer or player.
+
+#### ⚙️ Settings Migration & Interactive Preview Experience
+- **Media Settings Suite (`MediaSettingsScreen.kt`)**:
+  - Migrated Cutout Island settings from `DownloadSettingsScreen` to `MediaSettingsScreen`, placing it logically alongside Petal Media & Live Updates.
+  - Integrated rich interactive preview card (`IslandAnimationPreviewCard`), real-time alignment and offset sliders, and spring motion velocity chips.
+  - Indexed cutout island and live updates in `PetalSettingsSearchIndex` under `SettingsCategory.MEDIA`.
+
+---
+
 ### v4.5.5 — 🎵 PixelPlayer-Grade Media Architecture, Cookie Shape Album Art & Adaptive Theming
 
 > *"Milestone v4.5.5 brings a major overhaul to Petal Browser's standalone media player, incorporating PixelPlayer's state-of-the-art playback architecture, dynamic cookie-shaped album artwork, seamless M3 Expressive tonal elevation with zero artificial button borders, and intelligent artwork color engine integration."*

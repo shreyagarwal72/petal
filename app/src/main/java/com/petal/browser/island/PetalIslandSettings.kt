@@ -30,7 +30,17 @@ data class IslandSettings(
     val animBounce: IslandAnimationBounce = IslandAnimationBounce.NORMAL,
     val wavyProgress: Boolean = true,
     /** Show the island on top of other apps (needs "Display over other apps"). */
-    val overlayEnabled: Boolean = false
+    val overlayEnabled: Boolean = false,
+    /** Placement alignment mode: AUTO (detect physical camera), CENTER, LEFT, RIGHT. */
+    val alignmentMode: String = ALIGN_AUTO,
+    /** Manual fine-tuning horizontal offset in dp. */
+    val offsetXDp: Int = 0,
+    /** Manual fine-tuning vertical offset down in dp. */
+    val offsetYDp: Int = 0,
+    /** True if hanging from top edge as a notch with concave flare ears. */
+    val isNotch: Boolean = false,
+    /** Concave ear flare radius in dp for notch mode. */
+    val notchFlareDp: Int = 20,
 ) {
     val motion: IslandMotion
         get() = IslandMotion(style = animStyle, speed = animSpeed, bounce = animBounce)
@@ -40,6 +50,11 @@ data class IslandSettings(
         const val MODE_ALWAYS = "ALWAYS_ISLAND"
         const val MODE_NOTIFICATION_ONLY = "NOTIFICATION_ONLY"
 
+        const val ALIGN_AUTO = "AUTO"
+        const val ALIGN_CENTER = "CENTER"
+        const val ALIGN_LEFT = "LEFT"
+        const val ALIGN_RIGHT = "RIGHT"
+
         const val KEY_LIVE_UPDATES = "sp_live_updates"
         const val KEY_MODE = "sp_island_mode"
         const val KEY_STYLE = "sp_island_anim_style"
@@ -47,9 +62,15 @@ data class IslandSettings(
         const val KEY_BOUNCE = "sp_island_anim_bounce"
         const val KEY_WAVY = "sp_island_wavy_progress"
         const val KEY_OVERLAY = "sp_island_overlay"
+        const val KEY_ALIGNMENT = "sp_island_alignment"
+        const val KEY_OFFSET_X = "sp_island_offset_x"
+        const val KEY_OFFSET_Y = "sp_island_offset_y"
+        const val KEY_IS_NOTCH = "sp_island_is_notch"
+        const val KEY_NOTCH_FLARE = "sp_island_notch_flare"
 
         private val KEYS = setOf(
-            KEY_LIVE_UPDATES, KEY_MODE, KEY_STYLE, KEY_SPEED, KEY_BOUNCE, KEY_WAVY, KEY_OVERLAY
+            KEY_LIVE_UPDATES, KEY_MODE, KEY_STYLE, KEY_SPEED, KEY_BOUNCE, KEY_WAVY, KEY_OVERLAY,
+            KEY_ALIGNMENT, KEY_OFFSET_X, KEY_OFFSET_Y, KEY_IS_NOTCH, KEY_NOTCH_FLARE
         )
 
         fun read(sp: SharedPreferences): IslandSettings = IslandSettings(
@@ -68,7 +89,12 @@ data class IslandSettings(
                 else -> IslandAnimationBounce.NORMAL
             },
             wavyProgress = sp.getBoolean(KEY_WAVY, true),
-            overlayEnabled = sp.getBoolean(KEY_OVERLAY, false)
+            overlayEnabled = sp.getBoolean(KEY_OVERLAY, false),
+            alignmentMode = (sp.getString(KEY_ALIGNMENT, ALIGN_AUTO) ?: ALIGN_AUTO).uppercase(Locale.US),
+            offsetXDp = sp.getInt(KEY_OFFSET_X, 0).coerceIn(-120, 120),
+            offsetYDp = sp.getInt(KEY_OFFSET_Y, 0).coerceIn(0, 40),
+            isNotch = sp.getBoolean(KEY_IS_NOTCH, false),
+            notchFlareDp = sp.getInt(KEY_NOTCH_FLARE, 20).coerceIn(12, 36),
         )
 
         fun flow(context: Context): Flow<IslandSettings> {

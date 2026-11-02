@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.layout.Box
 import com.petal.browser.live.LiveActionActionListener
 import com.petal.browser.live.LiveActionBusState
@@ -36,6 +37,15 @@ fun PetalCutoutIsland(
     val settings by rememberIslandSettings()
     val show = remember(settings) { PetalIslandPermissions.shouldShowIsland(context, settings) }
 
+    val view = LocalView.current
+    val hardwareOffsetXDp = remember(view) { CutoutMetrics.cutoutHorizontalOffsetDp(view) }
+    val effectiveOffsetXDp = when (settings.alignmentMode) {
+        IslandSettings.ALIGN_LEFT -> -80f + settings.offsetXDp
+        IslandSettings.ALIGN_RIGHT -> 80f + settings.offsetXDp
+        IslandSettings.ALIGN_CENTER -> 0f + settings.offsetXDp
+        else -> hardwareOffsetXDp + settings.offsetXDp // ALIGN_AUTO
+    }
+
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.TopCenter
@@ -44,7 +54,8 @@ fun PetalCutoutIsland(
             state = if (show) busState else LiveActionBusState(),
             settings = settings,
             listener = actionListener ?: PetalLiveActionBus.getActionListener(),
-            contentModifier = Modifier.statusBarsPadding()
+            contentModifier = Modifier.statusBarsPadding(),
+            cutoutOffsetXDp = effectiveOffsetXDp
         )
     }
 }

@@ -257,7 +257,7 @@ fun PetalAudioPlayerScreen(
                 } else null
 
                 withContext(Dispatchers.Main) {
-                    metadata = AudioTrackMetadata(
+                    val newMeta = AudioTrackMetadata(
                         title = extractedTitle?.takeIf { it.isNotBlank() } ?: displayName.substringBeforeLast("."),
                         artist = extractedArtist?.takeIf { it.isNotBlank() } ?: "Unknown Artist",
                         album = extractedAlbum?.takeIf { it.isNotBlank() } ?: "Audio File",
@@ -267,6 +267,15 @@ fun PetalAudioPlayerScreen(
                         mimeType = extractedMime,
                         formatLabel = format,
                     )
+                    metadata = newMeta
+                    com.petal.browser.live.PetalLiveActionBus.updateMedia(
+                        title = newMeta.title,
+                        artist = newMeta.artist,
+                        isPlaying = exoPlayer.isPlaying,
+                        positionMs = exoPlayer.currentPosition,
+                        durationMs = exoPlayer.duration.coerceAtLeast(0L),
+                        albumArt = newMeta.artwork
+                    )
                 }
             } catch (_: Exception) {
             } finally {
@@ -275,17 +284,33 @@ fun PetalAudioPlayerScreen(
         }
     }
 
-    // Synchronize ExoPlayer state → Compose state
+    // Synchronize ExoPlayer state → Compose state and PetalLiveActionBus for Cutout Island
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
+                com.petal.browser.live.PetalLiveActionBus.updateMedia(
+                    title = metadata.title,
+                    artist = metadata.artist,
+                    isPlaying = playing,
+                    positionMs = exoPlayer.currentPosition,
+                    durationMs = exoPlayer.duration.coerceAtLeast(0L),
+                    albumArt = metadata.artwork
+                )
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 // Capture duration as soon as it is known.
                 val dur = exoPlayer.duration
                 if (dur > 0) durationMs = dur
+                com.petal.browser.live.PetalLiveActionBus.updateMedia(
+                    title = metadata.title,
+                    artist = metadata.artist,
+                    isPlaying = exoPlayer.isPlaying,
+                    positionMs = exoPlayer.currentPosition,
+                    durationMs = dur.coerceAtLeast(0L),
+                    albumArt = metadata.artwork
+                )
             }
         }
         exoPlayer.addListener(listener)
@@ -293,6 +318,7 @@ fun PetalAudioPlayerScreen(
         onDispose {
             exoPlayer.removeListener(listener)
             exoPlayer.release()
+            com.petal.browser.live.PetalLiveActionBus.dismissMedia()
         }
     }
 

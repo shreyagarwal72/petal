@@ -301,6 +301,20 @@ fun PetalImageViewerScreen(
     val pagerState = rememberPagerState(initialPage = initialIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0))) { entries.size }
     val currentEntry = entries.getOrNull(pagerState.currentPage)
 
+    // Emit active file viewing to PetalLiveActionBus
+    DisposableEffect(currentEntry) {
+        if (currentEntry != null) {
+            com.petal.browser.live.PetalLiveActionBus.updateFileViewer(
+                fileName = currentEntry.title.ifBlank { "Image" },
+                fileType = "IMAGE",
+                subtitle = "${pagerState.currentPage + 1} of ${entries.size}"
+            )
+        }
+        onDispose {
+            com.petal.browser.live.PetalLiveActionBus.dismissFileViewer()
+        }
+    }
+
     // Controls visibility with auto-hide
     var controlsVisible by remember { mutableStateOf(true) }
     val coroutineScope = rememberCoroutineScope()
