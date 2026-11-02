@@ -8,6 +8,7 @@ import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.roundToInt
 
@@ -40,6 +41,10 @@ class IslandMotion(
 
     fun intSize(): FiniteAnimationSpec<IntSize> =
         if (expressive) spatialSpec(speed, bounce, visibilityThreshold = IntSize.VisibilityThreshold)
+        else tween(durationMillis = scaled(BASE_TRANSITION_MS), easing = EaseInOutEasing)
+
+    fun intOffset(): FiniteAnimationSpec<IntOffset> =
+        if (expressive) spatialSpec(speed, bounce, visibilityThreshold = IntOffset.VisibilityThreshold)
         else tween(durationMillis = scaled(BASE_TRANSITION_MS), easing = EaseInOutEasing)
 
     fun dpSmooth(): FiniteAnimationSpec<Dp> =

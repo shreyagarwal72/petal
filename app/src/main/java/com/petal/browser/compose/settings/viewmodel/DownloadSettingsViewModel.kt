@@ -46,6 +46,9 @@ class DownloadSettingsViewModel @Inject constructor(
     val islandWavyProgress: StateFlow<Boolean> = settingsRepository.islandWavyProgress
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val islandOverlay: StateFlow<Boolean> = settingsRepository.islandOverlay
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun setDownloadManagerMode(mode: String) = viewModelScope.launch {
         settingsRepository.setDownloadManagerMode(mode)
     }
@@ -84,5 +87,9 @@ class DownloadSettingsViewModel @Inject constructor(
 
     fun setIslandWavyProgress(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setIslandWavyProgress(enabled)
+    }
+
+    fun setIslandOverlay(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setIslandOverlay(enabled)
     }
 }

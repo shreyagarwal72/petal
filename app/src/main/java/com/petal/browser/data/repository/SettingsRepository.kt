@@ -133,6 +133,7 @@ interface SettingsRepository {
     val islandAnimationSpeed: Flow<String>
     val islandAnimationBounce: Flow<String>
     val islandWavyProgress: Flow<Boolean>
+    val islandOverlay: Flow<Boolean>
 
     // Apple Duo (BETA) Animation
     val appleDuoEnabled: Flow<Boolean>
@@ -259,6 +260,7 @@ interface SettingsRepository {
     suspend fun setIslandAnimationSpeed(speed: String)
     suspend fun setIslandAnimationBounce(bounce: String)
     suspend fun setIslandWavyProgress(enabled: Boolean)
+    suspend fun setIslandOverlay(enabled: Boolean)
 
     suspend fun setAppleDuoEnabled(enabled: Boolean)
     suspend fun setAppleDuoWebsites(enabled: Boolean)

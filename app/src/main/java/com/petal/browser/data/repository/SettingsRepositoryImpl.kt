@@ -512,6 +512,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_island_wavy_progress", true)
     }
 
+    override val islandOverlay: Flow<Boolean> = preferenceFlow("sp_island_overlay") {
+        sp.getBoolean("sp_island_overlay", false)
+    }
+
     // ── Apple Duo (BETA) Animation ───────────────────────────────────────────
     override val appleDuoEnabled: Flow<Boolean> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_ENABLED) {
         sp.getBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_ENABLED, false)
@@ -1019,6 +1023,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setIslandWavyProgress(enabled: Boolean) {
         sp.edit().putBoolean("sp_island_wavy_progress", enabled).apply()
+    }
+
+    override suspend fun setIslandOverlay(enabled: Boolean) {
+        sp.edit().putBoolean("sp_island_overlay", enabled).apply()
     }
 
     override suspend fun setAppleDuoEnabled(enabled: Boolean) {

@@ -42,6 +42,7 @@ import com.petal.browser.island.IslandAnimationStyle
 import com.petal.browser.island.IslandAnimationSpeed
 import com.petal.browser.island.IslandAnimationBounce
 import com.petal.browser.island.IslandMotion
+import com.petal.browser.island.PetalIslandPermissions
 import com.petal.browser.island.PetalWavyProgressBar
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -63,6 +64,7 @@ fun DownloadSettingsScreen(
     val islandAnimationSpeed by viewModel.islandAnimationSpeed.collectAsStateWithLifecycle()
     val islandAnimationBounce by viewModel.islandAnimationBounce.collectAsStateWithLifecycle()
     val islandWavyProgress by viewModel.islandWavyProgress.collectAsStateWithLifecycle()
+    val islandOverlay by viewModel.islandOverlay.collectAsStateWithLifecycle()
 
     DownloadSettingsScreenContent(
         downloadManagerMode = downloadManagerMode,
@@ -75,6 +77,7 @@ fun DownloadSettingsScreen(
         islandAnimationSpeed = islandAnimationSpeed,
         islandAnimationBounce = islandAnimationBounce,
         islandWavyProgress = islandWavyProgress,
+        islandOverlay = islandOverlay,
         onDownloadManagerModeChange = viewModel::setDownloadManagerMode,
         onConfirmFileDeleteChange = viewModel::setConfirmDownloadDelete,
         onDeleteFromStorageChange = viewModel::setDeleteDownloadFile,
@@ -85,6 +88,7 @@ fun DownloadSettingsScreen(
         onIslandAnimationSpeedChange = viewModel::setIslandAnimationSpeed,
         onIslandAnimationBounceChange = viewModel::setIslandAnimationBounce,
         onIslandWavyProgressChange = viewModel::setIslandWavyProgress,
+        onIslandOverlayChange = viewModel::setIslandOverlay,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -103,6 +107,7 @@ fun DownloadSettingsScreenContent(
     islandAnimationSpeed: String,
     islandAnimationBounce: String,
     islandWavyProgress: Boolean,
+    islandOverlay: Boolean,
     onDownloadManagerModeChange: (String) -> Unit,
     onConfirmFileDeleteChange: (Boolean) -> Unit,
     onDeleteFromStorageChange: (Boolean) -> Unit,
@@ -113,6 +118,7 @@ fun DownloadSettingsScreenContent(
     onIslandAnimationSpeedChange: (String) -> Unit,
     onIslandAnimationBounceChange: (String) -> Unit,
     onIslandWavyProgressChange: (Boolean) -> Unit,
+    onIslandOverlayChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -276,6 +282,126 @@ fun DownloadSettingsScreenContent(
                     if (liveUpdates && notificationsAllowed) {
                         Spacer(modifier = Modifier.height(10.dp))
 
+                        // ── Over other apps (for devices without Android 16 Live Updates) ──
+                        var overlayGranted by remember { mutableStateOf(PetalIslandPermissions.canDrawOverlays(context)) }
+                        var pendingOverlayEnable by remember { mutableStateOf(false) }
+                        var showOverlayDialog by remember { mutableStateOf(false) }
+                        val settingsLifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+                        DisposableEffect(settingsLifecycleOwner) {
+                            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                                    overlayGranted = PetalIslandPermissions.canDrawOverlays(context)
+                                    // Back from the system screen: finish what the user started.
+                                    if (pendingOverlayEnable) {
+                                        pendingOverlayEnable = false
+                                        if (overlayGranted) onIslandOverlayChange(true)
+                                    }
+                                }
+                            }
+                            settingsLifecycleOwner.lifecycle.addObserver(observer)
+                            onDispose { settingsLifecycleOwner.lifecycle.removeObserver(observer) }
+                        }
+
+                        val nativeAvailable = remember(liveUpdates) { PetalIslandPermissions.nativeLiveUpdatesAvailable(context) }
+                        Text(
+                            text = if (nativeAvailable)
+                                "This device shows Android 16 Live Updates in the status bar. The island is optional here."
+                            else
+                                "This device has no Android 16 Live Updates, so Petal can show its own expressive island instead.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                            if (index == 0) {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = "Show island over other apps",
+                                    subtitle = if (islandOverlay && !overlayGranted)
+                                        "Permission removed. Turn on \"Display over other apps\" to show it."
+                                    else
+                                        "Downloads and media appear as an island on top of other apps while Petal is in the background",
+                                    icon = Icons.Rounded.Layers,
+                                    checked = islandOverlay && overlayGranted,
+                                    position = position,
+                                    onCheckedChange = { enabled ->
+                                        if (!enabled) {
+                                            onIslandOverlayChange(false)
+                                        } else if (overlayGranted) {
+                                            onIslandOverlayChange(true)
+                                        } else {
+                                            showOverlayDialog = true
+                                        }
+                                    }
+                                )
+                            } else {
+                                com.petal.browser.ui.containment.PetalGroupListRow(
+                                    position = position,
+                                    onClick = {
+                                        pendingOverlayEnable = false
+                                        try {
+                                            context.startActivity(PetalIslandPermissions.overlaySettingsIntent(context))
+                                        } catch (_: Exception) {
+                                        }
+                                    },
+                                    leading = {
+                                        com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                            icon = if (overlayGranted) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
+                                            variant = if (overlayGranted) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+                                            else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                        )
+                                    },
+                                    content = {
+                                        Text(
+                                            text = "Display over other apps",
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = if (overlayGranted) "Allowed. Tap to review in system settings."
+                                            else "Not allowed. Only needed for the over-other-apps island.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                )
+                            }
+                        }
+
+                        if (showOverlayDialog) {
+                            com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                                onDismissRequest = { showOverlayDialog = false },
+                                icon = { Icon(Icons.Rounded.Layers, contentDescription = null) },
+                                title = { Text("Allow display over other apps") },
+                                text = {
+                                    Text(
+                                        "Petal needs this Android permission to draw the live island above other apps. " +
+                                            "It is only used to show download and media progress. Petal does not read what is on your screen. " +
+                                            "On the next screen, find Petal and turn on \"Allow display over other apps\", then come back."
+                                    )
+                                },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            showOverlayDialog = false
+                                            pendingOverlayEnable = true
+                                            try {
+                                                context.startActivity(PetalIslandPermissions.overlaySettingsIntent(context))
+                                            } catch (_: Exception) {
+                                                pendingOverlayEnable = false
+                                            }
+                                        }
+                                    ) { Text("Open settings") }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showOverlayDialog = false }) { Text("Not now") }
+                                }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
                         // Interactive Motion Preview Card
                         IslandAnimationPreviewCard(
                             style = islandAnimationStyle,
@@ -295,8 +421,8 @@ fun DownloadSettingsScreenContent(
                         )
 
                         val modes = listOf(
-                            Triple("AUTO", "Auto (Recommended)", "Android 16 status bar chip on supported, Cutout Island on others"),
-                            Triple("ALWAYS_ISLAND", "Always Cutout Island", "Force the Material 3 Expressive dynamic island on all devices"),
+                            Triple("AUTO", "Auto (Recommended)", "Android 16 status bar chip where available, Petal island on other devices"),
+                            Triple("ALWAYS_ISLAND", "Always show island", "Petal island on every device, even next to the Android 16 chip"),
                             Triple("NOTIFICATION_ONLY", "Notification Bar Only", "Standard notification shade alerts without cutout island")
                         )
 

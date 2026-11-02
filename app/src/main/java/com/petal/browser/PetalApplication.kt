@@ -146,11 +146,13 @@ class PetalApplication : Application() {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
             override fun onActivityStarted(activity: Activity) {
                 startedActivityCount++
+                com.petal.browser.island.PetalForegroundTracker.onStartedCountChanged(startedActivityCount)
             }
             override fun onActivityResumed(activity: Activity) {}
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {
                 startedActivityCount = maxOf(0, startedActivityCount - 1)
+                com.petal.browser.island.PetalForegroundTracker.onStartedCountChanged(startedActivityCount)
                 if (startedActivityCount == 0 && activity.isFinishing) {
                     com.petal.browser.logger.PetalAppLogger.markCleanExit(this@PetalApplication)
                     val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
@@ -172,6 +174,13 @@ class PetalApplication : Application() {
         })
 
         lastNightModeBits = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+
+        // Over-other-apps live island. Idle until the user turns it on in Settings > Downloads.
+        try {
+            com.petal.browser.island.PetalLiveOverlayController.init(this)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Live island overlay init failed", t)
+        }
 
         try {
             PreferenceManager.getDefaultSharedPreferences(this)

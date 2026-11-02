@@ -1,0 +1,734 @@
+/*
+ * PetalLiveIsland.kt
+ * ──────────────────────────────────────────────────────────────────────────
+ * The Material 3 Expressive "live update" island. One composable, used in two places:
+ *   • inside Petal (PetalCutoutIsland)
+ *   • over other apps (PetalLiveOverlayController) for devices without Android 16 Live Updates,
+ *     or alongside them when the user picks "Always show island".
+ *
+ * Design rules
+ *   • Only Material 3 Expressive: spatial springs, shape morphing, wavy progress, big pill buttons.
+ *   • High contrast on ANY app behind it: inverse surface + inverse primary accent.
+ *   • Everything is driven by IslandSettings, so setting changes apply instantly.
+ *   • Expanded card collapses by itself after a few seconds of no touch.
+ */
+
+package com.petal.browser.island
+
+import android.text.format.Formatter
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Forward10
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Replay10
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.petal.browser.live.LiveActionActionListener
+import com.petal.browser.live.LiveActionBusState
+import com.petal.browser.live.LiveActionItem
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+/** How long an expanded card stays open with no touch before it folds back into the pill. */
+private const val AUTO_COLLAPSE_MS = 8_000L
+
+private class IslandPalette(
+    val surface: Color,
+    val content: Color,
+    val contentMuted: Color,
+    val accent: Color,
+    val onAccent: Color,
+    val accentSoft: Color,
+    val track: Color
+)
+
+@Composable
+private fun islandPalette(): IslandPalette {
+    val c = MaterialTheme.colorScheme
+    return IslandPalette(
+        surface = c.inverseSurface,
+        content = c.inverseOnSurface,
+        contentMuted = c.inverseOnSurface.copy(alpha = 0.68f),
+        accent = c.inversePrimary,
+        onAccent = c.inverseSurface,
+        accentSoft = c.inversePrimary.copy(alpha = 0.20f),
+        track = c.inverseOnSurface.copy(alpha = 0.18f)
+    )
+}
+
+@Composable
+fun PetalLiveIsland(
+    state: LiveActionBusState,
+    settings: IslandSettings,
+    listener: LiveActionActionListener?,
+    modifier: Modifier = Modifier,
+    /** Applied to the island's own row (e.g. status-bar padding), so a hidden island takes no space. */
+    contentModifier: Modifier = Modifier,
+    /** Lets a host window grow/shrink with the island (used by the overlay). */
+    onExpandedChange: (Boolean) -> Unit = {}
+) {
+    val motion = remember(settings.animStyle, settings.animSpeed, settings.animBounce) { settings.motion }
+    val palette = islandPalette()
+    val haptics = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+
+    // Keep the last real content alive so the exit animation has something to draw.
+    val lastState = remember { mutableStateOf(state) }
+    if (state.hasActiveAction) lastState.value = state
+    val shown = lastState.value
+    val primary = shown.primary
+    val secondary = shown.secondary
+
+    var expanded by remember { mutableStateOf(false) }
+    var focusSecondary by remember { mutableStateOf(false) }
+    var touches by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(state.hasActiveAction) {
+        if (!state.hasActiveAction) {
+            expanded = false
+            focusSecondary = false
+        }
+    }
+    LaunchedEffect(expanded) { onExpandedChange(expanded) }
+    LaunchedEffect(expanded, touches) {
+        if (expanded) {
+            delay(AUTO_COLLAPSE_MS)
+            expanded = false
+            focusSecondary = false
+        }
+    }
+
+    val boop = remember { Animatable(1f) }
+    fun playBoop() {
+        scope.launch {
+            boop.animateTo(0.94f, motion.boop())
+            boop.animateTo(1f, motion.boop())
+        }
+    }
+
+    // Shape morph: pill -> card.
+    val corner by animateDpAsState(
+        targetValue = if (expanded) 32.dp else 22.dp,
+        animationSpec = motion.dp(),
+        label = "islandCorner"
+    )
+    val shape = RoundedCornerShape(corner)
+
+    // Wrap the listener so every button press counts as "still using it".
+    val touchListener = remember(listener) {
+        object : LiveActionActionListener {
+            override fun onDownloadTogglePause(downloadId: Long) { touches++; listener?.onDownloadTogglePause(downloadId) }
+            override fun onDownloadCancel(downloadId: Long) { touches++; listener?.onDownloadCancel(downloadId) }
+            override fun onMediaTogglePlayPause() { touches++; listener?.onMediaTogglePlayPause() }
+            override fun onMediaSkip(seconds: Int) { touches++; listener?.onMediaSkip(seconds) }
+            override fun onOpenDownloads() { listener?.onOpenDownloads() }
+            override fun onOpenBrowser() { listener?.onOpenBrowser() }
+        }
+    }
+
+    AnimatedVisibility(
+        visible = state.hasActiveAction && primary != null,
+        modifier = modifier,
+        enter = slideInVertically(animationSpec = motion.intOffset()) { -it } +
+            scaleIn(initialScale = 0.6f, transformOrigin = TransformOrigin(0.5f, 0f), animationSpec = motion.float()) +
+            fadeIn(animationSpec = motion.swapFade()),
+        exit = slideOutVertically(animationSpec = motion.intOffset()) { -it } +
+            scaleOut(targetScale = 0.6f, transformOrigin = TransformOrigin(0.5f, 0f), animationSpec = motion.swapScale()) +
+            fadeOut(animationSpec = motion.swapFade())
+    ) {
+        if (primary == null) return@AnimatedVisibility
+        val expandedItem = if (focusSecondary && secondary != null) secondary else primary
+
+        Row(
+            modifier = contentModifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .graphicsLayer { scaleX = boop.value; scaleY = boop.value }
+                    .clip(shape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClickLabel = if (expanded) "Collapse live update" else "Expand live update",
+                        role = Role.Button
+                    ) {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        playBoop()
+                        touches++
+                        if (expanded) { expanded = false; focusSecondary = false } else expanded = true
+                    }
+                    .pointerInput(Unit) {
+                        var total = 0f
+                        detectVerticalDragGestures(
+                            onDragStart = { total = 0f },
+                            onDragEnd = {
+                                if (total > 24f) expanded = true else if (total < -24f) expanded = false
+                            }
+                        ) { _, dragAmount -> total += dragAmount }
+                    },
+                shape = shape,
+                color = palette.surface,
+                contentColor = palette.content,
+                tonalElevation = 0.dp,
+                shadowElevation = 10.dp
+            ) {
+                AnimatedContent(
+                    targetState = expanded,
+                    transitionSpec = {
+                        (fadeIn(motion.swapFade()) + scaleIn(initialScale = 0.9f, animationSpec = motion.float()))
+                            .togetherWith(fadeOut(motion.swapFade()) + scaleOut(targetScale = 0.9f, animationSpec = motion.swapScale()))
+                            .using(SizeTransform(clip = false) { _, _ -> motion.intSize() })
+                    },
+                    label = "islandExpandCollapse"
+                ) { isExpanded ->
+                    if (isExpanded) {
+                        ExpandedCard(
+                            item = expandedItem,
+                            palette = palette,
+                            listener = touchListener,
+                            wavy = settings.wavyProgress,
+                            onCollapse = { expanded = false; focusSecondary = false }
+                        )
+                    } else {
+                        CompactPill(item = primary, palette = palette)
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = secondary != null && !expanded,
+                enter = scaleIn(animationSpec = motion.float()) + fadeIn(motion.swapFade()),
+                exit = scaleOut(animationSpec = motion.swapScale()) + fadeOut(motion.swapFade())
+            ) {
+                if (secondary != null) {
+                    SatelliteBubble(
+                        item = secondary,
+                        palette = palette,
+                        onClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            focusSecondary = true
+                            expanded = true
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+/* ───────────────────────────── Compact pill ───────────────────────────── */
+
+@Composable
+private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
+    Row(
+        modifier = Modifier
+            .height(44.dp)
+            .padding(start = 8.dp, end = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        when (item) {
+            is LiveActionItem.Download -> {
+                ProgressBadge(
+                    progress = item.progressPercent / 100f,
+                    indeterminate = item.isIndeterminate && !item.isPaused,
+                    icon = if (item.isPaused) Icons.Rounded.Pause else Icons.Rounded.ArrowDownward,
+                    palette = palette,
+                    size = 32
+                )
+                Text(
+                    text = if (item.isIndeterminate) "Downloading" else "${item.progressPercent}%",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                    color = palette.content
+                )
+                if (!item.isPaused && item.speedBytesPerSec > 0) {
+                    Text(
+                        text = item.speedFormatted,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = palette.accent
+                    )
+                }
+                if (item.isPaused) {
+                    Text("Paused", style = MaterialTheme.typography.labelMedium, color = palette.contentMuted)
+                } else {
+                    PulsingDot(palette.accent)
+                }
+            }
+
+            is LiveActionItem.Media -> {
+                MediaArt(item = item, palette = palette, size = 32, corner = 16)
+                Text(
+                    text = item.title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                    modifier = Modifier.widthIn(max = 130.dp),
+                    color = palette.content
+                )
+                Equalizer(isPlaying = item.isPlaying, color = palette.accent)
+            }
+
+            is LiveActionItem.Task -> {
+                ProgressBadge(
+                    progress = item.progressPercent / 100f,
+                    indeterminate = false,
+                    icon = Icons.Rounded.AutoAwesome,
+                    palette = palette,
+                    size = 32
+                )
+                Text(
+                    text = item.taskName,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                    modifier = Modifier.widthIn(max = 120.dp),
+                    color = palette.content
+                )
+                Text(
+                    text = "${item.progressPercent}%",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = palette.accent
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .clickable(role = Role.Button, onClickLabel = "Show live update", onClick = onClick),
+        shape = CircleShape,
+        color = palette.surface,
+        shadowElevation = 10.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            when (item) {
+                is LiveActionItem.Download -> ProgressBadge(
+                    progress = item.progressPercent / 100f,
+                    indeterminate = item.isIndeterminate && !item.isPaused,
+                    icon = if (item.isPaused) Icons.Rounded.Pause else Icons.Rounded.ArrowDownward,
+                    palette = palette,
+                    size = 32
+                )
+                is LiveActionItem.Media -> MediaArt(item, palette, size = 32, corner = 16)
+                is LiveActionItem.Task -> ProgressBadge(
+                    progress = item.progressPercent / 100f,
+                    indeterminate = false,
+                    icon = Icons.Rounded.AutoAwesome,
+                    palette = palette,
+                    size = 32
+                )
+            }
+        }
+    }
+}
+
+/* ───────────────────────────── Expanded card ───────────────────────────── */
+
+@Composable
+private fun ExpandedCard(
+    item: LiveActionItem,
+    palette: IslandPalette,
+    listener: LiveActionActionListener,
+    wavy: Boolean,
+    onCollapse: () -> Unit
+) {
+    val context = LocalContext.current
+    Column(
+        modifier = Modifier
+            .widthIn(min = 300.dp, max = 360.dp)
+            .padding(start = 16.dp, end = 12.dp, top = 14.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        when (item) {
+            is LiveActionItem.Download -> {
+                CardHeader(
+                    leading = {
+                        ProgressBadge(
+                            progress = item.progressPercent / 100f,
+                            indeterminate = item.isIndeterminate && !item.isPaused,
+                            icon = Icons.Rounded.Download,
+                            palette = palette,
+                            size = 44
+                        )
+                    },
+                    title = item.fileName,
+                    subtitle = when {
+                        item.isPaused -> "Paused"
+                        item.isIndeterminate -> "Downloading…"
+                        else -> "${item.speedFormatted} • ${item.progressPercent}%"
+                    },
+                    palette = palette,
+                    onCollapse = onCollapse
+                )
+
+                PetalWavyProgressBar(
+                    progress = if (item.isIndeterminate) 0f else item.progressPercent / 100f,
+                    waveColor = palette.accent,
+                    trackColor = palette.track,
+                    isWavy = wavy && !item.isPaused,
+                    animated = wavy && !item.isPaused
+                )
+
+                val done = Formatter.formatFileSize(context, item.bytesDownloaded)
+                val total = if (item.totalBytes > 0) Formatter.formatFileSize(context, item.totalBytes) else "unknown size"
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("$done of $total", style = MaterialTheme.typography.labelMedium, color = palette.contentMuted)
+                    val eta = formatEta(item.etaSeconds)
+                    if (!item.isPaused && eta.isNotEmpty()) {
+                        Text(eta, style = MaterialTheme.typography.labelMedium, color = palette.accent)
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(end = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { listener.onDownloadTogglePause(item.downloadId) },
+                        modifier = Modifier.weight(1f),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(containerColor = palette.accent, contentColor = palette.onAccent)
+                    ) {
+                        Icon(
+                            if (item.isPaused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (item.isPaused) "Resume" else "Pause", fontWeight = FontWeight.SemiBold)
+                    }
+                    FilledTonalButton(
+                        onClick = { listener.onDownloadCancel(item.downloadId); onCollapse() },
+                        modifier = Modifier.weight(1f),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = palette.accentSoft, contentColor = palette.content)
+                    ) {
+                        Icon(Icons.Rounded.Close, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Cancel", fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(
+                        onClick = { listener.onOpenDownloads(); onCollapse() },
+                        colors = ButtonDefaults.textButtonColors(contentColor = palette.accent)
+                    ) { Text("Open downloads") }
+                }
+            }
+
+            is LiveActionItem.Media -> {
+                CardHeader(
+                    leading = { MediaArt(item, palette, size = 48, corner = 14) },
+                    title = item.title,
+                    subtitle = item.artist,
+                    palette = palette,
+                    onCollapse = onCollapse
+                )
+
+                val progress = if (item.durationMs > 0) (item.positionMs.toFloat() / item.durationMs).coerceIn(0f, 1f) else 0f
+                PetalWavyProgressBar(
+                    progress = progress,
+                    waveColor = palette.accent,
+                    trackColor = palette.track,
+                    isWavy = wavy && item.isPlaying,
+                    animated = wavy && item.isPlaying
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(end = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { listener.onMediaSkip(-10) },
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = palette.content)
+                    ) { Icon(Icons.Rounded.Replay10, contentDescription = "Back 10 seconds") }
+
+                    // Shape morph: round while playing, squircle while paused.
+                    val playCorner by animateDpAsState(
+                        targetValue = if (item.isPlaying) 28.dp else 16.dp,
+                        label = "playCorner"
+                    )
+                    FilledIconButton(
+                        onClick = { listener.onMediaTogglePlayPause() },
+                        modifier = Modifier.size(56.dp),
+                        shape = RoundedCornerShape(playCorner),
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.accent, contentColor = palette.onAccent)
+                    ) {
+                        Icon(
+                            if (item.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            contentDescription = if (item.isPlaying) "Pause" else "Play",
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { listener.onMediaSkip(10) },
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = palette.content)
+                    ) { Icon(Icons.Rounded.Forward10, contentDescription = "Forward 10 seconds") }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(
+                        onClick = { listener.onOpenBrowser(); onCollapse() },
+                        colors = ButtonDefaults.textButtonColors(contentColor = palette.accent)
+                    ) { Text("Open Petal") }
+                }
+            }
+
+            is LiveActionItem.Task -> {
+                CardHeader(
+                    leading = {
+                        ProgressBadge(
+                            progress = item.progressPercent / 100f,
+                            indeterminate = false,
+                            icon = Icons.Rounded.AutoAwesome,
+                            palette = palette,
+                            size = 44
+                        )
+                    },
+                    title = item.taskName,
+                    subtitle = "${item.progressPercent}%",
+                    palette = palette,
+                    onCollapse = onCollapse
+                )
+                PetalWavyProgressBar(
+                    progress = item.progressPercent / 100f,
+                    waveColor = palette.accent,
+                    trackColor = palette.track,
+                    isWavy = wavy,
+                    animated = wavy
+                )
+                Text(item.statusText, style = MaterialTheme.typography.bodySmall, color = palette.contentMuted)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CardHeader(
+    leading: @Composable () -> Unit,
+    title: String,
+    subtitle: String,
+    palette: IslandPalette,
+    onCollapse: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        leading()
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = palette.content
+            )
+            Text(
+                text = subtitle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.contentMuted
+            )
+        }
+        IconButton(
+            onClick = onCollapse,
+            modifier = Modifier.size(36.dp),
+            colors = IconButtonDefaults.iconButtonColors(contentColor = palette.contentMuted)
+        ) { Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Collapse") }
+    }
+}
+
+/* ───────────────────────────── Small parts ───────────────────────────── */
+
+/** Icon inside a circular progress ring. The ring eases to each new value instead of jumping. */
+@Composable
+private fun ProgressBadge(
+    progress: Float,
+    indeterminate: Boolean,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    palette: IslandPalette,
+    size: Int
+) {
+    val animated by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(350),
+        label = "badgeProgress"
+    )
+    Box(modifier = Modifier.size(size.dp), contentAlignment = Alignment.Center) {
+        if (indeterminate) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(size.dp),
+                color = palette.accent,
+                strokeWidth = 3.dp,
+                trackColor = palette.track
+            )
+        } else {
+            CircularProgressIndicator(
+                progress = { animated },
+                modifier = Modifier.size(size.dp),
+                color = palette.accent,
+                strokeWidth = 3.dp,
+                trackColor = palette.track
+            )
+        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size((size * 0.46f).dp),
+            tint = palette.content
+        )
+    }
+}
+
+@Composable
+private fun MediaArt(item: LiveActionItem.Media, palette: IslandPalette, size: Int, corner: Int) {
+    val art = item.albumArt
+    Box(
+        modifier = Modifier
+            .size(size.dp)
+            .clip(RoundedCornerShape(corner.dp))
+            .background(palette.accentSoft),
+        contentAlignment = Alignment.Center
+    ) {
+        if (art != null && !art.isRecycled) {
+            Image(
+                bitmap = art.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(size.dp)
+            )
+        } else {
+            Icon(Icons.Rounded.MusicNote, contentDescription = null, tint = palette.accent, modifier = Modifier.size((size * 0.55f).dp))
+        }
+    }
+}
+
+@Composable
+private fun PulsingDot(color: Color) {
+    val t = rememberInfiniteTransition(label = "dot")
+    val alpha by t.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Reverse),
+        label = "dotAlpha"
+    )
+    Box(Modifier.size(6.dp).clip(CircleShape).background(color.copy(alpha = alpha)))
+}
+
+@Composable
+private fun Equalizer(isPlaying: Boolean, color: Color) {
+    val t = rememberInfiniteTransition(label = "eq")
+    val b1 by t.animateFloat(4f, 14f, infiniteRepeatable(tween(350, easing = LinearEasing), RepeatMode.Reverse), label = "b1")
+    val b2 by t.animateFloat(12f, 5f, infiniteRepeatable(tween(420, easing = LinearEasing), RepeatMode.Reverse), label = "b2")
+    val b3 by t.animateFloat(6f, 16f, infiniteRepeatable(tween(300, easing = LinearEasing), RepeatMode.Reverse), label = "b3")
+    Row(
+        modifier = Modifier.height(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        listOf(
+            if (isPlaying) b1 else 4f,
+            if (isPlaying) b2 else 8f,
+            if (isPlaying) b3 else 5f
+        ).forEach { h ->
+            Box(Modifier.width(3.dp).height(h.dp).clip(RoundedCornerShape(2.dp)).background(color))
+        }
+    }
+}
+
+private fun formatEta(seconds: Long): String = when {
+    seconds <= 0L -> ""
+    seconds < 60L -> "${seconds}s left"
+    seconds < 3600L -> "${seconds / 60}m ${seconds % 60}s left"
+    else -> "${seconds / 3600}h ${(seconds % 3600) / 60}m left"
+}
