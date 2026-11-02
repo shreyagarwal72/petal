@@ -39,7 +39,9 @@ object PetalAudioColorEngine {
         val surfaceContainerHigh: Color,
         val surfaceContainerHighest: Color,
         val backgroundGradientColors: List<Color>,
-    )
+    ) {
+        val seed: Color get() = seedColor
+    }
 
     /**
      * Extracts or retrieves cached palette from the artwork bitmap.

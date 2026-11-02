@@ -104,6 +104,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -305,7 +306,7 @@ fun PetalImageViewerScreen(
     DisposableEffect(currentEntry) {
         if (currentEntry != null) {
             com.petal.browser.live.PetalLiveActionBus.updateFileViewer(
-                fileName = currentEntry.title.ifBlank { "Image" },
+                fileName = currentEntry.label.ifBlank { "Image" },
                 fileType = "IMAGE",
                 subtitle = "${pagerState.currentPage + 1} of ${entries.size}"
             )

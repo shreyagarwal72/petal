@@ -460,7 +460,7 @@ private fun PetalPdfViewerScreenImpl(
                 pageCount = renderer.pageCount
                 isLoading = false
                 com.petal.browser.live.PetalLiveActionBus.updateFileViewer(
-                    fileName = title,
+                    fileName = displayName,
                     fileType = "PDF",
                     subtitle = "$pageCount Pages"
                 )

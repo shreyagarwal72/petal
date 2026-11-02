@@ -16,7 +16,7 @@ jobs:
     permissions:
       contents: write
     env:
-      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC -Dorg.gradle.daemon=false"
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=1536m -XX:+UseG1GC -XX:+ParallelRefProcEnabled -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=4"
 
     steps:
       - name: Checkout repository
@@ -27,7 +27,23 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
+
+      - name: Setup Gradle & Build Cache
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-disabled: false
+          add-job-summary-as-pr-comment: never
+
+      - name: Cache Android Build Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/build-cache
+            ~/.android/cache
+          key: ${{ runner.os }}-android-build-cache-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-android-build-cache-${{ github.ref }}-
+            ${{ runner.os }}-android-build-cache-
 
       - name: Make gradlew executable
         run: chmod +x gradlew

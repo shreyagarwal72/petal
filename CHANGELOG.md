@@ -1,3 +1,29 @@
+### v4.5.9 — ⚡ CI/CD Build Resolution, High-Speed Gradle & GitHub Cache Infrastructure
+
+> *"Milestone v4.5.9 resolves all Android build and compilation blockers across Media Settings, Image/PDF Viewers, and Audio Color Palettes, and introduces enterprise-grade GitHub Actions caching with `setup-gradle@v4` and Android build-cache persistence to drastically cut build durations."*
+
+#### 🛠️ Compilation Fixes & File Viewer Stabilizations
+- **Media Settings Fixes (`MediaSettingsScreen.kt`)**:
+  - Corrected import for `LiveUpdateNotificationManager` (`com.petal.browser.compose.downloads` package).
+  - Resolved `PetalGroupRow` parameter usage across alignment modes, animation springs, spring velocity, and bounce rows by supplying standard `icon`, `title`, and `trailing` lambdas.
+- **Image & PDF Viewer Fixes (`PetalImageViewerScreen.kt`, `PetalPdfViewerScreen.kt`)**:
+  - Added missing `androidx.compose.runtime.DisposableEffect` import to `PetalImageViewerScreen.kt`.
+  - Fixed property reference from `currentEntry.title` to `currentEntry.label`.
+  - Corrected PDF file-viewer notification parameter to use `displayName`.
+- **Audio Palette Backwards Compatibility (`PetalAudioColorEngine.kt`)**:
+  - Added accessor `val seed: Color get() = seedColor` to `ExtractedAudioPalette` ensuring seamless compatibility across Compose themes, audio players, and bottom sheets.
+
+#### 🚀 Build Acceleration & GitHub Actions Caching Architecture (`android_build.yml`)
+- **Dedicated Gradle Build Cache (`gradle/actions/setup-gradle@v4`)**:
+  - Integrated `gradle/actions/setup-gradle@v4` to cache the Gradle wrapper distribution, resolving repeated 150MB downloads per runner.
+  - Enabled GitHub Actions persistent remote cache for Gradle build-cache (`build-cache-1`), skipping unchanged tasks and dependencies.
+- **Android Intermediate Cache Persistence**:
+  - Integrated `actions/cache@v4` for `~/.android/build-cache` and `~/.android/cache` across workflow runs.
+- **JVM Heap & Parallel Worker Tuning**:
+  - Increased CI heap allocation to 6GB (`-Xmx6144m -XX:MaxMetaspaceSize=1536m`) with parallel worker allocation (`-Dorg.gradle.workers.max=4`) and parallel reference processing (`-XX:+ParallelRefProcEnabled`).
+
+---
+
 ### v4.5.8 — 🎵 PixelPlayer Lyrics Engine, Interactive Queue & Advanced Media Controls
 
 > *"Milestone v4.5.8 equips Petal's audio and video media suite with a high-fidelity PixelPlayer experience: synchronized karaoke lyrics with manual-drag hold-off & tap-to-seek, an interactive queue manager with animated equalizer waves, an advanced sleep timer with end-of-track fadeout, detailed track audio specs inspector, fine-grained playback speed selector, and direct audio route switching."*

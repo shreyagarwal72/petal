@@ -43,7 +43,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.island.*
-import com.petal.browser.live.LiveUpdateNotificationManager
+import com.petal.browser.compose.downloads.LiveUpdateNotificationManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.scrollMotionBlur
@@ -378,20 +378,13 @@ fun MediaSettingsScreen(
                             val isSelected = alignmentMode == key
 
                             com.petal.browser.ui.containment.PetalGroupRow(
+                                icon = icon,
+                                title = label,
                                 position = position,
                                 onClick = {
                                     alignmentMode = key
                                     sp.edit().putString(IslandSettings.KEY_ALIGNMENT, key).apply()
                                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                },
-                                leading = { Icon(icon, contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                                content = {
-                                    Text(
-                                        text = label,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
                                 },
                                 trailing = {
                                     RadioButton(
@@ -527,20 +520,13 @@ fun MediaSettingsScreen(
                             val isSelected = animStyle.equals(key, ignoreCase = true)
 
                             com.petal.browser.ui.containment.PetalGroupRow(
+                                icon = Icons.Rounded.Animation,
+                                title = label,
                                 position = position,
                                 onClick = {
                                     animStyle = key
                                     sp.edit().putString(IslandSettings.KEY_STYLE, key).apply()
                                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                },
-                                leading = { Icon(Icons.Rounded.Animation, contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                                content = {
-                                    Text(
-                                        text = label,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
                                 },
                                 trailing = {
                                     RadioButton(
@@ -562,16 +548,14 @@ fun MediaSettingsScreen(
                             if (index == 0) {
                                 val speeds = listOf("SLOW", "DEFAULT", "FAST")
                                 com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.Speed,
+                                    title = "Spring Velocity",
                                     position = position,
                                     onClick = {
                                         val nextIdx = (speeds.indexOf(animSpeed.uppercase(Locale.US)).coerceAtLeast(0) + 1) % speeds.size
                                         animSpeed = speeds[nextIdx]
                                         sp.edit().putString(IslandSettings.KEY_SPEED, animSpeed).apply()
                                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                    },
-                                    leading = { Icon(Icons.Rounded.Speed, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                                    content = {
-                                        Text("Spring Velocity", style = MaterialTheme.typography.bodyMedium)
                                     },
                                     trailing = {
                                         AssistChip(
@@ -588,16 +572,14 @@ fun MediaSettingsScreen(
                             } else {
                                 val bounces = listOf("SMALL", "NORMAL", "BIG")
                                 com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.Refresh,
+                                    title = "Spring Bounciness",
                                     position = position,
                                     onClick = {
                                         val nextIdx = (bounces.indexOf(animBounce.uppercase(Locale.US)).coerceAtLeast(0) + 1) % bounces.size
                                         animBounce = bounces[nextIdx]
                                         sp.edit().putString(IslandSettings.KEY_BOUNCE, animBounce).apply()
                                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                    },
-                                    leading = { Icon(Icons.Rounded.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                                    content = {
-                                        Text("Spring Bounciness", style = MaterialTheme.typography.bodyMedium)
                                     },
                                     trailing = {
                                         AssistChip(
