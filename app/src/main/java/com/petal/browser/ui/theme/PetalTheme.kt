@@ -59,6 +59,13 @@ fun ColorScheme.applyAmoled(): ColorScheme = copy(
     surfaceVariant = Color(0xFF1C1C1C)
 )
 
+/** Reads the live theme prefs; subscribes the caller to [PetalThemePrefs] so changes apply instantly. */
+@Composable
+private fun themePrefs(): android.content.SharedPreferences {
+    @Suppress("UNUSED_VARIABLE") val revision = PetalThemePrefs.revision
+    return androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+}
+
 /**
  * Petal Material 3 Theme with Android 12+ Dynamic Color, Stride Palettes, Custom Fonts (Width, Weight, Roundness), Color Styles & AMOLED Black support.
  * For Android 12+ devices, defaults to system Material You colors; for devices below Android 12, defaults to Petal Pinkish theme.
@@ -66,7 +73,7 @@ fun ColorScheme.applyAmoled(): ColorScheme = copy(
 @Composable
 fun PetalExpressiveTheme(
     darkTheme: Boolean = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val sp = themePrefs()
         val configStr = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
         val config = try { ThemeConfig.valueOf(configStr) } catch (e: Exception) { ThemeConfig.FOLLOW_SYSTEM }
         when (config) {
@@ -76,7 +83,7 @@ fun PetalExpressiveTheme(
         }
     },
     dynamicColor: Boolean = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val sp = themePrefs()
         if (SeasonalEvent.isHalloweenActive && !sp.contains("useDynamicColor")) {
             false
         } else {
@@ -84,11 +91,11 @@ fun PetalExpressiveTheme(
         }
     },
     useAmoled: Boolean = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val sp = themePrefs()
         sp.getBoolean("sp_amoled", false)
     },
     expressiveColors: Boolean = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val sp = themePrefs()
         sp.getBoolean("sp_expressive_colors", false)
     },
     appFont: AppFont? = null,
@@ -99,12 +106,12 @@ fun PetalExpressiveTheme(
     fontRoundness: Float = 100f,
     gsFlexSettings: GSFlexSettings? = null,
     colorStyle: ColorStyle = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val sp = themePrefs()
         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
         try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
     },
     paletteId: String = run {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val sp = themePrefs()
         val stored = sp.getString("sp_palette_id", null)
         if (stored == null) {
             defaultPaletteId
@@ -129,14 +136,27 @@ fun PetalExpressiveTheme(
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
+        paletteId == CUSTOM_PALETTE_ID -> {
+            // Seed-based palette: the style is part of the generation, so it is not applied again below.
+            PetalCustomPalette.scheme(PetalCustomPalette.spec(context), colorStyle, darkTheme)
+        }
         else -> {
             val palette = paletteById(paletteId)
             if (darkTheme) palette.dark else palette.light
         }
     }
 
-    var colorScheme = baseScheme
+    val isCustomGenerated = !(dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) && paletteId == CUSTOM_PALETTE_ID
+    var colorScheme = if (isCustomGenerated) baseScheme else baseScheme
         .applyStyle(colorStyle)
+
+    // Palette mixing: secondary / tertiary can come from other palettes at the same time.
+    val mixConfig = PetalPaletteMix.config(context)
+    if (mixConfig.active) {
+        colorScheme = PetalPaletteMix.apply(
+            colorScheme, mixConfig, PetalCustomPalette.spec(context), darkTheme, colorStyle, context
+        )
+    }
 
     if (expressiveColors) {
         colorScheme = if (darkTheme) {

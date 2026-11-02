@@ -175,6 +175,15 @@ class PetalApplication : Application() {
 
         lastNightModeBits = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 
+        // Live theme updates + custom (seed-based) palette cache + palette mixing.
+        try {
+            com.petal.browser.ui.theme.PetalThemePrefs.install(this)
+            com.petal.browser.ui.theme.PetalCustomPalette.install(this)
+            com.petal.browser.ui.theme.PetalPaletteMix.install(this)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Theme prefs init failed", t)
+        }
+
         // Over-other-apps live island. Idle until the user turns it on in Settings > Downloads.
         try {
             com.petal.browser.island.PetalLiveOverlayController.init(this)

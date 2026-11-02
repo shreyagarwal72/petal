@@ -19,6 +19,9 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.toArgb
+import com.petal.browser.ui.theme.trackRevealOrigin
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -357,7 +360,8 @@ fun AppearanceSettingsScreenContent(
         )
     )
 
-    Box(modifier = modifier.fillMaxSize()) {
+    val reveal = com.petal.browser.ui.theme.rememberThemeReveal()
+    Box(modifier = modifier.fillMaxSize().trackRevealOrigin(reveal)) {
         M3ExpressiveVariableBackground(pageSeed = "appearance_settings")
 
         Column(modifier = Modifier.fillMaxSize()) {
@@ -568,14 +572,21 @@ fun AppearanceSettingsScreenContent(
                         selected = themeConfig,
                         minHeight = 44.dp,
                         onSelect = { config ->
-                            onThemeConfigChange(config)
-                            when (config) {
-                                ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                                ThemeConfig.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                                ThemeConfig.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                            reveal.reveal {
+                                onThemeConfigChange(config)
+                                when (config) {
+                                    ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                                    ThemeConfig.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                                    ThemeConfig.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                                }
                             }
                         }
                     )
+                    // Custom palette state (ColorBlendr-style: seed + optional secondary/tertiary)
+                    val themeSp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+                    val customRevision = com.petal.browser.ui.theme.PetalThemePrefs.revision
+                    var pickerSlot by remember { mutableStateOf(-1) } // 0 primary, 1 secondary, 2 tertiary
+
                     // Preset Color Palettes
                     Text(
                         stringResource(R.string.ui_preset_color_palettes),
@@ -607,11 +618,13 @@ fun AppearanceSettingsScreenContent(
                                             shape = CircleShape
                                         )
                                         .clickable {
-                                            androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-                                                .edit().putBoolean("sp_palette_manually_selected", true).apply()
-                                            onPaletteIdChange(pal.id)
-                                            onDynamicColorChange(false)
-                                            PetalSearchWidgetProvider.updateAllWidgets(context)
+                                            reveal.reveal {
+                                                androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                                                    .edit().putBoolean("sp_palette_manually_selected", true).apply()
+                                                onPaletteIdChange(pal.id)
+                                                onDynamicColorChange(false)
+                                                PetalSearchWidgetProvider.updateAllWidgets(context)
+                                            }
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -619,6 +632,45 @@ fun AppearanceSettingsScreenContent(
                                         Icon(Icons.Rounded.Check, contentDescription = pal.label, tint = Color.White, modifier = Modifier.size(20.dp))
                                     }
                                 }
+                            }
+
+                            // Custom palette tile: rainbow ring with + until the user picks colours.
+                            val customSelected = paletteId == com.petal.browser.ui.theme.CUSTOM_PALETTE_ID && !dynamicColor
+                            val customSpec = remember(customRevision) { com.petal.browser.ui.theme.PetalCustomPalette.spec(context) }
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (customSelected) Brush.linearGradient(listOf(Color(customSpec.seed), Color(customSpec.seed)))
+                                        else Brush.sweepGradient(listOf(Color(0xFFFF5252), Color(0xFFFFEB3B), Color(0xFF69F0AE), Color(0xFF40C4FF), Color(0xFFE040FB), Color(0xFFFF5252)))
+                                    )
+                                    .border(
+                                        width = if (customSelected) 3.dp else 0.dp,
+                                        color = if (customSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                        shape = CircleShape
+                                    )
+                                    .clickable {
+                                        if (customSelected) {
+                                            pickerSlot = 0
+                                        } else {
+                                            reveal.reveal {
+                                                androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                                                    .edit().putBoolean("sp_palette_manually_selected", true).apply()
+                                                onPaletteIdChange(com.petal.browser.ui.theme.CUSTOM_PALETTE_ID)
+                                                onDynamicColorChange(false)
+                                                PetalSearchWidgetProvider.updateAllWidgets(context)
+                                            }
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    if (customSelected) Icons.Rounded.Edit else Icons.Rounded.Add,
+                                    contentDescription = "Custom palette",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
                     }
@@ -630,8 +682,10 @@ fun AppearanceSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
+                    val isCustomPalette = paletteId == com.petal.browser.ui.theme.CUSTOM_PALETTE_ID && !dynamicColor
                     val currentPalette = remember(paletteId) {
-                        PetalPalettes.firstOrNull { it.id == paletteId } ?: PetalPalettes.first()
+                        if (paletteId == com.petal.browser.ui.theme.CUSTOM_PALETTE_ID) PetalPalettes.first()
+                        else PetalPalettes.firstOrNull { it.id == paletteId } ?: PetalPalettes.first()
                     }
                     val isEffectiveAmoled = isDarkTheme && amoledMode
                     val activeBaseScheme = remember(currentPalette, dynamicColor, isDarkTheme, isEffectiveAmoled, context) {
@@ -642,14 +696,18 @@ fun AppearanceSettingsScreenContent(
                         }
                         if (isDarkTheme && isEffectiveAmoled) base.applyAmoled() else base
                     }
-                    val activePreviewScheme = remember(activeBaseScheme, colorStyle) {
-                        activeBaseScheme.applyStyle(colorStyle)
-                    }
-                    val styleSchemes = remember(activeBaseScheme) {
-                        ColorStyle.entries.associateWith { style ->
-                            activeBaseScheme.applyStyle(style)
+                    val visibleStyles = remember(isCustomPalette) { ColorStyle.entries.filter { isCustomPalette || !it.customOnly } }
+                    val styleSchemes = remember(activeBaseScheme, isCustomPalette, customRevision, isDarkTheme, isEffectiveAmoled) {
+                        visibleStyles.associateWith { style ->
+                            if (isCustomPalette) {
+                                val gen = com.petal.browser.ui.theme.PetalCustomPalette.scheme(
+                                    com.petal.browser.ui.theme.PetalCustomPalette.spec(context), style, isDarkTheme
+                                )
+                                if (isDarkTheme && isEffectiveAmoled) gen.applyAmoled() else gen
+                            } else activeBaseScheme.applyStyle(style)
                         }
                     }
+                    val activePreviewScheme = styleSchemes[colorStyle] ?: activeBaseScheme
 
                     val paletteStyleScrollState = rememberScrollState()
                     ScrollFadeRow(
@@ -663,14 +721,16 @@ fun AppearanceSettingsScreenContent(
                                 .padding(vertical = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            ColorStyle.entries.forEach { style ->
+                            visibleStyles.forEach { style ->
                                 val swatchScheme = styleSchemes[style] ?: activePreviewScheme
                                 PaletteSwatchSquare(
                                     scheme = swatchScheme,
                                     selected = colorStyle == style,
                                     onClick = {
-                                        onColorStyleChange(style)
-                                        PetalSearchWidgetProvider.updateAllWidgets(context)
+                                        reveal.reveal {
+                                            onColorStyleChange(style)
+                                            PetalSearchWidgetProvider.updateAllWidgets(context)
+                                        }
                                     },
                                     modifier = Modifier.size(64.dp)
                                 )
@@ -700,6 +760,148 @@ fun AppearanceSettingsScreenContent(
                         }
                     }
 
+                    // ── Mix palettes: primary / secondary / tertiary from different sources at once ──
+                    val mixConfig = remember(customRevision) { com.petal.browser.ui.theme.PetalPaletteMix.config(context) }
+                    val mixCustom = remember(customRevision) { com.petal.browser.ui.theme.PetalCustomPalette.spec(context) }
+                    var mixDialogRole by remember { mutableStateOf(0) } // 1 secondary, 2 tertiary
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = "Mix palettes",
+                        subtitle = "Use a different palette for secondary and tertiary colours while keeping your primary",
+                        icon = Icons.Rounded.ColorLens,
+                        checked = mixConfig.enabled,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                        onCheckedChange = { on ->
+                            reveal.reveal {
+                                themeSp.edit().putBoolean(com.petal.browser.ui.theme.PetalPaletteMix.KEY_ENABLED, on).apply()
+                                PetalSearchWidgetProvider.updateAllWidgets(context)
+                            }
+                        }
+                    )
+                    if (mixConfig.enabled) {
+                        com.petal.browser.ui.components.PetalMixPreviewStrip(Modifier.padding(vertical = 8.dp))
+                        com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                            val role = index + 1
+                            val src = if (role == 1) mixConfig.secondary else mixConfig.tertiary
+                            val customArgb = if (role == 1) mixCustom.secondary else mixCustom.tertiary
+                            com.petal.browser.ui.containment.PetalGroupListRow(
+                                position = position,
+                                onClick = { mixDialogRole = role },
+                                leading = {
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.ColorLens,
+                                        variant = if (src != com.petal.browser.ui.theme.PetalPaletteMix.Source.Auto)
+                                            com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+                                        else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Text(if (role == 1) "Secondary source" else "Tertiary source",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface)
+                                    Text(com.petal.browser.ui.components.mixSourceLabel(src, customArgb),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            )
+                        }
+                    }
+                    if (mixDialogRole != 0) {
+                        val role = mixDialogRole
+                        val key = if (role == 1) com.petal.browser.ui.theme.PetalPaletteMix.KEY_SECONDARY else com.petal.browser.ui.theme.PetalPaletteMix.KEY_TERTIARY
+                        com.petal.browser.ui.components.PetalMixSourceDialog(
+                            title = if (role == 1) "Secondary colour from" else "Tertiary colour from",
+                            current = if (role == 1) mixConfig.secondary else mixConfig.tertiary,
+                            customArgb = if (role == 1) mixCustom.secondary else mixCustom.tertiary,
+                            onSelect = { src ->
+                                mixDialogRole = 0
+                                reveal.reveal {
+                                    themeSp.edit().putString(key, com.petal.browser.ui.theme.PetalPaletteMix.encode(src)).apply()
+                                    PetalSearchWidgetProvider.updateAllWidgets(context)
+                                }
+                            },
+                            onPickCustom = {
+                                mixDialogRole = 0
+                                themeSp.edit().putString(key, com.petal.browser.ui.theme.PetalPaletteMix.encode(com.petal.browser.ui.theme.PetalPaletteMix.Source.Custom)).apply()
+                                pickerSlot = role
+                            },
+                            onDismiss = { mixDialogRole = 0 }
+                        )
+                    }
+
+                    if (isCustomPalette) {
+                        val spec = remember(customRevision) { com.petal.browser.ui.theme.PetalCustomPalette.spec(context) }
+                        com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
+                            val (slotTitle, slotColor, slotHint) = when (index) {
+                                0 -> Triple("Primary colour", spec.seed, "Seed for the whole palette")
+                                1 -> Triple("Secondary colour", spec.secondary, "Auto: derived from the primary")
+                                else -> Triple("Tertiary colour", spec.tertiary, "Auto: derived from the primary")
+                            }
+                            com.petal.browser.ui.containment.PetalGroupListRow(
+                                position = position,
+                                onClick = { pickerSlot = index },
+                                leading = {
+                                    Box(
+                                        Modifier.size(40.dp).clip(CircleShape)
+                                            .background(if (slotColor != 0) Color(slotColor) else MaterialTheme.colorScheme.surfaceContainerHighest),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (slotColor == 0) Text("Auto", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                },
+                                content = {
+                                    Text(slotTitle, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                                    Text(
+                                        if (slotColor != 0) "#%06X".format(slotColor and 0xFFFFFF) else slotHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailing = if (index > 0 && slotColor != 0) {
+                                    {
+                                        TextButton(onClick = {
+                                            reveal.reveal {
+                                                themeSp.edit().putInt(
+                                                    if (index == 1) com.petal.browser.ui.theme.PetalCustomPalette.KEY_SECONDARY
+                                                    else com.petal.browser.ui.theme.PetalCustomPalette.KEY_TERTIARY, 0
+                                                ).apply()
+                                                PetalSearchWidgetProvider.updateAllWidgets(context)
+                                            }
+                                        }) { Text("Reset") }
+                                    }
+                                } else null
+                            )
+                        }
+                    }
+
+                    if (pickerSlot >= 0) {
+                        val spec = com.petal.browser.ui.theme.PetalCustomPalette.spec(context)
+                        val initial = when (pickerSlot) {
+                            0 -> spec.seed
+                            1 -> if (spec.secondary != 0) spec.secondary else spec.seed
+                            else -> if (spec.tertiary != 0) spec.tertiary else spec.seed
+                        }
+                        com.petal.browser.ui.components.PetalColorPickerDialog(
+                            initialColor = Color(initial),
+                            title = when (pickerSlot) { 0 -> "Primary colour"; 1 -> "Secondary colour"; else -> "Tertiary colour" },
+                            onDismiss = { pickerSlot = -1 },
+                            onConfirm = { picked ->
+                                val slot = pickerSlot
+                                pickerSlot = -1
+                                reveal.reveal {
+                                    themeSp.edit().putInt(
+                                        when (slot) {
+                                            0 -> com.petal.browser.ui.theme.PetalCustomPalette.KEY_SEED
+                                            1 -> com.petal.browser.ui.theme.PetalCustomPalette.KEY_SECONDARY
+                                            else -> com.petal.browser.ui.theme.PetalCustomPalette.KEY_TERTIARY
+                                        },
+                                        picked.toArgb() or (0xFF shl 24)
+                                    ).apply()
+                                    PetalSearchWidgetProvider.updateAllWidgets(context)
+                                }
+                            }
+                        )
+                    }
+
                     // Material You Dynamic Color Toggle
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = stringResource(R.string.ui_material_you_dynamic_color),
@@ -708,8 +910,10 @@ fun AppearanceSettingsScreenContent(
                         checked = dynamicColor,
                         position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         onCheckedChange = { newValue ->
-                            onDynamicColorChange(newValue)
-                            PetalSearchWidgetProvider.updateAllWidgets(context)
+                            reveal.reveal {
+                                onDynamicColorChange(newValue)
+                                PetalSearchWidgetProvider.updateAllWidgets(context)
+                            }
                         }
                     )
                     // AMOLED Black Toggle
@@ -721,8 +925,10 @@ fun AppearanceSettingsScreenContent(
                         enabled = isDarkTheme,
                         position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onCheckedChange = { newValue ->
-                            onAmoledModeChange(newValue)
-                            PetalSearchWidgetProvider.updateAllWidgets(context)
+                            reveal.reveal {
+                                onAmoledModeChange(newValue)
+                                PetalSearchWidgetProvider.updateAllWidgets(context)
+                            }
                         }
                     )
                 }
