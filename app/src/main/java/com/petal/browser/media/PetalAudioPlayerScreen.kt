@@ -69,6 +69,18 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Equalizer
+import com.petal.browser.media.lyrics.PetalLyrics
+import com.petal.browser.media.lyrics.PetalLyricsEngine
+import com.petal.browser.media.lyrics.PetalLyricsSheet
+import com.petal.browser.media.queue.PetalQueueItem
+import com.petal.browser.media.queue.PetalQueueManager
+import com.petal.browser.media.queue.PetalQueueBottomSheet
+import com.petal.browser.media.sheets.PetalAudioRouteSheet
+import com.petal.browser.media.sheets.PetalSleepTimerSheet
+import com.petal.browser.media.sheets.PetalSongInfoSheet
+import com.petal.browser.media.sheets.PetalSpeedSelectorSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -167,7 +179,43 @@ fun PetalAudioPlayerScreen(
     var isVinylMode by remember { mutableStateOf(false) }
     var showMoreBottomSheet by remember { mutableStateOf(false) }
     var showLyricsSheet by remember { mutableStateOf(false) }
+    var showQueueSheet by remember { mutableStateOf(false) }
+    var showSleepTimerSheet by remember { mutableStateOf(false) }
+    var showSongInfoSheet by remember { mutableStateOf(false) }
+    var showSpeedSheet by remember { mutableStateOf(false) }
+    var showAudioRouteSheet by remember { mutableStateOf(false) }
+    var sleepTimerSeconds by remember { mutableStateOf<Long?>(null) }
+    var sleepFinishSong by remember { mutableStateOf(false) }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+
+    var lyrics by remember { mutableStateOf(PetalLyrics()) }
+    LaunchedEffect(mediaUri) {
+        lyrics = PetalLyricsEngine.loadLyricsForUri(context, mediaUri)
+    }
+
+    val queueManager = remember(mediaUri, displayName) {
+        PetalQueueManager(
+            PetalQueueItem(
+                id = mediaUri.toString(),
+                uri = mediaUri,
+                title = displayName.substringBeforeLast("."),
+                artist = "Audio Track"
+            )
+        )
+    }
+
+    // Sleep Timer countdown ticker
+    LaunchedEffect(sleepTimerSeconds) {
+        val s = sleepTimerSeconds ?: return@LaunchedEffect
+        if (s <= 0L) {
+            exoPlayer.pause()
+            sleepTimerSeconds = null
+            PetalMediaSessionService.stopMediaSession(context)
+            return@LaunchedEffect
+        }
+        delay(1000L)
+        sleepTimerSeconds = s - 1L
+    }
 
     // ── PixelPlayer-style smooth progress wiring ──────────────────────────────
     // currentPositionProvider is a lambda so WavySliderExpressive reads it
@@ -527,10 +575,12 @@ fun PetalAudioPlayerScreen(
                     PetalPlayerHeaderTopBar(
                         onCollapse = onClose,
                         onQueueClick = {
-                            Toast.makeText(context, metadata.title, Toast.LENGTH_SHORT).show()
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                            showQueueSheet = true
                         },
                         onAudioRouteClick = {
-                            Toast.makeText(context, "Speaker (Phone)", Toast.LENGTH_SHORT).show()
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                            showAudioRouteSheet = true
                         },
                         title = stringResource(R.string.ui_now_playing),
                         audioRouteName = null,
@@ -840,9 +890,17 @@ fun PetalAudioPlayerScreen(
                     PetalAnimatedPlaybackControls(
                         isPlayingProvider = { isPlaying },
                         onPrevious = {
-                            val prev = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
-                            exoPlayer.seekTo(prev)
-                            // sampledPositionMs will update on next poll; no manual override needed.
+                            if (queueManager.queue.size > 1 && exoPlayer.currentPosition < 3000L) {
+                                val prevItem = queueManager.previous()
+                                if (prevItem != null) {
+                                    exoPlayer.setMediaItem(MediaItem.fromUri(prevItem.uri))
+                                    exoPlayer.prepare()
+                                    exoPlayer.play()
+                                }
+                            } else {
+                                val prev = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
+                                exoPlayer.seekTo(prev)
+                            }
                         },
                         onPlayPause = {
                             if (exoPlayer.isPlaying) {
@@ -852,9 +910,17 @@ fun PetalAudioPlayerScreen(
                             }
                         },
                         onNext = {
-                            val next = (exoPlayer.currentPosition + 10_000L).coerceAtMost(durationMs.coerceAtLeast(0L))
-                            exoPlayer.seekTo(next)
-                            // sampledPositionMs will update on next poll; no manual override needed.
+                            if (queueManager.queue.size > 1) {
+                                val nextItem = queueManager.next()
+                                if (nextItem != null) {
+                                    exoPlayer.setMediaItem(MediaItem.fromUri(nextItem.uri))
+                                    exoPlayer.prepare()
+                                    exoPlayer.play()
+                                }
+                            } else {
+                                val next = (exoPlayer.currentPosition + 10_000L).coerceAtMost(durationMs.coerceAtLeast(0L))
+                                exoPlayer.seekTo(next)
+                            }
                         },
                         previousIcon = Icons.Rounded.SkipPrevious,
                         nextIcon = Icons.Rounded.SkipNext,
@@ -975,7 +1041,100 @@ fun PetalAudioPlayerScreen(
 
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-                            // Details Row
+                            // Details / Song Info Row
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable {
+                                        showMoreBottomSheet = false
+                                        PetalHapticEngine.getInstance(context).playClick(context)
+                                        showSongInfoSheet = true
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = "Track Details & Audio Specs",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            // Sleep Timer Row
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable {
+                                        showMoreBottomSheet = false
+                                        PetalHapticEngine.getInstance(context).playClick(context)
+                                        showSleepTimerSheet = true
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Timer,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = if (sleepTimerSeconds != null) "Sleep Timer (${sleepTimerSeconds!! / 60}m remaining)" else "Sleep Timer",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            // System Equalizer Row
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable {
+                                        showMoreBottomSheet = false
+                                        PetalHapticEngine.getInstance(context).playClick(context)
+                                        try {
+                                            val eqIntent = Intent(android.media.audiofx.AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).apply {
+                                                putExtra(android.media.audiofx.AudioEffect.EXTRA_AUDIO_SESSION, exoPlayer.audioSessionId)
+                                                putExtra(android.media.audiofx.AudioEffect.EXTRA_PACKAGE_NAME, context.packageName)
+                                                putExtra(android.media.audiofx.AudioEffect.EXTRA_CONTENT_TYPE, android.media.audiofx.AudioEffect.CONTENT_TYPE_MUSIC)
+                                            }
+                                            context.startActivity(eqIntent)
+                                        } catch (_: Exception) {
+                                            Toast.makeText(context, "System equalizer not available on this device", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Equalizer,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = "Equalizer & Audio Effects",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            // Vinyl / Squircle Mode Toggle
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1042,41 +1201,100 @@ fun PetalAudioPlayerScreen(
                     }
                 }
 
-                // ── Lyrics Sheet ──
+                // ── Lyrics Sheet (PixelPlayer Karaoke View) ──
                 if (showLyricsSheet) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showLyricsSheet = false },
-                        sheetState = rememberModalBottomSheetState(),
-                        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.then(
-                            if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), enabled = true)
-                            else Modifier
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp)
-                                .padding(bottom = 36.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Text(
-                                text = "Lyrics",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "No synchronized lyrics embedded in this file.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
+                    PetalLyricsSheet(
+                        lyrics = lyrics,
+                        currentPositionMs = currentPositionProvider(),
+                        durationMs = durationMs,
+                        isPlaying = isPlaying,
+                        title = metadata.title,
+                        artist = metadata.artist,
+                        artwork = metadata.artwork,
+                        audioPalette = audioPalette,
+                        onDismiss = { showLyricsSheet = false },
+                        onSeekTo = { pos ->
+                            exoPlayer.seekTo(pos)
+                        },
+                        onPlayPauseToggle = {
+                            if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
+                        },
+                        onPrevious = {
+                            val prev = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
+                            exoPlayer.seekTo(prev)
+                        },
+                        onNext = {
+                            val next = (exoPlayer.currentPosition + 10_000L).coerceAtMost(durationMs)
+                            exoPlayer.seekTo(next)
+                        },
+                        onImportLrc = { lrcText ->
+                            lyrics = PetalLyricsEngine.parseLrc(lrcText)
                         }
-                    }
+                    )
+                }
+
+                // ── Queue & Playlist Sheet ──
+                if (showQueueSheet) {
+                    PetalQueueBottomSheet(
+                        queueManager = queueManager,
+                        isPlaying = isPlaying,
+                        audioPalette = audioPalette,
+                        onTrackSelected = { item ->
+                            exoPlayer.setMediaItem(MediaItem.fromUri(item.uri))
+                            exoPlayer.prepare()
+                            exoPlayer.play()
+                        },
+                        onDismiss = { showQueueSheet = false }
+                    )
+                }
+
+                // ── Sleep Timer Sheet ──
+                if (showSleepTimerSheet) {
+                    PetalSleepTimerSheet(
+                        remainingSeconds = sleepTimerSeconds,
+                        finishEndOfSong = sleepFinishSong,
+                        audioPalette = audioPalette,
+                        onStartTimer = { mins, finishSong ->
+                            sleepTimerSeconds = mins * 60L
+                            sleepFinishSong = finishSong
+                        },
+                        onCancelTimer = {
+                            sleepTimerSeconds = null
+                        },
+                        onDismiss = { showSleepTimerSheet = false }
+                    )
+                }
+
+                // ── Track Info Sheet ──
+                if (showSongInfoSheet) {
+                    PetalSongInfoSheet(
+                        metadata = metadata,
+                        mediaUri = mediaUri,
+                        durationMs = durationMs,
+                        audioPalette = audioPalette,
+                        onDismiss = { showSongInfoSheet = false }
+                    )
+                }
+
+                // ── Speed Selector Sheet ──
+                if (showSpeedSheet) {
+                    PetalSpeedSelectorSheet(
+                        currentSpeed = playbackSpeed,
+                        audioPalette = audioPalette,
+                        onSpeedSelected = { speed ->
+                            playbackSpeed = speed
+                            exoPlayer.playbackParameters = PlaybackParameters(speed)
+                        },
+                        onDismiss = { showSpeedSheet = false }
+                    )
+                }
+
+                // ── Audio Route Sheet ──
+                if (showAudioRouteSheet) {
+                    PetalAudioRouteSheet(
+                        audioPalette = audioPalette,
+                        onDismiss = { showAudioRouteSheet = false }
+                    )
                 }
             }
         }

@@ -1,3 +1,44 @@
+### v4.5.8 — 🎵 PixelPlayer Lyrics Engine, Interactive Queue & Advanced Media Controls
+
+> *"Milestone v4.5.8 equips Petal's audio and video media suite with a high-fidelity PixelPlayer experience: synchronized karaoke lyrics with manual-drag hold-off & tap-to-seek, an interactive queue manager with animated equalizer waves, an advanced sleep timer with end-of-track fadeout, detailed track audio specs inspector, fine-grained playback speed selector, and direct audio route switching."*
+
+#### 🎤 Synchronized Karaoke Lyrics Engine (`PetalLyricsEngine.kt`, `PetalLyricsSheet.kt`)
+- **Millisecond LRC & ID3 Scanner**:
+  - Implemented high-precision timestamp parser supporting both `[mm:ss.xx]` and `[mm:ss.xxx]` formats alongside standard LRC metadata tags (`[ti:]`, `[ar:]`, `[al:]`).
+  - Added automatic detection order: scans companion local `.lrc` files (`pathWithoutExt + ".lrc"`), followed by deep scanning of embedded ID3 `USLT` frames within MP3/FLAC/AAC streams.
+- **PixelPlayer Karaoke Sheet UI**:
+  - Modal bottom sheet displaying synchronized lyrics with smooth auto-scroll to the current singing line.
+  - Added smart 3.5s drag-holdoff: allows manual lyrics scrolling without sudden auto-scroll snaps.
+  - Interactive tap-to-seek: tapping any lyric line instantly seeks the ExoPlayer engine to that exact millisecond.
+  - Embedded bottom mini-player strip directly inside the lyrics sheet with Play/Pause and track title for uninterrupted control.
+  - Integrated `.lrc` file picker allowing users to import external lyrics files on-demand.
+
+#### 🎼 PixelPlayer Queue Manager & Bottom Sheet (`PetalQueueManager.kt`, `PetalQueueBottomSheet.kt`)
+- **Interactive Play Queue**:
+  - Manages active playlists, reordering, adding tracks via Android SAF, and swiping to remove individual tracks.
+  - Smart Next/Previous navigation: when multiple items are in the queue, skips between songs; when a single track is playing, seamlessly shifts to 10-second forward/backward skips.
+- **Animated 3-Bar Equalizer Wave (`PlayingEqualizerBars`)**:
+  - PixelPlayer-style animated 3-bar green equalizer next to the currently playing song in the queue list.
+  - Real-time indicator showing active playback state, queue position count, and quick clear queue options.
+
+#### ⚙️ More Options Sub-Sheets Suite (`PetalMoreOptionsSheets.kt`)
+- **Sleep Timer (`PetalSleepTimerSheet`)**:
+  - Quick chips for 15, 30, 45, 60 minutes, or custom duration with live countdown timer.
+  - Includes *Play Until End of Track* toggle to cleanly pause playback and shut down foreground media services once the current song ends.
+- **Song Info & Audio Inspector (`PetalSongInfoSheet`)**:
+  - Detailed metadata sheet showing Bitrate, Sample Rate, Audio Channel Configuration, Codec type, File Size, and full content/file path with one-tap clipboard copy.
+- **Playback Speed Selector (`PetalSpeedSelectorSheet`)**:
+  - Fine-grained pitch-preserving playback speed selector ranging from 0.5x to 2.0x with intuitive quick-tap chips and fine slider.
+- **Audio Output Route Switcher (`PetalAudioRouteSheet`)**:
+  - Inspects connected audio output routes (`AudioManager.getDevices`) including Built-in Speaker, Wired Headphones, Bluetooth A2DP, and USB Audio, with direct launcher for system Bluetooth settings.
+- **Equalizer Launcher**:
+  - Wired system audio effects intent (`AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL`) with fallback notification when no system equalizer is installed.
+
+#### 🎥 Video Player Verification & Control Locking
+- Verified video player HUD gestures, 2x long-press speed boost, lock screen slider (`PetalSlideToUnlock`), aspect ratio toggles, and PiP coordination.
+
+---
+
 ### v4.5.7 — 🎬 Unified Background Audio Engine, Picture-in-Picture (PiP) for Audio & Video, and Web Player Bridge Fixes
 
 > *"Milestone v4.5.7 brings seamless, uninterrupted background playback and universal Picture-in-Picture (PiP) support across all Petal media players — including standalone audio/music, standalone video, and in-page/fullscreen website HTML5 media."*
