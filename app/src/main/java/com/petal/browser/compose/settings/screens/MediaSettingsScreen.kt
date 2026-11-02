@@ -67,6 +67,8 @@ fun MediaSettingsScreen(
 
     // ── Media Engine States ──
     var nativeVideoPlayer by remember { mutableStateOf(sp.getBoolean("sp_native_video_player", false)) }
+    var backgroundPlay by remember { mutableStateOf(sp.getBoolean("sp_background_play", false)) }
+    var autoPip by remember { mutableStateOf(sp.getBoolean("sp_auto_pip", true)) }
     var detectBackground by remember { mutableStateOf(sp.getBoolean("sp_media_detect_background", true)) }
     var showMediaButton by remember { mutableStateOf(sp.getBoolean("sp_media_button_address_bar", true)) }
     var autoOpenPanel by remember { mutableStateOf(sp.getBoolean("sp_media_auto_open_panel", false)) }
@@ -211,7 +213,7 @@ fun MediaSettingsScreen(
 
                     // Validate media before showing
                     PetalSettingsToggleRow(
-                        position = PetalGroupPosition.BOTTOM,
+                        position = PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_validate_media_before_showing),
                         subtitle = stringResource(R.string.ui_perform_lightweight_head_check_on),
                         icon = Icons.Rounded.Verified,
@@ -219,6 +221,34 @@ fun MediaSettingsScreen(
                         onCheckedChange = { checked ->
                             validateStreams = checked
                             sp.edit().putBoolean("sp_media_validate_streams", checked).apply()
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                        }
+                    )
+
+                    // Background Media Playback
+                    PetalSettingsToggleRow(
+                        position = PetalGroupPosition.MIDDLE,
+                        title = "Background Media Playback",
+                        subtitle = "Keep audio playing when switching apps, minimizing Petal, or locking the device",
+                        icon = Icons.Rounded.GraphicEq,
+                        checked = backgroundPlay,
+                        onCheckedChange = { checked ->
+                            backgroundPlay = checked
+                            sp.edit().putBoolean("sp_background_play", checked).apply()
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                        }
+                    )
+
+                    // Picture-in-Picture (Auto-PiP)
+                    PetalSettingsToggleRow(
+                        position = PetalGroupPosition.BOTTOM,
+                        title = "Picture-in-Picture (Auto-PiP)",
+                        subtitle = "Automatically pop video or music into a floating mini-player when returning home",
+                        icon = Icons.Rounded.PictureInPictureAlt,
+                        checked = autoPip,
+                        onCheckedChange = { checked ->
+                            autoPip = checked
+                            sp.edit().putBoolean("sp_auto_pip", checked).apply()
                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                         }
                     )

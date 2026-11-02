@@ -1014,6 +1014,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
                 // Native resource DOM scan (extract video, audio, image, and download links)
                 if (success && !currentUrl.isNullOrBlank() && !com.petal.browser.media.sniffer.PetalNativeSnifferEngine.isSearchOrInternalUrl(currentUrl)) {
+                    getMediaBridge()?.injectMediaHooks()
                     evaluateJavascript(com.petal.browser.media.sniffer.PetalNativeSnifferEngine.DOM_SCAN_JS) { result ->
                         com.petal.browser.media.sniffer.PetalNativeSnifferEngine.parseDomScanResult(tabId, currentUrl, result)
                     }
@@ -2614,7 +2615,49 @@ class PetalGeckoView @JvmOverloads constructor(
         this.onScrollChangeListener = listener
     }
 
-    fun getMediaBridge(): PetalMediaBridge? = mediaBridge
+    fun getMediaBridge(): PetalMediaBridge? {
+        if (mediaBridge == null) {
+            val act = getHostActivity()
+            if (act != null) {
+                mediaBridge = PetalMediaBridge(act, this, object : PetalMediaBridge.MediaStateListener {
+                    override fun onMediaPlay(title: String?, positionMs: Long, durationMs: Long) {
+                        isMediaPlaying = true
+                        if (act is com.petal.browser.activity.BrowserActivity) {
+                            act.isMediaPlaying = true
+                            act.updatePipParams(true)
+                            act.mediaService?.updateMediaState(title ?: currentTitle, currentTitle, true, positionMs, durationMs)
+                        }
+                    }
+
+                    override fun onMediaPause(positionMs: Long, durationMs: Long) {
+                        isMediaPlaying = false
+                        if (act is com.petal.browser.activity.BrowserActivity) {
+                            act.isMediaPlaying = false
+                            act.updatePipParams(false)
+                            act.mediaService?.updateMediaState(currentTitle, currentTitle, false, positionMs, durationMs)
+                        }
+                    }
+
+                    override fun onMediaProgress(positionMs: Long, durationMs: Long) {}
+
+                    override fun onMediaPlayingStateChanged(playing: Boolean) {
+                        isMediaPlaying = playing
+                        if (act is com.petal.browser.activity.BrowserActivity) {
+                            act.isMediaPlaying = playing
+                            act.updatePipParams(playing)
+                        }
+                    }
+
+                    override fun onVideoDimensionsChanged(width: Int, height: Int) {
+                        if (act is com.petal.browser.activity.BrowserActivity) {
+                            act.updateVideoDimensions(width, height)
+                        }
+                    }
+                })
+            }
+        }
+        return mediaBridge
+    }
 
     fun setMediaBridge(bridge: PetalMediaBridge?) {
         this.mediaBridge = bridge
@@ -2747,7 +2790,8 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun onPause() {
-        if (!isPlayingAudio()) {
+        val bgPlay = sp.getBoolean("sp_background_play", false)
+        if (!isPlayingAudio() && (!bgPlay || !hasActiveMediaSession())) {
             session.setActive(false)
         }
     }

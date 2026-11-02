@@ -87,19 +87,57 @@ fun PetalVideoPlayerScreen(
         activity.isInPictureInPictureMode
     } else false
 
-    // Synchronize ExoPlayer events and update PetalLiveActionBus
-    DisposableEffect(exoPlayer) {
+    // Synchronize ExoPlayer events, PiP remote actions and PetalLiveActionBus
+    DisposableEffect(activity, exoPlayer) {
+        if (activity != null) {
+            PetalPipController.registerPipReceiver(activity, object : PetalPipController.PipActionCallback {
+                override fun onPlay() { exoPlayer.play() }
+                override fun onPause() { exoPlayer.pause() }
+                override fun onSkip(deltaSeconds: Int) {
+                    val newPos = (exoPlayer.currentPosition + deltaSeconds * 1000L).coerceIn(0L, exoPlayer.duration.coerceAtLeast(0L))
+                    exoPlayer.seekTo(newPos)
+                }
+            })
+        }
+
+        val serviceListener = object : PetalMediaSessionService.MediaControlListener {
+            override fun onPlay() { exoPlayer.play() }
+            override fun onPause() { exoPlayer.pause() }
+            override fun onStop() { exoPlayer.pause() }
+            override fun onSeekTo(pos: Long) { exoPlayer.seekTo(pos) }
+            override fun onSkip(delta: Int) {
+                val newPos = (exoPlayer.currentPosition + delta * 1000L).coerceIn(0L, exoPlayer.duration.coerceAtLeast(0L))
+                exoPlayer.seekTo(newPos)
+            }
+        }
+        PetalMediaSessionService.setGlobalControlListener(serviceListener)
+
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
                 com.petal.browser.live.PetalLiveActionBus.updateMedia(
-                    title = title,
+                    title = displayName,
                     artist = "Video Playback",
                     isPlaying = playing,
                     positionMs = exoPlayer.currentPosition,
                     durationMs = exoPlayer.duration.coerceAtLeast(0L),
                     albumArt = null
                 )
+                PetalMediaSessionService.startMediaSession(
+                    context,
+                    displayName,
+                    "Video Playback",
+                    playing,
+                    exoPlayer.currentPosition,
+                    exoPlayer.duration.coerceAtLeast(0L),
+                    null,
+                    com.petal.browser.activity.MediaPlayerActivity::class.java,
+                    serviceListener
+                )
+                if (activity != null) {
+                    val aspect = if (videoWidth > 0 && videoHeight > 0) Rational(videoWidth, videoHeight) else Rational(16, 9)
+                    PetalPipController.updatePipParams(activity, playing, aspect, enableAutoEnter = playing)
+                }
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -107,7 +145,7 @@ fun PetalVideoPlayerScreen(
                     val dur = exoPlayer.duration
                     durationMs = if (dur > 0) dur else 0L
                     com.petal.browser.live.PetalLiveActionBus.updateMedia(
-                        title = title,
+                        title = displayName,
                         artist = "Video Playback",
                         isPlaying = exoPlayer.isPlaying,
                         positionMs = exoPlayer.currentPosition,
@@ -121,6 +159,9 @@ fun PetalVideoPlayerScreen(
                 if (videoSize.width > 0 && videoSize.height > 0) {
                     videoWidth = videoSize.width
                     videoHeight = videoSize.height
+                    if (activity != null) {
+                        PetalPipController.updatePipParams(activity, exoPlayer.isPlaying, Rational(videoSize.width, videoSize.height), enableAutoEnter = exoPlayer.isPlaying)
+                    }
                 }
             }
         }
@@ -128,8 +169,15 @@ fun PetalVideoPlayerScreen(
 
         onDispose {
             exoPlayer.removeListener(listener)
-            exoPlayer.release()
-            com.petal.browser.live.PetalLiveActionBus.dismissMedia()
+            if (activity != null) {
+                PetalPipController.unregisterPipReceiver(activity)
+            }
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            val bgPlay = sp.getBoolean("sp_background_play", false)
+            if (!bgPlay) {
+                exoPlayer.release()
+                PetalMediaSessionService.stopMediaSession(context)
+            }
         }
     }
 
@@ -227,27 +275,9 @@ fun PetalVideoPlayerScreen(
                     }
                 },
                 onPipClick = {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activity != null) {
-                        try {
-                            val targetW = videoWidth.coerceIn(1, 10000)
-                            val targetH = videoHeight.coerceIn(1, 10000)
-                            val aspectNumerator = targetW.coerceIn(1, 239)
-                            val aspectDenominator = targetH.coerceIn(1, 239)
-                            val videoAspect = try {
-                                Rational(targetW, targetH).let { r ->
-                                    val f = r.toFloat()
-                                    if (f < 0.41841f) Rational(100, 239)
-                                    else if (f > 2.39f) Rational(239, 100)
-                                    else r
-                                }
-                            } catch (_: Exception) {
-                                Rational(16, 9)
-                            }
-                            val pipParams = PictureInPictureParams.Builder()
-                                .setAspectRatio(videoAspect)
-                                .build()
-                            activity.enterPictureInPictureMode(pipParams)
-                        } catch (_: Exception) {}
+                    if (activity != null) {
+                        val videoAspect = if (videoWidth > 0 && videoHeight > 0) Rational(videoWidth, videoHeight) else Rational(16, 9)
+                        PetalPipController.enterPip(activity, isPlaying, videoAspect)
                     }
                 },
                 onCloseFullscreen = onClose,

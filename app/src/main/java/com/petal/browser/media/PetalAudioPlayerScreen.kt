@@ -143,6 +143,8 @@ fun PetalAudioPlayerScreen(
     displayName: String,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    isInPip: Boolean = false,
+    onPipClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
 
@@ -276,6 +278,17 @@ fun PetalAudioPlayerScreen(
                         durationMs = exoPlayer.duration.coerceAtLeast(0L),
                         albumArt = newMeta.artwork
                     )
+                    PetalMediaSessionService.startMediaSession(
+                        context,
+                        newMeta.title,
+                        newMeta.artist,
+                        exoPlayer.isPlaying,
+                        exoPlayer.currentPosition,
+                        exoPlayer.duration.coerceAtLeast(0L),
+                        newMeta.artwork,
+                        com.petal.browser.activity.MediaPlayerActivity::class.java,
+                        null
+                    )
                 }
             } catch (_: Exception) {
             } finally {
@@ -284,8 +297,20 @@ fun PetalAudioPlayerScreen(
         }
     }
 
-    // Synchronize ExoPlayer state → Compose state and PetalLiveActionBus for Cutout Island
+    // Synchronize ExoPlayer state → Compose state, Foreground Service & PetalLiveActionBus
     DisposableEffect(exoPlayer) {
+        val serviceListener = object : PetalMediaSessionService.MediaControlListener {
+            override fun onPlay() { exoPlayer.play() }
+            override fun onPause() { exoPlayer.pause() }
+            override fun onStop() { exoPlayer.pause() }
+            override fun onSeekTo(positionMs: Long) { exoPlayer.seekTo(positionMs) }
+            override fun onSkip(deltaSeconds: Int) {
+                val newPos = (exoPlayer.currentPosition + deltaSeconds * 1000L).coerceIn(0L, exoPlayer.duration.coerceAtLeast(0L))
+                exoPlayer.seekTo(newPos)
+            }
+        }
+        PetalMediaSessionService.setGlobalControlListener(serviceListener)
+
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
@@ -296,6 +321,17 @@ fun PetalAudioPlayerScreen(
                     positionMs = exoPlayer.currentPosition,
                     durationMs = exoPlayer.duration.coerceAtLeast(0L),
                     albumArt = metadata.artwork
+                )
+                PetalMediaSessionService.startMediaSession(
+                    context,
+                    metadata.title,
+                    metadata.artist,
+                    playing,
+                    exoPlayer.currentPosition,
+                    exoPlayer.duration.coerceAtLeast(0L),
+                    metadata.artwork,
+                    com.petal.browser.activity.MediaPlayerActivity::class.java,
+                    serviceListener
                 )
             }
 
@@ -311,14 +347,29 @@ fun PetalAudioPlayerScreen(
                     durationMs = dur.coerceAtLeast(0L),
                     albumArt = metadata.artwork
                 )
+                PetalMediaSessionService.startMediaSession(
+                    context,
+                    metadata.title,
+                    metadata.artist,
+                    exoPlayer.isPlaying,
+                    exoPlayer.currentPosition,
+                    dur.coerceAtLeast(0L),
+                    metadata.artwork,
+                    com.petal.browser.activity.MediaPlayerActivity::class.java,
+                    serviceListener
+                )
             }
         }
         exoPlayer.addListener(listener)
 
         onDispose {
             exoPlayer.removeListener(listener)
-            exoPlayer.release()
-            com.petal.browser.live.PetalLiveActionBus.dismissMedia()
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            val bgPlay = sp.getBoolean("sp_background_play", true)
+            if (!bgPlay) {
+                exoPlayer.release()
+                PetalMediaSessionService.stopMediaSession(context)
+            }
         }
     }
 
@@ -386,6 +437,67 @@ fun PetalAudioPlayerScreen(
         colors = audioPalette.backgroundGradientColors
     )
 
+    if (isInPip) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(bgGradient),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                val pipShape = if (isPlaying) PetalCookieShape(sides = 8, curve = 0.082, rotation = 0f) else RoundedCornerShape(16.dp)
+                Surface(
+                    shape = pipShape,
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                        .clip(pipShape),
+                    color = audioPalette.surfaceContainerHighest
+                ) {
+                    if (metadata.artwork != null) {
+                        Image(
+                            bitmap = metadata.artwork!!.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.MusicNote,
+                                contentDescription = null,
+                                tint = audioPalette.seed,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = metadata.title,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = audioPalette.onSurface,
+                    maxLines = 1,
+                    modifier = Modifier.basicMarquee()
+                )
+                Text(
+                    text = metadata.artist,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = audioPalette.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
+        }
+        return
+    }
+
     val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
@@ -423,6 +535,7 @@ fun PetalAudioPlayerScreen(
                         title = stringResource(R.string.ui_now_playing),
                         audioRouteName = null,
                         isLiquidGlass = isGlass,
+                        onPipClick = onPipClick,
                     )
 
                     Spacer(modifier = Modifier.weight(0.3f))

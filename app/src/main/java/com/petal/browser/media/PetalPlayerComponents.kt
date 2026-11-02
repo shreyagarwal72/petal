@@ -53,6 +53,7 @@ import androidx.compose.material.icons.rounded.BrightnessLow
 import androidx.compose.material.icons.rounded.BrightnessMedium
 import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Favorite
@@ -1149,6 +1150,7 @@ fun PetalPlayerHeaderTopBar(
     isCastActive: Boolean = false,
     isBluetoothActive: Boolean = false,
     isLiquidGlass: Boolean = false,
+    onPipClick: (() -> Unit)? = null,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -1278,6 +1280,33 @@ fun PetalPlayerHeaderTopBar(
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(22.dp)
                 )
+            }
+
+            // PiP Button (if callback provided)
+            if (onPipClick != null) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(pillBg)
+                        .then(
+                            if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                            else Modifier
+                        )
+                        .clickable {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                            onPipClick()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.PictureInPictureAlt,
+                        contentDescription = "Picture in Picture",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }

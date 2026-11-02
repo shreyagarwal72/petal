@@ -371,6 +371,9 @@ object PetalGeckoRuntime {
                 user_pref("media.gmp-gmpopenh264.autoupdate", false);
                 user_pref("media.eme.enabled", false);
 
+                // Uninterrupted Background Playback & Web Audio Stability
+                user_pref("media.suspend-bkgnd-video.enabled", false);
+
                 // Firefox Reader Mode engine preferences
                 user_pref("reader.parse-on-load.enabled", true);
                 user_pref("reader.color_scheme", "auto");

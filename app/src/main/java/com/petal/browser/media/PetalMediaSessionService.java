@@ -49,6 +49,21 @@ public class PetalMediaSessionService extends Service {
     public static final String ACTION_SKIP_BACKWARD = "com.petal.browser.media.ACTION_SKIP_BACKWARD";
     public static final String ACTION_SPEED_TOGGLE = "com.petal.browser.media.ACTION_SPEED_TOGGLE";
     public static final String ACTION_MUTE_TOGGLE = "com.petal.browser.media.ACTION_MUTE_TOGGLE";
+    public static final String EXTRA_TARGET_ACTIVITY = "extra_target_activity";
+
+    private static PetalMediaSessionService activeInstance = null;
+    private static MediaControlListener globalControlListener = null;
+
+    public static PetalMediaSessionService getActiveInstance() {
+        return activeInstance;
+    }
+
+    public static void setGlobalControlListener(MediaControlListener listener) {
+        globalControlListener = listener;
+        if (activeInstance != null) {
+            activeInstance.setMediaControlListener(listener);
+        }
+    }
 
     private final IBinder binder = new LocalBinder();
     private MediaSessionCompat mediaSession;
@@ -61,6 +76,8 @@ public class PetalMediaSessionService extends Service {
     private long currentDuration = 0;
     private float currentSpeed = 1.0f;
     private boolean isMuted = false;
+    private Bitmap currentArtwork = null;
+    private Class<?> targetActivityClass = BrowserActivity.class;
 
     private boolean isNoisyReceiverRegistered = false;
     private final BroadcastReceiver noisyAudioReceiver = new BroadcastReceiver() {
@@ -113,6 +130,10 @@ public class PetalMediaSessionService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        activeInstance = this;
+        if (globalControlListener != null) {
+            this.controlListener = globalControlListener;
+        }
         createNotificationChannel();
 
         mediaSession = new MediaSessionCompat(this, TAG);
@@ -125,6 +146,19 @@ public class PetalMediaSessionService extends Service {
         mediaCallback = new MediaSessionCallback();
         mediaSession.setCallback(mediaCallback);
         mediaSession.setActive(true);
+    }
+
+    @Override
+    public void onDestroy() {
+        if (activeInstance == this) {
+            activeInstance = null;
+        }
+        unregisterNoisyReceiver();
+        if (mediaSession != null) {
+            mediaSession.setActive(false);
+            mediaSession.release();
+        }
+        super.onDestroy();
     }
 
     @Nullable
@@ -185,11 +219,25 @@ public class PetalMediaSessionService extends Service {
     }
 
     public void updateMediaState(String title, String artist, boolean playing, long positionMs, long durationMs) {
-        this.currentTitle = title != null && !title.isEmpty() ? title : "Web Media";
-        this.currentArtist = artist != null && !artist.isEmpty() ? artist : "Petal Browser";
+        updateMediaState(title, artist, playing, positionMs, durationMs, null, BrowserActivity.class);
+    }
+
+    public void updateMediaState(String title, String artist, boolean playing, long positionMs, long durationMs, Bitmap artwork) {
+        updateMediaState(title, artist, playing, positionMs, durationMs, artwork, BrowserActivity.class);
+    }
+
+    public void updateMediaState(String title, String artist, boolean playing, long positionMs, long durationMs, Bitmap artwork, Class<?> targetActivity) {
+        this.currentTitle = title != null && !title.isEmpty() ? title : "Media";
+        this.currentArtist = artist != null && !artist.isEmpty() ? artist : "Petal";
         this.isPlaying = playing;
         this.currentPosition = positionMs;
         this.currentDuration = durationMs;
+        if (artwork != null) {
+            this.currentArtwork = artwork;
+        }
+        if (targetActivity != null) {
+            this.targetActivityClass = targetActivity;
+        }
 
         updateMetadata();
         updatePlaybackState(playing, positionMs);
@@ -201,7 +249,7 @@ public class PetalMediaSessionService extends Service {
                 playing,
                 positionMs,
                 durationMs,
-                null
+                this.currentArtwork
         );
 
         Notification notification = buildNotification();
@@ -217,18 +265,44 @@ public class PetalMediaSessionService extends Service {
         }
     }
 
+    public static void startMediaSession(Context context, String title, String artist, boolean playing, long positionMs, long durationMs, Bitmap artwork, Class<?> targetActivity, MediaControlListener listener) {
+        setGlobalControlListener(listener);
+        if (activeInstance != null) {
+            activeInstance.updateMediaState(title, artist, playing, positionMs, durationMs, artwork, targetActivity);
+        } else {
+            Intent intent = new Intent(context, PetalMediaSessionService.class);
+            if (playing && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        }
+    }
+
+    public static void stopMediaSession(Context context) {
+        PetalLiveActionBus.dismissMedia();
+        if (activeInstance != null) {
+            activeInstance.stopForeground(true);
+            activeInstance.stopSelf();
+        }
+    }
+
     private void updateMetadata() {
         MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist)
                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, currentDuration);
 
-        try {
-            Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.icon_media_play);
-            if (icon != null) {
-                builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, icon);
-            }
-        } catch (Exception ignored) {}
+        if (currentArtwork != null) {
+            builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArtwork);
+        } else {
+            try {
+                Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.icon_media_play);
+                if (icon != null) {
+                    builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, icon);
+                }
+            } catch (Exception ignored) {}
+        }
 
         mediaSession.setMetadata(builder.build());
     }
@@ -251,8 +325,8 @@ public class PetalMediaSessionService extends Service {
     }
 
     private Notification buildNotification() {
-        Intent openIntent = new Intent(this, BrowserActivity.class);
-        openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        Intent openIntent = new Intent(this, targetActivityClass);
+        openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         PendingIntent openPendingIntent = PendingIntent.getActivity(
                 this, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -281,6 +355,10 @@ public class PetalMediaSessionService extends Service {
                 .setStyle(style)
                 .setOngoing(isPlaying);
 
+        if (currentArtwork != null) {
+            builder.setLargeIcon(currentArtwork);
+        }
+
         PendingIntent speedIntent = PendingIntent.getService(
                 this, 4, new Intent(this, PetalMediaSessionService.class).setAction(ACTION_SPEED_TOGGLE), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -294,13 +372,13 @@ public class PetalMediaSessionService extends Service {
                 this, 7, new Intent(this, PetalMediaSessionService.class).setAction(ACTION_SKIP_FORWARD), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        builder.addAction(R.drawable.icon_close, "-10s", skipBackIntent);
+        builder.addAction(R.drawable.icon_pip_replay, "-10s", skipBackIntent);
         if (isPlaying) {
-            builder.addAction(R.drawable.icon_close, "Pause", pauseIntent);
+            builder.addAction(R.drawable.icon_pause, "Pause", pauseIntent);
         } else {
-            builder.addAction(R.drawable.icon_media_play, "Play", playIntent);
+            builder.addAction(R.drawable.icon_play, "Play", playIntent);
         }
-        builder.addAction(R.drawable.icon_close, "+10s", skipForwardIntent);
+        builder.addAction(R.drawable.icon_pip_forward, "+10s", skipForwardIntent);
         builder.addAction(R.drawable.icon_close, String.format(java.util.Locale.US, "%.2fx", currentSpeed), speedIntent);
         builder.addAction(R.drawable.icon_close, isMuted ? "Unmute" : "Mute", muteIntent);
 

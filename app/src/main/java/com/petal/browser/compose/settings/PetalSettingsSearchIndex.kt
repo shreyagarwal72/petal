@@ -461,6 +461,20 @@ object PetalSettingsSearchIndex {
             keywords = listOf("validate media", "head request", "filter streams", "playable")
         ),
         SettingsSearchItem(
+            id = "media_background_play",
+            title = "Background Media Playback",
+            subtitle = "Keep audio playing when switching apps, minimizing Petal, or locking the device",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("background play", "background audio", "background music", "lock screen", "audio play")
+        ),
+        SettingsSearchItem(
+            id = "media_auto_pip",
+            title = "Picture-in-Picture (Auto-PiP)",
+            subtitle = "Automatically pop video or music into a floating mini-player when returning home",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("pip", "picture in picture", "floating video", "mini player", "auto pip")
+        ),
+        SettingsSearchItem(
             id = "media_cutout_island",
             title = "Expressive Cutout Island & Live Updates",
             subtitle = "Display media playback, downloads, and file viewer status around hardware camera cutout with AMOLED protection",

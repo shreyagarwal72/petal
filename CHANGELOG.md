@@ -1,3 +1,36 @@
+### v4.5.7 — 🎬 Unified Background Audio Engine, Picture-in-Picture (PiP) for Audio & Video, and Web Player Bridge Fixes
+
+> *"Milestone v4.5.7 brings seamless, uninterrupted background playback and universal Picture-in-Picture (PiP) support across all Petal media players — including standalone audio/music, standalone video, and in-page/fullscreen website HTML5 media."*
+
+#### 🎧 Standalone Music Background Playback & PiP Mini-Player
+- **Foreground Media Session Service Integration**:
+  - Bound `PetalAudioPlayerScreen` to `PetalMediaSessionService` foreground service with high-resolution artwork, lock screen controls, and system notification transport controls (`MediaStyle`).
+  - Added `AUDIO_BECOMING_NOISY` broadcast receiver to automatically pause audio when headphones or Bluetooth disconnect.
+  - Ensured ExoPlayer instances remain alive during background execution, lockscreen, or tab switching when `sp_background_play` is enabled.
+- **Dedicated Picture-in-Picture (PiP) Mini-Player for Music**:
+  - Added PiP action button in `PetalPlayerHeaderTopBar`.
+  - Built a custom compact 1:1 square PiP player view featuring ambient artwork gradients, continuous scalloped cookie artwork, and marquee track metadata.
+  - Wired remote PiP transport actions (Play/Pause toggle, Skip -10s, Skip +10s) directly to the playback pipeline.
+
+#### 🎥 Video Player PiP & Android 12+ Gesture Auto-Enter
+- **Unified PiP Controller (`PetalPipController.kt`)**:
+  - Implemented boundary-clamped aspect ratios (`[0.418f..2.39f]`), source rect letterbox/pillarbox calculation, and Android 12+ (API 31+) gesture Auto-Enter (`setAutoEnterEnabled(true)`).
+  - Cleaned PiP window transition by hiding all overlay controls, seekbars, and top navigation when in PiP mode.
+  - Synchronized remote action taps inside the PiP window to seek and play/pause ExoPlayer dynamically.
+
+#### 🌐 Web Player Media Bridge & Background Stability
+- **Uninterrupted Web Playback (`PetalGeckoRuntime.kt`, `PetalGeckoView.kt`)**:
+  - Enabled `media.suspend-bkgnd-video.enabled = false` in Gecko profile preferences to eliminate artificial background suspensions on YouTube, Vimeo, and HTML5 players.
+  - Injected `MEDIA_JS_INJECTION` hooks on page load to intercept document visibility transitions and keep media playback active when minimized.
+  - Connected `PetalGeckoView`'s media bridge automatically so media state and PiP parameters synchronize with `BrowserActivity` on all tabs.
+
+#### ⚙️ Media Settings & Search Indexing
+- **Media Engine Controls (`MediaSettingsScreen.kt`)**:
+  - Added toggle for *Background Media Playback* (`sp_background_play`) and *Picture-in-Picture (Auto-PiP)* (`sp_auto_pip`).
+  - Indexed both settings in `PetalSettingsSearchIndex.kt` under `SettingsCategory.MEDIA`.
+
+---
+
 ### v4.5.6 — 🏝️ Expressive Cutout Island Overhaul, AMOLED Burn-In Shield & Unified Services
 
 > *"Milestone v4.5.6 elevates Petal Browser's dynamic cutout island with hardware-calibrated placement, adaptive Light/Dark & OLED theming, automatic zero-configuration AMOLED burn-in protection, full native service integration across Petal Media & File Viewers, and relocation of Island settings to Media Settings."*
