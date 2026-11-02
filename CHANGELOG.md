@@ -1,23 +1,40 @@
-### v4.6.0 — 🦊 Send Tab to Device via Mozilla Sync & Reader Mode Overhaul with Read Aloud TTS
+### v4.6.0 — ✨ More Expressive
 
-> *"Milestone v4.6.0 introduces flagship Firefox ecosystem features to Petal Browser: bi-directional Send Tab to Device across desktop, laptop, tablet, and mobile Firefox instances, alongside a comprehensive overhaul of Reader Mode with clean DOM extraction and floating Read Aloud text-to-speech controls."*
+> *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and Firefox cloud power: introducing a completely overhauled and extended Mix Palettes engine with live reactivity and one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
 
-#### 📲 Send Tab to Device (`PetalSendToDeviceSheet.kt`, `PetalMozillaSyncManager.kt`)
-- **Bi-Directional Cloud Commands via Mozilla Sync**:
-  - Implemented `sendTabToDevice` dispatching `open-uri` command payloads directly into Mozilla Sync's encrypted `commands` collection.
-  - Added real-time incoming command polling during sync: detects tabs sent to this device, delivers high-priority heads-up notifications with instant "Open Tab" actions, and deletes processed cloud commands.
-- **PixelPlayer-Grade Send to Device Sheet**:
-  - Modal bottom sheet displaying all paired devices (Mac, Windows, Linux, Android, iOS) with hardware icons and active tab count.
-  - "Send to All Devices" bulk broadcast option.
-  - Wired into Page Actions, Long-Press Blank Area menu, and Browser Activity.
+#### 🎨 Mix Palettes Overhaul & Instant Live Reactivity (`PetalPaletteMix.kt`, `PetalPaletteMixUi.kt`)
+- **Resolved Live Toggle Reactivity**:
+  - Eliminated the "Silent Auto" bug where turning on Mix Palettes with default settings appeared non-functional. Toggling Mix Palettes ON now automatically pairs harmonious vibrant defaults (`defaultVibrantSources()`), instantly and visibly updating the theme live.
+  - Bound the toggle switch to immediate Compose `mutableStateOf` with synchronous `PetalThemePrefs.bump()` for zero-latency, real-time theme updates across the entire application.
+- **Curated One-Tap Harmony Recipes**:
+  - Added quick harmony recipe chips: **Sunset Glow** (Peach & Amber), **Ocean Forest** (Forest & Mint), **Cyberpunk** (Cyan & Pink), **Cherry Blossom** (Sakura & Sky), and **Autumn Amber** (Amber & Wine).
+- **Interactive Component Sandbox (`PetalMixComponentPreview`)**:
+  - Integrated a live component preview strip inside Appearance Settings demonstrating how Primary Action Buttons, Secondary Container Chips, and Tertiary Highlight Pills look together before leaving settings.
+- **Redesigned Role Cards & Source Dialog**:
+  - Expandable Spring animation (`expandVertically` + `fadeIn`) revealing Secondary Accent and Tertiary Highlight cards with live rendered color swatches and an all-inclusive source picker.
+
+#### 📲 Send Tab to Device via Mozilla Sync (`PetalSendToDeviceSheet.kt`, `PetalMozillaSyncManager.kt`)
+- **Bi-Directional Cloud Commands**:
+  - Dispatches `open-uri` command payloads directly into Mozilla Sync's encrypted `commands` collection.
+  - Background polling during sync cycles detects incoming tabs from desktop, laptop, and mobile Firefox instances, surfacing high-priority notifications with instant "Open Tab" actions.
+- **Paired Hardware Device Picker**:
+  - Material 3 Expressive bottom sheet displaying connected devices (Mac, Windows, Linux, Android, iOS) with hardware icons and active tab counts, plus a *"Send to All Devices"* broadcast option.
 
 #### 📖 Reader Mode Overhaul & Read Aloud TTS Fixes (`PetalReaderBridge.kt`, `PetalReaderScreen.kt`)
 - **Robust In-Page Readability Extraction**:
-  - Fixed JavaScript evaluation syntax errors in `PetalGeckoView.kt` and `PetalTabViewController.kt` (`evaluateJavascript`), ensuring scripts execute cleanly without parsing collisions.
-  - Injected an inline self-contained article extractor that filters noisy elements (`<script>`, `<style>`, `<nav>`, `<aside>`), extracts clean `<p>` paragraph streams, bylines, and lead imagery, with reliable timeouts and fallbacks to native Firefox `about:reader`.
+  - Fixed JavaScript evaluation syntax errors in `evaluateJavascript` across `PetalGeckoView.kt` and `PetalTabViewController.kt`.
+  - Injected an inline self-contained article extractor that filters noisy elements (`<script>`, `<style>`, `<nav>`, `<aside>`) and extracts clean paragraph streams, bylines, and lead imagery, with reliable timeouts and fallbacks to native Firefox `about:reader`.
 - **Text-to-Speech (TTS) Floating Player Integration**:
   - Anchored `PetalFloatingTtsPlayerBar` dynamically at the bottom of the reader screen with sentence-by-sentence reading, speed modulation (0.75x–2.0x), skip $\pm 10\text{s}$, and pause/resume.
-  - Improved paragraph flow and layout typography across Light, Sepia, Dark, and AMOLED reader themes.
+
+---
+
+#### 🌟 The "More Expressive" Milestone Summary (v4.5.1 → v4.6.0)
+The **v4.6.0** milestone consolidates extensive architectural and UX advancements across the v4.5.x lineage:
+- **🏝️ Dynamic Cutout Island & Android 16 Live Actions (v4.5.1, v4.5.6)**: Hardware-calibrated camera hole-punch alignment, dynamic notch flare, Live Updates for file downloads/media, and zero-configuration AMOLED phosphor burn-in shield.
+- **💎 Pure Liquid Glass & Morph Physics (v4.5.2, v4.5.3, v4.5.4)**: Real-time translucent wallpaper refraction across minimized address bars, APK installers, contextual sheets, and profile lock authentication.
+- **🎵 PixelPlayer-Grade Media Architecture (v4.5.5, v4.5.7, v4.5.8)**: Scallop cookie artwork physics, synchronized millisecond karaoke lyrics (`[mm:ss.xxx]`) with drag hold-off, interactive queue with animated 3-bar equalizer waves, pitch-preserving speed selector, sleep timer, universal PiP mini-players, and uninterrupted background media services.
+- **⚡ Enterprise CI/CD Caching & Build Engine (v4.5.9)**: `setup-gradle@v4` build-cache persistence, Android intermediate cache caching, and 6GB parallel worker pipeline.
 
 ---
 

@@ -129,3 +129,92 @@ private fun SourceRow(label: String, sub: String, selected: Boolean, swatch: @Co
         if (selected) Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
     }
 }
+
+/** Interactive sandbox displaying real-time live mixed colors on buttons, chips, and pills. */
+@Composable
+fun PetalMixComponentPreview(modifier: Modifier = Modifier) {
+    val cs = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = cs.surfaceContainerHigh,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "Live Component Sandbox",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = cs.primary
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Primary Action Button
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = cs.primary,
+                    modifier = Modifier.weight(1f).height(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("Primary", color = cs.onPrimary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
+                // Secondary Container Chip
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = cs.secondaryContainer,
+                    modifier = Modifier.weight(1f).height(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("Secondary", color = cs.onSecondaryContainer, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
+                // Tertiary Highlight Pill
+                Surface(
+                    shape = CircleShape,
+                    color = cs.tertiary,
+                    modifier = Modifier.weight(1f).height(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("Tertiary", color = cs.onTertiary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** One-tap curated harmonious recipes strip. */
+@Composable
+fun PetalMixRecipesStrip(
+    activeSecondary: Source,
+    activeTertiary: Source,
+    onSelectRecipe: (PetalPaletteMix.Recipe) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            "Harmonious Quick Recipes",
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PetalPaletteMix.RECIPES.forEach { recipe ->
+                val isSelected = activeSecondary == recipe.secondary && activeTertiary == recipe.tertiary
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onSelectRecipe(recipe) },
+                    label = { Text(recipe.name) },
+                    leadingIcon = if (isSelected) {
+                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    } else null,
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+        }
+    }
+}

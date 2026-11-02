@@ -39,6 +39,30 @@ object PetalPaletteMix {
         data object Custom : Source
     }
 
+    data class Recipe(
+        val id: String,
+        val name: String,
+        val subtitle: String,
+        val secondary: Source,
+        val tertiary: Source
+    )
+
+    val RECIPES = listOf(
+        Recipe("sunset", "Sunset Glow", "Peach & Amber", Source.Preset("peach"), Source.Preset("amber")),
+        Recipe("ocean_forest", "Ocean Forest", "Forest & Mint", Source.Preset("forest"), Source.Preset("mint")),
+        Recipe("cyberpunk", "Cyberpunk", "Cyan & Pink", Source.Preset("cyan"), Source.Preset("pink")),
+        Recipe("sakura_sky", "Cherry Blossom", "Sakura & Sky", Source.Preset("sakura"), Source.Preset("sky")),
+        Recipe("autumn_clay", "Autumn Amber", "Amber & Wine", Source.Preset("amber"), Source.Preset("wine"))
+    )
+
+    fun defaultVibrantSources(): Pair<Source, Source> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Pair(Source.Dynamic, Source.Preset("forest"))
+        } else {
+            Pair(Source.Preset("ocean"), Source.Preset("peach"))
+        }
+    }
+
     data class Config(
         val enabled: Boolean = false,
         val secondary: Source = Source.Auto,

@@ -201,4 +201,9 @@ object PetalThemePrefs {
         PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
             .registerOnSharedPreferenceChangeListener { _, key -> if (key == null || key in keys) revision++ }
     }
+
+    /** Synchronously bumps theme revision to trigger instantaneous recomposition in Compose. */
+    fun bump() {
+        revision++
+    }
 }

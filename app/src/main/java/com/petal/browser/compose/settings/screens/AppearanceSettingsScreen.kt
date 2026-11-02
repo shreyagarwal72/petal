@@ -760,6 +760,125 @@ fun AppearanceSettingsScreenContent(
                         }
                     }
 
+                    // ── Mix palettes: primary / secondary / tertiary from different sources at once ──
+                    val mixConfig = remember(customRevision) { com.petal.browser.ui.theme.PetalPaletteMix.config(context) }
+                    val mixCustom = remember(customRevision) { com.petal.browser.ui.theme.PetalCustomPalette.spec(context) }
+                    var mixEnabled by remember { mutableStateOf(mixConfig.enabled) }
+                    var mixDialogRole by remember { mutableStateOf(0) } // 1 secondary, 2 tertiary
+
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = "Mix palettes",
+                        subtitle = "Harmonize distinct color sources for secondary and tertiary while keeping your primary",
+                        icon = Icons.Rounded.ColorLens,
+                        checked = mixEnabled,
+                        position = if (mixEnabled) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                        onCheckedChange = { on ->
+                            mixEnabled = on
+                            reveal.reveal {
+                                val editor = themeSp.edit().putBoolean(com.petal.browser.ui.theme.PetalPaletteMix.KEY_ENABLED, on)
+                                if (on && mixConfig.secondary == com.petal.browser.ui.theme.PetalPaletteMix.Source.Auto && mixConfig.tertiary == com.petal.browser.ui.theme.PetalPaletteMix.Source.Auto) {
+                                    val (defaultSec, defaultTer) = com.petal.browser.ui.theme.PetalPaletteMix.defaultVibrantSources()
+                                    editor.putString(com.petal.browser.ui.theme.PetalPaletteMix.KEY_SECONDARY, com.petal.browser.ui.theme.PetalPaletteMix.encode(defaultSec))
+                                    editor.putString(com.petal.browser.ui.theme.PetalPaletteMix.KEY_TERTIARY, com.petal.browser.ui.theme.PetalPaletteMix.encode(defaultTer))
+                                }
+                                editor.apply()
+                                com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                                PetalSearchWidgetProvider.updateAllWidgets(context)
+                            }
+                        }
+                    )
+
+                    AnimatedVisibility(
+                        visible = mixEnabled,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Three live color swatches
+                            com.petal.browser.ui.components.PetalMixPreviewStrip()
+
+                            // One-tap harmonious recipes strip
+                            com.petal.browser.ui.components.PetalMixRecipesStrip(
+                                activeSecondary = mixConfig.secondary,
+                                activeTertiary = mixConfig.tertiary,
+                                onSelectRecipe = { recipe ->
+                                    reveal.reveal {
+                                        themeSp.edit()
+                                            .putString(com.petal.browser.ui.theme.PetalPaletteMix.KEY_SECONDARY, com.petal.browser.ui.theme.PetalPaletteMix.encode(recipe.secondary))
+                                            .putString(com.petal.browser.ui.theme.PetalPaletteMix.KEY_TERTIARY, com.petal.browser.ui.theme.PetalPaletteMix.encode(recipe.tertiary))
+                                            .apply()
+                                        com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                                        PetalSearchWidgetProvider.updateAllWidgets(context)
+                                    }
+                                }
+                            )
+
+                            // Interactive Component Preview Sandbox
+                            com.petal.browser.ui.components.PetalMixComponentPreview()
+
+                            // Secondary & Tertiary Source Rows
+                            com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                                val role = index + 1
+                                val src = if (role == 1) mixConfig.secondary else mixConfig.tertiary
+                                val customArgb = if (role == 1) mixCustom.secondary else mixCustom.tertiary
+                                com.petal.browser.ui.containment.PetalGroupListRow(
+                                    position = position,
+                                    onClick = { mixDialogRole = role },
+                                    leading = {
+                                        com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                            icon = if (role == 1) Icons.Rounded.Palette else Icons.Rounded.Colorize,
+                                            variant = if (src != com.petal.browser.ui.theme.PetalPaletteMix.Source.Auto)
+                                                com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+                                            else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                        )
+                                    },
+                                    content = {
+                                        Text(
+                                            if (role == 1) "Secondary accent" else "Tertiary highlight",
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            com.petal.browser.ui.components.mixSourceLabel(src, customArgb),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    if (mixDialogRole != 0) {
+                        val role = mixDialogRole
+                        val key = if (role == 1) com.petal.browser.ui.theme.PetalPaletteMix.KEY_SECONDARY else com.petal.browser.ui.theme.PetalPaletteMix.KEY_TERTIARY
+                        com.petal.browser.ui.components.PetalMixSourceDialog(
+                            title = if (role == 1) "Secondary colour from" else "Tertiary colour from",
+                            current = if (role == 1) mixConfig.secondary else mixConfig.tertiary,
+                            customArgb = if (role == 1) mixCustom.secondary else mixCustom.tertiary,
+                            onSelect = { src ->
+                                mixDialogRole = 0
+                                reveal.reveal {
+                                    themeSp.edit().putString(key, com.petal.browser.ui.theme.PetalPaletteMix.encode(src)).apply()
+                                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                                    PetalSearchWidgetProvider.updateAllWidgets(context)
+                                }
+                            },
+                            onPickCustom = {
+                                mixDialogRole = 0
+                                themeSp.edit().putString(key, com.petal.browser.ui.theme.PetalPaletteMix.encode(com.petal.browser.ui.theme.PetalPaletteMix.Source.Custom)).apply()
+                                com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                                pickerSlot = role
+                            },
+                            onDismiss = { mixDialogRole = 0 }
+                        )
+                    }
+
                     if (isCustomPalette) {
                         val spec = remember(customRevision) { com.petal.browser.ui.theme.PetalCustomPalette.spec(context) }
                         com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
