@@ -1178,7 +1178,9 @@ class PetalTabViewController private constructor(
         try {
             val session = observedSession
             if (session != null) {
-                session.loadUrl("javascript:(function(){ try { return ($script); } catch(e) { return 'ERROR: ' + e; } })()")
+                val cleanScript = script.trim().removeSuffix(";")
+                val js = "javascript:(function(){ try { $cleanScript; } catch(e) { console.error('JS eval error:', e); } })()"
+                session.loadUrl(js)
                 callback?.invoke(null)
             } else {
                 callback?.invoke(null)

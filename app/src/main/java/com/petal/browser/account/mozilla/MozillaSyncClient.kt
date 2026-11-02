@@ -260,6 +260,38 @@ class MozillaSyncClient(
         }
     }
 
+    /**
+     * Deletes a single BSO record from a collection.
+     */
+    fun deleteCollectionRecord(
+        apiEndpoint: String,
+        collection: String,
+        authToken: String,
+        recordId: String
+    ): SyncClientResult<Boolean> {
+        return try {
+            val url = URL(apiEndpoint.trimEnd('/') + "/storage/$collection/$recordId")
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "DELETE"
+                setRequestProperty("Authorization", resolveAuthHeader("DELETE", url, authToken))
+                setRequestProperty("Accept", "application/json")
+                connectTimeout = 8_000
+                readTimeout = 8_000
+            }
+
+            val statusCode = conn.responseCode
+            val backoff = extractBackoff(conn)
+            if (statusCode in 200..299 || statusCode == 404) {
+                SyncClientResult.Success(true, backoffSeconds = backoff)
+            } else {
+                val errorMsg = extractErrorStream(conn) ?: "HTTP $statusCode"
+                SyncClientResult.Failure(statusCode, errorMsg, backoffSeconds = backoff)
+            }
+        } catch (e: Exception) {
+            SyncClientResult.Failure(-1, e.message ?: "Failed to delete record $recordId")
+        }
+    }
+
     private fun extractBackoff(conn: HttpURLConnection): Long {
         val backoffHeader = conn.getHeaderField("X-Backoff") ?: conn.getHeaderField("Retry-After")
         return backoffHeader?.toLongOrNull() ?: 0L

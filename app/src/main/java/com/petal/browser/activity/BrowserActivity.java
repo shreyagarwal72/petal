@@ -5700,6 +5700,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public void showSendToDevice() {
+        if (currentAlbumController == null) return;
+        String url = currentAlbumController.getUrl();
+        String title = currentAlbumController.getTitle();
+        if (url == null || url.trim().isEmpty() || url.startsWith("about:") || url.startsWith("petal://")) {
+            return;
+        }
+        com.petal.browser.account.mozilla.PetalSendToDeviceBridge.showSendToDevice(
+            this,
+            url,
+            title != null ? title : url,
+            () -> {
+                showAccountSyncScreen();
+                return kotlin.Unit.INSTANCE;
+            }
+        );
+    }
+
     public void showAccountSyncScreen() {
         try {
             captureBrowserMainPreview();

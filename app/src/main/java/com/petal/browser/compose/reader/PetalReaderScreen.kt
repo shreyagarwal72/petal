@@ -242,25 +242,42 @@ fun PetalReaderScreen(
                             Spacer(Modifier.height(20.dp))
 
                             // Article Body Paragraphs
-                            val paragraphs = article.contentText.split("\n\n+".toRegex())
+                            val paragraphs = article.contentText
+                                .replace("\r\n", "\n")
+                                .split(Regex("\n{2,}|\n(?=[A-Z0-9\"'“‘])"))
+                                .map { it.trim() }
+                                .filter { it.isNotBlank() }
+
                             paragraphs.forEach { paragraph ->
-                                val clean = paragraph.trim()
-                                if (clean.isNotBlank()) {
-                                    Text(
-                                        text = clean,
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            fontFamily = selectedFont.family,
-                                            fontSize = fontSizeSp.sp,
-                                            lineHeight = (fontSizeSp * lineHeightMult).sp
-                                        ),
-                                        color = contentTextColor
-                                    )
-                                    Spacer(Modifier.height(16.dp))
-                                }
+                                Text(
+                                    text = paragraph,
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = selectedFont.family,
+                                        fontSize = fontSizeSp.sp,
+                                        lineHeight = (fontSizeSp * lineHeightMult).sp
+                                    ),
+                                    color = contentTextColor
+                                )
+                                Spacer(Modifier.height(16.dp))
                             }
 
-                            Spacer(Modifier.height(48.dp))
+                            Spacer(Modifier.height(96.dp))
                         }
+                    }
+
+                    // Floating TTS Text-to-Speech Player Bar
+                    AnimatedVisibility(
+                        visible = isTtsActive,
+                        enter = slideInVertically { it } + fadeIn(),
+                        exit = slideOutVertically { it } + fadeOut(),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
+                    ) {
+                        PetalFloatingTtsPlayerBar(
+                            engine = ttsEngine,
+                            onClose = { isTtsActive = false }
+                        )
                     }
 
                     // Appearance Customization Modal Sheet

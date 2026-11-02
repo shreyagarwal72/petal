@@ -232,9 +232,10 @@ window.addEventListener('message', (event) => {
     if (!data || !data.type) return;
 
     if (data.type === 'PETAL_EXTRACT_ARTICLE') {
+        var articlePayload = data.article || extractArticleData();
         chrome.runtime.sendMessage({
             type: 'READER_ARTICLE_DATA',
-            article: extractArticleData(),
+            article: articlePayload,
             pageUrl: window.location.href
         }).catch(() => {});
     } else if (data.type === 'REQUEST_HANDOFF') {

@@ -1,3 +1,26 @@
+### v4.6.0 — 🦊 Send Tab to Device via Mozilla Sync & Reader Mode Overhaul with Read Aloud TTS
+
+> *"Milestone v4.6.0 introduces flagship Firefox ecosystem features to Petal Browser: bi-directional Send Tab to Device across desktop, laptop, tablet, and mobile Firefox instances, alongside a comprehensive overhaul of Reader Mode with clean DOM extraction and floating Read Aloud text-to-speech controls."*
+
+#### 📲 Send Tab to Device (`PetalSendToDeviceSheet.kt`, `PetalMozillaSyncManager.kt`)
+- **Bi-Directional Cloud Commands via Mozilla Sync**:
+  - Implemented `sendTabToDevice` dispatching `open-uri` command payloads directly into Mozilla Sync's encrypted `commands` collection.
+  - Added real-time incoming command polling during sync: detects tabs sent to this device, delivers high-priority heads-up notifications with instant "Open Tab" actions, and deletes processed cloud commands.
+- **PixelPlayer-Grade Send to Device Sheet**:
+  - Modal bottom sheet displaying all paired devices (Mac, Windows, Linux, Android, iOS) with hardware icons and active tab count.
+  - "Send to All Devices" bulk broadcast option.
+  - Wired into Page Actions, Long-Press Blank Area menu, and Browser Activity.
+
+#### 📖 Reader Mode Overhaul & Read Aloud TTS Fixes (`PetalReaderBridge.kt`, `PetalReaderScreen.kt`)
+- **Robust In-Page Readability Extraction**:
+  - Fixed JavaScript evaluation syntax errors in `PetalGeckoView.kt` and `PetalTabViewController.kt` (`evaluateJavascript`), ensuring scripts execute cleanly without parsing collisions.
+  - Injected an inline self-contained article extractor that filters noisy elements (`<script>`, `<style>`, `<nav>`, `<aside>`), extracts clean `<p>` paragraph streams, bylines, and lead imagery, with reliable timeouts and fallbacks to native Firefox `about:reader`.
+- **Text-to-Speech (TTS) Floating Player Integration**:
+  - Anchored `PetalFloatingTtsPlayerBar` dynamically at the bottom of the reader screen with sentence-by-sentence reading, speed modulation (0.75x–2.0x), skip $\pm 10\text{s}$, and pause/resume.
+  - Improved paragraph flow and layout typography across Light, Sepia, Dark, and AMOLED reader themes.
+
+---
+
 ### v4.5.9 — ⚡ CI/CD Build Resolution, High-Speed Gradle & GitHub Cache Infrastructure
 
 > *"Milestone v4.5.9 resolves all Android build and compilation blockers across Media Settings, Image/PDF Viewers, and Audio Color Palettes, and introduces enterprise-grade GitHub Actions caching with `setup-gradle@v4` and Android build-cache persistence to drastically cut build durations."*

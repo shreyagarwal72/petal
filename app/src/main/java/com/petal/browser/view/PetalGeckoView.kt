@@ -3013,11 +3013,13 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     /**
-     * Evaluates JavaScript on the current GeckoSession.
+     * Evaluates JavaScript on the current GeckoSession safely.
      */
     fun evaluateJavascript(script: String, callback: ((String?) -> Unit)? = null) {
         try {
-            session.loadUri("javascript:(function(){ try { return ($script); } catch(e) { return 'ERROR: ' + e; } })()")
+            val cleanScript = script.trim().removeSuffix(";")
+            val js = "javascript:(function(){ try { $cleanScript; } catch(e) { console.error('JS eval error:', e); } })()"
+            session.loadUri(js)
             callback?.invoke(null)
         } catch (t: Throwable) {
             callback?.invoke("ERROR: ${t.message}")

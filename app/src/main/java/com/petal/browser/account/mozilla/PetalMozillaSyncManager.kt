@@ -244,6 +244,9 @@ class PetalMozillaSyncManager private constructor(
                             records = listOf(deviceBso)
                         )
                     }
+
+                    // Poll and process incoming Send Tab to Device commands
+                    pollIncomingCommands(context, apiEndpoint, authToken)
                 }
 
                 val finalTabs = if (openTabs.isNotEmpty()) openTabs else {
@@ -418,6 +421,154 @@ class PetalMozillaSyncManager private constructor(
         if (backoffSeconds > 0) {
             backoffUntilMillis = System.currentTimeMillis() + (backoffSeconds * 1000L)
         }
+    }
+
+    /**
+     * Sends a tab URL and title to another paired Firefox / Petal device via the Mozilla Sync commands collection.
+     */
+    fun sendTabToDevice(
+        context: Context,
+        targetDeviceId: String?,
+        targetDeviceName: String,
+        url: String,
+        title: String,
+        onComplete: (Boolean) -> Unit = {}
+    ) {
+        scope.launch {
+            val token = accountManager.getAccessToken()
+            if (token.isNullOrBlank()) {
+                onMain { onComplete(false) }
+                return@launch
+            }
+
+            val credsResult = syncClient.fetchStorageCredentials(token)
+            if (credsResult !is SyncClientResult.Success) {
+                onMain { onComplete(false) }
+                return@launch
+            }
+
+            val apiEndpoint = credsResult.data.apiEndpoint
+            val authToken = token
+            val senderDeviceName = accountManager.getDeviceName()
+
+            val commandId = java.util.UUID.randomUUID().toString().replace("-", "").take(12)
+            val payload = org.json.JSONObject().apply {
+                put("id", commandId)
+                put("command", "open-uri")
+                put("target", targetDeviceId ?: "*")
+                put("senderName", senderDeviceName)
+                put("targetName", targetDeviceName)
+                val argsArr = org.json.JSONArray().apply {
+                    put(url)
+                    put(title)
+                }
+                put("args", argsArr)
+                put("timestamp", System.currentTimeMillis())
+            }
+
+            val bso = BsoRecord(
+                id = commandId,
+                modified = System.currentTimeMillis() / 1000.0,
+                payload = payload.toString()
+            )
+
+            val postResult = syncClient.postCollectionRecords(
+                apiEndpoint = apiEndpoint,
+                collection = "commands",
+                authToken = authToken,
+                records = listOf(bso)
+            )
+
+            val success = postResult is SyncClientResult.Success
+            onMain { onComplete(success) }
+        }
+    }
+
+    /**
+     * Polls the Mozilla Sync commands collection for incoming open-uri directives sent to this device.
+     */
+    suspend fun pollIncomingCommands(context: Context, apiEndpoint: String, authToken: String) {
+        try {
+            val fetchResult = syncClient.fetchCollectionRecords(
+                apiEndpoint = apiEndpoint,
+                collection = "commands",
+                authToken = authToken
+            )
+            if (fetchResult !is SyncClientResult.Success) return
+
+            val localDeviceId = accountManager.getUserId() ?: ""
+            for (bso in fetchResult.data) {
+                try {
+                    val json = org.json.JSONObject(bso.payload)
+                    val command = json.optString("command")
+                    val target = json.optString("target")
+                    val senderName = json.optString("senderName", "Firefox Device")
+                    val argsArr = json.optJSONArray("args")
+
+                    if (command == "open-uri" && argsArr != null && argsArr.length() > 0) {
+                        if (target == "*" || target.isBlank() || target == localDeviceId) {
+                            val url = argsArr.optString(0)
+                            val title = if (argsArr.length() > 1) argsArr.optString(1) else url
+
+                            if (url.isNotBlank()) {
+                                dispatchReceivedTabNotification(context, senderName, title, url)
+                                syncClient.deleteCollectionRecord(apiEndpoint, "commands", authToken, bso.id)
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun dispatchReceivedTabNotification(context: Context, senderName: String, title: String, url: String) {
+        try {
+            val intent = android.content.Intent(context, com.petal.browser.activity.BrowserActivity::class.java).apply {
+                action = android.content.Intent.ACTION_VIEW
+                data = android.net.Uri.parse(url)
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+
+            val pendingIntent = android.app.PendingIntent.getActivity(
+                context,
+                url.hashCode(),
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notifManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager
+                ?: return
+
+            val channelId = "petal_synced_tabs"
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                val channel = android.app.NotificationChannel(
+                    channelId,
+                    "Synced Tabs",
+                    android.app.NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Tabs sent from your connected Firefox and Petal devices"
+                    enableVibration(true)
+                }
+                notifManager.createNotificationChannel(channel)
+            }
+
+            val notif = androidx.core.app.NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(com.petal.browser.R.drawable.ic_launcher_foreground)
+                .setContentTitle("Tab received from $senderName")
+                .setContentText(title.ifBlank { url })
+                .setSubText("Firefox Sync")
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .addAction(
+                    android.R.drawable.ic_menu_view,
+                    "Open Tab",
+                    pendingIntent
+                )
+                .build()
+
+            notifManager.notify(url.hashCode(), notif)
+        } catch (_: Exception) {}
     }
 
     companion object {

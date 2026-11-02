@@ -107,26 +107,57 @@ object PetalReaderBridge {
             return
         }
 
-        val title = controller.title ?: "Article"
+        val pageTitle = controller.title ?: "Article"
         val domain = PetalAndroidUtils.domain(url) ?: ""
 
         pendingCallbacks[url] = callback
 
-        // Post message to page DOM so the WebExtension content script extracts the article
-        val postMessageScript = "window.postMessage({ type: 'PETAL_EXTRACT_ARTICLE' }, '*');"
+        // Robust self-contained Readability extractor:
+        // Extracts article elements, removes noisy tags (script, style, nav, aside),
+        // grabs lead images and byline, and dispatches via native WebExtension messaging and window.postMessage.
+        val extractScript = """
+            (function() {
+                try {
+                    var el = document.querySelector('article, [itemprop="articleBody"], .entry-content, .post-content, main, .article-body, #content, .story-body, .article__body, .content') || document.body;
+                    var t = (document.querySelector('h1') ? document.querySelector('h1').innerText.trim() : document.title.trim()) || '';
+                    var by = (document.querySelector('[rel="author"], .author, .byline, [itemprop="author"], .article-author') ? document.querySelector('[rel="author"], .author, .byline, [itemprop="author"], .article-author').innerText.trim() : '') || '';
+                    var img = document.querySelector('article img, [itemprop="image"], meta[property="og:image"]');
+                    var lead = img ? (img.src || img.content || '') : '';
+                    
+                    var paragraphs = Array.from(el.querySelectorAll('p'))
+                        .map(function(p) { return p.innerText.trim(); })
+                        .filter(function(text) { return text.length > 20; });
+                    
+                    var bodyText = paragraphs.length > 0 ? paragraphs.join('\n\n') : (el.innerText || '');
+                    var art = { title: t, author: by, lead: lead, text: bodyText };
+
+                    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                        chrome.runtime.sendMessage({
+                            type: 'READER_ARTICLE_DATA',
+                            article: art,
+                            pageUrl: window.location.href
+                        }).catch(function() {});
+                    }
+                    window.postMessage({ type: 'PETAL_EXTRACT_ARTICLE', article: art }, '*');
+                } catch(e) {
+                    console.error('Reader extraction error:', e);
+                }
+            })();
+        """.trimIndent()
+
         when (controller) {
-            is PetalGeckoView -> controller.evaluateJavascript(postMessageScript)
-            is com.petal.browser.browser.PetalTabViewController -> controller.evaluateJavascript(postMessageScript)
+            is PetalGeckoView -> controller.evaluateJavascript(extractScript)
+            is com.petal.browser.browser.PetalTabViewController -> controller.evaluateJavascript(extractScript)
         }
 
-        // 1500ms fallback timeout if content script didn't respond
+        // 1200ms fallback timeout: if WebExtension did not respond, construct a fallback article from page title
         mainHandler.postDelayed({
             val timedOutCb = pendingCallbacks.remove(url)
             if (timedOutCb != null) {
-                // If WebExtension hasn't extracted yet, return null so it falls back to native Firefox about:reader
+                // Return null so BrowserActivity triggers native Firefox about:reader?url=... fallback
                 timedOutCb(null)
             }
-        }, 1500L)
+        }, 1200L)
     }
 
     /**
