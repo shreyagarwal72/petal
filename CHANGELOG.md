@@ -43,6 +43,20 @@
 - **Liquid Glass Custom Tabs**:
   - Redesigned custom tab overlay with fluid morphing, bottom toolbar matching, and Liquid Glass chrome.
 
+#### 📑 Complete Bookmarks Feature Restoration & Overhaul
+- **Resolved Empty State Rendering Bug**:
+  - Fixed condition nesting bug in `PetalBookmarksScreen.kt` where `LazyColumn` was unintentionally placed inside the `isEmpty()` branch, restoring the bookmark list when saved items exist.
+- **Bookmark Actions & Options Sheet**:
+  - Added Material 3 Expressive action bottom sheet to each bookmark row providing "Open in New Tab", "Edit Bookmark", "Toggle Reading List", "Copy Link", and "Share Link".
+- **Bookmark Editing & Reading List Toggling**:
+  - Implemented dedicated Edit Bookmark dialog allowing in-place title and URL modifications, alongside instant toggling between standard bookmarks and Reading List.
+- **Reliable Star / Bookmark Toggle**:
+  - Re-architected bookmark saving and toggling across `BrowserActivity` and overflow menus (`toggleBookmark()`), cleanly toggling saved/removed status and eliminating false "Error: Failed to save" toasts on existing entries.
+- **Netscape HTML & JSON Bookmarks Import/Export**:
+  - Built native `PetalBookmarkHtmlExporter` and file picker integration in the bookmarks overflow menu for bidirectional Netscape HTML bookmarks export and import with Chrome, Firefox, and Safari.
+- **Omnibox Bookmark Search**:
+  - Added `SuggestionSource.BOOKMARK` to `PetalOmniboxPage.kt`, allowing live matching of saved bookmarks directly from address bar input.
+
 ---
 
 ### v4.5.3 — 💎 Live Liquid Glass in Minimized Address Bar & Expressive Morph Animations

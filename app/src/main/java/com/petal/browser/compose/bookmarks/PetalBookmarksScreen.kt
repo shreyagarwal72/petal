@@ -9,9 +9,15 @@
 package com.petal.browser.compose.bookmarks
 import com.petal.browser.ui.components.scrollMotionBlur
 
+import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.petal.browser.account.mozilla.FirefoxDataImportManager
+import com.petal.browser.view.PetalToast
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -138,6 +144,28 @@ fun PetalBookmarksScreen(
     var showClearConfirm by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showReadingListOnly by remember { mutableStateOf(false) }
+    var editingRecord by remember { mutableStateOf<Record?>(null) }
+    var optionsRecord by remember { mutableStateOf<Record?>(null) }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            coroutineScope.launch {
+                try {
+                    val count = FirefoxDataImportManager.importFile(context, uri)
+                    if (count > 0) {
+                        PetalToast.show(context, "Imported $count bookmarks")
+                        reloadBookmarks()
+                    } else {
+                        PetalToast.show(context, "No bookmarks found in selected file")
+                    }
+                } catch (e: Exception) {
+                    PetalToast.show(context, "Import failed: ${e.message}")
+                }
+            }
+        }
+    }
 
     // Load bookmarks from SQLite database asynchronously
     var rawBookmarks by remember { mutableStateOf<List<Record>?>(null) }
@@ -238,6 +266,45 @@ fun PetalBookmarksScreen(
                                     onDismissRequest = { overflowMenuExpanded = false }
                                 ) {
                                     com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                        text = "Import Bookmarks (HTML / JSON)",
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Rounded.CloudDownload,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        },
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            importLauncher.launch(arrayOf("text/html", "application/json", "*/*"))
+                                        }
+                                    )
+                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                        text = "Export Bookmarks (HTML)",
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Rounded.CloudUpload,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.secondary
+                                            )
+                                        },
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            val list = rawBookmarks ?: emptyList()
+                                            if (list.isEmpty()) {
+                                                PetalToast.show(context, "No bookmarks to export")
+                                            } else {
+                                                val file = PetalBookmarkHtmlExporter.exportToDownloads(context, list)
+                                                if (file != null) {
+                                                    PetalToast.show(context, "Exported ${list.size} bookmarks to Downloads")
+                                                } else {
+                                                    PetalToast.show(context, "Failed to export bookmarks")
+                                                }
+                                            }
+                                        }
+                                    )
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
                                         text = stringResource(R.string.ui_clear_all_bookmarks),
                                         leadingIcon = {
                                             Icon(
@@ -336,9 +403,14 @@ fun PetalBookmarksScreen(
                 } else if (filteredBookmarks.isEmpty()) {
                     com.petal.browser.ui.components.EmptyStateBlob(
                         illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.BOOKMARKS,
-                        title = if (searchQuery.isEmpty()) "No Bookmarks Saved Yet" else "No Matching Bookmarks",
-                        description = if (searchQuery.isEmpty()) "Tap the star icon on web pages to save them" else "Try searching with a different URL or keyword"
+                        title = if (searchQuery.isEmpty()) {
+                            if (showReadingListOnly) "Reading List Empty" else "No Bookmarks Saved Yet"
+                        } else "No Matching Bookmarks",
+                        description = if (searchQuery.isEmpty()) {
+                            if (showReadingListOnly) "Add web pages to your reading list to read them later" else "Tap the star icon on web pages to save them"
+                        } else "Try searching with a different URL or keyword"
                     )
+                } else {
                     val bookmarksListState = androidx.compose.foundation.lazy.rememberLazyListState()
                     LazyColumn(
                         state = bookmarksListState,
@@ -348,13 +420,13 @@ fun PetalBookmarksScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        itemsIndexed(filteredBookmarks, key = { _, record -> "${record.url}_${record.time}" }) { index, record ->
+                        itemsIndexed(filteredBookmarks, key = { _, record -> "${record.url}_${record.iconColor}" }) { index, record ->
                             val faviconUrl = remember(record.url) { getFaviconUrl(record.url) }
                             var isFaviconError by remember(record.url) { mutableStateOf(false) }
                             PetalGroupListRow(
                                 position = petalGroupPositionFor(index, filteredBookmarks.size),
                                 onClick = { onOpenUrl(record.url) },
-                                modifier = Modifier.animateItem().entrance(index = index, playKey = "${record.url}_${record.time}"),
+                                modifier = Modifier.animateItem().entrance(index = index, playKey = "${record.url}_${record.iconColor}"),
                                 leading = {
                                     Box(
                                         Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer),
@@ -388,39 +460,283 @@ fun PetalBookmarksScreen(
                                 },
                                 trailing = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        IconButton(onClick = {
-                                    val deletedRecord = record
-                                    try {
-                                        val action = HistoryBookmarkRepository(context)
-                                        action.open(true)
-                                        action.deleteURL(deletedRecord.url, HistoryBookmarkContract.TABLE_BOOKMARK)
-                                        action.close()
-                                    } catch (_: Exception) {}
-                                    reloadBookmarks()
-
-                                    coroutineScope.launch {
-                                        val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "Bookmark"
-                                        val result = snackbarHostState.showSnackbar(
-                                            message = "Deleted \"$displayTitle\"",
-                                            actionLabel = "Undo",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            try {
-                                                val action = HistoryBookmarkRepository(context)
-                                                action.open(true)
-                                                action.addBookmark(deletedRecord)
-                                                action.close()
-                                            } catch (_: Exception) {}
-                                            reloadBookmarks()
+                                        IconButton(
+                                            onClick = { optionsRecord = record },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.MoreVert,
+                                                contentDescription = "Bookmark Options",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(18.dp)
+                                            )
                                         }
-                                    }
-                                        }) { Icon(Icons.Rounded.Close, "Delete Bookmark", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
-                                        Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        IconButton(
+                                            onClick = {
+                                                val deletedRecord = record
+                                                try {
+                                                    val action = HistoryBookmarkRepository(context)
+                                                    action.open(true)
+                                                    action.deleteURL(deletedRecord.url, HistoryBookmarkContract.TABLE_BOOKMARK)
+                                                    action.close()
+                                                } catch (_: Exception) {}
+                                                reloadBookmarks()
+
+                                                coroutineScope.launch {
+                                                    val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "Bookmark"
+                                                    val result = snackbarHostState.showSnackbar(
+                                                        message = "Deleted \"$displayTitle\"",
+                                                        actionLabel = "Undo",
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                    if (result == SnackbarResult.ActionPerformed) {
+                                                        try {
+                                                            val action = HistoryBookmarkRepository(context)
+                                                            action.open(true)
+                                                            action.addBookmark(deletedRecord)
+                                                            action.close()
+                                                        } catch (_: Exception) {}
+                                                        reloadBookmarks()
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Close,
+                                                contentDescription = "Delete Bookmark",
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
                                 }
                             )
                         }
+                    }
+                }
+            }
+        }
+
+        // Bookmark Item Options Sheet (Material 3 Expressive)
+        optionsRecord?.let { rec ->
+            com.petal.browser.ui.containment.PetalSheet(
+                onDismissRequest = { optionsRecord = null }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    if (rec.isReadingList) Icons.Rounded.AutoStories else Icons.Rounded.Bookmark,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = rec.title?.ifBlank { rec.url } ?: "Bookmark",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = rec.url ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 5) { index, position ->
+                        when (index) {
+                            0 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.OpenInNew,
+                                    title = "Open in New Tab",
+                                    position = position,
+                                    onClick = {
+                                        val url = rec.url ?: ""
+                                        optionsRecord = null
+                                        (context as? com.petal.browser.activity.BrowserActivity)?.let { act ->
+                                            act.addAlbum(rec.title ?: url, url, true)
+                                            onDismiss()
+                                        } ?: onOpenUrl(url)
+                                    }
+                                )
+                            }
+                            1 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.Edit,
+                                    title = "Edit Bookmark",
+                                    position = position,
+                                    onClick = {
+                                        editingRecord = rec
+                                        optionsRecord = null
+                                    }
+                                )
+                            }
+                            2 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = if (rec.isReadingList) Icons.Rounded.BookmarkRemove else Icons.Rounded.AutoStories,
+                                    title = if (rec.isReadingList) "Remove from Reading List" else "Add to Reading List",
+                                    position = position,
+                                    onClick = {
+                                        optionsRecord = null
+                                        val newReadingState = !rec.isReadingList
+                                        try {
+                                            val action = HistoryBookmarkRepository(context)
+                                            action.open(true)
+                                            action.setBookmarkReadingList(rec.url, newReadingState)
+                                            action.close()
+                                            PetalToast.show(context, if (newReadingState) "Added to Reading List" else "Removed from Reading List")
+                                        } catch (_: Exception) {}
+                                        reloadBookmarks()
+                                    }
+                                )
+                            }
+                            3 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.ContentCopy,
+                                    title = "Copy Link",
+                                    position = position,
+                                    onClick = {
+                                        optionsRecord = null
+                                        try {
+                                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("URL", rec.url))
+                                            PetalToast.show(context, "Link copied to clipboard")
+                                        } catch (_: Exception) {}
+                                    }
+                                )
+                            }
+                            4 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.Share,
+                                    title = "Share Link",
+                                    position = position,
+                                    onClick = {
+                                        optionsRecord = null
+                                        try {
+                                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(Intent.EXTRA_TEXT, rec.url)
+                                                putExtra(Intent.EXTRA_SUBJECT, rec.title)
+                                            }
+                                            context.startActivity(Intent.createChooser(intent, "Share Bookmark"))
+                                        } catch (_: Exception) {}
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+        }
+
+        // Dialog: Edit Bookmark (Material 3 Expressive)
+        editingRecord?.let { target ->
+            var editTitle by remember(target) { mutableStateOf(target.title ?: "") }
+            var editUrl by remember(target) { mutableStateOf(target.url ?: "") }
+
+            PetalExpressiveDialog(onDismissRequest = { editingRecord = null }) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.Edit,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    text = "Edit Bookmark",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = editTitle,
+                        onValueChange = { editTitle = it },
+                        label = { Text(stringResource(R.string.ui_title)) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editUrl,
+                        onValueChange = { editUrl = it },
+                        label = { Text(stringResource(R.string.ui_url)) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = { editingRecord = null },
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
+                        Text(stringResource(R.string.ui_cancel))
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            val origUrl = target.url ?: ""
+                            val newUrl = editUrl.trim()
+                            val newTitle = editTitle.trim().ifBlank { newUrl }
+                            editingRecord = null
+                            if (newUrl.isNotBlank() && origUrl.isNotBlank()) {
+                                try {
+                                    val action = HistoryBookmarkRepository(context)
+                                    action.open(true)
+                                    action.updateBookmark(origUrl, newTitle, newUrl)
+                                    action.close()
+                                    PetalToast.show(context, "Bookmark updated")
+                                } catch (_: Exception) {}
+                                reloadBookmarks()
+                            }
+                        },
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
+                        Text(stringResource(R.string.ui_save))
                     }
                 }
             }

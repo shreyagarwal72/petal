@@ -76,7 +76,7 @@ object BrowserNavigationDelegate {
 
                 override fun onToggleBookmark() {
                     if (url.isNotEmpty()) {
-                        activity.saveBookmark(title, url)
+                        activity.toggleBookmark(title, url)
                     }
                 }
 

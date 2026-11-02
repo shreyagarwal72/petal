@@ -53,9 +53,13 @@ public class HistoryBookmarkRepository {
         ContentValues values = new ContentValues();
         values.put(HistoryBookmarkContract.COLUMN_TITLE, record.getTitle().trim());
         values.put(HistoryBookmarkContract.COLUMN_URL, record.getURL().trim());
-        values.put(HistoryBookmarkContract.COLUMN_TIME, record.getIconColor());
+        values.put(HistoryBookmarkContract.COLUMN_TIME, record.getIconColor() > 0 ? record.getIconColor() : System.currentTimeMillis());
         values.put(HistoryBookmarkContract.COLUMN_IS_READING_LIST, record.isReadingList() ? 1 : 0);
-        database.insert(HistoryBookmarkContract.TABLE_BOOKMARK, null, values);
+        if (checkBookmark(record.getURL())) {
+            database.update(HistoryBookmarkContract.TABLE_BOOKMARK, values, HistoryBookmarkContract.COLUMN_URL + "=?", new String[]{record.getURL().trim()});
+        } else {
+            database.insert(HistoryBookmarkContract.TABLE_BOOKMARK, null, values);
+        }
         if (context != null) {
             try {
                 com.petal.browser.account.progress.PetalProgressStore.INSTANCE.bump(
@@ -66,6 +70,31 @@ public class HistoryBookmarkRepository {
                 );
             } catch (Throwable ignored) {}
         }
+    }
+
+    public boolean updateBookmark(String oldUrl, String newTitle, String newUrl) {
+        if (oldUrl == null || oldUrl.trim().isEmpty() || newUrl == null || newUrl.trim().isEmpty()) {
+            return false;
+        }
+        ContentValues values = new ContentValues();
+        values.put(HistoryBookmarkContract.COLUMN_TITLE, newTitle != null && !newTitle.trim().isEmpty() ? newTitle.trim() : newUrl.trim());
+        values.put(HistoryBookmarkContract.COLUMN_URL, newUrl.trim());
+        int updated = database.update(HistoryBookmarkContract.TABLE_BOOKMARK, values, HistoryBookmarkContract.COLUMN_URL + "=?", new String[]{oldUrl.trim()});
+        return updated > 0;
+    }
+
+    public boolean setBookmarkReadingList(String url, boolean isReadingList) {
+        if (url == null || url.trim().isEmpty()) {
+            return false;
+        }
+        ContentValues values = new ContentValues();
+        values.put(HistoryBookmarkContract.COLUMN_IS_READING_LIST, isReadingList ? 1 : 0);
+        int updated = database.update(HistoryBookmarkContract.TABLE_BOOKMARK, values, HistoryBookmarkContract.COLUMN_URL + "=?", new String[]{url.trim()});
+        return updated > 0;
+    }
+
+    public void deleteBookmark(String url) {
+        deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK);
     }
 
     public List<Record> listBookmark(Context context, boolean filter, long filterBy) {

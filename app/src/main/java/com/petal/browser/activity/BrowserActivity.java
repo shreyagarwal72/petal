@@ -6555,13 +6555,33 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
         action.open(true);
-        String message = context.getString(R.string.app_error) + ": " + context.getString(R.string.app_error_save);
-        if (action.checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK))
-            PetalToast.show(this, message);
-        else {
-            action.addBookmark(new Record(title, url, 0, 0));
-            PetalToast.show(this, R.string.app_done); }
+        if (action.checkBookmark(url)) {
+            action.updateBookmark(url, title != null && !title.isEmpty() ? title : url, url);
+            PetalToast.show(this, "Bookmark updated");
+        } else {
+            action.addBookmark(new Record(title != null && !title.isEmpty() ? title : url, url, 0, 0));
+            PetalToast.show(this, R.string.app_done);
+        }
         action.close();
+    }
+
+    public boolean toggleBookmark(String title, String url) {
+        if (url == null || url.trim().isEmpty() || isHomePage(url)) {
+            PetalToast.show(this, "Home page cannot be bookmarked");
+            return false;
+        }
+        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
+        action.open(true);
+        boolean wasBookmarked = action.checkBookmark(url);
+        if (wasBookmarked) {
+            action.deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK);
+            PetalToast.show(this, "Bookmark removed");
+        } else {
+            action.addBookmark(new Record(title != null && !title.isEmpty() ? title : url, url, 0, 0));
+            PetalToast.show(this, R.string.app_done);
+        }
+        action.close();
+        return !wasBookmarked;
     }
 
     public void performGesture(String gesture, String url) {

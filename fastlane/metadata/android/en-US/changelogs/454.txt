@@ -1,6 +1,7 @@
 Petal Browser v4.5.4 Release:
 - Material 3 Expressive Theme Engine: Official M3 Expressive shapes scale (8/12/16/24/32dp) and authentic tonal elevation hierarchy across Light, Dark, and AMOLED modes.
 - Profile & App Lock Redesign: Dynamic biometric vs passcode routing, removed hardcoded passcode fallback, active profile identity badge, and liquid glass avatar.
+- Bookmarks Overhaul & Fixes: Fixed bookmarks list empty-state display bug, added bookmark editing, per-bookmark options sheet, Reading List toggles, Netscape HTML import/export, and omnibox bookmark search.
 - 100% Unified Iconography: Migrated all screens and components to Icons.Rounded while strictly preserving 100% of primary, secondary, and tertiary color palettes.
 - Position-Aware Containment: Position-aware PetalVariableSlider, hero capsules for settings columns, and upgraded zoom/font live preview surfaces.
 - Firefox Engine & Flags Harvest: Integrated native Firefox flags hub, privacy hardening, and smart download router.

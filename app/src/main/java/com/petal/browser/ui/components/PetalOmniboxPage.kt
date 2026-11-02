@@ -95,7 +95,7 @@ import java.net.URI
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
-enum class SuggestionSource { RECENT_SEARCH, BROWSING_HISTORY, SEARCH_ENGINE, SWITCH_TO_TAB }
+enum class SuggestionSource { RECENT_SEARCH, BROWSING_HISTORY, SEARCH_ENGINE, SWITCH_TO_TAB, BOOKMARK }
 
 data class OmniboxSuggestion(
     val query: String,
@@ -395,6 +395,23 @@ fun PetalOmniboxPage(
         }
     }
 
+    // Fetch local bookmarks for omnibox suggestion matches
+    val localBookmarksList = remember(isIncognito) {
+        if (isIncognito) {
+            emptyList<Record>()
+        } else {
+            try {
+                val action = HistoryBookmarkRepository(context)
+                action.open(false)
+                val list = action.listBookmark(context, false, 0)
+                action.close()
+                list
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
+    }
+
     // Debounced search query handler with robust long multi-word query support
     LaunchedEffect(queryState.text, removedSuggestions, isIncognito, currentEngineIndexStr) {
         val currentText = queryState.text.trim()
@@ -432,6 +449,21 @@ fun PetalOmniboxPage(
                 )
             }
 
+            val matchedBookmarks = localBookmarksList.filter { rec ->
+                val title = rec.title?.lowercase() ?: ""
+                val url = rec.url?.lowercase() ?: ""
+                (title.contains(lowerCurrent) || url.contains(lowerCurrent) ||
+                        queryTokens.all { title.contains(it) || url.contains(it) }) &&
+                        !removedSuggestions.contains(rec.title)
+            }.take(3).map { rec ->
+                OmniboxSuggestion(
+                    query = rec.title?.ifBlank { rec.url } ?: rec.url ?: "",
+                    isHistory = false,
+                    source = SuggestionSource.BOOKMARK,
+                    targetUrl = rec.url
+                )
+            }
+
             val savedMatches = savedQueries
                 .filter { query ->
                     val lower = query.lowercase()
@@ -461,6 +493,7 @@ fun PetalOmniboxPage(
                 SearchSuggestionsManager.fetchSuggestionsForEngine(context, currentEngineIndexStr, currentText) { engineResults ->
                     val combined = mutableListOf<OmniboxSuggestion>()
                     combined.addAll(matchedTabs)
+                    combined.addAll(matchedBookmarks)
                     combined.addAll(historyMatches)
                     engineResults.forEach { res ->
                         val trimmedRes = res.trim()
@@ -477,6 +510,7 @@ fun PetalOmniboxPage(
             } else {
                 val combined = mutableListOf<OmniboxSuggestion>()
                 combined.addAll(matchedTabs)
+                combined.addAll(matchedBookmarks)
                 if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && historyMatches.none { it.query.equals(currentText, ignoreCase = true) }) {
                     combined.add(OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
                 }
@@ -1117,18 +1151,21 @@ fun PetalOmniboxPage(
                                                     // Icon and tint per source group
                                                     val badgeIcon = when (payload.source) {
                                                         SuggestionSource.SWITCH_TO_TAB -> Icons.Rounded.Tab
+                                                        SuggestionSource.BOOKMARK -> Icons.Rounded.Bookmark
                                                         SuggestionSource.RECENT_SEARCH -> Icons.Rounded.History
                                                         SuggestionSource.BROWSING_HISTORY -> Icons.Rounded.History
                                                         SuggestionSource.SEARCH_ENGINE -> Icons.Rounded.Search
                                                     }
                                                     val badgeContainer = when (payload.source) {
                                                         SuggestionSource.SWITCH_TO_TAB -> MaterialTheme.colorScheme.tertiaryContainer
+                                                        SuggestionSource.BOOKMARK -> MaterialTheme.colorScheme.primaryContainer
                                                         SuggestionSource.RECENT_SEARCH -> MaterialTheme.colorScheme.secondaryContainer
                                                         SuggestionSource.BROWSING_HISTORY -> MaterialTheme.colorScheme.tertiaryContainer
                                                         SuggestionSource.SEARCH_ENGINE -> MaterialTheme.colorScheme.primaryContainer
                                                     }
                                                     val badgeTint = when (payload.source) {
                                                         SuggestionSource.SWITCH_TO_TAB -> MaterialTheme.colorScheme.onTertiaryContainer
+                                                        SuggestionSource.BOOKMARK -> MaterialTheme.colorScheme.onPrimaryContainer
                                                         SuggestionSource.RECENT_SEARCH -> MaterialTheme.colorScheme.onSecondaryContainer
                                                         SuggestionSource.BROWSING_HISTORY -> MaterialTheme.colorScheme.onTertiaryContainer
                                                         SuggestionSource.SEARCH_ENGINE -> MaterialTheme.colorScheme.onPrimaryContainer
@@ -1148,6 +1185,8 @@ fun PetalOmniboxPage(
                                                                     val trimmed = payload.targetUrl?.trim() ?: payload.query.trim()
                                                                     if (trimmed.isNotEmpty()) submitSearch(trimmed)
                                                                 }
+                                                            } else if (payload.source == SuggestionSource.BOOKMARK && !payload.targetUrl.isNullOrBlank()) {
+                                                                submitSearch(payload.targetUrl.trim())
                                                             } else {
                                                                 val trimmed = payload.query.trim()
                                                                 if (trimmed.isNotEmpty()) submitSearch(trimmed)
@@ -1196,6 +1235,14 @@ fun PetalOmniboxPage(
                                                                     overflow = TextOverflow.Ellipsis
                                                                 )
                                                                 if (payload.source == SuggestionSource.SWITCH_TO_TAB && !payload.targetUrl.isNullOrBlank()) {
+                                                                    Text(
+                                                                        text = smartEllipsize(payload.targetUrl, true, maxChars = 60),
+                                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                                                        color = MaterialTheme.colorScheme.primary,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis
+                                                                    )
+                                                                } else if (payload.source == SuggestionSource.BOOKMARK && !payload.targetUrl.isNullOrBlank()) {
                                                                     Text(
                                                                         text = smartEllipsize(payload.targetUrl, true, maxChars = 60),
                                                                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
