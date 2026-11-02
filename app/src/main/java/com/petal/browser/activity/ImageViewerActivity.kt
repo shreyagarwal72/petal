@@ -34,6 +34,7 @@ class ImageViewerActivity : ComponentActivity() {
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
         PetalAndroidUtils.initTheme(this)
         enableEdgeToEdge()
+        window.decorView.setBackgroundColor(android.graphics.Color.BLACK)
 
         val controller = WindowCompat.getInsetsController(window, window.decorView)
         controller.hide(WindowInsetsCompat.Type.systemBars())

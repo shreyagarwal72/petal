@@ -2,27 +2,28 @@
  * PetalImageViewerScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Built-in native image viewer for Petal Browser.
- * Material 3 Expressive — offline-first, works on all image sources:
+ * Material 3 Expressive & Liquid Glass — offline-first, works on all image sources:
  *   • Local downloaded files (Downloads page preview strip + row items)
  *   • Web/remote URLs (long-press on website images → context menu)
  *   • External share intents (ACTION_SEND and ACTION_VIEW for image MIME types)
  *
  * Features:
  *  - HorizontalPager gallery (swipe left/right between images)
- *  - Pinch-to-zoom (0.8× – 5×), pan when zoomed
+ *  - Pinch-to-zoom (0.8× – 6×), pan when zoomed with boundary clamping
  *  - Double-tap toggle zoom (1× ↔ 2.5×) with spring animation
  *  - Single-tap auto-hide/show controls (top bar + bottom bar)
  *  - Rotate 90° CW (visual only)
  *  - Share, Delete (local only, with undo), Set as Wallpaper
- *  - Image Info bottom sheet (dimensions, size, path/URL, date)
- *  - Network images loaded with Coil (already in project) — offline BitmapFactory for local
+ *  - Material 3 Expressive Image Info bottom sheet (dimensions, size, path/URL, date)
+ *  - OCR / MLKit text scanning integration
+ *  - Comic / Webtoon Continuous Vertical Scroll Mode (Soul Browser Style)
+ *  - Liquid Glass containment with isolated wallpaper capture (zero recursive crashes)
  *
  * MIT License — Copyright (c) 2026 Petal Browser
  */
 
 package com.petal.browser.compose.downloads
 
-import com.petal.browser.ui.components.petalContainerEnter
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -44,37 +45,89 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import com.petal.browser.haptics.PetalHapticEngine
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.RotateRight
-import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.AutoStories
+import androidx.compose.material.icons.rounded.BrokenImage
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Crop
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DocumentScanner
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.RotateRight
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.ViewCarousel
-import androidx.compose.material.icons.rounded.*
-import com.petal.browser.compose.image.PetalImageCropDialog
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Wallpaper
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -84,25 +137,25 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import androidx.compose.ui.platform.LocalView
-import com.petal.browser.ui.components.PetalLiquidIconButton
+import com.petal.browser.R
+import com.petal.browser.compose.image.PetalImageCropDialog
+import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.petalContainerEnter
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
-import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import com.petal.browser.ui.glass.captureGlassWallpaperLive
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.containment.PetalSheet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
+import java.util.Date
+import java.util.Locale
 
 // ─── Unified image entry — covers local files AND remote/network URLs ─────────
 
@@ -162,11 +215,11 @@ object PetalImageViewerBridge {
                     colorStyle   = colorStyle,
                     paletteId    = paletteId,
                 ) {
-                    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize().petalContainerEnter()) {
+                    Box(Modifier.fillMaxSize().petalContainerEnter()) {
                         PetalImageViewerScreen(
-                            initialIndex       = initialIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0)),
-                            entries            = entries,
-                            onBackPress        = onBackPress,
+                            initialIndex = initialIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0)),
+                            entries      = entries,
+                            onBackPress  = onBackPress,
                         )
                     }
                 }
@@ -176,10 +229,6 @@ object PetalImageViewerBridge {
 
     // ── 1. Local downloaded images (Downloads page) ────────────────────────────
 
-    /**
-     * Opens the viewer for images already downloaded to the device.
-     * Used by the Downloads page preview strip and row items.
-     */
     @JvmStatic
     fun createViewerView(
         activity: ComponentActivity,
@@ -201,13 +250,6 @@ object PetalImageViewerBridge {
 
     // ── 2. Remote / web images (website long-press) ────────────────────────────
 
-    /**
-     * Opens the viewer for a single remote image URL (e.g. from a website long-press).
-     * Uses Coil for network loading — works with any HTTP/HTTPS image.
-     *
-     * @param imageUrl   The remote image URL to display.
-     * @param pageTitle  Optional page title shown as subtitle.
-     */
     @JvmStatic
     @JvmOverloads
     fun createWebViewerView(
@@ -229,13 +271,6 @@ object PetalImageViewerBridge {
 
     // ── 3. External intent sources (ACTION_VIEW image/*, ACTION_SEND image/*) ──
 
-    /**
-     * Opens the viewer for an image delivered via an external Android intent
-     * (e.g. "Open with" from Files, Share from another app).
-     *
-     * @param contentUri  The content:// or file:// URI from the intent.
-     * @param displayName Optional display name from the resolver.
-     */
     @JvmStatic
     @JvmOverloads
     fun createExternalViewerView(
@@ -254,7 +289,6 @@ object PetalImageViewerBridge {
     }
 }
 
-
 // ─── Root Screen ─────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -264,13 +298,13 @@ fun PetalImageViewerScreen(
     entries: List<PetalViewerImageEntry>,
     onBackPress: () -> Unit = {},
 ) {
-    val pagerState   = rememberPagerState(initialPage = initialIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0))) { entries.size }
+    val pagerState = rememberPagerState(initialPage = initialIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0))) { entries.size }
     val currentEntry = entries.getOrNull(pagerState.currentPage)
 
     // Controls visibility with auto-hide
     var controlsVisible by remember { mutableStateOf(true) }
     val coroutineScope = rememberCoroutineScope()
-    val hideJob = remember { androidx.compose.runtime.mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val hideJob = remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     val scheduleHide: () -> Unit = {
         hideJob.value?.cancel()
@@ -339,65 +373,66 @@ fun PetalImageViewerScreen(
             onBack = onBackPress
         ) {
             com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
-                Scaffold(
-                    containerColor = Color.Black,
-                    contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                    snackbarHost = {
-                        com.petal.browser.ui.containment.PetalSnackbarHost(
-                            hostState = snackbarHostState,
-                            modifier = Modifier.navigationBarsPadding()
-                        )
-                    },
-                ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                ) {
+                    // ── Sibling 1: Image Gallery Viewport (Wallpaper Producer) ──
+                    // IMPORTANT: captureGlassWallpaperLive is placed ONLY on this viewport sibling,
+                    // completely avoiding recursive GraphicsLayer recording cycles with the overlay bars!
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black)
-                            .padding(innerPadding)
-                            .captureGlassWallpaperLive(imageWallpaper) { pagerState.currentPage.toLong() }
+                            .then(
+                                if (isGlass) Modifier.captureGlassWallpaperLive(imageWallpaper) { pagerState.currentPage.toLong() }
+                                else Modifier
+                            )
                     ) {
-                    // ── Gallery View (Horizontal Pager or Comic Vertical Strip) ──
-                    if (isComicMode) {
-                        LazyColumn(
-                            state = comicListState,
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(0.dp)
-                        ) {
-                            items(
-                                count = entries.size,
-                                key = { entries[it].sourceUrl }
+                        if (isComicMode) {
+                            LazyColumn(
+                                state = comicListState,
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(0.dp)
+                            ) {
+                                items(
+                                    count = entries.size,
+                                    key = { entries[it].sourceUrl }
+                                ) { page ->
+                                    val entry = entries[page]
+                                    val rotDeg = rotationMap[entry.sourceUrl] ?: 0f
+                                    ZoomableImagePage(
+                                        entry       = entry,
+                                        rotationDeg = rotDeg,
+                                        onSingleTap = toggleControls,
+                                    )
+                                }
+                            }
+                        } else {
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxSize(),
+                                key = { entries[it].sourceUrl },
                             ) { page ->
-                                val entry = entries[page]
-                                val rotDeg = rotationMap[entry.sourceUrl] ?: 0f
+                                val entry   = entries[page]
+                                val rotDeg  = rotationMap[entry.sourceUrl] ?: 0f
                                 ZoomableImagePage(
-                                    entry = entry,
+                                    entry       = entry,
                                     rotationDeg = rotDeg,
                                     onSingleTap = toggleControls,
                                 )
                             }
                         }
-                    } else {
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier.fillMaxSize(),
-                            key = { entries[it].sourceUrl },
-                        ) { page ->
-                            val entry   = entries[page]
-                            val rotDeg  = rotationMap[entry.sourceUrl] ?: 0f
-                            ZoomableImagePage(
-                                entry       = entry,
-                                rotationDeg = rotDeg,
-                                onSingleTap = toggleControls,
-                            )
-                        }
                     }
 
-                    // ── Top Bar ──────────────────────────────────────
+                    // ── Sibling 2: Top Bar (Wallpaper Consumer - Floats over viewport) ──
                     AnimatedVisibility(
                         visible = controlsVisible,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { -it },
-                        exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { -it },
+                        enter = fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()) +
+                                slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { -it },
+                        exit = fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()) +
+                                slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { -it },
                     ) {
                         ImageViewerTopBar(
                             currentIndex = pagerState.currentPage,
@@ -410,7 +445,6 @@ fun PetalImageViewerScreen(
                                 if (entry.downloadItem != null) {
                                     shareDownloadedFile(context, entry.downloadItem)
                                 } else {
-                                    // Share remote URL as text
                                     val intent = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
                                         putExtra(Intent.EXTRA_TEXT, entry.sourceUrl)
@@ -441,54 +475,20 @@ fun PetalImageViewerScreen(
                             onScanOcr = {
                                 val entry = currentEntry ?: return@ImageViewerTopBar
                                 val url = entry.downloadItem?.localUri ?: entry.sourceUrl
-                                (context as? androidx.appcompat.app.AppCompatActivity)?.let { act ->
-                                    com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(act, url)
-                                }
+                                com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(context, url)
                             }
                         )
                     }
 
-                    // ── Bottom Bar ───────────────────────────────────
-                    AnimatedVisibility(
-                        visible = controlsVisible,
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + slideInVertically(androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()) { it },
-                        exit = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()) + slideOutVertically(androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec()) { it },
-                    ) {
-                        ImageViewerBottomBar(
-                            entry        = currentEntry,
-                            isComicMode  = isComicMode,
-                            onToggleComic = {
-                                isComicMode = !isComicMode
-                                PetalHapticEngine.getInstance(context).playClick(context)
-                            },
-                            onCrop       = {
-                                showCropDialog = true
-                                PetalHapticEngine.getInstance(context).playClick(context)
-                            },
-                            onRotate     = { rotateCurrentEntry() },
-                            onDelete     = { performDeleteCurrent() },
-                            onWallpaper  = {
-                                val entry = currentEntry ?: return@ImageViewerBottomBar
-                                if (entry.downloadItem != null) {
-                                    setAsWallpaper(context, entry.downloadItem)
-                                } else {
-                                    com.petal.browser.view.PetalToast.show(context, "Download the image first to set as wallpaper")
-                                }
-                            },
-                            onInfo       = { showInfoSheet = true },
-                        )
-                    }
-
-                    // ── Page indicator dots ──────────────────────────
+                    // ── Sibling 3: Page Indicator Dots (Gallery mode only) ──
                     if (entries.size > 1 && !isComicMode) {
                         AnimatedVisibility(
                             visible = controlsVisible,
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = 100.dp),
-                            enter = fadeIn(androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()),
-                            exit  = fadeOut(androidx.compose.material3.MaterialTheme.motionScheme.fastEffectsSpec()),
+                                .padding(bottom = 96.dp),
+                            enter = fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                            exit  = fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()),
                         ) {
                             PageIndicatorDots(
                                 count   = entries.size,
@@ -496,24 +496,67 @@ fun PetalImageViewerScreen(
                             )
                         }
                     }
+
+                    // ── Sibling 4: Bottom Action Bar (Wallpaper Consumer - Floats over viewport) ──
+                    AnimatedVisibility(
+                        visible = controlsVisible,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        enter = fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()) +
+                                slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { it },
+                        exit = fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()) +
+                                slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { it },
+                    ) {
+                        ImageViewerBottomBar(
+                            entry         = currentEntry,
+                            isComicMode   = isComicMode,
+                            onToggleComic = {
+                                isComicMode = !isComicMode
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                            },
+                            onCrop        = {
+                                showCropDialog = true
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                            },
+                            onRotate      = { rotateCurrentEntry() },
+                            onDelete      = { performDeleteCurrent() },
+                            onWallpaper   = {
+                                val entry = currentEntry ?: return@ImageViewerBottomBar
+                                if (entry.downloadItem != null) {
+                                    setAsWallpaper(context, entry.downloadItem)
+                                } else {
+                                    com.petal.browser.view.PetalToast.show(context, "Download the image first to set as wallpaper")
+                                }
+                            },
+                            onInfo        = { showInfoSheet = true },
+                        )
+                    }
+
+                    // ── Sibling 5: Snackbar Host ──
+                    com.petal.browser.ui.containment.PetalSnackbarHost(
+                        hostState = snackbarHostState,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
+                            .padding(bottom = 90.dp)
+                    )
                 }
             }
         }
-    }
 
-        // ── Image Crop Dialog ────────────────────────────────
+        // ── Image Crop Dialog ──
         if (showCropDialog && currentEntry != null) {
             PetalImageCropDialog(
-                imageUri = currentEntry.downloadItem?.localUri?.let { Uri.parse(it) },
+                imageUri = currentEntry.downloadItem?.localUri?.let { Uri.parse(it) } ?: runCatching { Uri.parse(currentEntry.sourceUrl) }.getOrNull(),
                 imageUrl = currentEntry.sourceUrl,
                 onDismissRequest = { showCropDialog = false },
                 onImageSaved = { savedFile ->
                     showCropDialog = false
+                    com.petal.browser.view.PetalToast.show(context, "Image saved")
                 }
             )
         }
 
-        // ── Image Info Bottom Sheet ──────────────────────────
+        // ── Image Info Bottom Sheet ──
         if (showInfoSheet && currentEntry != null) {
             ImageInfoBottomSheet(
                 entry     = currentEntry,
@@ -522,7 +565,6 @@ fun PetalImageViewerScreen(
         }
     }
 }
-
 
 // ─── Zoomable Image Page ─────────────────────────────────────────────────────
 
@@ -542,7 +584,7 @@ private fun ZoomableImagePage(
 
     // Rotation animation
     val animatedRotation by animateFloatAsState(
-        targetValue  = rotationDeg,
+        targetValue   = rotationDeg,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "rotation",
     )
@@ -579,16 +621,15 @@ private fun ZoomableImagePage(
                 },
             )
         }
-        // Pinch-to-zoom + pan (only consume gestures when actually zoomed in, allowing HorizontalPager to swipe)
+        // Pinch-to-zoom + pan with panZoomLock = false to smoothly pass swipe events to HorizontalPager when at 1x
         .pointerInput(entry.sourceUrl) {
-            detectTransformGestures(panZoomLock = true) { _, pan, zoom, _ ->
+            detectTransformGestures(panZoomLock = false) { _, pan, zoom, _ ->
                 scope.launch {
                     val currentScale = scaleAnim.value
-                    val newScale = (currentScale * zoom).coerceIn(0.8f, 5f)
+                    val newScale = (currentScale * zoom).coerceIn(0.8f, 6f)
                     scaleAnim.snapTo(newScale)
                     val maxX = (size.width  * (newScale - 1f)) / 2f
                     val maxY = (size.height * (newScale - 1f)) / 2f
-                    // Only apply pan if zoomed in
                     if (newScale > 1.05f) {
                         offsetXAnim.snapTo((offsetXAnim.value + pan.x).coerceIn(-maxX, maxX))
                         offsetYAnim.snapTo((offsetYAnim.value + pan.y).coerceIn(-maxY, maxY))
@@ -617,7 +658,7 @@ private fun ZoomableImagePage(
 
     Box(modifier = gestureModifier, contentAlignment = Alignment.Center) {
         if (entry.isRemote) {
-            // ── Remote / network image via Coil ──────────────────────────────
+            // ── Remote / network image via Coil ──
             SubcomposeAsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(entry.sourceUrl)
@@ -632,9 +673,9 @@ private fun ZoomableImagePage(
                             com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 48.dp)
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                text  = entry.label,
-                                color = Color.White.copy(alpha = 0.5f),
-                                style = MaterialTheme.typography.bodySmall,
+                                text     = entry.label,
+                                color    = Color.White.copy(alpha = 0.5f),
+                                style    = MaterialTheme.typography.bodySmall,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.padding(horizontal = 32.dp),
@@ -661,7 +702,7 @@ private fun ZoomableImagePage(
                 },
             )
         } else {
-            // ── Local file via BitmapFactory (offline-capable) ────────────────
+            // ── Local file via BitmapFactory (offline-capable) ──
             val bitmap by produceState<Bitmap?>(initialValue = null, entry.sourceUrl) {
                 value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     runCatching {
@@ -714,8 +755,7 @@ private fun ZoomableImagePage(
     }
 }
 
-
-// ─── Top Bar ─────────────────────────────────────────────────────────────────
+// ─── Material 3 Expressive Floating Top Bar ───────────────────────────────────
 
 @Composable
 private fun ImageViewerTopBar(
@@ -731,130 +771,201 @@ private fun ImageViewerTopBar(
 ) {
     var moreMenuExpanded by remember { mutableStateOf(false) }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val barShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+    val context = LocalContext.current
+    val topShape = RoundedCornerShape(32.dp)
 
-    Surface(
-        shape = barShape,
-        color = if (isGlass) petalGroupSurfaceColor() else Color.Black.copy(alpha = 0.75f),
-        shadowElevation = 0.dp,
-        tonalElevation = 0.dp,
+    val topBarBg = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.88f)
+    val buttonBg = if (isGlass) MaterialTheme.colorScheme.surface.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f)
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (isGlass) Modifier.liquidGlassChrome(barShape, enabled = true, pressFx = false) else Modifier)
+            .padding(
+                top = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+                    .asPaddingValues().calculateTopPadding().coerceAtLeast(10.dp),
+            )
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Row(
+        Surface(
+            shape = topShape,
+            color = topBarBg,
+            shadowElevation = 8.dp,
+            tonalElevation = 2.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .shadow(8.dp, topShape, spotColor = Color.Black.copy(alpha = 0.35f))
+                .clip(topShape)
+                .then(
+                    if (isGlass) Modifier.liquidGlassChrome(topShape, enabled = true, sheenIntensity = 0.8f, pressFx = false)
+                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), topShape)
+                )
         ) {
-            // Back button
-            PetalLiquidIconButton(
-                onClick = onBack,
-                contentDescription = stringResource(R.string.ui_back),
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = null,
-                    tint = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White,
-                )
-            }
-
-            Spacer(Modifier.width(8.dp))
-
-            // Title + counter
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text      = fileName,
-                    color     = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White,
-                    style     = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    maxLines  = 1,
-                    overflow  = TextOverflow.Ellipsis,
-                )
-                if (total > 1) {
-                    Text(
-                        text  = stringResource(R.string.ui_of, currentIndex + 1, total),
-                        color = if (isGlass) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
-
-            // OCR / Scan Text
-            PetalLiquidIconButton(
-                onClick = onScanOcr,
-                contentDescription = "Scan Text",
-            ) {
-                Icon(
-                    Icons.Rounded.DocumentScanner,
-                    contentDescription = null,
-                    tint = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White
-                )
-            }
-
-            Spacer(Modifier.width(4.dp))
-
-            // Share
-            PetalLiquidIconButton(
-                onClick = onShare,
-                contentDescription = stringResource(R.string.ui_share),
-            ) {
-                Icon(
-                    Icons.Rounded.Share,
-                    contentDescription = null,
-                    tint = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White
-                )
-            }
-
-            Spacer(Modifier.width(4.dp))
-
-            // More options
-            val menuRotation by animateFloatAsState(
-                targetValue = if (moreMenuExpanded) 180f else 0f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-                label = "img_menu_rot"
-            )
-            Box {
-                PetalLiquidIconButton(
-                    onClick = { moreMenuExpanded = true },
-                    modifier = Modifier.graphicsLayer { rotationZ = menuRotation },
-                    contentDescription = stringResource(R.string.ui_more),
+                // Back Pill Button
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(buttonBg)
+                        .clickable {
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                            onBack()
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Rounded.MoreVert,
-                        contentDescription = null,
-                        tint = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = stringResource(R.string.ui_back),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
-                com.petal.browser.ui.containment.PetalPopupMenu(
-                    expanded    = moreMenuExpanded,
-                    onDismissRequest = { moreMenuExpanded = false },
+
+                Spacer(Modifier.width(8.dp))
+
+                // Title and Page Badge Row
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = "Extract Text (OCR)",
-                        leadingIcon = { Icon(Icons.Rounded.DocumentScanner, null) },
-                        onClick = { moreMenuExpanded = false; onScanOcr() },
+                    Text(
+                        text = fileName,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .basicMarquee()
                     )
-                    com.petal.browser.ui.containment.PetalMenuDivider()
-                    com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = stringResource(R.string.ui_open_in_external_app),
-                        leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) },
-                        onClick = { moreMenuExpanded = false; onOpenExternal() },
+
+                    if (total > 1) {
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                        ) {
+                            Text(
+                                text = "${currentIndex + 1} / $total",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                // Quick Actions: OCR + Share + More
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // OCR / Text Scanner
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(buttonBg)
+                            .clickable {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                onScanOcr()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.DocumentScanner,
+                            contentDescription = "Scan Text",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    // Share
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(buttonBg)
+                            .clickable {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                onShare()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Share,
+                            contentDescription = stringResource(R.string.ui_share),
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    // More Menu
+                    val menuRotation by animateFloatAsState(
+                        targetValue = if (moreMenuExpanded) 180f else 0f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                        label = "img_menu_rot"
                     )
-                    com.petal.browser.ui.containment.PetalMenuDivider()
-                    com.petal.browser.ui.containment.PetalPopupMenuItem(
-                        text = stringResource(R.string.ui_copy_url),
-                        leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) },
-                        onClick = { moreMenuExpanded = false; onCopyUrl() },
-                    )
+                    Box {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(buttonBg)
+                                .graphicsLayer { rotationZ = menuRotation }
+                                .clickable {
+                                    PetalHapticEngine.getInstance(context).playClick(context)
+                                    moreMenuExpanded = true
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = stringResource(R.string.ui_more),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        com.petal.browser.ui.containment.PetalPopupMenu(
+                            expanded = moreMenuExpanded,
+                            onDismissRequest = { moreMenuExpanded = false },
+                        ) {
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                text = "Extract Text (OCR)",
+                                leadingIcon = { Icon(Icons.Rounded.DocumentScanner, null) },
+                                onClick = { moreMenuExpanded = false; onScanOcr() },
+                            )
+                            com.petal.browser.ui.containment.PetalMenuDivider()
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                text = stringResource(R.string.ui_open_in_external_app),
+                                leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) },
+                                onClick = { moreMenuExpanded = false; onOpenExternal() },
+                            )
+                            com.petal.browser.ui.containment.PetalMenuDivider()
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                text = stringResource(R.string.ui_copy_url),
+                                leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) },
+                                onClick = { moreMenuExpanded = false; onCopyUrl() },
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-// ─── Bottom Bar ──────────────────────────────────────────────────────────────
+// ─── Material 3 Expressive Floating Bottom Action Bar ─────────────────────────
 
 @Composable
 private fun ImageViewerBottomBar(
@@ -869,132 +980,141 @@ private fun ImageViewerBottomBar(
 ) {
     val isLocal = entry?.downloadItem != null
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val bottomShape = RoundedCornerShape(32.dp)
+    val bottomShape = RoundedCornerShape(36.dp)
     val bottomClearance = WindowInsets.navigationBars.asPaddingValues()
         .calculateBottomPadding().coerceAtLeast(16.dp)
+
+    val bottomBarBg = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.90f)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = bottomClearance)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(bottom = bottomClearance + 6.dp)
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         Surface(
             shape = bottomShape,
-            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp,
-            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-            ),
-            modifier = Modifier.then(if (isGlass) Modifier.liquidGlassChrome(bottomShape, enabled = true, pressFx = false) else Modifier),
+            color = bottomBarBg,
+            tonalElevation = 2.dp,
+            shadowElevation = 8.dp,
+            modifier = Modifier
+                .shadow(8.dp, bottomShape, spotColor = Color.Black.copy(alpha = 0.35f))
+                .clip(bottomShape)
+                .then(
+                    if (isGlass) Modifier.liquidGlassChrome(bottomShape, enabled = true, sheenIntensity = 0.8f, pressFx = false)
+                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), bottomShape)
+                ),
         ) {
+            // Horizontal scroll ensures zero clipping or overflowing on any screen width or orientation
             Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Comic Mode Toggle (Soul Browser Style)
-                ViewerActionButton(
-                    icon        = if (isComicMode) Icons.Rounded.ViewCarousel else Icons.Rounded.AutoStories,
-                    label       = if (isComicMode) "Gallery" else "Comic",
-                    tint        = if (isComicMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    containerColor = if (isComicMode) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    onClick     = onToggleComic,
+                // 1. Comic Mode Toggle (Soul Browser Style)
+                ExpressivePillActionChip(
+                    icon = if (isComicMode) Icons.Rounded.ViewCarousel else Icons.Rounded.AutoStories,
+                    label = if (isComicMode) "Gallery" else "Comic",
+                    isActive = isComicMode,
+                    onClick = onToggleComic,
                 )
 
-                // Crop & Edit
-                ViewerActionButton(
-                    icon        = Icons.Rounded.Crop,
-                    label       = "Crop",
-                    tint        = MaterialTheme.colorScheme.onSurface,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    onClick     = onCrop,
+                // 2. Crop & Edit
+                ExpressivePillActionChip(
+                    icon = Icons.Rounded.Crop,
+                    label = "Crop",
+                    onClick = onCrop,
                 )
 
-                // Rotate
-                ViewerActionButton(
-                    icon        = Icons.Rounded.RotateRight,
-                    label       = stringResource(R.string.ui_rotate),
-                    tint        = MaterialTheme.colorScheme.onSurface,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    onClick     = onRotate,
+                // 3. Rotate 90°
+                ExpressivePillActionChip(
+                    icon = Icons.Rounded.RotateRight,
+                    label = stringResource(R.string.ui_rotate),
+                    onClick = onRotate,
                 )
 
-                // Delete — only shown for local downloaded files
+                // 4. Wallpaper
+                ExpressivePillActionChip(
+                    icon = Icons.Rounded.Wallpaper,
+                    label = stringResource(R.string.ui_wallpaper),
+                    onClick = onWallpaper,
+                )
+
+                // 5. Details / Info
+                ExpressivePillActionChip(
+                    icon = Icons.Rounded.Info,
+                    label = stringResource(R.string.ui_info),
+                    onClick = onInfo,
+                )
+
+                // 6. Delete (Local downloaded file only)
                 if (isLocal) {
-                    ViewerActionButton(
-                        icon    = Icons.Rounded.Delete,
-                        label   = stringResource(R.string.ui_delete),
-                        tint    = MaterialTheme.colorScheme.error,
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    ExpressivePillActionChip(
+                        icon = Icons.Rounded.Delete,
+                        label = stringResource(R.string.ui_delete),
+                        isDestructive = true,
                         onClick = onDelete,
                     )
                 }
-
-                // Set as wallpaper
-                ViewerActionButton(
-                    icon        = Icons.Rounded.Wallpaper,
-                    label       = stringResource(R.string.ui_wallpaper),
-                    tint        = MaterialTheme.colorScheme.onSurface,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    onClick     = onWallpaper,
-                )
-
-                // Info
-                ViewerActionButton(
-                    icon        = Icons.Rounded.Info,
-                    label       = stringResource(R.string.ui_info),
-                    tint        = MaterialTheme.colorScheme.onSurface,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    onClick     = onInfo,
-                )
             }
         }
     }
 }
 
 @Composable
-private fun ViewerActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun ExpressivePillActionChip(
+    icon: ImageVector,
     label: String,
-    tint: Color = MaterialTheme.colorScheme.onSurface,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    isActive: Boolean = false,
+    isDestructive: Boolean = false,
     onClick: () -> Unit,
 ) {
-    val hapticClick = com.petal.browser.haptics.rememberHapticOnClick(onClick)
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+    val context = LocalContext.current
+    val shape = RoundedCornerShape(22.dp)
+
+    val containerColor = when {
+        isActive -> MaterialTheme.colorScheme.primaryContainer
+        isDestructive -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
+    }
+
+    val contentColor = when {
+        isActive -> MaterialTheme.colorScheme.onPrimaryContainer
+        isDestructive -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
+    Box(
+        modifier = Modifier
+            .height(44.dp)
+            .clip(shape)
+            .background(containerColor)
+            .clickable {
+                PetalHapticEngine.getInstance(context).playClick(context)
+                onClick()
+            }
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center
     ) {
-        FilledTonalIconButton(
-            onClick = hapticClick,
-            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                containerColor = if (isGlass) petalGroupSurfaceColor() else containerColor,
-                contentColor = tint,
-            ),
-            modifier = Modifier
-                .size(44.dp)
-                .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, pressFx = true) else Modifier),
-            shape = CircleShape,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = tint,
-                modifier = Modifier.size(22.dp),
+                tint = contentColor,
+                modifier = Modifier.size(19.dp)
+            )
+            Text(
+                text = label,
+                color = contentColor,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
             )
         }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text  = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium, fontSize = 11.sp),
-        )
     }
 }
 
@@ -1006,18 +1126,18 @@ private fun PageIndicatorDots(count: Int, current: Int) {
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(50))
+            .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(50))
             .padding(horizontal = 10.dp, vertical = 6.dp),
     ) {
         repeat(count.coerceAtMost(8)) { index ->
             val isActive = index == current
             val size by animateFloatAsState(
-                targetValue  = if (isActive) 8f else 5f,
+                targetValue   = if (isActive) 8f else 5f,
                 animationSpec = spring(stiffness = Spring.StiffnessMedium),
                 label = "dotSize",
             )
             val alpha by animateFloatAsState(
-                targetValue  = if (isActive) 1f else 0.45f,
+                targetValue   = if (isActive) 1f else 0.45f,
                 animationSpec = tween(180),
                 label = "dotAlpha",
             )
@@ -1031,7 +1151,7 @@ private fun PageIndicatorDots(count: Int, current: Int) {
     }
 }
 
-// ─── Image Info Bottom Sheet ──────────────────────────────────────────────────
+// ─── Material 3 Expressive Image Info Bottom Sheet ────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1040,13 +1160,14 @@ private fun ImageInfoBottomSheet(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    // Resolve file info for local entries only
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+
     val fileInfo by produceState<Triple<String, String, String>?>(initialValue = null, entry.sourceUrl) {
         value = if (entry.isRemote) null else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
                 val rawUri = Uri.parse(entry.sourceUrl)
                 val path: String? = when (rawUri.scheme) {
-                    "content" -> null // dimensions not available without decode
+                    "content" -> null
                     "file", null -> rawUri.path ?: entry.sourceUrl.removePrefix("file://")
                     else -> rawUri.path
                 }
@@ -1059,7 +1180,6 @@ private fun ImageInfoBottomSheet(
                     bmp?.recycle()
                     Triple(size, date, dims)
                 } else {
-                    // content:// URI — get size only
                     val fd = runCatching { context.contentResolver.openFileDescriptor(rawUri, "r") }.getOrNull()
                     val size = if (fd != null) { val s = formatBytes(fd.statSize); fd.close(); s } else "—"
                     Triple(size, "—", "—")
@@ -1068,71 +1188,86 @@ private fun ImageInfoBottomSheet(
         }
     }
 
-    PetalSheet(
-        onDismissRequest  = onDismiss,
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.then(
+            if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), enabled = true)
+            else Modifier
+        )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 36.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(
-                text      = stringResource(R.string.ui_image_info),
-                style     = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                modifier  = Modifier.padding(bottom = 16.dp),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = stringResource(R.string.ui_image_info),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
 
-            InfoRow(label = stringResource(R.string.ui_name), value = entry.label)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            InfoCardRow(label = stringResource(R.string.ui_name), value = entry.label)
 
             if (entry.isRemote) {
-                InfoRow(label = stringResource(R.string.ui_source_url), value = entry.sourceUrl)
-                InfoRow(label = stringResource(R.string.ui_type), value = "Remote image")
+                InfoCardRow(label = stringResource(R.string.ui_type), value = "Remote Network Image")
+                InfoCardRow(label = stringResource(R.string.ui_source_url), value = entry.sourceUrl)
             } else {
-                // Local file details
                 if (fileInfo != null) {
-                    if (fileInfo!!.third != "—") InfoRow(label = stringResource(R.string.ui_dimensions), value = fileInfo!!.third)
-                    InfoRow(label = stringResource(R.string.ui_file_size), value = fileInfo!!.first)
-                    if (fileInfo!!.second != "—") InfoRow(label = stringResource(R.string.ui_date), value = fileInfo!!.second)
+                    if (fileInfo!!.third != "—") InfoCardRow(label = stringResource(R.string.ui_dimensions), value = fileInfo!!.third)
+                    InfoCardRow(label = stringResource(R.string.ui_file_size), value = fileInfo!!.first)
+                    if (fileInfo!!.second != "—") InfoCardRow(label = stringResource(R.string.ui_date), value = fileInfo!!.second)
                 }
                 val rawUri = Uri.parse(entry.sourceUrl)
                 val path   = rawUri.path ?: entry.sourceUrl.removePrefix("file://")
-                if (path.isNotBlank()) InfoRow(label = stringResource(R.string.ui_path), value = path)
-                // Source URL (original download link) if present via downloadItem
+                if (path.isNotBlank()) InfoCardRow(label = stringResource(R.string.ui_path), value = path)
                 entry.downloadItem?.fileUrl?.takeIf { it.isNotBlank() }?.let {
-                    InfoRow(label = stringResource(R.string.ui_source_url), value = it)
+                    InfoCardRow(label = stringResource(R.string.ui_source_url), value = it)
                 }
             }
         }
     }
 }
 
-
 @Composable
-private fun InfoRow(label: String, value: String) {
+private fun InfoCardRow(label: String, value: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f))
+            .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         Text(
             text  = label,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
         )
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(3.dp))
         Text(
             text     = value,
             style    = MaterialTheme.typography.bodyMedium,
             color    = MaterialTheme.colorScheme.onSurface,
-            maxLines = 3,
+            maxLines = 4,
             overflow = TextOverflow.Ellipsis,
-        )
-        HorizontalDivider(
-            modifier  = Modifier.padding(top = 10.dp),
-            color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         )
     }
 }
@@ -1141,8 +1276,8 @@ private fun InfoRow(label: String, value: String) {
 
 private fun setAsWallpaper(context: Context, item: DownloadItem) {
     try {
-        val localUri    = item.localUri ?: return
-        val rawUri      = Uri.parse(localUri)
+        val localUri = item.localUri ?: return
+        val rawUri   = Uri.parse(localUri)
         val contentUri: Uri = if (rawUri.scheme == "file" || rawUri.scheme == null) {
             val path = rawUri.path ?: localUri.removePrefix("file://")
             val file = File(path)
