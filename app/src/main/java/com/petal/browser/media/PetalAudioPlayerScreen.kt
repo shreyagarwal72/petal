@@ -114,6 +114,10 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -153,7 +157,6 @@ fun PetalAudioPlayerScreen(
     }
 
     var isPlaying by remember { mutableStateOf(true) }
-    var positionMs by remember { mutableLongStateOf(0L) }
     var durationMs by remember { mutableLongStateOf(0L) }
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
     var repeatMode by remember { mutableIntStateOf(Player.REPEAT_MODE_OFF) }
@@ -163,6 +166,48 @@ fun PetalAudioPlayerScreen(
     var showMoreBottomSheet by remember { mutableStateOf(false) }
     var showLyricsSheet by remember { mutableStateOf(false) }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+
+    // ── PixelPlayer-style smooth progress wiring ──────────────────────────────
+    // currentPositionProvider is a lambda so WavySliderExpressive reads it
+    // on every draw frame — no snapshot recomposition per tick.
+    val currentPositionProvider: () -> Long = remember(exoPlayer) { { exoPlayer.currentPosition } }
+
+    // sampledPositionMs drives the UI; updated by the polling loop below.
+    var sampledPositionMs by remember { mutableLongStateOf(0L) }
+
+    // sliderDragValue: non-null only while the user is actively scrubbing (fraction 0–1).
+    var sliderDragValue by remember { mutableStateOf<Float?>(null) }
+
+    // targetSeekFraction: holds the last committed seek fraction until playback catches up.
+    var targetSeekFraction by remember { mutableFloatStateOf(-1f) }
+    var lastSeekFinishedTime by remember { mutableLongStateOf(0L) }
+
+    // animatedProgressFraction: what the seekbar thumb actually reads.
+    // Priority: drag > pending seek > live smooth progress.
+    // NOTE: reads durationMs directly inside the lambda (not via a snapshot val) so
+    // it stays reactive — durationMs is MutableState-backed, safe to read here.
+    val animatedProgressFraction: () -> Float = remember(exoPlayer) {
+        {
+            val dur = durationMs.coerceAtLeast(1L)
+            when {
+                sliderDragValue != null -> sliderDragValue!!
+                targetSeekFraction >= 0f -> targetSeekFraction
+                else -> (sampledPositionMs.toFloat() / dur.toFloat()).coerceIn(0f, 1f)
+            }
+        }
+    }
+
+    // Release the held seek target once playback catches up (within 4 %) or after 5 s.
+    LaunchedEffect(targetSeekFraction, sampledPositionMs) {
+        if (targetSeekFraction < 0f || sliderDragValue != null) return@LaunchedEffect
+        val timeSinceSeek = System.currentTimeMillis() - lastSeekFinishedTime
+        val dur = durationMs.coerceAtLeast(1L)
+        val liveFraction = (sampledPositionMs.toFloat() / dur.toFloat()).coerceIn(0f, 1f)
+        val diff = kotlin.math.abs(liveFraction - targetSeekFraction)
+        if (timeSinceSeek > 5_000L || diff < 0.04f) {
+            targetSeekFraction = -1f
+        }
+    }
 
     // Audio Metadata State
     var metadata by remember {
@@ -230,7 +275,7 @@ fun PetalAudioPlayerScreen(
         }
     }
 
-    // Synchronize ExoPlayer
+    // Synchronize ExoPlayer state → Compose state
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
@@ -238,10 +283,9 @@ fun PetalAudioPlayerScreen(
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_READY) {
-                    val dur = exoPlayer.duration
-                    durationMs = if (dur > 0) dur else 0L
-                }
+                // Capture duration as soon as it is known.
+                val dur = exoPlayer.duration
+                if (dur > 0) durationMs = dur
             }
         }
         exoPlayer.addListener(listener)
@@ -252,15 +296,35 @@ fun PetalAudioPlayerScreen(
         }
     }
 
-    // Progress updater loop
-    LaunchedEffect(isPlaying) {
-        while (isActive) {
-            if (exoPlayer.isPlaying) {
-                positionMs = exoPlayer.currentPosition
-                val dur = exoPlayer.duration
-                if (dur > 0) durationMs = dur
+    // ── PixelPlayer-style position sampler ────────────────────────────────────
+    // When paused: polls slowly (every 500 ms) waiting for resume, saving CPU.
+    // When playing: samples every ~180 ms (matches PixelPlayer's cadence).
+    // Skips sampledPositionMs update while user is dragging (sliderDragValue != null).
+    LaunchedEffect(exoPlayer) {
+        fun sample() {
+            val dur = exoPlayer.duration
+            if (dur > 0) durationMs = dur
+            // Only update sampledPositionMs when user is NOT dragging, so the
+            // thumb never fights the user's finger during scrub.
+            if (sliderDragValue == null) {
+                sampledPositionMs = exoPlayer.currentPosition.coerceIn(0L, dur.coerceAtLeast(0L))
             }
-            delay(150)
+        }
+
+        sample() // Initial snapshot
+
+        while (isActive) {
+            if (!exoPlayer.isPlaying) {
+                // Paused: back off to 500 ms polling; isPlaying is Compose state
+                // so the loop will naturally catch the play event on next iteration.
+                delay(500L)
+                sample()
+                continue
+            }
+
+            // Playing: sample every ~180 ms (matches PixelPlayer's cadence).
+            delay(180L)
+            sample()
         }
     }
 
@@ -287,35 +351,14 @@ fun PetalAudioPlayerScreen(
         label = "albumArtScale"
     )
 
-    // Dynamic background sampling from artwork or surface
-    val dominantColor = remember(metadata.artwork) {
-        metadata.artwork?.let { bmp ->
-            try {
-                val pixel = bmp.getPixel(bmp.width / 2, bmp.height / 3)
-                Color(pixel)
-            } catch (_: Exception) {
-                null
-            }
-        } ?: Color.Unspecified
+    // Dynamic adaptive color engine derived from album artwork (PixelPlayer-style)
+    val audioPalette = remember(metadata.artwork) {
+        PetalAudioColorEngine.extractPalette(metadata.artwork)
     }
 
-    val bgGradient = if (dominantColor != Color.Unspecified) {
-        Brush.verticalGradient(
-            colors = listOf(
-                dominantColor.copy(alpha = 0.55f),
-                dominantColor.copy(alpha = 0.20f),
-                MaterialTheme.colorScheme.background,
-            )
-        )
-    } else {
-        Brush.verticalGradient(
-            colors = listOf(
-                MaterialTheme.colorScheme.surfaceContainerHighest,
-                MaterialTheme.colorScheme.surface,
-                MaterialTheme.colorScheme.background,
-            )
-        )
-    }
+    val bgGradient = Brush.verticalGradient(
+        colors = audioPalette.backgroundGradientColors
+    )
 
     val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
@@ -358,14 +401,24 @@ fun PetalAudioPlayerScreen(
 
                     Spacer(modifier = Modifier.weight(0.3f))
 
-                    // ── 2. Album Artwork (Squircle Card ↔ Vinyl Disc) ──
-                    val artShape = RoundedCornerShape(32.dp)
+                    // ── 2. Album Artwork: PixelPlayer Cookie Silhouette when playing ↔ Squircle when paused ──
+                    val cookieCurve by animateFloatAsState(
+                        targetValue = if (isPlaying) 0.082f else 0.0f,
+                        animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
+                        label = "cookieCurve"
+                    )
+                    val artShape: androidx.compose.ui.graphics.Shape = if (isPlaying) {
+                        PetalCookieShape(sides = 8, curve = cookieCurve.toDouble(), rotation = 0f)
+                    } else {
+                        RoundedCornerShape(32.dp)
+                    }
+
                     if (!isVinylMode) {
                         Surface(
                             shape = artShape,
                             shadowElevation = 24.dp,
                             tonalElevation = 4.dp,
-                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            color = audioPalette.surfaceContainerHighest,
                             modifier = Modifier
                                 .sizeIn(maxWidth = 310.dp, maxHeight = 310.dp)
                                 .aspectRatio(1f)
@@ -378,7 +431,7 @@ fun PetalAudioPlayerScreen(
                                 }
                                 .then(
                                     if (isGlass) Modifier.liquidGlassChrome(artShape, enabled = true, sheenIntensity = 0.85f)
-                                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), artShape)
+                                    else Modifier
                                 ),
                         ) {
                             if (metadata.artwork != null) {
@@ -395,8 +448,8 @@ fun PetalAudioPlayerScreen(
                                         .background(
                                             Brush.radialGradient(
                                                 listOf(
-                                                    MaterialTheme.colorScheme.primaryContainer,
-                                                    MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                    audioPalette.primaryContainer,
+                                                    audioPalette.surfaceContainerHighest,
                                                 )
                                             )
                                         ),
@@ -405,7 +458,7 @@ fun PetalAudioPlayerScreen(
                                     Icon(
                                         imageVector = Icons.Rounded.MusicNote,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = audioPalette.primary,
                                         modifier = Modifier.size(76.dp),
                                     )
                                 }
@@ -519,7 +572,7 @@ fun PetalAudioPlayerScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val actionPillBg = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f)
+                            val actionPillBg = if (isGlass) petalGroupSurfaceColor() else audioPalette.surfaceContainerHigh
 
                             // Lyrics Pill Button
                             Box(
@@ -529,7 +582,7 @@ fun PetalAudioPlayerScreen(
                                     .background(actionPillBg)
                                     .then(
                                         if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
-                                        else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), CircleShape)
+                                        else Modifier
                                     )
                                     .clickable {
                                         PetalHapticEngine.getInstance(context).playClick(context)
@@ -540,7 +593,7 @@ fun PetalAudioPlayerScreen(
                                 Icon(
                                     painter = painterResource(R.drawable.rounded_lyrics_24),
                                     contentDescription = "Lyrics",
-                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    tint = audioPalette.onSurface,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -553,7 +606,7 @@ fun PetalAudioPlayerScreen(
                                     .background(actionPillBg)
                                     .then(
                                         if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
-                                        else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), CircleShape)
+                                        else Modifier
                                     )
                                     .clickable {
                                         PetalHapticEngine.getInstance(context).playClick(context)
@@ -564,7 +617,7 @@ fun PetalAudioPlayerScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.MoreVert,
                                     contentDescription = "More Options",
-                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    tint = audioPalette.onSurface,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -573,40 +626,70 @@ fun PetalAudioPlayerScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // ── 4. Wavy Seekbar & Specs Badge Row (PixelPlayer Specs) ──
+                    // ── 4. Wavy Seekbar & Specs Badge Row (PixelPlayer Wiring) ──
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         val durationSec = (durationMs.toFloat() / 1000f).coerceAtLeast(0.1f)
-                        val posSec = (positionMs.toFloat() / 1000f).coerceIn(0f, durationSec)
 
-                        WavySliderExpressive(
-                            value = { posSec },
-                            onValueChange = { newSec ->
-                                positionMs = (newSec * 1000f).toLong()
-                            },
-                            onValueCommit = { finalSec ->
-                                val targetMs = (finalSec * 1000f).toLong()
-                                positionMs = targetMs
-                                exoPlayer.seekTo(targetMs)
-                            },
-                            valueRange = 0f..durationSec,
-                            activeTrackColor = MaterialTheme.colorScheme.primary,
-                            inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                            thumbColor = MaterialTheme.colorScheme.primary,
-                            isPlaying = isPlaying,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        // Absorb vertical drags so the seekbar thumb never conflicts
+                        // with any parent scroll/drag gesture (PixelPlayer pattern).
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(Unit) {
+                                    detectVerticalDragGestures(
+                                        onVerticalDrag = { _, _ -> }
+                                    )
+                                }
+                        ) {
+                            WavySliderExpressive(
+                                // Lambda-based read: no recomposition on every tick.
+                                value = {
+                                    val frac = animatedProgressFraction()
+                                    frac * durationSec
+                                },
+                                onValueChange = { newSec ->
+                                    // User is dragging — hold position locally, freeze sampler output.
+                                    val frac = (newSec / durationSec).coerceIn(0f, 1f)
+                                    sliderDragValue = frac
+                                },
+                                onValueCommit = { finalSec ->
+                                    val finalFrac = (finalSec / durationSec).coerceIn(0f, 1f)
+                                    val targetMs = (finalFrac * durationMs).toLong()
+                                    // 1. Pin target so UI doesn't snap back before ExoPlayer confirms.
+                                    targetSeekFraction = finalFrac
+                                    lastSeekFinishedTime = System.currentTimeMillis()
+                                    // 2. Issue the actual seek.
+                                    exoPlayer.seekTo(targetMs)
+                                    // 3. Release drag lock; sampler resumes on next poll.
+                                    sliderDragValue = null
+                                },
+                                valueRange = 0f..durationSec,
+                                activeTrackColor = audioPalette.primary,
+                                inactiveTrackColor = audioPalette.surfaceContainerHigh.copy(alpha = 0.65f),
+                                thumbColor = audioPalette.primary,
+                                isPlaying = isPlaying,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        // Elapsed Time (00:11)  |  [ 48 kHz • 135 kbps • OPUS ]  |  Duration (03:57)
+                        // Time labels read the same animatedProgressFraction to stay in sync.
+                        val displayedPositionMs = remember {
+                            derivedStateOf {
+                                val dur = durationMs.coerceAtLeast(0L)
+                                (animatedProgressFraction() * durationMs).toLong()
+                                    .coerceIn(0L, dur)
+                            }
+                        }
                         PetalExpressiveTimeLabels(
-                            currentPositionMs = positionMs,
+                            currentPositionMs = displayedPositionMs.value,
                             totalDurationMs = durationMs,
                             audioMetaLabel = metadata.metaBadge ?: "48 kHz • 135 kbps • OPUS",
-                            textColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textColor = audioPalette.onSurfaceVariant,
                             isLiquidGlass = isGlass,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -614,13 +697,13 @@ fun PetalAudioPlayerScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // ── 5. M3 Expressive Morphing Playback Controls Triad ──
+                    // ── 5. M3 Expressive Morphing Playback Controls Triad (PixelPlayer) ──
                     PetalAnimatedPlaybackControls(
                         isPlayingProvider = { isPlaying },
                         onPrevious = {
                             val prev = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
                             exoPlayer.seekTo(prev)
-                            positionMs = prev
+                            // sampledPositionMs will update on next poll; no manual override needed.
                         },
                         onPlayPause = {
                             if (exoPlayer.isPlaying) {
@@ -632,13 +715,17 @@ fun PetalAudioPlayerScreen(
                         onNext = {
                             val next = (exoPlayer.currentPosition + 10_000L).coerceAtMost(durationMs.coerceAtLeast(0L))
                             exoPlayer.seekTo(next)
-                            positionMs = next
+                            // sampledPositionMs will update on next poll; no manual override needed.
                         },
                         previousIcon = Icons.Rounded.SkipPrevious,
                         nextIcon = Icons.Rounded.SkipNext,
                         previousContentDescription = stringResource(R.string.ui_rewind_10s),
                         nextContentDescription = stringResource(R.string.ui_forward_10s),
                         isLiquidGlass = isGlass,
+                        colorOtherButtons = audioPalette.surfaceContainerHighest,
+                        colorPlayPause = audioPalette.primary,
+                        tintPlayPauseIcon = audioPalette.onPrimary,
+                        tintOtherIcons = audioPalette.onSurface,
                         height = 82.dp,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -668,6 +755,9 @@ fun PetalAudioPlayerScreen(
                             isFavorite = !isFavorite
                         },
                         isLiquidGlass = isGlass,
+                        activeColorShuffle = audioPalette.primary,
+                        onActiveColorShuffle = audioPalette.onPrimary,
+                        containerColor = audioPalette.surfaceContainerHighest.copy(alpha = 0.75f),
                         height = 56.dp,
                         modifier = Modifier
                             .fillMaxWidth()

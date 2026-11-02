@@ -1,3 +1,32 @@
+### v4.5.5 — 🎵 PixelPlayer-Grade Media Architecture, Cookie Shape Album Art & Adaptive Theming
+
+> *"Milestone v4.5.5 brings a major overhaul to Petal Browser's standalone media player, incorporating PixelPlayer's state-of-the-art playback architecture, dynamic cookie-shaped album artwork, seamless M3 Expressive tonal elevation with zero artificial button borders, and intelligent artwork color engine integration."*
+
+#### 🎵 PixelPlayer-Grade Playback & Seekbar Architecture
+- **State-of-the-Art Progress Sampling & Scrub Lock**:
+  - Re-architected `PetalAudioPlayerScreen` progress handling using PixelPlayer's exact smooth-progress pattern: decoupled polling loop from Compose recomposition ticks.
+  - Introduced `sliderDragValue` locking so user scrubbing never fights background polling updates.
+  - Implemented `targetSeekFraction` hold-until-catchup with timeout and 4% delta tolerance, completely eliminating seekbar snap-back.
+  - Added vertical drag gesture isolation (`detectVerticalDragGestures`) preventing parent containers from intercepting seekbar scrubs.
+  - Synchronized real-time time labels via `derivedStateOf` reads directly connected to the smooth fraction provider.
+
+#### 🍪 Dynamic Scalloped Cookie Album Art
+- **PixelPlayer Scalloped Cookie Silhouette (`PetalCookieShape.kt`)**:
+  - Implemented continuous 8-sided scalloped cookie shape with configurable curvature depth and rotation.
+  - Dynamically morphs into the cookie shape during active music playback, and softly relaxes to an expressive squircle (`RoundedCornerShape(32.dp)`) with interactive pause-squish physics when paused.
+
+#### 🎨 Adaptive Dynamic Artwork Color Engine (`PetalAudioColorEngine.kt`)
+- **Vibrant Seed Color Extraction & Harmonious Theming**:
+  - Built an in-memory LRU-cached color engine that extracts vibrant seed colors from album art without blocking the main UI thread.
+  - Dynamically renders subtle ambient vertical gradients, high-contrast M3 container surfaces (`surfaceContainerHighest`, `surfaceContainerHigh`), and themed controls based on track artwork palette.
+
+#### ✨ Border Removal & Authentic Material 3 Surface Hierarchy
+- **Elimination of Artificial Borders**:
+  - Removed all artificial `1.dp` outlines from playback controls (previous, next), top bar navigation pills (collapse, route, queue), quick actions (lyrics, more options), and compartment rows in `PetalPlayerComponents.kt`.
+  - Replaced legacy outlines with authentic Material 3 Expressive tonal elevation, contrast-aware container fills, and fluid spring weights.
+
+---
+
 ### v4.5.4 — 🎨 Material 3 Expressive UI & UX Containment, Profile Lock Overhaul & Unified Iconography
 
 > *"Milestone v4.5.4 brings a comprehensive Material 3 Expressive upgrade across Petal Browser: authentic M3 Expressive shape scales and tonal container ladders, an overhaul of the Profile & App Lock security flow with biometric and profile identity badges, 100% unified Rounded iconography with zero colorology drift, position-aware containment capsules, native Firefox flags harvest, and Liquid Glass Custom Tabs."*

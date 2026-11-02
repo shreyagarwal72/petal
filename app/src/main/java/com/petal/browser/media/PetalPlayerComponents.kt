@@ -676,9 +676,7 @@ fun PetalAnimatedPlaybackControls(
                     .background(colorOtherButtons.copy(alpha = 0.5f), prevShape)
                     .liquidGlassChrome(prevShape, enabled = true, sheenIntensity = 0.85f, pressFx = true)
             } else {
-                Modifier
-                    .background(colorOtherButtons, prevShape)
-                    .border(1.dp, Color.White.copy(alpha = 0.15f), prevShape)
+                Modifier.background(colorOtherButtons, prevShape)
             }
             Box(
                 modifier = Modifier
@@ -766,9 +764,7 @@ fun PetalAnimatedPlaybackControls(
                     .background(colorOtherButtons.copy(alpha = 0.5f), nextShape)
                     .liquidGlassChrome(nextShape, enabled = true, sheenIntensity = 0.85f, pressFx = true)
             } else {
-                Modifier
-                    .background(colorOtherButtons, nextShape)
-                    .border(1.dp, Color.White.copy(alpha = 0.15f), nextShape)
+                Modifier.background(colorOtherButtons, nextShape)
             }
             Box(
                 modifier = Modifier
@@ -1039,9 +1035,7 @@ fun PetalBottomToggleRow(
             .background(containerColor, rowShape)
             .liquidGlassChrome(rowShape, enabled = true, sheenIntensity = 0.85f)
     } else {
-        Modifier
-            .background(containerColor, rowShape)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), rowShape)
+        Modifier.background(containerColor, rowShape)
     }
 
     Box(
@@ -1176,7 +1170,7 @@ fun PetalPlayerHeaderTopBar(
                 .background(pillBg)
                 .then(
                     if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
-                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), CircleShape)
+                    else Modifier
                 )
                 .clickable {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -1223,7 +1217,7 @@ fun PetalPlayerHeaderTopBar(
                     .background(pillBg)
                     .then(
                         if (isLiquidGlass) Modifier.liquidGlassChrome(routeShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
-                        else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), routeShape)
+                        else Modifier
                     )
                     .clickable {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -1269,7 +1263,7 @@ fun PetalPlayerHeaderTopBar(
                     .background(pillBg)
                     .then(
                         if (isLiquidGlass) Modifier.liquidGlassChrome(queueShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
-                        else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), queueShape)
+                        else Modifier
                     )
                     .clickable {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
