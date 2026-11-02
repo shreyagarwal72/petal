@@ -36,7 +36,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.PetalButtonVariant
 import com.petal.browser.ui.components.PetalLiquidButton
 import com.petal.browser.ui.containment.PetalSheet
-import com.petal.browser.unit.PetalToast
+import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -215,7 +215,7 @@ fun PetalSendToDeviceSheet(
                                         isSending = false
                                         if (success) {
                                             sentTarget = device.deviceId
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.SUCCESS, 0.9f)
+                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
                                             PetalToast.show(context, "Tab sent to ${device.deviceName.ifBlank { "device" }}!")
                                             onDismissRequest()
                                         } else {
@@ -276,7 +276,7 @@ fun PetalSendToDeviceSheet(
                         ) { success ->
                             isSending = false
                             if (success) {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.SUCCESS, 1.0f)
+                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
                                 PetalToast.show(context, "Tab sent to all connected Firefox devices!")
                                 onDismissRequest()
                             } else {

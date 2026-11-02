@@ -22,6 +22,8 @@ import androidx.core.graphics.ColorUtils
 import kotlin.math.max
 import kotlin.math.min
 
+typealias PetalAudioPalette = PetalAudioColorEngine.ExtractedAudioPalette
+
 object PetalAudioColorEngine {
 
     private val colorCache = LruCache<Int, ExtractedAudioPalette>(32)
