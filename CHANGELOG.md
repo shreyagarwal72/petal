@@ -12,6 +12,8 @@
   - Corrected PDF file-viewer notification parameter to use `displayName`.
 - **Audio Palette Backwards Compatibility (`PetalAudioColorEngine.kt`)**:
   - Added accessor `val seed: Color get() = seedColor` to `ExtractedAudioPalette` ensuring seamless compatibility across Compose themes, audio players, and bottom sheets.
+- **Appearance Settings Streamlining (`AppearanceSettingsScreen.kt`)**:
+  - Removed "Mix palettes" toggle option along with its expandable preview strip and source configuration menus for a simplified, focused theme customization workflow.
 
 #### 🚀 Build Acceleration & GitHub Actions Caching Architecture (`android_build.yml`)
 - **Dedicated Gradle Build Cache (`gradle/actions/setup-gradle@v4`)**:
