@@ -1126,6 +1126,7 @@ fun PetalOmniboxPage(
                                                         SuggestionSource.RECENT_SEARCH -> "Recent Searches"
                                                         SuggestionSource.BROWSING_HISTORY -> "From Browsing History"
                                                         SuggestionSource.SEARCH_ENGINE -> stringResource(R.string.ui_search_suggestions)
+                                                        SuggestionSource.BOOKMARK -> stringResource(R.string.ui_bookmarks)
                                                     }
                                                     Text(
                                                         text = headerLabel,

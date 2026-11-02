@@ -147,26 +147,6 @@ fun PetalBookmarksScreen(
     var editingRecord by remember { mutableStateOf<Record?>(null) }
     var optionsRecord by remember { mutableStateOf<Record?>(null) }
 
-    val importLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            coroutineScope.launch {
-                try {
-                    val count = FirefoxDataImportManager.importFile(context, uri)
-                    if (count > 0) {
-                        PetalToast.show(context, "Imported $count bookmarks")
-                        reloadBookmarks()
-                    } else {
-                        PetalToast.show(context, "No bookmarks found in selected file")
-                    }
-                } catch (e: Exception) {
-                    PetalToast.show(context, "Import failed: ${e.message}")
-                }
-            }
-        }
-    }
-
     // Load bookmarks from SQLite database asynchronously
     var rawBookmarks by remember { mutableStateOf<List<Record>?>(null) }
     
@@ -191,7 +171,6 @@ fun PetalBookmarksScreen(
 
     var overflowMenuExpanded by remember { mutableStateOf(false) }
 
-
     val filteredBookmarks = remember(searchQuery, rawBookmarks, showReadingListOnly) {
         val list = rawBookmarks ?: emptyList()
         val scoped = if (showReadingListOnly) list.filter { it.isReadingList } else list
@@ -208,6 +187,26 @@ fun PetalBookmarksScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            coroutineScope.launch {
+                try {
+                    val count = FirefoxDataImportManager.importFile(context, uri)
+                    if (count > 0) {
+                        PetalToast.show(context, "Imported $count bookmarks")
+                        reloadBookmarks()
+                    } else {
+                        PetalToast.show(context, "No bookmarks found in selected file")
+                    }
+                } catch (e: Exception) {
+                    PetalToast.show(context, "Import failed: ${e.message}")
+                }
+            }
+        }
+    }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,

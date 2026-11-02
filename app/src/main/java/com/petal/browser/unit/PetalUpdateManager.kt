@@ -118,11 +118,11 @@ object PetalUpdateManager {
                     val idLong = download.id.hashCode().toLong()
                     val total = download.contentLength ?: 0L
                     val copied = download.currentBytesCopied
-                    val rawProgress = download.progress
+                    val rawProgress = download.progress?.toFloat()
                     val progress = when {
-                        rawProgress != null && rawProgress > 1 -> rawProgress
-                        rawProgress != null -> (rawProgress * 100).toInt()
-                        total > 0L -> ((copied * 100) / total).toInt().coerceIn(0, 100)
+                        rawProgress != null && rawProgress > 1f -> rawProgress.toInt()
+                        rawProgress != null -> (rawProgress * 100f).toInt()
+                        total > 0L -> ((copied.toFloat() * 100f) / total.toFloat()).toInt()
                         else -> 0
                     }.coerceIn(0, 100)
 

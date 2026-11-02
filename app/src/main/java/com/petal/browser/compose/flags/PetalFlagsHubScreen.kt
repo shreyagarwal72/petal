@@ -160,7 +160,7 @@ fun PetalFlagsHubScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = onDismiss) {
                                 Icon(
-                                    imageVector = Icons.AutoMirrored.rounded.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                     contentDescription = "Back",
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
@@ -416,10 +416,10 @@ private fun FlagRowItem(
     }
 
     val containerShape = when (position) {
-        PetalGroupPosition.First -> RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
-        PetalGroupPosition.Middle -> RoundedCornerShape(4.dp)
-        PetalGroupPosition.Last -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
-        PetalGroupPosition.Single -> RoundedCornerShape(20.dp)
+        PetalGroupPosition.TOP -> RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+        PetalGroupPosition.MIDDLE -> RoundedCornerShape(4.dp)
+        PetalGroupPosition.BOTTOM -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
+        PetalGroupPosition.SINGLE -> RoundedCornerShape(20.dp)
     }
 
     Surface(
@@ -606,10 +606,10 @@ private fun RawPreferencesTab(
             ) { index, position ->
                 val (key, value, type) = filtered[index]
                 val containerShape = when (position) {
-                    PetalGroupPosition.First -> RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
-                    PetalGroupPosition.Middle -> RoundedCornerShape(4.dp)
-                    PetalGroupPosition.Last -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
-                    PetalGroupPosition.Single -> RoundedCornerShape(16.dp)
+                    PetalGroupPosition.TOP -> RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+                    PetalGroupPosition.MIDDLE -> RoundedCornerShape(4.dp)
+                    PetalGroupPosition.BOTTOM -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
+                    PetalGroupPosition.SINGLE -> RoundedCornerShape(16.dp)
                 }
 
                 Surface(
