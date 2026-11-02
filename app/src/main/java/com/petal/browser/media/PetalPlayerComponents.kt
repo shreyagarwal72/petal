@@ -3,8 +3,11 @@ package com.petal.browser.media
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -22,6 +25,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +39,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,20 +47,33 @@ import androidx.compose.material.icons.automirrored.rounded.VolumeDown
 import androidx.compose.material.icons.automirrored.rounded.VolumeMute
 import androidx.compose.material.icons.automirrored.rounded.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.BrightnessHigh
 import androidx.compose.material.icons.rounded.BrightnessLow
 import androidx.compose.material.icons.rounded.BrightnessMedium
+import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.Speaker
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Surface
@@ -75,19 +93,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.media3.common.Player
+import java.util.Locale
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -917,5 +942,455 @@ fun PetalAudioMetaBadge(
             maxLines = 1,
             letterSpacing = 0.5.sp,
         )
+    }
+}
+
+// ── 9. Segmented Compartment Button & Bottom Toggle Row ──────────────────────
+
+@Composable
+fun PetalToggleSegmentButton(
+    modifier: Modifier,
+    active: Boolean,
+    enabled: Boolean = true,
+    activeColor: Color,
+    inactiveColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
+    activeContentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    inactiveContentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    activeCornerRadius: Dp = 60.dp,
+    inactiveCornerRadius: Dp = 10.dp,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val targetBgColor = if (active) activeColor else inactiveColor
+    val bgColor by animateColorAsState(
+        targetValue = if (enabled) targetBgColor else targetBgColor.copy(alpha = 0.5f),
+        animationSpec = tween(durationMillis = 240),
+        label = "segmentBg"
+    )
+    val cornerRadius by animateDpAsState(
+        targetValue = if (active) activeCornerRadius else inactiveCornerRadius,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "segmentCorner"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(bgColor)
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .graphicsLayer(alpha = if (enabled) 1f else 0.38f)
+                .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            content()
+        }
+    }
+}
+
+/**
+ * Bottom Connected Segmented Compartment Pill Bar
+ * Exactly as displayed in PixelPlayer and the reference screenshot:
+ * A single continuous stadium pill (60dp corners) housing 3 compartments:
+ * 1. Shuffle (toggle active/inactive)
+ * 2. Repeat (Off / All / One)
+ * 3. Favorite (heart pop bounce)
+ */
+@Composable
+fun PetalBottomToggleRow(
+    isShuffleEnabled: Boolean,
+    repeatMode: Int,
+    isFavorite: Boolean,
+    onShuffleToggle: () -> Unit,
+    onRepeatToggle: () -> Unit,
+    onFavoriteToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    height: Dp = 56.dp,
+    activeColorShuffle: Color = MaterialTheme.colorScheme.primary,
+    activeColorRepeat: Color = MaterialTheme.colorScheme.secondary,
+    activeColorFavorite: Color = MaterialTheme.colorScheme.tertiary,
+    onActiveColorShuffle: Color = MaterialTheme.colorScheme.onPrimary,
+    onActiveColorRepeat: Color = MaterialTheme.colorScheme.onSecondary,
+    onActiveColorFavorite: Color = MaterialTheme.colorScheme.onTertiary,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f),
+    inactiveColor: Color = Color.Transparent,
+    inactiveContentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    isLiquidGlass: Boolean = false,
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val rowCorners = 60.dp
+    val rowShape = RoundedCornerShape(rowCorners)
+
+    // Interactive scale bounce for favorite heart
+    var favClickTrigger by remember { mutableIntStateOf(0) }
+    val favScale by animateFloatAsState(
+        targetValue = if (favClickTrigger % 2 == 1) 1.25f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "favScale"
+    )
+
+    val rowModifier = if (isLiquidGlass) {
+        Modifier
+            .background(containerColor, rowShape)
+            .liquidGlassChrome(rowShape, enabled = true, sheenIntensity = 0.85f)
+    } else {
+        Modifier
+            .background(containerColor, rowShape)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), rowShape)
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(rowShape)
+            .then(rowModifier)
+            .padding(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val commonModifier = Modifier.weight(1f)
+
+            // 1. Shuffle
+            PetalToggleSegmentButton(
+                modifier = commonModifier,
+                active = isShuffleEnabled,
+                activeColor = activeColorShuffle,
+                activeContentColor = onActiveColorShuffle,
+                inactiveColor = inactiveColor,
+                inactiveContentColor = inactiveContentColor,
+                activeCornerRadius = rowCorners,
+                onClick = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    PetalHapticEngine.getInstance(context).playClick(context)
+                    onShuffleToggle()
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Shuffle,
+                    contentDescription = "Shuffle",
+                    tint = if (isShuffleEnabled) onActiveColorShuffle else inactiveContentColor,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            // 2. Repeat
+            val isRepeatActive = repeatMode != Player.REPEAT_MODE_OFF
+            val repeatIcon = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat
+            PetalToggleSegmentButton(
+                modifier = commonModifier,
+                active = isRepeatActive,
+                activeColor = activeColorRepeat,
+                activeContentColor = onActiveColorRepeat,
+                inactiveColor = inactiveColor,
+                inactiveContentColor = inactiveContentColor,
+                activeCornerRadius = rowCorners,
+                onClick = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    PetalHapticEngine.getInstance(context).playClick(context)
+                    onRepeatToggle()
+                }
+            ) {
+                Icon(
+                    imageVector = repeatIcon,
+                    contentDescription = "Repeat",
+                    tint = if (isRepeatActive) onActiveColorRepeat else inactiveContentColor,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            // 3. Favorite (Heart)
+            PetalToggleSegmentButton(
+                modifier = commonModifier,
+                active = isFavorite,
+                activeColor = activeColorFavorite,
+                activeContentColor = onActiveColorFavorite,
+                inactiveColor = inactiveColor,
+                inactiveContentColor = inactiveContentColor,
+                activeCornerRadius = rowCorners,
+                onClick = {
+                    favClickTrigger++
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    PetalHapticEngine.getInstance(context).playClick(context)
+                    onFavoriteToggle()
+                }
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    contentDescription = "Favorite",
+                    tint = if (isFavorite) onActiveColorFavorite else inactiveContentColor,
+                    modifier = Modifier
+                        .size(22.dp)
+                        .graphicsLayer(scaleX = favScale, scaleY = favScale)
+                )
+            }
+        }
+    }
+}
+
+// ── 10. Pixel-Style Player Header Top Bar ────────────────────────────────────
+
+/**
+ * Top Navigation Bar matching the PixelPlayer screenshot:
+ * - Left: Rounded collapse down chevron pill button
+ * - Center: Bold "Now Playing" heading
+ * - Right: Cast / Audio route pill badge + Queue/Playlist asymmetrical button
+ */
+@Composable
+fun PetalPlayerHeaderTopBar(
+    onCollapse: () -> Unit,
+    onQueueClick: () -> Unit,
+    onAudioRouteClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String = "Now Playing",
+    audioRouteName: String? = null,
+    isCastActive: Boolean = false,
+    isBluetoothActive: Boolean = false,
+    isLiquidGlass: Boolean = false,
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val pillBg = if (isLiquidGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f)
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .padding(horizontal = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Collapse Pill Button
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(pillBg)
+                .then(
+                    if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), CircleShape)
+                )
+                .clickable {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    PetalHapticEngine.getInstance(context).playClick(context)
+                    onCollapse()
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowDown,
+                contentDescription = "Collapse",
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(26.dp)
+            )
+        }
+
+        // Center Title
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        // Right Actions: Route Pill + Queue Button
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Audio Route Pill
+            val routeShape = RoundedCornerShape(
+                topStart = 50.dp,
+                topEnd = if (!audioRouteName.isNullOrBlank()) 50.dp else 8.dp,
+                bottomStart = 50.dp,
+                bottomEnd = if (!audioRouteName.isNullOrBlank()) 50.dp else 8.dp
+            )
+            Box(
+                modifier = Modifier
+                    .height(42.dp)
+                    .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessLow))
+                    .clip(routeShape)
+                    .background(pillBg)
+                    .then(
+                        if (isLiquidGlass) Modifier.liquidGlassChrome(routeShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                        else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), routeShape)
+                    )
+                    .clickable {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        PetalHapticEngine.getInstance(context).playClick(context)
+                        onAudioRouteClick()
+                    }
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val routeIcon = when {
+                        isCastActive -> Icons.Rounded.Cast
+                        isBluetoothActive -> Icons.Rounded.Bluetooth
+                        else -> Icons.Rounded.Speaker
+                    }
+                    Icon(
+                        imageVector = routeIcon,
+                        contentDescription = "Audio Output",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    if (!audioRouteName.isNullOrBlank()) {
+                        Text(
+                            text = audioRouteName,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+
+            // Queue Asymmetric Pill Button
+            val queueShape = RoundedCornerShape(topStart = 8.dp, topEnd = 50.dp, bottomStart = 8.dp, bottomEnd = 50.dp)
+            Box(
+                modifier = Modifier
+                    .size(width = 46.dp, height = 42.dp)
+                    .clip(queueShape)
+                    .background(pillBg)
+                    .then(
+                        if (isLiquidGlass) Modifier.liquidGlassChrome(queueShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                        else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), queueShape)
+                    )
+                    .clickable {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        PetalHapticEngine.getInstance(context).playClick(context)
+                        onQueueClick()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.QueueMusic,
+                    contentDescription = "Queue",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+    }
+}
+
+// ── 11. Pixel-Style Metadata & Timing Helpers ───────────────────────────────
+
+fun formatAudioMetaLabel(mimeType: String?, bitrate: Int?, sampleRate: Int?): String? {
+    val formatLabel = when {
+        mimeType == null -> null
+        mimeType.contains("flac", ignoreCase = true) -> "FLAC"
+        mimeType.contains("opus", ignoreCase = true) -> "OPUS"
+        mimeType.contains("mp3", ignoreCase = true) || mimeType.contains("mpeg", ignoreCase = true) -> "MP3"
+        mimeType.contains("aac", ignoreCase = true) -> "AAC"
+        mimeType.contains("ogg", ignoreCase = true) -> "OGG"
+        mimeType.contains("wav", ignoreCase = true) -> "WAV"
+        mimeType.contains("m4a", ignoreCase = true) -> "M4A"
+        else -> null
+    }
+
+    val parts = buildList {
+        sampleRate?.takeIf { it > 0 }?.let { add(String.format(Locale.US, "%.0f kHz", it / 1000.0)) }
+        bitrate?.takeIf { it > 0 }?.let { bitrateValue ->
+            val kbpsLabel = "${bitrateValue / 1000} kbps"
+            if (formatLabel != null) {
+                add("$kbpsLabel • $formatLabel")
+            } else {
+                add(kbpsLabel)
+            }
+        } ?: formatLabel?.let { add(it) }
+    }
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(" • ")
+}
+
+/**
+ * PixelPlayer-style Efficient Time Labels row with centered audio spec badge:
+ * Elapsed Time (00:11)  |  [ 48 kHz • 135 kbps • OPUS ]  |  Total Time (03:57)
+ */
+@Composable
+fun PetalExpressiveTimeLabels(
+    currentPositionMs: Long,
+    totalDurationMs: Long,
+    audioMetaLabel: String?,
+    modifier: Modifier = Modifier,
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    isLiquidGlass: Boolean = false,
+) {
+    val posSec = (currentPositionMs / 1000L).coerceAtLeast(0L)
+    val durSec = (totalDurationMs / 1000L).coerceAtLeast(0L)
+    val posStr = String.format(Locale.US, "%02d:%02d", posSec / 60, posSec % 60)
+    val durStr = String.format(Locale.US, "%02d:%02d", durSec / 60, durSec % 60)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = posStr,
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                fontWeight = FontWeight.SemiBold,
+                color = textColor
+            )
+            Text(
+                text = durStr,
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                fontWeight = FontWeight.SemiBold,
+                color = textColor
+            )
+        }
+
+        if (!audioMetaLabel.isNullOrBlank()) {
+            val badgeShape = RoundedCornerShape(999.dp)
+            val badgeModifier = if (isLiquidGlass) {
+                Modifier
+                    .background(petalGroupSurfaceColor(), badgeShape)
+                    .liquidGlassChrome(badgeShape, enabled = true, sheenIntensity = 0.8f)
+            } else {
+                Modifier.background(textColor.copy(alpha = 0.12f), badgeShape)
+            }
+
+            Surface(
+                shape = badgeShape,
+                color = Color.Transparent,
+                modifier = Modifier
+                    .clip(badgeShape)
+                    .then(badgeModifier)
+                    .padding(horizontal = 4.dp),
+            ) {
+                Text(
+                    text = audioMetaLabel,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 11.sp
+                    ),
+                    color = textColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                )
+            }
+        }
     }
 }

@@ -401,6 +401,7 @@ fun PetalSeekbarWithTimers(
     activeColor: Color = MaterialTheme.colorScheme.primary,
     inactiveColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
     isLiquidGlass: Boolean = true,
+    specsBadge: String? = null,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val durationSeconds = (durationMs.toFloat() / 1000f).coerceAtLeast(0f)
@@ -460,28 +461,14 @@ fun PetalSeekbarWithTimers(
             }
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            // Elapsed Time
-            PetalVideoTimer(
-                seconds = currentSeconds,
-                isInverted = false,
-                onClick = {},
-                modifier = Modifier.width(60.dp),
-            )
-
-            // Center WavySliderExpressive from PixelPlayer
+        if (!specsBadge.isNullOrBlank()) {
+            // Material 3 Expressive Layout: Full-width slider on top + Expressive labels row below
             Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
+                    .fillMaxWidth()
+                    .height(40.dp)
                     .onSizeChanged { barWidthPx = it.width.toFloat() }
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = 2.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 WavySliderExpressive(
@@ -510,13 +497,76 @@ fun PetalSeekbarWithTimers(
                 )
             }
 
-            // Duration / Inverted Remaining Time
-            PetalVideoTimer(
-                seconds = if (isInvertedTimer) (currentSeconds - durationSeconds) else durationSeconds,
-                isInverted = isInvertedTimer,
-                onClick = { isInvertedTimer = !isInvertedTimer },
-                modifier = Modifier.width(60.dp),
+            Spacer(modifier = Modifier.height(2.dp))
+
+            PetalExpressiveTimeLabels(
+                currentPositionMs = (currentSeconds * 1000f).toLong(),
+                totalDurationMs = durationMs,
+                audioMetaLabel = specsBadge,
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                isLiquidGlass = isLiquidGlass,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             )
+        } else {
+            // Standard compact row with inline timers
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                // Elapsed Time
+                PetalVideoTimer(
+                    seconds = currentSeconds,
+                    isInverted = false,
+                    onClick = {},
+                    modifier = Modifier.width(60.dp),
+                )
+
+                // Center WavySliderExpressive from PixelPlayer
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .onSizeChanged { barWidthPx = it.width.toFloat() }
+                        .padding(vertical = 4.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    WavySliderExpressive(
+                        value = { if (isUserInteracting) userPositionSeconds else positionSeconds },
+                        onValueChange = { newSec ->
+                            isUserInteracting = true
+                            userPositionSeconds = newSec
+                            val quantized = (if (durationSeconds > 0) (newSec / durationSeconds) * 20f else 0f).toInt()
+                            if (quantized != lastHapticStep[0]) {
+                                lastHapticStep[0] = quantized
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
+                        },
+                        onValueCommit = { finalSec ->
+                            userPositionSeconds = finalSec
+                            onSeek((finalSec * 1000f).roundToLong())
+                            isUserInteracting = false
+                        },
+                        valueRange = 0f..durationSeconds.coerceAtLeast(0.1f),
+                        activeTrackColor = activeColor,
+                        inactiveTrackColor = inactiveColor,
+                        thumbColor = activeColor,
+                        isPlaying = !isPaused,
+                        onScrubStateChange = { isUserInteracting = it },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                // Duration / Inverted Remaining Time
+                PetalVideoTimer(
+                    seconds = if (isInvertedTimer) (currentSeconds - durationSeconds) else durationSeconds,
+                    isInverted = isInvertedTimer,
+                    onClick = { isInvertedTimer = !isInvertedTimer },
+                    modifier = Modifier.width(60.dp),
+                )
+            }
         }
     }
 }
