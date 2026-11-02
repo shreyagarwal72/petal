@@ -23,13 +23,15 @@ object SafeDownloadValues {
 
     fun isHttpUrl(value: String?): Boolean {
         if (value.isNullOrBlank()) return false
-        return runCatching {
-            val uri = URI(value.trim())
-            (uri.scheme.equals("http", ignoreCase = true) ||
-                uri.scheme.equals("https", ignoreCase = true)) &&
-                !uri.host.isNullOrBlank() &&
-                uri.userInfo == null
-        }.getOrDefault(false)
+        val s = value.trim()
+        val isHttp = s.startsWith("http://", ignoreCase = true) || s.startsWith("https://", ignoreCase = true)
+        if (!isHttp) return false
+        return try {
+            val uri = android.net.Uri.parse(s)
+            !uri.host.isNullOrBlank()
+        } catch (_: Throwable) {
+            s.length > 8 && s.contains("://")
+        }
     }
 
     fun mimeType(value: String?): String {

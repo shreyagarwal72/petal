@@ -13,6 +13,20 @@ import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 
+class PetalFallbackFetchClient(
+    private val primary: Client,
+    private val fallback: Client
+) : Client() {
+    override fun fetch(request: mozilla.components.concept.fetch.Request): mozilla.components.concept.fetch.Response {
+        return try {
+            primary.fetch(request)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalMozillaDownload", "Primary GeckoView fetch failed (${t.message}), falling back to OkHttp", t)
+            fallback.fetch(request)
+        }
+    }
+}
+
 /**
  * Android Components download service (the same AbstractFetchDownloadService Firefox/Fenix
  * uses) and Petal's only engine for browser downloads. Bytes go through Gecko's own network
@@ -33,14 +47,20 @@ class PetalMozillaDownloadService : AbstractFetchDownloadService() {
     }
 
     override val httpClient: Client by lazy {
-        val base: Client = try {
+        val geckoClient: Client? = try {
             GeckoViewFetchClient(
                 applicationContext,
                 com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(applicationContext)
             )
         } catch (t: Throwable) {
             android.util.Log.w("PetalMozillaDownload", "GeckoViewFetchClient unavailable, using OkHttp", t)
-            PetalOkHttpFetchClient()
+            null
+        }
+        val okHttpClient = PetalOkHttpFetchClient()
+        val base: Client = if (geckoClient != null) {
+            PetalFallbackFetchClient(primary = geckoClient, fallback = okHttpClient)
+        } else {
+            okHttpClient
         }
         // Order matters: PetalMozillaFetchClient injects the per-URL Referer/Cookie/UA headers on the
         // original request, then PetalParallelFetchClient splits it into Range segments that all

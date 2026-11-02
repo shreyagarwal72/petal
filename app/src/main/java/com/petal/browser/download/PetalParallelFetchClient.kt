@@ -346,6 +346,14 @@ internal class PetalParallelRangeStream(
                 } catch (t: InterruptedException) {
                     return
                 } catch (t: IOException) {
+                    val attempts = throttleCounts.merge(index, 1) { a, b -> a + b } ?: 1
+                    if (attempts < MAX_THROTTLE_ATTEMPTS && !closed) {
+                        requeue(index)
+                        shrinkConnections()
+                        if (id > 0 && id >= allowedWorkers.get()) return
+                        sleepBackoff(attempts)
+                        continue
+                    }
                     if (!closed) fail(t)
                     return
                 }

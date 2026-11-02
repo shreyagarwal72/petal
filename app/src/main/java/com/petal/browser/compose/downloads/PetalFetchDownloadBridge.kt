@@ -588,14 +588,16 @@ object PetalFetchDownloadBridge {
         try {
             val downloads = com.petal.browser.engine.gecko.PetalEngineStore
                 .getStore(context).state.downloads.values
+            val nowMs = System.currentTimeMillis()
             synchronized(mozillaDownloadsMap) {
                 mozillaDownloadsMap.clear()
                 downloads.forEach { download ->
-                    // Filter out stale unhandled INITIATED downloads (0 B stuck items) from Mozilla pipeline
-                    if (download.status == mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED &&
+                    // Filter out stale unhandled INITIATED downloads (0 B stuck items older than 30s) from Mozilla pipeline
+                    val isStaleInitiated = download.status == mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED &&
                         (download.contentLength == null || download.contentLength == 0L) &&
-                        download.currentBytesCopied == 0L
-                    ) {
+                        download.currentBytesCopied == 0L &&
+                        (nowMs - download.createdTime > 30_000L)
+                    if (isStaleInitiated) {
                         return@forEach
                     }
                     val id = download.id.hashCode().toLong()
@@ -607,7 +609,6 @@ object PetalFetchDownloadBridge {
                         else -> DownloadStatus.STATUS_FAILED
                     }
                     val total = download.contentLength ?: 0L
-                    val nowMs = System.currentTimeMillis()
                     val copied = download.currentBytesCopied
                     var speed = 0L
                     if (status == DownloadStatus.STATUS_RUNNING) {

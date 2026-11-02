@@ -1,6 +1,7 @@
 package com.petal.browser.download
 
 import android.content.Context
+import android.os.Build
 import android.os.Environment
 import androidx.preference.PreferenceManager
 import java.io.File
@@ -11,7 +12,7 @@ import java.util.Locale
  * ─────────────────────────────────────────────────────────────────────────
  * Inspired by Floorp Browser's Smart Download Management.
  * Automatically organizes downloads into dedicated subdirectories based
- * on file extension and MIME type.
+ * on file extension and MIME type where supported by the operating system.
  */
 object PetalSmartDownloadRouter {
 
@@ -35,8 +36,17 @@ object PetalSmartDownloadRouter {
     @JvmStatic
     fun resolveDestinationDirectory(context: Context, fileName: String, mimeType: String?): File {
         val baseDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        // On Android 10+ (API 29+), Scoped Storage requires writing through MediaStore.Downloads.
+        // Mozilla Components' DefaultDownloadFileWriter specifically requires the public Downloads
+        // directory path (Environment.DIRECTORY_DOWNLOADS) to activate MediaStore integration.
+        // Returning custom subdirectory paths causes DefaultDownloadFileWriter to fail with:
+        // "directoryPath must be a content URI" or EACCES (Permission Denied).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return baseDownloads
+        }
+
         val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
-        val enabled = sp.getBoolean(PREF_SMART_ROUTING, true)
+        val enabled = sp.getBoolean(PREF_SMART_ROUTING, false)
 
         if (!enabled) {
             return baseDownloads
@@ -54,8 +64,10 @@ object PetalSmartDownloadRouter {
 
         val targetDir = File(baseDownloads, category.subfolder)
         if (!targetDir.exists()) {
-            targetDir.mkdirs()
+            if (!targetDir.mkdirs()) {
+                return baseDownloads
+            }
         }
-        return targetDir
+        return if (targetDir.canWrite()) targetDir else baseDownloads
     }
 }
