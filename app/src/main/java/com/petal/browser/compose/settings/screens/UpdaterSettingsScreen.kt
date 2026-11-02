@@ -41,7 +41,7 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalCrashReportingPicker
 import com.petal.browser.unit.PetalUpdateManager
-import com.petal.browser.unit.UpdateUnit
+import com.petal.browser.unit.PetalUpdateUtils
 import com.petal.browser.view.PetalToast
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -442,7 +442,7 @@ fun UpdaterSettingsScreenContent(
                                                 ctx = ctx.baseContext
                                             }
                                             if (act != null) {
-                                                UpdateUnit.checkForUpdates(act, false) {
+                                                PetalUpdateUtils.checkForUpdates(act, false) {
                                                     isCheckingUpdate = false
                                                     lastCheckTimestamp = System.currentTimeMillis()
                                                 }

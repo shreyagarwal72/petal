@@ -1,6 +1,53 @@
-### v4.5.3 — 🚀 In Development
+### v4.5.4 — 🎨 Material 3 Expressive UI & UX Containment, Profile Lock Overhaul & Unified Iconography
 
-> *"Work-in-progress release cycle for Petal Browser v4.5.3."*
+> *"Milestone v4.5.4 brings a comprehensive Material 3 Expressive upgrade across Petal Browser: authentic M3 Expressive shape scales and tonal container ladders, an overhaul of the Profile & App Lock security flow with biometric and profile identity badges, 100% unified Rounded iconography with zero colorology drift, position-aware containment capsules, native Firefox flags harvest, and Liquid Glass Custom Tabs."*
+
+#### 🎨 Material 3 Expressive Theme Engine & Color Scheme
+- **Official Material 3 Expressive Shapes Scale**:
+  - Supplied explicit `Shapes` (`extraSmall = 8.dp`, `small = 12.dp`, `medium = 16.dp`, `large = 24.dp`, `extraLarge = 32.dp`) to `MaterialExpressiveTheme` in `PetalTheme.kt`, giving cards, sheets, buttons, and badges their signature modern curvature.
+- **Tonal Elevation Container Hierarchy**:
+  - Completely resolved the container flattening bug in `expressiveColors`, restoring distinct surface steps (`surfaceContainerLowest`, `Low`, `Container`, `High`, `Highest`) across Light, Dark, and AMOLED modes.
+  - Preserved pure `#000000` AMOLED backdrops while guaranteeing high-contrast subtle container elevation and outline borders on OLED panels.
+
+#### 🔒 Profile & App Lock Security Redesign
+- **Dynamic Preference & Auth Routing**:
+  - Eliminated the hardcoded `"1234"` fallback passcode bug; now strictly checks actual saved credentials and respects `sp_app_lock_type` (`"FINGERPRINT"` vs `"PASSWORD"`).
+  - Automatically launches biometric prompt on launch when configured for fingerprint, and switches smoothly to password PIN pad when requested.
+- **Profile Identity Badge**:
+  - Added an active profile identity chip badge (`"${activeProfile.name} Profile"`) with avatar accenting above the lock screen header, ensuring users immediately recognize which profile is being secured.
+- **Liquid Glass Avatar Surface & Pill Physics**:
+  - Upgraded unlock avatar surface with `isLiquidGlassEnabled("sp_liquid_glass_containments")`, `liquidGlassChrome`, and spring scaling on `Bun.toShape()`.
+  - Refined biometric action button to standard M3 Expressive pill contour (`RoundedCornerShape(50)`).
+- **Redesigned Passcode Modal**:
+  - Re-engineered the passcode creation and change dialog using `PetalDialog` with clean vertical spacing, title, hint, and button row.
+
+#### ✨ 100% Unified `Icons.Rounded.*` Iconography (Strict Colorology Preservation)
+- **Zero Legacy Iconography**:
+  - Migrated every single Compose ImageVector icon from `Icons.Filled.*`, `Icons.Default.*`, `Icons.Outlined.*`, and `Icons.AutoMirrored.Filled.*` to `Icons.Rounded.*` and `Icons.AutoMirrored.Rounded.*`.
+  - Upgraded across all layers: Core containment (`PetalContainment.kt`, `PetalTransientSurfaces.kt`, `ExpressiveHeader.kt`), Navigation & Sheets (`PetalOptionsSheet.kt`, `PetalInactiveTabsSheet.kt`, `PetalBookmarksScreen.kt`, `PetalHistoryScreen.kt`, `PetalExtensionsScreen.kt`, `PetalOmniboxPage.kt`), File System (`PetalFilePickerScreen.kt`, `PetalFileViewerScreen.kt`), Media Players (`PetalAspectRatioSheet.kt`, `PetalAudioPlayerScreen.kt`, `PetalCastManager.kt`, `PetalPlayerComponents.kt`, `PetalVideoPlayerOverlay.kt`), Settings & Permissions (`PetalFeaturedCarousel.kt`, `SettingsHubScreen.kt`, `DataBackupSettingsScreen.kt`, `InactiveSettingsScreen.kt`, `PetalDeleteScreen.kt`, `PetalBrowserPermissionDialog.kt`, `PetalWelcomeScreen.kt`, `PetalImageViewerScreen.kt`, `PetalPdfViewerScreen.kt`).
+- **Strict Colorology Preservation**:
+  - 100% preserved all `primary`, `secondary`, `tertiary`, `containerColor`, and `tint` attributes across all badges, chips, rows, and cards, fulfilling strict visual identity guidelines.
+
+#### 📦 Position-Aware Containment & M3 Hero Cards
+- **Position-Aware Sliders (`PetalVariableSlider`)**:
+  - Enhanced `PetalVariableSlider` with `position: PetalGroupPosition` shape awareness, AMOLED outline border, and `liquidGlassChrome` sheen.
+- **Hero Card Encapsulation**:
+  - Enclosed loose settings columns in `AppearanceSettingsScreen.kt` (Shape Change Mode and Motion Blur slider) inside structured `PetalHeroCard` capsules.
+  - Enclosed nested zoom and live font preview surfaces in `DisplaySettingsScreen.kt` with M3 Expressive container tokens and outline borders.
+
+#### 🦊 Native Firefox Flags Hub & Wiring Harvest
+- **Native Firefox Flags Hub**:
+  - Built direct about:config and gecko flags inspection bridge, allowing granular engine tuning directly from Petal Settings.
+- **Privacy Hardening**:
+  - Hardened tracking protection, isolated storage partitions, and refined Gecko runtime parameters for battery and memory efficiency.
+- **Liquid Glass Custom Tabs**:
+  - Redesigned custom tab overlay with fluid morphing, bottom toolbar matching, and Liquid Glass chrome.
+
+---
+
+### v4.5.3 — 💎 Live Liquid Glass in Minimized Address Bar & Expressive Morph Animations
+
+> *"Release v4.5.3 brings live Liquid Glass refraction to the minimized address bar pill, spring minimization physics, dynamic find-in-page slotting, and dedicated Google Play AAB bundle support with native in-app updates."*
 
 #### 💎 Live Liquid Glass in Minimized Address Bar & Expressive Morph Animations
 - **True Live Liquid Glass in Minimized Pill**:

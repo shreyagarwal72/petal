@@ -22,15 +22,15 @@ import android.view.MotionEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.preference.PreferenceManager
-import com.petal.browser.browser.AlbumController
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.browser.PetalTabController
+import com.petal.browser.unit.PetalAndroidUtils
 
 object PetalAccessibilityEngine {
 
     private const val TAG = "PetalAccessibility"
     const val JS_BRIDGE_NAME = "PetalAccessibilityBridge"
 
-    private fun evaluateJavascript(controller: AlbumController?, script: String) {
+    private fun evaluateJavascript(controller: PetalTabController?, script: String) {
         if (controller == null) return
         when (controller) {
             is com.petal.browser.browser.PetalTabViewController -> {
@@ -48,7 +48,7 @@ object PetalAccessibilityEngine {
     // ── Master Accessibility Hook for Tab Controllers ────────────────────────
 
     @JvmStatic
-    fun applyAccessibilitySettings(controller: AlbumController?) {
+    fun applyAccessibilitySettings(controller: PetalTabController?) {
         if (controller == null) return
         val view = controller.albumView ?: return
         val context = view.context ?: return
@@ -73,7 +73,7 @@ object PetalAccessibilityEngine {
         val defaultScale = sp.getFloat("sp_zoom_level_scale", 1.0f)
         val defaultTextScale = sp.getFloat("sp_font_size_scale", 1.0f)
         val legacyFontSize = try {
-            val legacyStr = HelperUnit.getSafeString(sp, "sp_fontSize", "100")
+            val legacyStr = PetalAndroidUtils.getSafeString(sp, "sp_fontSize", "100")
             legacyStr.toInt().toFloat() / 100f
         } catch (e: Exception) {
             1.0f
@@ -94,7 +94,7 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun applyZoom(controller: AlbumController?, url: String?) {
+    fun applyZoom(controller: PetalTabController?, url: String?) {
         if (controller == null) return
         val view = controller.albumView ?: return
         val context = view.context ?: return
@@ -130,7 +130,7 @@ object PetalAccessibilityEngine {
             return null
         }
         return try {
-            HelperUnit.domain(url)
+            PetalAndroidUtils.domain(url)
         } catch (e: Exception) {
             null
         }
@@ -145,7 +145,7 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun applyForceZoom(controller: AlbumController?) {
+    fun applyForceZoom(controller: PetalTabController?) {
         if (controller == null) return
         val view = controller.albumView ?: return
         val context = view.context ?: return
@@ -246,7 +246,7 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun toggleCaretBrowsing(context: Context, controller: AlbumController?): Boolean {
+    fun toggleCaretBrowsing(context: Context, controller: PetalTabController?): Boolean {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val current = sp.getBoolean("sp_caret_browsing", false)
         val newState = !current
@@ -256,14 +256,14 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun setCaretBrowsing(context: Context, controller: AlbumController?, enabled: Boolean) {
+    fun setCaretBrowsing(context: Context, controller: PetalTabController?, enabled: Boolean) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         sp.edit().putBoolean("sp_caret_browsing", enabled).apply()
         applyCaretBrowsing(controller, enabled)
     }
 
     @JvmStatic
-    fun applyCaretBrowsing(controller: AlbumController?, enabled: Boolean) {
+    fun applyCaretBrowsing(controller: PetalTabController?, enabled: Boolean) {
         if (controller == null) return
         val js = if (enabled) {
             "document.designMode = 'on'; window.__petal_caret_mode = true;"
@@ -297,7 +297,7 @@ object PetalAccessibilityEngine {
     private var lastSwipeTime = 0L
 
     @JvmStatic
-    fun handleGenericMotion(controller: AlbumController?, event: MotionEvent): Boolean {
+    fun handleGenericMotion(controller: PetalTabController?, event: MotionEvent): Boolean {
         if (controller == null) return false
         val view = controller.albumView
         val context = view?.context ?: return false

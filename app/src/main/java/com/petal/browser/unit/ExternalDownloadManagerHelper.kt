@@ -19,6 +19,8 @@ import java.util.Locale
  */
 object ExternalDownloadManagerHelper {
 
+    const val FIREFOX_MOBILE_UA = "Mozilla/5.0 (Android; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0"
+
     // Preference key for download manager mode
     const val PREF_DOWNLOAD_MANAGER_MODE = "sp_download_manager_mode"
     const val MODE_IN_APP = "IN_APP"
@@ -114,12 +116,15 @@ object ExternalDownloadManagerHelper {
     }
 
     @JvmStatic
+    @JvmOverloads
     fun launchDownloadInExternalManager(
         context: Context,
         url: String,
         fileName: String?,
         mimeType: String?,
-        preferredDownloader: ExternalDownloader? = null
+        preferredDownloader: ExternalDownloader? = null,
+        userAgent: String? = null,
+        cookie: String? = null
     ): Boolean {
         val activity = resolveActivity(context)
         val mode = getDownloadManagerMode(context)
@@ -137,8 +142,10 @@ object ExternalDownloadManagerHelper {
             url
         }
 
-        val userAgent = try { WebSettings.getDefaultUserAgent(context) } catch (e: Exception) { null }
-        val cookie = try { CookieManager.getInstance().getCookie(verifiedUrl) } catch (e: Exception) { null }
+        val effectiveUa = userAgent?.takeIf { it.isNotBlank() } ?: FIREFOX_MOBILE_UA
+        val effectiveCookie = cookie?.takeIf { it.isNotBlank() }
+            ?: com.petal.browser.media.sniffer.PetalMediaSniffer.getCookiesForUrl(verifiedUrl)?.takeIf { it.isNotBlank() }
+            ?: try { CookieManager.getInstance().getCookie(verifiedUrl) } catch (e: Exception) { null }
 
         // 1. If target is 1DM (or installed and activity available)
         if (targetDownloader == ExternalDownloader.ENGINE_1DM) {
@@ -146,7 +153,7 @@ object ExternalDownloadManagerHelper {
                 try {
                     val headers = HashMap<String, String>()
                     headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-                    headers["Accept-Language"] = com.petal.browser.unit.HelperUnit.getAcceptLanguage(activity)
+                    headers["Accept-Language"] = com.petal.browser.unit.PetalAndroidUtils.getAcceptLanguage(activity)
                     headers["Referer"] = verifiedUrl
 
                     Util1DM.downloadFile(
@@ -154,8 +161,8 @@ object ExternalDownloadManagerHelper {
                         verifiedUrl,
                         verifiedUrl,
                         fileName,
-                        userAgent,
-                        cookie,
+                        effectiveUa,
+                        effectiveCookie,
                         headers,
                         false,
                         false
@@ -186,13 +193,13 @@ object ExternalDownloadManagerHelper {
                             putExtra("file_name", fileName)
                             putExtra("name", fileName)
                         }
-                        if (!userAgent.isNullOrBlank()) {
-                            putExtra("extra_useragent", userAgent)
-                            putExtra("user_agent", userAgent)
+                        if (!effectiveUa.isNullOrBlank()) {
+                            putExtra("extra_useragent", effectiveUa)
+                            putExtra("user_agent", effectiveUa)
                         }
-                        if (!cookie.isNullOrBlank()) {
-                            putExtra("extra_cookies", cookie)
-                            putExtra("cookie", cookie)
+                        if (!effectiveCookie.isNullOrBlank()) {
+                            putExtra("extra_cookies", effectiveCookie)
+                            putExtra("cookie", effectiveCookie)
                         }
                         putExtra("extra_referer", verifiedUrl)
                         putExtra("referer", verifiedUrl)
@@ -220,11 +227,11 @@ object ExternalDownloadManagerHelper {
                     putExtra("extra_filename", fileName)
                     putExtra("file_name", fileName)
                 }
-                if (!userAgent.isNullOrBlank()) {
-                    putExtra("extra_useragent", userAgent)
+                if (!effectiveUa.isNullOrBlank()) {
+                    putExtra("extra_useragent", effectiveUa)
                 }
-                if (!cookie.isNullOrBlank()) {
-                    putExtra("extra_cookies", cookie)
+                if (!effectiveCookie.isNullOrBlank()) {
+                    putExtra("extra_cookies", effectiveCookie)
                 }
                 putExtra("extra_referer", verifiedUrl)
             }

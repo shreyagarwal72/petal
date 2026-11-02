@@ -1,9 +1,9 @@
 package com.petal.browser.account.mozilla
 
 import android.content.Context
+import com.petal.browser.database.HistoryBookmarkContract
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
-import com.petal.browser.database.RecordAction
-import com.petal.browser.unit.RecordUnit
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -24,7 +24,7 @@ data class MozHistoryItem(
 class PetalHistorySyncBridge {
 
     fun exportToBsoRecords(context: Context, maxRecords: Int = 100): List<BsoRecord> {
-        val action = RecordAction(context)
+        val action = HistoryBookmarkRepository(context)
         val historyList = try {
             action.open(false)
             action.listHistory(context)
@@ -122,7 +122,7 @@ class PetalHistorySyncBridge {
 
     fun importToDatabase(context: Context, items: List<MozHistoryItem>) {
         if (items.isEmpty()) return
-        val action = RecordAction(context)
+        val action = HistoryBookmarkRepository(context)
         try {
             action.open(true)
             val existingHistory = action.listHistory(context)
@@ -151,7 +151,7 @@ class PetalHistorySyncBridge {
                     existingUrlMap[normUrl] = record
                 } else if (visitTime > existingRecord.time) {
                     // Update to more recent visit time
-                    action.deleteURL(existingRecord.url, RecordUnit.TABLE_HISTORY)
+                    action.deleteURL(existingRecord.url, HistoryBookmarkContract.TABLE_HISTORY)
                     val updatedRecord = Record().apply {
                         title = item.title.ifBlank { existingRecord.title ?: item.url }
                         url = item.url

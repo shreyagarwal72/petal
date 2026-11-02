@@ -28,8 +28,8 @@ import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
 import com.petal.browser.objects.CustomRedirect;
 import com.petal.browser.objects.CustomSearchesHelper;
-import com.petal.browser.unit.BrowserUnit;
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalBrowserUtils;
+import com.petal.browser.unit.PetalAndroidUtils;
 
 public class CustomSearchAdapter extends RecyclerView.Adapter<RedirectsViewHolder> {
     final private ArrayList<CustomRedirect> redirects;
@@ -71,7 +71,7 @@ public class CustomSearchAdapter extends RecyclerView.Adapter<RedirectsViewHolde
         remove.setVisibility(VISIBLE);
         source.setText(current.getSource());
         target.setText(current.getTarget());
-        HelperUnit.setHighLightedText(context, target, current.getTarget(), HelperUnit.domain(current.getTarget()));
+        PetalAndroidUtils.setHighLightedText(context, target, current.getTarget(), PetalAndroidUtils.domain(current.getTarget()));
 
         remove.setOnClickListener(v -> {
             PetalToast.show(context, context.getString(R.string.hint_database), PetalToast.LENGTH_SHORT, context.getString(R.string.app_ok), () -> {
@@ -92,10 +92,10 @@ public class CustomSearchAdapter extends RecyclerView.Adapter<RedirectsViewHolde
             }
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
             sp.edit().putString("sp_search_customSearches", current.getTarget()).apply();
-            String t = BrowserUnit.queryWrapper(context, url);
+            String t = PetalBrowserUtils.queryWrapper(context, url);
 
-            if (BrowserUnit.isURL(t)) {
-                BrowserUnit.intentURL(context, Uri.parse(t));
+            if (PetalBrowserUtils.isURL(t)) {
+                PetalBrowserUtils.intentURL(context, Uri.parse(t));
                 sp.edit().putString("sp_search_customSearches", "").apply();
             } else {
                 PetalToast.show(BrowserActivity.getAppContext(), R.string.app_error);

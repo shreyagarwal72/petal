@@ -9,8 +9,9 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.activity.SettingsDataClearActivity
-import com.petal.browser.database.RecordAction
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.database.HistoryBookmarkRepository
+import com.petal.browser.unit.PetalAndroidUtils
+import com.petal.browser.unit.PetalBrowserUtils
 import com.petal.browser.view.PetalToast
 import com.petal.browser.view.PetalGeckoView
 
@@ -26,13 +27,13 @@ object BrowserNavigationDelegate {
         val geckoView = currentController as? com.petal.browser.view.PetalGeckoView
         val tabSurface = currentController as? com.petal.browser.browser.PetalTabViewController
 
-        val isHome = activity.isPetalHomeSurfaceShowing || activity.isCurrentTabHomeOrBlank || com.petal.browser.unit.BrowserUnit.isHomePage(geckoView?.url ?: currentController?.url)
+        val isHome = activity.isPetalHomeSurfaceShowing || activity.isCurrentTabHomeOrBlank || PetalBrowserUtils.isHomePage(geckoView?.url ?: currentController?.url)
         val title = if (isHome) "Petal Home" else (geckoView?.title ?: currentController?.title ?: "")
         val url = if (isHome) "petal://home" else (geckoView?.url ?: currentController?.url ?: "")
 
         var isBookmarked = false
         if (!isHome && url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
-            val action = RecordAction(activity)
+            val action = HistoryBookmarkRepository(activity)
             action.open(false)
             isBookmarked = action.checkBookmark(url)
             action.close()
@@ -85,7 +86,7 @@ object BrowserNavigationDelegate {
 
                 override fun onOpenPageInfo() {
                     if (url.isNotEmpty() && activity.fab_menu != null) {
-                        activity.showDialogFastToggle(HelperUnit.domain(url), url, activity.fab_menu)
+                        activity.showDialogFastToggle(PetalAndroidUtils.domain(url), url, activity.fab_menu)
                     }
                 }
 
@@ -178,7 +179,7 @@ object BrowserNavigationDelegate {
 
                 override fun onCopyCleanLink() {
                     if (url.isNotEmpty()) {
-                        val cleanUrl = com.petal.browser.unit.BrowserUnit.cleanTrackingParams(url)
+                        val cleanUrl = PetalBrowserUtils.cleanTrackingParams(url)
                         val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
                         val clip = android.content.ClipData.newPlainText("Clean URL", cleanUrl)
                         clipboard?.setPrimaryClip(clip)

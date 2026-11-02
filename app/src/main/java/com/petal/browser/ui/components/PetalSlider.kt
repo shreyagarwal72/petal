@@ -29,6 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.rememberGlassSheen
 
 private val TrackHeight = 46.dp
 private val ThumbSize = 30.dp
@@ -55,6 +59,10 @@ fun PetalSlider(
     val interactionSource = remember { MutableInteractionSource() }
     val isDragged by interactionSource.collectIsDraggedAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
+
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = rememberGlassSheen(isGlass)
+    val trackShape = RoundedCornerShape(50)
 
     Slider(
         value = value,
@@ -89,8 +97,19 @@ fun PetalSlider(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(TrackHeight)
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .clip(trackShape)
+                    .then(
+                        if (isGlass) Modifier.liquidGlassChrome(
+                            trackShape,
+                            enabled = true,
+                            sheenIntensity = sheen * 0.75f,
+                            pressFx = false
+                        ) else Modifier
+                    )
+                    .background(
+                        if (isGlass) petalGroupSurfaceColor()
+                        else MaterialTheme.colorScheme.surfaceContainerHighest
+                    )
             ) {
                 val travel = maxWidth - ThumbSize - ThumbInset * 2
                 val thumbStart = ThumbInset + travel * fraction

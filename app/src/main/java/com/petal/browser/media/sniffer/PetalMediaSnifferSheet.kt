@@ -8,6 +8,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -71,6 +73,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.petal.browser.ui.components.ExpressiveSplitButton
 import com.petal.browser.ui.components.SplitButtonVariant
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.theme.PetalMaterialShapes
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -137,24 +143,50 @@ fun PetalMediaSnifferOverlay(
         exit  = slideOutVertically { -it } + fadeOut() + scaleOut(targetScale = .92f),
         modifier = Modifier.fillMaxWidth()
     ) {
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val bannerShape = RoundedCornerShape(24.dp)
         Surface(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp,
-            shadowElevation = 2.dp
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .liquidGlassChrome(
+                    shape = bannerShape,
+                    enabled = isGlass,
+                    sheenIntensity = 0.65f,
+                    pressFx = true
+                ),
+            shape = bannerShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = if (isGlass) 0.dp else 6.dp,
+            shadowElevation = if (isGlass) 0.dp else 2.dp,
+            border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
         ) {
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Rounded.VideoLibrary, null, tint = MaterialTheme.colorScheme.primary)
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(PetalMaterialShapes.Gem.toShape())
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.VideoLibrary,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
                 Column(Modifier.weight(1f)) {
                     Text(
                         if (media.isNotEmpty()) "Media found" else "Social download",
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         when {
@@ -163,12 +195,34 @@ fun PetalMediaSnifferOverlay(
                             platform != null -> platform.displayName
                             else -> "Media available"
                         },
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                AssistChip(onClick = { sheetOpen = true }, label = { Text(stringResource(R.string.ui_view)) })
-                IconButton(onClick = { dismissed = true }, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Rounded.Close, "Dismiss", modifier = Modifier.size(18.dp))
+                FilledTonalButton(
+                    onClick = { sheetOpen = true },
+                    shape = RoundedCornerShape(14.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.ui_view),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                    )
+                }
+                IconButton(
+                    onClick = { dismissed = true },
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "Dismiss",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }
@@ -289,11 +343,15 @@ private fun PetalMediaSheet(
                             val isStream = item.type == MediaInterceptor.MediaType.HLS || item.type == MediaInterceptor.MediaType.DASH
                             val sizeStr = formatMediaSize(item.sizeBytes)
 
+                            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                            val itemShape = com.petal.browser.ui.containment.petalGroupShape(position)
                             Surface(
-                                shape = com.petal.browser.ui.containment.petalGroupShape(position),
+                                shape = itemShape,
                                 color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
                                 tonalElevation = 0.dp,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(if (isGlass) Modifier.liquidGlassChrome(itemShape, enabled = true, sheenIntensity = 0.5f, pressFx = true) else Modifier)
                             ) {
                                 Column(
                                     modifier = Modifier.padding(16.dp),

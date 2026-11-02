@@ -16,12 +16,10 @@ package com.petal.browser.browser
 
 import android.content.Context
 import android.net.Uri
-import android.webkit.WebResourceResponse
 import androidx.preference.PreferenceManager
 import com.petal.browser.engine.petal.blocking.PetalCosmeticScript
 import com.petal.browser.engine.petal.blocking.PetalProceduralCosmeticScript
 import com.petal.browser.engine.petal.blocking.ContentBlocker
-import java.io.ByteArrayInputStream
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
@@ -345,21 +343,6 @@ object PetalAdBlockEngine {
 
     @JvmStatic
     fun getTotalBlockedCount(): Long = totalBlockedCount.get()
-
-    /**
-     * High-performance empty 204 No Content WebResourceResponse to cancel ad network requests cleanly.
-     */
-    @JvmStatic
-    fun createEmpty204Response(): WebResourceResponse {
-        return WebResourceResponse(
-            "text/plain",
-            "UTF-8",
-            204,
-            "No Content",
-            mapOf("Access-Control-Allow-Origin" to "*"),
-            ByteArrayInputStream(ByteArray(0))
-        )
-    }
 
     /**
      * uBlock Origin & AdGuard Injection Payload:

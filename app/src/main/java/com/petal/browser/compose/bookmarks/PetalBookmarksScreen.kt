@@ -23,10 +23,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,9 +44,9 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
+import com.petal.browser.database.HistoryBookmarkContract
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
-import com.petal.browser.database.RecordAction
-import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
@@ -148,7 +144,7 @@ fun PetalBookmarksScreen(
     
     val reloadBookmarks: () -> Unit = {
         try {
-            val action = RecordAction(context)
+            val action = HistoryBookmarkRepository(context)
             action.open(false)
             val list = action.listBookmark(context, false, 0)
             action.close()
@@ -372,7 +368,7 @@ fun PetalBookmarksScreen(
                                                 modifier = Modifier.size(24.dp).clip(RoundedCornerShape(6.dp))
                                             )
                                         } else {
-                                            Icon(if (record.isReadingList) Icons.Filled.AutoStories else Icons.Filled.Bookmark,
+                                            Icon(if (record.isReadingList) Icons.Rounded.AutoStories else Icons.Rounded.Bookmark,
                                                 contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
                                         }
                                     }
@@ -395,9 +391,9 @@ fun PetalBookmarksScreen(
                                         IconButton(onClick = {
                                     val deletedRecord = record
                                     try {
-                                        val action = RecordAction(context)
+                                        val action = HistoryBookmarkRepository(context)
                                         action.open(true)
-                                        action.deleteURL(deletedRecord.url, RecordUnit.TABLE_BOOKMARK)
+                                        action.deleteURL(deletedRecord.url, HistoryBookmarkContract.TABLE_BOOKMARK)
                                         action.close()
                                     } catch (_: Exception) {}
                                     reloadBookmarks()
@@ -411,7 +407,7 @@ fun PetalBookmarksScreen(
                                         )
                                         if (result == SnackbarResult.ActionPerformed) {
                                             try {
-                                                val action = RecordAction(context)
+                                                val action = HistoryBookmarkRepository(context)
                                                 action.open(true)
                                                 action.addBookmark(deletedRecord)
                                                 action.close()
@@ -419,8 +415,8 @@ fun PetalBookmarksScreen(
                                             reloadBookmarks()
                                         }
                                     }
-                                        }) { Icon(Icons.Filled.Close, "Delete Bookmark", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
-                                        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }) { Icon(Icons.Rounded.Close, "Delete Bookmark", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                                        Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             )
@@ -443,9 +439,9 @@ fun PetalBookmarksScreen(
                 onConfirm = {
                     showClearConfirm = false
                     try {
-                        val action = RecordAction(context)
+                        val action = HistoryBookmarkRepository(context)
                         action.open(true)
-                        action.clearTable(RecordUnit.TABLE_BOOKMARK)
+                        action.clearTable(HistoryBookmarkContract.TABLE_BOOKMARK)
                         action.close()
                     } catch (_: Exception) {}
                     reloadBookmarks()
@@ -524,7 +520,7 @@ fun PetalBookmarksScreen(
                                 val finalUrl = if (!newUrl.startsWith("http://") && !newUrl.startsWith("https://")) "https://$newUrl" else newUrl
                                 val finalTitle = newTitle.ifBlank { Uri.parse(finalUrl).host ?: finalUrl }
                                 try {
-                                    val action = RecordAction(context)
+                                    val action = HistoryBookmarkRepository(context)
                                     action.open(true)
                                     action.addBookmark(Record(finalTitle, finalUrl, 0, 0))
                                     action.close()

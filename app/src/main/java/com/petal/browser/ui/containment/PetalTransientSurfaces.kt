@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -69,7 +69,7 @@ fun PetalSnackbarHost(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    PetalGroupIconBadge(Icons.Filled.Info, container = badgeContainer, tint = accent, size = 36.dp, iconSize = 18.dp)
+                    PetalGroupIconBadge(Icons.Rounded.Info, container = badgeContainer, tint = accent, size = 36.dp, iconSize = 18.dp)
                     Text(message, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium, lineHeight = 18.sp), maxLines = 2)
                     data.visuals.actionLabel?.let { label ->
                         TextButton(onClick = data::performAction, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp), colors = ButtonDefaults.textButtonColors(contentColor = actionColor)) {
@@ -78,7 +78,7 @@ fun PetalSnackbarHost(
                     }
                     if (data.visuals.withDismissAction) {
                         IconButton(onClick = data::dismiss, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.ui_dismiss), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_dismiss), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -234,7 +234,7 @@ fun PetalAlertDialog(
     message: String,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
-    icon: ImageVector = Icons.Filled.Info,
+    icon: ImageVector = Icons.Rounded.Info,
     destructive: Boolean = false,
     confirmText: String = "OK",
     dismissText: String? = "Cancel",

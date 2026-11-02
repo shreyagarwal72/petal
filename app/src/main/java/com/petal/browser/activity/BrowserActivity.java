@@ -147,14 +147,15 @@ import com.petal.browser.browser.BrowserController;
 import com.petal.browser.browser.DataURIParser;
 import com.petal.browser.browser.StandardDomainWhitelist;
 import com.petal.browser.database.FaviconHelper;
+import com.petal.browser.database.HistoryBookmarkContract;
+import com.petal.browser.database.HistoryBookmarkRepository;
 import com.petal.browser.database.Record;
-import com.petal.browser.database.RecordAction;
 import com.petal.browser.dialogs.CustomRedirectsDialog;
 import com.petal.browser.objects.CustomRedirect;
 import com.petal.browser.objects.CustomSearchesHelper;
-import com.petal.browser.unit.BrowserUnit;
-import com.petal.browser.unit.HelperUnit;
-import com.petal.browser.unit.RecordUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
+import com.petal.browser.unit.PetalBackupManager;
+import com.petal.browser.unit.PetalBrowserUtils;
 import com.petal.browser.view.CustomSearchAdapter;
 import com.petal.browser.view.BrowserMenuAdapter;
 import com.petal.browser.view.GridAdapter;
@@ -621,7 +622,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         }
 
-        super.attachBaseContext(HelperUnit.applyLanguage(newBase));
+        super.attachBaseContext(PetalAndroidUtils.applyLanguage(newBase));
     }
 
     /**
@@ -762,6 +763,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.profile.PetalProfileManager.INSTANCE.init(this);
             com.petal.browser.wallpaper.PetalWallpaperManager.INSTANCE.init(this);
             com.petal.browser.apk.PetalApkInstallerEngine.checkAndRequestShizuku(this);
+            com.petal.browser.compose.reader.PetalReaderBridge.setReaderEligibilityListener((artUrl, eligible) -> {
+                setReaderModeEligibleForUrl(artUrl, eligible);
+                return kotlin.Unit.INSTANCE;
+            });
         } catch (Throwable ignored) {}
 
         // Blend the system launch splash (animated cookie + pinwheel) into whatever comes next. The exit
@@ -905,10 +910,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(context);
         } catch (Exception ignored) {}
-        HelperUnit.initTheme(activity);
+        PetalAndroidUtils.initTheme(activity);
         com.petal.browser.account.PetalUserProfileManager.INSTANCE.init(this);
         com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance().initialize(this);
-        com.petal.browser.unit.BackupUnit.performAutoVersionBackup(this);
+        PetalBackupManager.performAutoVersionBackup(this);
 
         if (sp.getBoolean("sp_screenOn", false)) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (sp.getBoolean("sp_standard_restart", false)) sp.edit().putString("profile", "profileStandard").apply();
@@ -1069,13 +1074,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return insets;
         });
 
-        MaterialAlertDialogBuilder builderOverview = new MaterialAlertDialogBuilder(context);
-        View dialogViewOverview = View.inflate(context, R.layout.dialog_overview, null);
-        builderOverview.setView(dialogViewOverview);
-        dialogOverview = builderOverview.create();
-        bottom_navigation = dialogViewOverview.findViewById(R.id.bottom_navigation);
-        tab_container = dialogViewOverview.findViewById(R.id.listTabs);
-        HelperUnit.setupDialog(context, dialogOverview);
+        // Legacy dialogOverview is deprecated and replaced by modern Compose UI
+        // (PetalTabSwitcherBridge, PetalBookmarksBottomSheet, PetalHistoryBottomSheet).
 
         initOmniBox();
         initSearchOnSite();
@@ -1087,7 +1087,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // initialized, so ACTION_VIEW would consume the intent (setAction("")) without
         // actually loading the URL — causing the "only opens on 2nd launch" bug.
 
-        // Update check disabled (UpdateUnit removed)
+        // Update check disabled
 
         // Tab Session Restoration & Rehydration
         boolean tabsRestored = com.petal.browser.unit.PetalTabSessionManager.restoreSession(this);
@@ -1178,7 +1178,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (matches != null && !matches.isEmpty()) {
                 String query = matches.get(0);
                 if (query != null && !query.trim().isEmpty()) {
-                    String targetUrl = BrowserUnit.queryWrapper(this, query.trim());
+                    String targetUrl = PetalBrowserUtils.queryWrapper(this, query.trim());
                     addAlbum(null, targetUrl, true);
                 }
             }
@@ -1302,10 +1302,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             BrowserContainer.clear();
             if (sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
-                BrowserUnit.clearOnExit(this);
+                PetalBrowserUtils.clearOnExit(this);
             }
             if (sp != null && sp.getBoolean("sp_backup_quit", false)) {
-                com.petal.browser.unit.BackupUnit.backupData(activity, 0);
+                PetalBackupManager.backupData(activity, 0);
             }
             com.petal.browser.media.BrowserMediaDelegate.unregisterPipReceiver(this);
         } catch (Exception e) {
@@ -1328,7 +1328,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         try {
             if (isFinishing() && sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
-                BrowserUnit.clearOnExit(this);
+                PetalBrowserUtils.clearOnExit(this);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error in BrowserActivity.onStop", e);
@@ -1441,7 +1441,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
         if (isKeyboardVisible) {
-            HelperUnit.hideSoftKeyboard(this, currentFocus);
+            PetalAndroidUtils.hideSoftKeyboard(this, currentFocus);
             return;
         }
 
@@ -1550,7 +1550,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // ── Tier 4: Intra-Tab Home Fallback ──
         // If on a web document with no history, navigate back to this tab's start surface
         if (!isPetalHomeSurfaceShowing && !isHomePage(currentUrl) && currentUrl != null && !currentUrl.isEmpty() && !currentUrl.equalsIgnoreCase("about:blank")) {
-            String homeUrl = BrowserUnit.getEffectiveHomepageUrl(this);
+            String homeUrl = PetalBrowserUtils.getEffectiveHomepageUrl(this);
             if (homeUrl == null || homeUrl.trim().isEmpty()) homeUrl = "about:blank";
             if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).stopLoading();
@@ -1824,7 +1824,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 sp.edit().putBoolean("sp_auto_pip", false).apply();
                             });
                     androidx.appcompat.app.AlertDialog pipDialog = pipBuilder.create();
-                    HelperUnit.setupDialog(this, pipDialog);
+                    PetalAndroidUtils.setupDialog(this, pipDialog);
                     pipDialog.show();
                 } else if (isAutoPipEnabled) {
                     triggerSystemPipMode();
@@ -2447,7 +2447,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     String targetUrl = u;
                     if (targetUrl != null && !targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-                        targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, u);
+                        targetUrl = PetalBrowserUtils.queryWrapper(BrowserActivity.this, u);
                     }
                     if (currentAlbumController != null) {
                         showAlbum(currentAlbumController, targetUrl);
@@ -2489,7 +2489,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 if (!url.startsWith("http://") && !url.startsWith("https://")) {
                                     url = "https://" + url;
                                 }
-                                if (title.isEmpty()) title = HelperUnit.domain(url);
+                                if (title.isEmpty()) title = PetalAndroidUtils.domain(url);
 
                                 try {
                                     SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(BrowserActivity.this);
@@ -2807,8 +2807,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void onHomeClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                            String effectiveHome = BrowserUnit.getEffectiveHomepageUrl(BrowserActivity.this);
-                            if (effectiveHome != null && !effectiveHome.equalsIgnoreCase("about:blank") && !BrowserUnit.isHomePage(effectiveHome)) {
+                            String effectiveHome = PetalBrowserUtils.getEffectiveHomepageUrl(BrowserActivity.this);
+                            if (effectiveHome != null && !effectiveHome.equalsIgnoreCase("about:blank") && !PetalBrowserUtils.isHomePage(effectiveHome)) {
                                 if (currentAlbumController != null) {
                                     if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                                         ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadUrl(effectiveHome);
@@ -3009,7 +3009,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addressBar.setVisibility(VISIBLE);
             }
 
-            final int addressHeight = addressBar.getVisibility() == GONE ? 0 : (addressBar.getHeight() > 0 ? addressBar.getHeight() : (int) HelperUnit.convertDpToPixel(60f, context));
+            final int addressHeight = addressBar.getVisibility() == GONE ? 0 : (addressBar.getHeight() > 0 ? addressBar.getHeight() : (int) PetalAndroidUtils.convertDpToPixel(60f, context));
             // Use the actual Compose bottom-nav height, NOT the container height.
             // The bottom_nav_container (a RelativeLayout with wrap_content height) can
             // incorrectly measure at the full screen height when RelativeLayout resolves
@@ -3033,11 +3033,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // Guard: if the container is suspiciously tall (> half screen height),
                 // fall back to the compose view height which is the ground-truth.
                 int screenH = getResources().getDisplayMetrics().heightPixels;
-                bottomNavHeight = (containerH > screenH / 2) ? composeH : (containerH > 0 ? containerH : (int) HelperUnit.convertDpToPixel(64f, context));
+                bottomNavHeight = (containerH > screenH / 2) ? composeH : (containerH > 0 ? containerH : (int) PetalAndroidUtils.convertDpToPixel(64f, context));
             } else {
                 bottomNavHeight = 0;
             }
-            final int gap = (int) HelperUnit.convertDpToPixel(2f, context);
+            final int gap = (int) PetalAndroidUtils.convertDpToPixel(2f, context);
 
             // Keep main_content as a stable full-screen container and reserve space
             // with padding. This avoids the old circular/async RelativeLayout layout
@@ -3072,7 +3072,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             boolean isImmersive = (sp != null && sp.getBoolean("sp_immersive_fullscreen", false)) || isCustomFullscreenState;
-            int resolvedStatusBarGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this));
+            int resolvedStatusBarGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : PetalAndroidUtils.getStatusBarHeight(this));
             // For bottom address bar (Firefox style):
             // When address bar is at the bottom, it docks flush right above the bottom nav (if visible) or parent bottom.
             // Reserved bottom padding for mainContent ensures webpage content sits flush above the bottom toolbar.
@@ -3099,7 +3099,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     && isFloatingNavStyle && !isBottom
                     && !com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp);
             boolean isPillCollapse = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
-            int pillHeightPx = (int) HelperUnit.convertDpToPixel(40f, context);
+            int pillHeightPx = (int) PetalAndroidUtils.convertDpToPixel(40f, context);
             com.petal.browser.ui.components.BarInsets.Result insets = com.petal.browser.ui.components.BarInsets.compute(
                     isBottom, reserveBarSpace, addressHeight, bottomNavHeight, gap, resolvedStatusBarGap,
                     legacyUnder && liquidGlassTopOn,
@@ -3152,7 +3152,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     lp.bottomMargin = 0;
                 }
                 progressBarCompose.setLayoutParams(lp);
-                progressBarCompose.setElevation(HelperUnit.convertDpToPixel(30f, context));
+                progressBarCompose.setElevation(PetalAndroidUtils.convertDpToPixel(30f, context));
                 progressBarCompose.setTranslationY(0f);
                 progressBarCompose.bringToFront();
             }
@@ -3165,7 +3165,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 if (isBottom) {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) HelperUnit.convertDpToPixel(8f, context);
+                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) PetalAndroidUtils.convertDpToPixel(8f, context);
                     lp.topMargin = 0;
                 } else {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
@@ -3185,11 +3185,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 if (isBottom) {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) HelperUnit.convertDpToPixel(8f, context);
+                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) PetalAndroidUtils.convertDpToPixel(8f, context);
                     lp.topMargin = 0;
                 } else {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    lp.topMargin = addressHeight + (int) HelperUnit.convertDpToPixel(6f, context);
+                    lp.topMargin = addressHeight + (int) PetalAndroidUtils.convertDpToPixel(6f, context);
                     lp.bottomMargin = 0;
                 }
                 networkStatusBanner.setLayoutParams(lp);
@@ -3205,11 +3205,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 if (isBottom) {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) HelperUnit.convertDpToPixel(8f, context);
+                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) PetalAndroidUtils.convertDpToPixel(8f, context);
                     lp.topMargin = 0;
                 } else {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    lp.topMargin = addressHeight + (int) HelperUnit.convertDpToPixel(6f, context);
+                    lp.topMargin = addressHeight + (int) PetalAndroidUtils.convertDpToPixel(6f, context);
                     lp.bottomMargin = 0;
                 }
                 mediaSnifferBanner.setLayoutParams(lp);
@@ -3222,11 +3222,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 if (isBottom) {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    lp.bottomMargin = bottomNavHeight + addressHeight + (int) HelperUnit.convertDpToPixel(12f, context);
+                    lp.bottomMargin = bottomNavHeight + addressHeight + (int) PetalAndroidUtils.convertDpToPixel(12f, context);
                     lp.topMargin = 0;
                 } else {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    lp.topMargin = addressHeight + (int) HelperUnit.convertDpToPixel(16f, context);
+                    lp.topMargin = addressHeight + (int) PetalAndroidUtils.convertDpToPixel(16f, context);
                     lp.bottomMargin = 0;
                 }
                 fabBubble.setLayoutParams(lp);
@@ -3254,7 +3254,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ABOVE);
                 lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                 lp.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
-                lp.bottomMargin = isFloating ? (int) HelperUnit.convertDpToPixel(6f, context) : 0;
+                lp.bottomMargin = isFloating ? (int) PetalAndroidUtils.convertDpToPixel(6f, context) : 0;
                 bottomNav.setLayoutParams(lp);
                 bottomNav.bringToFront();
             }
@@ -3342,7 +3342,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     predecessor = currentAlbumController;
                 }
                 //if not the current TAB is being closed return to current TAB
-                tab_container.removeView(controller.getAlbumView());
+                if (tab_container != null && controller.getAlbumView() != null) {
+                    tab_container.removeView(controller.getAlbumView());
+                }
                 // Retained surface: unmount it from contentFrame before the tab is destroyed.
                 detachTabSurface(controller);
                 int index = BrowserContainer.indexOf(controller);
@@ -3466,11 +3468,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             
             // Forgetful Browsing: If no remaining open tabs have this domain, purge its data
             try {
-                String closedHost = HelperUnit.domain(controller.getUrl());
+                String closedHost = PetalAndroidUtils.domain(controller.getUrl());
                 if (closedHost != null && !closedHost.isEmpty()) {
                     boolean stillOpen = false;
                     for (AlbumController ac : BrowserContainer.list()) {
-                        if (closedHost.equalsIgnoreCase(HelperUnit.domain(ac.getUrl()))) {
+                        if (closedHost.equalsIgnoreCase(PetalAndroidUtils.domain(ac.getUrl()))) {
                             stillOpen = true;
                             break;
                         }
@@ -3789,195 +3791,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @SuppressLint("ClickableViewAccessibility")
     public void initOverview() {
-        if (dialogOverview == null) return;
-        listView = dialogOverview.findViewById(R.id.list_overView);
-        AtomicInteger intPage = new AtomicInteger();
-
-        try {
-            TypedValue typedValue = new TypedValue();
-            context.getTheme().resolveAttribute(R.attr.colorPrimaryInverse, typedValue, true);
-            int color = typedValue.data;
-            TypedValue typedValue2 = new TypedValue();
-            context.getTheme().resolveAttribute(R.attr.colorOnSurface, typedValue2, true);
-            int color2 = typedValue2.data;
-
-            if (bottom_navigation != null) {
-                BadgeDrawable badge = bottom_navigation.getOrCreateBadge(R.id.page_0);
-                if (badge != null) {
-                    badge.setBackgroundColor(color);
-                    badge.setBadgeTextColor(color2);
-                    badge.setHorizontalOffset(0);
-                    badge.setVerticalOffset(0);
-                    if (BrowserContainer.size() > 1) {
-                        badge.setNumber(BrowserContainer.size());
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-
-        NavigationBarView.OnItemSelectedListener navListener = menuItem -> {
-
-            if (menuItem.getItemId() == R.id.page_0) {
-                if (fab_overview != null) fab_overview.setImageResource(R.drawable.icon_tab);
-                overViewTab = getString(R.string.album_title_tab);
-                intPage.set(R.id.page_0);
-                if (listView != null) listView.setVisibility(GONE);
-                if (tab_container != null) tab_container.setVisibility(VISIBLE);}
-
-            else if (menuItem.getItemId() == R.id.page_2) {
-                try {
-                    RecordAction action = new RecordAction(context);
-                    action.open(true);
-                    String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
-                    if (fab_overview != null) {
-                        if (currentUrl != null && !currentUrl.isEmpty() && action.checkUrl(currentUrl, RecordUnit.TABLE_BOOKMARK)) {
-                            fab_overview.setImageResource(R.drawable.icon_bookmark_added);
-                        } else {
-                            fab_overview.setImageResource(R.drawable.icon_bookmark);
-                        }
-                    }
-                    action.close();
-
-                } catch (Exception e) {Log.i(TAG, "dialogCustomSearches:" + e);}
-                overViewTab = getString(R.string.album_title_bookmarks);
-                intPage.set(R.id.page_2);
-                if (listView != null) listView.setVisibility(VISIBLE);
-                if (tab_container != null) tab_container.setVisibility(GONE);
-
-                RecordAction action = new RecordAction(context);
-                action.open(false);
-                final List<Record> list;
-                list = action.listBookmark(activity, filter, filterBy);
-                action.close();
-                adapter = new RecordListAdapter(context, list);
-                if (listView != null) {
-                    listView.setAdapter(adapter);
-                    adapter.notifyDataSetChanged();
-                    filter = false;
-                    listView.setOnItemClickListener((parent, view, position, id) -> {
-                        String itemUrl = list.get(position).getURL();
-                        navigateInCurrentTab(itemUrl);
-                        hideOverview();
-                    });
-                    listView.setOnItemLongClickListener((parent, view, position, id) -> {
-                        showOverflow(dialogOverview, listView, 3, list.get(position).getTitle(), list.get(position).getURL(), adapter, list, position);
-                        return true;
-                    });
-                } }
-            else if (menuItem.getItemId() == R.id.page_3) {
-                if (fab_overview != null) fab_overview.setImageResource(R.drawable.icon_history);
-                overViewTab = getString(R.string.album_title_history);
-                intPage.set(R.id.page_3);
-                listView.setVisibility(VISIBLE);
-                tab_container.setVisibility(GONE);
-
-                RecordAction action = new RecordAction(context);
-                action.open(false);
-                final List<Record> list;
-                list = action.listHistory(context);
-                action.close();
-                //noinspection NullableProblems
-                adapter = new RecordListAdapter(context, list) {
-                    @Override
-                    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-                        View v = super.getView(position, convertView, parent);
-                        TextView record_item_time = v.findViewById(R.id.dateView);
-                        record_item_time.setVisibility(VISIBLE);
-                        return v;
-                    }
-                };
-                listView.setAdapter(adapter);
-                adapter.notifyDataSetChanged();
-                listView.setOnItemClickListener((parent, view, position, id) -> {
-                    String itemUrl = list.get(position).getURL();
-                    navigateInCurrentTab(itemUrl);
-                    hideOverview();
-                });
-                listView.setOnItemLongClickListener((parent, view, position, id) -> {
-                    showOverflow(dialogOverview, listView, 4, list.get(position).getTitle(), list.get(position).getURL(), adapter, list, position);
-                    return true;
-                }); }
-            else if (menuItem.getItemId() == R.id.page_incognito) {
-                addAlbum("Incognito Tab", sp.getString("favoriteURL", "about:blank"), true, true);
-                hideOverview();
-            }
-            else if (menuItem.getItemId() == R.id.page_4) {
-                PopupMenu popup = new PopupMenu(this, bottom_navigation.findViewById(R.id.page_2));
-                popup.setForceShowIcon(true);
-                popup.setOnDismissListener(menu -> setSelectedTab());
-                if (bottom_navigation.getSelectedItemId() == R.id.page_0)
-                    popup.inflate(R.menu.menu_help);
-                else if (bottom_navigation.getSelectedItemId() == R.id.page_2)
-                    popup.inflate(R.menu.menu_list_bookmark);
-                else if (bottom_navigation.getSelectedItemId() == R.id.page_3)
-                    popup.inflate(R.menu.menu_list_history);
-
-                popup.setOnMenuItemClickListener(item -> {
-                    if (item.getItemId() == R.id.menu_delete) {
-                        String dialogTitle = overViewTab.equals(getString(R.string.album_title_bookmarks))
-                                ? "Clear All Bookmarks?" : "Clear All History?";
-                        String dialogMsg = overViewTab.equals(getString(R.string.album_title_bookmarks))
-                                ? "This will permanently remove all bookmarks from your library."
-                                : "This will permanently remove all web history records.";
-                        com.petal.browser.ui.components.PetalConfirmSheetBridge.showClearDatabaseConfirmation(
-                            BrowserActivity.this,
-                            dialogTitle,
-                            dialogMsg,
-                            () -> {
-                                if (overViewTab.equals(getString(R.string.album_title_bookmarks))) {
-                                    BrowserUnit.clearBookmark(context);
-                                    bottom_navigation.setSelectedItemId(R.id.page_2);
-                                } else if (overViewTab.equals(getString(R.string.album_title_history))) {
-                                    BrowserUnit.clearHistory(context);
-                                    bottom_navigation.setSelectedItemId(R.id.page_3);
-                                }
-                            }
-                        );
-                    } else if (item.getItemId() == R.id.menu_sortName) {
-                        sp.edit().putString("sort_bookmark", "title").apply();
-                        sp.edit().putBoolean("sort_bookmarkDomain", false).apply();
-                        bottom_navigation.setSelectedItemId(R.id.page_2);
-                    } else if (item.getItemId() == R.id.menu_sortIcon) {
-                        sp.edit().putString("sort_bookmark", "time").apply();
-                        sp.edit().putBoolean("sort_bookmarkDomain", false).apply();
-                        bottom_navigation.setSelectedItemId(R.id.page_2);
-                    } else if (item.getItemId() == R.id.menu_sortDate) {
-                        sp.edit().putBoolean("sort_historyDomain", false).apply();
-                        bottom_navigation.setSelectedItemId(R.id.page_3);
-                    } else if (item.getItemId() == R.id.menu_sortDomain) {
-                        if (overViewTab.equals(getString(R.string.album_title_bookmarks))) {
-                            sp.edit().putBoolean("sort_bookmarkDomain", true).apply();
-                            bottom_navigation.setSelectedItemId(R.id.page_2); }
-                        else if (overViewTab.equals(getString(R.string.album_title_history))) {
-                            sp.edit().putBoolean("sort_historyDomain", true).apply();
-                            bottom_navigation.setSelectedItemId(R.id.page_3);
-                        }
-                    } else if (item.getItemId() == R.id.menu_filter) {
-                        showDialogFilter();
-                    } else if (item.getItemId() == R.id.menu_help) {
-                        if (activeGeckoView != null) {
-                            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl("about:blank");
-                            showAlbum(currentAlbumController, "about:blank");
-                        }
-                    }
-                    return true;
-                });
-                popup.show();
-            }
-
-            return true;
-        };
-        bottom_navigation.setOnItemSelectedListener(navListener);
-        bottom_navigation.findViewById(R.id.page_2).setOnLongClickListener(v -> {
-            showDialogFilter();
-            return true;
-        });
-        setSelectedTab();
-        initOmniBox();
+        // Modern Petal tab switcher, bookmarks, and history are powered by Jetpack Compose
+        // (PetalTabSwitcherBridge, PetalBookmarksBottomSheet, PetalHistoryBottomSheet).
+        // The legacy FOSS overview dialog is dead code and no longer inflated.
+        if (dialogOverview != null) {
+            return;
+        }
 
         fab_menu = findViewById(R.id.fab_menu);
         if (fab_menu != null) {
-            HelperUnit.applyBouncyTouchFeedback(fab_menu);
+            PetalAndroidUtils.applyBouncyTouchFeedback(fab_menu);
             fab_menu.setOnClickListener(view -> {
                 String title = activeGeckoView != null ? activeGeckoView.getTitle() : "";
                 String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
@@ -3992,7 +3815,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         FloatingActionButton fab_share = findViewById(R.id.fab_share);
         if (fab_share != null) {
-            HelperUnit.applyBouncyTouchFeedback(fab_share);
+            PetalAndroidUtils.applyBouncyTouchFeedback(fab_share);
             fab_share.setOnClickListener(v -> {
                 if (activeGeckoView != null && activeGeckoView.getUrl() != null) {
                     shareLink(activeGeckoView.getTitle(), activeGeckoView.getUrl());
@@ -4002,7 +3825,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         FloatingActionButton fab_undo = findViewById(R.id.fab_undo);
         if (fab_undo != null) {
-            HelperUnit.applyBouncyTouchFeedback(fab_undo);
+            PetalAndroidUtils.applyBouncyTouchFeedback(fab_undo);
             fab_undo.setOnClickListener(v -> {
                 if (activeGeckoView != null && activeGeckoView.canGoBack()) {
                     activeGeckoView.goBack();
@@ -4088,7 +3911,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (fab_overview != null) {
-            HelperUnit.applyBouncyTouchFeedback(fab_overview);
+            PetalAndroidUtils.applyBouncyTouchFeedback(fab_overview);
             fab_overview.setOnClickListener(v -> showOverview());
             fab_overview.setOnLongClickListener(v -> {
                 performGesture("setting_gesture_overViewButton", activeGeckoView != null ? activeGeckoView.getUrl() : "");
@@ -4104,7 +3927,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         View fab_bubble = findViewById(R.id.fab_bubble);
         if (fab_bubble != null) {
-            HelperUnit.applyBouncyTouchFeedback(fab_bubble);
+            PetalAndroidUtils.applyBouncyTouchFeedback(fab_bubble);
             fab_bubble.setOnClickListener(v -> animateAddressBarCollapse(false));
             styleFabBubbleForLiquidGlass(fab_bubble);
         }
@@ -4116,15 +3939,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (query == null || query.trim().isEmpty()) return;
         final String trimmed = query.trim();
         // Google Search Fixer is enabled by default silently without disturbing popups or prompts
-        String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, trimmed);
+        String targetUrl = com.petal.browser.unit.PetalBrowserUtils.queryWrapper(this, trimmed);
         onReadyToNavigate.accept(targetUrl);
     }
 
     public void handleFinalSearch(String query) {
         if (query != null && !query.trim().isEmpty()) {
             hideSearch();
+            String trimmed = query.trim();
+            if (trimmed.equalsIgnoreCase("about:config") || trimmed.equalsIgnoreCase("about:flags") || trimmed.equalsIgnoreCase("chrome://flags") || trimmed.startsWith("petal://flags")) {
+                openFlagsHubScreen();
+                return;
+            }
             boolean isIncognito = currentAlbumController != null && currentAlbumController.isIncognito();
-            performSearchWithFixerPrompt(query.trim(), isIncognito, targetUrl -> {
+            performSearchWithFixerPrompt(trimmed, isIncognito, targetUrl -> {
+                if (targetUrl.equalsIgnoreCase("about:config") || targetUrl.equalsIgnoreCase("about:flags") || targetUrl.equalsIgnoreCase("chrome://flags") || targetUrl.startsWith("petal://flags")) {
+                    openFlagsHubScreen();
+                    return;
+                }
                 if (currentAlbumController != null) {
                     showAlbum(currentAlbumController, targetUrl);
                 } else if (activeGeckoView != null) {
@@ -4323,6 +4155,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (controller == currentAlbumController || controller == activeGeckoView) {
             this.isCurrentPageReaderEligible = eligible;
             updateAddressBar();
+        }
+    }
+
+    public void setReaderModeEligibleForUrl(String url, boolean eligible) {
+        if (url == null) return;
+        String current = currentAlbumController != null ? currentAlbumController.getUrl() : null;
+        if (current != null) {
+            String c1 = current.split("#")[0].replaceAll("/+$", "");
+            String u1 = url.split("#")[0].replaceAll("/+$", "");
+            if (c1.equalsIgnoreCase(u1) || current.startsWith(url) || url.startsWith(current)) {
+                this.isCurrentPageReaderEligible = eligible;
+                runOnUiThread(this::updateAddressBar);
+            }
         }
     }
 
@@ -4565,17 +4410,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
         boolean isPillMode = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
-        float dp16 = HelperUnit.convertDpToPixel(16f, context);
+        float dp16 = PetalAndroidUtils.convertDpToPixel(16f, context);
         int screenH = getResources().getDisplayMetrics().heightPixels;
 
-        float addrH = addressBar.getHeight() > 0 ? addressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
+        float addrH = addressBar.getHeight() > 0 ? addressBar.getHeight() : PetalAndroidUtils.convertDpToPixel(56f, context);
         View navTarget = (navContainer != null && navContainer.getVisibility() != GONE) ? navContainer : null;
         float navH = 0f;
         if (navTarget != null) {
             int h = navTarget.getHeight();
             // Guard against the container measuring at full-screen height (see applyAddressBarPosition).
             if (h > screenH / 2 && navCompose != null) h = navCompose.getHeight();
-            navH = h > 0 ? h : HelperUnit.convertDpToPixel(64f, context);
+            navH = h > 0 ? h : PetalAndroidUtils.convertDpToPixel(64f, context);
         }
 
         float addrOff = 0f, navOff = 0f, dockedOff = 0f;
@@ -4583,14 +4428,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             navOff = navTarget != null ? navH + dp16 : 0f;
             if (isPillMode) {
                 addrOff = 0f;
-                dockedOff = isBottom ? addrH + navH + dp16 : -(addrH + HelperUnit.convertDpToPixel(40f, context));
+                dockedOff = isBottom ? addrH + navH + dp16 : -(addrH + PetalAndroidUtils.convertDpToPixel(40f, context));
             } else if (isBottom) {
                 addrOff = addrH + navH + dp16;
                 dockedOff = addrOff;
             } else {
                 boolean isImmersive = (sp != null && sp.getBoolean("sp_immersive_fullscreen", false)) || isCustomFullscreenState;
-                int statusGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this));
-                addrOff = -(addrH + HelperUnit.convertDpToPixel(40f, context));
+                int statusGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : PetalAndroidUtils.getStatusBarHeight(this));
+                addrOff = -(addrH + PetalAndroidUtils.convertDpToPixel(40f, context));
                 dockedOff = -Math.max(0f, addrH - statusGap);
             }
         } else {
@@ -4691,15 +4536,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (hiddenState) {
             lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
             lp.topMargin = 0;
-            lp.bottomMargin = navigationBarBottomInset + (int) HelperUnit.convertDpToPixel(20f, context);
+            lp.bottomMargin = navigationBarBottomInset + (int) PetalAndroidUtils.convertDpToPixel(20f, context);
         } else if (isBottom) {
             lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
             lp.topMargin = 0;
-            lp.bottomMargin = (int) (navH + addrH + HelperUnit.convertDpToPixel(12f, context));
+            lp.bottomMargin = (int) (navH + addrH + PetalAndroidUtils.convertDpToPixel(12f, context));
         } else {
             lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
             lp.bottomMargin = 0;
-            lp.topMargin = (int) (addrH + HelperUnit.convertDpToPixel(16f, context));
+            lp.topMargin = (int) (addrH + PetalAndroidUtils.convertDpToPixel(16f, context));
         }
         bubble.setLayoutParams(lp);
     }
@@ -4717,15 +4562,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 int glassStroke = androidx.core.graphics.ColorUtils.setAlphaComponent(outlineColor, alphaOutline);
                 card.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(glassBg));
                 card.setStrokeColor(android.content.res.ColorStateList.valueOf(glassStroke));
-                card.setStrokeWidth((int) HelperUnit.convertDpToPixel(1.2f, context));
-                card.setCardElevation(HelperUnit.convertDpToPixel(8f, context));
+                card.setStrokeWidth((int) PetalAndroidUtils.convertDpToPixel(1.2f, context));
+                card.setCardElevation(PetalAndroidUtils.convertDpToPixel(8f, context));
             } else {
                 int surfaceColor = com.google.android.material.color.MaterialColors.getColor(card, com.google.android.material.R.attr.colorSurfaceContainerHighest);
                 int outlineColor = com.google.android.material.color.MaterialColors.getColor(card, com.google.android.material.R.attr.colorOutlineVariant);
                 card.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(surfaceColor));
                 card.setStrokeColor(android.content.res.ColorStateList.valueOf(outlineColor));
-                card.setStrokeWidth((int) HelperUnit.convertDpToPixel(1f, context));
-                card.setCardElevation(HelperUnit.convertDpToPixel(16f, context));
+                card.setStrokeWidth((int) PetalAndroidUtils.convertDpToPixel(1f, context));
+                card.setCardElevation(PetalAndroidUtils.convertDpToPixel(16f, context));
             }
         }
     }
@@ -5037,7 +4882,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // device, so the spinner landed on top of the wavy progress line instead of
             // below it. Measure the actual address bar height once it's laid out, and
             // keep it in sync if that height ever changes (font scale, theme, etc.).
-            params.topMargin = (int) HelperUnit.convertDpToPixel(56f, this);
+            params.topMargin = (int) PetalAndroidUtils.convertDpToPixel(56f, this);
             addContentView(refreshBarCompose, params);
             com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
             refreshBarCompose.setClipChildren(false);
@@ -5048,7 +4893,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ((android.view.ViewGroup) parentView).setClipToPadding(false);
             }
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                float elevationPx = HelperUnit.convertDpToPixel(999f, this);
+                float elevationPx = PetalAndroidUtils.convertDpToPixel(999f, this);
                 refreshBarCompose.setElevation(elevationPx);
                 refreshBarCompose.setTranslationZ(elevationPx);
             }
@@ -5068,7 +4913,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     int targetTopMargin;
                     if (isBottom) {
                         boolean isImmersive = (sp != null && sp.getBoolean("sp_immersive_fullscreen", false)) || isCustomFullscreenState;
-                        int resolvedStatusBarGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(BrowserActivity.this));
+                        int resolvedStatusBarGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : PetalAndroidUtils.getStatusBarHeight(BrowserActivity.this));
                         targetTopMargin = resolvedStatusBarGap;
                     } else {
                         int[] loc = new int[2];
@@ -5439,10 +5284,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void hideOverview() {
-        dialogOverview.cancel();
+        if (dialogOverview != null) {
+            dialogOverview.cancel();
+        }
     }
 
     public void setSelectedTab() {
+        if (bottom_navigation == null) return;
         if (overViewTab.equals(getString(R.string.album_title_tab))) bottom_navigation.setSelectedItemId(R.id.page_0);
         else if (overViewTab.equals(getString(R.string.album_title_bookmarks))) bottom_navigation.setSelectedItemId(R.id.page_2);
         else if (overViewTab.equals(getString(R.string.album_title_history))) bottom_navigation.setSelectedItemId(R.id.page_3);
@@ -5762,7 +5610,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         String rawTitle = (currentAlbumController.getTitle() != null && !currentAlbumController.getTitle().trim().isEmpty())
                 ? currentAlbumController.getTitle()
-                : HelperUnit.domain(url);
+                : PetalAndroidUtils.domain(url);
         String sanitizedTitle = rawTitle.replaceAll("[^a-zA-Z0-9._-]", "_");
         String fileName = sanitizedTitle + "_" + System.currentTimeMillis() + ".html";
         java.io.File archiveFile = new java.io.File(offlineDir, fileName);
@@ -5815,37 +5663,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             com.petal.browser.compose.reader.PetalReaderBridge.extractArticle(currentAlbumController, article -> {
-                if (article != null && article.getContentText() != null && !article.getContentText().trim().isEmpty()) {
-                    isOverlayScreenShowing = true;
-                    clearContentFrameKeepingTabs();
-                    if (appBar != null) appBar.setVisibility(GONE);
-                    LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
-                    if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
-                    View bottomNav = findViewById(R.id.bottom_nav_compose);
-                    if (bottomNav != null) bottomNav.setVisibility(GONE);
-                    if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
-                    if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
-                    View fab_bubble = findViewById(R.id.fab_bubble);
-                    if (fab_bubble != null) fab_bubble.setVisibility(GONE);
-                    hideRefreshAndProgressOverlays();
+                runOnUiThread(() -> {
+                    if (article != null && article.getContentText() != null && !article.getContentText().trim().isEmpty() && !article.getContentText().contains("Unable to extract article text")) {
+                        isOverlayScreenShowing = true;
+                        clearContentFrameKeepingTabs();
+                        if (appBar != null) appBar.setVisibility(GONE);
+                        LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+                        if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+                        View bottomNav = findViewById(R.id.bottom_nav_compose);
+                        if (bottomNav != null) bottomNav.setVisibility(GONE);
+                        if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+                        if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+                        View fab_bubble = findViewById(R.id.fab_bubble);
+                        if (fab_bubble != null) fab_bubble.setVisibility(GONE);
+                        hideRefreshAndProgressOverlays();
 
-                    View readerView = com.petal.browser.compose.reader.PetalReaderBridge.createReaderView(
-                        BrowserActivity.this,
-                        article,
-                        () -> {
-                            showAlbum(currentAlbumController);
-                            return kotlin.Unit.INSTANCE;
-                        }
-                    );
-                    presentComposeScreen(readerView);
-                } else {
-                    PetalToast.show(BrowserActivity.this, "Could not extract article content for Reading mode");
-                }
+                        View readerView = com.petal.browser.compose.reader.PetalReaderBridge.createReaderView(
+                            BrowserActivity.this,
+                            article,
+                            () -> {
+                                showAlbum(currentAlbumController);
+                                return kotlin.Unit.INSTANCE;
+                            }
+                        );
+                        presentComposeScreen(readerView);
+                    } else {
+                        // Fall back directly to Firefox's engine-level about:reader?url=...
+                        com.petal.browser.compose.reader.PetalReaderBridge.toggleNativeGeckoReader(currentAlbumController, true);
+                    }
+                });
                 return kotlin.Unit.INSTANCE;
             });
         } catch (Exception e) {
             Log.e(TAG, "Error launching reader mode", e);
-            PetalToast.show(this, "Failed to load Reading mode");
+            com.petal.browser.compose.reader.PetalReaderBridge.toggleNativeGeckoReader(currentAlbumController, true);
         }
     }
 
@@ -5911,7 +5762,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         String profile;
         if (listStandard.isWhite(url)) {
-            profile = HelperUnit.domain(url);
+            profile = PetalAndroidUtils.domain(url);
         } else {
             profile = sp.getString("profile", "profileStandard");
         }
@@ -5921,17 +5772,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View dialogViewFastToggle = View.inflate(context, R.layout.dialog_fast_toggle, null);
             builderFastToggle.setView(dialogViewFastToggle);
             AlertDialog dialogFastToggle = builderFastToggle.create();
-            HelperUnit.setupDialog(context, dialogFastToggle);
+            PetalAndroidUtils.setupDialog(context, dialogFastToggle);
 
             LinearLayout textGroup = dialogViewFastToggle.findViewById(R.id.textGroup);
             TextView overflowURL = dialogViewFastToggle.findViewById(R.id.textGroup_menuURL);
             overflowURL.setText(url);
-            HelperUnit.setHighLightedText(context, overflowURL, url, HelperUnit.domain(url));
+            PetalAndroidUtils.setHighLightedText(context, overflowURL, url, PetalAndroidUtils.domain(url));
             TextView overflowTitle = dialogViewFastToggle.findViewById(R.id.textGroup_menuTitle);
             overflowTitle.setText(title);
             FaviconHelper.setFavicon(context, dialogViewFastToggle, url, R.id.menu_icon, R.drawable.icon_image_broken);
             textGroup.setOnClickListener(v ->
-                    HelperUnit.showCustomSnackbarWithTwoActions(
+                    PetalAndroidUtils.showCustomSnackbarWithTwoActions(
                     this, dialogViewFastToggle, null,
                     title, "", url,
                     R.drawable.icon_share, () -> {
@@ -6288,11 +6139,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             });
 
-            HelperUnit.applyBouncyTouchFeedback(ib_save);
+            PetalAndroidUtils.applyBouncyTouchFeedback(ib_save);
             ib_save.setOnClickListener(v -> {
-                listStandard.removeDomain(HelperUnit.domain(url));
-                listStandard.addDomain(HelperUnit.domain(url));
-                String profileToSave = HelperUnit.domain(url);
+                listStandard.removeDomain(PetalAndroidUtils.domain(url));
+                listStandard.addDomain(PetalAndroidUtils.domain(url));
+                String profileToSave = PetalAndroidUtils.domain(url);
                 sp.edit()
                         .putBoolean(profileToSave + "_saveData", checkbox_saveData.isChecked())
                         .putBoolean(profileToSave + "_images", checkbox_image.isChecked())
@@ -6320,10 +6171,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 reloadCurrentBrowserTab();
             });
 
-            HelperUnit.applyBouncyTouchFeedback(ib_delete, 0.88f);
+            PetalAndroidUtils.applyBouncyTouchFeedback(ib_delete, 0.88f);
             ib_delete.setOnClickListener(view -> {
-                listStandard.removeDomain(HelperUnit.domain(url));
-                String profileToSave = HelperUnit.domain(url);
+                listStandard.removeDomain(PetalAndroidUtils.domain(url));
+                String profileToSave = PetalAndroidUtils.domain(url);
                 sp.edit()
                         .remove(profileToSave + "_saveData")
                         .remove(profileToSave + "_images")
@@ -6352,14 +6203,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
 
             Button ib_reload = dialogViewFastToggle.findViewById(R.id.ib_reload);
-            HelperUnit.applyBouncyTouchFeedback(ib_reload);
+            PetalAndroidUtils.applyBouncyTouchFeedback(ib_reload);
             ib_reload.setOnClickListener(view -> {
                 dialogFastToggle.cancel();
                 reloadCurrentBrowserTab();
             });
 
             Button ib_settings = dialogViewFastToggle.findViewById(R.id.ib_settings);
-            HelperUnit.applyBouncyTouchFeedback(ib_settings);
+            PetalAndroidUtils.applyBouncyTouchFeedback(ib_settings);
             ib_settings.setOnClickListener(view -> {
                 if (activeGeckoView != null) {
                     dialogFastToggle.cancel();
@@ -6369,7 +6220,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
 
             Button button_help = dialogViewFastToggle.findViewById(R.id.button_help);
-            HelperUnit.applyBouncyTouchFeedback(button_help);
+            PetalAndroidUtils.applyBouncyTouchFeedback(button_help);
             button_help.setOnClickListener(view -> {
                 dialogFastToggle.cancel();
                 if (activeGeckoView != null) {
@@ -6383,7 +6234,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (SDK_INT >= Build.VERSION_CODES.TIRAMISU && sp.getBoolean("sp_tabBackground", false)) {
                 int notificationAllowed = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS);
                 if (notificationAllowed != PackageManager.PERMISSION_GRANTED) {
-                    HelperUnit.showCustomSnackbarWithTwoActions(
+                    PetalAndroidUtils.showCustomSnackbarWithTwoActions(
                             context, dialogViewFastToggle, null,
                             getString(R.string.dialog_backGround), getString(R.string.app_permission), "",
                             R.drawable.icon_check, () -> {
@@ -6495,7 +6346,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         hideOverview();
         StandardDomainWhitelist listStandard = new StandardDomainWhitelist(context);
         String profile = sp.getString("profile", "profileStandard");
-        if (listStandard.isWhite(cleanUrl)) profile = HelperUnit.domain(cleanUrl);
+        if (listStandard.isWhite(cleanUrl)) profile = PetalAndroidUtils.domain(cleanUrl);
 
         boolean removeTracking = sp.getBoolean(profile + "_trackingULS", true);
 
@@ -6525,11 +6376,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 overflowURL.setText(url);
                 TextView overflowMessage = dialogView.findViewById(R.id.overflowMessage);
                 overflowMessage.setText(m);
-                HelperUnit.setHighLightedText(context, overflowURL, url, HelperUnit.domain(url));
+                PetalAndroidUtils.setHighLightedText(context, overflowURL, url, PetalAndroidUtils.domain(url));
                 TextView menuTitle = dialogView.findViewById(R.id.overflowTitle);
-                menuTitle.setText(HelperUnit.domain(url));
+                menuTitle.setText(PetalAndroidUtils.domain(url));
                 textGroup.setOnClickListener(v ->
-                        HelperUnit.showCustomSnackbarWithTwoActions(
+                        PetalAndroidUtils.showCustomSnackbarWithTwoActions(
                                 context, dialogView, null,
                                 title, "", url,
                                 R.drawable.icon_share, () -> {
@@ -6554,7 +6405,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 AlertDialog dialogTrack = builderTrack.create();
                 dialogTrack.show();
-                HelperUnit.setupDialog(context, dialogTrack);
+                PetalAndroidUtils.setupDialog(context, dialogTrack);
 
                 GridView menu_grid = dialogView.findViewById(R.id.menu_grid);
                 final List<GridItem> gridList = new LinkedList<>();
@@ -6594,7 +6445,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             editTopLayout.setVisibility(GONE);
                             EditText input = dialogEdit.findViewById(R.id.editBottom);
                             input.setText(url);
-                            HelperUnit.showSoftKeyboard(input);
+                            PetalAndroidUtils.showSoftKeyboard(input);
 
                             MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
                             builder.setTitle(context.getString(R.string.menu_edit));
@@ -6603,10 +6454,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             Dialog dialog = builder.create();
 
                             Button ib_cancel = dialogEdit.findViewById(R.id.editCancel);
-                            HelperUnit.applyBouncyTouchFeedback(ib_cancel);
+                            PetalAndroidUtils.applyBouncyTouchFeedback(ib_cancel);
                             ib_cancel.setOnClickListener(v -> dialog.cancel());
                             Button ib_ok = dialogEdit.findViewById(R.id.editOK);
-                            HelperUnit.applyBouncyTouchFeedback(ib_ok);
+                            PetalAndroidUtils.applyBouncyTouchFeedback(ib_ok);
                             ib_ok.setOnClickListener(v -> {
                                 dialog.dismiss();
                                 String newValue = Objects.requireNonNull(input.getText()).toString();
@@ -6618,7 +6469,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 context.startActivity(Intent.createChooser(sharingIntentEdit, (context.getString(R.string.menu_share_link))));
                             });
                             dialog.show();
-                            HelperUnit.setupDialog(context, dialog);
+                            PetalAndroidUtils.setupDialog(context, dialog);
                             break;
                     }
                 });
@@ -6656,13 +6507,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             Dialog dialog = builder.create();
             dialog.show();
-            HelperUnit.setupDialog(context, dialog);
+            PetalAndroidUtils.setupDialog(context, dialog);
 
             Button ib_cancel = dialogViewSubMenu.findViewById(R.id.editCancel);
-            HelperUnit.applyBouncyTouchFeedback(ib_cancel);
+            PetalAndroidUtils.applyBouncyTouchFeedback(ib_cancel);
             ib_cancel.setOnClickListener(v -> dialog.cancel());
             Button ib_ok = dialogViewSubMenu.findViewById(R.id.editOK);
-            HelperUnit.applyBouncyTouchFeedback(ib_ok);
+            PetalAndroidUtils.applyBouncyTouchFeedback(ib_ok);
             ib_ok.setOnClickListener(v -> {
                 EditText editBottom = dialogViewSubMenu.findViewById(R.id.editBottom);
                 String shareTop = editBottom.getText().toString().trim();
@@ -6702,10 +6553,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             PetalToast.show(this, "Home page cannot be bookmarked");
             return;
         }
-        RecordAction action = new RecordAction(context);
+        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
         action.open(true);
         String message = context.getString(R.string.app_error) + ": " + context.getString(R.string.app_error_save);
-        if (action.checkUrl(url, RecordUnit.TABLE_BOOKMARK))
+        if (action.checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK))
             PetalToast.show(this, message);
         else {
             action.addBookmark(new Record(title, url, 0, 0));
@@ -6838,7 +6689,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 String targetLoadUrl = dataUri.toString();
                 String offlineArchivePath = intent.getStringExtra("offline_archive_path");
-                if (offlineArchivePath != null && !HelperUnit.isNetworkAvailable(this)) {
+                if (offlineArchivePath != null && !PetalAndroidUtils.isNetworkAvailable(this)) {
                     java.io.File archiveFile = new java.io.File(offlineArchivePath);
                     if (archiveFile.exists()) {
                         targetLoadUrl = "file://" + archiveFile.getAbsolutePath();
@@ -7273,7 +7124,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (!isPopup) {
             if (url == null || url.trim().isEmpty() || isHomePage(url)) {
-                String effectiveHome = BrowserUnit.getEffectiveHomepageUrl(this);
+                String effectiveHome = PetalBrowserUtils.getEffectiveHomepageUrl(this);
                 if (effectiveHome != null && !effectiveHome.equalsIgnoreCase("about:blank") && !isHomePage(effectiveHome)) {
                     tabSurface.loadUrl(effectiveHome);
                 } else {
@@ -7608,6 +7459,31 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void openApiIntegrationsHub() {
         openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS);
+    }
+
+    public void openFlagsHubScreen() {
+        try {
+            captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
+            clearContentFrameKeepingTabs();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_flags = findViewById(R.id.fab_bubble);
+            if (fab_bubble_flags != null) fab_bubble_flags.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
+            View flagsView = com.petal.browser.compose.flags.PetalFlagsHubBridge.createFlagsHubView(BrowserActivity.this, () -> {
+                showAlbum(currentAlbumController);
+                return kotlin.Unit.INSTANCE;
+            });
+            presentComposeScreen(flagsView);
+        } catch (Exception e) {
+            android.util.Log.e("BrowserActivity", "Failed to open Flags Hub: " + e.getMessage(), e);
+        }
     }
 
     public void openSettingsScreen() {

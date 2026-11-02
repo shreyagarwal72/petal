@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,7 +48,7 @@ import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.theme.*
-import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.unit.PetalBrowserUtils
 import androidx.compose.ui.res.stringResource
 
 object PetalDeleteBridge {
@@ -141,7 +140,7 @@ fun PetalDeleteScreen(
                 Button(
                     onClick = {
                         showConfirmDialog = false
-                        BrowserUnit.clearBrowserData(context)
+                        PetalBrowserUtils.clearBrowserData(context)
                         com.petal.browser.view.PetalToast.show(context, R.string.app_ok)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
@@ -203,7 +202,7 @@ fun PetalDeleteScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            PetalGroupIconBadge(Icons.Filled.DeleteSweep)
+                            PetalGroupIconBadge(Icons.Rounded.DeleteSweep)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = stringResource(R.string.ui_clear_browsing_data),

@@ -33,7 +33,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.unit.PetalBrowserUtils
 import java.util.regex.Pattern
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -366,7 +366,7 @@ private fun RenderInlineMarkdownText(
             annotatedString.getStringAnnotations(tag = "URL", start = offset, end = offset)
                 .firstOrNull()?.let { annotation ->
                     try {
-                        BrowserUnit.intentURL(context, Uri.parse(annotation.item))
+                        PetalBrowserUtils.intentURL(context, Uri.parse(annotation.item))
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }

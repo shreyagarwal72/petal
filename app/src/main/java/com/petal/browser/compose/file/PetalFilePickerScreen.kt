@@ -52,9 +52,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.Sort
@@ -671,7 +668,7 @@ private fun FilePickerBrowserContent(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.5.dp),
                                 leading = {
                                     PetalGroupIconBadge(
-                                        Icons.AutoMirrored.Filled.ArrowBack,
+                                        Icons.AutoMirrored.Rounded.ArrowBack,
                                         container = MaterialTheme.colorScheme.secondaryContainer,
                                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
@@ -855,7 +852,7 @@ private fun FilePickerRowItem(
         leading = {
             when {
                 isDir -> PetalGroupIconBadge(
-                    Icons.Filled.Folder,
+                    Icons.Rounded.Folder,
                     variant = PetalBadgeVariant.SECONDARY
                 )
                 thumbnail != null -> Image(
@@ -866,7 +863,7 @@ private fun FilePickerRowItem(
                 )
                 packageInfo != null -> {
                     PetalGroupIconBadge(
-                        Icons.Filled.Android,
+                        Icons.Rounded.Android,
                         variant = PetalBadgeVariant.PRIMARY
                     )
                 }
@@ -889,7 +886,7 @@ private fun FilePickerRowItem(
                 Checkbox(checked = isSelected, onCheckedChange = { onClick() })
             } else if (!isDir) {
                 IconButton(onClick = onPreview, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Filled.Visibility, contentDescription = stringResource(R.string.file_picker_preview), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Visibility, contentDescription = stringResource(R.string.file_picker_preview), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
             }
         },
@@ -898,14 +895,14 @@ private fun FilePickerRowItem(
 
 private fun getFileIcon(ext: String): ImageVector {
     return when {
-        ext in APK_EXTENSIONS -> Icons.Filled.Android
-        ext in IMAGE_EXTENSIONS -> Icons.Filled.Image
-        ext in VIDEO_EXTENSIONS -> Icons.Filled.VideoFile
-        ext in AUDIO_EXTENSIONS -> Icons.Filled.AudioFile
-        ext in CODE_EXTENSIONS -> Icons.Filled.Code
-        ext in ARCHIVE_EXTENSIONS -> Icons.Filled.FolderZip
-        ext in DOC_EXTENSIONS -> Icons.Filled.Description
-        else -> Icons.AutoMirrored.Filled.InsertDriveFile
+        ext in APK_EXTENSIONS -> Icons.Rounded.Android
+        ext in IMAGE_EXTENSIONS -> Icons.Rounded.Image
+        ext in VIDEO_EXTENSIONS -> Icons.Rounded.VideoFile
+        ext in AUDIO_EXTENSIONS -> Icons.Rounded.AudioFile
+        ext in CODE_EXTENSIONS -> Icons.Rounded.Code
+        ext in ARCHIVE_EXTENSIONS -> Icons.Rounded.FolderZip
+        ext in DOC_EXTENSIONS -> Icons.Rounded.Description
+        else -> Icons.AutoMirrored.Rounded.InsertDriveFile
     }
 }
 

@@ -7,9 +7,10 @@ import android.os.Build
 import android.webkit.CookieManager
 import android.webkit.WebSettings
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
-import com.petal.browser.unit.BackupUnit
+import com.petal.browser.media.sniffer.PetalMediaSniffer
 import com.petal.browser.unit.ExternalDownloadManagerHelper
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
+import com.petal.browser.unit.PetalBackupManager
 import com.petal.browser.view.PetalToast
 
 /**
@@ -26,6 +27,8 @@ import com.petal.browser.view.PetalToast
  * Navi, or Auto), requests are routed with full headers, cookies, referer, and user-agent.
  */
 object PetalDownloadRouter {
+
+    const val FIREFOX_MOBILE_UA = "Mozilla/5.0 (Android; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0"
 
     @JvmStatic
     @JvmOverloads
@@ -56,7 +59,7 @@ object PetalDownloadRouter {
         // 1. External Download Manager preference check (1DM, ADM, AB Download Manager, Navi, Auto)
         if (ExternalDownloadManagerHelper.isExternalPreferred(context)) {
             val launched = ExternalDownloadManagerHelper.launchDownloadInExternalManager(
-                context, verifiedUrl, fileName, mimeType, null
+                context, verifiedUrl, fileName, mimeType, null, userAgent, cookie
             )
             if (launched) {
                 return
@@ -64,22 +67,24 @@ object PetalDownloadRouter {
         }
 
         // 2. Storage permission check for Android 9 and older
-        val hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || BackupUnit.checkPermissionStorage(context)
+        val hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || PetalBackupManager.checkPermissionStorage(context)
         if (!hasPermission) {
             if (context is Activity) {
-                BackupUnit.requestPermission(context)
+                PetalBackupManager.requestPermission(context)
             }
             onFailed?.invoke()
             return
         }
 
         // 3. Resolve context parameters (cookies, user-agent, referer)
-        val effectiveUa = userAgent?.takeIf { it.isNotBlank() } ?: runCatching { WebSettings.getDefaultUserAgent(context) }.getOrNull()
-        val effectiveCookie = cookie?.takeIf { it.isNotBlank() } ?: runCatching { CookieManager.getInstance().getCookie(verifiedUrl) }.getOrNull()
+        val effectiveUa = userAgent?.takeIf { it.isNotBlank() } ?: FIREFOX_MOBILE_UA
+        val effectiveCookie = cookie?.takeIf { it.isNotBlank() }
+            ?: PetalMediaSniffer.getCookiesForUrl(verifiedUrl)?.takeIf { it.isNotBlank() }
+            ?: runCatching { CookieManager.getInstance().getCookie(verifiedUrl) }.getOrNull()
 
         val extraHeaders = LinkedHashMap<String, String>()
         extraHeaders["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
-        extraHeaders["Accept-Language"] = HelperUnit.getAcceptLanguage(context)
+        extraHeaders["Accept-Language"] = PetalAndroidUtils.getAcceptLanguage(context)
         extraHeaders["Connection"] = "keep-alive"
         extraHeaders["Cache-Control"] = "no-transform"
         if (!referrerUrl.isNullOrBlank()) {

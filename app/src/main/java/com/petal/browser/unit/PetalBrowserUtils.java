@@ -48,7 +48,8 @@ import java.util.regex.Pattern;
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
 import com.petal.browser.browser.StandardDomainWhitelist;
-import com.petal.browser.database.RecordAction;
+import com.petal.browser.database.HistoryBookmarkContract;
+import com.petal.browser.database.HistoryBookmarkRepository;
 import com.petal.browser.objects.CustomRedirect;
 import com.petal.browser.objects.CustomRedirectsHelper;
 
@@ -104,7 +105,7 @@ public class PetalBrowserUtils {
         }
 
         if (isURL(query)) {
-            if (query.startsWith("about:blank") || query.startsWith("mailto:") || query.startsWith("file:") || query.startsWith("content:") || query.startsWith("chrome://") || query.startsWith("moz-extension://") || query.startsWith("petal://")) {
+            if (query.startsWith("about:") || query.startsWith("mailto:") || query.startsWith("file:") || query.startsWith("content:") || query.startsWith("chrome://") || query.startsWith("moz-extension://") || query.startsWith("petal://")) {
                 return query;
             }
             if (!query.contains("://")) {
@@ -243,16 +244,16 @@ public class PetalBrowserUtils {
     }
 
     public static void clearBookmark(Context context) {
-        RecordAction action = new RecordAction(context);
+        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
         action.open(true);
-        action.clearTable(RecordUnit.TABLE_BOOKMARK);
+        action.clearTable(HistoryBookmarkContract.TABLE_BOOKMARK);
         action.close();
     }
 
     public static void clearHistory(Context context) {
-        RecordAction action = new RecordAction(context);
+        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
         action.open(true);
-        action.clearTable(RecordUnit.TABLE_HISTORY);
+        action.clearTable(HistoryBookmarkContract.TABLE_HISTORY);
         action.close();
     }
 
@@ -270,7 +271,7 @@ public class PetalBrowserUtils {
         //    matching Firefox's behaviour where "Clear on Exit" for cache/cookies does NOT
         //    automatically delete browsing history.
         if (clearHistory) {
-            BrowserUnit.clearHistory(context);
+            clearHistory(context);
             PetalSessionHistoryManager.clearSessionHistory(context);
             // Saved per-tab back/forward stacks are browsing history too.
             PetalTabStateStore.clearAll(context);
@@ -309,7 +310,7 @@ public class PetalBrowserUtils {
         boolean clearDB = sp.getBoolean("sp_deleteDatabase", false);
         boolean clearSettings = sp.getBoolean("sp_clear_settings", false);
 
-        if (clearHistory) BrowserUnit.clearHistory(context);
+        if (clearHistory) clearHistory(context);
         if (clearCache)  {
             try {
                 CacheManager.clearAllCache(context, null);
@@ -506,6 +507,12 @@ public class PetalBrowserUtils {
     public static void intentURL(Context context, Uri uri) {
         if (context == null || uri == null) return;
         String uriStr = uri.toString();
+        if (uriStr.startsWith("petal://flags") || uriStr.startsWith("about:flags") || uriStr.startsWith("about:config") || uriStr.startsWith("chrome://flags")) {
+            if (context instanceof com.petal.browser.activity.BrowserActivity) {
+                ((com.petal.browser.activity.BrowserActivity) context).openFlagsHubScreen();
+                return;
+            }
+        }
         if (uriStr.startsWith("petal://settings") || uriStr.startsWith("petal://credits") || uriStr.startsWith("petal://ai")) {
             if (context instanceof Activity) {
                 Activity activity = (Activity) context;

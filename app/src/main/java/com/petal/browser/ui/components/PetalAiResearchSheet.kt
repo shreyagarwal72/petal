@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.ResearchMode
-import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.unit.PetalBrowserUtils
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -419,7 +419,7 @@ fun PetalAiResearchSheet(
                                     position = position,
                                     onClick = {
                                         try {
-                                            BrowserUnit.intentURL(context, Uri.parse(selectedProvider.keyUrl))
+                                            PetalBrowserUtils.intentURL(context, Uri.parse(selectedProvider.keyUrl))
                                         } catch (e: Exception) { e.printStackTrace() }
                                     },
                                     leadingIcon = { Icon(Icons.Rounded.OpenInNew, contentDescription = null) }

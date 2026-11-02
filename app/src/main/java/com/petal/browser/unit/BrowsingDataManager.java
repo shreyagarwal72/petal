@@ -126,11 +126,30 @@ public class BrowsingDataManager {
             cookieManager.removeAllCookies(null);
             cookieManager.flush();
         });
+        try {
+            Context ctx = com.petal.browser.PetalApplication.getInstance();
+            if (ctx != null) {
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
+                    ctx,
+                    org.mozilla.geckoview.StorageController.ClearFlags.COOKIES |
+                    org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
+                );
+            }
+        } catch (Throwable ignored) {}
     }
 
     public static void clearWebStorage() {
         runOnMainThreadBlocking(() -> WebStorage.getInstance().deleteAllData());
         clearProfileCacheAndStorage();
+        try {
+            Context ctx = com.petal.browser.PetalApplication.getInstance();
+            if (ctx != null) {
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
+                    ctx,
+                    org.mozilla.geckoview.StorageController.ClearFlags.DOM_STORAGES
+                );
+            }
+        } catch (Throwable ignored) {}
     }
 
     public static void clearAutofillData(final Context context) {
@@ -142,6 +161,14 @@ public class BrowsingDataManager {
                 webViewDatabase.clearFormData();
             }
         });
+        try {
+            if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(context)) {
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
+                    context,
+                    org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
+                );
+            }
+        } catch (Throwable ignored) {}
     }
 
     /**
@@ -222,11 +249,24 @@ public class BrowsingDataManager {
     }
 
     public static void clearPermissions() {
+        clearPermissions(null);
+    }
+
+    public static void clearPermissions(final Context context) {
         runOnMainThreadBlocking(() -> GeolocationPermissions.getInstance().clearAll());
         clearServiceWorkerCache();
         clearTracingControllerBuffers();
         clearProxyOverrides();
         clearHttpResponseCache();
+        try {
+            Context appCtx = context != null ? context : com.petal.browser.PetalApplication.getInstance();
+            if (appCtx != null && com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(appCtx)) {
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
+                    appCtx,
+                    org.mozilla.geckoview.StorageController.ClearFlags.PERMISSIONS
+                );
+            }
+        } catch (Throwable ignored) {}
     }
 
     public static void clearBrowsingDataAsync(
@@ -249,7 +289,7 @@ public class BrowsingDataManager {
             if (cookies) flags |= PetalCacheManager.Flags.COOKIES;
             if (webStorage) flags |= PetalCacheManager.Flags.DOM_WEB_STORAGE;
             if (autofill) clearAutofillData(context);
-            if (permissions) clearPermissions();
+            if (permissions) clearPermissions(context);
 
             PetalCacheManager.clearCache(context, flags, webView, onCompleted);
         });

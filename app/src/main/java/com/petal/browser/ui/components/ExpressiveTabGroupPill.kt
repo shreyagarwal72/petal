@@ -1,20 +1,23 @@
-package com.petal.browser.ui.components;
+package com.petal.browser.ui.components
 
-import androidx.compose.foundation.background;
-import androidx.compose.foundation.clickable;
-import androidx.compose.foundation.layout.*;
-import androidx.compose.foundation.shape.RoundedCornerShape;
-import androidx.compose.material3.MaterialTheme;
-import androidx.compose.material3.Surface;
-import androidx.compose.material3.Text;
-import androidx.compose.runtime.Composable;
-import androidx.compose.ui.Alignment;
-import androidx.compose.ui.Modifier;
-import androidx.compose.ui.draw.clip;
-import androidx.compose.ui.graphics.Color;
-import androidx.compose.ui.text.font.FontWeight;
-import androidx.compose.ui.unit.dp;
-import androidx.compose.ui.unit.sp;
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.glass.rememberGlassSheen
 
 /**
  * ExpressiveTabGroupPill renders Material 3 Expressive color-coded tab group tags.
@@ -26,12 +29,24 @@ fun ExpressiveTabGroupPill(
     contentColor: Color = Color.White,
     onClick: () -> Unit = {}
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = rememberGlassSheen(isGlass)
+    val pillShape = RoundedCornerShape(12.dp)
+
     Surface(
-        color = containerColor,
+        color = if (isGlass) containerColor.copy(alpha = 0.65f) else containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(12.dp),
+        shape = pillShape,
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
+            .then(
+                if (isGlass) Modifier.liquidGlassChrome(
+                    pillShape,
+                    enabled = true,
+                    sheenIntensity = sheen * 0.6f,
+                    pressFx = true
+                ) else Modifier
+            )
+            .clip(pillShape)
             .clickable { onClick() }
     ) {
         Row(

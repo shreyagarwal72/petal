@@ -13,7 +13,8 @@ import android.os.Process
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.petal.browser.predictive.PetalPredictiveJunction
-import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.unit.PetalAndroidUtils
+import com.petal.browser.unit.PetalBrowserUtils
 import com.petal.browser.unit.TabThumbnailCache
 import com.petal.browser.widget.PetalSearchWidgetProvider
 import dagger.hilt.android.HiltAndroidApp
@@ -61,7 +62,7 @@ class PetalApplication : Application() {
         try {
             com.petal.browser.logger.PetalAppLogger.init(base)
         } catch (_: Throwable) {}
-        super.attachBaseContext(com.petal.browser.unit.HelperUnit.applyLanguage(base))
+        super.attachBaseContext(PetalAndroidUtils.applyLanguage(base))
     }
 
     override fun onCreate() {
@@ -154,7 +155,7 @@ class PetalApplication : Application() {
                     com.petal.browser.logger.PetalAppLogger.markCleanExit(this@PetalApplication)
                     val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
                     if (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) {
-                        BrowserUnit.clearOnExit(this@PetalApplication)
+                        PetalBrowserUtils.clearOnExit(this@PetalApplication)
                     }
                 }
             }
@@ -164,7 +165,7 @@ class PetalApplication : Application() {
                     com.petal.browser.logger.PetalAppLogger.markCleanExit(this@PetalApplication)
                     val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
                     if (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) {
-                        BrowserUnit.clearOnExit(this@PetalApplication)
+                        PetalBrowserUtils.clearOnExit(this@PetalApplication)
                     }
                 }
             }

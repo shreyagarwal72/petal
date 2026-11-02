@@ -70,8 +70,9 @@ import java.util.regex.Matcher;
 
 import com.petal.browser.R;
 import com.petal.browser.browser.StandardDomainWhitelist;
+import com.petal.browser.database.HistoryBookmarkContract;
+import com.petal.browser.database.HistoryBookmarkRepository;
 import com.petal.browser.database.Record;
-import com.petal.browser.database.RecordAction;
 import com.petal.browser.view.PetalToast;
 
 public class PetalBackupManager {
@@ -114,7 +115,7 @@ public class PetalBackupManager {
         builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
         AlertDialog dialog = builder.create();
         dialog.show();
-        HelperUnit.setupDialog(activity, dialog);
+        PetalAndroidUtils.setupDialog(activity, dialog);
     }
 
     public static File getSafeBackupDir(Context context) {
@@ -361,7 +362,7 @@ public class PetalBackupManager {
 
             if (backupBookmarks) {
                 try {
-                    RecordAction action = new RecordAction(context);
+                    HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                     action.open(false);
                     List<Record> bookmarks = action.listBookmark(context, false, 0);
                     action.close();
@@ -384,7 +385,7 @@ public class PetalBackupManager {
 
             if (backupHistory) {
                 try {
-                    RecordAction action = new RecordAction(context);
+                    HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                     action.open(false);
                     List<Record> history = action.listHistory(context);
                     action.close();
@@ -405,7 +406,7 @@ public class PetalBackupManager {
 
             if (backupStartSites) {
                 try {
-                    RecordAction action = new RecordAction(context);
+                    HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                     action.open(false);
                     List<Record> startSites = action.listStartSites();
                     action.close();
@@ -427,7 +428,7 @@ public class PetalBackupManager {
 
             if (backupTabSessions) {
                 try {
-                    RecordAction action = new RecordAction(context);
+                    HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                     action.open(false);
                     String sessionJson = action.getSessionStateJson();
                     action.close();
@@ -445,11 +446,11 @@ public class PetalBackupManager {
 
             if (backupSavedSites) {
                 try {
-                    RecordAction action = new RecordAction(context);
+                    HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                     action.open(false);
-                    List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
-                    List<String> trusted = action.listDomains(RecordUnit.TABLE_TRUSTED);
-                    List<String> protect = action.listDomains(RecordUnit.TABLE_PROTECTED);
+                    List<String> domains = action.listDomains(HistoryBookmarkContract.TABLE_STANDARD);
+                    List<String> trusted = action.listDomains(HistoryBookmarkContract.TABLE_TRUSTED);
+                    List<String> protect = action.listDomains(HistoryBookmarkContract.TABLE_PROTECTED);
                     action.close();
 
                     org.json.JSONArray sitesArray = new org.json.JSONArray();
@@ -688,7 +689,7 @@ public class PetalBackupManager {
                 if (restoreBookmarks && backupJson.has("bookmarks")) {
                     try {
                         org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
-                        RecordAction action = new RecordAction(context);
+                        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                         action.open(true);
                         for (int i = 0; i < bookmarksArray.length(); i++) {
                             org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
@@ -708,7 +709,7 @@ public class PetalBackupManager {
                             if (title.isEmpty()) {
                                 title = url;
                             }
-                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
+                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK)) {
                                 Record record = new Record();
                                 record.setTitle(title);
                                 record.setURL(url);
@@ -726,7 +727,7 @@ public class PetalBackupManager {
                 if (restoreHistory && backupJson.has("history")) {
                     try {
                         org.json.JSONArray historyArray = backupJson.getJSONArray("history");
-                        RecordAction action = new RecordAction(context);
+                        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                         action.open(true);
                         for (int i = 0; i < historyArray.length(); i++) {
                             org.json.JSONObject obj = historyArray.getJSONObject(i);
@@ -745,7 +746,7 @@ public class PetalBackupManager {
                             if (title.isEmpty()) {
                                 title = url;
                             }
-                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
+                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, HistoryBookmarkContract.TABLE_HISTORY)) {
                                 action.addHistory(new Record(title, url, time, 0L));
                             }
                         }
@@ -758,7 +759,7 @@ public class PetalBackupManager {
                 if (restoreStartSites && backupJson.has("start_sites")) {
                     try {
                         org.json.JSONArray startArray = backupJson.getJSONArray("start_sites");
-                        RecordAction action = new RecordAction(context);
+                        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                         action.open(true);
                         for (int i = 0; i < startArray.length(); i++) {
                             org.json.JSONObject obj = startArray.getJSONObject(i);
@@ -791,7 +792,7 @@ public class PetalBackupManager {
                             sessionJson = (String) sessionObj;
                         }
                         if (sessionJson != null && !sessionJson.trim().isEmpty()) {
-                            RecordAction action = new RecordAction(context);
+                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                             action.open(true);
                             action.saveSessionStateJson(sessionJson);
                             action.close();
@@ -810,12 +811,12 @@ public class PetalBackupManager {
                     if (backupJson.has("saved_sites")) {
                         try {
                             org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
-                            RecordAction action = new RecordAction(context);
+                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                             StandardDomainWhitelist listStandard = new StandardDomainWhitelist(context);
                             action.open(true);
                             for (int i = 0; i < sitesArray.length(); i++) {
                                 String domain = sitesArray.optString(i, "");
-                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
+                                if (!domain.isEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_STANDARD)) {
                                     listStandard.addDomain(domain);
                                 }
                             }
@@ -827,12 +828,12 @@ public class PetalBackupManager {
                     if (backupJson.has("trusted_sites")) {
                         try {
                             org.json.JSONArray trustedArray = backupJson.getJSONArray("trusted_sites");
-                            RecordAction action = new RecordAction(context);
+                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                             action.open(true);
                             for (int i = 0; i < trustedArray.length(); i++) {
                                 String domain = trustedArray.optString(i, "");
-                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_TRUSTED)) {
-                                    action.addDomain(domain, RecordUnit.TABLE_TRUSTED);
+                                if (!domain.isEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_TRUSTED)) {
+                                    action.addDomain(domain, HistoryBookmarkContract.TABLE_TRUSTED);
                                 }
                             }
                             action.close();
@@ -843,12 +844,12 @@ public class PetalBackupManager {
                     if (backupJson.has("protected_sites")) {
                         try {
                             org.json.JSONArray protectArray = backupJson.getJSONArray("protected_sites");
-                            RecordAction action = new RecordAction(context);
+                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                             action.open(true);
                             for (int i = 0; i < protectArray.length(); i++) {
                                 String domain = protectArray.optString(i, "");
-                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_PROTECTED)) {
-                                    action.addDomain(domain, RecordUnit.TABLE_PROTECTED);
+                                if (!domain.isEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_PROTECTED)) {
+                                    action.addDomain(domain, HistoryBookmarkContract.TABLE_PROTECTED);
                                 }
                             }
                             action.close();
@@ -933,7 +934,7 @@ public class PetalBackupManager {
                 if (restoreBookmarks && backupJson.has("bookmarks")) {
                     try {
                         org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
-                        RecordAction action = new RecordAction(context);
+                        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                         action.open(true);
                         for (int i = 0; i < bookmarksArray.length(); i++) {
                             org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
@@ -953,7 +954,7 @@ public class PetalBackupManager {
                             if (title.isEmpty()) {
                                 title = url;
                             }
-                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
+                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK)) {
                                 Record record = new Record();
                                 record.setTitle(title);
                                 record.setURL(url);
@@ -971,7 +972,7 @@ public class PetalBackupManager {
                 if (restoreHistory && backupJson.has("history")) {
                     try {
                         org.json.JSONArray historyArray = backupJson.getJSONArray("history");
-                        RecordAction action = new RecordAction(context);
+                        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                         action.open(true);
                         for (int i = 0; i < historyArray.length(); i++) {
                             org.json.JSONObject obj = historyArray.getJSONObject(i);
@@ -990,7 +991,7 @@ public class PetalBackupManager {
                             if (title.isEmpty()) {
                                 title = url;
                             }
-                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
+                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, HistoryBookmarkContract.TABLE_HISTORY)) {
                                 action.addHistory(new Record(title, url, time, 0L));
                             }
                         }
@@ -1003,7 +1004,7 @@ public class PetalBackupManager {
                 if (restoreStartSites && backupJson.has("start_sites")) {
                     try {
                         org.json.JSONArray startArray = backupJson.getJSONArray("start_sites");
-                        RecordAction action = new RecordAction(context);
+                        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                         action.open(true);
                         for (int i = 0; i < startArray.length(); i++) {
                             org.json.JSONObject obj = startArray.getJSONObject(i);
@@ -1036,7 +1037,7 @@ public class PetalBackupManager {
                             sessionJson = (String) sessionObj;
                         }
                         if (sessionJson != null && !sessionJson.trim().isEmpty()) {
-                            RecordAction action = new RecordAction(context);
+                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                             action.open(true);
                             action.saveSessionStateJson(sessionJson);
                             action.close();
@@ -1055,12 +1056,12 @@ public class PetalBackupManager {
                     if (backupJson.has("saved_sites")) {
                         try {
                             org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
-                            RecordAction action = new RecordAction(context);
+                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                             StandardDomainWhitelist listStandard = new StandardDomainWhitelist(context);
                             action.open(true);
                             for (int i = 0; i < sitesArray.length(); i++) {
                                 String domain = sitesArray.optString(i, "");
-                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
+                                if (!domain.isEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_STANDARD)) {
                                     listStandard.addDomain(domain);
                                 }
                             }
@@ -1072,12 +1073,12 @@ public class PetalBackupManager {
                     if (backupJson.has("trusted_sites")) {
                         try {
                             org.json.JSONArray trustedArray = backupJson.getJSONArray("trusted_sites");
-                            RecordAction action = new RecordAction(context);
+                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                             action.open(true);
                             for (int i = 0; i < trustedArray.length(); i++) {
                                 String domain = trustedArray.optString(i, "");
-                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_TRUSTED)) {
-                                    action.addDomain(domain, RecordUnit.TABLE_TRUSTED);
+                                if (!domain.isEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_TRUSTED)) {
+                                    action.addDomain(domain, HistoryBookmarkContract.TABLE_TRUSTED);
                                 }
                             }
                             action.close();
@@ -1088,12 +1089,12 @@ public class PetalBackupManager {
                     if (backupJson.has("protected_sites")) {
                         try {
                             org.json.JSONArray protectArray = backupJson.getJSONArray("protected_sites");
-                            RecordAction action = new RecordAction(context);
+                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                             action.open(true);
                             for (int i = 0; i < protectArray.length(); i++) {
                                 String domain = protectArray.optString(i, "");
-                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_PROTECTED)) {
-                                    action.addDomain(domain, RecordUnit.TABLE_PROTECTED);
+                                if (!domain.isEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_PROTECTED)) {
+                                    action.addDomain(domain, HistoryBookmarkContract.TABLE_PROTECTED);
                                 }
                             }
                             action.close();
@@ -1168,15 +1169,15 @@ public class PetalBackupManager {
                 backupJson.put("app_version_code", currentVersionCode);
                 backupJson.put("timestamp", System.currentTimeMillis());
 
-                RecordAction action = new RecordAction(context);
+                HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
                 action.open(false);
                 List<Record> bookmarks = action.listBookmark(context, false, 0);
                 List<Record> history = action.listHistory(context);
                 List<Record> startSites = action.listStartSites();
                 String sessionJson = action.getSessionStateJson();
-                List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
-                List<String> trusted = action.listDomains(RecordUnit.TABLE_TRUSTED);
-                List<String> protect = action.listDomains(RecordUnit.TABLE_PROTECTED);
+                List<String> domains = action.listDomains(HistoryBookmarkContract.TABLE_STANDARD);
+                List<String> trusted = action.listDomains(HistoryBookmarkContract.TABLE_TRUSTED);
+                List<String> protect = action.listDomains(HistoryBookmarkContract.TABLE_PROTECTED);
                 action.close();
 
                 org.json.JSONArray bookmarksArray = new org.json.JSONArray();

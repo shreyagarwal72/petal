@@ -15,14 +15,12 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.JavascriptInterface;
-import android.webkit.ServiceWorkerClient;
-import android.webkit.ServiceWorkerController;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.EditText;
@@ -39,7 +37,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
 import com.petal.browser.view.PetalGeckoView;
 
 import org.json.JSONArray;
@@ -54,6 +52,10 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -89,13 +91,17 @@ public class PetalPwaManager {
         void onPwaDetected(PwaManifest manifest);
     }
 
+    private static final ExecutorService sPwaExecutor = Executors.newSingleThreadExecutor();
+    private static final Map<String, PwaManifest> sManifestCache = new ConcurrentHashMap<>();
+    private static volatile PwaManifest currentManifest;
+    private static volatile PwaInstallPromptListener sPromptListener;
+
     private final Context context;
     private final com.petal.browser.browser.AlbumController albumController;
     private final WebView webView;
     private final PetalGeckoView geckoView;
     private final com.petal.browser.browser.PetalTabViewController tabViewController;
     private PwaInstallPromptListener promptListener;
-    private PwaManifest currentManifest;
 
     public PetalPwaManager(Context context, com.petal.browser.browser.AlbumController albumController, PwaInstallPromptListener listener) {
         this.context = context;
@@ -104,11 +110,170 @@ public class PetalPwaManager {
         this.geckoView = (albumController instanceof PetalGeckoView) ? (PetalGeckoView) albumController : null;
         this.tabViewController = (albumController instanceof com.petal.browser.browser.PetalTabViewController) ? (com.petal.browser.browser.PetalTabViewController) albumController : null;
         this.promptListener = listener;
+        if (listener != null) {
+            sPromptListener = listener;
+        }
 
         if (this.webView != null) {
             configurePwaWebSettings(this.webView.getSettings());
-            configureServiceWorker();
             this.webView.addJavascriptInterface(new PwaJavascriptInterface(), JS_INTERFACE_NAME);
+        }
+    }
+
+    /**
+     * Called when a PWA manifest is detected in a GeckoView tab (via Petal Resource Sniffer WebExtension)
+     * or any GeckoView native bridge event.
+     * Fetches manifest JSON asynchronously from manifestUrl and parses it into currentManifest.
+     */
+    public static void onManifestDiscovered(String manifestUrl, String pageUrl, String pageTitle) {
+        if (manifestUrl == null || manifestUrl.trim().isEmpty()) return;
+        sPwaExecutor.execute(() -> {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(manifestUrl);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0");
+                conn.setRequestProperty("Accept", "application/manifest+json, application/json, text/plain, */*");
+                conn.setConnectTimeout(6000);
+                conn.setReadTimeout(6000);
+                conn.setInstanceFollowRedirects(true);
+                conn.connect();
+
+                int code = conn.getResponseCode();
+                if (code >= 200 && code < 400) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                    }
+                    reader.close();
+
+                    String jsonStr = sb.toString().trim();
+                    if (!jsonStr.isEmpty()) {
+                        JSONObject json = new JSONObject(jsonStr);
+                        PwaManifest manifest = parseManifest(json, manifestUrl, pageUrl, pageTitle);
+                        if (manifest != null) {
+                            currentManifest = manifest;
+                            if (pageUrl != null && !pageUrl.isEmpty()) {
+                                sManifestCache.put(pageUrl, manifest);
+                            }
+                            sManifestCache.put(manifestUrl, manifest);
+                            Log.d(TAG, "PWA manifest discovered & parsed for " + (pageUrl != null ? pageUrl : manifestUrl) + ": name=" + manifest.name + ", display=" + manifest.display);
+
+                            PwaInstallPromptListener prompt = sPromptListener;
+                            if (prompt != null && ("standalone".equalsIgnoreCase(manifest.display) || "fullscreen".equalsIgnoreCase(manifest.display))) {
+                                new Handler(Looper.getMainLooper()).post(() -> {
+                                    try {
+                                        prompt.onPwaDetected(manifest);
+                                    } catch (Exception e) {
+                                        Log.w(TAG, "Error notifying PWA prompt listener", e);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to fetch PWA manifest from " + manifestUrl + ": " + e.getMessage());
+            } finally {
+                if (conn != null) {
+                    try {
+                        conn.disconnect();
+                    } catch (Exception ignored) {}
+                }
+            }
+        });
+    }
+
+    /**
+     * Parses a Web App Manifest JSONObject into a PwaManifest instance.
+     */
+    public static PwaManifest parseManifest(JSONObject json, String manifestUrl, String pageUrl, String pageTitle) {
+        if (json == null) return null;
+        try {
+            PwaManifest manifest = new PwaManifest();
+            manifest.name = json.optString("name", "");
+            if (manifest.name.isEmpty() && pageTitle != null && !pageTitle.isEmpty()) {
+                manifest.name = pageTitle;
+            }
+            manifest.shortName = json.optString("short_name", manifest.name);
+            String rawStartUrl = json.optString("start_url", "");
+            if (!rawStartUrl.isEmpty()) {
+                manifest.startUrl = resolveUrl(manifestUrl != null ? manifestUrl : pageUrl, rawStartUrl);
+            } else if (pageUrl != null && !pageUrl.isEmpty()) {
+                manifest.startUrl = pageUrl;
+            }
+            manifest.display = json.optString("display", "standalone");
+            manifest.themeColor = json.optString("theme_color", "#FFFFFF");
+            manifest.backgroundColor = json.optString("background_color", "#FFFFFF");
+
+            if (json.has("icons")) {
+                JSONArray icons = json.getJSONArray("icons");
+                if (icons.length() > 0) {
+                    String bestIcon = "";
+                    int bestSize = 0;
+                    for (int i = 0; i < icons.length(); i++) {
+                        JSONObject ic = icons.getJSONObject(i);
+                        String src = ic.optString("src", "");
+                        String sizes = ic.optString("sizes", "0x0");
+                        int sizeVal = 0;
+                        try {
+                            if (sizes.contains("x")) {
+                                sizeVal = Integer.parseInt(sizes.split("x")[0].trim());
+                            }
+                        } catch (Exception ignored) {}
+                        if (bestIcon.isEmpty() || sizeVal >= bestSize) {
+                            bestSize = sizeVal;
+                            bestIcon = src;
+                        }
+                    }
+                    if (bestIcon.isEmpty()) {
+                        bestIcon = icons.getJSONObject(icons.length() - 1).optString("src", "");
+                    }
+                    if (!bestIcon.isEmpty()) {
+                        manifest.iconUrl = resolveUrl(manifestUrl != null ? manifestUrl : pageUrl, bestIcon);
+                    }
+                }
+            }
+
+            if (json.has("shortcuts")) {
+                JSONArray shortcuts = json.getJSONArray("shortcuts");
+                for (int i = 0; i < shortcuts.length(); i++) {
+                    JSONObject sc = shortcuts.getJSONObject(i);
+                    PwaShortcut shortcut = new PwaShortcut();
+                    shortcut.name = sc.optString("name", sc.optString("short_name", ""));
+                    String scUrl = sc.optString("url", "");
+                    if (!scUrl.isEmpty()) {
+                        shortcut.url = resolveUrl(manifestUrl != null ? manifestUrl : pageUrl, scUrl);
+                    }
+                    if (sc.has("icons")) {
+                        JSONArray scIcons = sc.getJSONArray("icons");
+                        if (scIcons.length() > 0) {
+                            shortcut.iconUrl = resolveUrl(manifestUrl != null ? manifestUrl : pageUrl, scIcons.getJSONObject(0).optString("src", ""));
+                        }
+                    }
+                    manifest.shortcuts.add(shortcut);
+                }
+            }
+
+            return manifest;
+        } catch (Exception e) {
+            Log.w(TAG, "Error in parseManifest: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Parses a Web App Manifest JSON string into a PwaManifest instance.
+     */
+    public static PwaManifest parseManifest(String jsonStr, String manifestUrl, String pageUrl, String pageTitle) {
+        if (jsonStr == null || jsonStr.trim().isEmpty()) return null;
+        try {
+            return parseManifest(new JSONObject(jsonStr), manifestUrl, pageUrl, pageTitle);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to parse manifest JSON string: " + e.getMessage());
+            return null;
         }
     }
 
@@ -126,27 +291,6 @@ public class PetalPwaManager {
         webSettings.setAllowContentAccess(true);
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
-    }
-
-    /**
-     * Configures Service Worker lifecycle for offline caching.
-     */
-    private void configureServiceWorker() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            try {
-                ServiceWorkerController controller = ServiceWorkerController.getInstance();
-                controller.getServiceWorkerWebSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
-                controller.getServiceWorkerWebSettings().setAllowContentAccess(true);
-                controller.setServiceWorkerClient(new ServiceWorkerClient() {
-                    @Override
-                    public WebResourceResponse shouldInterceptRequest(WebResourceRequest request) {
-                        return super.shouldInterceptRequest(request);
-                    }
-                });
-            } catch (Exception e) {
-                Log.w(TAG, "ServiceWorkerController setup warning: " + e.getMessage());
-            }
-        }
     }
 
     /**
@@ -230,8 +374,12 @@ public class PetalPwaManager {
         return currentManifest;
     }
 
+    public static PwaManifest getLatestManifest() {
+        return currentManifest;
+    }
+
     public void setCurrentManifest(PwaManifest manifest) {
-        this.currentManifest = manifest;
+        currentManifest = manifest;
     }
 
     public static String resolveUrl(String baseUrl, String relativeOrAbsoluteUrl) {
@@ -546,14 +694,18 @@ public class PetalPwaManager {
             try {
                 // Initialize working manifest
                 PwaManifest workingManifest = new PwaManifest();
-                if (currentManifest != null) {
-                    workingManifest.name = currentManifest.name;
-                    workingManifest.shortName = currentManifest.shortName;
-                    workingManifest.startUrl = currentManifest.startUrl;
-                    workingManifest.display = currentManifest.display;
-                    workingManifest.themeColor = currentManifest.themeColor;
-                    workingManifest.backgroundColor = currentManifest.backgroundColor;
-                    workingManifest.iconUrl = currentManifest.iconUrl;
+                PwaManifest activeManifest = currentManifest;
+                if (activeManifest == null && finalPageUrl != null) {
+                    activeManifest = sManifestCache.get(finalPageUrl);
+                }
+                if (activeManifest != null) {
+                    workingManifest.name = activeManifest.name;
+                    workingManifest.shortName = activeManifest.shortName;
+                    workingManifest.startUrl = activeManifest.startUrl;
+                    workingManifest.display = activeManifest.display;
+                    workingManifest.themeColor = activeManifest.themeColor;
+                    workingManifest.backgroundColor = activeManifest.backgroundColor;
+                    workingManifest.iconUrl = activeManifest.iconUrl;
                 }
 
                 List<String> iconCandidates = new ArrayList<>();
@@ -586,7 +738,7 @@ public class PetalPwaManager {
                     rawTitle = workingManifest.name;
                 }
                 if (rawTitle == null || rawTitle.isEmpty()) {
-                    rawTitle = finalController != null && finalController.getTitle() != null && !finalController.getTitle().isEmpty() ? finalController.getTitle() : (webView != null && webView.getTitle() != null && !webView.getTitle().isEmpty() ? webView.getTitle() : HelperUnit.domain(finalPageUrl));
+                    rawTitle = finalController != null && finalController.getTitle() != null && !finalController.getTitle().isEmpty() ? finalController.getTitle() : (webView != null && webView.getTitle() != null && !webView.getTitle().isEmpty() ? webView.getTitle() : PetalAndroidUtils.domain(finalPageUrl));
                 }
                 if (rawTitle == null || rawTitle.isEmpty()) {
                     rawTitle = "Web App";
@@ -676,7 +828,7 @@ public class PetalPwaManager {
                 titleView.setSelection(titleView.getText().length());
             }
             if (urlView != null) {
-                String domainText = HelperUnit.domain(targetUrl);
+                String domainText = PetalAndroidUtils.domain(targetUrl);
                 if (domainText == null || domainText.isEmpty()) domainText = targetUrl;
                 urlView.setText(domainText);
             }
@@ -704,7 +856,7 @@ public class PetalPwaManager {
             }
 
             dialog.show();
-            HelperUnit.setupDialog(activity, dialog);
+            PetalAndroidUtils.setupDialog(activity, dialog);
         } catch (Exception e) {
             Log.e(TAG, "Error showing install dialog, falling back to direct pinning", e);
             performShortcutPinning(activity, defaultTitle, targetUrl, adaptiveIcon, themeColorHex, manifest);
@@ -835,46 +987,15 @@ public class PetalPwaManager {
         public void onManifestParsed(String jsonStr, String manifestUrl) {
             try {
                 JSONObject json = new JSONObject(jsonStr);
-                PwaManifest manifest = new PwaManifest();
-                manifest.name = json.optString("name", "");
-                manifest.shortName = json.optString("short_name", manifest.name);
-                String rawStartUrl = json.optString("start_url", "");
-                manifest.startUrl = resolveUrl(manifestUrl, rawStartUrl);
-                manifest.display = json.optString("display", "standalone");
-                manifest.themeColor = json.optString("theme_color", "#FFFFFF");
-                manifest.backgroundColor = json.optString("background_color", "#FFFFFF");
-
-                if (json.has("icons")) {
-                    JSONArray icons = json.getJSONArray("icons");
-                    if (icons.length() > 0) {
-                        String bestIcon = "";
-                        int bestSize = 0;
-                        for (int i = 0; i < icons.length(); i++) {
-                            JSONObject ic = icons.getJSONObject(i);
-                            String src = ic.optString("src", "");
-                            String sizes = ic.optString("sizes", "0x0");
-                            int sizeVal = 0;
-                            try {
-                                if (sizes.contains("x")) {
-                                    sizeVal = Integer.parseInt(sizes.split("x")[0].trim());
-                                }
-                            } catch (Exception ignored) {}
-                            if (bestIcon.isEmpty() || sizeVal >= bestSize) {
-                                bestSize = sizeVal;
-                                bestIcon = src;
-                            }
-                        }
-                        if (bestIcon.isEmpty()) {
-                            bestIcon = icons.getJSONObject(icons.length() - 1).optString("src", "");
-                        }
-                        manifest.iconUrl = resolveUrl(manifestUrl, bestIcon);
+                PwaManifest manifest = parseManifest(json, manifestUrl, manifestUrl, "");
+                if (manifest != null) {
+                    currentManifest = manifest;
+                    if (manifestUrl != null && !manifestUrl.isEmpty()) {
+                        sManifestCache.put(manifestUrl, manifest);
                     }
-                }
-
-                currentManifest = manifest;
-
-                if (promptListener != null && ("standalone".equalsIgnoreCase(manifest.display) || "fullscreen".equalsIgnoreCase(manifest.display))) {
-                    ((Activity) context).runOnUiThread(() -> promptListener.onPwaDetected(manifest));
+                    if (promptListener != null && ("standalone".equalsIgnoreCase(manifest.display) || "fullscreen".equalsIgnoreCase(manifest.display))) {
+                        ((Activity) context).runOnUiThread(() -> promptListener.onPwaDetected(manifest));
+                    }
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Error parsing PWA manifest JSON: " + e.getMessage());

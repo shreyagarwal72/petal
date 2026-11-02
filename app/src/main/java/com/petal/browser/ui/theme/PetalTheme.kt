@@ -4,8 +4,10 @@ import android.app.Activity
 import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -20,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 /**
@@ -144,31 +147,30 @@ fun PetalExpressiveTheme(
                     surface = Color.Black,
                     surfaceContainerLowest = Color.Black,
                     surfaceContainerLow = Color(0xFF0B0B0B),
-                    surfaceContainer = Color(0xFF181818),
+                    surfaceContainer = Color(0xFF141414),
                     surfaceContainerHigh = Color(0xFF1E1E1E),
-                    surfaceContainerHighest = Color(0xFF262626),
+                    surfaceContainerHighest = Color(0xFF282828),
                     surfaceVariant = Color(0xFF1C1C1C)
                 )
             } else {
+                // Authentic Material 3 Expressive elevation ladder
                 colorScheme.copy(
-                    background = colorScheme.surfaceContainerLow,
-                    surface = colorScheme.surfaceContainerLow,
-                    surfaceContainer = colorScheme.surfaceContainerHigh,
-                    surfaceContainerLow = colorScheme.surfaceContainerHigh,
+                    background = colorScheme.surfaceContainerLowest,
+                    surface = colorScheme.surfaceContainerLowest,
+                    surfaceContainerLow = colorScheme.surfaceContainerLow,
+                    surfaceContainer = colorScheme.surfaceContainer,
                     surfaceContainerHigh = colorScheme.surfaceContainerHigh,
-                    surfaceContainerHighest = colorScheme.surfaceContainerHigh,
-                    surfaceContainerLowest = colorScheme.surfaceContainerHigh
+                    surfaceContainerHighest = colorScheme.surfaceContainerHighest
                 )
             }
         } else {
+            // Light theme expressive tonal container depth
             colorScheme.copy(
-                background = colorScheme.surfaceContainerLow,
-                surface = colorScheme.surfaceContainerLow,
-                surfaceContainer = Color.White,
-                surfaceContainerLow = Color.White,
-                surfaceContainerHigh = Color.White,
-                surfaceContainerHighest = Color.White,
-                surfaceContainerLowest = Color.White
+                surfaceContainerLowest = Color(0xFFFFFFFF),
+                surfaceContainerLow = colorScheme.surfaceContainerLow,
+                surfaceContainer = colorScheme.surfaceContainer,
+                surfaceContainerHigh = colorScheme.surfaceContainerHigh,
+                surfaceContainerHighest = colorScheme.surfaceContainerHighest
             )
         }
     }
@@ -287,6 +289,26 @@ fun PetalExpressiveTheme(
     }
 
     val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
+    val expressiveShapes = remember(expressiveShapesState) {
+        if (expressiveShapesState) {
+            Shapes(
+                extraSmall = RoundedCornerShape(8.dp),
+                small = RoundedCornerShape(12.dp),
+                medium = RoundedCornerShape(16.dp),
+                large = RoundedCornerShape(24.dp),
+                extraLarge = RoundedCornerShape(32.dp),
+            )
+        } else {
+            Shapes(
+                extraSmall = RoundedCornerShape(4.dp),
+                small = RoundedCornerShape(8.dp),
+                medium = RoundedCornerShape(12.dp),
+                large = RoundedCornerShape(16.dp),
+                extraLarge = RoundedCornerShape(28.dp),
+            )
+        }
+    }
+
     CompositionLocalProvider(
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper,
         com.petal.browser.ui.glass.LocalPetalGlassRevision provides glassRevision,
@@ -298,6 +320,7 @@ fun PetalExpressiveTheme(
     ) {
         androidx.compose.material3.MaterialExpressiveTheme(
             colorScheme = colorScheme,
+            shapes = expressiveShapes,
             motionScheme = if (reduceMotion) com.petal.browser.ui.components.PetalInstantMotionScheme else androidx.compose.material3.MotionScheme.expressive(),
             typography = effectiveTypography,
             content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }

@@ -26,6 +26,9 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
@@ -175,10 +178,18 @@ object PetalConfirmSheetBridge {
                     useAmoled = isAmoled,
                     dynamicColor = useDynamic
                 ) {
+                    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+                    val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+
                     Surface(
-                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.fillMaxWidth()
+                        shape = sheetShape,
+                        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        tonalElevation = if (isGlass) 0.dp else 6.dp,
+                        shadowElevation = if (isGlass) 0.dp else 8.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
                     ) {
                         PetalConfirmSheetContent(
                             icon = icon,

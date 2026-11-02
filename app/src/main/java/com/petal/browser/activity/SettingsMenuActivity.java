@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Objects;
 
 import com.petal.browser.R;
-import com.petal.browser.unit.BrowserUnit;
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
+import com.petal.browser.unit.PetalBrowserUtils;
 import com.petal.browser.view.SettingsMenuAdapter;
 import com.petal.browser.view.MenuItem;
 
@@ -40,7 +40,7 @@ public class SettingsMenuActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        HelperUnit.initTheme(this);
+        PetalAndroidUtils.initTheme(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_settings_menu);
 
@@ -93,7 +93,7 @@ public class SettingsMenuActivity extends AppCompatActivity {
         if (menuItem.getItemId() == android.R.id.home) finish();
         else if (menuItem.getItemId() == R.id.menu_help) {
             Uri webpage = Uri.parse("https://github.com/shreyagarwal72/petal");
-            BrowserUnit.intentURL(this, webpage);
+            PetalBrowserUtils.intentURL(this, webpage);
         }
         return true;
     }

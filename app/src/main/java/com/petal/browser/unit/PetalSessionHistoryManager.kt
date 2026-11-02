@@ -2,7 +2,7 @@ package com.petal.browser.unit
 
 import android.content.Context
 import android.util.Log
-import com.petal.browser.database.RecordAction
+import com.petal.browser.database.HistoryBookmarkRepository
 import java.util.Collections
 
 /**
@@ -42,7 +42,7 @@ object PetalSessionHistoryManager {
     @JvmStatic
     fun clearSessionHistory(context: Context) {
         try {
-            val action = RecordAction(context)
+            val action = HistoryBookmarkRepository(context)
             action.open(true)
             action.deleteSessionHistory(sessionStartTime, sessionUrls)
             action.close()

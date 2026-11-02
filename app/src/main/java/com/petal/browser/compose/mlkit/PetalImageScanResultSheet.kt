@@ -49,7 +49,7 @@ import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
-import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.unit.PetalBrowserUtils
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.InputStream
@@ -505,7 +505,7 @@ fun PetalImageScanResultSheet(
                                         IconButton(onClick = {
                                             onDismiss()
                                             try {
-                                                BrowserUnit.intentURL(context, Uri.parse(barcode.rawValue))
+                                                PetalBrowserUtils.intentURL(context, Uri.parse(barcode.rawValue))
                                             } catch (e: Exception) { e.printStackTrace() }
                                         }) {
                                             Icon(Icons.Rounded.OpenInNew, contentDescription = stringResource(R.string.ui_open_link), tint = MaterialTheme.colorScheme.primary)

@@ -40,8 +40,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -387,7 +387,7 @@ private fun PetalFileViewerTopBar(
                 contentDescription = stringResource(R.string.ui_back),
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
@@ -627,7 +627,7 @@ private fun ArchiveViewerContent(
                                         contentDescription = "Up",
                                     ) {
                                         Icon(
-                                            Icons.AutoMirrored.Filled.ArrowBack,
+                                            Icons.AutoMirrored.Rounded.ArrowBack,
                                             contentDescription = null,
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -784,7 +784,7 @@ private fun ArchiveEntryRow(
 
     val (iconVector, badgeContainer, badgeTint) = remember(isFolder, ext) {
         when {
-            isFolder -> Triple(Icons.Filled.Folder, null, null)
+            isFolder -> Triple(Icons.Rounded.Folder, null, null)
             ext in listOf("png", "jpg", "jpeg", "webp", "gif", "bmp", "svg") ->
                 Triple(Icons.Rounded.Image, null, null)
             ext in listOf("mp3", "wav", "ogg", "m4a", "flac", "aac", "mp4", "mkv", "webm") ->
@@ -795,7 +795,7 @@ private fun ArchiveEntryRow(
                 Triple(Icons.Rounded.FolderZip, null, null)
             ext in listOf("txt", "md", "json", "xml", "html", "kt", "java", "py", "js", "ts", "css", "c", "cpp") ->
                 Triple(Icons.Rounded.Code, null, null)
-            else -> Triple(Icons.Filled.InsertDriveFile, null, null)
+            else -> Triple(Icons.AutoMirrored.Rounded.InsertDriveFile, null, null)
         }
     }
 
@@ -825,7 +825,7 @@ private fun ArchiveEntryRow(
         },
         trailing = {
             Icon(
-                imageVector = if (isFolder) Icons.Filled.ChevronRight else Icons.Filled.OpenInNew,
+                imageVector = if (isFolder) Icons.Rounded.ChevronRight else Icons.Rounded.OpenInNew,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -886,7 +886,7 @@ private fun ArchiveEntryPreview(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back to archive")
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back to archive")
                 }
                 Text(
                     entry.path.substringAfterLast('/'),

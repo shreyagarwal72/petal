@@ -12,7 +12,7 @@ import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.browser.PlaceholderAlbumController
 import com.petal.browser.controller.BrowserWebViewController
-import com.petal.browser.database.RecordAction
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.view.PetalGeckoView
 import java.util.Arrays
 import java.util.concurrent.Executors
@@ -184,7 +184,7 @@ object PetalTabSessionManager {
                         .remove(PREF_OPEN_TABS_LEGACY)
                         .apply()
                     try {
-                        val action = RecordAction(context)
+                        val action = HistoryBookmarkRepository(context)
                         action.open(true)
                         action.clearSessionStateJson()
                         action.close()
@@ -204,9 +204,9 @@ object PetalTabSessionManager {
                     .putString(PREF_OPEN_TABS_LEGACY, TextUtils.join(DELIMITER_LEGACY, legacyUrls))
                     .apply()
 
-                // 2. Save JSON to SQLite RecordUnit.TABLE_SESSION for Backup & Restore integration
+                // 2. Save JSON to SQLite HistoryBookmarkContract.TABLE_SESSION for Backup & Restore integration
                 try {
-                    val action = RecordAction(context)
+                    val action = HistoryBookmarkRepository(context)
                     action.open(true)
                     action.saveSessionStateJson(json)
                     action.close()
@@ -226,7 +226,7 @@ object PetalTabSessionManager {
 
         // 1. Try SQLite Database first
         try {
-            val action = RecordAction(context)
+            val action = HistoryBookmarkRepository(context)
             action.open(false)
             val dbJson = action.getSessionStateJson()
             action.close()
@@ -471,7 +471,7 @@ object PetalTabSessionManager {
                     .remove(PREF_OPEN_TABS_LEGACY)
                     .apply()
 
-                val action = RecordAction(context)
+                val action = HistoryBookmarkRepository(context)
                 action.open(true)
                 action.clearSessionStateJson()
                 action.close()

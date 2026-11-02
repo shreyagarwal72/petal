@@ -226,7 +226,7 @@ fun PetalLensBottomSheet(
                     showPetalScanner = false
                     (context as? com.petal.browser.activity.BrowserActivity)?.restoreBrowserInputFocus()
                     if (value.startsWith("http://") || value.startsWith("https://")) {
-                        com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(value))
+                        com.petal.browser.unit.PetalBrowserUtils.intentURL(context, Uri.parse(value))
                         onDismissRequest()
                     } else {
                         val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager

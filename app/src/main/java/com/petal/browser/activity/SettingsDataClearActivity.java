@@ -16,15 +16,15 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.Objects;
 
 import com.petal.browser.R;
-import com.petal.browser.unit.BrowserUnit;
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
+import com.petal.browser.unit.PetalBrowserUtils;
 
 public class SettingsDataClearActivity extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        HelperUnit.initTheme(this);
+        PetalAndroidUtils.initTheme(this);
         EdgeToEdge.enable(this);
         setContentView(com.petal.browser.compose.settings.PetalDeleteBridge.createDeleteView(this, this::finish));
     }
@@ -40,7 +40,7 @@ public class SettingsDataClearActivity extends AppCompatActivity {
         if (menuItem.getItemId() == android.R.id.home) finish();
         if (menuItem.getItemId() == R.id.menu_help) {
             Uri webpage = Uri.parse("https://github.com/shreyagarwal72/petal");
-            BrowserUnit.intentURL(this, webpage);
+            PetalBrowserUtils.intentURL(this, webpage);
         }
         return true;
     }

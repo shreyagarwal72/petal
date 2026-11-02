@@ -312,6 +312,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse([]);
         }
         return true;
+    } else if (message.type === 'PWA_MANIFEST_FOUND') {
+        try {
+            chrome.runtime.sendNativeMessage('petalApp', {
+                type: 'PWA_MANIFEST_DETECTED',
+                manifestUrl: message.manifestUrl,
+                pageUrl: message.pageUrl || (sender.tab ? sender.tab.url : ''),
+                pageTitle: message.pageTitle || ''
+            }).catch((err) => {
+                console.error('[background.js] Error sending PWA_MANIFEST_DETECTED:', err);
+            });
+        } catch (e) {
+            console.error('[background.js] Native message failed for PWA_MANIFEST_DETECTED:', e);
+        }
+    } else if (message.type === 'DOM_RESOURCES_SNIFFED') {
+        try {
+            chrome.runtime.sendNativeMessage('petalApp', {
+                type: 'DOM_RESOURCES_SNIFFED',
+                items: message.items,
+                pageUrl: message.pageUrl,
+                tabId: (sender.tab && sender.tab.id !== undefined) ? String(sender.tab.id) : ''
+            }).catch(() => {});
+        } catch (e) {}
     } else if (message.type === 'REQUEST_HANDOFF') {
         const url = message.url;
         const pageUrl = message.pageUrl || (sender.tab ? sender.tab.url : '');
@@ -492,5 +514,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 url: sender.tab ? sender.tab.url : ''
             }).catch(() => {});
         } catch (e) {}
+    } else if (message.type === 'READER_ELIGIBLE_DETECTED') {
+        chrome.runtime.sendNativeMessage('petalApp', {
+            type: 'READER_ELIGIBLE_DETECTED',
+            pageUrl: message.pageUrl,
+            isArticle: message.isArticle,
+            tabId: (sender.tab && sender.tab.id !== undefined) ? String(sender.tab.id) : ''
+        }).catch(() => {});
+    } else if (message.type === 'READER_ARTICLE_DATA') {
+        chrome.runtime.sendNativeMessage('petalApp', {
+            type: 'READER_ARTICLE_DATA',
+            article: message.article,
+            pageUrl: message.pageUrl,
+            tabId: (sender.tab && sender.tab.id !== undefined) ? String(sender.tab.id) : ''
+        }).catch(() => {});
     }
 });

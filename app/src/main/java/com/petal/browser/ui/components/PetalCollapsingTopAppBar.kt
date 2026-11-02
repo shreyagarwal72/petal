@@ -15,6 +15,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,13 +24,19 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.rememberGlassSheen
 
 /**
  * A collapsing Medium Top App Bar with Zenith-style animated title transitions.
@@ -66,8 +73,30 @@ fun PetalCollapsingTopAppBar(
         label = "petalHeaderBackButtonScale"
     )
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_toolbars")
+    val sheen = rememberGlassSheen(isGlass)
+    val barShape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)
+
     MediumTopAppBar(
-        modifier = modifier,
+        modifier = modifier
+            .then(
+                if (isGlass) Modifier
+                    .clip(barShape)
+                    .liquidGlassChrome(
+                        barShape,
+                        enabled = true,
+                        sheenIntensity = sheen * 0.8f
+                    )
+                else Modifier
+            ),
+        colors = if (isGlass) {
+            TopAppBarDefaults.mediumTopAppBarColors(
+                containerColor = petalGroupSurfaceColor(),
+                scrolledContainerColor = petalGroupSurfaceColor(),
+            )
+        } else {
+            TopAppBarDefaults.mediumTopAppBarColors()
+        },
         title = {
             // Zenith-style: fade + scale transition when the title text changes
             // (e.g., switching from "Settings" overview → a sub-page title).

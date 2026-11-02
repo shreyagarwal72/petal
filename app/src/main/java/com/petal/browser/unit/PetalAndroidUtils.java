@@ -141,7 +141,7 @@ public class PetalAndroidUtils {
             builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
             AlertDialog dialog = builder.create();
             dialog.show();
-            HelperUnit.setupDialog(activity, dialog);
+            PetalAndroidUtils.setupDialog(activity, dialog);
         }
     }
 
@@ -156,7 +156,7 @@ public class PetalAndroidUtils {
             builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
             AlertDialog dialog = builder.create();
             dialog.show();
-            HelperUnit.setupDialog(activity, dialog);
+            PetalAndroidUtils.setupDialog(activity, dialog);
         }
     }
 
@@ -171,12 +171,12 @@ public class PetalAndroidUtils {
             builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
             AlertDialog dialog = builder.create();
             dialog.show();
-            HelperUnit.setupDialog(activity, dialog);
+            PetalAndroidUtils.setupDialog(activity, dialog);
         }
     }
 
     public static void saveAs(final Activity activity, final String url, final String name, Dialog dialogParent) {
-        if (BackupUnit.checkPermissionStorage(activity)) {
+        if (PetalBackupManager.checkPermissionStorage(activity)) {
 
             try {
                 MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
@@ -203,7 +203,7 @@ public class PetalAndroidUtils {
 
                 AlertDialog dialog = builder.create();
                 dialog.show();
-                HelperUnit.setupDialog(activity, dialog);
+                PetalAndroidUtils.setupDialog(activity, dialog);
 
                 Button ib_cancel = dialogView.findViewById(R.id.editCancel);
                 ib_cancel.setOnClickListener(view -> dialog.cancel());
@@ -265,7 +265,7 @@ public class PetalAndroidUtils {
             } catch (Exception e) {
                 Log.i(TAG, "SaveAs:" + e);
             }
-        } else BackupUnit.requestPermission(activity);
+        } else PetalBackupManager.requestPermission(activity);
     }
 
     public static void createShortcut(Context context, String title, String url) {
@@ -418,7 +418,7 @@ public class PetalAndroidUtils {
 
         AlertDialog dialog = builder.create();
         dialog.show();
-        HelperUnit.setupDialog(activity, dialog);
+        PetalAndroidUtils.setupDialog(activity, dialog);
 
         Button ib_cancel = dialogView.findViewById(R.id.editCancel);
         ib_cancel.setOnClickListener(view -> dialog.cancel());
@@ -432,7 +432,7 @@ public class PetalAndroidUtils {
             if (title.isEmpty() || !extension1.startsWith(".")) {
                 PetalToast.show(activity, activity.getString(R.string.toast_input_empty));
             } else {
-                if (BackupUnit.checkPermissionStorage(activity)) {
+                if (PetalBackupManager.checkPermissionStorage(activity)) {
                     File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename1);
                     try {
                         try(FileOutputStream fos = new FileOutputStream(file)) {
@@ -442,7 +442,7 @@ public class PetalAndroidUtils {
                         Log.i(TAG, "Error Downloading File:" + e);
                     }
                 } else {
-                    BackupUnit.requestPermission(activity);
+                    PetalBackupManager.requestPermission(activity);
                 }
                 dialog.cancel();
                 dialogParent.cancel();
@@ -507,12 +507,12 @@ public class PetalAndroidUtils {
                 android.graphics.drawable.GradientDrawable backgroundDrawable = new android.graphics.drawable.GradientDrawable();
                 backgroundDrawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
                 backgroundDrawable.setColor(surfaceColor != 0 ? surfaceColor : android.graphics.Color.parseColor("#1C1B1F"));
-                backgroundDrawable.setCornerRadius(HelperUnit.convertDpToPixel(32f, context));
-                backgroundDrawable.setStroke(HelperUnit.convertDpToPixel(1f, context), getThemeColor(context, com.google.android.material.R.attr.colorOutlineVariant, Color.TRANSPARENT));
+                backgroundDrawable.setCornerRadius(convertDpToPixel(32f, context));
+                backgroundDrawable.setStroke(convertDpToPixel(1f, context), getThemeColor(context, com.google.android.material.R.attr.colorOutlineVariant, Color.TRANSPARENT));
                 dialog.getWindow().setBackgroundDrawable(backgroundDrawable);
                 dialog.getWindow().setDimAmount(0.32f);
                 dialog.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-                dialog.getWindow().getDecorView().setElevation(HelperUnit.convertDpToPixel(12f, context));
+                dialog.getWindow().getDecorView().setElevation(convertDpToPixel(12f, context));
             }
         } catch (Exception ignored) {}
     }

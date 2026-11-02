@@ -1,6 +1,6 @@
 package com.petal.browser.database;
 
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
 
 /**
  * Modern data model representing a browser history entry or bookmark item.
@@ -66,7 +66,7 @@ public class HistoryBookmarkItem {
     }
 
     public String getDomain() {
-        return HelperUnit.domain(url);
+        return PetalAndroidUtils.domain(url);
     }
 
     public void setURL(String url) {

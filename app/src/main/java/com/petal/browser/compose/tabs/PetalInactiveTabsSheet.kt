@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,7 +37,7 @@ import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -148,7 +147,7 @@ fun PetalInactiveTabsSheet(
                         placeholder = { Text(stringResource(R.string.ui_search_inactive_tabs)) },
                         leadingIcon = {
                             Icon(
-                                Icons.Filled.Search,
+                                Icons.Rounded.Search,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
@@ -158,7 +157,7 @@ fun PetalInactiveTabsSheet(
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = "" }) {
                                     Icon(
-                                        Icons.Filled.Close,
+                                        Icons.Rounded.Close,
                                         contentDescription = stringResource(R.string.ui_clear),
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -222,7 +221,7 @@ fun PetalInactiveTabsSheet(
                                 modifier = Modifier.padding(32.dp)
                             ) {
                                 PetalGroupIconBadge(
-                                    icon = Icons.Filled.TabUnselected,
+                                    icon = Icons.Rounded.TabUnselected,
                                     size = 72.dp,
                                     iconSize = 32.dp,
                                 )
@@ -246,7 +245,7 @@ fun PetalInactiveTabsSheet(
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(
-                                        Icons.Filled.Settings,
+                                        Icons.Rounded.Settings,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -320,7 +319,7 @@ private fun InactiveTabGridCard(
         try { Color(android.graphics.Color.parseColor(it)) } catch (_: Exception) { null }
     }
 
-    val titleText = tab.title.ifBlank { HelperUnit.domain(tab.url).ifBlank { "Untitled" } }
+    val titleText = tab.title.ifBlank { PetalAndroidUtils.domain(tab.url).ifBlank { "Untitled" } }
 
     PetalHeroCard(
         shape = RoundedCornerShape(32.dp),
@@ -353,7 +352,7 @@ private fun InactiveTabGridCard(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = if (tab.isDuplicateArchive) Icons.Filled.ContentCopy else Icons.Filled.History,
+                                imageVector = if (tab.isDuplicateArchive) Icons.Rounded.ContentCopy else Icons.Rounded.History,
                                 contentDescription = null,
                                 tint = accentColor,
                                 modifier = Modifier.size(11.dp)
@@ -381,7 +380,7 @@ private fun InactiveTabGridCard(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Filled.Close,
+                            imageVector = Icons.Rounded.Close,
                             contentDescription = stringResource(R.string.ui_close_tab_2),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
@@ -435,7 +434,7 @@ private fun InactiveTabPreviewCard(
             "Active ${dateFormatter.format(Date(tab.lastAccessedTimestamp))}"
         } else "Archived"
     }
-    val domain = remember(tab.url) { HelperUnit.domain(tab.url).ifBlank { tab.url } }
+    val domain = remember(tab.url) { PetalAndroidUtils.domain(tab.url).ifBlank { tab.url } }
 
     Box(
         modifier = Modifier
@@ -458,7 +457,7 @@ private fun InactiveTabPreviewCard(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (tab.isDuplicateArchive) Icons.Filled.ContentCopy else Icons.Filled.HistoryToggleOff,
+                    imageVector = if (tab.isDuplicateArchive) Icons.Rounded.ContentCopy else Icons.Rounded.HistoryToggleOff,
                     contentDescription = null,
                     tint = accentColor,
                     modifier = Modifier.size(20.dp)
@@ -477,7 +476,7 @@ private fun InactiveTabPreviewCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Language,
+                        imageVector = Icons.Rounded.Language,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         modifier = Modifier.size(12.dp)
@@ -500,7 +499,7 @@ private fun InactiveTabPreviewCard(
                 modifier = Modifier.height(28.dp)
             ) {
                 Icon(
-                imageVector = Icons.Filled.Unarchive,
+                imageVector = Icons.Rounded.Unarchive,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp)
                 )
@@ -551,7 +550,7 @@ private fun InactiveTabListItem(
             .entrance(),
         leading = {
             PetalGroupIconBadge(
-                icon = if (tab.isDuplicateArchive) Icons.Filled.ContentCopy else Icons.Filled.History,
+                icon = if (tab.isDuplicateArchive) Icons.Rounded.ContentCopy else Icons.Rounded.History,
                 container = if (tab.isDuplicateArchive) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
                 tint = if (tab.isDuplicateArchive) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                 size = 44.dp,
@@ -564,7 +563,7 @@ private fun InactiveTabListItem(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = tab.title.ifBlank { HelperUnit.domain(tab.url).ifBlank { "Untitled" } },
+                            text = tab.title.ifBlank { PetalAndroidUtils.domain(tab.url).ifBlank { "Untitled" } },
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                             color = textColor,
                             maxLines = 1,
@@ -584,7 +583,7 @@ private fun InactiveTabListItem(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = HelperUnit.domain(tab.url).ifBlank { tab.url },
+                            text = PetalAndroidUtils.domain(tab.url).ifBlank { tab.url },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -606,10 +605,10 @@ private fun InactiveTabListItem(
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onRestore, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Filled.Unarchive, contentDescription = stringResource(R.string.ui_restore_tab), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Unarchive, contentDescription = stringResource(R.string.ui_restore_tab), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
                 IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.ui_close_tab_2), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close_tab_2), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                 }
             }
         },

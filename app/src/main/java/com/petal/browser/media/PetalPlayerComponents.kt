@@ -38,20 +38,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeDown
-import androidx.compose.material.icons.automirrored.filled.VolumeMute
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.BrightnessHigh
-import androidx.compose.material.icons.filled.BrightnessLow
-import androidx.compose.material.icons.filled.BrightnessMedium
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FastForward
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.automirrored.rounded.VolumeDown
+import androidx.compose.material.icons.automirrored.rounded.VolumeMute
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.BrightnessHigh
+import androidx.compose.material.icons.rounded.BrightnessLow
+import androidx.compose.material.icons.rounded.BrightnessMedium
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
@@ -138,19 +136,19 @@ fun PetalDoubleTapSeekTriangles(
         modifier = modifier.rotate(rotation),
     ) {
         Icon(
-            imageVector = Icons.Default.PlayArrow,
+            imageVector = Icons.Rounded.PlayArrow,
             contentDescription = null,
             tint = Color.White.copy(alpha = a1.value),
             modifier = Modifier.size(24.dp),
         )
         Icon(
-            imageVector = Icons.Default.PlayArrow,
+            imageVector = Icons.Rounded.PlayArrow,
             contentDescription = null,
             tint = Color.White.copy(alpha = a2.value),
             modifier = Modifier.size(24.dp),
         )
         Icon(
-            imageVector = Icons.Default.PlayArrow,
+            imageVector = Icons.Rounded.PlayArrow,
             contentDescription = null,
             tint = Color.White.copy(alpha = a3.value),
             modifier = Modifier.size(24.dp),
@@ -280,9 +278,9 @@ fun PetalBrightnessHud(
             )
             Icon(
                 imageVector = when {
-                    brightness < 0.35f -> Icons.Default.BrightnessLow
-                    brightness < 0.70f -> Icons.Default.BrightnessMedium
-                    else -> Icons.Default.BrightnessHigh
+                    brightness < 0.35f -> Icons.Rounded.BrightnessLow
+                    brightness < 0.70f -> Icons.Rounded.BrightnessMedium
+                    else -> Icons.Rounded.BrightnessHigh
                 },
                 contentDescription = null,
                 tint = Color.White,
@@ -337,10 +335,10 @@ fun PetalVolumeHud(
             )
             Icon(
                 imageVector = when {
-                    volume == 0 -> Icons.AutoMirrored.Filled.VolumeOff
-                    volume < (maxVolume / 3) -> Icons.AutoMirrored.Filled.VolumeMute
-                    volume < (maxVolume * 2 / 3) -> Icons.AutoMirrored.Filled.VolumeDown
-                    else -> Icons.AutoMirrored.Filled.VolumeUp
+                    volume == 0 -> Icons.AutoMirrored.Rounded.VolumeOff
+                    volume < (maxVolume / 3) -> Icons.AutoMirrored.Rounded.VolumeMute
+                    volume < (maxVolume * 2 / 3) -> Icons.AutoMirrored.Rounded.VolumeDown
+                    else -> Icons.AutoMirrored.Rounded.VolumeUp
                 },
                 contentDescription = null,
                 tint = Color.White,
@@ -447,7 +445,7 @@ fun PetalSlideToUnlock(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = if (showUnlocked) Icons.Filled.LockOpen else Icons.Filled.Lock,
+                imageVector = if (showUnlocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(24.dp),
@@ -492,7 +490,7 @@ fun PetalSpeedCapsule(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
         ) {
             Icon(
-                imageVector = Icons.Default.FastForward,
+                imageVector = Icons.Rounded.FastForward,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(15.dp),

@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
 
 
 public class FaviconHelper extends SQLiteOpenHelper {
@@ -76,7 +76,7 @@ public class FaviconHelper extends SQLiteOpenHelper {
     }
 
     public synchronized void addFavicon(Context context, String url, Bitmap bitmap) throws SQLiteException {
-        String domain = HelperUnit.domain(url);
+        String domain = PetalAndroidUtils.domain(url);
         if (bitmap == null) return;
         SQLiteDatabase database = this.getWritableDatabase();
         //first delete existing Favicon for domain if available
@@ -98,7 +98,7 @@ public class FaviconHelper extends SQLiteOpenHelper {
 
     public synchronized Bitmap getFavicon(String url) {
         if (url == null) return null;
-        String domain = HelperUnit.domain(url);
+        String domain = PetalAndroidUtils.domain(url);
         try (SQLiteDatabase database = this.getReadableDatabase()) {
             Cursor cursor;
             cursor = database.query(TABLE_FAVICON,
@@ -143,12 +143,12 @@ public class FaviconHelper extends SQLiteOpenHelper {
         executor.execute(() -> {
             //Background work here
             List<String> faviconURLs = getAllFaviconDomains();
-            RecordAction action = new RecordAction(context);
+            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
             List<Record> allEntries = action.listEntries((Activity) context);
             for (String faviconURL : faviconURLs) {
                 boolean found = false;
                 for (Record entry : allEntries) {
-                    if (Objects.equals(HelperUnit.domain(entry.getURL()), faviconURL)) {
+                    if (Objects.equals(PetalAndroidUtils.domain(entry.getURL()), faviconURL)) {
                         found = true;
                         break;
                     }

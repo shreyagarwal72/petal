@@ -60,6 +60,9 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.view.PetalToast
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 @Composable
 fun PetalQrGeneratorDialog(
@@ -79,12 +82,19 @@ fun PetalQrGeneratorDialog(
         )
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val dialogShape = RoundedCornerShape(32.dp)
+
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
-            shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 8.dp,
-            modifier = Modifier.widthIn(max = 380.dp)
+            shape = dialogShape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = if (isGlass) 0.dp else 8.dp,
+            shadowElevation = if (isGlass) 0.dp else 8.dp,
+            modifier = Modifier
+                .widthIn(max = 380.dp)
+                .then(if (isGlass) Modifier.liquidGlassChrome(dialogShape, enabled = true, sheenIntensity = sheen) else Modifier)
         ) {
             Column(
                 modifier = Modifier

@@ -52,7 +52,7 @@ import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -475,14 +475,14 @@ fun PetalLinkContextMenuSheet(
     }
 
     val title = when (kind) {
-        MenuKind.PAGE -> linkTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(linkUrl) ?: "Current page"
+        MenuKind.PAGE -> linkTitle?.takeIf { it.isNotBlank() } ?: PetalAndroidUtils.domain(linkUrl) ?: "Current page"
         MenuKind.TEXT -> "Selected text"
         MenuKind.EMAIL -> linkUrl.removePrefix("mailto:").substringBefore('?')
         MenuKind.PHONE -> linkUrl.removePrefix("tel:")
         MenuKind.SMS -> linkUrl.removePrefix("sms:").removePrefix("smsto:").substringBefore('?')
         MenuKind.LOCATION -> "Map location"
-        MenuKind.IMAGE_LINK -> linkTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(linkUrl) ?: linkUrl
-        else -> linkTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(linkUrl) ?: linkUrl
+        MenuKind.IMAGE_LINK -> linkTitle?.takeIf { it.isNotBlank() } ?: PetalAndroidUtils.domain(linkUrl) ?: linkUrl
+        else -> linkTitle?.takeIf { it.isNotBlank() } ?: PetalAndroidUtils.domain(linkUrl) ?: linkUrl
     }
     val subtitle = when (kind) {
         MenuKind.PAGE -> linkUrl.ifBlank { null }

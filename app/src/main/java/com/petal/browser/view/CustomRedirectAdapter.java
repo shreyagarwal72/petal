@@ -31,7 +31,7 @@ import java.util.Objects;
 import com.petal.browser.R;
 import com.petal.browser.objects.CustomRedirect;
 import com.petal.browser.objects.CustomRedirectsHelper;
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
 
 public class CustomRedirectAdapter extends RecyclerView.Adapter<RedirectsViewHolder> {
     final private ArrayList<CustomRedirect> redirects;
@@ -120,7 +120,7 @@ public class CustomRedirectAdapter extends RecyclerView.Adapter<RedirectsViewHol
 
             AlertDialog dialog = builder.create();
             dialog.show();
-            HelperUnit.setupDialog(context, dialog);
+            PetalAndroidUtils.setupDialog(context, dialog);
         });
 
     }

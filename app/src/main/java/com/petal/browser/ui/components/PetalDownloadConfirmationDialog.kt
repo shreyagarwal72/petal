@@ -471,7 +471,7 @@ object PetalDownloadDialogBridge {
 
                 engineDialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
                 engineDialog.show()
-                com.petal.browser.unit.HelperUnit.setupDialog(activity, engineDialog)
+                com.petal.browser.unit.PetalAndroidUtils.setupDialog(activity, engineDialog)
             } catch (e: Exception) {
                 e.printStackTrace()
                 com.petal.browser.torrent.PetalTorrentEngineManager.setEnginePromptCompleted(activity)
@@ -489,7 +489,7 @@ object PetalDownloadDialogBridge {
         contentLength: Long,
         onConfirmDownload: (String) -> Unit
     ) {
-        val guessedFileName = com.petal.browser.unit.HelperUnit.resolveFileName(url, contentDisposition, mimeType)
+        val guessedFileName = com.petal.browser.unit.PetalAndroidUtils.resolveFileName(url, contentDisposition, mimeType)
         val formattedSize = formatFileSize(contentLength)
         val isDuplicate = isFileExistsInDownloads(guessedFileName)
 
@@ -575,7 +575,7 @@ object PetalDownloadDialogBridge {
 
                     dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
                     dialog.show()
-                    com.petal.browser.unit.HelperUnit.setupDialog(activity, dialog)
+                    com.petal.browser.unit.PetalAndroidUtils.setupDialog(activity, dialog)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     // Fallback to direct download if dialog creation fails
@@ -665,7 +665,7 @@ object PetalDownloadDialogBridge {
 
                 dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
                 dialog.show()
-                com.petal.browser.unit.HelperUnit.setupDialog(activity, dialog)
+                com.petal.browser.unit.PetalAndroidUtils.setupDialog(activity, dialog)
             } catch (e: Exception) {
                 e.printStackTrace()
                 // Fallback to direct save if dialog creation fails

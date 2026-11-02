@@ -33,6 +33,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 @Composable
 fun PetalImageGrabberSheet(
@@ -41,11 +44,18 @@ fun PetalImageGrabberSheet(
     onDownloadAll: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 6.dp
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheen) else Modifier),
+        shape = sheetShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = if (isGlass) 0.dp else 6.dp,
+        shadowElevation = if (isGlass) 0.dp else 8.dp
     ) {
         Column(
             modifier = Modifier

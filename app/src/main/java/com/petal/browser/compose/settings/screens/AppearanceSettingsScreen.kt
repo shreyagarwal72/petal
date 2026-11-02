@@ -10,7 +10,7 @@ import android.content.Context
 import android.os.Build
 import androidx.preference.PreferenceManager
 import androidx.appcompat.app.AppCompatDelegate
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.unit.PetalLanguages
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
@@ -474,7 +474,7 @@ fun AppearanceSettingsScreenContent(
                                                 onClick = {
                                                     if (appLanguage != lang.tag) {
                                                         onAppLanguageChange(lang.tag)
-                                                        HelperUnit.setAppLanguage(context, lang.tag)
+                                                        PetalAndroidUtils.setAppLanguage(context, lang.tag)
                                                     }
                                                 },
                                                 label = { Text(lang.nativeName) },
@@ -682,6 +682,7 @@ fun AppearanceSettingsScreenContent(
                     Surface(
                         shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.SINGLE),
                         color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -718,20 +719,11 @@ fun AppearanceSettingsScreenContent(
                         icon = Icons.Rounded.DarkMode,
                         checked = amoledMode && isDarkTheme,
                         enabled = isDarkTheme,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onCheckedChange = { newValue ->
                             onAmoledModeChange(newValue)
                             PetalSearchWidgetProvider.updateAllWidgets(context)
                         }
-                    )
-                    // Dark Webpages / Smart Dark Mode Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.petal_setup_ext_dark),
-                        subtitle = stringResource(R.string.petal_setup_ext_dark_reason),
-                        icon = Icons.Rounded.Nightlight,
-                        checked = forceDarkMode,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                        onCheckedChange = onForceDarkModeChange
                     )
                 }
 
@@ -1095,62 +1087,64 @@ fun AppearanceSettingsScreenContent(
                     )
 
                     if (expressiveBgShapes) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.ui_shape_change_mode),
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        com.petal.browser.ui.containment.PetalHeroCard {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.ui_shape_change_mode),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
 
-                            ExpressiveButtonGroup(
-                                items = listOf(
-                                    ExpressiveSegmentItem(id = "ALWAYS", label = "Always", icon = Icons.Rounded.Autorenew),
-                                    ExpressiveSegmentItem(id = "PERIODIC", label = "Periodically", icon = Icons.Rounded.Schedule)
-                                ),
-                                selectedId = bgShapeChangeMode,
-                                onItemSelected = onBgShapeChangeModeChange,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                                ExpressiveButtonGroup(
+                                    items = listOf(
+                                        ExpressiveSegmentItem(id = "ALWAYS", label = "Always", icon = Icons.Rounded.Autorenew),
+                                        ExpressiveSegmentItem(id = "PERIODIC", label = "Periodically", icon = Icons.Rounded.Schedule)
+                                    ),
+                                    selectedId = bgShapeChangeMode,
+                                    onItemSelected = onBgShapeChangeModeChange,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
 
-                            if (bgShapeChangeMode == "PERIODIC") {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 4.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                if (bgShapeChangeMode == "PERIODIC") {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 4.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        Text(
-                                            text = stringResource(R.string.ui_auto_change_interval),
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.ui_min, bgShapeRotationMin),
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.primary
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.ui_auto_change_interval),
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.ui_min, bgShapeRotationMin),
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        PetalSlider(
+                                            value = bgShapeRotationMin.coerceIn(1, 60).toFloat(),
+                                            onValueChange = { newValue ->
+                                                val rounded = Math.round(newValue).coerceIn(1, 60)
+                                                if (rounded != bgShapeRotationMin) {
+                                                    onBgShapeRotationMinChange(rounded)
+                                                }
+                                            },
+                                            valueRange = 1f..60f,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                     }
-                                    PetalSlider(
-                                        value = bgShapeRotationMin.coerceIn(1, 60).toFloat(),
-                                        onValueChange = { newValue ->
-                                            val rounded = Math.round(newValue).coerceIn(1, 60)
-                                            if (rounded != bgShapeRotationMin) {
-                                                onBgShapeRotationMinChange(rounded)
-                                            }
-                                        },
-                                        valueRange = 1f..60f,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
                                 }
                             }
                         }
@@ -1206,35 +1200,37 @@ fun AppearanceSettingsScreenContent(
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                        com.petal.browser.ui.containment.PetalHeroCard {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Text(
-                                    stringResource(R.string.ui_motion_blur_amount),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    String.format(java.util.Locale.getDefault(), "%.1fx", motionBlurScale),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        stringResource(R.string.ui_motion_blur_amount),
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        String.format(java.util.Locale.getDefault(), "%.1fx", motionBlurScale),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                PetalSlider(
+                                    value = motionBlurScale,
+                                    onValueChange = onMotionBlurScaleChange,
+                                    valueRange = 0.5f..2.5f,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
-                            PetalSlider(
-                                value = motionBlurScale,
-                                onValueChange = onMotionBlurScaleChange,
-                                valueRange = 0.5f..2.5f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
                         }
                     }
                 }
@@ -1826,7 +1822,7 @@ fun AppearanceSettingsScreenContent(
                                 onClick = {
                                     if (appLanguage != lang.tag) {
                                         onAppLanguageChange(lang.tag)
-                                        HelperUnit.setAppLanguage(context, lang.tag)
+                                        PetalAndroidUtils.setAppLanguage(context, lang.tag)
                                     }
                                     showLanguageSheet = false
                                 },

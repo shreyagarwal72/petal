@@ -58,25 +58,25 @@ fun PetalOptionsSheet(
             ) {
                 com.petal.browser.ui.containment.PetalActionCard(onClick = { onNewTab(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
-                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.Add)
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Rounded.Add)
                         Text(stringResource(R.string.ui_new_tab), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
                 com.petal.browser.ui.containment.PetalActionCard(onClick = { onBookmarks(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
-                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.Bookmarks)
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Rounded.Bookmarks)
                         Text(stringResource(R.string.ui_bookmarks), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
                 com.petal.browser.ui.containment.PetalActionCard(onClick = { onHistory(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
-                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.History)
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Rounded.History)
                         Text(stringResource(R.string.ui_history), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
                 com.petal.browser.ui.containment.PetalActionCard(onClick = { onDownloads(); onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().height(76.dp).padding(6.dp)) {
-                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Filled.Download)
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(Icons.Rounded.Download)
                         Text(stringResource(R.string.ui_downloads), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
@@ -89,15 +89,15 @@ fun PetalOptionsSheet(
                     .entrance(index = 2),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                com.petal.browser.ui.containment.PetalGroupToggleRow(Icons.Filled.DesktopWindows, "Desktop Mode", "Request desktop version of websites", isDesktopSite, onDesktopSiteChange, com.petal.browser.ui.containment.PetalGroupPosition.TOP)
-                com.petal.browser.ui.containment.PetalGroupToggleRow(Icons.Filled.Security, "Private Browsing", "Don't save history or cookies", isIncognito, onIncognitoChange, com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM)
+                com.petal.browser.ui.containment.PetalGroupToggleRow(Icons.Rounded.DesktopWindows, "Desktop Mode", "Request desktop version of websites", isDesktopSite, onDesktopSiteChange, com.petal.browser.ui.containment.PetalGroupPosition.TOP)
+                com.petal.browser.ui.containment.PetalGroupToggleRow(Icons.Rounded.Security, "Private Browsing", "Don't save history or cookies", isIncognito, onIncognitoChange, com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM)
             }
 
             // Action Items Group with RvSystemMonitor variable corner shape
             val actionItems = listOf(
-                Triple(Icons.Filled.Search, "Find in Page", onFindInPage),
-                Triple(Icons.Filled.Share, "Share Web Page", onShare),
-                Triple(Icons.Filled.Settings, "Browser Settings", onSettings)
+                Triple(Icons.Rounded.Search, "Find in Page", onFindInPage),
+                Triple(Icons.Rounded.Share, "Share Web Page", onShare),
+                Triple(Icons.Rounded.Settings, "Browser Settings", onSettings)
             )
 
             Column(

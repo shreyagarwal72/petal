@@ -51,7 +51,7 @@ import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 
 /**
  * Creates an animated shimmering gradient brush for Material 3 Expressive skeletons.
@@ -91,7 +91,7 @@ fun PetalWebsiteLoadingSkeleton(
     val shimmerBrush = rememberShimmerBrush()
     val displayHost = remember(url) {
         try {
-            val domain = HelperUnit.domain(url)
+            val domain = PetalAndroidUtils.domain(url)
             if (!domain.isNullOrBlank() && !domain.equals("blank", ignoreCase = true)) domain else "Connecting..."
         } catch (_: Exception) {
             "Connecting..."

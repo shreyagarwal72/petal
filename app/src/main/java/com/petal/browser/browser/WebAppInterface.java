@@ -17,7 +17,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import com.petal.browser.R;
-import com.petal.browser.unit.HelperUnit;
 
 public class WebAppInterface {
     private final Context mContext;

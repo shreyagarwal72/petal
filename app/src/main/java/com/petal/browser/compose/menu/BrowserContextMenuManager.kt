@@ -9,12 +9,12 @@ import androidx.lifecycle.lifecycleScope
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.compose.ai.ResearchMode
 import com.petal.browser.compose.mlkit.PetalImageScannerBridge
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
-import com.petal.browser.database.RecordAction
 import com.petal.browser.download.DownloadFileNameResolver
 import com.petal.browser.ui.components.PetalAiResearchBridge
-import com.petal.browser.unit.BrowserUnit
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
+import com.petal.browser.unit.PetalBrowserUtils
 import com.petal.browser.unit.ImageActionHelper
 import com.petal.browser.view.PetalToast
 
@@ -40,7 +40,7 @@ object BrowserContextMenuManager {
             }
             activity.startActivity(intent)
         } catch (e: Exception) {
-            activity.addAlbum(HelperUnit.domain(targetUrl), targetUrl, true)
+            activity.addAlbum(PetalAndroidUtils.domain(targetUrl), targetUrl, true)
         }
     }
 
@@ -84,7 +84,7 @@ object BrowserContextMenuManager {
     @JvmStatic
     @JvmOverloads
     fun showImageContextMenu(activity: BrowserActivity, imageURL: String, title: String? = null) {
-        val displayTitle = title?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(imageURL)
+        val displayTitle = title?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: PetalAndroidUtils.domain(imageURL)
         PetalLinkContextMenuBridge.show(
             activity = activity,
             linkTitle = displayTitle,
@@ -125,7 +125,7 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyLinkAddress() {
-                    HelperUnit.copy(activity, imageURL)
+                    PetalAndroidUtils.copy(activity, imageURL)
                     PetalToast.show(activity, "Image address copied")
                 }
 
@@ -138,12 +138,12 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyImageAddress() {
-                    HelperUnit.copy(activity, imageURL)
+                    PetalAndroidUtils.copy(activity, imageURL)
                     PetalToast.show(activity, "Image address copied")
                 }
 
                 override fun onCopyLinkText() {
-                    HelperUnit.copy(activity, displayTitle)
+                    PetalAndroidUtils.copy(activity, displayTitle)
                     PetalToast.show(activity, "Title copied")
                 }
 
@@ -185,7 +185,7 @@ object BrowserContextMenuManager {
 
                 override fun onAddToReadingList() {
                     try {
-                        val action = RecordAction(activity)
+                        val action = HistoryBookmarkRepository(activity)
                         action.open(true)
                         val record = Record(displayTitle, imageURL, System.currentTimeMillis(), 0)
                         record.isReadingList = true
@@ -265,7 +265,7 @@ object BrowserContextMenuManager {
         val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
             "${parsed.scheme}://${parsed.authority}/favicon.ico"
         } else null
-        val displayTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(urlResult)
+        val displayTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: PetalAndroidUtils.domain(urlResult)
 
         PetalLinkContextMenuBridge.show(
             activity = activity,
@@ -330,14 +330,14 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyLinkAddress() {
-                    HelperUnit.copy(activity, urlResult)
+                    PetalAndroidUtils.copy(activity, urlResult)
                     PetalToast.show(activity, "Link copied")
                 }
 
                 override fun onCopyLinkText() {
                     val text = linkText?.trim().orEmpty()
                     if (text.isNotEmpty()) {
-                        HelperUnit.copy(activity, text)
+                        PetalAndroidUtils.copy(activity, text)
                         PetalToast.show(activity, "Link text copied")
                     } else {
                         PetalToast.show(activity, "This link has no text")
@@ -380,7 +380,7 @@ object BrowserContextMenuManager {
 
                 override fun onAddToReadingList() {
                     try {
-                        val action = RecordAction(activity)
+                        val action = HistoryBookmarkRepository(activity)
                         action.open(true)
                         val record = Record(displayTitle, urlResult, System.currentTimeMillis(), 0)
                         record.isReadingList = true
@@ -455,7 +455,7 @@ object BrowserContextMenuManager {
 
     @JvmStatic
     fun showVideoContextMenu(activity: BrowserActivity, cleanVideoUrl: String) {
-        val title = HelperUnit.domain(cleanVideoUrl)
+        val title = PetalAndroidUtils.domain(cleanVideoUrl)
         PetalLinkContextMenuBridge.show(
             activity = activity,
             linkTitle = title,
@@ -520,12 +520,12 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyVideoLink() {
-                    HelperUnit.copy(activity, cleanVideoUrl)
+                    PetalAndroidUtils.copy(activity, cleanVideoUrl)
                     PetalToast.show(activity, "Video link copied")
                 }
 
                 override fun onCopyLinkAddress() {
-                    HelperUnit.copy(activity, cleanVideoUrl)
+                    PetalAndroidUtils.copy(activity, cleanVideoUrl)
                     PetalToast.show(activity, "Video link copied")
                 }
 
@@ -542,7 +542,7 @@ object BrowserContextMenuManager {
 
     @JvmStatic
     fun showAudioContextMenu(activity: BrowserActivity, audioUrl: String) {
-        val title = HelperUnit.domain(audioUrl)
+        val title = PetalAndroidUtils.domain(audioUrl)
         PetalLinkContextMenuBridge.show(
             activity = activity,
             linkTitle = title,
@@ -596,12 +596,12 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyAudioLink() {
-                    HelperUnit.copy(activity, audioUrl)
+                    PetalAndroidUtils.copy(activity, audioUrl)
                     PetalToast.show(activity, "Audio link copied")
                 }
 
                 override fun onCopyLinkAddress() {
-                    HelperUnit.copy(activity, audioUrl)
+                    PetalAndroidUtils.copy(activity, audioUrl)
                     PetalToast.show(activity, "Audio link copied")
                 }
 
@@ -630,12 +630,12 @@ object BrowserContextMenuManager {
             selectedText = selectedText,
             handler = object : PetalLinkContextMenuHandler {
                 override fun onSearchWebText(text: String) {
-                    val query = BrowserUnit.queryWrapper(activity, text)
+                    val query = PetalBrowserUtils.queryWrapper(activity, text)
                     activity.addAlbum(text.take(24), query, true)
                 }
 
                 override fun onSearchWebTextInBackground(text: String) {
-                    val query = BrowserUnit.queryWrapper(activity, text)
+                    val query = PetalBrowserUtils.queryWrapper(activity, text)
                     activity.addAlbum(text.take(24), query, false)
                     PetalToast.show(activity, "Search opened in background tab")
                 }
@@ -663,7 +663,7 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopySelectedText(text: String) {
-                    HelperUnit.copy(activity, text)
+                    PetalAndroidUtils.copy(activity, text)
                     PetalToast.show(activity, "Text copied")
                 }
 
@@ -699,7 +699,7 @@ object BrowserContextMenuManager {
 
                 override fun onCopyLinkAddress() {
                     val cleanNumber = smsUri.removePrefix("sms:").removePrefix("smsto:").substringBefore('?')
-                    HelperUnit.copy(activity, cleanNumber)
+                    PetalAndroidUtils.copy(activity, cleanNumber)
                     PetalToast.show(activity, "Phone number copied")
                 }
             }
@@ -718,7 +718,7 @@ object BrowserContextMenuManager {
             "${parsed.scheme}://${parsed.authority}/favicon.ico"
         } else null
 
-        val title = pageTitle?.takeIf { it.isNotBlank() } ?: HelperUnit.domain(pageUrl) ?: "Current Page"
+        val title = pageTitle?.takeIf { it.isNotBlank() } ?: PetalAndroidUtils.domain(pageUrl) ?: "Current Page"
 
         PetalLinkContextMenuBridge.show(
             activity = activity,
@@ -762,7 +762,7 @@ object BrowserContextMenuManager {
 
                 override fun onViewPageSource() {
                     val sourceUrl = if (pageUrl.startsWith("view-source:")) pageUrl else "view-source:$pageUrl"
-                    activity.addAlbum("Source: " + HelperUnit.domain(pageUrl), sourceUrl, true)
+                    activity.addAlbum("Source: " + PetalAndroidUtils.domain(pageUrl), sourceUrl, true)
                 }
 
                 override fun onAiSummarizePage() {
@@ -790,7 +790,7 @@ object BrowserContextMenuManager {
         val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
             "${parsed.scheme}://${parsed.authority}/favicon.ico"
         } else null
-        val displayTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: HelperUnit.domain(linkUrl)
+        val displayTitle = linkText?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: PetalAndroidUtils.domain(linkUrl)
 
         PetalLinkContextMenuBridge.show(
             activity = activity,
@@ -857,14 +857,14 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyLinkAddress() {
-                    HelperUnit.copy(activity, linkUrl)
+                    PetalAndroidUtils.copy(activity, linkUrl)
                     PetalToast.show(activity, "Link address copied")
                 }
 
                 override fun onCopyLinkText() {
                     val text = linkText?.trim().orEmpty()
                     if (text.isNotEmpty()) {
-                        HelperUnit.copy(activity, text)
+                        PetalAndroidUtils.copy(activity, text)
                         PetalToast.show(activity, "Link text copied")
                     } else {
                         PetalToast.show(activity, "This link has no text")
@@ -916,11 +916,11 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onOpenImageInNewTab() {
-                    activity.addAlbum(HelperUnit.domain(imageUrl), imageUrl, true)
+                    activity.addAlbum(PetalAndroidUtils.domain(imageUrl), imageUrl, true)
                 }
 
                 override fun onOpenImageInBackgroundTab() {
-                    activity.addAlbum(HelperUnit.domain(imageUrl), imageUrl, false)
+                    activity.addAlbum(PetalAndroidUtils.domain(imageUrl), imageUrl, false)
                     PetalToast.show(activity, "Image opened in background tab")
                 }
 
@@ -933,7 +933,7 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onCopyImageAddress() {
-                    HelperUnit.copy(activity, imageUrl)
+                    PetalAndroidUtils.copy(activity, imageUrl)
                     PetalToast.show(activity, "Image address copied")
                 }
 

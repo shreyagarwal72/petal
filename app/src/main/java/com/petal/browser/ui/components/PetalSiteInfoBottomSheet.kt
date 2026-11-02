@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.view.PetalGeckoView
 import com.petal.browser.ui.glass.captureGlassWallpaper
@@ -48,7 +48,7 @@ fun PetalSiteInfoBottomSheet(
     val geckoView = albumController as? PetalGeckoView
     
     val currentUrl = albumController?.url ?: ""
-    val domain = remember(currentUrl) { HelperUnit.domain(currentUrl) }
+    val domain = remember(currentUrl) { PetalAndroidUtils.domain(currentUrl) }
     val favicon: Bitmap? = geckoView?.getFavicon()
 
     // Check GeckoView SecurityInformation if available, plus URL scheme
@@ -405,7 +405,7 @@ fun PetalSiteInfoBottomSheet(
                             mutableStateOf(com.petal.browser.privacy.ForgetfulBrowsingManager.isDomainForgetful(context, domain))
                         }
                         com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                             title = "Forgetful Browsing",
                             subtitle = "Clear cookies, storage and cache when tab is closed",
                             icon = Icons.Rounded.DeleteSweep,
@@ -413,6 +413,31 @@ fun PetalSiteInfoBottomSheet(
                             onCheckedChange = { checked ->
                                 isForgetful = checked
                                 com.petal.browser.privacy.ForgetfulBrowsingManager.setDomainForgetful(context, domain, checked)
+                            }
+                        )
+                        var isDarkWhitelisted by remember {
+                            mutableStateOf(
+                                com.petal.browser.extensions.PetalBuiltInExtensionManager.isDomainInWhitelist(
+                                    domain,
+                                    com.petal.browser.extensions.PetalBuiltInExtensionManager.getDarkWebpagesWhitelist(context)
+                                )
+                            )
+                        }
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                            title = "Smart Dark Mode for Site",
+                            subtitle = if (!isDarkWhitelisted) "Active (bright canvas inverted if not dark)" else "Excluded from Smart Dark Mode",
+                            icon = Icons.Rounded.Nightlight,
+                            checked = !isDarkWhitelisted,
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    com.petal.browser.extensions.PetalBuiltInExtensionManager.removeDarkWebpageWhitelist(context, domain)
+                                    isDarkWhitelisted = false
+                                } else {
+                                    com.petal.browser.extensions.PetalBuiltInExtensionManager.addDarkWebpageWhitelist(context, domain)
+                                    isDarkWhitelisted = true
+                                }
+                                geckoView?.reloadWithoutInit()
                             }
                         )
 
@@ -580,9 +605,6 @@ fun PetalSiteInfoBottomSheet(
                             onPrimaryClick = {
                                 try {
                                     com.petal.browser.unit.PetalCacheManager.clearSiteData(context, domain, includeCookies = true, includePermissions = false)
-                                    CookieManager.getInstance().removeAllCookies(null)
-                                    CookieManager.getInstance().flush()
-                                    WebStorage.getInstance().deleteAllData()
                                     cookieCount = 0
                                     onResetSiteData()
                                 } catch (e: Exception) {
@@ -611,8 +633,6 @@ fun PetalSiteInfoBottomSheet(
                                     siteResetExpanded = false
                                     try {
                                         com.petal.browser.unit.PetalCacheManager.clearSiteData(context, domain, includeCookies = true, includePermissions = false)
-                                        CookieManager.getInstance().removeAllCookies(null)
-                                        CookieManager.getInstance().flush()
                                         cookieCount = 0
                                     } catch (_: Exception) {}
                                 }
@@ -649,7 +669,6 @@ fun PetalSiteInfoBottomSheet(
                                     siteResetExpanded = false
                                     try {
                                         com.petal.browser.unit.PetalCacheManager.clearSiteCache(context, domain)
-                                        WebStorage.getInstance().deleteAllData()
                                         onResetSiteData()
                                     } catch (_: Exception) {}
                                 }
@@ -680,7 +699,7 @@ fun PetalSiteInfoBottomSheet(
                         isCameraAllowed = allowed
                         sp.edit().putBoolean(profile + "_camera", allowed).apply()
                         if (allowed && context is android.app.Activity) {
-                            HelperUnit.grantPermissionsCamera(context)
+                            PetalAndroidUtils.grantPermissionsCamera(context)
                         }
                         geckoView?.reloadWithoutInit()
                     },
@@ -707,7 +726,7 @@ fun PetalSiteInfoBottomSheet(
                         isMicAllowed = allowed
                         sp.edit().putBoolean(profile + "_microphone", allowed).apply()
                         if (allowed && context is android.app.Activity) {
-                            HelperUnit.grantPermissionsMic(context)
+                            PetalAndroidUtils.grantPermissionsMic(context)
                         }
                         geckoView?.reloadWithoutInit()
                     },
@@ -734,7 +753,7 @@ fun PetalSiteInfoBottomSheet(
                         isLocationAllowed = allowed
                         sp.edit().putBoolean(profile + "_location", allowed).apply()
                         if (allowed && context is android.app.Activity) {
-                            HelperUnit.grantPermissionsLoc(context)
+                            PetalAndroidUtils.grantPermissionsLoc(context)
                         } else if (!allowed) {
                             try {
                                 GeolocationPermissions.getInstance().clear(domain)

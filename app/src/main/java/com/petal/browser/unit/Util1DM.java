@@ -180,7 +180,7 @@ public class Util1DM {
                     }
                 });
         AlertDialog dialog = builder.create();
-        HelperUnit.setupDialog(activity, dialog);
+        PetalAndroidUtils.setupDialog(activity, dialog);
         dialog.show();
     }
 

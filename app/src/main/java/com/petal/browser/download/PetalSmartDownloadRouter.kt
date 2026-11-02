@@ -1,0 +1,61 @@
+package com.petal.browser.download
+
+import android.content.Context
+import android.os.Environment
+import androidx.preference.PreferenceManager
+import java.io.File
+import java.util.Locale
+
+/**
+ * PetalSmartDownloadRouter
+ * ─────────────────────────────────────────────────────────────────────────
+ * Inspired by Floorp Browser's Smart Download Management.
+ * Automatically organizes downloads into dedicated subdirectories based
+ * on file extension and MIME type.
+ */
+object PetalSmartDownloadRouter {
+
+    const val PREF_SMART_ROUTING = "sp_smart_download_routing"
+
+    enum class Category(val subfolder: String) {
+        IMAGES("Petal/Images"),
+        VIDEO("Petal/Video"),
+        AUDIO("Petal/Audio"),
+        DOCUMENTS("Petal/Documents"),
+        PACKAGES("Petal/Apps"),
+        GENERAL("Petal")
+    }
+
+    private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "gif", "svg", "bmp", "ico", "avif")
+    private val VIDEO_EXTENSIONS = setOf("mp4", "mkv", "webm", "avi", "mov", "flv", "m4v")
+    private val AUDIO_EXTENSIONS = setOf("mp3", "flac", "wav", "ogg", "m4a", "opus", "aac")
+    private val DOCUMENT_EXTENSIONS = setOf("pdf", "epub", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv")
+    private val PACKAGE_EXTENSIONS = setOf("apk", "xapk", "apks", "zip", "tar", "gz", "7z", "rar", "xpi")
+
+    @JvmStatic
+    fun resolveDestinationDirectory(context: Context, fileName: String, mimeType: String?): File {
+        val baseDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        val enabled = sp.getBoolean(PREF_SMART_ROUTING, true)
+
+        if (!enabled) {
+            return baseDownloads
+        }
+
+        val ext = fileName.substringAfterLast('.', "").lowercase(Locale.ROOT)
+        val category = when {
+            IMAGE_EXTENSIONS.contains(ext) || mimeType?.startsWith("image/") == true -> Category.IMAGES
+            VIDEO_EXTENSIONS.contains(ext) || mimeType?.startsWith("video/") == true -> Category.VIDEO
+            AUDIO_EXTENSIONS.contains(ext) || mimeType?.startsWith("audio/") == true -> Category.AUDIO
+            DOCUMENT_EXTENSIONS.contains(ext) || mimeType?.contains("pdf") == true || mimeType?.contains("document") == true -> Category.DOCUMENTS
+            PACKAGE_EXTENSIONS.contains(ext) || mimeType?.contains("android.package-archive") == true -> Category.PACKAGES
+            else -> Category.GENERAL
+        }
+
+        val targetDir = File(baseDownloads, category.subfolder)
+        if (!targetDir.exists()) {
+            targetDir.mkdirs()
+        }
+        return targetDir
+    }
+}

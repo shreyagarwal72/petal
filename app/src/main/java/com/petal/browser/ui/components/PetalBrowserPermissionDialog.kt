@@ -27,7 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -261,7 +261,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             PermissionEntry(
                 title = "Default Browser",
                 description = "Open links and in-app browsing with Petal first",
-                icon = Icons.Outlined.Language,
+                icon = Icons.Rounded.Language,
                 isGranted = isDefault,
                 actionText = "Set",
                 onGrant = { activity?.let { PetalBrowserPermissionDialog.requestSetDefaultBrowser(it) } }
@@ -271,7 +271,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             PermissionEntry(
                 title = "Camera",
                 description = "Video calls, QR scanning, and camera websites",
-                icon = Icons.Outlined.Videocam,
+                icon = Icons.Rounded.Videocam,
                 isGranted = camera,
                 actionText = "Grant",
                 onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.CAMERA)) } }
@@ -281,7 +281,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             PermissionEntry(
                 title = "Microphone",
                 description = "Voice search, audio notes, and media calls",
-                icon = Icons.Outlined.Mic,
+                icon = Icons.Rounded.Mic,
                 isGranted = microphone,
                 actionText = "Grant",
                 onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.RECORD_AUDIO)) } }
@@ -291,7 +291,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             PermissionEntry(
                 title = "Location",
                 description = "Maps and location-aware web experiences",
-                icon = Icons.Outlined.LocationOn,
+                icon = Icons.Rounded.LocationOn,
                 isGranted = location,
                 actionText = "Grant",
                 onGrant = {
@@ -306,7 +306,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                 PermissionEntry(
                     title = "Notifications",
                     description = "Download progress, alerts, and web updates",
-                    icon = Icons.Outlined.Notifications,
+                    icon = Icons.Rounded.Notifications,
                     isGranted = notifications,
                     actionText = "Grant",
                     onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) } }
@@ -316,7 +316,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                 PermissionEntry(
                     title = "Photos and videos",
                     description = "Media picker, file uploads, and attachment selection",
-                    icon = Icons.Outlined.PhotoLibrary,
+                    icon = Icons.Rounded.PhotoLibrary,
                     isGranted = media,
                     actionText = "Grant",
                     onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)) } }
@@ -327,7 +327,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                 PermissionEntry(
                     title = "Storage & Media",
                     description = "File uploads, image previews, and web downloads",
-                    icon = Icons.Outlined.Folder,
+                    icon = Icons.Rounded.Folder,
                     isGranted = media,
                     actionText = "Grant",
                     onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)) } }
@@ -389,7 +389,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                         .background(MaterialTheme.colorScheme.primaryContainer)
                 )
                 Icon(
-                    imageVector = Icons.Outlined.Security,
+                    imageVector = Icons.Rounded.Security,
                     contentDescription = null,
                     modifier = Modifier.size(36.dp),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -479,7 +479,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
 
             PermissionActionButton(
                 text = if (allGranted) "Everything is ready" else "Continue",
-                icon = if (allGranted) Icons.Outlined.CheckCircle else Icons.Outlined.Check,
+                icon = if (allGranted) Icons.Rounded.CheckCircle else Icons.Rounded.Check,
                 filled = true,
                 onClick = onDone,
                 modifier = Modifier.fillMaxWidth()
@@ -517,7 +517,7 @@ private fun ZenithPermissionItemRow(
         },
         trailing = {
             if (isGranted) {
-                Icon(Icons.Outlined.CheckCircle, contentDescription = stringResource(R.string.ui_granted), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Rounded.CheckCircle, contentDescription = stringResource(R.string.ui_granted), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             } else {
                 FilledTonalButton(onClick = onGrant, shape = CircleShape, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)) {
                     Text(actionText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)

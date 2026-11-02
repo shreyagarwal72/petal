@@ -41,10 +41,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -511,7 +511,7 @@ fun PetalGroupRow(
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                 subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
-            if (trailing != null) trailing() else Icon(Icons.Filled.ChevronRight, null,
+            if (trailing != null) trailing() else Icon(Icons.Rounded.ChevronRight, null,
                 tint = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -526,7 +526,7 @@ fun PetalGroupToggleRow(
     iconTint: Color = MaterialTheme.colorScheme.onPrimaryContainer,
 ) {
     PetalGroupRow(icon, title, position, { if (enabled) onCheckedChange(!checked) }, modifier.alpha(if (enabled) 1f else 0.38f), subtitle, iconContainer, iconTint, enabled = enabled,
-        trailing = { Switch(checked, if (enabled) onCheckedChange else null, thumbContent = if (checked) ({ Icon(Icons.Filled.Check, null, Modifier.size(SwitchDefaults.IconSize)) }) else null) })
+        trailing = { Switch(checked, if (enabled) onCheckedChange else null, thumbContent = if (checked) ({ Icon(Icons.Rounded.Check, null, Modifier.size(SwitchDefaults.IconSize)) }) else null) })
 }
 
 @Composable
@@ -590,7 +590,7 @@ fun PetalGroupControlRow(
                 enabled = enabled,
                 thumbContent = {
                     AnimatedContent(targetState = checked, transitionSpec = { fadeIn(tween(100)) togetherWith fadeOut(tween(100)) }, label = "petalSwitchThumb") { isChecked ->
-                        Icon(if (isChecked) Icons.Filled.Check else Icons.Filled.Close, null, Modifier.size(SwitchDefaults.IconSize))
+                        Icon(if (isChecked) Icons.Rounded.Check else Icons.Rounded.Close, null, Modifier.size(SwitchDefaults.IconSize))
                     }
                 },
                 colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary, checkedIconColor = MaterialTheme.colorScheme.primary),
@@ -622,13 +622,13 @@ fun PetalGroupNavigationRow(
                 containerColor = containerColor,
                 contentColor = contentColor,
             ) { leadingIcon() }
-            else PetalGroupIconBadge(Icons.Filled.Settings, variant = variant)
+            else PetalGroupIconBadge(Icons.Rounded.Settings, variant = variant)
         },
         content = {
             Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
         },
-        trailing = trailingIcon ?: { Icon(Icons.Filled.ChevronRight, null, tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)) },
+        trailing = trailingIcon ?: { Icon(Icons.Rounded.ChevronRight, null, tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)) },
     )
 }
 
@@ -680,7 +680,7 @@ fun PetalGroupToggleRow(
             }
             com.petal.browser.ui.components.IconSwitch(
                 checked = checked,
-                icon = Icons.Filled.Check,
+                icon = Icons.Rounded.Check,
                 onCheckedChange = onCheckedChange,
                 enabled = enabled,
             )
@@ -1337,7 +1337,7 @@ fun PetalSelectableOptionCard(title: String, selected: Boolean, onClick: () -> U
                 subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             if (selected) Box(Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
+                Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
             }
         }
     }

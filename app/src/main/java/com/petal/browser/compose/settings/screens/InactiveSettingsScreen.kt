@@ -8,8 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -83,7 +81,7 @@ fun InactiveSettingsScreen(
                 // ── Inactivity Threshold ──
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_inactivity_threshold),
-                    icon = Icons.Filled.Timer,
+                    icon = Icons.Rounded.Timer,
                 ) {
                     Text(
                         text = stringResource(R.string.ui_move_tabs_that_haven_t),
@@ -183,7 +181,7 @@ fun InactiveSettingsScreen(
                 // ── Auto-Archive ──
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_auto_archive),
-                    icon = Icons.Filled.Archive,
+                    icon = Icons.Rounded.Archive,
                 ) {
                     com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
                         when (index) {

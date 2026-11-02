@@ -95,7 +95,7 @@ class PetalTabViewController private constructor(
         if (isIncognito()) return
         val url = pageUrl
         if (url.isBlank() || url.equals("about:blank", ignoreCase = true) ||
-            com.petal.browser.unit.BrowserUnit.isHomePage(url)) return
+            com.petal.browser.unit.PetalBrowserUtils.isHomePage(url)) return
         val serialized = captureEngineState() ?: return
         val appCtx = appContext
         STATE_WRITER.execute { com.petal.browser.unit.PetalTabStateStore.write(appCtx, id, serialized) }
@@ -428,6 +428,13 @@ class PetalTabViewController private constructor(
         statePersistHandler.removeCallbacks(statePersistRunnable)
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
         engineView.render(session)
+        if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            post {
+                findGeckoView(engineView.asView())?.let {
+                    try { com.petal.browser.ui.glass.GeckoGlassBackend.useTextureView(it) } catch (_: Throwable) {}
+                }
+            }
+        }
         session.register(observer)
         val geckoSession = getGeckoSession()
         com.petal.browser.extensions.PetalExtensionManager.attachSession(geckoSession)
@@ -651,12 +658,12 @@ class PetalTabViewController private constructor(
                     val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                         try {
-                            val action = com.petal.browser.database.RecordAction(context)
+                            val action = com.petal.browser.database.HistoryBookmarkRepository(context)
                             action.open(false)
                             val visited = BooleanArray(urls.size) { i ->
                                 val u = urls[i]
                                 if (u.isBlank() || u.startsWith("about:") || u.startsWith("moz-extension://")) false
-                                else action.checkUrl(u, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
+                                else action.checkUrl(u, com.petal.browser.database.HistoryBookmarkContract.TABLE_HISTORY)
                             }
                             action.close()
                             result.complete(visited)
@@ -711,8 +718,8 @@ class PetalTabViewController private constructor(
             publishState()
             return
         }
-        val redirected = com.petal.browser.unit.BrowserUnit.redirectURL(preferences, rawUrl)
-        var targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(appContext, redirected)
+        val redirected = com.petal.browser.unit.PetalBrowserUtils.redirectURL(preferences, rawUrl)
+        var targetUrl = com.petal.browser.unit.PetalBrowserUtils.queryWrapper(appContext, redirected)
         val httpsOnly = preferences.getBoolean(
             "sp_https_only",
             preferences.getBoolean("profileStandard_httpsOnly", false)
@@ -720,8 +727,8 @@ class PetalTabViewController private constructor(
         if (httpsOnly && targetUrl.startsWith("http://", ignoreCase = true)) {
             targetUrl = "https://" + targetUrl.substring(7)
         }
-        if (com.petal.browser.unit.BrowserUnit.isHomePage(targetUrl) ||
-            com.petal.browser.unit.BrowserUnit.isHomePage(rawUrl) ||
+        if (com.petal.browser.unit.PetalBrowserUtils.isHomePage(targetUrl) ||
+            com.petal.browser.unit.PetalBrowserUtils.isHomePage(rawUrl) ||
             targetUrl.equals("about:blank", ignoreCase = true)
         ) {
             pendingNavUrl = null
@@ -884,7 +891,7 @@ class PetalTabViewController private constructor(
     fun markAdoptedNavigation(url: String?) {
         isAdoptedPopup = true
         val target = url?.trim().orEmpty()
-        if (target.isNotEmpty() && !com.petal.browser.unit.BrowserUnit.isHomePage(target)) {
+        if (target.isNotEmpty() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(target)) {
             pageUrl = target
             tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, target)) }
         }
@@ -1016,6 +1023,15 @@ class PetalTabViewController private constructor(
     fun toggleReaderMode(active: Boolean) {
         val id = boundTabId ?: return
         PetalEngineStore.toggleReaderMode(context, id, active)
+        val curUrl = url ?: return
+        try {
+            if (active) {
+                loadUrl("about:reader?url=${android.net.Uri.encode(curUrl)}")
+            } else if (curUrl.startsWith("about:reader?url=")) {
+                val origUrl = android.net.Uri.decode(curUrl.substringAfter("about:reader?url="))
+                loadUrl(origUrl)
+            }
+        } catch (_: Throwable) {}
     }
 
     fun printToPdf(outputStream: java.io.OutputStream, callback: ((Boolean) -> Unit)? = null) {
@@ -1218,7 +1234,7 @@ class PetalTabViewController private constructor(
     }
 
     fun isPageAtTop(): Boolean {
-        if (pageUrl.isBlank() || pageUrl.equals("about:blank", ignoreCase = true) || com.petal.browser.unit.BrowserUnit.isHomePage(pageUrl)) {
+        if (pageUrl.isBlank() || pageUrl.equals("about:blank", ignoreCase = true) || com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl)) {
             return true
         }
         val view = engineView.asView()
@@ -1437,7 +1453,7 @@ class PetalTabViewController private constructor(
 
     private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null, force: Boolean = false) {
         if (isIncognito() || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) ||
-            targetUrl.startsWith("about:", ignoreCase = true) || com.petal.browser.unit.BrowserUnit.isHomePage(targetUrl)) {
+            targetUrl.startsWith("about:", ignoreCase = true) || com.petal.browser.unit.PetalBrowserUtils.isHomePage(targetUrl)) {
             return
         }
         if (!force && targetUrl == lastRecordedHistoryUrl) {
@@ -1456,10 +1472,10 @@ class PetalTabViewController private constructor(
         }
 
         try {
-            val action = com.petal.browser.database.RecordAction(appContext)
+            val action = com.petal.browser.database.HistoryBookmarkRepository(appContext)
             action.open(true)
-            if (action.checkUrl(targetUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)) {
-                action.deleteURL(targetUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
+            if (action.checkUrl(targetUrl, com.petal.browser.database.HistoryBookmarkContract.TABLE_HISTORY)) {
+                action.deleteURL(targetUrl, com.petal.browser.database.HistoryBookmarkContract.TABLE_HISTORY)
             }
             action.addHistory(com.petal.browser.database.Record(effectiveTitle, targetUrl, System.currentTimeMillis(), 0))
             action.close()

@@ -22,7 +22,7 @@ import java.util.Locale;
 import com.petal.browser.R;
 import com.petal.browser.database.FaviconHelper;
 import com.petal.browser.database.Record;
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
 
 public class RecordListAdapter extends ArrayAdapter<Record> {
     private final Context context;
@@ -113,7 +113,7 @@ public class RecordListAdapter extends ArrayAdapter<Record> {
             }
         }
 
-        HelperUnit.setHighLightedText(context, holder.time, record.getURL(), HelperUnit.domain(record.getURL()));
+        PetalAndroidUtils.setHighLightedText(context, holder.time, record.getURL(), PetalAndroidUtils.domain(record.getURL()));
         return view;
     }
 }

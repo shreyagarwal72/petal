@@ -41,6 +41,10 @@ import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.PetalAlertDialog
 import com.petal.browser.ui.containment.PetalSnackbarHost
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.rememberGlassSheen
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -58,7 +62,8 @@ fun PetalAppLockScreen(
     val context = LocalContext.current
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
 
-    val savedPasscode = remember { sp.getString("sp_app_lock_passcode", "1234") ?: "1234" }
+    val lockType = remember { sp.getString("sp_app_lock_type", "FINGERPRINT") ?: "FINGERPRINT" }
+    val savedPasscode = remember { sp.getString("sp_app_lock_passcode", "") ?: "" }
     val isBiometricAllowed = remember { sp.getBoolean("sp_biometric_lock", false) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -68,7 +73,7 @@ fun PetalAppLockScreen(
     var showForgotPasswordDialog by remember { mutableStateOf(false) }
 
     fun verifyPasscode() {
-        if (enteredPasscode.trim() == savedPasscode.trim()) {
+        if (savedPasscode.isNotBlank() && enteredPasscode.trim() == savedPasscode.trim()) {
             errorMessage = null
             isUnlockedSuccess = true
             PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
@@ -109,11 +114,11 @@ fun PetalAppLockScreen(
         }
     }
 
-    val isBiometricAvailable = isBiometricAllowed && com.petal.browser.security.BiometricLockManager.canAuthenticate(context)
+    val isBiometricAvailable = (isBiometricAllowed || lockType == "FINGERPRINT") && com.petal.browser.security.BiometricLockManager.canAuthenticate(context)
     var showChoiceDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        if (isBiometricAvailable) {
+        if (lockType == "FINGERPRINT" && isBiometricAvailable) {
             triggerBiometricUnlock()
         }
     }
@@ -167,13 +172,29 @@ fun PetalAppLockScreen(
                         )
                     }
 
+                    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val sheen = rememberGlassSheen(isGlass)
+                    val avatarShape = com.petal.browser.ui.theme.PetalMaterialShapes.Bun.toShape()
+
                     Surface(
-                        shape = com.petal.browser.ui.theme.PetalMaterialShapes.Bun.toShape(),
+                        shape = avatarShape,
                         modifier = Modifier
                             .size(112.dp)
-                            .scale(avatarScale.value),
-                        color = if (isUnlockedSuccess) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
-                        tonalElevation = 6.dp
+                            .scale(avatarScale.value)
+                            .then(
+                                if (isGlass) Modifier.liquidGlassChrome(
+                                    avatarShape,
+                                    enabled = true,
+                                    sheenIntensity = sheen * 0.8f
+                                ) else Modifier
+                            ),
+                        color = if (isGlass) {
+                            if (isUnlockedSuccess) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
+                            else petalGroupSurfaceColor()
+                        } else {
+                            if (isUnlockedSuccess) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary
+                        },
+                        tonalElevation = if (isGlass) 0.dp else 6.dp
                     ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -182,13 +203,42 @@ fun PetalAppLockScreen(
                             Icon(
                                 imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
                                 contentDescription = stringResource(R.string.ui_app_lock),
-                                tint = if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary,
+                                tint = if (isGlass) {
+                                    if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                } else {
+                                    if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
+                                },
                                 modifier = Modifier.size(48.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    val activeProfile = com.petal.browser.profile.PetalProfileManager.activeProfile
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "${activeProfile.name} Profile",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
 
                     Text(
                         text = if (isUnlockedSuccess) "Unlocked Successfully" else "App Protected",
@@ -247,7 +297,7 @@ fun PetalAppLockScreen(
                         ) {
                             OutlinedButton(
                                 onClick = { triggerBiometricUnlock() },
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(50),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(20.dp))
@@ -305,7 +355,7 @@ fun PetalAppLockScreen(
             confirmText = stringResource(R.string.ui_erase_all_data_unlock),
             onConfirm = {
                 showForgotPasswordDialog = false
-                com.petal.browser.unit.BrowserUnit.eraseAllAppData(context)
+                com.petal.browser.unit.PetalBrowserUtils.eraseAllAppData(context)
                 PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(

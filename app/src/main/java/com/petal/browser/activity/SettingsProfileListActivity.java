@@ -30,10 +30,10 @@ import java.util.Objects;
 
 import com.petal.browser.R;
 import com.petal.browser.browser.StandardDomainWhitelist;
-import com.petal.browser.database.RecordAction;
-import com.petal.browser.unit.BrowserUnit;
-import com.petal.browser.unit.HelperUnit;
-import com.petal.browser.unit.RecordUnit;
+import com.petal.browser.database.HistoryBookmarkContract;
+import com.petal.browser.database.HistoryBookmarkRepository;
+import com.petal.browser.unit.PetalAndroidUtils;
+import com.petal.browser.unit.PetalBrowserUtils;
 import com.petal.browser.view.PetalToast;
 import com.petal.browser.view.ProfileListAdapter;
 
@@ -45,7 +45,7 @@ public class SettingsProfileListActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        HelperUnit.initTheme(this);
+        PetalAndroidUtils.initTheme(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_settings_profile_list);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -53,9 +53,9 @@ public class SettingsProfileListActivity extends AppCompatActivity {
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
 
         listStandard = new StandardDomainWhitelist(this);
-        RecordAction action = new RecordAction(this);
+        HistoryBookmarkRepository action = new HistoryBookmarkRepository(this);
         action.open(false);
-        list = action.listDomains(RecordUnit.TABLE_STANDARD);
+        list = action.listDomains(HistoryBookmarkContract.TABLE_STANDARD);
         action.close();
         ListView listView = findViewById(R.id.whitelist);
         listView.setEmptyView(findViewById(R.id.whitelist_empty));
@@ -72,7 +72,7 @@ public class SettingsProfileListActivity extends AppCompatActivity {
                 int color = typedValue.data;
                 MaterialCardView cardView = v.findViewById(R.id.menuCardView);
                 cardView.setBackgroundColor(color);
-                HelperUnit.applyBouncyTouchFeedback(deleteEntry, 0.88f);
+                PetalAndroidUtils.applyBouncyTouchFeedback(deleteEntry, 0.88f);
                 deleteEntry.setOnClickListener(v1 -> {
                     String domain = list.get(position);
                     PetalConfirmSheetBridge.showClearDatabaseConfirmation(
@@ -135,7 +135,7 @@ public class SettingsProfileListActivity extends AppCompatActivity {
         if (menuItem.getItemId() == android.R.id.home) finish();
         else if (menuItem.getItemId() == R.id.menu_help) {
             Uri webpage = Uri.parse("https://github.com/shreyagarwal72/petal");
-            BrowserUnit.intentURL(this, webpage);
+            PetalBrowserUtils.intentURL(this, webpage);
         }
         return true;
     }

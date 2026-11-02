@@ -42,7 +42,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -162,7 +161,7 @@ fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
 fun fetchTopVisitedShortcuts(context: Context): List<PetalShortcut> {
     val list = mutableListOf<PetalShortcut>()
     try {
-        val action = com.petal.browser.database.RecordAction(context)
+        val action = com.petal.browser.database.HistoryBookmarkRepository(context)
         action.open(false)
         val records = action.listHistory(context)
         action.close()
@@ -1374,7 +1373,7 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.PetalUserPro
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            PetalGroupIconBadge(Icons.Filled.AutoAwesome, modifier = Modifier.size(36.dp), size = 36.dp, iconSize = 20.dp)
+            PetalGroupIconBadge(Icons.Rounded.AutoAwesome, modifier = Modifier.size(36.dp), size = 36.dp, iconSize = 20.dp)
 
             Spacer(Modifier.width(14.dp))
 

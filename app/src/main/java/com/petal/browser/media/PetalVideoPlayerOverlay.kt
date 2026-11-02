@@ -34,17 +34,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Cast
-import androidx.compose.material.icons.filled.FastForward
-import androidx.compose.material.icons.filled.FastRewind
-import androidx.compose.material.icons.filled.FitScreen
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PictureInPictureAlt
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
+import androidx.compose.material.icons.rounded.FitScreen
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.Subtitles
 import com.petal.browser.media.subtitle.PetalSubtitleEngine
 import com.petal.browser.media.subtitle.SubtitleCue
@@ -385,7 +381,7 @@ fun PetalVideoPlayerOverlay(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FitScreen,
+                        imageVector = Icons.Rounded.FitScreen,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp),
@@ -508,7 +504,7 @@ fun PetalVideoPlayerOverlay(
                                     contentDescription = "Close",
                                 ) {
                                     Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                         contentDescription = null,
                                         tint = Color.White,
                                     )
@@ -542,7 +538,7 @@ fun PetalVideoPlayerOverlay(
                                     contentDescription = stringResource(R.string.ui_aspect_ratio),
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.FitScreen,
+                                        imageVector = Icons.Rounded.FitScreen,
                                         contentDescription = null,
                                         tint = Color.White,
                                         modifier = Modifier.size(20.dp),
@@ -573,7 +569,7 @@ fun PetalVideoPlayerOverlay(
                                     contentDescription = stringResource(R.string.ui_player_locked),
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Lock,
+                                        imageVector = Icons.Rounded.Lock,
                                         contentDescription = null,
                                         tint = Color.White,
                                         modifier = Modifier.size(20.dp),
@@ -588,7 +584,7 @@ fun PetalVideoPlayerOverlay(
                                         contentDescription = stringResource(R.string.ui_cast_to_device),
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Cast,
+                                            imageVector = Icons.Rounded.Cast,
                                             contentDescription = null,
                                             tint = Color.White,
                                             modifier = Modifier.size(20.dp),
@@ -603,7 +599,7 @@ fun PetalVideoPlayerOverlay(
                                     contentDescription = "PiP",
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.PictureInPictureAlt,
+                                        imageVector = Icons.Rounded.PictureInPictureAlt,
                                         contentDescription = null,
                                         tint = Color.White,
                                         modifier = Modifier.size(20.dp),

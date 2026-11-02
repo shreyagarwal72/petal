@@ -35,7 +35,7 @@ object PetalNativeSnifferEngine {
 
     // Tab-scoped live sniffer store: tabId -> List<SniffedResource>
     private val tabResourcesMap = ConcurrentHashMap<String, MutableList<SniffedResource>>()
-    private val activeTabId = MutableStateFlow("")
+    val activeTabId = MutableStateFlow("")
     private val activePageUrl = MutableStateFlow("")
 
     private val _currentTabResources = MutableStateFlow<List<SniffedResource>>(emptyList())

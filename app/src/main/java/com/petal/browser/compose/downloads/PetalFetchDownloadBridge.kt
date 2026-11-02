@@ -250,8 +250,8 @@ object PetalFetchDownloadBridge {
                 mimeType = mimeType,
                 preferredFileName = fileName
             ).ifBlank { "download" }
-            val downloadsDir = android.os.Environment
-                .getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+            val downloadsDir = com.petal.browser.download.PetalSmartDownloadRouter
+                .resolveDestinationDirectory(appContext, safeName, mimeType)
             com.petal.browser.download.PetalDownloadHeaderRegistry.put(url, extraHeaders)
             val manager = FetchDownloadManager(
                 applicationContext = appContext,

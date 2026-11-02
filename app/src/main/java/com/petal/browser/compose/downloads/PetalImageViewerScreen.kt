@@ -55,7 +55,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.petal.browser.haptics.PetalHapticEngine
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.RotateRight
 import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.AutoStories
@@ -755,7 +755,7 @@ private fun ImageViewerTopBar(
                 contentDescription = stringResource(R.string.ui_back),
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null,
                     tint = if (isGlass) MaterialTheme.colorScheme.onSurface else Color.White,
                 )

@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.preference.PreferenceManager
-import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.Util1DM
 import com.petal.browser.view.PetalToast
 import java.io.File

@@ -51,22 +51,9 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Animation
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FontDownload
-import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tab
-import androidx.compose.material.icons.filled.ViewDay
-import androidx.compose.material.icons.filled.VpnLock
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -135,67 +122,67 @@ fun PetalFeaturedCarousel(
             PetalFeaturedItem(
                 title = "Ad & Tracker Shield",
                 description = "uBlock Origin-grade content filter engine",
-                icon = Icons.Filled.Shield,
+                icon = Icons.Rounded.Shield,
                 onClick = { onCategoryClick(SettingsCategory.PRIVACY, "privacy_adblock") }
             ),
             PetalFeaturedItem(
                 title = "Pure Black AMOLED",
                 description = "True pitch-black mode for OLED displays",
-                icon = Icons.Filled.DarkMode,
+                icon = Icons.Rounded.DarkMode,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_theme") }
             ),
             PetalFeaturedItem(
                 title = "Custom Fonts & Typography",
                 description = "Load custom TTF/OTF fonts or Product Sans",
-                icon = Icons.Filled.FontDownload,
+                icon = Icons.Rounded.FontDownload,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_font") }
             ),
             PetalFeaturedItem(
                 title = "High Refresh Rate",
                 description = "Lock 120Hz/144Hz peak display smoothness",
-                icon = Icons.Filled.Speed,
+                icon = Icons.Rounded.Speed,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_refresh") }
             ),
             PetalFeaturedItem(
                 title = "Deep Research AI",
                 description = "Connect Gemini, GPT-4o, Claude or Ollama",
-                icon = Icons.Filled.AutoAwesome,
+                icon = Icons.Rounded.AutoAwesome,
                 onClick = { onCategoryClick(SettingsCategory.API_INTEGRATIONS, "ai") }
             ),
             PetalFeaturedItem(
                 title = "Private DNS Protection",
                 description = "Encrypt queries with Cloudflare & Google DoH",
-                icon = Icons.Filled.VpnLock,
+                icon = Icons.Rounded.VpnLock,
                 onClick = { onCategoryClick(SettingsCategory.PRIVACY, "privacy_private_dns") }
             ),
             PetalFeaturedItem(
                 title = "Bottom Address Bar",
                 description = "Ergonomic one-handed URL search navigation",
-                icon = Icons.Filled.ViewDay,
+                icon = Icons.Rounded.ViewDay,
                 onClick = { onCategoryClick(SettingsCategory.ADDRESS_BAR, "address_bar") }
             ),
             PetalFeaturedItem(
                 title = "M3 Expressive Shapes",
                 description = "Fluid morphing ambient background shapes",
-                icon = Icons.Filled.Layers,
+                icon = Icons.Rounded.Layers,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_layout") }
             ),
             PetalFeaturedItem(
                 title = "Predictive Back Gestures",
                 description = "Fluid Android 14+ predictive back transitions",
-                icon = Icons.Filled.Animation,
+                icon = Icons.Rounded.Animation,
                 onClick = { onCategoryClick(SettingsCategory.DISPLAY_ZOOM, "display") }
             ),
             PetalFeaturedItem(
                 title = "Backup & Restore",
                 description = "Export all bookmarks, history & settings to JSON",
-                icon = Icons.Filled.CloudUpload,
+                icon = Icons.Rounded.CloudUpload,
                 onClick = { onCategoryClick(SettingsCategory.DATA_STORAGE, "data_backup") }
             ),
             PetalFeaturedItem(
                 title = "Material You Dynamic Color",
                 description = "Harmonize browser palette with system wallpaper",
-                icon = Icons.Filled.Palette,
+                icon = Icons.Rounded.Palette,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_theme") }
             )
         ).shuffled().take(3)
@@ -209,7 +196,7 @@ fun PetalFeaturedCarousel(
             PetalFeaturedItem(
                 title = "Support Development",
                 description = "Fuel our mission with a tip on Ko-fi",
-                icon = Icons.Filled.Favorite,
+                icon = Icons.Rounded.Favorite,
                 isTertiary = true,
                 onClick = {
                     try {
@@ -227,7 +214,7 @@ fun PetalFeaturedCarousel(
             PetalFeaturedItem(
                 title = "Star on GitHub",
                 description = "Love Petal? Give us a star on GitHub!",
-                icon = Icons.Filled.Star,
+                icon = Icons.Rounded.Star,
                 isTertiary = true,
                 onClick = {
                     try {
@@ -564,9 +551,9 @@ private fun RowScope.FeaturedStepCard(
                 ) {
                     Icon(
                         imageVector = if (isToTheLeft) {
-                            Icons.AutoMirrored.Filled.KeyboardArrowLeft
+                            Icons.AutoMirrored.Rounded.KeyboardArrowLeft
                         } else {
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight
+                            Icons.AutoMirrored.Rounded.KeyboardArrowRight
                         },
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),

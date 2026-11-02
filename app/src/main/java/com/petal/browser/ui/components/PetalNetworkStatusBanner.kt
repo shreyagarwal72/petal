@@ -49,6 +49,9 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -206,12 +209,16 @@ fun PetalNetworkStatusBanner(
                 MaterialTheme.colorScheme.onPrimaryContainer
             }
 
+            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+            val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+            val pillShape = RoundedCornerShape(21.dp)
+
             Surface(
                 modifier = Modifier
                     .wrapContentWidth()
                     .height(42.dp)
-                    .shadow(8.dp, RoundedCornerShape(21.dp))
-                    .clip(RoundedCornerShape(21.dp))
+                    .then(if (isGlass) Modifier.liquidGlassChrome(pillShape, enabled = true, sheenIntensity = sheen, pressFx = true) else Modifier.shadow(8.dp, pillShape))
+                    .clip(pillShape)
                     .pointerInput(state) {
                         detectHorizontalDragGestures { _, dragAmount ->
                             if (Math.abs(dragAmount) > 12f) {
@@ -219,9 +226,9 @@ fun PetalNetworkStatusBanner(
                             }
                         }
                     },
-                shape = RoundedCornerShape(21.dp),
-                color = containerColor,
-                tonalElevation = 6.dp
+                shape = pillShape,
+                color = if (isGlass) (if (isOffline) containerColor.copy(alpha = 0.85f) else petalGroupSurfaceColor()) else containerColor,
+                tonalElevation = if (isGlass) 0.dp else 6.dp
             ) {
                 Row(
                     modifier = Modifier

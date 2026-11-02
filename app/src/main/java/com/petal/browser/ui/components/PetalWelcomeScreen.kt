@@ -47,7 +47,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -77,7 +77,7 @@ import androidx.preference.PreferenceManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 
@@ -571,7 +571,7 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
                 isGranted = hasCamera,
                 onGrant = {
                     if (activity != null) {
-                        HelperUnit.grantPermissionsCamera(activity)
+                        PetalAndroidUtils.grantPermissionsCamera(activity)
                         hasCamera = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
                     }
                 }
@@ -587,7 +587,7 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
                 isGranted = hasMic,
                 onGrant = {
                     if (activity != null) {
-                        HelperUnit.grantPermissionsMic(activity)
+                        PetalAndroidUtils.grantPermissionsMic(activity)
                         hasMic = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
                     }
                 }
@@ -603,7 +603,7 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
                 isGranted = hasLoc,
                 onGrant = {
                     if (activity != null) {
-                        HelperUnit.grantPermissionsLoc(activity)
+                        PetalAndroidUtils.grantPermissionsLoc(activity)
                         hasLoc = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                     }
                 }
@@ -753,7 +753,7 @@ private fun BackupFeatureStepPage(context: Context) {
     ) { uri: android.net.Uri? ->
         if (uri != null) {
             try {
-                com.petal.browser.unit.BackupUnit.restoreFromUri(
+                com.petal.browser.unit.PetalBackupManager.restoreFromUri(
                     context,
                     uri,
                     true,
@@ -852,7 +852,7 @@ private fun BackupFeatureStepPage(context: Context) {
             onFileSelected = { file ->
                 showRestorePicker = false
                 try {
-                    com.petal.browser.unit.BackupUnit.restoreFromUri(
+                    com.petal.browser.unit.PetalBackupManager.restoreFromUri(
                         context,
                         android.net.Uri.fromFile(file),
                         true,
@@ -928,7 +928,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 val themes = listOf(
-                    Triple("LIGHT", "Light", Icons.Outlined.LightMode),
+                    Triple("LIGHT", "Light", Icons.Rounded.LightMode),
                     Triple("DARK", "Dark", Icons.Rounded.DarkMode),
                     Triple("FOLLOW_SYSTEM", "System", Icons.Rounded.Android)
                 )
@@ -1016,7 +1016,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                         onClick = {
                             if (appLanguage != lang.tag) {
                                 appLanguage = lang.tag
-                                HelperUnit.setAppLanguage(context, lang.tag)
+                                PetalAndroidUtils.setAppLanguage(context, lang.tag)
                             }
                         },
                         shape = RoundedCornerShape(16.dp),

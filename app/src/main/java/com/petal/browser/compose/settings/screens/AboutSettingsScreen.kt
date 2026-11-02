@@ -22,7 +22,7 @@ import com.petal.browser.R
 import com.petal.browser.ui.components.*
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.PetalSettingsSection
-import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.unit.PetalBrowserUtils
 import com.petal.browser.view.PetalToast
 
 @Composable
@@ -46,7 +46,7 @@ fun AboutSettingsScreen(
 
     fun openUrl(url: String) {
         try {
-            BrowserUnit.intentURL(context, Uri.parse(url))
+            PetalBrowserUtils.intentURL(context, Uri.parse(url))
         } catch (e: Exception) {
             e.printStackTrace()
         }

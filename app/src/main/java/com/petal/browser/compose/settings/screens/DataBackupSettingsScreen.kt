@@ -11,7 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,7 +31,7 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSettingsSection
-import com.petal.browser.unit.BackupUnit
+import com.petal.browser.unit.PetalBackupManager
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -64,7 +63,7 @@ fun DataBackupSettingsScreen(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri: Uri? ->
         if (uri != null) {
-            BackupUnit.backupToUri(
+            PetalBackupManager.backupToUri(
                 context,
                 uri,
                 backupBookmarks,
@@ -82,7 +81,7 @@ fun DataBackupSettingsScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            BackupUnit.restoreFromUri(
+            PetalBackupManager.restoreFromUri(
                 context,
                 uri,
                 restoreBookmarks,
@@ -291,7 +290,7 @@ fun DataBackupSettingsScreen(
                 Button(
                     onClick = {
                         showBackupDialog = false
-                        BackupUnit.backupToDownloadManager(
+                        PetalBackupManager.backupToDownloadManager(
                             context,
                             backupBookmarks,
                             backupHistory,
@@ -532,7 +531,7 @@ fun DataBackupSettingsScreen(
                         when (index) {
                             0 -> {
                                 com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Filled.CloudUpload,
+                                    icon = Icons.Rounded.CloudUpload,
                                     title = stringResource(R.string.ui_backup_json),
                                     subtitle = "Export bookmarks, history, settings and vault",
                                     position = position,
@@ -581,7 +580,7 @@ fun DataBackupSettingsScreen(
                 onFileSelected = { file ->
                     showRestorePicker = false
                     val uri = android.net.Uri.fromFile(file)
-                    BackupUnit.restoreFromUri(
+                    PetalBackupManager.restoreFromUri(
                         context,
                         uri,
                         restoreBookmarks,

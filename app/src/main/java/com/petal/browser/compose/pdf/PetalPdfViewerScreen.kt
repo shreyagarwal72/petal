@@ -65,8 +65,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -1822,7 +1822,7 @@ private fun PdfTextEditTopBar(
                             modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Filled.Undo,
+                                Icons.AutoMirrored.Rounded.Undo,
                                 contentDescription = stringResource(R.string.ui_undo_last_text_edit),
                                 tint = if (canUndo) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.35f)
                             )
@@ -1883,7 +1883,7 @@ private fun PdfViewerTopBar(
                 contentDescription = stringResource(R.string.ui_back),
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface
                 )
@@ -2187,7 +2187,7 @@ private fun PdfEditTopBar(
                             contentDescription = stringResource(R.string.ui_undo),
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Filled.Undo,
+                                Icons.AutoMirrored.Rounded.Undo,
                                 contentDescription = null,
                                 tint = if (canUndo) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.35f)
                             )

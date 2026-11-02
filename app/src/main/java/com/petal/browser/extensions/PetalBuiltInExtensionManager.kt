@@ -10,6 +10,8 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.WebExtension
 import org.mozilla.geckoview.WebExtensionController
 import com.petal.browser.media.sniffer.PetalMediaSniffer
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -27,9 +29,56 @@ object PetalBuiltInExtensionManager {
 
     private const val TAG = "PetalBuiltInExt"
     private const val MEDIA_GRABBER_ID = "petal-media-grabber@petalbrowser.app"
+    private const val DARK_WEBPAGES_ID = "petal-dark-webpages@petalbrowser.app"
     private const val NATIVE_APP = "petalApp"
 
+    private var appContext: Context? = null
     private val installedExtensions = ConcurrentHashMap<String, WebExtension>()
+    private val activeSessions = Collections.newSetFromMap(WeakHashMap<GeckoSession, Boolean>())
+
+    private val darkMessageDelegate = object : WebExtension.MessageDelegate {
+        override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any>? {
+            if (nativeApp != NATIVE_APP) return null
+            val json = runCatching { if (message is JSONObject) message else JSONObject(message.toString()) }.getOrNull()
+                ?: return null
+            val msgType = json.optString("type")
+            val ctx = appContext ?: return null
+
+            when (msgType) {
+                "GET_DARK_SETTINGS" -> {
+                    val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
+                    val enabled = sp.getBoolean("petal_builtin_dark_webpages", true)
+                    val contrast = getDarkWebpagesContrast(ctx)
+                    val whitelist = getDarkWebpagesWhitelist(ctx)
+                    val resp = JSONObject().apply {
+                        put("type", "DARK_SETTINGS_RESPONSE")
+                        put("enabled", enabled)
+                        put("contrast", contrast)
+                        put("whitelist", org.json.JSONArray(whitelist.toList()))
+                    }
+                    return GeckoResult.fromValue(resp)
+                }
+                "TOGGLE_DARK_WHITELIST" -> {
+                    val host = json.optString("host", "").trim()
+                    if (host.isNotBlank()) {
+                        val current = getDarkWebpagesWhitelist(ctx)
+                        if (isDomainInWhitelist(host, current)) {
+                            removeDarkWebpageWhitelist(ctx, host)
+                        } else {
+                            addDarkWebpageWhitelist(ctx, host)
+                        }
+                    }
+                    val resp = JSONObject().apply {
+                        put("type", "DARK_SETTINGS_RESPONSE")
+                        put("success", true)
+                        put("whitelist", org.json.JSONArray(getDarkWebpagesWhitelist(ctx).toList()))
+                    }
+                    return GeckoResult.fromValue(resp)
+                }
+            }
+            return null
+        }
+    }
 
     private val mediaMessageDelegate = object : WebExtension.MessageDelegate {
         override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any>? {
@@ -46,9 +95,39 @@ object PetalBuiltInExtensionManager {
                 return GeckoResult.fromValue(resp)
             }
 
+            if (msgType == "PWA_MANIFEST_DETECTED") {
+                val manifestUrl = json.optString("manifestUrl").takeIf { it.isNotBlank() }
+                val pUrl = json.optString("pageUrl", "")
+                val pTitle = json.optString("pageTitle", "")
+                if (!manifestUrl.isNullOrBlank()) {
+                    com.petal.browser.pwa.PetalPwaManager.onManifestDiscovered(manifestUrl, pUrl, pTitle)
+                }
+                return null
+            }
+
+            if (msgType == "READER_ELIGIBLE_DETECTED") {
+                val pUrl = json.optString("pageUrl", "")
+                val isArticle = json.optBoolean("isArticle", false)
+                com.petal.browser.compose.reader.PetalReaderBridge.onReaderEligibilityDetected(pUrl, isArticle)
+                return null
+            }
+
+            if (msgType == "READER_ARTICLE_DATA") {
+                val pUrl = json.optString("pageUrl", "")
+                val artObj = json.optJSONObject("article")
+                if (artObj != null) {
+                    val title = artObj.optString("title")
+                    val author = artObj.optString("author")
+                    val lead = artObj.optString("lead")
+                    val text = artObj.optString("text")
+                    com.petal.browser.compose.reader.PetalReaderBridge.onArticleReceived(pUrl, title, author, lead, text)
+                }
+                return null
+            }
+
             val pageUrl = json.optString("pageUrl").takeIf { it.startsWith("http") }
             val cookies = json.optString("cookies").takeIf { it.isNotBlank() }
-            if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(pageUrl)) {
+            if (pageUrl != null && PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(pageUrl)) {
                 return null
             }
             if (pageUrl != null && cookies != null) {
@@ -56,18 +135,28 @@ object PetalBuiltInExtensionManager {
             }
 
             when (msgType) {
-                "MEDIA_GRABBED" -> {
+                "DOM_RESOURCES_SNIFFED" -> {
+                    val items = json.optString("items")
+                    val sniffedPageUrl = json.optString("pageUrl", "")
+                    val tabId = json.optString("tabId").takeIf { it.isNotBlank() } ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
+                    if (!items.isNullOrBlank()) {
+                        com.petal.browser.media.sniffer.PetalNativeSnifferEngine.parseDomScanResult(tabId, sniffedPageUrl, items)
+                    }
+                }
+                "MEDIA_GRABBED", "REQUEST_DOWNLOAD", "SITE_DOWNLOAD_REQUEST" -> {
                     val url = json.optString("url").takeIf { it.startsWith("http") } ?: return null
                     if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url)) return null
                     val mime = json.optString("mimeType", "video/mp4")
                     val size = json.optLong("sizeBytes", -1L).takeIf { it > 0 }
                     PetalMediaSniffer.onAggressiveMedia(url, mime, cookies, size)
-                }
-                "REQUEST_DOWNLOAD", "SITE_DOWNLOAD_REQUEST" -> {
-                    val url = json.optString("url").takeIf { it.startsWith("http") } ?: return null
-                    if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url)) return null
-                    val mime = json.optString("mimeType", "video/mp4")
-                    PetalMediaSniffer.onAggressiveMedia(url, mime, cookies, null)
+                    val tabId = json.optString("tabId").takeIf { it.isNotBlank() } ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
+                    com.petal.browser.media.sniffer.PetalNativeSnifferEngine.registerResource(
+                        tabId = tabId,
+                        url = url,
+                        mimeType = mime,
+                        sizeBytes = size,
+                        pageUrl = pageUrl ?: ""
+                    )
                 }
             }
             return null
@@ -180,6 +269,9 @@ object PetalBuiltInExtensionManager {
     @JvmStatic
     fun attachSession(session: GeckoSession?) {
         if (session == null) return
+        synchronized(activeSessions) {
+            activeSessions.add(session)
+        }
         val mediaGrabber = installedExtensions[MEDIA_GRABBER_ID]
         if (mediaGrabber != null) {
             try {
@@ -188,11 +280,20 @@ object PetalBuiltInExtensionManager {
                 Log.w(TAG, "Failed to attach media grabber delegate to session", t)
             }
         }
+        val darkWebpages = installedExtensions[DARK_WEBPAGES_ID]
+        if (darkWebpages != null) {
+            try {
+                session.webExtensionController.setMessageDelegate(darkWebpages, darkMessageDelegate, NATIVE_APP)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to attach dark webpages delegate to session", t)
+            }
+        }
     }
 
     /** Install and sync all built-in extensions. Called from BrowserActivity. */
     @JvmStatic
     fun installAll(context: Context) {
+        appContext = context.applicationContext
         val runtime = try {
             PetalGeckoRuntime.getOrCreate(context.applicationContext)
         } catch (t: Throwable) {
@@ -214,6 +315,7 @@ object PetalBuiltInExtensionManager {
      */
     @JvmStatic
     fun ensureInstalled(context: Context, extensionId: String) {
+        appContext = context.applicationContext
         val spec = builtIns.find { it.extensionId == extensionId } ?: return
         val runtime = try {
             PetalGeckoRuntime.getOrCreate(context.applicationContext)
@@ -245,6 +347,29 @@ object PetalBuiltInExtensionManager {
                         ext.setMessageDelegate(mediaMessageDelegate, NATIVE_APP)
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to set global message delegate for media grabber", t)
+                    }
+                    val sessions = synchronized(activeSessions) { activeSessions.toList() }
+                    for (session in sessions) {
+                        try {
+                            session.webExtensionController.setMessageDelegate(ext, mediaMessageDelegate, NATIVE_APP)
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Failed to retroactively attach media grabber delegate to active session", t)
+                        }
+                    }
+                }
+                if (spec.extensionId == DARK_WEBPAGES_ID) {
+                    try {
+                        ext.setMessageDelegate(darkMessageDelegate, NATIVE_APP)
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to set global message delegate for dark webpages", t)
+                    }
+                    val sessions = synchronized(activeSessions) { activeSessions.toList() }
+                    for (session in sessions) {
+                        try {
+                            session.webExtensionController.setMessageDelegate(ext, darkMessageDelegate, NATIVE_APP)
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Failed to retroactively attach dark webpages delegate to active session", t)
+                        }
                     }
                 }
                 controller.setAllowedInPrivateBrowsing(ext, true)
@@ -291,6 +416,16 @@ object PetalBuiltInExtensionManager {
 
     private const val PREF_DARK_WHITELIST = "petal_dark_webpages_whitelist"
     private const val PREF_DARK_CONTRAST = "petal_dark_webpages_contrast"
+
+    @JvmStatic
+    fun isDomainInWhitelist(domain: String?, whitelist: Set<String>): Boolean {
+        if (domain.isNullOrBlank()) return false
+        val clean = domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
+        return whitelist.any { item ->
+            val cleanItem = item.trim().lowercase()
+            clean == cleanItem || clean.endsWith(".$cleanItem")
+        }
+    }
 
     @JvmStatic
     fun getDarkWebpagesWhitelist(context: Context): Set<String> {

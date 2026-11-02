@@ -54,9 +54,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.NorthWest
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.CenterFocusWeak
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -86,8 +83,8 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
-import com.petal.browser.database.RecordAction
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.*
@@ -383,7 +380,7 @@ fun PetalOmniboxPage(
         } else {
             val list = mutableListOf<String>()
             try {
-                val action = RecordAction(context)
+                val action = HistoryBookmarkRepository(context)
                 action.open(false)
                 val records: List<Record> = action.listHistory(context)
                 action.close()
@@ -501,7 +498,7 @@ fun PetalOmniboxPage(
                     val text = clipData.getItemAt(0).text?.toString()?.trim()
                     if (!text.isNullOrBlank()) {
                         clipboardText = text
-                        isClipboardUrl = com.petal.browser.unit.BrowserUnit.isURL(text)
+                        isClipboardUrl = com.petal.browser.unit.PetalBrowserUtils.isURL(text)
                     }
                 }
             }
@@ -1120,9 +1117,9 @@ fun PetalOmniboxPage(
                                                     // Icon and tint per source group
                                                     val badgeIcon = when (payload.source) {
                                                         SuggestionSource.SWITCH_TO_TAB -> Icons.Rounded.Tab
-                                                        SuggestionSource.RECENT_SEARCH -> Icons.Filled.History
-                                                        SuggestionSource.BROWSING_HISTORY -> Icons.Filled.History
-                                                        SuggestionSource.SEARCH_ENGINE -> Icons.Filled.Search
+                                                        SuggestionSource.RECENT_SEARCH -> Icons.Rounded.History
+                                                        SuggestionSource.BROWSING_HISTORY -> Icons.Rounded.History
+                                                        SuggestionSource.SEARCH_ENGINE -> Icons.Rounded.Search
                                                     }
                                                     val badgeContainer = when (payload.source) {
                                                         SuggestionSource.SWITCH_TO_TAB -> MaterialTheme.colorScheme.tertiaryContainer
@@ -1214,7 +1211,7 @@ fun PetalOmniboxPage(
                                                                 onClick = { queryState = TextFieldValue(text = payload.query, selection = TextRange(payload.query.length)) },
                                                                 modifier = Modifier.size(36.dp),
                                                             ) {
-                                                                Icon(Icons.Filled.NorthWest, contentDescription = stringResource(R.string.ui_insert_query_into_omnibox), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                                                                Icon(Icons.Rounded.NorthWest, contentDescription = stringResource(R.string.ui_insert_query_into_omnibox), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                                                             }
                                                         },
                                                     )
@@ -1280,7 +1277,7 @@ fun PetalOmniboxPage(
                         if (item.isHistory) {
                             Thread {
                                 try {
-                                    val action = RecordAction(context)
+                                    val action = HistoryBookmarkRepository(context)
                                     action.open(true)
                                     action.deleteHistoryByTitle(targetQuery)
                                     action.close()

@@ -545,7 +545,7 @@ fun PetalOverflowMenuSheet(
                 pageTitle.equals("Petal", ignoreCase = true) ||
                 pageTitle.equals("Petal Home", ignoreCase = true) ||
                 pageTitle.equals("Petal Start", ignoreCase = true) ||
-                com.petal.browser.unit.BrowserUnit.isHomePage(pageUrl)
+                com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl)
             }
 
             Column(

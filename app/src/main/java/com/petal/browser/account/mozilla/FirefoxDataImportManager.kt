@@ -2,8 +2,8 @@ package com.petal.browser.account.mozilla
 
 import android.content.Context
 import android.net.Uri
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
-import com.petal.browser.database.RecordAction
 import org.json.JSONArray
 import java.util.regex.Pattern
 
@@ -11,14 +11,14 @@ import java.util.regex.Pattern
 object FirefoxDataImportManager {
     fun importFile(context: Context, uri: Uri): Int {
         val text = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } ?: return 0
-        val action = RecordAction(context)
+        val action = HistoryBookmarkRepository(context)
         action.open(true)
         return try {
             if (text.trimStart().startsWith("[")) importJson(text, action) else importBookmarksHtml(text, action)
         } finally { action.close() }
     }
 
-    private fun importBookmarksHtml(text: String, action: RecordAction): Int {
+    private fun importBookmarksHtml(text: String, action: HistoryBookmarkRepository): Int {
         val pattern = Pattern.compile("<A[^>]*HREF=\\\"([^\\\"]+)\\\"[^>]*>(.*?)</A>", Pattern.CASE_INSENSITIVE or Pattern.DOTALL)
         val matcher = pattern.matcher(text)
         var count = 0
@@ -32,7 +32,7 @@ object FirefoxDataImportManager {
         return count
     }
 
-    private fun importJson(text: String, action: RecordAction): Int {
+    private fun importJson(text: String, action: HistoryBookmarkRepository): Int {
         val array = JSONArray(text)
         var count = 0
         for (i in 0 until array.length()) {

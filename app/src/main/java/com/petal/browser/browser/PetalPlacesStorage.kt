@@ -1,14 +1,15 @@
 package com.petal.browser.browser
 
 import android.content.Context
+import com.petal.browser.database.HistoryBookmarkContract
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
-import com.petal.browser.database.RecordAction
 
 /**
  * PetalPlacesStorage
  * ─────────────────────────────────────────────────────────────────────────
  * Clean storage abstraction layer for browsing history and bookmarks.
- * Powered by high-speed SQLite [RecordAction] engine with zero overhead,
+ * Powered by high-speed SQLite [HistoryBookmarkRepository] engine with zero overhead,
  * maintaining persistent access without requiring native Rust storage-sync dependencies.
  */
 object PetalPlacesStorage {
@@ -19,7 +20,7 @@ object PetalPlacesStorage {
     fun recordVisit(context: Context, url: String, title: String) {
         if (url.isBlank() || url.startsWith("about:") || url.startsWith("moz-extension://")) return
         try {
-            val action = RecordAction(context)
+            val action = HistoryBookmarkRepository(context)
             action.open(true)
             val record = Record().apply {
                 setTitle(title.ifBlank { url })
@@ -36,7 +37,7 @@ object PetalPlacesStorage {
      */
     fun getVisited(context: Context): List<Record> {
         return try {
-            val action = RecordAction(context)
+            val action = HistoryBookmarkRepository(context)
             action.open(false)
             val list = action.listHistory(context)
             action.close()
@@ -51,9 +52,9 @@ object PetalPlacesStorage {
      */
     fun clearHistory(context: Context) {
         try {
-            val action = RecordAction(context)
+            val action = HistoryBookmarkRepository(context)
             action.open(true)
-            action.clearTable(com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
+            action.clearTable(HistoryBookmarkContract.TABLE_HISTORY)
             action.close()
         } catch (_: Throwable) {}
     }

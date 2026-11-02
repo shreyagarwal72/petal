@@ -315,38 +315,69 @@ fun PetalAppLockConfigScreen(
                 // Passcode configuration dialog
                 if (showPasscodeConfigDialog) {
                     PetalDialog(onDismissRequest = { showPasscodeConfigDialog = false }) {
-                        PetalGroupIconBadge(
-                            Icons.Rounded.Key,
-                            size = 48.dp,
-                            iconSize = 24.dp
-                        )
-                        Text(stringResource(R.string.ui_set_app_password), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text(
-                            stringResource(R.string.ui_enter_password_for_petal_browser),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        PetalShapedPasswordInput(
-                            value = tempPasscode,
-                            onValueChange = { tempPasscode = it },
-                            hintText = "Enter passcode",
-                            accentColor = MaterialTheme.colorScheme.primary,
-                            onUnlock = null,
-                            unlockButtonText = "",
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword,
-                            disableAutofill = true
-                        )
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            TextButton(onClick = { showPasscodeConfigDialog = false }) { Text(stringResource(R.string.ui_cancel)) }
-                            Button(onClick = {
-                                if (tempPasscode.trim().isNotBlank()) {
-                                    savedPasscode = tempPasscode.trim()
-                                    sp.edit().putString("sp_app_lock_passcode", savedPasscode).apply()
-                                    if (isLockEnabled) updateLockConfig(true, "PASSWORD")
-                                    showPasscodeConfigDialog = false
-                                    coroutineScope.launch { snackbarHostState.showSnackbar("App password saved successfully") }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            PetalGroupIconBadge(
+                                Icons.Rounded.Key,
+                                size = 48.dp,
+                                iconSize = 24.dp
+                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    stringResource(R.string.ui_set_app_password),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    stringResource(R.string.ui_enter_password_for_petal_browser),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                            PetalShapedPasswordInput(
+                                value = tempPasscode,
+                                onValueChange = { tempPasscode = it },
+                                hintText = "Enter passcode",
+                                accentColor = MaterialTheme.colorScheme.primary,
+                                onUnlock = null,
+                                unlockButtonText = "",
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword,
+                                disableAutofill = true
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextButton(onClick = { showPasscodeConfigDialog = false }) {
+                                    Text(stringResource(R.string.ui_cancel))
                                 }
-                            }) { Text(stringResource(R.string.ui_save_password), fontWeight = FontWeight.Bold) }
+                                Spacer(Modifier.width(8.dp))
+                                Button(
+                                    onClick = {
+                                        if (tempPasscode.trim().isNotBlank()) {
+                                            savedPasscode = tempPasscode.trim()
+                                            sp.edit().putString("sp_app_lock_passcode", savedPasscode).apply()
+                                            if (isLockEnabled) updateLockConfig(true, "PASSWORD")
+                                            showPasscodeConfigDialog = false
+                                            coroutineScope.launch { snackbarHostState.showSnackbar("App password saved successfully") }
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(50)
+                                ) {
+                                    Text(stringResource(R.string.ui_save_password), fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
                     }
                 }

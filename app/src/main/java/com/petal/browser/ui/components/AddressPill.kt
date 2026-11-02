@@ -42,8 +42,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import com.petal.browser.compose.ai.PetalAiResearchEngine
+import com.petal.browser.database.HistoryBookmarkContract
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
-import com.petal.browser.database.RecordAction
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.sniffer.PetalMediaSniffer
 import com.petal.browser.media.sniffer.PetalNativeSnifferEngine
@@ -302,7 +303,7 @@ fun AddressPill(
                     var isBookmarked by remember(url) {
                         mutableStateOf(
                             try {
-                                val action = RecordAction(context)
+                                val action = HistoryBookmarkRepository(context)
                                 action.open(false)
                                 val result = action.checkBookmark(url)
                                 action.close()
@@ -316,10 +317,10 @@ fun AddressPill(
                                 onAiResearchClick()
                             } else {
                                 try {
-                                    val action = RecordAction(context)
+                                    val action = HistoryBookmarkRepository(context)
                                     action.open(true)
                                     if (isBookmarked) {
-                                        action.deleteURL(url, com.petal.browser.unit.RecordUnit.TABLE_BOOKMARK)
+                                        action.deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK)
                                         isBookmarked = false
                                         PetalToast.show(context, "Bookmark removed")
                                     } else {
@@ -484,7 +485,7 @@ fun AddressPill(
                 var isBookmarked by remember {
                     mutableStateOf(
                         try {
-                            val action = RecordAction(context)
+                            val action = HistoryBookmarkRepository(context)
                             action.open(false)
                             val res = action.checkBookmark(url)
                             action.close()
@@ -550,10 +551,10 @@ fun AddressPill(
                         iconTint = if (isBookmarked) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer,
                         onClick = {
                             try {
-                                val action = RecordAction(context)
+                                val action = HistoryBookmarkRepository(context)
                                 action.open(true)
                                 if (isBookmarked) {
-                                    action.deleteURL(url, com.petal.browser.unit.RecordUnit.TABLE_BOOKMARK)
+                                    action.deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK)
                                     isBookmarked = false
                                     PetalToast.show(context, "Bookmark removed")
                                 } else {

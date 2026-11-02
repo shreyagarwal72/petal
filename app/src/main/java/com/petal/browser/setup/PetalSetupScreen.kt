@@ -21,8 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,7 +43,7 @@ import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.ui.components.*
 import com.petal.browser.ui.containment.*
-import com.petal.browser.unit.BackupUnit
+import com.petal.browser.unit.PetalBackupManager
 
 private data class SetupPermission(val id: String, val title: Int, val reason: Int, val permissions: List<String>, val optional: Boolean = false)
 
@@ -98,7 +96,7 @@ private fun PetalSetupContent(
     ) { uri: Uri? ->
         if (uri != null) {
             runCatching {
-                BackupUnit.restoreFromUri(
+                PetalBackupManager.restoreFromUri(
                     context,
                     uri,
                     true,
@@ -862,7 +860,7 @@ private fun AccessStage(
                             shape = RoundedCornerShape(14.dp),
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                         ) {
-                            Icon(Icons.Filled.Check, null, Modifier.size(14.dp))
+                            Icon(Icons.Rounded.Check, null, Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.petal_setup_granted), style = MaterialTheme.typography.labelSmall)
                         }

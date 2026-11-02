@@ -1,8 +1,8 @@
 package com.petal.browser.account.mozilla
 
 import android.content.Context
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
-import com.petal.browser.database.RecordAction
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -27,7 +27,7 @@ data class MozBookmarkItem(
 class PetalBookmarkSyncBridge {
 
     fun exportToBsoRecords(context: Context): List<BsoRecord> {
-        val action = RecordAction(context)
+        val action = HistoryBookmarkRepository(context)
         val records = try {
             action.open(false)
             action.listBookmark(context, false, 0)
@@ -98,7 +98,7 @@ class PetalBookmarkSyncBridge {
 
     fun importToDatabase(context: Context, items: List<MozBookmarkItem>) {
         if (items.isEmpty()) return
-        val action = RecordAction(context)
+        val action = HistoryBookmarkRepository(context)
         try {
             action.open(true)
             val existing = action.listBookmark(context, false, 0)

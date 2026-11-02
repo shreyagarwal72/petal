@@ -48,18 +48,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.FastForward
-import androidx.compose.material.icons.filled.FastRewind
-import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.RepeatOne
-import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.material.icons.rounded.SkipNext
@@ -306,7 +298,7 @@ fun PetalAudioPlayerScreen(
                     modifier = Modifier.size(44.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = stringResource(R.string.ui_back),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
@@ -325,7 +317,7 @@ fun PetalAudioPlayerScreen(
                     modifier = Modifier.size(44.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Speed,
+                        imageVector = Icons.Rounded.Speed,
                         contentDescription = stringResource(R.string.ui_playback_speed),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
@@ -428,7 +420,7 @@ fun PetalAudioPlayerScreen(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                imageVector = Icons.Default.MusicNote,
+                                imageVector = Icons.Rounded.MusicNote,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(72.dp),
@@ -488,7 +480,7 @@ fun PetalAudioPlayerScreen(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
-                                    imageVector = if (isPlaying) Icons.Default.GraphicEq else Icons.Default.MusicNote,
+                                    imageVector = if (isPlaying) Icons.Rounded.GraphicEq else Icons.Rounded.MusicNote,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(32.dp),

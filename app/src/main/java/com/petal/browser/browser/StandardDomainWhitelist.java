@@ -5,9 +5,9 @@ import android.content.Context;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.petal.browser.database.RecordAction;
-import com.petal.browser.unit.HelperUnit;
-import com.petal.browser.unit.RecordUnit;
+import com.petal.browser.database.HistoryBookmarkContract;
+import com.petal.browser.database.HistoryBookmarkRepository;
+import com.petal.browser.unit.PetalAndroidUtils;
 
 public class StandardDomainWhitelist {
 
@@ -20,16 +20,16 @@ public class StandardDomainWhitelist {
     }
 
     private synchronized static void loadDomains(Context context) {
-        RecordAction action = new RecordAction(context);
+        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
         action.open(false);
         listStandard.clear();
-        listStandard.addAll(action.listDomains(RecordUnit.TABLE_STANDARD));
+        listStandard.addAll(action.listDomains(HistoryBookmarkContract.TABLE_STANDARD));
         action.close();
     }
 
     public boolean isWhite(String url) {
         for (String domain : listStandard) {
-            if (url != null && HelperUnit.domain(url).equals(domain)) {
+            if (url != null && PetalAndroidUtils.domain(url).equals(domain)) {
                 return true;
             }
         }
@@ -37,25 +37,25 @@ public class StandardDomainWhitelist {
     }
 
     public synchronized void addDomain(String domain) {
-        RecordAction action = new RecordAction(context);
+        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
         action.open(true);
-        action.addDomain(domain, RecordUnit.TABLE_STANDARD);
+        action.addDomain(domain, HistoryBookmarkContract.TABLE_STANDARD);
         action.close();
         listStandard.add(domain);
     }
 
     public synchronized void removeDomain(String domain) {
-        RecordAction action = new RecordAction(context);
+        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
         action.open(true);
-        action.deleteDomain(domain, RecordUnit.TABLE_STANDARD);
+        action.deleteDomain(domain, HistoryBookmarkContract.TABLE_STANDARD);
         action.close();
         listStandard.remove(domain);
     }
 
     public synchronized void clearDomains() {
-        RecordAction action = new RecordAction(context);
+        HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
         action.open(true);
-        action.clearTable(RecordUnit.TABLE_STANDARD);
+        action.clearTable(HistoryBookmarkContract.TABLE_STANDARD);
         action.close();
         listStandard.clear();
     }

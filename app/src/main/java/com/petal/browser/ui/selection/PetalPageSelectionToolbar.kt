@@ -34,7 +34,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.compose.menu.BrowserContextMenuManager
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.unit.PetalBrowserUtils
 import org.mozilla.geckoview.GeckoSession.SelectionActionDelegate as Sel
 
 /**
@@ -135,7 +135,7 @@ object PetalPageSelectionToolbar {
         if (browser != null && text.isNotBlank()) {
             out += PetalSelectionAction("search", "Search", Icons.Rounded.Search) {
                 hide(activity)
-                val query = BrowserUnit.queryWrapper(browser, text)
+                val query = PetalBrowserUtils.queryWrapper(browser, text)
                 browser.addAlbum(text.take(24), query, false)
             }
             out += PetalSelectionAction("share", "Share", Icons.Rounded.Share) {

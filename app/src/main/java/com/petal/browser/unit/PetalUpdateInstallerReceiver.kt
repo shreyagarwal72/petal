@@ -11,22 +11,14 @@ import androidx.core.content.FileProvider
 import androidx.preference.PreferenceManager
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.view.PetalToast
-import com.tonyodev.fetch2.AbstractFetchListener
-import com.tonyodev.fetch2.Download
-import com.tonyodev.fetch2.EnqueueAction
-import com.tonyodev.fetch2.Error
-import com.tonyodev.fetch2.Fetch
-import com.tonyodev.fetch2.NetworkType
-import com.tonyodev.fetch2.Priority
-import com.tonyodev.fetch2.Request
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
  * Petal in-app update installer and downloader.
- * Uses Petal's high-speed internal download engine (Fetch2 + OkHttp) exclusively.
- * Fully eliminates legacy android.app.DownloadManager dependencies.
+ * Uses Mozilla Firefox's official download pipeline exclusively.
+ * Fully eliminates legacy android.app.DownloadManager and Fetch2 dependencies.
  */
 class PetalUpdateInstallerReceiver : BroadcastReceiver() {
 

@@ -30,11 +30,13 @@ import com.petal.browser.R
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserController
 import com.petal.browser.database.FaviconHelper
+import com.petal.browser.database.HistoryBookmarkContract
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import com.petal.browser.media.PetalMediaBridge
 import com.petal.browser.pwa.PetalPwaManager
-import com.petal.browser.unit.BrowserUnit
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
+import com.petal.browser.unit.PetalBrowserUtils
 import com.petal.browser.unit.TabThumbnailCache
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
@@ -159,7 +161,7 @@ class PetalGeckoView @JvmOverloads constructor(
             val mimeType = headers?.entries?.firstOrNull {
                 it.key.equals("Content-Type", ignoreCase = true)
             }?.value
-            val fileName = HelperUnit.resolveFileName(responseUrl, contentDisposition, mimeType)
+            val fileName = PetalAndroidUtils.resolveFileName(responseUrl, contentDisposition, mimeType)
             val contentLength = headers?.entries?.firstOrNull {
                 it.key.equals("Content-Length", ignoreCase = true)
             }?.value?.toLongOrNull() ?: 0L
@@ -889,6 +891,38 @@ class PetalGeckoView @JvmOverloads constructor(
         this.pwaManager = PetalPwaManager(context, this, null)
     }
 
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        if (com.petal.browser.privacy.PetalPrivacyHardening.isLetterboxingEnabled(sp)) {
+            val totalW = measuredWidth
+            val totalH = measuredHeight
+            if (totalW > 0 && totalH > 0) {
+                val density = resources.displayMetrics.density
+                val stepW = (200 * density).toInt().coerceAtLeast(1)
+                val stepH = (100 * density).toInt().coerceAtLeast(1)
+
+                val targetW = ((totalW / stepW) * stepW).coerceIn((240 * density).toInt(), totalW)
+                val targetH = ((totalH / stepH) * stepH).coerceIn((320 * density).toInt(), totalH)
+
+                val lp = geckoView.layoutParams as? LayoutParams
+                if (lp != null && (lp.width != targetW || lp.height != targetH)) {
+                    lp.width = targetW
+                    lp.height = targetH
+                    lp.gravity = android.view.Gravity.CENTER
+                    geckoView.layoutParams = lp
+                }
+            }
+        } else {
+            val lp = geckoView.layoutParams as? LayoutParams
+            if (lp != null && (lp.width != ViewGroup.LayoutParams.MATCH_PARENT || lp.height != ViewGroup.LayoutParams.MATCH_PARENT)) {
+                lp.width = ViewGroup.LayoutParams.MATCH_PARENT
+                lp.height = ViewGroup.LayoutParams.MATCH_PARENT
+                lp.gravity = android.view.Gravity.NO_GRAVITY
+                geckoView.layoutParams = lp
+            }
+        }
+    }
+
     @MainThread
     private fun initGeckoSession() {
         if (sessionInitializationStarted) {
@@ -918,7 +952,7 @@ class PetalGeckoView @JvmOverloads constructor(
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
             override fun onPageStart(session: GeckoSession, url: String) {
                 if (isInternalBootstrapUrl(url)) return
-                if (url.equals("about:blank", ignoreCase = true) && persistentUrl.isNotBlank() && !BrowserUnit.isHomePage(persistentUrl)) {
+                if (url.equals("about:blank", ignoreCase = true) && persistentUrl.isNotBlank() && !PetalBrowserUtils.isHomePage(persistentUrl)) {
                     return
                 }
                 previewRevision++
@@ -971,7 +1005,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 hideLoadingSkeleton()
                 dismissSurfaceCover()
                 isStopped = true
-                updateProgress(BrowserUnit.LOADING_STOPPED)
+                updateProgress(PetalBrowserUtils.LOADING_STOPPED)
                 if (hasContentfulPaint) schedulePreviewCapture(150L)
                 if (engineSession != null) {
                     com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, false)
@@ -985,13 +1019,13 @@ class PetalGeckoView @JvmOverloads constructor(
                     }
 
                     // Firefox-style Article Detection for dynamic Reader View indicator
-                    evaluateJavascript("Boolean(document.querySelector('article, [itemprop=\"articleBody\"], .entry-content, .post-content') || (document.querySelectorAll('p').length > 3 && document.body && document.body.innerText.length > 800))") { result ->
-                        val isArticle = result?.trim()?.equals("true", ignoreCase = true) == true
-                        this@PetalGeckoView.isReaderEligible = isArticle
+                    val isCachedEligible = com.petal.browser.compose.reader.PetalReaderBridge.isUrlEligible(currentUrl)
+                    if (isCachedEligible) {
+                        this@PetalGeckoView.isReaderEligible = true
                         val hostAct = getHostActivity()
                         if (hostAct is com.petal.browser.activity.BrowserActivity) {
                             hostAct.runOnUiThread {
-                                hostAct.setReaderModeEligible(this@PetalGeckoView, isArticle)
+                                hostAct.setReaderModeEligible(this@PetalGeckoView, true)
                             }
                         }
                     }
@@ -1078,7 +1112,7 @@ class PetalGeckoView @JvmOverloads constructor(
             ) {
                 if (url.isNullOrBlank() || url.equals(currentUrl, ignoreCase = true)) return
                 if (isInternalBootstrapUrl(url)) return
-                if (url.equals("about:blank", ignoreCase = true) && persistentUrl.isNotBlank() && !BrowserUnit.isHomePage(persistentUrl)) {
+                if (url.equals("about:blank", ignoreCase = true) && persistentUrl.isNotBlank() && !PetalBrowserUtils.isHomePage(persistentUrl)) {
                     return
                 }
                 // Brave Bounce Tracking Defense: skip intermediary tracking redirects directly to destination
@@ -1187,7 +1221,7 @@ class PetalGeckoView @JvmOverloads constructor(
                     return GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
 
-                if (BrowserUnit.isHomePage(uri)) {
+                if (PetalBrowserUtils.isHomePage(uri)) {
                     if (uri.equals("about:blank", ignoreCase = true)) {
                         return GeckoResult.fromValue(AllowOrDeny.ALLOW)
                     }
@@ -1363,12 +1397,12 @@ class PetalGeckoView @JvmOverloads constructor(
                 val result = GeckoResult<BooleanArray>()
                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                     try {
-                        val action = com.petal.browser.database.RecordAction(context)
+                        val action = HistoryBookmarkRepository(context)
                         action.open(false)
                         val visited = BooleanArray(urls.size) { i ->
                             val u = urls[i]
                             if (u.isBlank() || u.startsWith("about:") || u.startsWith("moz-extension://")) false
-                            else action.checkUrl(u, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
+                            else action.checkUrl(u, HistoryBookmarkContract.TABLE_HISTORY)
                         }
                         action.close()
                         result.complete(visited)
@@ -1723,7 +1757,7 @@ class PetalGeckoView @JvmOverloads constructor(
      */
     private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null, force: Boolean = false) {
         if (isIncognito || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) ||
-            targetUrl.startsWith("about:", ignoreCase = true) || BrowserUnit.isHomePage(targetUrl)) {
+            targetUrl.startsWith("about:", ignoreCase = true) || PetalBrowserUtils.isHomePage(targetUrl)) {
             return
         }
         if (!force && targetUrl == lastRecordedHistoryUrl) {
@@ -1742,10 +1776,10 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         try {
-            val action = com.petal.browser.database.RecordAction(context)
+            val action = HistoryBookmarkRepository(context)
             action.open(true)
-            if (action.checkUrl(targetUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)) {
-                action.deleteURL(targetUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
+            if (action.checkUrl(targetUrl, HistoryBookmarkContract.TABLE_HISTORY)) {
+                action.deleteURL(targetUrl, HistoryBookmarkContract.TABLE_HISTORY)
             }
             action.addHistory(com.petal.browser.database.Record(effectiveTitle, targetUrl, System.currentTimeMillis(), 0))
             action.close()
@@ -1794,7 +1828,7 @@ class PetalGeckoView @JvmOverloads constructor(
         if (isForegroundTab) {
             val bc = getBrowserController()
             if (bc != null) {
-                val p = if (!isStopped) progress else BrowserUnit.LOADING_STOPPED
+                val p = if (!isStopped) progress else PetalBrowserUtils.LOADING_STOPPED
                 bc.updateProgress(p)
             }
         }
@@ -1880,7 +1914,7 @@ class PetalGeckoView @JvmOverloads constructor(
         dismissSurfaceCover()
         hasContentfulPaint = true
         isStopped = true
-        updateProgress(BrowserUnit.LOADING_STOPPED)
+        updateProgress(PetalBrowserUtils.LOADING_STOPPED)
         val act = getHostActivity()
         if (act is com.petal.browser.activity.BrowserActivity) {
             act.runOnUiThread {
@@ -1947,6 +1981,18 @@ class PetalGeckoView @JvmOverloads constructor(
     // ─────────────────────────────────────────────────────────────────────────
 
     fun loadUrl(url: String) {
+        val trimmed = url.trim()
+        if (trimmed.equals("about:config", ignoreCase = true) ||
+            trimmed.equals("about:flags", ignoreCase = true) ||
+            trimmed.startsWith("petal://flags", ignoreCase = true) ||
+            trimmed.equals("chrome://flags", ignoreCase = true)) {
+            val act = getHostActivity()
+            if (act is com.petal.browser.activity.BrowserActivity) {
+                act.runOnUiThread { act.openFlagsHubScreen() }
+                return
+            }
+        }
+
         // "Petal Home" / "Petal Start" are the tab-switcher's human-readable display
         // placeholders (see AdapterTabs/setAlbumTitle), never real navigable targets.
         // If one leaks in here (e.g. from a session saved before this was fixed, or
@@ -1960,8 +2006,8 @@ class PetalGeckoView @JvmOverloads constructor(
             return
         }
 
-        val redirected = BrowserUnit.redirectURL(sp, url)
-        var targetUrl = BrowserUnit.queryWrapper(context, redirected)
+        val redirected = PetalBrowserUtils.redirectURL(sp, url)
+        var targetUrl = PetalBrowserUtils.queryWrapper(context, redirected)
 
         // Enforce HTTPS-Only Security Upgrade
         val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
@@ -1982,7 +2028,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 com.petal.browser.download.PetalDownloadRouter.download(
                     activity,
                     targetUrl,
-                    HelperUnit.resolveFileName(targetUrl, null, "application/vnd.android.package-archive"),
+                    PetalAndroidUtils.resolveFileName(targetUrl, null, "application/vnd.android.package-archive"),
                     "application/vnd.android.package-archive",
                     referrerUrl = currentUrl,
                     isPrivate = isIncognito
@@ -1991,7 +2037,7 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
-        if (BrowserUnit.isHomePage(targetUrl) || BrowserUnit.isHomePage(url) || targetUrl.equals("about:blank", ignoreCase = true)) {
+        if (PetalBrowserUtils.isHomePage(targetUrl) || PetalBrowserUtils.isHomePage(url) || targetUrl.equals("about:blank", ignoreCase = true)) {
             hideLoadingSkeleton()
             session.loadUri("about:blank")
             currentUrl = "about:blank"
@@ -2164,10 +2210,10 @@ class PetalGeckoView @JvmOverloads constructor(
     private fun reloadInternal(flags: Int) {
         isStopped = false
         applySettings()
-        val target = if (currentUrl.isNotBlank() && !BrowserUnit.isHomePage(currentUrl) && !currentUrl.equals("about:blank", ignoreCase = true)) {
+        val target = if (currentUrl.isNotBlank() && !PetalBrowserUtils.isHomePage(currentUrl) && !currentUrl.equals("about:blank", ignoreCase = true)) {
             showLoadingSkeleton(currentUrl)
             currentUrl
-        } else if (persistentUrl.isNotBlank() && !BrowserUnit.isHomePage(persistentUrl) && !persistentUrl.equals("about:blank", ignoreCase = true)) {
+        } else if (persistentUrl.isNotBlank() && !PetalBrowserUtils.isHomePage(persistentUrl) && !persistentUrl.equals("about:blank", ignoreCase = true)) {
             showLoadingSkeleton(persistentUrl)
             persistentUrl
         } else {
@@ -2195,7 +2241,7 @@ class PetalGeckoView @JvmOverloads constructor(
     fun stopLoading() {
         isStopped = true
         if (engineSession != null) engineSession.stopLoading() else session.stop()
-        updateProgress(BrowserUnit.LOADING_STOPPED)
+        updateProgress(PetalBrowserUtils.LOADING_STOPPED)
     }
 
     fun getProgress(): Int = currentProgress
@@ -2387,7 +2433,7 @@ class PetalGeckoView @JvmOverloads constructor(
      * Also returns true if the page is currently about:blank or home.
      */
     fun isPageAtTop(): Boolean {
-        if (currentUrl.isBlank() || currentUrl.equals("about:blank", ignoreCase = true) || com.petal.browser.unit.BrowserUnit.isHomePage(currentUrl)) {
+        if (currentUrl.isBlank() || currentUrl.equals("about:blank", ignoreCase = true) || PetalBrowserUtils.isHomePage(currentUrl)) {
             return true
         }
         return currentScrollY <= PAGE_TOP_TOLERANCE_PX
@@ -2508,7 +2554,7 @@ class PetalGeckoView @JvmOverloads constructor(
     fun markAdoptedNavigation(url: String?) {
         isAdoptedPopup = true
         val target = url?.trim().orEmpty()
-        if (target.isEmpty() || BrowserUnit.isHomePage(target)) return
+        if (target.isEmpty() || PetalBrowserUtils.isHomePage(target)) return
         currentUrl = target
         currentTitle = target
     }

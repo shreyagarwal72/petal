@@ -27,10 +27,76 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.view.PetalGeckoView
 
+import java.util.concurrent.ConcurrentHashMap
+
 object PetalReaderBridge {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val pendingCallbacks = ConcurrentHashMap<String, (ReaderArticleData?) -> Unit>()
+    private val eligibleUrls = ConcurrentHashMap<String, Boolean>()
+
+    @Volatile
+    var readerEligibilityListener: ((url: String, isEligible: Boolean) -> Unit)? = null
+
+    @JvmStatic
+    fun isUrlEligible(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val clean = url.substringBefore('#').trimEnd('/')
+        return eligibleUrls[url] == true || eligibleUrls[clean] == true
+    }
+
+    @JvmStatic
+    fun onReaderEligibilityDetected(pageUrl: String, isEligible: Boolean) {
+        if (pageUrl.isBlank()) return
+        val clean = pageUrl.substringBefore('#').trimEnd('/')
+        eligibleUrls[pageUrl] = isEligible
+        eligibleUrls[clean] = isEligible
+        mainHandler.post {
+            readerEligibilityListener?.invoke(pageUrl, isEligible)
+        }
+    }
+
+    @JvmStatic
+    fun onArticleReceived(
+        pageUrl: String,
+        title: String,
+        author: String,
+        lead: String,
+        text: String
+    ) {
+        val domain = PetalAndroidUtils.domain(pageUrl) ?: ""
+        val article = ReaderArticleData(
+            title = title.ifBlank { "Article" },
+            author = author,
+            domain = domain,
+            leadImageUrl = lead,
+            contentText = text
+        )
+
+        val cb = findAndRemoveCallback(pageUrl)
+        if (cb != null) {
+            mainHandler.post { cb(article) }
+        }
+    }
+
+    private fun findAndRemoveCallback(pageUrl: String): ((ReaderArticleData?) -> Unit)? {
+        pendingCallbacks.remove(pageUrl)?.let { return it }
+        val clean = pageUrl.substringBefore('#').trimEnd('/')
+        for (entry in pendingCallbacks.entries) {
+            val keyClean = entry.key.substringBefore('#').trimEnd('/')
+            if (clean == keyClean || clean.startsWith(keyClean) || keyClean.startsWith(clean)) {
+                return pendingCallbacks.remove(entry.key)
+            }
+        }
+        if (pendingCallbacks.size == 1) {
+            val key = pendingCallbacks.keys.first()
+            return pendingCallbacks.remove(key)
+        }
+        return null
+    }
 
     @JvmStatic
     fun extractArticle(controller: AlbumController?, callback: (ReaderArticleData?) -> Unit) {
@@ -41,50 +107,25 @@ object PetalReaderBridge {
         }
 
         val title = controller.title ?: "Article"
-        val domain = HelperUnit.domain(url) ?: ""
+        val domain = PetalAndroidUtils.domain(url) ?: ""
 
-        // Offline client-side DOM readability extraction without external network calls
-        val extractJs = """
-            (function() {
-                try {
-                    var el = document.querySelector('article, [itemprop="articleBody"], .entry-content, .post-content, main, #content') || document.body;
-                    var t = (document.querySelector('h1') ? document.querySelector('h1').innerText : document.title) || '';
-                    var by = (document.querySelector('[rel="author"], .author, .byline, [itemprop="author"]') ? document.querySelector('[rel="author"], .author, .byline, [itemprop="author"]').innerText : '') || '';
-                    var img = document.querySelector('article img, [itemprop="image"], meta[property="og:image"]');
-                    var lead = img ? (img.src || img.content || '') : '';
-                    var bodyText = el ? el.innerText : '';
-                    return JSON.stringify({ title: t, author: by, lead: lead, text: bodyText });
-                } catch(e) {
-                    return JSON.stringify({ title: '', author: '', lead: '', text: document.body ? document.body.innerText : '' });
-                }
-            })();
-        """.trimIndent()
+        pendingCallbacks[url] = callback
 
-        val evalBlock: (String, (String?) -> Unit) -> Unit = when (controller) {
-            is PetalGeckoView -> { s, cb -> controller.evaluateJavascript(s, cb) }
-            is com.petal.browser.browser.PetalTabViewController -> { s, cb -> controller.evaluateJavascript(s, cb) }
-            else -> { _, cb -> cb(null) }
+        // Post message to page DOM so the WebExtension content script extracts the article
+        val postMessageScript = "window.postMessage({ type: 'PETAL_EXTRACT_ARTICLE' }, '*');"
+        when (controller) {
+            is PetalGeckoView -> controller.evaluateJavascript(postMessageScript)
+            is com.petal.browser.browser.PetalTabViewController -> controller.evaluateJavascript(postMessageScript)
         }
 
-        evalBlock(extractJs) { rawJson: String? ->
-            try {
-                if (!rawJson.isNullOrBlank() && rawJson != "null") {
-                    val unescaped = if (rawJson.startsWith("\"") && rawJson.endsWith("\"")) {
-                        org.json.JSONTokener(rawJson).nextValue().toString()
-                    } else rawJson
-                    val json = org.json.JSONObject(unescaped)
-                    val extractedTitle = json.optString("title").ifBlank { title }
-                    val author = json.optString("author")
-                    val leadImg = json.optString("lead")
-                    val text = json.optString("text").trim()
-                    if (text.isNotBlank()) {
-                        callback(ReaderArticleData(extractedTitle, author, domain, leadImg, text))
-                        return@evalBlock
-                    }
-                }
-            } catch (_: Throwable) {}
-            callback(ReaderArticleData(title, "", domain, "", "Unable to extract article text from this page."))
-        }
+        // 1500ms fallback timeout if content script didn't respond
+        mainHandler.postDelayed({
+            val timedOutCb = pendingCallbacks.remove(url)
+            if (timedOutCb != null) {
+                // If WebExtension hasn't extracted yet, return null so it falls back to native Firefox about:reader
+                timedOutCb(null)
+            }
+        }, 1500L)
     }
 
     /**

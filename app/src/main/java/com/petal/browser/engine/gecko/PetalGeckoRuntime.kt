@@ -86,10 +86,14 @@ object PetalGeckoRuntime {
             (appContext.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         } catch (_: Throwable) { false }
 
+        val privacyProfile = com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp)
+        val securityLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
+        val isStrictOrHardened = privacyProfile != com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STANDARD
+
         val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
         val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
         val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-        val etpStrict = sp.getBoolean("sp_etp_strict", true)
+        val etpStrict = sp.getBoolean("sp_etp_strict", true) || isStrictOrHardened
         val defaultCookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || adBlockEnabled || etpStrict) {
             ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
         } else {
@@ -104,9 +108,9 @@ object PetalGeckoRuntime {
         // or DEFAULT (standard tracking protection) baseline instead of NONE.
         val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
 
-        val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PrivateDnsUnit.DNS_OFF)
-        val dohUri = com.petal.browser.unit.PrivateDnsUnit.getDnsEndpointUrl(sp)
-        val trrMode = if (!dohUri.isNullOrBlank() && privateDnsMode != com.petal.browser.unit.PrivateDnsUnit.DNS_OFF) {
+        val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PetalPrivateDnsHelper.DNS_OFF)
+        val dohUri = com.petal.browser.unit.PetalPrivateDnsHelper.getDnsEndpointUrl(sp)
+        val trrMode = if (!dohUri.isNullOrBlank() && privateDnsMode != com.petal.browser.unit.PetalPrivateDnsHelper.DNS_OFF) {
             GeckoRuntimeSettings.TRR_MODE_FIRST
         } else {
             GeckoRuntimeSettings.TRR_MODE_OFF
@@ -121,7 +125,7 @@ object PetalGeckoRuntime {
             else -> if (forceDark) GeckoRuntimeSettings.COLOR_SCHEME_DARK else GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
         }
 
-        val allowAboutConfig = sp.getBoolean("sp_enable_about_config", false) || isDebug
+        val allowAboutConfig = sp.getBoolean("sp_enable_about_config", true)
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(allowAboutConfig)
             .trustedRecursiveResolverMode(trrMode)
@@ -134,7 +138,10 @@ object PetalGeckoRuntime {
                     .enhancedTrackingProtectionLevel(etpLevel)
                     .build()
             )
-            .javaScriptEnabled(sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true)))
+            .javaScriptEnabled(
+                if (securityLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) false
+                else sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
+            )
             .fontSizeFactor(sp.getFloat("sp_font_size_scale", 1.0f))
             .consoleOutput(isDebug)
             .remoteDebuggingEnabled(isDebug)
@@ -244,8 +251,17 @@ object PetalGeckoRuntime {
     fun syncPreferences(sp: SharedPreferences) {
         runtime?.let { rt ->
             try {
+                val privacyProfile = com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp)
+                val securityLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
+                val isStrictOrHardened = privacyProfile != com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STANDARD
+
                 // 1. JavaScript
-                rt.settings.javaScriptEnabled = sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
+                val jsAllowed = if (securityLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) {
+                    false
+                } else {
+                    sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
+                }
+                rt.settings.javaScriptEnabled = jsAllowed
 
                 // Text zoom / font scale factor
                 try {
@@ -257,7 +273,7 @@ object PetalGeckoRuntime {
 
                 // 2. Enhanced Tracking Protection & AdBlock
                 val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-                val etpStrict = sp.getBoolean("sp_etp_strict", true)
+                val etpStrict = sp.getBoolean("sp_etp_strict", true) || isStrictOrHardened
                 val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
                 rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)
                 rt.settings.contentBlocking.setStrictSocialTrackingProtection(adBlockEnabled || etpStrict)
@@ -288,9 +304,9 @@ object PetalGeckoRuntime {
                 rt.settings.loginAutofillEnabled = webauthnEnabled
 
                 // 7. Private DNS / Trusted Recursive Resolver (TRR / DoH)
-                val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PrivateDnsUnit.DNS_OFF)
-                val dohUri = com.petal.browser.unit.PrivateDnsUnit.getDnsEndpointUrl(sp)
-                val trrMode = if (!dohUri.isNullOrBlank() && privateDnsMode != com.petal.browser.unit.PrivateDnsUnit.DNS_OFF) {
+                val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PetalPrivateDnsHelper.DNS_OFF)
+                val dohUri = com.petal.browser.unit.PetalPrivateDnsHelper.getDnsEndpointUrl(sp)
+                val trrMode = if (!dohUri.isNullOrBlank() && privateDnsMode != com.petal.browser.unit.PetalPrivateDnsHelper.DNS_OFF) {
                     GeckoRuntimeSettings.TRR_MODE_FIRST
                 } else {
                     GeckoRuntimeSettings.TRR_MODE_OFF
@@ -340,6 +356,7 @@ object PetalGeckoRuntime {
 
     private fun seedProfileUserJs(appContext: Context) {
         try {
+            val arkenfoxRules = com.petal.browser.privacy.PetalPrivacyHardening.buildArkenfoxUserJs(appContext)
             val userJsContent = """
                 // Petal Browser Android 16+ Native Stability & GMP Crash Prevention
                 user_pref("media.gmp-provider.enabled", false);
@@ -353,6 +370,12 @@ object PetalGeckoRuntime {
                 user_pref("media.gmp-gmpopenh264.enabled", false);
                 user_pref("media.gmp-gmpopenh264.autoupdate", false);
                 user_pref("media.eme.enabled", false);
+
+                // Firefox Reader Mode engine preferences
+                user_pref("reader.parse-on-load.enabled", true);
+                user_pref("reader.color_scheme", "auto");
+
+                $arkenfoxRules
             """.trimIndent()
 
             val possibleDirs = listOf(
@@ -364,12 +387,13 @@ object PetalGeckoRuntime {
             for (dir in possibleDirs) {
                 if (dir.exists() && dir.isDirectory) {
                     val subdirs = dir.listFiles { f -> f.isDirectory } ?: emptyArray()
-                    for (sub in subdirs) {
+                    val targetDirs = if (subdirs.isNotEmpty()) subdirs.toList() + dir else listOf(dir)
+                    for (target in targetDirs) {
                         try {
-                            val userJs = java.io.File(sub, "user.js")
-                            if (!userJs.exists() || !userJs.readText().contains("media.gmp-provider.enabled")) {
-                                userJs.writeText(userJsContent)
-                            }
+                            val flagsJs = java.io.File(target, "petal-flags.js")
+                            val extraFlags = if (flagsJs.exists()) "\n" + flagsJs.readText() else ""
+                            val userJs = java.io.File(target, "user.js")
+                            userJs.writeText(userJsContent + extraFlags)
                         } catch (_: Throwable) {}
                     }
                 }

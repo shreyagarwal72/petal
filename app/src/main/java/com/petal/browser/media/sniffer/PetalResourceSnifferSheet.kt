@@ -6,6 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -31,9 +36,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.containment.PetalFilterChip
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.view.PetalToast
 
 /**
@@ -81,19 +88,20 @@ fun PetalResourceSnifferSheet(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(36.dp)
+                    val headerBadgeShape = PetalMaterialShapes.Cookie4Sided.toShape()
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(headerBadgeShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Rounded.TravelExplore,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Rounded.TravelExplore,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     Spacer(Modifier.width(12.dp))
                     Column {
@@ -147,20 +155,58 @@ fun PetalResourceSnifferSheet(
                         resources.count { it.category == category }
                     }
 
-                    FilterChip(
-                        selected = selectedCategory == category,
+                    val shape = when (category) {
+                        PetalResourceCategory.ALL -> PetalMaterialShapes.Cookie4Sided.toShape()
+                        PetalResourceCategory.VIDEO -> PetalMaterialShapes.Gem.toShape()
+                        PetalResourceCategory.AUDIO -> PetalMaterialShapes.Flower.toShape()
+                        PetalResourceCategory.IMAGE -> PetalMaterialShapes.Boom.toShape()
+                        PetalResourceCategory.DOCUMENT -> PetalMaterialShapes.PuffyDiamond.toShape()
+                    }
+
+                    val icon = when (category) {
+                        PetalResourceCategory.ALL -> Icons.Rounded.Category
+                        PetalResourceCategory.VIDEO -> Icons.Rounded.PlayCircle
+                        PetalResourceCategory.AUDIO -> Icons.Rounded.Audiotrack
+                        PetalResourceCategory.IMAGE -> Icons.Rounded.Image
+                        PetalResourceCategory.DOCUMENT -> Icons.Rounded.Description
+                    }
+
+                    val isSelected = selectedCategory == category
+
+                    PetalFilterChip(
+                        selected = isSelected,
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                             selectedCategory = category
+                        },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(shape)
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
                         },
                         label = {
                             Text(
                                 text = "${category.label} ($count)",
                                 maxLines = 1,
-                                style = MaterialTheme.typography.labelMedium
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
                             )
                         },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(14.dp)
                     )
                 }
             }
@@ -225,24 +271,30 @@ fun PetalResourceSnifferSheet(
                 }
             }
 
-            // Bottom Batch Action Bar (Download selected / Copy selected)
+            // Bottom Batch Action floating bar (Download selected / Copy selected)
             AnimatedVisibility(
                 visible = selectedIds.isNotEmpty(),
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+                enter = fadeIn() + expandVertically() + slideInVertically { it / 2 },
+                exit = fadeOut() + shrinkVertically() + slideOutVertically { it / 2 }
             ) {
+                val dockShape = RoundedCornerShape(22.dp)
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = petalGroupSurfaceColor(),
+                    shape = dockShape,
+                    color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                     tonalElevation = 0.dp,
-                    shadowElevation = 0.dp,
+                    shadowElevation = if (isGlass) 0.dp else 4.dp,
+                    border = if (isGlass) null else BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.35f else 0.5f),
-                            RoundedCornerShape(16.dp)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .liquidGlassChrome(
+                            shape = dockShape,
+                            enabled = isGlass,
+                            sheenIntensity = 0.75f,
+                            pressFx = true
                         )
                 ) {
                     Row(
@@ -252,43 +304,65 @@ fun PetalResourceSnifferSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = "${selectedIds.size} selected",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(PetalMaterialShapes.Cookie4Sided.toShape())
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "${selectedIds.size}",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            Text(
+                                text = "${selectedIds.size} selected",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            OutlinedButton(
+                            FilledTonalButton(
                                 onClick = {
                                     val urls = filteredResources.filter { selectedIds.contains(it.id) }.joinToString("\n") { it.url }
                                     val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     cb.setPrimaryClip(ClipData.newPlainText("URLs", urls))
+                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                     PetalToast.show(context, "Copied ${selectedIds.size} links")
                                 },
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(14.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                             ) {
-                                Text("Copy Links", style = MaterialTheme.typography.labelMedium)
+                                Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Copy URLs", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
                             }
 
                             Button(
                                 onClick = {
                                     val toDownload = filteredResources.filter { selectedIds.contains(it.id) }
                                     PetalNativeSnifferEngine.downloadBatch(context, toDownload)
+                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     PetalToast.show(context, "Downloading ${toDownload.size} items")
                                     selectedIds.clear()
                                     onDismiss()
                                 },
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(14.dp),
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
-                                Icon(Icons.Rounded.Download, null, Modifier.size(16.dp))
+                                Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Download", style = MaterialTheme.typography.labelMedium)
+                                Text("Download all selected", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), maxLines = 1)
                             }
                         }
                     }
@@ -315,20 +389,56 @@ private fun SniffedResourceRow(
         PetalResourceCategory.ALL -> Icons.Rounded.Attachment
     }
 
+    val categoryShape = when (resource.category) {
+        PetalResourceCategory.ALL -> PetalMaterialShapes.Cookie4Sided.toShape()
+        PetalResourceCategory.VIDEO -> PetalMaterialShapes.Gem.toShape()
+        PetalResourceCategory.AUDIO -> PetalMaterialShapes.Flower.toShape()
+        PetalResourceCategory.IMAGE -> PetalMaterialShapes.Boom.toShape()
+        PetalResourceCategory.DOCUMENT -> PetalMaterialShapes.PuffyDiamond.toShape()
+    }
+
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val itemShape = RoundedCornerShape(18.dp)
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 0.98f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = 0.75f,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "item_scale"
+    )
+
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = petalGroupSurfaceColor(),
+        shape = itemShape,
+        color = if (isGlass) {
+            if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+            else petalGroupSurfaceColor()
+        } else {
+            if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+            else petalGroupSurfaceColor()
+        },
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
+        border = if (isGlass) {
+            if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+            else null
+        } else {
+            BorderStroke(
+                1.dp,
+                if (isSelected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+            )
+        },
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onToggleSelect() }
-            .border(
-                1.dp,
-                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.35f else 0.5f),
-                RoundedCornerShape(16.dp)
+            .scale(scale)
+            .liquidGlassChrome(
+                shape = itemShape,
+                enabled = isGlass,
+                sheenIntensity = 0.5f,
+                pressFx = true
             )
+            .clickable { onToggleSelect() }
     ) {
         Row(
             modifier = Modifier
@@ -343,19 +453,22 @@ private fun SniffedResourceRow(
 
             Spacer(Modifier.width(8.dp))
 
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.size(40.dp)
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(categoryShape)
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = categoryIcon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+                Icon(
+                    imageVector = categoryIcon,
+                    contentDescription = null,
+                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
             }
 
             Spacer(Modifier.width(12.dp))
@@ -373,14 +486,14 @@ private fun SniffedResourceRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(6.dp),
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     ) {
                         Text(
                             text = resource.fileExtension,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
 
@@ -398,30 +511,51 @@ private fun SniffedResourceRow(
 
             // Action Icons
             if (resource.category == PetalResourceCategory.VIDEO || resource.category == PetalResourceCategory.AUDIO) {
-                IconButton(onClick = onPlay, modifier = Modifier.size(34.dp)) {
+                FilledTonalIconButton(
+                    onClick = onPlay,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    modifier = Modifier.size(34.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
                         contentDescription = "Play",
-                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            IconButton(onClick = onDownload, modifier = Modifier.size(34.dp)) {
+            FilledTonalIconButton(
+                onClick = onDownload,
+                shape = RoundedCornerShape(10.dp),
+                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = if (isGlass) 0.6f else 1f),
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                modifier = Modifier.size(34.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.Download,
                     contentDescription = "Download",
-                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(19.dp)
                 )
             }
 
-            IconButton(onClick = onCopyUrl, modifier = Modifier.size(34.dp)) {
+            FilledTonalIconButton(
+                onClick = onCopyUrl,
+                shape = RoundedCornerShape(10.dp),
+                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = if (isGlass) 0.6f else 1f),
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                modifier = Modifier.size(34.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.ContentCopy,
                     contentDescription = "Copy URL",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
             }

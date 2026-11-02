@@ -61,7 +61,7 @@ object DownloadFileNameResolver {
         fallbackMimeType: String? = null,
         onResolved: (fileName: String, mimeType: String?) -> Unit
     ) {
-        val fallbackName = com.petal.browser.unit.HelperUnit.resolveFileName(url, null, fallbackMimeType)
+        val fallbackName = com.petal.browser.unit.PetalAndroidUtils.resolveFileName(url, null, fallbackMimeType)
         if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) {
             // data:/blob:/file: URIs etc. - no network request possible, use the guess as-is.
             onResolved(fallbackName, fallbackMimeType)

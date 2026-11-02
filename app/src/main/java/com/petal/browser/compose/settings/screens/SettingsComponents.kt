@@ -29,6 +29,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.components.PetalSlider
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.rememberPetalGroupShape
+import com.petal.browser.ui.glass.rememberGlassSheen
 import kotlinx.coroutines.delay
 
 @Composable
@@ -36,12 +42,27 @@ fun PetalVariableSlider(
     label: String,
     value: Float,
     range: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    position: PetalGroupPosition = PetalGroupPosition.SINGLE
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = rememberGlassSheen(isGlass)
+    val shape = rememberPetalGroupShape(position)
+
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth()
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = shape,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.20f else 0.42f)),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (isGlass) Modifier.liquidGlassChrome(
+                    shape = shape,
+                    enabled = true,
+                    sheenIntensity = sheen * 0.7f
+                ) else Modifier
+            )
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Row(

@@ -73,7 +73,7 @@ object PetalStorageManager {
     fun optimizeDatabases(context: Context) {
         bgScope.launch {
             try {
-                val action = com.petal.browser.database.RecordAction(context.applicationContext)
+                val action = com.petal.browser.database.HistoryBookmarkRepository(context.applicationContext)
                 action.open(true)
                 action.optimizeDatabase()
                 action.close()

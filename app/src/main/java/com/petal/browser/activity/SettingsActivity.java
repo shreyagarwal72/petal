@@ -14,8 +14,8 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.petal.browser.R;
 import com.petal.browser.compose.settings.PetalSettingsBridge;
 import com.petal.browser.compose.settings.SettingsCategory;
-import com.petal.browser.unit.BrowserUnit;
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
+import com.petal.browser.unit.PetalBrowserUtils;
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
@@ -31,14 +31,14 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     protected void attachBaseContext(android.content.Context newBase) {
-        super.attachBaseContext(HelperUnit.applyLanguage(newBase));
+        super.attachBaseContext(PetalAndroidUtils.applyLanguage(newBase));
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this);
-        HelperUnit.initTheme(this);
+        PetalAndroidUtils.initTheme(this);
         EdgeToEdge.enable(this);
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         controller.hide(WindowInsetsCompat.Type.systemBars());
@@ -71,7 +71,7 @@ public class SettingsActivity extends AppCompatActivity {
         if (menuItem.getItemId() == android.R.id.home) finish();
         else if (menuItem.getItemId() == R.id.menu_help) {
             Uri webpage = Uri.parse("https://github.com/shreyagarwal72/petal");
-            BrowserUnit.intentURL(this, webpage);
+            PetalBrowserUtils.intentURL(this, webpage);
         }
         return true;
     }

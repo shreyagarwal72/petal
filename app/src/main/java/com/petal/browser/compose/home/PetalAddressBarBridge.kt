@@ -262,8 +262,8 @@ object PetalAddressBarBridge {
                             onHomeClick = {
                                 homeClick?.run() ?: run {
                                     val act = activity as? BrowserActivity ?: return@run
-                                    val effectiveHome = com.petal.browser.unit.BrowserUnit.getEffectiveHomepageUrl(act)
-                                    if (effectiveHome != null && !effectiveHome.equals("about:blank", true) && !com.petal.browser.unit.BrowserUnit.isHomePage(effectiveHome)) {
+                                    val effectiveHome = com.petal.browser.unit.PetalBrowserUtils.getEffectiveHomepageUrl(act)
+                                    if (effectiveHome != null && !effectiveHome.equals("about:blank", true) && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(effectiveHome)) {
                                         act.showAlbum(act.currentAlbumController, effectiveHome)
                                     } else {
                                         act.showAlbum(act.currentAlbumController, "about:blank")
@@ -287,11 +287,11 @@ object PetalAddressBarBridge {
                                 bookmarkClick?.run() ?: run {
                                     val act = activity as? BrowserActivity ?: return@run
                                     try {
-                                        val action = com.petal.browser.database.RecordAction(act)
+                                        val action = com.petal.browser.database.HistoryBookmarkRepository(act)
                                         action.open(true)
                                         val isBookmarked = action.checkBookmark(currentUrl)
                                         if (isBookmarked) {
-                                            action.deleteURL(currentUrl, com.petal.browser.unit.RecordUnit.TABLE_BOOKMARK)
+                                            action.deleteURL(currentUrl, com.petal.browser.database.HistoryBookmarkContract.TABLE_BOOKMARK)
                                             com.petal.browser.view.PetalToast.show(act, "Bookmark removed")
                                         } else {
                                             action.addBookmark(com.petal.browser.database.Record(currentTitle.ifBlank { currentUrl }, currentUrl, 0L, 0))

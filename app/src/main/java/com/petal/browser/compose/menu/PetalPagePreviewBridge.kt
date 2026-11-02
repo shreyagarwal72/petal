@@ -50,7 +50,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.view.PetalGeckoView
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -91,7 +91,7 @@ object PetalPagePreviewBridge {
                                 url = url,
                                 onOpenFullTab = {
                                     dialog.dismiss()
-                                    activity.addAlbum(HelperUnit.domain(url), url, true)
+                                    activity.addAlbum(PetalAndroidUtils.domain(url), url, true)
                                 },
                                 onDismiss = { dialog.dismiss() }
                             )
@@ -172,7 +172,7 @@ private fun PetalPagePreviewSheet(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = HelperUnit.domain(url) ?: url,
+                    text = PetalAndroidUtils.domain(url) ?: url,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

@@ -60,7 +60,7 @@ import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
-import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.unit.PetalBrowserUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -205,7 +205,7 @@ fun PetalAboutDeveloperSheetContent(
                     activity.addAlbum(null, url, true)
                 }
             } else {
-                BrowserUnit.intentURL(context, Uri.parse(url))
+                PetalBrowserUtils.intentURL(context, Uri.parse(url))
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -511,7 +511,7 @@ fun AppInfoGroup(
     versionCode: Int = 390,
     onCopyVersion: () -> Unit
 ) {
-    PetalGroup(rowCount = 3, modifier = Modifier.fillMaxWidth()) { index, position ->
+    PetalGroup(rowCount = 4, modifier = Modifier.fillMaxWidth()) { index, position ->
         when (index) {
             0 -> {
                 PetalGroupListRow(
@@ -594,6 +594,45 @@ fun AppInfoGroup(
                             text = "Zero Telemetry • Isolated Profiles • AdBlock & Tracking Protection",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                )
+            }
+            3 -> {
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                PetalGroupListRow(
+                    position = position,
+                    onClick = {
+                        val act = ctx as? com.petal.browser.activity.BrowserActivity
+                        if (act != null) {
+                            act.openFlagsHubScreen()
+                        } else {
+                            com.petal.browser.unit.PetalBrowserUtils.intentURL(ctx, android.net.Uri.parse("petal://flags"))
+                        }
+                    },
+                    leading = {
+                        PetalGroupIconBadge(
+                            icon = Icons.Rounded.AutoAwesome,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+                        )
+                    },
+                    content = {
+                        Text(
+                            text = "Experiments & Flags",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "about:config • Chrome-style flags & engine experiments",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailing = {
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 )

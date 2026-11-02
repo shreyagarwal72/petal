@@ -16,10 +16,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -472,7 +472,7 @@ fun PetalCastDeviceSheet(
                     enabled = !isScanning,
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Refresh,
+                        imageVector = Icons.Rounded.Refresh,
                         contentDescription = "Refresh",
                         tint = if (isScanning) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
                     )
@@ -484,7 +484,7 @@ fun PetalCastDeviceSheet(
                     },
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Close,
+                        imageVector = Icons.Rounded.Close,
                         contentDescription = "Close",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -519,7 +519,7 @@ fun PetalCastDeviceSheet(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Tv,
+                        imageVector = Icons.Rounded.Tv,
                         contentDescription = null,
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.outline,
@@ -576,7 +576,7 @@ fun PetalCastDeviceSheet(
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
-                                            imageVector = Icons.Default.Tv,
+                                            imageVector = Icons.Rounded.Tv,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(22.dp),
@@ -622,7 +622,7 @@ fun PetalCastDeviceSheet(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(
-                    imageVector = Icons.Default.OpenInNew,
+                    imageVector = Icons.Rounded.OpenInNew,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
                 )

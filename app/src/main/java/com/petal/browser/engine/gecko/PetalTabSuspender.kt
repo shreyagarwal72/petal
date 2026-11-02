@@ -85,7 +85,7 @@ object PetalTabSuspender {
                 // Persist engine back/forward state before releasing the view (matches official Firefox session suspension)
                 try {
                     controller.captureEngineState()?.let { state ->
-                        if (!isIncognito && url.isNotBlank() && !com.petal.browser.unit.BrowserUnit.isHomePage(url)) {
+                        if (!isIncognito && url.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(url)) {
                             com.petal.browser.unit.PetalTabStateStore.write(context, tabId, state)
                         }
                     }
@@ -118,7 +118,7 @@ object PetalTabSuspender {
                 // Persist engine back/forward state before releasing the view
                 try {
                     controller.captureEngineState()?.let { state ->
-                        if (!isIncognito && url.isNotBlank() && !com.petal.browser.unit.BrowserUnit.isHomePage(url)) {
+                        if (!isIncognito && url.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(url)) {
                             com.petal.browser.unit.PetalTabStateStore.write(context, tabId, state)
                         }
                     }

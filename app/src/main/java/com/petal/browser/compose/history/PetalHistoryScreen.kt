@@ -22,10 +22,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,9 +44,9 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.launch
 import coil.compose.SubcomposeAsyncImage
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.petal.browser.database.HistoryBookmarkContract
+import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
-import com.petal.browser.database.RecordAction
-import com.petal.browser.unit.RecordUnit
 import com.petal.browser.compose.composable.ContainedLoadingIndicator
 import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.ExpressiveHeader
@@ -227,7 +223,7 @@ fun PetalHistoryScreen(
 
     LaunchedEffect(Unit) {
         try {
-            val action = RecordAction(context)
+            val action = HistoryBookmarkRepository(context)
             action.open(false)
             val list = action.listHistory(context)
             action.close()
@@ -271,9 +267,9 @@ fun PetalHistoryScreen(
             destructive = true,
             onConfirm = {
                 try {
-                    val action = RecordAction(context)
+                    val action = HistoryBookmarkRepository(context)
                     action.open(true)
-                    action.clearTable(RecordUnit.TABLE_HISTORY)
+                    action.clearTable(HistoryBookmarkContract.TABLE_HISTORY)
                     action.close()
                     rawHistory = emptyList()
                 } catch (e: Exception) {
@@ -374,7 +370,7 @@ fun PetalHistoryScreen(
                         ) {
                             item(key = "clear_banner") {
                                 PetalGroupRow(
-                                    icon = Icons.Filled.CleaningServices,
+                                    icon = Icons.Rounded.CleaningServices,
                                     title = stringResource(R.string.ui_clear_browsing_data_2),
                                     position = PetalGroupPosition.SINGLE,
                                     onClick = onClearBrowsingData,
@@ -441,10 +437,10 @@ fun PetalHistoryScreen(
                                                                 contentDescription = "Website Icon",
                                                                 modifier = Modifier.size(24.dp).clip(CircleShape),
                                                                 contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                                                                loading = { Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) },
-                                                                error = { Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) }
+                                                                loading = { Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) },
+                                                                error = { Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) }
                                                             )
-                                                        } else Icon(Icons.Filled.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+                                                        } else Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
                                                     }
                                                 },
                                                 content = {
@@ -462,9 +458,9 @@ fun PetalHistoryScreen(
                                                             val deletedRecord = record
                                                             val deletedIndex = rawHistory?.indexOfFirst { it.url == record.url } ?: -1
                                                             try {
-                                                                val action = RecordAction(context)
+                                                                val action = HistoryBookmarkRepository(context)
                                                                 action.open(true)
-                                                                action.deleteURL(deletedRecord.url, RecordUnit.TABLE_HISTORY)
+                                                                action.deleteURL(deletedRecord.url, HistoryBookmarkContract.TABLE_HISTORY)
                                                                 action.close()
                                                                 rawHistory = rawHistory?.filter { it.url != deletedRecord.url } ?: emptyList()
                                                             } catch (e: Exception) {
@@ -479,7 +475,7 @@ fun PetalHistoryScreen(
                                                                 )
                                                                 if (result == SnackbarResult.ActionPerformed) {
                                                                     try {
-                                                                        val action = RecordAction(context)
+                                                                        val action = HistoryBookmarkRepository(context)
                                                                         action.open(true)
                                                                         action.addHistory(deletedRecord)
                                                                         action.close()
@@ -496,9 +492,9 @@ fun PetalHistoryScreen(
                                                                 }
                                                             }
                                                         }) {
-                                                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.ui_remove_entry), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_remove_entry), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                                         }
-                                                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                                     }
                                                 }
                                             )

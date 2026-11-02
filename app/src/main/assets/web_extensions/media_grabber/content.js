@@ -48,6 +48,121 @@ setTimeout(refreshTabMedia, 1200);
 setTimeout(refreshTabMedia, 3000);
 setTimeout(refreshTabMedia, 6000);
 
+// Progressive Web App (PWA) manifest discovery for GeckoView native bridge
+function detectPwaManifest() {
+    try {
+        if (window.top !== window) return;
+        const manifestLink = document.querySelector('link[rel="manifest"], link[rel="alternate"][type="application/manifest+json"]');
+        if (manifestLink && manifestLink.href) {
+            chrome.runtime.sendMessage({
+                type: 'PWA_MANIFEST_FOUND',
+                manifestUrl: manifestLink.href,
+                pageUrl: window.location.href,
+                pageTitle: document.title || ''
+            }).catch(() => {});
+        }
+    } catch (e) {}
+}
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    detectPwaManifest();
+} else {
+    document.addEventListener('DOMContentLoaded', detectPwaManifest);
+}
+window.addEventListener('load', detectPwaManifest);
+setTimeout(detectPwaManifest, 1500);
+setTimeout(detectPwaManifest, 4000);
+
+// Reader Mode article eligibility detector
+function checkArticleEligibility() {
+    try {
+        const articleEl = document.querySelector('article, [itemprop="articleBody"], .entry-content, .post-content, main, .article-content, #article-body');
+        const paragraphs = document.querySelectorAll('p');
+        let textLength = 0;
+        for (let i = 0; i < paragraphs.length; i++) {
+            textLength += (paragraphs[i].innerText || '').length;
+        }
+        const isArticle = !!(articleEl || (paragraphs.length >= 3 && textLength > 600));
+        if (isArticle) {
+            chrome.runtime.sendMessage({
+                type: 'READER_ELIGIBLE_DETECTED',
+                pageUrl: window.location.href,
+                isArticle: true
+            }).catch(() => {});
+        }
+    } catch (e) {}
+}
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    checkArticleEligibility();
+} else {
+    document.addEventListener('DOMContentLoaded', checkArticleEligibility);
+}
+window.addEventListener('load', checkArticleEligibility);
+setTimeout(checkArticleEligibility, 1500);
+setTimeout(checkArticleEligibility, 3500);
+
+// DOM resource discovery: videos, audios, high-res images, and documents/media links
+function scanDomResources() {
+    try {
+        checkArticleEligibility();
+        const results = [];
+        const seenUrls = new Set();
+
+        // 1. Videos, Audio & Source tags
+        document.querySelectorAll('video, audio, source').forEach(el => {
+            const src = el.src || el.currentSrc || el.getAttribute('data-src');
+            if (src && src.startsWith('http') && !seenUrls.has(src)) {
+                seenUrls.add(src);
+                const tag = (el.tagName || '').toLowerCase();
+                const type = tag === 'audio' ? 'audio' : 'video';
+                results.push({ url: src, type: type });
+            }
+        });
+
+        // 2. High-res images
+        document.querySelectorAll('img').forEach(img => {
+            const src = img.currentSrc || img.src || img.getAttribute('data-src');
+            if (src && src.startsWith('http') && (img.naturalWidth > 100 || img.width > 100) && !seenUrls.has(src)) {
+                seenUrls.add(src);
+                results.push({ url: src, type: 'image' });
+            }
+        });
+
+        // 3. Document and media links
+        document.querySelectorAll('a[href]').forEach(a => {
+            const href = a.href;
+            if (href && /\.(pdf|zip|rar|7z|apk|tar|gz|epub|m3u8|mp4|mp3)(\?|$)/i.test(href) && !seenUrls.has(href)) {
+                seenUrls.add(href);
+                let type = 'doc';
+                if (/\.(m3u8|mp4)(\?|$)/i.test(href)) {
+                    type = 'video';
+                } else if (/\.mp3(\?|$)/i.test(href)) {
+                    type = 'audio';
+                }
+                const title = (a.innerText || a.title || '').trim();
+                results.push({ url: href, type: type, title: title });
+            }
+        });
+
+        if (results.length > 0) {
+            chrome.runtime.sendMessage({
+                type: 'DOM_RESOURCES_SNIFFED',
+                items: JSON.stringify(results),
+                pageUrl: window.location.href
+            }).catch(() => {});
+        }
+    } catch (e) {}
+}
+
+if (document.readyState === 'complete') {
+    scanDomResources();
+} else {
+    document.addEventListener('DOMContentLoaded', scanDomResources);
+}
+window.addEventListener('load', scanDomResources);
+setTimeout(scanDomResources, 2000);
+
 // Listen for messages from background script (network-detected manifests + native player config + handoff control)
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!message || !message.type) return;
@@ -96,13 +211,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
+function extractArticleData() {
+    try {
+        var el = document.querySelector('article, [itemprop="articleBody"], .entry-content, .post-content, main, .article-body, #content') || document.body;
+        var t = (document.querySelector('h1') ? document.querySelector('h1').innerText : document.title) || '';
+        var by = (document.querySelector('[rel="author"], .author, .byline, [itemprop="author"]') ? document.querySelector('[rel="author"], .author, .byline, [itemprop="author"]').innerText : '') || '';
+        var img = document.querySelector('article img, [itemprop="image"], meta[property="og:image"]');
+        var lead = img ? (img.src || img.content || '') : '';
+        var bodyText = el ? (el.innerText || '') : '';
+        return { title: t, author: by, lead: lead, text: bodyText };
+    } catch(err) {
+        return { title: document.title || '', author: '', lead: '', text: document.body ? document.body.innerText : '' };
+    }
+}
+
 // Relay messages from the page-level inject.js hook to background.js
 window.addEventListener('message', (event) => {
     if (event.source !== window) return;
     const data = event.data;
     if (!data || !data.type) return;
 
-    if (data.type === 'REQUEST_HANDOFF') {
+    if (data.type === 'PETAL_EXTRACT_ARTICLE') {
+        chrome.runtime.sendMessage({
+            type: 'READER_ARTICLE_DATA',
+            article: extractArticleData(),
+            pageUrl: window.location.href
+        }).catch(() => {});
+    } else if (data.type === 'REQUEST_HANDOFF') {
         chrome.runtime.sendMessage({
             type: 'REQUEST_HANDOFF',
             url: data.url,

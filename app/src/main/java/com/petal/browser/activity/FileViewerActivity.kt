@@ -21,18 +21,18 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.petal.browser.compose.file.PetalFileViewerBridge
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 
 class FileViewerActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: android.content.Context) {
-        super.attachBaseContext(HelperUnit.applyLanguage(newBase))
+        super.attachBaseContext(PetalAndroidUtils.applyLanguage(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
-        HelperUnit.initTheme(this)
+        PetalAndroidUtils.initTheme(this)
         enableEdgeToEdge()
 
         val controller = WindowCompat.getInsetsController(window, window.decorView)

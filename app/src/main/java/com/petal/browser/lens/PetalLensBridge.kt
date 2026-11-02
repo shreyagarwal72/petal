@@ -24,7 +24,7 @@ import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
-import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.unit.PetalBrowserUtils
 
 object PetalLensBridge {
 
@@ -195,7 +195,7 @@ object PetalLensBridge {
                                     onResult = { value ->
                                         showScanner = false
                                         if (value.startsWith("http://") || value.startsWith("https://")) {
-                                            BrowserUnit.intentURL(activity, Uri.parse(value))
+                                            PetalBrowserUtils.intentURL(activity, Uri.parse(value))
                                         } else {
                                             val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                                                     as android.content.ClipboardManager

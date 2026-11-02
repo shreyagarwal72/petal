@@ -28,7 +28,7 @@ import androidx.preference.PreferenceManager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
-import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.unit.PetalAndroidUtils;
 import com.petal.browser.view.PetalToast;
 import com.petal.browser.view.PetalGeckoView;
 
@@ -258,7 +258,7 @@ public class PetalPwaActivity extends AppCompatActivity {
 
         // Load offline archive or target web app URL
         String targetUrl = pwaUrl;
-        if (offlineArchivePath != null && !HelperUnit.isNetworkAvailable(this)) {
+        if (offlineArchivePath != null && !PetalAndroidUtils.isNetworkAvailable(this)) {
             File archive = new File(offlineArchivePath);
             if (archive.exists()) {
                 targetUrl = "file://" + archive.getAbsolutePath();

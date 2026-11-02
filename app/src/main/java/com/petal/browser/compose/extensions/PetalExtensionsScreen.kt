@@ -480,15 +480,15 @@ private fun BuiltInExtensionsList(
                 onClick = { onOpenSettings(spec) },
                 leading = {
                         PetalGroupIconBadge(icon = when (spec.prefKey) {
-                            "petal_builtin_dark_webpages" -> Icons.Filled.DarkMode
-                            "petal_builtin_clean_link" -> Icons.Filled.LinkOff
-                            "petal_builtin_universal_copy" -> Icons.Filled.ContentCopy
-                            "petal_builtin_translate" -> Icons.Filled.Translate
-                            "petal_builtin_google_search_fixer" -> Icons.Filled.Search
-                            "petal_builtin_media_grabber" -> Icons.Filled.VideoLibrary
+                            "petal_builtin_dark_webpages" -> Icons.Rounded.DarkMode
+                            "petal_builtin_clean_link" -> Icons.Rounded.LinkOff
+                            "petal_builtin_universal_copy" -> Icons.Rounded.ContentCopy
+                            "petal_builtin_translate" -> Icons.Rounded.Translate
+                            "petal_builtin_google_search_fixer" -> Icons.Rounded.Search
+                            "petal_builtin_media_grabber" -> Icons.Rounded.VideoLibrary
                             "petal_builtin_brave_news" -> Icons.Rounded.Newspaper
-                            "petal_builtin_torrays" -> Icons.Filled.CloudDownload
-                            else -> Icons.Filled.Extension
+                            "petal_builtin_torrays" -> Icons.Rounded.CloudDownload
+                            else -> Icons.Rounded.Extension
                         })
                 },
                 content = {

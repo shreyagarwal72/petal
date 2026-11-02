@@ -135,28 +135,28 @@ data class CustomFontSettings(
 fun getCustomFontSettings(sp: android.content.SharedPreferences): CustomFontSettings {
     return CustomFontSettings(
         display = FontAxes(
-            weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_weight", 950f),
-            width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_width", 100f),
-            opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_opsz", 30f),
-            grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_grade", 0f),
-            slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_slant", 0f),
-            roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_display_roundness", 100f)
+            weight = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_display_weight", 950f),
+            width = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_display_width", 100f),
+            opsz = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_display_opsz", 30f),
+            grade = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_display_grade", 0f),
+            slant = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_display_slant", 0f),
+            roundness = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_display_roundness", 100f)
         ),
         headline = FontAxes(
-            weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_weight", 700f),
-            width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_width", 100f),
-            opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_opsz", 32f),
-            grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_grade", 0f),
-            slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_slant", 0f),
-            roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_headline_roundness", 60f)
+            weight = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_headline_weight", 700f),
+            width = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_headline_width", 100f),
+            opsz = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_headline_opsz", 32f),
+            grade = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_headline_grade", 0f),
+            slant = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_headline_slant", 0f),
+            roundness = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_headline_roundness", 60f)
         ),
         body = FontAxes(
-            weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_weight", 450f),
-            width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_width", 100f),
-            opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_opsz", 16f),
-            grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_grade", 0f),
-            slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_slant", 0f),
-            roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_custom_body_roundness", 0f)
+            weight = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_body_weight", 450f),
+            width = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_body_width", 100f),
+            opsz = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_body_opsz", 16f),
+            grade = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_body_grade", 0f),
+            slant = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_body_slant", 0f),
+            roundness = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_custom_body_roundness", 0f)
         )
     )
 }
@@ -370,28 +370,28 @@ fun loadGSFlexSettings(sp: android.content.SharedPreferences): GSFlexSettings {
     val preset = GSFlexPreset.fromName(presetName)
     val defaultAxes = getPresetFontAxes(GSFlexPreset.PETAL_SIGNATURE)
     val display = FontAxes(
-        weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_weight", defaultAxes.first.weight),
-        width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_width", defaultAxes.first.width),
-        opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_opsz", defaultAxes.first.opsz),
-        grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_grade", defaultAxes.first.grade),
-        slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_slant", defaultAxes.first.slant),
-        roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_d_roundness", defaultAxes.first.roundness)
+        weight = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_d_weight", defaultAxes.first.weight),
+        width = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_d_width", defaultAxes.first.width),
+        opsz = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_d_opsz", defaultAxes.first.opsz),
+        grade = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_d_grade", defaultAxes.first.grade),
+        slant = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_d_slant", defaultAxes.first.slant),
+        roundness = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_d_roundness", defaultAxes.first.roundness)
     )
     val headline = FontAxes(
-        weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_weight", defaultAxes.second.weight),
-        width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_width", defaultAxes.second.width),
-        opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_opsz", defaultAxes.second.opsz),
-        grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_grade", defaultAxes.second.grade),
-        slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_slant", defaultAxes.second.slant),
-        roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_h_roundness", defaultAxes.second.roundness)
+        weight = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_h_weight", defaultAxes.second.weight),
+        width = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_h_width", defaultAxes.second.width),
+        opsz = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_h_opsz", defaultAxes.second.opsz),
+        grade = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_h_grade", defaultAxes.second.grade),
+        slant = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_h_slant", defaultAxes.second.slant),
+        roundness = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_h_roundness", defaultAxes.second.roundness)
     )
     val body = FontAxes(
-        weight = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_weight", defaultAxes.third.weight),
-        width = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_width", defaultAxes.third.width),
-        opsz = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_opsz", defaultAxes.third.opsz),
-        grade = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_grade", defaultAxes.third.grade),
-        slant = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_slant", defaultAxes.third.slant),
-        roundness = com.petal.browser.unit.HelperUnit.getSafeFloat(sp, "sp_gs_b_roundness", defaultAxes.third.roundness)
+        weight = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_b_weight", defaultAxes.third.weight),
+        width = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_b_width", defaultAxes.third.width),
+        opsz = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_b_opsz", defaultAxes.third.opsz),
+        grade = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_b_grade", defaultAxes.third.grade),
+        slant = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_b_slant", defaultAxes.third.slant),
+        roundness = com.petal.browser.unit.PetalAndroidUtils.getSafeFloat(sp, "sp_gs_b_roundness", defaultAxes.third.roundness)
     )
     return GSFlexSettings(preset = preset, display = display, headline = headline, body = body)
 }

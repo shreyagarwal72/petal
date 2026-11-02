@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import androidx.preference.PreferenceManager
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import java.util.Collections
@@ -80,11 +80,11 @@ class PetalGeckoPermissionDelegate(
 
         if ("allow" == savedRule) {
             if (!video.isNullOrEmpty()) {
-                HelperUnit.grantPermissionsCamera(activity)
+                PetalAndroidUtils.grantPermissionsCamera(activity)
                 PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, true)
             }
             if (!audio.isNullOrEmpty()) {
-                HelperUnit.grantPermissionsMic(activity)
+                PetalAndroidUtils.grantPermissionsMic(activity)
                 PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, true)
             }
             callback.grant(video?.firstOrNull(), audio?.firstOrNull())
@@ -102,11 +102,11 @@ class PetalGeckoPermissionDelegate(
                 onAllow = { remember ->
                     if (remember) sp.edit().putString(prefKey, "allow").apply()
                     if (!video.isNullOrEmpty()) {
-                        HelperUnit.grantPermissionsCamera(activity)
+                        PetalAndroidUtils.grantPermissionsCamera(activity)
                         PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, true)
                     }
                     if (!audio.isNullOrEmpty()) {
-                        HelperUnit.grantPermissionsMic(activity)
+                        PetalAndroidUtils.grantPermissionsMic(activity)
                         PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, true)
                     }
                     callback.grant(video?.firstOrNull(), audio?.firstOrNull())
@@ -152,7 +152,7 @@ class PetalGeckoPermissionDelegate(
 
         if ("allow" == sessionRule || "allow" == savedRule) {
             if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION) {
-                HelperUnit.grantPermissionsLoc(activity)
+                PetalAndroidUtils.grantPermissionsLoc(activity)
             }
             result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
             return result
@@ -174,7 +174,7 @@ class PetalGeckoPermissionDelegate(
                             } else {
                                 sp.edit().putString(sessionKey, "allow").apply()
                             }
-                            HelperUnit.grantPermissionsLoc(activity)
+                            PetalAndroidUtils.grantPermissionsLoc(activity)
                             result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
                         },
                         onDeny = { remember ->

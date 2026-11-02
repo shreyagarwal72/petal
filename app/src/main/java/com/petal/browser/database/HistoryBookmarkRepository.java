@@ -17,11 +17,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-import com.petal.browser.unit.RecordUnit;
-
 /**
  * Modern repository managing bookmarks, browsing history, and protected/standard domain lists.
- * Modernized from legacy FOSS Browser RecordAction.
+ * Modernized from legacy FOSS Browser database access object.
  */
 public class HistoryBookmarkRepository {
     public static final int HISTORY_ITEM = 0;
@@ -53,11 +51,11 @@ public class HistoryBookmarkRepository {
             return;
         }
         ContentValues values = new ContentValues();
-        values.put(RecordUnit.COLUMN_TITLE, record.getTitle().trim());
-        values.put(RecordUnit.COLUMN_URL, record.getURL().trim());
-        values.put(RecordUnit.COLUMN_TIME, record.getIconColor());
-        values.put(RecordUnit.COLUMN_IS_READING_LIST, record.isReadingList() ? 1 : 0);
-        database.insert(RecordUnit.TABLE_BOOKMARK, null, values);
+        values.put(HistoryBookmarkContract.COLUMN_TITLE, record.getTitle().trim());
+        values.put(HistoryBookmarkContract.COLUMN_URL, record.getURL().trim());
+        values.put(HistoryBookmarkContract.COLUMN_TIME, record.getIconColor());
+        values.put(HistoryBookmarkContract.COLUMN_IS_READING_LIST, record.isReadingList() ? 1 : 0);
+        database.insert(HistoryBookmarkContract.TABLE_BOOKMARK, null, values);
         if (context != null) {
             try {
                 com.petal.browser.account.progress.PetalProgressStore.INSTANCE.bump(
@@ -75,12 +73,12 @@ public class HistoryBookmarkRepository {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         String sortBy = Objects.requireNonNull(sp.getString("sort_bookmark", "title"));
         Cursor cursor = database.query(
-                RecordUnit.TABLE_BOOKMARK,
+                HistoryBookmarkContract.TABLE_BOOKMARK,
                 new String[]{
-                        RecordUnit.COLUMN_TITLE,
-                        RecordUnit.COLUMN_URL,
-                        RecordUnit.COLUMN_TIME,
-                        RecordUnit.COLUMN_IS_READING_LIST
+                        HistoryBookmarkContract.COLUMN_TITLE,
+                        HistoryBookmarkContract.COLUMN_URL,
+                        HistoryBookmarkContract.COLUMN_TIME,
+                        HistoryBookmarkContract.COLUMN_IS_READING_LIST
                 },
                 null,
                 null,
@@ -127,26 +125,26 @@ public class HistoryBookmarkRepository {
         record.setTime(record.getTime());
 
         ContentValues values = new ContentValues();
-        values.put(RecordUnit.COLUMN_TITLE, record.getTitle().trim());
-        values.put(RecordUnit.COLUMN_URL, record.getURL().trim());
-        values.put(RecordUnit.COLUMN_TIME, record.getTime());
-        database.insert(RecordUnit.TABLE_HISTORY, null, values);
+        values.put(HistoryBookmarkContract.COLUMN_TITLE, record.getTitle().trim());
+        values.put(HistoryBookmarkContract.COLUMN_URL, record.getURL().trim());
+        values.put(HistoryBookmarkContract.COLUMN_TIME, record.getTime());
+        database.insert(HistoryBookmarkContract.TABLE_HISTORY, null, values);
     }
 
     public List<Record> listHistory(Context context) {
         List<Record> list = new ArrayList<>();
         Cursor cursor = database.query(
-                RecordUnit.TABLE_HISTORY,
+                HistoryBookmarkContract.TABLE_HISTORY,
                 new String[]{
-                        RecordUnit.COLUMN_TITLE,
-                        RecordUnit.COLUMN_URL,
-                        RecordUnit.COLUMN_TIME
+                        HistoryBookmarkContract.COLUMN_TITLE,
+                        HistoryBookmarkContract.COLUMN_URL,
+                        HistoryBookmarkContract.COLUMN_TIME
                 },
                 null,
                 null,
                 null,
                 null,
-                RecordUnit.COLUMN_TIME + " DESC"
+                HistoryBookmarkContract.COLUMN_TIME + " DESC"
         );
 
         cursor.moveToFirst();
@@ -167,7 +165,7 @@ public class HistoryBookmarkRepository {
             return;
         }
         ContentValues values = new ContentValues();
-        values.put(RecordUnit.COLUMN_DOMAIN, domain.trim());
+        values.put(HistoryBookmarkContract.COLUMN_DOMAIN, domain.trim());
         database.insert(table, null, values);
     }
 
@@ -177,8 +175,8 @@ public class HistoryBookmarkRepository {
         }
         Cursor cursor = database.query(
                 table,
-                new String[]{RecordUnit.COLUMN_DOMAIN},
-                RecordUnit.COLUMN_DOMAIN + "=?",
+                new String[]{HistoryBookmarkContract.COLUMN_DOMAIN},
+                HistoryBookmarkContract.COLUMN_DOMAIN + "=?",
                 new String[]{domain.trim()},
                 null,
                 null,
@@ -193,19 +191,19 @@ public class HistoryBookmarkRepository {
         if (domain == null || domain.trim().isEmpty()) {
             return;
         }
-        database.execSQL("DELETE FROM " + table + " WHERE " + RecordUnit.COLUMN_DOMAIN + " = \"" + domain.trim() + "\"");
+        database.execSQL("DELETE FROM " + table + " WHERE " + HistoryBookmarkContract.COLUMN_DOMAIN + " = \"" + domain.trim() + "\"");
     }
 
     public List<String> listDomains(String table) {
         List<String> list = new ArrayList<>();
         Cursor cursor = database.query(
                 table,
-                new String[]{RecordUnit.COLUMN_DOMAIN},
+                new String[]{HistoryBookmarkContract.COLUMN_DOMAIN},
                 null,
                 null,
                 null,
                 null,
-                RecordUnit.COLUMN_DOMAIN
+                HistoryBookmarkContract.COLUMN_DOMAIN
         );
         cursor.moveToFirst();
         while (!cursor.isAfterLast()) {
@@ -217,7 +215,7 @@ public class HistoryBookmarkRepository {
     }
 
     public boolean checkBookmark(String url) {
-        return checkUrl(url, RecordUnit.TABLE_BOOKMARK);
+        return checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK);
     }
 
     public void addStartSite(HistoryBookmarkItem record) {
@@ -229,28 +227,28 @@ public class HistoryBookmarkRepository {
             return;
         }
         ContentValues values = new ContentValues();
-        values.put(RecordUnit.COLUMN_TITLE, record.getTitle().trim());
-        values.put(RecordUnit.COLUMN_URL, record.getURL().trim());
-        values.put(RecordUnit.COLUMN_FILENAME, record.getFilename() != null ? record.getFilename() : "");
-        values.put(RecordUnit.COLUMN_ORDINAL, record.getOrdinal());
-        database.insert(RecordUnit.TABLE_START, null, values);
+        values.put(HistoryBookmarkContract.COLUMN_TITLE, record.getTitle().trim());
+        values.put(HistoryBookmarkContract.COLUMN_URL, record.getURL().trim());
+        values.put(HistoryBookmarkContract.COLUMN_FILENAME, record.getFilename() != null ? record.getFilename() : "");
+        values.put(HistoryBookmarkContract.COLUMN_ORDINAL, record.getOrdinal());
+        database.insert(HistoryBookmarkContract.TABLE_START, null, values);
     }
 
     public List<Record> listStartSites() {
         List<Record> list = new ArrayList<>();
         Cursor cursor = database.query(
-                RecordUnit.TABLE_START,
+                HistoryBookmarkContract.TABLE_START,
                 new String[]{
-                        RecordUnit.COLUMN_TITLE,
-                        RecordUnit.COLUMN_URL,
-                        RecordUnit.COLUMN_FILENAME,
-                        RecordUnit.COLUMN_ORDINAL
+                        HistoryBookmarkContract.COLUMN_TITLE,
+                        HistoryBookmarkContract.COLUMN_URL,
+                        HistoryBookmarkContract.COLUMN_FILENAME,
+                        HistoryBookmarkContract.COLUMN_ORDINAL
                 },
                 null,
                 null,
                 null,
                 null,
-                RecordUnit.COLUMN_ORDINAL + " ASC"
+                HistoryBookmarkContract.COLUMN_ORDINAL + " ASC"
         );
         if (cursor != null) {
             if (cursor.moveToFirst()) {
@@ -269,7 +267,7 @@ public class HistoryBookmarkRepository {
     }
 
     public boolean checkStartSite(String url) {
-        return checkUrl(url, RecordUnit.TABLE_START);
+        return checkUrl(url, HistoryBookmarkContract.TABLE_START);
     }
 
     public boolean checkUrl(String url, String table) {
@@ -278,8 +276,8 @@ public class HistoryBookmarkRepository {
         }
         Cursor cursor = database.query(
                 table,
-                new String[]{RecordUnit.COLUMN_URL},
-                RecordUnit.COLUMN_URL + "=?",
+                new String[]{HistoryBookmarkContract.COLUMN_URL},
+                HistoryBookmarkContract.COLUMN_URL + "=?",
                 new String[]{url.trim()},
                 null,
                 null,
@@ -294,14 +292,14 @@ public class HistoryBookmarkRepository {
         if (domain == null || domain.trim().isEmpty()) {
             return;
         }
-        database.execSQL("DELETE FROM " + table + " WHERE " + RecordUnit.COLUMN_URL + " = \"" + domain.trim() + "\"");
+        database.execSQL("DELETE FROM " + table + " WHERE " + HistoryBookmarkContract.COLUMN_URL + " = \"" + domain.trim() + "\"");
     }
 
     public void deleteHistoryByTitle(String title) {
         if (title == null || title.trim().isEmpty()) {
             return;
         }
-        database.delete(RecordUnit.TABLE_HISTORY, RecordUnit.COLUMN_TITLE + " = ? OR " + RecordUnit.COLUMN_URL + " = ?", new String[]{title.trim(), title.trim()});
+        database.delete(HistoryBookmarkContract.TABLE_HISTORY, HistoryBookmarkContract.COLUMN_TITLE + " = ? OR " + HistoryBookmarkContract.COLUMN_URL + " = ?", new String[]{title.trim(), title.trim()});
     }
 
     public void clearTable(String table) {
@@ -340,11 +338,11 @@ public class HistoryBookmarkRepository {
         if (json == null) return;
         database.beginTransaction();
         try {
-            database.execSQL("DELETE FROM " + RecordUnit.TABLE_SESSION);
+            database.execSQL("DELETE FROM " + HistoryBookmarkContract.TABLE_SESSION);
             ContentValues values = new ContentValues();
-            values.put(RecordUnit.COLUMN_ORDINAL, 1);
-            values.put(RecordUnit.COLUMN_DATA, json);
-            database.insert(RecordUnit.TABLE_SESSION, null, values);
+            values.put(HistoryBookmarkContract.COLUMN_ORDINAL, 1);
+            values.put(HistoryBookmarkContract.COLUMN_DATA, json);
+            database.insert(HistoryBookmarkContract.TABLE_SESSION, null, values);
             database.setTransactionSuccessful();
         } finally {
             database.endTransaction();
@@ -355,9 +353,9 @@ public class HistoryBookmarkRepository {
         Cursor cursor = null;
         try {
             cursor = database.query(
-                    RecordUnit.TABLE_SESSION,
-                    new String[]{RecordUnit.COLUMN_DATA},
-                    RecordUnit.COLUMN_ORDINAL + "=?",
+                    HistoryBookmarkContract.TABLE_SESSION,
+                    new String[]{HistoryBookmarkContract.COLUMN_DATA},
+                    HistoryBookmarkContract.COLUMN_ORDINAL + "=?",
                     new String[]{"1"},
                     null,
                     null,
@@ -376,7 +374,7 @@ public class HistoryBookmarkRepository {
 
     public void clearSessionStateJson() {
         try {
-            database.execSQL("DELETE FROM " + RecordUnit.TABLE_SESSION);
+            database.execSQL("DELETE FROM " + HistoryBookmarkContract.TABLE_SESSION);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -387,11 +385,11 @@ public class HistoryBookmarkRepository {
         try {
             database.beginTransaction();
             // Delete all history records created at or after the session start time
-            database.delete(RecordUnit.TABLE_HISTORY, RecordUnit.COLUMN_TIME + " >= ?", new String[]{String.valueOf(sessionStartTime)});
+            database.delete(HistoryBookmarkContract.TABLE_HISTORY, HistoryBookmarkContract.COLUMN_TIME + " >= ?", new String[]{String.valueOf(sessionStartTime)});
             if (sessionUrls != null && !sessionUrls.isEmpty()) {
                 for (String url : sessionUrls) {
                     if (url != null && !url.trim().isEmpty()) {
-                        database.delete(RecordUnit.TABLE_HISTORY, RecordUnit.COLUMN_URL + " = ?", new String[]{url.trim()});
+                        database.delete(HistoryBookmarkContract.TABLE_HISTORY, HistoryBookmarkContract.COLUMN_URL + " = ?", new String[]{url.trim()});
                     }
                 }
             }

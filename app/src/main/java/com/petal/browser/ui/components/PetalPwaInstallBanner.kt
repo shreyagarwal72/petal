@@ -12,6 +12,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 @Composable
 fun PetalPwaInstallBanner(
@@ -20,15 +23,20 @@ fun PetalPwaInstallBanner(
     onDismissClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val bannerShape = RoundedCornerShape(24.dp)
+
     Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        tonalElevation = 8.dp,
-        shadowElevation = 8.dp,
+        shape = bannerShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
+        contentColor = if (isGlass) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimaryContainer,
+        tonalElevation = if (isGlass) 0.dp else 8.dp,
+        shadowElevation = if (isGlass) 0.dp else 8.dp,
         modifier = modifier
             .fillMaxWidth()
             .padding(12.dp)
+            .then(if (isGlass) Modifier.liquidGlassChrome(bannerShape, enabled = true, sheenIntensity = sheen) else Modifier)
     ) {
         Row(
             modifier = Modifier

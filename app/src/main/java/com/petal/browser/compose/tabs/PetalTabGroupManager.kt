@@ -221,7 +221,7 @@ object PetalTabGroupManager {
         val domainMap = mutableMapOf<String, MutableList<PetalTabItem>>()
         
         for (tab in regularTabs) {
-            val domain = com.petal.browser.unit.HelperUnit.domain(tab.url)
+            val domain = com.petal.browser.unit.PetalAndroidUtils.domain(tab.url)
             if (!domain.isNullOrBlank() && domain != "null" && domain != "localhost") {
                 domainMap.getOrPut(domain) { mutableListOf() }.add(tab)
             }

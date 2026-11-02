@@ -19,7 +19,7 @@ import com.petal.browser.view.GridAdapter
 import com.petal.browser.objects.CustomSearchesHelper
 import com.petal.browser.objects.CustomRedirect
 import com.petal.browser.view.GridItem
-import com.petal.browser.unit.HelperUnit
+import com.petal.browser.unit.PetalAndroidUtils
 import org.json.JSONException
 import java.util.LinkedList
 import java.util.Objects
@@ -42,7 +42,7 @@ object BrowserDialogManager {
 
         val dialog = builder.create()
         dialog.show()
-        HelperUnit.setupDialog(context, dialog)
+        PetalAndroidUtils.setupDialog(context, dialog)
 
         val cardView = dialogView.findViewById<CardView>(R.id.item_CardViewItem)
         cardView?.visibility = View.GONE
@@ -50,7 +50,7 @@ object BrowserDialogManager {
         val menuGrid = dialogView.findViewById<GridView>(R.id.menu_grid)
         val gridList: MutableList<GridItem> = LinkedList()
         activity.sp.edit().putString("showFilterDialogX", "true").apply()
-        HelperUnit.addFilterItems(activity, gridList)
+        PetalAndroidUtils.addFilterItems(activity, gridList)
 
         val gridAdapter = GridAdapter(context, gridList)
         menuGrid.numColumns = 2
@@ -137,7 +137,7 @@ object BrowserDialogManager {
             builderAddCustom.setView(dialogViewAddCustom)
             val dialogCustomSearchesNew = builderAddCustom.create()
             dialogCustomSearchesNew.show()
-            HelperUnit.setupDialog(context, dialogCustomSearchesNew)
+            PetalAndroidUtils.setupDialog(context, dialogCustomSearchesNew)
         }
 
         builder.setPositiveButton(R.string.app_cancel) { _, _ ->
@@ -147,6 +147,6 @@ object BrowserDialogManager {
         dialogCustomSearches = builder.create()
         dialogCustomSearches.show()
         dialogCustomSearches.setCancelable(false)
-        HelperUnit.setupDialog(context, dialogCustomSearches)
+        PetalAndroidUtils.setupDialog(context, dialogCustomSearches)
     }
 }
