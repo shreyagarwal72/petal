@@ -150,6 +150,7 @@ public class PetalMediaSessionService extends Service {
 
     @Override
     public void onDestroy() {
+        PetalLiveActionBus.dismissMedia();
         if (activeInstance == this) {
             activeInstance = null;
         }
@@ -453,16 +454,5 @@ public class PetalMediaSessionService extends Service {
             currentPosition = pos;
             updatePlaybackState(isPlaying, pos);
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        PetalLiveActionBus.dismissMedia();
-        unregisterNoisyReceiver();
-        if (mediaSession != null) {
-            mediaSession.setActive(false);
-            mediaSession.release();
-        }
-        super.onDestroy();
     }
 }
